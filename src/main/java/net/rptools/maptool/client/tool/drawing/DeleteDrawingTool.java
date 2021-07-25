@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import javax.swing.*;
-
 import net.rptools.lib.AppEvent;
 import net.rptools.lib.AppEventListener;
 import net.rptools.lib.image.ImageUtil;
@@ -38,9 +37,11 @@ import net.rptools.maptool.client.ui.zone.ZoneRenderer;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Zone.Layer;
 import net.rptools.maptool.model.ZonePoint;
+import net.rptools.maptool.model.drawing.DrawnElement;
 
 /** Tool for deleting drawings. */
-public class DeleteDrawingTool extends DefaultTool implements ZoneOverlay, MouseListener, AppEventListener {
+public class DeleteDrawingTool extends DefaultTool
+    implements ZoneOverlay, MouseListener, AppEventListener {
 
   @Serial private static final long serialVersionUID = -8846217296437736953L;
 
@@ -100,7 +101,7 @@ public class DeleteDrawingTool extends DefaultTool implements ZoneOverlay, Mouse
     super.mouseClicked(e);
     var zone = renderer.getZone();
 
-    var multiSelect = e.isControlDown();
+    var multiSelect = e.isShiftDown();
 
     if (!multiSelect) selectedDrawings.clear();
 
@@ -125,45 +126,31 @@ public class DeleteDrawingTool extends DefaultTool implements ZoneOverlay, Mouse
 
     for (var id : selectedDrawings) {
       var drawnElement = renderer.getZone().getDrawnElement(id);
-      if(drawnElement == null)
-        continue;
+      if (drawnElement == null) continue;
 
-      drawBox(g, drawnElement.getDrawable().getBounds());
+      drawBox(g, drawnElement);
     }
   }
 
-  private void drawBox(Graphics2D g, Rectangle box) {
-    Composite composite = g.getComposite();
-    Stroke stroke = g.getStroke();
-    g.setStroke(new BasicStroke(2));
+  private void drawBox(Graphics2D g, DrawnElement element) {
+    var box = element.getDrawable().getBounds();
+    var pen = element.getPen();
 
-    var offX = renderer.getViewOffsetX();
-    var offY = renderer.getViewOffsetY();
     var scale = renderer.getScale();
 
     var screenPoint = ScreenPoint.fromZonePoint(renderer, box.x, box.y);
 
-    var x = (int) screenPoint.x;
-    var y = (int) screenPoint.y;
-    var w = (int)(box.width * scale);
-    var h = (int)(box.height * scale);
+    var x = (int) (screenPoint.x - pen.getThickness() * scale / 2);
+    var y = (int) (screenPoint.y - pen.getThickness() * scale / 2);
+    var w = (int) ((box.width + pen.getThickness()) * scale);
+    var h = (int) ((box.height + pen.getThickness()) * scale);
 
-    g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP, .25f));
-    g.setPaint(AppStyle.selectionBoxFill);
-    g.fillRoundRect(x, y, w, h,10,10);
-    g.setComposite(composite);
-
-    g.setColor(AppStyle.selectionBoxOutline);
-    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-    g.drawRoundRect(x, y, w, h,10,10);
-
-    g.setStroke(stroke);
+    AppStyle.selectedBorder.paintAround(g, x, y, w, h);
   }
 
   @Override
   public void handleAppEvent(AppEvent event) {
-    if (event.getId() != MapTool.ZoneEvent.Activated)
-      return;
+    if (event.getId() != MapTool.ZoneEvent.Activated) return;
 
     selectedDrawings.clear();
   }
