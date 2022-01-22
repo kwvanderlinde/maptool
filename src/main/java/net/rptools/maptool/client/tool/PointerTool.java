@@ -76,7 +76,6 @@ import org.mt4j.util.math.Vector3D;
  * the NumPad keys, and it handles positioning the Speech and Thought bubbles when the Spacebar is
  * held down (possibly in combination with Shift or Ctrl).
  */
-
 public class PointerTool extends DefaultTool implements IGestureEventListener {
   private static final long serialVersionUID = 8606021718606275084L;
   private static final Logger log = LogManager.getLogger(PointerTool.class);
