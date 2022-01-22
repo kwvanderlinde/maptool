@@ -19,6 +19,7 @@ import com.google.gson.JsonObject;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolUtil;
@@ -45,8 +46,12 @@ public class TokenCopyDeleteFunctions extends AbstractFunction {
   private static final String COPY_FUNC = "copyToken";
   private static final String REMOVE_FUNC = "removeToken";
 
+  private static final String CREATE_TOKEN_FUNC = "createToken";
+
+  private static final String CREATE_TOKENS_FUNC = "createTokens";
+
   private TokenCopyDeleteFunctions() {
-    super(1, 4, COPY_FUNC, REMOVE_FUNC);
+    super(1, 4, COPY_FUNC, REMOVE_FUNC, CREATE_TOKEN_FUNC, CREATE_TOKENS_FUNC);
   }
 
   public static TokenCopyDeleteFunctions getInstance() {
@@ -60,26 +65,80 @@ public class TokenCopyDeleteFunctions extends AbstractFunction {
     FunctionUtil.blockUntrustedMacro(functionName);
     int psize = parameters.size();
 
-    if (functionName.equals(COPY_FUNC)) {
+    if (functionName.equalsIgnoreCase(COPY_FUNC)) {
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 4);
 
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, 2);
       int nCopies = psize > 1 ? FunctionUtil.paramAsInteger(functionName, parameters, 1, false) : 1;
       JsonObject newVals;
-      if (psize > 3) newVals = FunctionUtil.paramAsJsonObject(functionName, parameters, 3);
-      else newVals = new JsonObject();
+      if (psize > 3) {
+        newVals = FunctionUtil.paramAsJsonObject(functionName, parameters, 3);
+      } else {
+        newVals = new JsonObject();
+      }
 
       return copyTokens((MapToolVariableResolver) resolver, token, nCopies, newVals);
     }
 
-    if (functionName.equals(REMOVE_FUNC)) {
+    if (functionName.equalsIgnoreCase(REMOVE_FUNC)) {
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, 1);
 
       return deleteToken(token);
     }
 
+    if (functionName.equalsIgnoreCase(CREATE_TOKEN_FUNC)) {
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
+      JsonObject vals = FunctionUtil.paramAsJsonObject(functionName, parameters, 0);
+      return createToken((MapToolVariableResolver) resolver, vals);
+    }
+
+    if (functionName.equalsIgnoreCase(CREATE_TOKENS_FUNC)) {
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
+      JsonArray vals = FunctionUtil.paramAsJsonArray(functionName, parameters, 0);
+      var tokenIds = new JsonArray();
+      for (int i = 0; i < vals.size(); i++) {
+        tokenIds.add(
+            createToken((MapToolVariableResolver) resolver, vals.get(i).getAsJsonObject()));
+      }
+      return tokenIds;
+    }
+
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));
+  }
+
+  private String createToken(MapToolVariableResolver resolver, JsonObject vals)
+      throws ParserException {
+
+    if (!vals.has("name")) {
+      throw new ParserException(I18N.getText("macro.function.tokenCopyDelete.noName"));
+    }
+    String name = vals.get("name").getAsString();
+
+    if (!vals.has("tokenImage")) {
+      throw new ParserException(I18N.getText("macro.function.tokenCopyDelete.noImage"));
+    }
+    String tokenImage = vals.get("tokenImage").getAsString();
+
+    Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
+    List<Token> allTokens = zone.getTokens();
+    Token t = new Token(name, new MD5Key(tokenImage));
+
+    // Make sure the exposedAreaGUID stays unique
+    if (allTokens != null) {
+      for (Token tok : allTokens) {
+        GUID tea = tok.getExposedAreaGUID();
+        if (tea != null && tea.equals(t.getExposedAreaGUID())) {
+          t.setExposedAreaGUID(new GUID());
+        }
+      }
+    }
+    // setTokenValues() handles the naming of the new token and must be called even if
+    // nothing was passed for the updates parameter (newVals).
+    setTokenValues(t, vals, zone, resolver);
+
+    MapTool.serverCommand().putToken(zone.getId(), t);
+    return t.getId().toString();
   }
 
   /**
@@ -201,6 +260,64 @@ public class TokenCopyDeleteFunctions extends AbstractFunction {
     int x = token.getX();
     int y = token.getY();
 
+    int deltX = 0; // in context x
+    int deltY = 0;
+
+    boolean delta = false;
+    boolean relativeto = false;
+    if (newVals.has("delta") && newVals.has("relativeto")) {
+      throw new ParserException(
+          I18N.getText("macro.function.tokenCopy.oxymoronicParameters", COPY_FUNC));
+    }
+    if (newVals.has("delta")) {
+      try {
+        delta = Integer.parseInt(newVals.get("delta").getAsString().trim()) != 0;
+      } catch (NumberFormatException e) {
+        delta = true;
+      }
+      if (delta) {
+        relativeto = true;
+        deltX = token.getX();
+        deltY = token.getY();
+      }
+    }
+    if (newVals.has("relativeto") && !delta) {
+      relativeto = true;
+      if (newVals
+          .get("relativeto")
+          .getAsString()
+          .trim()
+          .toLowerCase(Locale.ROOT)
+          .equals("current")) {
+        try {
+          deltX = res.getTokenInContext().getX();
+          deltY = res.getTokenInContext().getY();
+        } catch (NullPointerException e) {
+          throw new ParserException(
+              I18N.getText("macro.function.tokenCopy.noCurrentToken", COPY_FUNC));
+        }
+      } else if (newVals
+          .get("relativeto")
+          .getAsString()
+          .trim()
+          .toLowerCase(Locale.ROOT)
+          .equals("source")) {
+        deltX = token.getX();
+        deltY = token.getY();
+      } else if (newVals
+          .get("relativeto")
+          .getAsString()
+          .trim()
+          .toLowerCase(Locale.ROOT)
+          .equals("map")) {
+        deltX = 0;
+        deltY = 0;
+      } else {
+        throw new ParserException(
+            I18N.getText("macro.function.tokenCopy.unrecognizedRelativeValue", COPY_FUNC));
+      }
+    }
+
     // Location...
     boolean useDistance = false; // FALSE means to multiple x,y values by grid size
     if (newVals.has("useDistance")) {
@@ -209,28 +326,31 @@ public class TokenCopyDeleteFunctions extends AbstractFunction {
     Grid grid =
         zone.getGrid(); // These won't change for a given execution; this could be more efficient
     if (!useDistance) {
-      CellPoint cp = grid.convert(new ZonePoint(x, y));
+      CellPoint cp =
+          grid.convert(
+              new ZonePoint(
+                  x, y)); // Accidentally removed these 3 lines earlier, it serves a very important
+      // purpose for when the tokens don't move in a certain direction.
       x = cp.x;
       y = cp.y;
+      cp = grid.convert(new ZonePoint(deltX, deltY));
+      deltX = cp.x;
+      deltY = cp.y;
     }
 
     boolean tokenMoved = false;
-    boolean delta = false;
-    if (newVals.has("delta")) {
-      delta = newVals.get("delta").getAsInt() != 0;
-    }
 
     // X
     if (newVals.has("x")) {
       int tmpX = newVals.get("x").getAsInt();
-      x = tmpX + (delta ? x : 0);
+      x = tmpX + (relativeto ? deltX : 0);
       tokenMoved = true;
     }
 
     // Y
     if (newVals.has("y")) {
       int tmpY = newVals.get("y").getAsInt();
-      y = tmpY + (delta ? y : 0);
+      y = tmpY + (relativeto ? deltY : 0);
       tokenMoved = true;
     }
 

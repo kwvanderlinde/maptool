@@ -378,7 +378,7 @@ public abstract class DefaultTool extends Tool
           .getSelectedTokensList()
           .forEach(
               token -> {
-                if (token != null) {
+                if (token != null && AppUtil.playerOwns(token)) {
                   MapTool.serverCommand().updateTokenProperty(token, Token.Update.flipX);
                 }
               });
@@ -395,7 +395,7 @@ public abstract class DefaultTool extends Tool
           .getSelectedTokensList()
           .forEach(
               token -> {
-                if (token != null) {
+                if (token != null && AppUtil.playerOwns(token)) {
                   MapTool.serverCommand().updateTokenProperty(token, Token.Update.flipY);
                 }
               });
