@@ -14,6 +14,8 @@
  */
 package net.rptools.maptool.client;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.backends.jogamp.JoglAwtInput;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.File;
@@ -25,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 public class AppState {
   private static final Logger log = LogManager.getLogger(AppState.class);
   public static final String USE_DOUBLE_WIDE_PROP_NAME = "useDoubleWide";
+  public static final String TOUCH_MODE_ENABLED_PROP_NAME = "touchModeEnabled";
 
   private static boolean showGrid = false;
   private static boolean showCoordinates = false;
@@ -44,6 +47,8 @@ public class AppState {
   private static boolean isLoggingToConsole = false;
   private static boolean isLockedForBackgroundTask = false;
   private static boolean enableFullScreenUI = true;
+  private static boolean touchModeEnabled = true;
+  private static boolean tuioServerEnabled = false;
 
   private static PropertyChangeSupport changeSupport = new PropertyChangeSupport(AppState.class);
 
@@ -223,5 +228,29 @@ public class AppState {
 
   public static void setFullScreenUIEnabled(boolean value) {
     enableFullScreenUI = value;
+  }
+
+  public static boolean isTouchModeEnabled() {
+    return touchModeEnabled;
+  }
+
+  public static void setTouchModeEnabled(boolean value) {
+    var old = touchModeEnabled;
+    touchModeEnabled = value;
+    changeSupport.firePropertyChange(TOUCH_MODE_ENABLED_PROP_NAME, old, touchModeEnabled);
+  }
+
+  public static boolean isTuioServerEnabled() {
+    return tuioServerEnabled;
+  }
+
+  public static void setTuioServerEnabled(boolean value) {
+    tuioServerEnabled = value;
+    var input = (JoglAwtInput) Gdx.input;
+    if (tuioServerEnabled) {
+      input.startTuioClient();
+    } else {
+      input.stopTuioClient();
+    }
   }
 }

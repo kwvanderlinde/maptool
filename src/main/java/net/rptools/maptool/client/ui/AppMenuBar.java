@@ -286,6 +286,14 @@ public class AppMenuBar extends JMenuBar {
     item.setSelected(AppState.isFullScreenUIEnabled());
     menu.add(item);
 
+    item = new RPCheckBoxMenuItem(AppActions.TOGGLE_TOUCH_MODE, menu);
+    item.setSelected(AppState.isTouchModeEnabled());
+    menu.add(item);
+
+    item = new RPCheckBoxMenuItem(AppActions.TOGGLE_TUIO_SERVER, menu);
+    item.setSelected(AppState.isTuioServerEnabled());
+    menu.add(item);
+
     return menu;
   }
 

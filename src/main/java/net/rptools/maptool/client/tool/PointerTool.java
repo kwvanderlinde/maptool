@@ -14,6 +14,8 @@
  */
 package net.rptools.maptool.client.tool;
 
+import com.badlogic.gdx.input.GestureDetector;
+import com.badlogic.gdx.math.Vector2;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
@@ -56,15 +58,6 @@ import net.rptools.maptool.util.TokenUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.mt4j.input.inputProcessors.IGestureEventListener;
-import org.mt4j.input.inputProcessors.MTGestureEvent;
-import org.mt4j.input.inputProcessors.componentProcessors.dragProcessor.DragEvent;
-import org.mt4j.input.inputProcessors.componentProcessors.panProcessor.PanEvent;
-import org.mt4j.input.inputProcessors.componentProcessors.rotateProcessor.RotateEvent;
-import org.mt4j.input.inputProcessors.componentProcessors.tapProcessor.TapAndHoldEvent;
-import org.mt4j.input.inputProcessors.componentProcessors.tapProcessor.TapEvent;
-import org.mt4j.input.inputProcessors.componentProcessors.zoomProcessor.ZoomEvent;
-import org.mt4j.util.math.Vector3D;
 
 /**
  * This is the pointer tool from the top-level of the toolbar. It allows tokens to be selected and
@@ -72,8 +65,7 @@ import org.mt4j.util.math.Vector3D;
  * the NumPad keys, and it handles positioning the Speech and Thought bubbles when the Spacebar is
  * held down (possibly in combination with Shift or Ctrl).
  */
-
-public class PointerTool extends DefaultTool implements IGestureEventListener {
+public class PointerTool extends DefaultTool implements GestureDetector.GestureListener {
   private static final long serialVersionUID = 8606021718606275084L;
   private static final Logger log = LogManager.getLogger(PointerTool.class);
 
@@ -164,48 +156,6 @@ public class PointerTool extends DefaultTool implements IGestureEventListener {
     }
   }
 
-  /**
-   * When implementation is completed, this method will accept a ZoneRenderer parameter and
-   * determine that zone's grid style, then query the grid for the keystroke movement it wants to
-   * use. Those keystrokes are then added to the InputMap and ActionMap for the component by calling
-   * the superclass's addListeners() method.
-   *
-   * @param comp the component to add as listener
-   * @deprecated
-   */
-  @Deprecated
-  protected void addListeners_NOT_USED(JComponent comp) {
-    if (comp instanceof ZoneRenderer) {
-      Grid grid = ((ZoneRenderer) comp).getZone().getGrid();
-      addGridBasedKeys(grid, true);
-    }
-    super.addListeners(comp);
-  }
-
-  /**
-   * Let the grid decide which keys perform which kind of movement. This allows hex grids to handle
-   * the six-sided shapes intelligently depending on whether the grid is a vertical or horizontal
-   * grid. This also moves us one step closer to defining the keys in an external file...
-   *
-   * <p>Boy, this is ugly. As I pin down fixes for code leading up to MT1.4 I find myself performing
-   * criminal acts on the code base. :(
-   */
-  @Override
-  protected void addGridBasedKeys(Grid grid, boolean enable) { // XXX Currently not called from
-    // anywhere
-    try {
-      if (enable) {
-        grid.installMovementKeys(this, keyActionMap);
-      } else {
-        grid.uninstallMovementKeys(keyActionMap);
-      }
-    } catch (Exception e) {
-      // If there was an exception just ignore those keystrokes...
-      MapTool.showError("exception adding grid-based keys; shouldn't get here!", e); // this
-      // gives me a hook to set a breakpoint
-    }
-  }
-
   @Override
   protected void detachFrom(ZoneRenderer renderer) {
     super.detachFrom(renderer);
@@ -223,17 +173,21 @@ public class PointerTool extends DefaultTool implements IGestureEventListener {
     return "tool.pointer.tooltip";
   }
 
-  public void startTokenDrag(Token keyToken) {
+  public boolean startTokenDrag(Token keyToken) {
     if (isDraggingToken
         || keyToken == null
         || renderer.isTokenMoving(keyToken)
         || tokenPopupMenu != null
-        || isDrawingSelectionBox) return;
+        || isDrawingSelectionBox) {
+      return false;
+    }
 
     Player p = MapTool.getPlayer();
 
     Set<GUID> selectedTokenSet = renderer.getOwnedTokens(renderer.getSelectedTokenSet());
-    if (selectedTokenSet.isEmpty()) return;
+    if (selectedTokenSet.isEmpty()) {
+      return false;
+    }
 
     // Make sure we can do this
     // Possibly let unowned tokens be moved?
@@ -241,7 +195,7 @@ public class PointerTool extends DefaultTool implements IGestureEventListener {
       for (GUID tokenGUID : selectedTokenSet) {
         Token token = renderer.getZone().getToken(tokenGUID);
         if (!token.isOwner(p.getName())) {
-          return;
+          return false;
         }
       }
     }
@@ -250,7 +204,7 @@ public class PointerTool extends DefaultTool implements IGestureEventListener {
         && (MapTool.getServerPolicy().isMovementLocked()
             || MapTool.getFrame().getInitiativePanel().isMovementLocked(keyToken))) {
       // Not allowed
-      return;
+      return false;
     }
 
     tokenBeingDragged = keyToken;
@@ -270,11 +224,13 @@ public class PointerTool extends DefaultTool implements IGestureEventListener {
 
     isDraggingToken = true;
     if (AppPreferences.getHideMousePointerWhileDragging()) SwingUtil.hidePointer(renderer);
+
+    return true;
   }
 
   /** Complete the drag of the token, and expose FOW */
-  public void stopTokenDrag() {
-    if (!isDraggingToken) return;
+  public boolean stopTokenDrag() {
+    if (!isDraggingToken) return false;
 
     renderer.commitMoveSelectionSet(tokenBeingDragged.getId()); // TODO: figure out a better way
     isDraggingToken = false;
@@ -284,6 +240,7 @@ public class PointerTool extends DefaultTool implements IGestureEventListener {
     dragOffsetY = 0;
 
     exposeFoW(null);
+    return true;
   }
 
   /**
@@ -339,6 +296,142 @@ public class PointerTool extends DefaultTool implements IGestureEventListener {
     tokenStackPanel.show(tokenList, x, y);
     isShowingTokenStackPopup = true;
     repaint();
+  }
+
+  @Override
+  public boolean touchDown(float x, float y, int pointer, int button) {
+    log.info("touchDown: pointer:" + pointer + " button: " + button);
+    if (isDraggingToken) {
+      setWaypoint();
+      repaintZone();
+      return true;
+    }
+    return false;
+  }
+
+  @Override
+  public boolean touchUp(float x, float y, int pointer, int button) {
+    log.info("touchUp: pointer:" + pointer + " button: " + button);
+    return false;
+  }
+
+  @Override
+  public boolean tap(float x, float y, int count, int button) {
+    log.info("tap: count:" + count + " button: " + button);
+    var tapPoint = new Point();
+    tapPoint.x = (int) x;
+    tapPoint.y = (int) y;
+
+    handleSingleSelectAt(tapPoint, true);
+    repaintZone();
+    return false;
+  }
+
+  @Override
+  public boolean longPress(float x, float y) {
+    log.info("longPress");
+    return false;
+    /*
+    var tapPoint = new Point();
+    tapPoint.x = (int) x;
+    tapPoint.y = (int) y;
+
+    handleSingleSelectAt(tapPoint, false);
+    // if we open popup stop handling this touch
+    if(showTokenPopupAt(tapPoint)) {
+      return true;
+    }
+    startSelectionBox(tapPoint);
+    return false;*/
+  }
+
+  @Override
+  public boolean fling(float velocityX, float velocityY, int button) {
+    log.info("fling");
+    return false;
+  }
+
+  @Override
+  public boolean pan(float x, float y, float deltaX, float deltaY) {
+    log.info("pan x:" + x + " y:" + y + " deltaX:" + deltaX + " deltaY:" + deltaY);
+
+    var from = new Point();
+    from.x = (int) x;
+    from.y = (int) y;
+
+    var to = new Point();
+    to.x = (int) (x + deltaX);
+    to.y = (int) (y + deltaY);
+
+    // if we are not doing pan action, try to select something at start point
+    if(!isDraggingToken && !isDrawingSelectionBox) {
+      handleSelectAt(from, false, false, false);
+    }
+
+    if (startTokenDrag(tokenUnderMouse)) {
+      dragStartX = from.x;
+      dragStartY = from.y;
+    }
+
+    if(isDraggingToken) {
+      updateTokenDrag(from, to);
+    } else if (isDrawingSelectionBox) {
+      updateSelectionBox(to);
+    } else {
+      setDraggingMap(true);
+      moveMapBy((int) deltaX, (int) deltaY);
+    }
+
+    repaintZone();
+    return true;
+  }
+
+  @Override
+  public boolean panStop(float x, float y, int pointer, int button) {
+    log.info("panStop");
+    stopTokenDrag();
+    endSelectionBox(true);
+
+    SwingUtil.showPointer(renderer);
+
+    setDraggingMap(false);
+    repaintZone();
+    return true;
+  }
+
+  @Override
+  public boolean zoom(float initialDistance, float distance) {
+    float zoomFactor = distance / initialDistance;
+
+    renderer
+        .getZoneScale()
+        .zoomScale((int) zoomCenter.x, (int) zoomCenter.y, zoomFactor * zoomStartScale);
+    return false;
+  }
+
+  private Vector2 zoomCenter = new Vector2();
+  private Double zoomStartScale = null;
+
+  @Override
+  public boolean pinch(
+      Vector2 initialPointer1, Vector2 initialPointer2, Vector2 pointer1, Vector2 pointer2) {
+    var minX = Math.min(initialPointer1.x, initialPointer2.x);
+    var maxX = Math.max(initialPointer1.x, initialPointer2.x);
+
+    var minY = Math.min(initialPointer1.y, initialPointer2.y);
+    var maxY = Math.max(initialPointer1.y, initialPointer2.y);
+
+    zoomCenter.x = minX + (maxX - minX) / 2;
+    zoomCenter.y = minY + (maxY - minY) / 2;
+    if (zoomStartScale == null) zoomStartScale = renderer.getZoneScale().getScale();
+    log.info("pinch center:" + zoomCenter);
+    return false;
+  }
+
+  @Override
+  public void pinchStop() {
+    log.info("pinchStop");
+    zoomStartScale = null;
   }
 
   private class TokenStackPanel {
@@ -474,45 +567,10 @@ public class PointerTool extends DefaultTool implements IGestureEventListener {
     return false;
   }
 
-  // @Override
-  public boolean processGestureEvent(MTGestureEvent ge) {
-    System.out.println(
-        System.currentTimeMillis() + " " + ge.getClass().getSimpleName() + " " + ge.getIdName());
-    if (MapTool.getFrame().getToolbox().getSelectedTool() != this) return false;
-    if (ge instanceof PanEvent) processPanEvent((PanEvent) ge);
-    else if (ge instanceof ZoomEvent) processZoomEvent((ZoomEvent) ge);
-    else if (ge instanceof RotateEvent) processRotateEvent((RotateEvent) ge);
-    else if (ge instanceof TapEvent) processTapEvent((TapEvent) ge);
-    else if (ge instanceof TapAndHoldEvent) processTapAndHoldEvent((TapAndHoldEvent) ge);
-    else if (ge instanceof DragEvent) processDragEvent((DragEvent) ge);
-
-    return true;
-  }
-
-  private void processDragEvent(DragEvent ge) {
-    Point from = ge.getFromOn(renderer);
-    Point to = ge.getToOn(renderer);
-    if (ge.isResume()) {
-      dragStartX = from.x;
-      dragStartY = from.y;
-      handleSelectAt(from, false, false, tapHoldActive);
-      startSelectionBox(from);
-      startTokenDrag(tokenUnderMouse);
+  private boolean updateTokenDrag(Point from, Point to) {
+    if (!isDraggingToken) {
+      return false;
     }
-    if (ge.isUpdate()) {
-      updateSelectionBox(to);
-      updateTokenDrag(from, to);
-    }
-    if (ge.isEnd() || ge.isCancel()) {
-      stopTokenDrag();
-      endSelectionBox(!tapHoldActive);
-      SwingUtil.showPointer(renderer);
-    }
-    repaintZone();
-  }
-
-  private void updateTokenDrag(Point from, Point to) {
-    if (!isDraggingToken) return;
 
     ZonePoint last = renderer.getLastWaypoint(tokenUnderMouse.getId());
     if (last == null) {
@@ -524,11 +582,13 @@ public class PointerTool extends DefaultTool implements IGestureEventListener {
 
     int dx = zp.x - last.x;
     int dy = zp.y - last.y;
-    handleDragToken(zp, dx, dy);
+    return handleDragToken(zp, dx, dy);
   }
 
-  private void endSelectionBox(boolean clearBeforeSelecting) {
-    if (!isDrawingSelectionBox) return;
+  private boolean endSelectionBox(boolean clearBeforeSelecting) {
+    if (!isDrawingSelectionBox) {
+      return false;
+    }
 
     if (clearBeforeSelecting) {
       renderer.clearSelectedTokens();
@@ -539,53 +599,33 @@ public class PointerTool extends DefaultTool implements IGestureEventListener {
     selectionBoundBox = null;
     isDrawingSelectionBox = false;
 
-    return;
+    return true;
   }
 
-  private void updateSelectionBox(Point to) {
-    if (!isDrawingSelectionBox) return;
+  private boolean updateSelectionBox(Point to) {
+    if (!isDrawingSelectionBox) {
+      return false;
+    }
 
     selectionBoundBox.x = Math.min(dragStartX, to.x);
     selectionBoundBox.y = Math.min(dragStartY, to.y);
     selectionBoundBox.width = Math.abs(dragStartX - to.x);
     selectionBoundBox.height = Math.abs(dragStartY - to.y);
+
+    return true;
   }
 
-  private void startSelectionBox(Point from) {
-    if (tokenUnderMouse != null || isDrawingSelectionBox || isDraggingToken) return;
+  private boolean startSelectionBox(Point from) {
+    if (tokenUnderMouse != null || isDrawingSelectionBox || isDraggingToken) {
+      return false;
+    }
+    dragStartX = from.x;
+    dragStartY = from.y;
 
     hideMarkerPopup();
     isDrawingSelectionBox = true;
     selectionBoundBox = new Rectangle(from.x, from.y, 0, 0);
-  }
-
-  private boolean tapHoldActive = false;
-
-  private void processTapAndHoldEvent(TapAndHoldEvent e) {
-    if (!e.isHoldComplete()) return;
-
-    if (e.isUpdate()) {
-      // only one holdEvent at a time
-      if (tapHoldActive) return;
-
-      tapHoldActive = true;
-
-      handleSingleSelectAt(e.getLocationOn(renderer), false);
-      showTokenPopupAt(e.getLocationOn(renderer));
-    } else {
-      tapHoldActive = false;
-    }
-  }
-
-  private void processTapEvent(TapEvent te) {
-    if (!te.isTapped()) return;
-
-    if (!isDraggingToken) {
-      if (tapHoldActive) handleMultiSelectAt(te.getLocationOn(renderer), true);
-      else handleSingleSelectAt(te.getLocationOn(renderer), true);
-    } else setWaypoint();
-
-    repaintZone();
+    return true;
   }
 
   private void handleSingleSelectAt(Point p, boolean showDetails) {
@@ -618,13 +658,14 @@ public class PointerTool extends DefaultTool implements IGestureEventListener {
 
     if (renderer.isTokenMoving(token)) return;
 
+    calcTokenDragOffset(token, p.x, p.y);
     if (token == tokenUnderMouse) {
       if (showDetails) handleTapOnCurrentToken(p, token);
       return;
     }
 
     setNewCurrentToken(token, clearBeforeSelection, muliSelect);
-    calcTokenDragOffset(token, p.x, p.y);
+
   }
 
   private void setNewCurrentToken(
@@ -692,7 +733,7 @@ public class PointerTool extends DefaultTool implements IGestureEventListener {
 
     List<Token> tokenList = renderer.getTokenStackAt(p.x, p.y);
     if ((tokenList == null || isShowingTokenStackPopup) && AppUtil.playerOwns(token))
-      MapTool.getFrame().showTokenPropertiesDialog(token, renderer);
+      EventQueue.invokeLater(() -> MapTool.getFrame().showTokenPropertiesDialog(token, renderer));
     else showTokenStackPopup(tokenList, p.x, p.y);
   }
 
@@ -719,36 +760,6 @@ public class PointerTool extends DefaultTool implements IGestureEventListener {
     hoverTokenBounds = null;
     hoverTokenNotes = null;
     markerUnderMouse = null;
-  }
-
-  private float sumRotation = 0;
-
-  private void processRotateEvent(RotateEvent ge) {
-    sumRotation += ge.getRotationDegrees();
-    System.out.println("Rotation:" + ge.getRotationDegrees() + "Sum: " + sumRotation);
-    // rotateSelectedToken(ge.getRotationDegrees() > 0, false, false);
-  }
-
-  private void processZoomEvent(ZoomEvent ge) {
-    Vector3D center = ge.getCenterPoint();
-    System.out.println("Zoom:" + ge.getCamZoomAmount());
-
-    if (Math.abs(ge.getCamZoomAmount()) < 1) return;
-
-    zoomMap((int) center.x, (int) center.y, ge.getCamZoomAmount() < 0);
-  }
-
-  private void processPanEvent(PanEvent pe) {
-    if (pe.isStart()) {
-      setDraggingMap(true);
-    } else if (pe.isEnd()) {
-      setDraggingMap(false);
-    }
-
-    Vector3D trans = pe.getTranslationVector();
-    if (trans == null) return;
-
-    moveMapBy((int) trans.x, (int) trans.y);
   }
 
   // //
@@ -1173,6 +1184,7 @@ public class PointerTool extends DefaultTool implements IGestureEventListener {
     Grid grid = renderer.getZone().getGrid();
     // Always correct for offset. Fix #1589
     zonePoint.translate(-dragOffsetX, -dragOffsetY);
+
     // For snapped dragging
     if (tokenBeingDragged.isSnapToGrid()
         && grid.getCapabilities().isSnapToGridSupported()

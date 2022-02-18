@@ -659,6 +659,40 @@ public class AppActions {
         }
       };
 
+  public static final Action TOGGLE_TOUCH_MODE =
+      new DefaultClientAction() {
+        {
+          init("action.toggleTouchMode");
+        }
+
+        @Override
+        public boolean isSelected() {
+          return AppState.isTouchModeEnabled();
+        }
+
+        @Override
+        protected void executeAction() {
+          AppState.setTouchModeEnabled(!AppState.isTouchModeEnabled());
+        }
+      };
+
+  public static final Action TOGGLE_TUIO_SERVER =
+      new DefaultClientAction() {
+        {
+          init("action.toggleTuioServer");
+        }
+
+        @Override
+        public boolean isSelected() {
+          return AppState.isTuioServerEnabled();
+        }
+
+        @Override
+        protected void executeAction() {
+          AppState.setTuioServerEnabled(!AppState.isTuioServerEnabled());
+        }
+      };
+
   public static final Action SHOW_CONNECTION_INFO =
       new DefaultClientAction() {
         {
