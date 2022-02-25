@@ -1383,9 +1383,9 @@ public class MapTool {
     return clientId;
   }
 
- // public ServerHeartBeatThread() {
- //   super("MapTool.ServerHeartBeatThread");
- // }
+  // public ServerHeartBeatThread() {
+  //   super("MapTool.ServerHeartBeatThread");
+  // }
   /**
    * Search for command line arguments for options. Expecting arguments specified as
    * -parameter=value pair and returns a string.
