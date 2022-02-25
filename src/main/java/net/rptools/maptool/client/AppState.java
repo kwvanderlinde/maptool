@@ -46,6 +46,7 @@ public class AppState {
   private static boolean collectProfilingData = false;
   private static boolean isLoggingToConsole = false;
   private static boolean isLockedForBackgroundTask = false;
+  private static boolean useWebRTC = false;
   private static boolean enableFullScreenUI = true;
   private static boolean touchModeEnabled = true;
   private static boolean tuioServerEnabled = false;
@@ -220,6 +221,14 @@ public class AppState {
 
   public static void setNotificationEnforced(boolean enforce) {
     enforceNotification = enforce;
+  }
+
+  public static boolean useWebRTC() {
+    return useWebRTC;
+  }
+
+  public static void setUseWebRTC(boolean use) {
+    useWebRTC = use;
   }
 
   public static boolean isFullScreenUIEnabled() {

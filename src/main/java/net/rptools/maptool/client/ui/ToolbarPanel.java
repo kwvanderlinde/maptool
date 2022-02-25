@@ -24,10 +24,10 @@ import net.rptools.lib.image.ImageUtil;
 import net.rptools.lib.swing.SwingUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.functions.MediaPlayerAdapter;
+import net.rptools.maptool.client.swing.TopologyModeSelectionPanel;
 import net.rptools.maptool.client.tool.AI_Tool;
 import net.rptools.maptool.client.tool.AI_UseVblTool;
 import net.rptools.maptool.client.tool.BoardTool;
-import net.rptools.maptool.client.tool.DrawTopologySelectionTool;
 import net.rptools.maptool.client.tool.FacingTool;
 import net.rptools.maptool.client.tool.GridTool;
 import net.rptools.maptool.client.tool.MeasureTool;
@@ -57,13 +57,13 @@ public class ToolbarPanel extends JToolBar {
   private final Component horizontalSpacer;
   private final JPanel optionPanel;
   private final Toolbox toolbox;
+  private final JButton mapselect;
 
   public ToolbarPanel(Toolbox tbox) {
     setRollover(true);
 
     toolbox = tbox;
     optionPanel = new JPanel(new CardLayout());
-    optionPanel.setOpaque(false);
 
     final JSeparator vertSplit = new JSeparator(JSeparator.VERTICAL);
     final Component vertSpacer = Box.createHorizontalStrut(10);
@@ -179,7 +179,8 @@ public class ToolbarPanel extends JToolBar {
     // Jamz: End panel
 
     // the "Select Map" button
-    add(createZoneSelectionButton());
+    mapselect = createZoneSelectionButton();
+    add(mapselect);
 
     // Non visible tools
     tbox.createTool(GridTool.class);
@@ -198,8 +199,6 @@ public class ToolbarPanel extends JToolBar {
           vertSplit.setVisible(orientation == JToolBar.HORIZONTAL);
           vertSpacer.setVisible(orientation == JToolBar.HORIZONTAL);
         });
-
-    setBorderSizes(optionPanel, pointerGroupButton);
   }
 
   public JPanel getOptionPanel() {
@@ -228,6 +227,10 @@ public class ToolbarPanel extends JToolBar {
 
   public int getOptionsPanelIndex() {
     return getComponentIndex(horizontalSpacer) + 1;
+  }
+
+  public JButton getMapselect() {
+    return mapselect;
   }
 
   private JToggleButton createPointerGroupButton() {
@@ -262,7 +265,6 @@ public class ToolbarPanel extends JToolBar {
                     .getClassLoader()
                     .getResource("net/rptools/maptool/client/image/tool/btn-world.png")));
     button.setToolTipText(title);
-    button.setContentAreaFilled(false);
 
     SwingUtil.makePopupMenuButton(button, ZoneSelectionPopup::new, true);
     return button;
@@ -340,33 +342,19 @@ public class ToolbarPanel extends JToolBar {
     panel.add(DiamondTopologyTool.class);
     panel.add(HollowDiamondTopologyTool.class);
 
-    // Add with space to denote button is not part of the Topology Panel button group
-    final SidePanel topologySelectionPanel = new SidePanel();
-    topologySelectionPanel.add(DrawTopologySelectionTool.class);
+    // Add with space to separate mode button group from shape button group.
+    panel.add(Box.createHorizontalStrut(10));
 
-    panel.add(Box.createHorizontalStrut(5));
-    panel.add(topologySelectionPanel);
+    final var topologyModeSelectionPanel = new TopologyModeSelectionPanel();
+    panel.add(topologyModeSelectionPanel);
 
     return panel;
-  }
-
-  private void setBorderSizes(JPanel container, JToggleButton source) {
-    for (var component : container.getComponents()) {
-      if (component instanceof JPanel) setBorderSizes((JPanel) component, source);
-      if (component instanceof JToggleButton) {
-        ((JToggleButton) component).setBorder(source.getBorder());
-      }
-      if (component instanceof AbstractButton) {
-        component.setSize(source.getSize());
-      }
-    }
   }
 
   private JToggleButton createButton(
       final String icon, final String offIcon, final OptionPanel panel, String tooltip) {
     final JToggleButton button = new JToggleButton();
     button.setToolTipText(tooltip);
-    button.setContentAreaFilled(false);
 
     button.addActionListener(
         e -> {
@@ -472,7 +460,7 @@ public class ToolbarPanel extends JToolBar {
     }
   }
 
-  private class OptionPanel extends JPanel {
+  private class OptionPanel extends JToolBar {
 
     private Class<? extends Tool> firstTool;
     private Class<? extends Tool> currentTool;
@@ -482,16 +470,9 @@ public class ToolbarPanel extends JToolBar {
       setRollover(true);
       setBorder(null);
       setBorderPainted(false);
-      setOpaque(false);
-      setLayout(ToolbarPanel.this.getOrientation());
 
       ToolbarPanel.this.addPropertyChangeListener(
-          "orientation", evt -> setLayout((Integer) evt.getNewValue()));
-    }
-
-    private void setLayout(int orientation) {
-      if (orientation == JToolBar.HORIZONTAL) setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
-      else setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
+          "orientation", evt -> setOrientation((Integer) evt.getNewValue()));
     }
 
     public void add(Class<? extends Tool> toolClass) {
@@ -505,7 +486,6 @@ public class ToolbarPanel extends JToolBar {
               currentTool = tool.getClass();
             }
           });
-      tool.setOpaque(false);
       add(tool);
     }
 
@@ -520,28 +500,20 @@ public class ToolbarPanel extends JToolBar {
   /*
    * Stand-alone toolbar with meant to not interact with standard toolbar
    */
-  private class SidePanel extends JPanel {
+  private class SidePanel extends JToolBar {
 
     public SidePanel() {
       setFloatable(false);
       setRollover(true);
       setBorder(null);
       setBorderPainted(false);
-      setOpaque(false);
-      setLayout(ToolbarPanel.this.getOrientation());
 
       ToolbarPanel.this.addPropertyChangeListener(
-          "orientation", evt -> setLayout((Integer) evt.getNewValue()));
-    }
-
-    private void setLayout(int orientation) {
-      if (orientation == JToolBar.HORIZONTAL) setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
-      else setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
+          "orientation", evt -> setOrientation((Integer) evt.getNewValue()));
     }
 
     public void add(Class<? extends Tool> toolClass) {
       final Tool tool = toolbox.createTool(toolClass);
-      tool.setOpaque(false);
       add(tool);
     }
   }

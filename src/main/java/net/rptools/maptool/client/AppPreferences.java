@@ -23,10 +23,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.prefs.Preferences;
 import net.rptools.maptool.client.walker.WalkerMetric;
+import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.GridFactory;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
-import net.rptools.maptool.model.Zone.TopologyMode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -40,6 +40,7 @@ public class AppPreferences {
   private static final String KEY_SAVE_TOKEN_DIR = "saveTokenDir";
   private static final String KEY_SAVE_MAP_DIR = "saveMapDir";
   private static final String KEY_LOAD_DIR = "loadDir";
+  private static final String KEY_ADD_ON_LOAD_DIR = "addOnLoadDir";
   private static final String KEY_MRU_CAMPAIGNS = "mruCampaigns";
   private static final String KEY_SAVED_PAINT_TEXTURES = "savedTextures";
 
@@ -91,6 +92,8 @@ public class AppPreferences {
 
   private static final String KEY_USE_SOFT_FOG_EDGES = "useSoftFog";
   private static final boolean DEFAULT_USE_SOFT_FOG_EDGES = true;
+
+  private static final String KEY_MAP_VISIBILITY_WARNING = "mapVisibilityWarning";
 
   private static final String KEY_NEW_MAPS_HAVE_FOW = "newMapsHaveFow";
   private static final boolean DEFAULT_NEW_MAPS_HAVE_FOW = false;
@@ -184,8 +187,15 @@ public class AppPreferences {
   private static final String MACRO_EDITOR_THEME = "macroEditorTheme";
   private static final String DEFAULT_MACRO_EDITOR_THEME = "default";
 
-  private static final String KEY_TOPOLOGY_DRAWING_MODE = "topologyDrawingMode";
-  private static final String DEFAULT_TOPOLOGY_DRAWING_MODE = "VBL";
+  // When hill VBL was introduced, older versions of MapTool were unable to read the new topology
+  // modes. So we use a different preference key than in the past so older versions would not
+  // unexpectedly break.
+  private static final String KEY_TOPOLOGY_TYPES = "topologyTypes";
+  private static final String KEY_OLD_TOPOLOGY_DRAWING_MODE = "topologyDrawingMode";
+  private static final String DEFAULT_TOPOLOGY_TYPE = "VBL";
+
+  private static final String KEY_WEB_END_POINT_PORT = "webEndPointPort";
+  private static final int DEFAULT_WEB_END_POINT = 654555;
 
   public static void setFillSelectionBox(boolean fill) {
     prefs.putBoolean(KEY_FILL_SELECTION_BOX, fill);
@@ -280,6 +290,14 @@ public class AppPreferences {
         KEY_USE_HALO_COLOR_ON_VISION_OVERLAY, DEFAULT_USE_HALO_COLOR_ON_VISION_OVERLAY);
   }
 
+  public static void setMapVisibilityWarning(boolean flag) {
+    prefs.putBoolean(KEY_MAP_VISIBILITY_WARNING, flag);
+  }
+
+  public static boolean getMapVisibilityWarning() {
+    return prefs.getBoolean(KEY_MAP_VISIBILITY_WARNING, false);
+  }
+
   public static void setAutoRevealVisionOnGMMovement(boolean flag) {
     prefs.putBoolean(KEY_AUTO_REVEAL_VISION_ON_GM_MOVEMENT, flag);
   }
@@ -343,7 +361,7 @@ public class AppPreferences {
   private static final boolean DEFAULT_FACE_EDGE = true;
 
   private static final String KEY_DEFAULT_GRID_SIZE = "defaultGridSize";
-  private static final int DEFAULT_DEFAULT_GRID_SIZE = 50;
+  private static final int DEFAULT_DEFAULT_GRID_SIZE = 100;
 
   private static final String KEY_DEFAULT_GRID_COLOR = "defaultGridColor";
   private static final int DEFAULT_DEFAULT_GRID_COLOR = Color.black.getRGB();
@@ -356,6 +374,9 @@ public class AppPreferences {
 
   private static final String KEY_DEFAULT_VISION_TYPE = "defaultVisionType";
   private static final Zone.VisionType DEFAULT_VISION_TYPE = Zone.VisionType.OFF;
+
+  private static final String KEY_MAP_SORT_TYPE = "sortByGMName";
+  private static final MapSortType DEFAULT_MAP_SORT_TYPE = MapSortType.GMNAME;
 
   private static final String KEY_FONT_SIZE = "fontSize";
   private static final int DEFAULT_FONT_SIZE = 12;
@@ -434,6 +455,10 @@ public class AppPreferences {
 
   private static final String KEY_FIT_GM_VIEW = "fitGMView";
   private static final boolean DEFAULT_FIT_GM_VIEW = true;
+
+  private static final String KEY_DEFAULT_USERNAME = "defaultUsername";
+  private static final String DEFAULT_USERNAME =
+      I18N.getString("Preferences.client.default.username.value");
 
   private static final String KEY_TYPING_NOTIFICATION_DURATION = "typingNotificationDuration";
   private static final int DEFAULT_TYPING_NOTIFICATION_DURATION = 5000;
@@ -691,12 +716,24 @@ public class AppPreferences {
     prefs.put(KEY_DEFAULT_VISION_TYPE, visionType.name());
   }
 
+  public static void setMapSortType(MapSortType mapSortType) {
+    prefs.put(KEY_MAP_SORT_TYPE, mapSortType.name());
+  }
+
   public static Zone.VisionType getDefaultVisionType() {
     try {
       return Zone.VisionType.valueOf(
           prefs.get(KEY_DEFAULT_VISION_TYPE, DEFAULT_VISION_TYPE.name()));
     } catch (Exception e) {
       return DEFAULT_VISION_TYPE;
+    }
+  }
+
+  public static MapSortType getMapSortType() {
+    try {
+      return MapSortType.valueOf(prefs.get(KEY_MAP_SORT_TYPE, DEFAULT_MAP_SORT_TYPE.name()));
+    } catch (Exception e) {
+      return DEFAULT_MAP_SORT_TYPE;
     }
   }
 
@@ -878,6 +915,14 @@ public class AppPreferences {
     prefs.putBoolean(KEY_FIT_GM_VIEW, fit);
   }
 
+  public static String getDefaultUserName() {
+    return prefs.get(KEY_DEFAULT_USERNAME, DEFAULT_USERNAME);
+  }
+
+  public static void setDefaultUserName(String uname) {
+    prefs.put(KEY_DEFAULT_USERNAME, uname);
+  }
+
   public static void setMovementMetric(WalkerMetric metric) {
     prefs.put(KEY_MOVEMENT_METRIC, metric.name());
   }
@@ -970,6 +1015,15 @@ public class AppPreferences {
   public static File getLoadDir() {
     String filePath = prefs.get(KEY_LOAD_DIR, null);
     return filePath != null ? new File(filePath) : new File(File.separator);
+  }
+
+  public static File getAddOnLoadDir() {
+    String filePath = prefs.get(KEY_ADD_ON_LOAD_DIR, null);
+    return filePath != null ? new File(filePath) : getSaveDir();
+  }
+
+  public static void setAddOnLoadDir(File file) {
+    prefs.put(KEY_ADD_ON_LOAD_DIR, file.toString());
   }
 
   public static void addAssetRoot(File root) {
@@ -1214,21 +1268,63 @@ public class AppPreferences {
     prefs.put(MACRO_EDITOR_THEME, type);
   }
 
-  public static TopologyMode getTopologyDrawingMode() {
-    return TopologyMode.valueOf(
-        prefs.get(KEY_TOPOLOGY_DRAWING_MODE, DEFAULT_TOPOLOGY_DRAWING_MODE));
+  public static Zone.TopologyTypeSet getTopologyTypes() {
+    try {
+      String typeNames = prefs.get(KEY_TOPOLOGY_TYPES, "");
+      if ("".equals(typeNames)) {
+        // Fallback to the key used prior to the introduction of various VBL types.
+        String oldDrawingMode = prefs.get(KEY_OLD_TOPOLOGY_DRAWING_MODE, DEFAULT_TOPOLOGY_TYPE);
+        return switch (oldDrawingMode) {
+          default -> new Zone.TopologyTypeSet(Zone.TopologyType.WALL_VBL);
+          case "VBL" -> new Zone.TopologyTypeSet(Zone.TopologyType.WALL_VBL);
+          case "MBL" -> new Zone.TopologyTypeSet(Zone.TopologyType.MBL);
+          case "COMBINED" -> new Zone.TopologyTypeSet(
+              Zone.TopologyType.WALL_VBL, Zone.TopologyType.MBL);
+        };
+      } else {
+        return Zone.TopologyTypeSet.valueOf(typeNames);
+      }
+    } catch (Exception exc) {
+      return new Zone.TopologyTypeSet(Zone.TopologyType.WALL_VBL);
+    }
+  }
+
+  public static void setWebEndPointPort(int value) {
+    prefs.putInt(KEY_WEB_END_POINT_PORT, value);
+  }
+
+  public static int getWebEndPointPort() {
+    return prefs.getInt(KEY_WEB_END_POINT_PORT, DEFAULT_WEB_END_POINT);
+  }
+
+  // Based off vision type enum in Zone.java, this could easily get tossed somewhere else if
+  // preferred.
+  public enum MapSortType {
+    DISPLAYNAME(),
+    GMNAME();
+
+    private final String displayName;
+
+    MapSortType() {
+      displayName = I18N.getString("mapSortType." + name());
+    }
+
+    @Override
+    public String toString() {
+      return displayName;
+    }
   }
 
   /**
    * Sets the topology mode preference.
    *
-   * @param mode the mode. A value of null resets to default.
+   * @param types the topology types. A value of null resets to default.
    */
-  public static void setTopologyDrawingMode(TopologyMode mode) {
-    if (mode == null) {
-      prefs.remove(KEY_TOPOLOGY_DRAWING_MODE);
+  public static void setTopologyTypes(Zone.TopologyTypeSet types) {
+    if (types == null) {
+      prefs.remove(KEY_TOPOLOGY_TYPES);
     } else {
-      prefs.put(KEY_TOPOLOGY_DRAWING_MODE, mode.toString());
+      prefs.put(KEY_TOPOLOGY_TYPES, types.toString());
     }
   }
 }

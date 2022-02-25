@@ -20,6 +20,7 @@ import java.awt.event.ActionListener;
 import java.util.LinkedList;
 import java.util.List;
 import javax.swing.*;
+import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
@@ -42,31 +43,44 @@ public class ZoneSelectionPopup extends JScrollPopupMenu {
 
   private JMenuItem createEntries() {
 
-    List<ZoneRenderer> rendererList =
-        new LinkedList<ZoneRenderer>(MapTool.getFrame().getZoneRenderers());
-    if (!MapTool.getPlayer().isGM()) {
-      rendererList.removeIf(renderer -> !renderer.getZone().isVisible());
-    }
-
-    rendererList.sort(
-        (o1, o2) -> {
-          String name1 = o1.getZone().getName();
-          String name2 = o2.getZone().getName();
-
-          return String.CASE_INSENSITIVE_ORDER.compare(name1, name2);
-        });
-
     JMenuItem selection = null;
-    for (ZoneRenderer renderer : rendererList) {
-      ZoneItem item = new ZoneItem(renderer);
-      boolean current = renderer == MapTool.getFrame().getCurrentZoneRenderer();
-      if (current) {
-        item.setSelected(true);
-        selection = item;
-      } else if (!renderer.getZone().isVisible()) {
-        item.setIcon(new ImageIcon(AppStyle.notVisible));
+    if (MapTool.getServerPolicy().getMapSelectUIHidden() && !MapTool.getPlayer().isGM()) {
+      MapTool.getFrame().getToolbarPanel().getMapselect().setVisible(false);
+    } else {
+      List<ZoneRenderer> rendererList =
+          new LinkedList<ZoneRenderer>(MapTool.getFrame().getZoneRenderers());
+      if (!MapTool.getPlayer().isGM()) {
+        rendererList.removeIf(renderer -> !renderer.getZone().isVisible());
       }
-      add(item);
+
+      if (AppPreferences.getMapSortType().equals(AppPreferences.MapSortType.GMNAME))
+        rendererList.sort(
+            (o1, o2) -> {
+              String name1 = o1.getZone().getName();
+              String name2 = o2.getZone().getName();
+
+              return String.CASE_INSENSITIVE_ORDER.compare(name1, name2);
+            });
+      else
+        rendererList.sort(
+            (o1, o2) -> {
+              String name1 = o1.getZone().getPlayerAlias();
+              String name2 = o2.getZone().getPlayerAlias();
+
+              return String.CASE_INSENSITIVE_ORDER.compare(name1, name2);
+            });
+
+      for (ZoneRenderer renderer : rendererList) {
+        ZoneItem item = new ZoneItem(renderer);
+        boolean current = renderer == MapTool.getFrame().getCurrentZoneRenderer();
+        if (current) {
+          item.setSelected(true);
+          selection = item;
+        } else if (!renderer.getZone().isVisible()) {
+          item.setIcon(new ImageIcon(AppStyle.notVisible));
+        }
+        add(item);
+      }
     }
 
     return selection;
@@ -78,7 +92,12 @@ public class ZoneSelectionPopup extends JScrollPopupMenu {
 
     ZoneItem(ZoneRenderer renderer) {
       this.renderer = renderer;
-      String name = renderer.getZone().getName();
+      String name =
+          MapTool.getPlayer().isGM()
+              ? renderer.getZone().getName().equals(renderer.getZone().getPlayerAlias())
+                  ? renderer.getZone().getName()
+                  : renderer.getZone().getPlayerAlias() + " (" + renderer.getZone().getName() + ")"
+              : renderer.getZone().getPlayerAlias();
       if ("".equals(name)) {
         name = I18N.getText("Button.map");
       }
