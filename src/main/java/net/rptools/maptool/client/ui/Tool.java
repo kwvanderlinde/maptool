@@ -18,8 +18,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.jogamp.JoglAwtInput;
 import com.badlogic.gdx.input.GestureDetector;
 import java.awt.event.*;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -54,18 +52,21 @@ public abstract class Tool extends JToggleButton implements ActionListener, KeyL
       gestureDetector =
           new GestureDetector((GestureDetector.GestureListener) this) {
             public boolean touchUp(float x, float y, int pointer, int button) {
-              if (!super.touchUp(x, y, pointer, button)) ;
+              if (!super.touchUp(x, y, pointer, button))
+                ;
               return Tool.this.touchUp(x, y, pointer, button);
             }
           };
     }
 
     // reregister listensers if touchmode changes
-    AppState.addPropertyChangeListener(AppState.TOUCH_MODE_ENABLED_PROP_NAME, evt -> {
-      var comp = currentComponent;
-      removeListeners(comp);
-      addListeners(comp);
-    });
+    AppState.addPropertyChangeListener(
+        AppState.TOUCH_MODE_ENABLED_PROP_NAME,
+        evt -> {
+          var comp = currentComponent;
+          removeListeners(comp);
+          addListeners(comp);
+        });
   }
 
   protected boolean touchUp(float x, float y, int pointer, int button) {

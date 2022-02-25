@@ -370,7 +370,7 @@ public class PointerTool extends DefaultTool implements GestureDetector.GestureL
     to.y = (int) (y + deltaY);
 
     // if we are not doing pan action, try to select something at start point
-    if(!isDraggingToken && !isDrawingSelectionBox) {
+    if (!isDraggingToken && !isDrawingSelectionBox) {
       handleSelectAt(from, false, false, false);
     }
 
@@ -379,7 +379,7 @@ public class PointerTool extends DefaultTool implements GestureDetector.GestureL
       dragStartY = from.y;
     }
 
-    if(isDraggingToken) {
+    if (isDraggingToken) {
       updateTokenDrag(from, to);
     } else if (isDrawingSelectionBox) {
       updateSelectionBox(to);
@@ -671,7 +671,6 @@ public class PointerTool extends DefaultTool implements GestureDetector.GestureL
     }
 
     setNewCurrentToken(token, clearBeforeSelection, muliSelect);
-
   }
 
   private void setNewCurrentToken(

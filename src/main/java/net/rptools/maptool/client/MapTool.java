@@ -16,8 +16,8 @@ package net.rptools.maptool.client;
 
 import static net.rptools.maptool.model.player.PlayerDatabaseFactory.PlayerDatabaseType.PERSONAL_SERVER;
 
-import com.badlogic.gdx.Graphics;
 import com.badlogic.gdx.*;
+import com.badlogic.gdx.Graphics;
 import com.badlogic.gdx.backends.jogamp.JoglAwtInput;
 import com.badlogic.gdx.utils.Clipboard;
 import com.jidesoft.plaf.LookAndFeelFactory;
@@ -29,9 +29,28 @@ import io.sentry.SentryClient;
 import io.sentry.SentryClientFactory;
 import io.sentry.event.BreadcrumbBuilder;
 import io.sentry.event.UserBuilder;
+import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
+import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.text.MessageFormat;
+import java.util.*;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import javax.imageio.ImageIO;
+import javax.imageio.spi.IIORegistry;
+import javax.swing.*;
+import javax.swing.plaf.FontUIResource;
 import net.rptools.lib.*;
 import net.rptools.lib.image.ThumbnailManager;
 import net.rptools.lib.net.RPTURLStreamHandlerFactory;
@@ -77,29 +96,7 @@ import org.apache.logging.log4j.core.appender.FileAppender;
 import org.apache.logging.log4j.core.appender.RollingFileAppender;
 import org.apache.logging.log4j.core.config.Configurator;
 
-import javax.imageio.ImageIO;
-import javax.imageio.spi.IIORegistry;
-import javax.swing.*;
-import javax.swing.plaf.FontUIResource;
-import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
-import java.net.URL;
-import java.text.MessageFormat;
-import java.util.List;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-/**
- *
- */
+/** */
 public class MapTool {
 
   public static final String SND_INVALID_OPERATION = "invalidOperation";
@@ -166,7 +163,7 @@ public class MapTool {
    * the detail message from the <code>Throwable</code> appended to the end.
    *
    * @param msgKey the string to use when calling {@link I18N#getText(String)}
-   * @param t      the exception to be processed
+   * @param t the exception to be processed
    * @return the <code>String</code> result
    */
   public static String generateMessage(String msgKey, Throwable t) {
@@ -186,12 +183,12 @@ public class MapTool {
    * error, a warning, or just an information message. Do not use this method if the desired result
    * is a simple confirmation box (use {@link #confirm(String, Object...)} instead).
    *
-   * @param message     the key in the properties file to put in the body of the dialog (formatted using
-   *                    <code>params</code>)
-   * @param titleKey    the key in the properties file to use when creating the title of the dialog
-   *                    window (formatted using <code>params</code>)
+   * @param message the key in the properties file to put in the body of the dialog (formatted using
+   *     <code>params</code>)
+   * @param titleKey the key in the properties file to use when creating the title of the dialog
+   *     window (formatted using <code>params</code>)
    * @param messageType JOptionPane.{ERROR|WARNING|INFORMATION}_MESSAGE
-   * @param params      optional parameters to use when formatting the data from the properties file
+   * @param params optional parameters to use when formatting the data from the properties file
    */
   public static void showMessage(
       String message, String titleKey, int messageType, Object... params) {
@@ -205,15 +202,15 @@ public class MapTool {
    * is stored into a JList and that component is then used as the content of the dialog box. This
    * allows multiple strings to be displayed in a manner consistent with other message dialogs.
    *
-   * @param messages    the Objects (normally strings) to put in the body of the dialog; no properties
-   *                    file lookup is performed!
-   * @param titleKey    the key in the properties file to use when creating the title of the dialog
-   *                    window (formatted using <code>params</code>)
+   * @param messages the Objects (normally strings) to put in the body of the dialog; no properties
+   *     file lookup is performed!
+   * @param titleKey the key in the properties file to use when creating the title of the dialog
+   *     window (formatted using <code>params</code>)
    * @param messageType one of <code>JOptionPane.ERROR_MESSAGE</code>, <code>
    *                    JOptionPane.WARNING_MESSAGE</code>, <code>JOptionPane.INFORMATION_MESSAGE
    *                    </code>
-   * @param params      optional parameters to use when formatting the title text from the properties
-   *                    file
+   * @param params optional parameters to use when formatting the title text from the properties
+   *     file
    */
   public static void showMessage(
       Object[] messages, String titleKey, int messageType, Object... params) {
@@ -229,7 +226,7 @@ public class MapTool {
    * parameters.
    *
    * @param messages the Objects (normally strings) to put in the body of the dialog; no properties
-   *                 file lookup is performed!
+   *     file lookup is performed!
    */
   public static void showFeedback(Object[] messages) {
     showMessage(messages, "msg.title.messageDialogFeedback", JOptionPane.ERROR_MESSAGE);
@@ -254,7 +251,7 @@ public class MapTool {
    * type is <code>JOptionPane.ERROR_MESSAGE</code>.
    *
    * @param msgKey the key to use when calling {@link I18N#getText(String)}
-   * @param t      the exception to be processed
+   * @param t the exception to be processed
    */
   public static void showError(String msgKey, Throwable t) {
     String msg = generateMessage(msgKey, t);
@@ -281,7 +278,7 @@ public class MapTool {
    * type is <code>JOptionPane.WARNING_MESSAGE</code>.
    *
    * @param msgKey the key to use when calling {@link I18N#getText(String)}
-   * @param t      the exception to be processed
+   * @param t the exception to be processed
    */
   public static void showWarning(String msgKey, Throwable t) {
     String msg = generateMessage(msgKey, t);
@@ -308,7 +305,7 @@ public class MapTool {
    * type is <code>JOptionPane.INFORMATION_MESSAGE</code>.
    *
    * @param msgKey the key to use when calling {@link I18N#getText(String)}
-   * @param t      the exception to be processed
+   * @param t the exception to be processed
    */
   public static void showInformation(String msgKey, Throwable t) {
     String msg = generateMessage(msgKey, t);
@@ -321,7 +318,7 @@ public class MapTool {
    * additional values as parameters to the formatting of the key lookup.
    *
    * @param message key from the properties file (preferred) or hard-coded string to display
-   * @param params  optional arguments for the formatting of the property value
+   * @param params optional arguments for the formatting of the property value
    * @return <code>true</code> if the user clicks the OK button, <code>false</code> otherwise
    */
   public static boolean confirm(String message, Object... params) {
@@ -337,11 +334,11 @@ public class MapTool {
    * Displays a confirmation dialog that uses the message as a key to the properties file, and the
    * additional values as parameters to the formatting of the key lookup.
    *
-   * @param title   the title of the dialog.
+   * @param title the title of the dialog.
    * @param buttons the buttons to display on the dialog, one of {@link JOptionPane#YES_NO_OPTION},
-   *                {@link JOptionPane#YES_NO_CANCEL_OPTION}, {@link JOptionPane#OK_CANCEL_OPTION}.
+   *     {@link JOptionPane#YES_NO_CANCEL_OPTION}, {@link JOptionPane#OK_CANCEL_OPTION}.
    * @param message key from the properties file (preferred) or hard-coded string to display
-   * @param params  optional arguments for the formatting of the property value
+   * @param params optional arguments for the formatting of the property value
    * @return <code>true</code> if the user clicks the OK button, <code>false</code> otherwise
    */
   public static int confirmImpl(String title, int buttons, String message, Object... params) {
@@ -400,11 +397,11 @@ public class MapTool {
   private static int confirmDelete(String msg) {
     log.debug(msg);
     Object[] options = {
-        // getText() strips out the & as when the button text is specified this way the mnemonics
-        // don't work.
-        I18N.getText("msg.title.messageDialog.yes"),
-        I18N.getText("msg.title.messageDialog.no"),
-        I18N.getText("msg.title.messageDialog.dontAskAgain")
+      // getText() strips out the & as when the button text is specified this way the mnemonics
+      // don't work.
+      I18N.getText("msg.title.messageDialog.yes"),
+      I18N.getText("msg.title.messageDialog.no"),
+      I18N.getText("msg.title.messageDialog.dontAskAgain")
     };
     String title = I18N.getText("msg.title.messageDialogConfirm");
     return JOptionPane.showOptionDialog(
@@ -462,7 +459,7 @@ public class MapTool {
         if (browser != null) {
           try {
             param = var + "=\"" + browser + "\"";
-            Runtime.getRuntime().exec(new String[]{browser, url});
+            Runtime.getRuntime().exec(new String[] {browser, url});
             apparentlyItWorked = true;
           } catch (Exception e) {
             exception = e;
@@ -579,8 +576,8 @@ public class MapTool {
    * For Multi-monitor support, allows you to move the frame to a specific monitor. It will also set
    * the height, width and x, y position of the frame.
    *
-   * @param frame    The JFrame to move
-   * @param monitor  The monitor number as an int. Note the first monitor start at 0, not 1.
+   * @param frame The JFrame to move
+   * @param monitor The monitor number as an int. Note the first monitor start at 0, not 1.
    * @param maximize set to true if you want to maximize the frame to that monitor.
    * @author Jamz
    * @since 1.4.1.0
@@ -725,9 +722,7 @@ public class MapTool {
     return serverCommand;
   }
 
-  /**
-   * @return the server, or null if player is a client.
-   */
+  /** @return the server, or null if player is a client. */
   public static MapToolServer getServer() {
     return server;
   }
@@ -853,8 +848,8 @@ public class MapTool {
    * and addMessage(GM, ...). The <code>targets</code> is expected do be in a string list built with
    * <code>separator</code>.
    *
-   * @param message   message to be sent
-   * @param targets   string specifying clients to send the message to (spaces are trimmed)
+   * @param message message to be sent
+   * @param targets string specifying clients to send the message to (spaces are trimmed)
    * @param separator the separator between entries in <code>targets</code>
    */
   public static void addGlobalMessage(String message, String targets, String separator) {
@@ -969,10 +964,10 @@ public class MapTool {
   /**
    * Start the server from a campaign file and various settings.
    *
-   * @param id           the id of the server for announcement.
-   * @param config       the server configuration.
-   * @param policy       the server policy configuration to use.
-   * @param campaign     the campaign.
+   * @param id the id of the server for announcement.
+   * @param config the server configuration.
+   * @param policy the server policy configuration to use.
+   * @param campaign the campaign.
    * @param playerDatabase the player database to use for the connection.
    * @param copyCampaign should the campaign be a copy of the one provided.
    * @throws IOException if new MapToolServer fails.
@@ -1058,9 +1053,7 @@ public class MapTool {
     return playerList;
   }
 
-  /**
-   * Returns the list of non-gm names.
-   */
+  /** Returns the list of non-gm names. */
   public static List<String> getNonGMs() {
     List<String> nonGMs = new ArrayList<>(playerList.size());
     playerList.forEach(
@@ -1072,9 +1065,7 @@ public class MapTool {
     return nonGMs;
   }
 
-  /**
-   * Returns the list of gm names.
-   */
+  /** Returns the list of gm names. */
   public static List<String> getGMs() {
     List<String> gms = new ArrayList<>(playerList.size());
     playerList.forEach(
@@ -1194,16 +1185,12 @@ public class MapTool {
     return conn;
   }
 
-  /**
-   * returns whether the player is using a personal server.
-   */
+  /** returns whether the player is using a personal server. */
   public static boolean isPersonalServer() {
     return server != null && server.getConfig().isPersonalServer();
   }
 
-  /**
-   * returns whether the player is hosting a server - personal servers do not count.
-   */
+  /** returns whether the player is hosting a server - personal servers do not count. */
   public static boolean isHostingServer() {
     return server != null && !server.getConfig().isPersonalServer();
   }
@@ -1396,17 +1383,17 @@ public class MapTool {
     return clientId;
   }
 
-    public ServerHeartBeatThread() {
-      super("MapTool.ServerHeartBeatThread");
-    }
+  public ServerHeartBeatThread() {
+    super("MapTool.ServerHeartBeatThread");
+  }
   /**
    * Search for command line arguments for options. Expecting arguments specified as
    * -parameter=value pair and returns a string.
    *
    * <p>Examples: -version=1.4.0.1 -user=Jamz
    *
-   * @param cmd          {@link org.apache.commons.cli.Options}
-   * @param searchValue  Option string to search for, ie -version
+   * @param cmd {@link org.apache.commons.cli.Options}
+   * @param searchValue Option string to search for, ie -version
    * @param defaultValue A default value to return if option is not found
    * @return Option value found as a String, or defaultValue if not found
    * @author Jamz
@@ -1422,7 +1409,7 @@ public class MapTool {
    *
    * <p>Examples: -x or -fullscreen
    *
-   * @param cmd         {@link org.apache.commons.cli.Options}
+   * @param cmd {@link org.apache.commons.cli.Options}
    * @param searchValue Option string to search for, ie -version
    * @return A boolean value of true if option parameter found
    * @author Jamz
@@ -1438,8 +1425,8 @@ public class MapTool {
    *
    * <p>Examples: -monitor=1 -x=0 -y=0 -w=1200 -h=960
    *
-   * @param cmd          {@link org.apache.commons.cli.Options}
-   * @param searchValue  Option string to search for, ie -version
+   * @param cmd {@link org.apache.commons.cli.Options}
+   * @param searchValue Option string to search for, ie -version
    * @param defaultValue A default value to return if option is not found
    * @return Int value of the matching option parameter if found
    * @author Jamz
@@ -1449,16 +1436,12 @@ public class MapTool {
     return StringUtil.parseInteger(cmd.getOptionValue(searchValue), defaultValue);
   }
 
-  /**
-   * An example method that throws an exception.
-   */
+  /** An example method that throws an exception. */
   static void unsafeMethod() {
     throw new UnsupportedOperationException("You shouldn't call this either!");
   }
 
-  /**
-   * Examples using the (recommended) static API.
-   */
+  /** Examples using the (recommended) static API. */
   static void testSentryAPI() {
     // Note that all fields set on the context are optional. Context data is copied onto
     // all future events in the current context (until the context is cleared).
@@ -1715,7 +1698,7 @@ public class MapTool {
       Font f = new Font("\u65B0\u5B8B\u4F53", Font.PLAIN, 12);
       FontUIResource fontRes = new FontUIResource(f);
       for (Iterator<Object> iterator = UIManager.getDefaults().keySet().iterator();
-           iterator.hasNext(); ) {
+          iterator.hasNext(); ) {
         Object key = iterator.next();
         Object value = UIManager.get(key);
         if (value instanceof FontUIResource) {
@@ -1761,28 +1744,22 @@ public class MapTool {
           }
 
           @Override
-          public void log(String s, String s1) {
-          }
+          public void log(String s, String s1) {}
 
           @Override
-          public void log(String s, String s1, Throwable throwable) {
-          }
+          public void log(String s, String s1, Throwable throwable) {}
 
           @Override
-          public void error(String s, String s1) {
-          }
+          public void error(String s, String s1) {}
 
           @Override
-          public void error(String s, String s1, Throwable throwable) {
-          }
+          public void error(String s, String s1, Throwable throwable) {}
 
           @Override
-          public void debug(String s, String s1) {
-          }
+          public void debug(String s, String s1) {}
 
           @Override
-          public void debug(String s, String s1, Throwable throwable) {
-          }
+          public void debug(String s, String s1, Throwable throwable) {}
 
           @Override
           public int getLogLevel() {
@@ -1790,8 +1767,7 @@ public class MapTool {
           }
 
           @Override
-          public void setLogLevel(int i) {
-          }
+          public void setLogLevel(int i) {}
 
           @Override
           public ApplicationLogger getApplicationLogger() {
@@ -1799,8 +1775,7 @@ public class MapTool {
           }
 
           @Override
-          public void setApplicationLogger(ApplicationLogger applicationLogger) {
-          }
+          public void setApplicationLogger(ApplicationLogger applicationLogger) {}
 
           @Override
           public ApplicationType getType() {
@@ -1838,16 +1813,13 @@ public class MapTool {
           }
 
           @Override
-          public void exit() {
-          }
+          public void exit() {}
 
           @Override
-          public void addLifecycleListener(LifecycleListener lifecycleListener) {
-          }
+          public void addLifecycleListener(LifecycleListener lifecycleListener) {}
 
           @Override
-          public void removeLifecycleListener(LifecycleListener lifecycleListener) {
-          }
+          public void removeLifecycleListener(LifecycleListener lifecycleListener) {}
         };
     var input = new JoglAwtInput(null);
     if (AppState.isTuioServerEnabled()) input.startTuioClient();
@@ -1860,7 +1832,10 @@ public class MapTool {
           } catch (Throwable t) {
             log.error(t.toString());
           }
-        }, 1000 / 30, 1000 / 30, TimeUnit.MILLISECONDS);
+        },
+        1000 / 30,
+        1000 / 30,
+        TimeUnit.MILLISECONDS);
 
     EventQueue.invokeLater(
         () -> {
@@ -1877,7 +1852,7 @@ public class MapTool {
 
   private static void loadTheme()
       throws ClassNotFoundException, InstantiationException, IllegalAccessException,
-      UnsupportedLookAndFeelException {
+          UnsupportedLookAndFeelException {
     // After the TinyLAF library is initialized, look to see if there is a Default.theme
     // in our AppHome directory and load it if there is. Unfortunately, changing the
     // search path for the default theme requires subclassing TinyLAF and because
