@@ -364,7 +364,10 @@ dependencies {
     implementation 'com.github.cwisniew:NoiseLib:1.0.0-rc3' // The most recent version, 1.0.0 is build for a later java version: major version 55 is newer than 54, the highest major version supported by this compiler
 
     // gdx only for Mulitouch for now
-    implementation 'com.thelsing.gdx:gdx-backend-jogl:1.10.0'
+    //maven local for development
+    // implementation 'com.thelsing.gdx:gdx-backend-jogl:1.10.0'
+    //github
+    implementation 'com.github.thelsing:libgdx-jogl-backend:master-SNAPSHOT'
 }
 
 

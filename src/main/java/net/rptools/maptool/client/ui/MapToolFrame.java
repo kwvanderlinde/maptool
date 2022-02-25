@@ -14,6 +14,8 @@
  */
 package net.rptools.maptool.client.ui;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.backends.jogamp.JoglAwtInput;
 import com.jidesoft.docking.DefaultDockableHolder;
 import com.jidesoft.docking.DockableFrame;
 import java.awt.*;
@@ -1661,6 +1663,9 @@ public class MapToolFrame extends DefaultDockableHolder
 
     fullScreenFrame.setVisible(true);
     showFullScreenTools();
+
+    ((JoglAwtInput) Gdx.input).refreshJFrame();
+
     this.setVisible(false);
   }
 
@@ -1784,6 +1789,8 @@ public class MapToolFrame extends DefaultDockableHolder
     setJMenuBar(menuBar);
     menuBar.setVisible(true);
     this.setVisible(true);
+
+    ((JoglAwtInput) Gdx.input).refreshJFrame();
 
     fullScreenFrame.dispose();
     fullScreenFrame = null;
