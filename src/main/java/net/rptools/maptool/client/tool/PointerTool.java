@@ -328,7 +328,7 @@ public class PointerTool extends DefaultTool implements GestureDetector.GestureL
     tapPoint.x = (int) x;
     tapPoint.y = (int) y;
 
-    handleSingleSelectAt(tapPoint, true);
+    handleSingleSelectAt(tapPoint, count >= 2);
     repaintZone();
     return false;
   }
@@ -336,19 +336,19 @@ public class PointerTool extends DefaultTool implements GestureDetector.GestureL
   @Override
   public boolean longPress(float x, float y) {
     log.info("longPress");
-    return false;
-    /*
+    // return false;
+
     var tapPoint = new Point();
     tapPoint.x = (int) x;
     tapPoint.y = (int) y;
 
     handleSingleSelectAt(tapPoint, false);
     // if we open popup stop handling this touch
-    if(showTokenPopupAt(tapPoint)) {
+    if (showTokenPopupAt(tapPoint)) {
       return true;
     }
     startSelectionBox(tapPoint);
-    return false;*/
+    return false;
   }
 
   @Override
@@ -771,6 +771,8 @@ public class PointerTool extends DefaultTool implements GestureDetector.GestureL
   // Mouse
   @Override
   public void mousePressed(MouseEvent e) {
+    log.info("mousePressed " + e.toString());
+
     super.mousePressed(e);
 
     if (handledByHover(e.getPoint())) return;
@@ -859,6 +861,7 @@ public class PointerTool extends DefaultTool implements GestureDetector.GestureL
 
   // @Override
   public void mouseReleased(MouseEvent e) {
+    log.info("mouseReleased " + e.toString());
     mouseButtonDown = false;
     // System.out.println("mouseReleased " + e.toString());
 
@@ -990,6 +993,7 @@ public class PointerTool extends DefaultTool implements GestureDetector.GestureL
   // MouseMotion
   @Override
   public void mouseMoved(MouseEvent e) {
+    log.info("mouseMoved " + e.toString());
     if (renderer == null) {
       return;
     }
@@ -1061,6 +1065,7 @@ public class PointerTool extends DefaultTool implements GestureDetector.GestureL
 
   // @Override
   public void mouseDragged(MouseEvent e) {
+    log.info("mouseDragged " + e.toString());
     mouseX = e.getX();
     mouseY = e.getY();
 
