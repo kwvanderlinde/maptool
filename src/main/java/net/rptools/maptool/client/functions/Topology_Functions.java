@@ -31,6 +31,7 @@ import java.util.function.BiConsumer;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
+import net.rptools.maptool.client.functions.util.MacroFunction;
 import net.rptools.maptool.client.ui.zone.ZoneRenderer;
 import net.rptools.maptool.client.ui.zone.vbl.TokenVBL;
 import net.rptools.maptool.client.ui.zone.vbl.TokenVBL.JTS_SimplifyMethodType;
@@ -192,6 +193,10 @@ public class Topology_Functions extends AbstractFunction {
     }
 
     return "";
+  }
+
+  @MacroFunction
+  public void drawVBL(JsonElement shapes) {
   }
 
   private void childEvaluateDrawEraseTopology(String functionName, List<Object> parameters)
