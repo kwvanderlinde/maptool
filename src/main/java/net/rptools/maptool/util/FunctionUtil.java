@@ -109,6 +109,36 @@ public class FunctionUtil {
   }
 
   /**
+   * Combines a list of strings into string list or JSON array.
+   *
+   * @param strings The strings to combine.
+   * @param delim The delimiter to use in the resulting string list, or "json" to make a JSON array.
+   * @return A JsonArray containing all of results if delim is "json". Otherwise a string list
+   *     containing all of results.
+   */
+  public static Object delimited(List<String> strings, String delim) {
+    if ("json".equals(delim)) {
+      JsonArray jarr = new JsonArray();
+      strings.forEach(m -> jarr.add(new JsonPrimitive(m)));
+      return jarr;
+    } else {
+      return StringFunctions.getInstance().join(strings, delim);
+    }
+  }
+
+  public static @Nonnull Token getImpersonated(String functionName, VariableResolver resolver)
+      throws ParserException {
+    Token token = null;
+    if (resolver instanceof MapToolVariableResolver mtResolver) {
+      token = mtResolver.getTokenInContext();
+    }
+    if (token == null) {
+      throw new ParserException(I18N.getText(KEY_NO_IMPERSONATED, functionName));
+    }
+    return token;
+  }
+
+  /**
    * Gets the token from the specified index or returns the token in context. This method will check
    * the list size before trying to retrieve the token so it is safe to use for functions that have
    * the token as a optional argument.

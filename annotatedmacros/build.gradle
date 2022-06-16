@@ -1,0 +1,40 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.18'
+    }
+}
+
+
+plugins {
+    id "java"
+}
+
+repositories {
+    // Use 'jcenter' for resolving your dependencies.
+    // You can declare any Maven/Ivy/file repository here.
+    mavenLocal()
+    mavenCentral()
+    maven { url = 'https://maptool.craigs-stuff.net/repo/' }
+    maven { url = 'https://jitpack.io' }
+    maven { url "https://www.jetbrains.com/intellij-repository/releases" }
+}
+
+dependencies {
+    annotationProcessor 'com.google.auto.service:auto-service:1.0.1'
+    implementation 'com.google.auto.service:auto-service:1.0.1'
+    implementation 'com.google.auto.service:auto-service-annotations:1.0.1'
+    implementation 'com.squareup:javapoet:1.13.0'
+    // parser for macros
+    //implementation 'com.github.RPTools:parser:1.8.3'
+}
+
+jar {
+    manifest {
+        attributes(
+            "Premain-Class": "ap.agents.ThreadSafetyAgent"
+        )
+    }
+}
