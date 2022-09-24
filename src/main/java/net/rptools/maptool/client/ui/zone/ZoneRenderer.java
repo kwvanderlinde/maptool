@@ -55,6 +55,8 @@ import net.rptools.maptool.client.ui.htmlframe.HTMLFrameFactory;
 import net.rptools.maptool.client.ui.token.AbstractTokenOverlay;
 import net.rptools.maptool.client.ui.token.BarTokenOverlay;
 import net.rptools.maptool.client.ui.token.NewTokenDialog;
+import net.rptools.maptool.client.ui.zone.rendering.LightOverlayLayer;
+import net.rptools.maptool.client.ui.zone.rendering.RenderLayer;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.*;
@@ -168,7 +170,7 @@ public class ZoneRenderer extends JComponent
   private final List<ItemRenderer> itemRenderList = new LinkedList<ItemRenderer>();
   private PlayerView lastView;
   private Set<GUID> visibleTokenSet = new HashSet<>();
-  private CodeTimer timer;
+  private final CodeTimer timer;
 
   private boolean autoResizeStamp = false;
 
@@ -179,6 +181,8 @@ public class ZoneRenderer extends JComponent
   private double previousScale;
 
   private ZonePoint previousZonePoint;
+
+  private final List<RenderLayer> layers = new ArrayList<>();
 
   public enum TokenMoveCompletion {
     TRUE,
@@ -192,6 +196,8 @@ public class ZoneRenderer extends JComponent
    * @param zone the zone of the ZoneRenderer
    */
   public ZoneRenderer(Zone zone) {
+    timer = new CodeTimer("ZoneRenderer.renderZone");
+
     if (zone == null) {
       throw new IllegalArgumentException("Zone cannot be null");
     }
@@ -241,6 +247,13 @@ public class ZoneRenderer extends JComponent
         });
     // fps.start();
 
+    layers.add(new LightOverlayLayer(
+            "light overlay",
+            this.zoneView,
+            this,
+            timer,
+            tempBufferPool
+    ));
   }
 
   public void setAutoResizeStamp(boolean value) {
@@ -674,6 +687,11 @@ public class ZoneRenderer extends JComponent
    * @param token the token to flush
    */
   public void flush(Token token) {
+    // TODO Token-specific flush
+    for (final var layer : layers) {
+      layer.flush();
+    }
+
     // This method can be called from a non-EDT thread so if that happens, make sure
     // we synchronize with the EDT.
     synchronized (tokenLocationCache) {
@@ -703,6 +721,10 @@ public class ZoneRenderer extends JComponent
 
   /** Clear internal caches and backbuffers */
   public void flush() {
+    for (final var layer : layers) {
+      layer.flush();
+    }
+
     if (zone.getBackgroundPaint() instanceof DrawableTexturePaint) {
       ImageManager.flushImage(((DrawableTexturePaint) zone.getBackgroundPaint()).getAssetId());
     }
@@ -724,6 +746,10 @@ public class ZoneRenderer extends JComponent
 
   /** Set the drawableLights and drawableAuras to null, flush the zoneView, and repaint. */
   public void flushLight() {
+    // TODO Only do to lighting layers.
+    for (final var layer : layers) {
+      layer.flush();
+    }
     drawableLights = null;
     drawableAuras = null;
     zoneView.flush();
@@ -845,9 +871,6 @@ public class ZoneRenderer extends JComponent
 
   @Override
   public void paintComponent(Graphics g) {
-    if (timer == null) {
-      timer = new CodeTimer("ZoneRenderer.renderZone");
-    }
     timer.setEnabled(AppState.isCollectProfilingData() || log.isDebugEnabled());
     timer.clear();
     timer.setThreshold(10);
@@ -1095,6 +1118,10 @@ public class ZoneRenderer extends JComponent
    * flag so that fog will be recalculated.
    */
   public void invalidateCurrentViewCache() {
+    for (final var layer : layers) {
+      layer.flush();
+    }
+
     flushFog = true;
     drawableLights = null;
     drawableAuras = null;
@@ -1257,6 +1284,7 @@ public class ZoneRenderer extends JComponent
     }
     if (Zone.Layer.TOKEN.isEnabled()) {
       timer.start("lights");
+      layers.get(0).render(g2d, visibleScreenArea, view);
       renderLights(g2d, view);
       timer.stop("lights");
 
@@ -1495,15 +1523,15 @@ public class ZoneRenderer extends JComponent
     timer.stop("renderLights:filterLights");
     timer.stop("renderLights:getLights");
 
-    timer.start("renderLights:renderLightOverlay");
-    renderLightOverlay(
-        g,
-        AlphaComposite.SrcOver.derive(AppPreferences.getLightOverlayOpacity() / 255.0f),
-        view.isGMView() ? null : LightOverlayClipStyle.CLIP_TO_VISIBLE_AREA,
-        nonDarknessLights,
-        new Color(255, 255, 255, 255),
-        1.0f);
-    timer.stop("renderLights:renderLightOverlay");
+//    timer.start("renderLights:renderLightOverlay");
+//    renderLightOverlay(
+//        g,
+//        AlphaComposite.SrcOver.derive(AppPreferences.getLightOverlayOpacity() / 255.0f),
+//        view.isGMView() ? null : LightOverlayClipStyle.CLIP_TO_VISIBLE_AREA,
+//        nonDarknessLights,
+//        new Color(255, 255, 255, 255),
+//        1.0f);
+//    timer.stop("renderLights:renderLightOverlay");
 
     // Players should not be able to discern the nature of the darkness, so we always render it as
     // black for them.
