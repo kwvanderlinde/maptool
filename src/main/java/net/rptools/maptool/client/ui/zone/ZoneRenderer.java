@@ -75,6 +75,21 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
 /** */
+/* TODO Whole-part relationship. Separate each layer into its own renderer. The layer is responsible for deciding what
+ *  to render, but can pass back to the ZoneRenderer for actual rendering. And, actually, the first pass can just do the
+ *  rendering in the layer, and then we can figure out how we want to pass the rendering itself back to the
+ *  ZoneRenderer. Keep in mind that the goal is to eventually have a Swing-based renderer and a LibGDX-based renderer,
+ *  and we don't want to duplicate business logic between them.
+ * TODO Simplify clipping and visibility. For a player view, nothing gets rendered under hard FoW (except certain
+ *  configured tokens), most things gets rendered under soft FoW (except tokens I think), and everything gets rendered
+ *  in broad daylight (depending on current token view). In general, I think our business logic should deal just with
+ *  the visible area (hard and soft), while clipping is dealt with by the graphics library (Graphics2D for swing, I
+ *  guess a stencil for LibGDX).
+ * TODO A ZoneRenderer needs to expose a JComponent for integration with Swing. For this class, that is itself. For
+ *  LibGDX, it would return a Jogl something something. At the same time, we want to move ZoneRenderer to an interface
+ *  with a few methods as needed for interaction - one of those methods returns the JComponent corresponding to the
+ *  implementation.
+ */
 public class ZoneRenderer extends JComponent
     implements DropTargetListener, Comparable<ZoneRenderer> {
 
