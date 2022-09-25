@@ -245,6 +245,34 @@ public class ZoneRenderer extends JComponent
         });
     // fps.start();
 
+    // TODO We need these render layers at least, and I think in this order:
+    //  - Board (background + map)
+    //  - Background layer drawables
+    //  - Background layer stamps
+    //  - Object layer drawables
+    //  - Grid
+    //  - Object layer stamps
+    //  - Light overlay
+    //  - Darkness overlay
+    //  - Aura overlay (should this actually be under the darkness overlay?)
+    //  (and now for the confusing part)
+    //  - Token layer drawables  (player drawn images shouldn't obscure GM's images)
+    //  - Hidden layer drawables
+    //  - Hidden layer tokens
+    //  - Token layer tokens     (but why then can player tokens obscure GM tokens?)
+    //  (back to sensible reality)
+    //  - Labels
+    //  - Fog
+    //  - Always visible tokens
+    //  - Figure tokens  (I don't even know what these are or why they need to be rendered this high)
+    //  - Movement overlay (blocked moves, associated renderables)
+    //  - GM vision overlay (vision outline + halo colour fill)
+    //  - Player vision overlay (similar to GM, but clip to exposed area)
+    //  - Tool overlays
+    //  - Pointer overlay (thought, speech, finger, arrow)
+    //  - Coordinates
+    //  - Light source icon overlay.
+
     layerManager.addLayer(LightOverlayLayer.class, new LightOverlayLayer(
             this.zoneView,
             this,
@@ -1279,12 +1307,10 @@ public class ZoneRenderer extends JComponent
       timer.start("lights");
       layerManager.getLayer(LightOverlayLayer.class).render(g2d, visibleScreenArea, view);
       layerManager.getLayer(DarknessOverlayLayer.class).render(g2d, visibleScreenArea, view);
-      //renderLights(g2d, view);
       timer.stop("lights");
 
       timer.start("auras");
       layerManager.getLayer(AuraOverlayLayer.class).render(g2d, visibleScreenArea, view);
-      //renderAuras(g2d, view);
       timer.stop("auras");
     }
 
