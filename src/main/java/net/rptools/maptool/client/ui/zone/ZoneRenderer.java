@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import net.rptools.lib.CodeTimer;
@@ -55,10 +54,7 @@ import net.rptools.maptool.client.ui.htmlframe.HTMLFrameFactory;
 import net.rptools.maptool.client.ui.token.AbstractTokenOverlay;
 import net.rptools.maptool.client.ui.token.BarTokenOverlay;
 import net.rptools.maptool.client.ui.token.NewTokenDialog;
-import net.rptools.maptool.client.ui.zone.rendering.AuraOverlayLayer;
-import net.rptools.maptool.client.ui.zone.rendering.DarknessOverlayLayer;
-import net.rptools.maptool.client.ui.zone.rendering.LightOverlayLayer;
-import net.rptools.maptool.client.ui.zone.rendering.RenderLayer;
+import net.rptools.maptool.client.ui.zone.rendering.*;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.*;
@@ -184,7 +180,7 @@ public class ZoneRenderer extends JComponent
 
   private ZonePoint previousZonePoint;
 
-  private final List<RenderLayer> layers = new ArrayList<>();
+  private final RenderLayerManager layerManager = new RenderLayerManager();
 
   public enum TokenMoveCompletion {
     TRUE,
@@ -249,19 +245,19 @@ public class ZoneRenderer extends JComponent
         });
     // fps.start();
 
-    layers.add(new LightOverlayLayer(
+    layerManager.addLayer(LightOverlayLayer.class, new LightOverlayLayer(
             this.zoneView,
             this,
             timer,
             tempBufferPool
     ));
-    layers.add(new DarknessOverlayLayer(
+    layerManager.addLayer(DarknessOverlayLayer.class, new DarknessOverlayLayer(
             this.zoneView,
             this,
             timer,
             tempBufferPool
     ));
-    layers.add(new AuraOverlayLayer(
+    layerManager.addLayer(AuraOverlayLayer.class, new AuraOverlayLayer(
             this.zoneView,
             this,
             timer,
@@ -701,9 +697,7 @@ public class ZoneRenderer extends JComponent
    */
   public void flush(Token token) {
     // TODO Token-specific flush
-    for (final var layer : layers) {
-      layer.flush();
-    }
+    layerManager.getAllLayers().forEach(RenderLayer::flush);
 
     // This method can be called from a non-EDT thread so if that happens, make sure
     // we synchronize with the EDT.
@@ -732,9 +726,7 @@ public class ZoneRenderer extends JComponent
 
   /** Clear internal caches and backbuffers */
   public void flush() {
-    for (final var layer : layers) {
-      layer.flush();
-    }
+    layerManager.getAllLayers().forEach(RenderLayer::flush);
 
     if (zone.getBackgroundPaint() instanceof DrawableTexturePaint) {
       ImageManager.flushImage(((DrawableTexturePaint) zone.getBackgroundPaint()).getAssetId());
@@ -755,10 +747,8 @@ public class ZoneRenderer extends JComponent
 
   /** Set the drawableLights and drawableAuras to null, flush the zoneView, and repaint. */
   public void flushLight() {
-    // TODO Only do to lighting layers.
-    for (final var layer : layers) {
-      layer.flush();
-    }
+    layerManager.getMatchingLayers(LightOverlayLayer.class, DarknessOverlayLayer.class, AuraOverlayLayer.class).forEach(RenderLayer::flush);
+
     zoneView.flush();
     repaintDebouncer.dispatch();
   }
@@ -1125,9 +1115,7 @@ public class ZoneRenderer extends JComponent
    * flag so that fog will be recalculated.
    */
   public void invalidateCurrentViewCache() {
-    for (final var layer : layers) {
-      layer.flush();
-    }
+    layerManager.getMatchingLayers(LightOverlayLayer.class, DarknessOverlayLayer.class, AuraOverlayLayer.class).forEach(RenderLayer::flush);
 
     flushFog = true;
     visibleScreenArea = null;
@@ -1289,13 +1277,13 @@ public class ZoneRenderer extends JComponent
     }
     if (Zone.Layer.TOKEN.isEnabled()) {
       timer.start("lights");
-      layers.get(0).render(g2d, visibleScreenArea, view);
-      layers.get(1).render(g2d, visibleScreenArea, view);
+      layerManager.getLayer(LightOverlayLayer.class).render(g2d, visibleScreenArea, view);
+      layerManager.getLayer(DarknessOverlayLayer.class).render(g2d, visibleScreenArea, view);
       //renderLights(g2d, view);
       timer.stop("lights");
 
       timer.start("auras");
-      layers.get(2).render(g2d, visibleScreenArea, view);
+      layerManager.getLayer(AuraOverlayLayer.class).render(g2d, visibleScreenArea, view);
       //renderAuras(g2d, view);
       timer.stop("auras");
     }
