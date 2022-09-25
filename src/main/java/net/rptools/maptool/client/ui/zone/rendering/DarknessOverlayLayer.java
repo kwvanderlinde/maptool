@@ -10,21 +10,21 @@ import java.awt.geom.Area;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LightOverlayLayer extends AbstractLightOverlayLayer {
-    public LightOverlayLayer(ZoneView zoneView, ZoneRenderer zoneRenderer, CodeTimer timer, BufferedImagePool tempBufferPool) {
+public class DarknessOverlayLayer extends AbstractLightOverlayLayer {
+    public DarknessOverlayLayer(ZoneView zoneView, ZoneRenderer zoneRenderer, CodeTimer timer, BufferedImagePool tempBufferPool) {
         super(zoneView, zoneRenderer, timer, tempBufferPool);
     }
 
     @Override
     public String getName() {
-        return "lightOverlay";
+        return "darknessOverlay";
     }
 
     protected List<DrawableLight> supplyLights(ZoneView zoneView, PlayerView view) {
         // Collect and organize lights
         final var drawableLights = new ArrayList<>(zoneView.getDrawableLights(view));
         drawableLights.removeIf(light -> light.getType() != LightSource.Type.NORMAL);
-        drawableLights.removeIf(light -> light.getLumens() < 0);
+        drawableLights.removeIf(light -> light.getLumens() >= 0);
         return drawableLights;
     }
 
@@ -33,15 +33,17 @@ public class LightOverlayLayer extends AbstractLightOverlayLayer {
         final var lights = getLights(view);
 
         final var name = getName();
-        timer.start("renderLights:renderLightOverlay");
+        timer.start("renderLights:renderDarknessOverlay");
         renderLightOverlay(
                 g,
                 visibleScreenArea,
-                AlphaComposite.SrcOver.derive(AppPreferences.getLightOverlayOpacity() / 255.0f),
-                view.isGMView() ? null : ClipStyle.CLIP_TO_VISIBLE_AREA,
+                view.isGMView()
+                        ? AlphaComposite.SrcOver.derive(AppPreferences.getDarknessOverlayOpacity() / 255.0f)
+                        : new SolidColorComposite(0xff000000),
+                view.isGMView() ? null : ClipStyle.CLIP_TO_NOT_VISIBLE_AREA,
                 lights,
-                new Color(255, 255, 255, 255),
+                new Color(0, 0, 0, 255),
                 1.0f);
-        timer.stop("renderLights:renderLightOverlay");
+        timer.stop("renderLights:renderDarknessOverlay");
     }
 }

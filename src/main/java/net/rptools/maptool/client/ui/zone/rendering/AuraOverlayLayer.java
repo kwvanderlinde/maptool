@@ -10,22 +10,18 @@ import java.awt.geom.Area;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LightOverlayLayer extends AbstractLightOverlayLayer {
-    public LightOverlayLayer(ZoneView zoneView, ZoneRenderer zoneRenderer, CodeTimer timer, BufferedImagePool tempBufferPool) {
+public class AuraOverlayLayer extends AbstractLightOverlayLayer {
+    public AuraOverlayLayer(ZoneView zoneView, ZoneRenderer zoneRenderer, CodeTimer timer, BufferedImagePool tempBufferPool) {
         super(zoneView, zoneRenderer, timer, tempBufferPool);
     }
 
     @Override
     public String getName() {
-        return "lightOverlay";
+        return "auraOverlay";
     }
 
     protected List<DrawableLight> supplyLights(ZoneView zoneView, PlayerView view) {
-        // Collect and organize lights
-        final var drawableLights = new ArrayList<>(zoneView.getDrawableLights(view));
-        drawableLights.removeIf(light -> light.getType() != LightSource.Type.NORMAL);
-        drawableLights.removeIf(light -> light.getLumens() < 0);
-        return drawableLights;
+        return new ArrayList<>(zoneView.getLights(LightSource.Type.AURA));
     }
 
     @Override
@@ -33,15 +29,15 @@ public class LightOverlayLayer extends AbstractLightOverlayLayer {
         final var lights = getLights(view);
 
         final var name = getName();
-        timer.start("renderLights:renderLightOverlay");
+        timer.start("renderLights:renderAuraOverlay");
         renderLightOverlay(
                 g,
                 visibleScreenArea,
-                AlphaComposite.SrcOver.derive(AppPreferences.getLightOverlayOpacity() / 255.0f),
+                AlphaComposite.SrcOver.derive(AppPreferences.getAuraOverlayOpacity() / 255.0f),
                 view.isGMView() ? null : ClipStyle.CLIP_TO_VISIBLE_AREA,
                 lights,
-                new Color(255, 255, 255, 255),
+                new Color(255, 255, 255, 150),
                 1.0f);
-        timer.stop("renderLights:renderLightOverlay");
+        timer.stop("renderLights:renderAuraOverlay");
     }
 }
