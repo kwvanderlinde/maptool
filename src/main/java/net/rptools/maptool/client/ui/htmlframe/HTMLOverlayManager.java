@@ -144,7 +144,7 @@ public class HTMLOverlayManager extends HTMLWebViewManager implements HTMLPanelC
       if (MapTool.getFrame().getOverlayPanel().areWebViewCursorsDefault()) {
         ZoneRenderer zr = MapTool.getFrame().getCurrentZoneRenderer();
         if (zr != null) {
-          Cursor cursor = zr.getCursor();
+          Cursor cursor = zr.asSwingComponent().getCursor();
           MapTool.getFrame().getOverlayPanel().setOverlayCursor(cursor);
         }
       }

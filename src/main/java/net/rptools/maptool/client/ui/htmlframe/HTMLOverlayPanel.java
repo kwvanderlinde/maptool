@@ -394,7 +394,7 @@ public class HTMLOverlayPanel extends JFXPanel {
    * @param e the mouse event to forward
    */
   void passMouseEvent(MouseEvent e) {
-    Component c = MapTool.getFrame().getCurrentZoneRenderer();
+    Component c = MapTool.getFrame().getCurrentZoneRenderer().asSwingComponent();
     if (c != null) {
       c.dispatchEvent(SwingUtilities.convertMouseEvent(e.getComponent(), e, c));
     }

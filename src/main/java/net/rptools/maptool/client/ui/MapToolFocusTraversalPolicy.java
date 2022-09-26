@@ -23,26 +23,26 @@ public class MapToolFocusTraversalPolicy extends FocusTraversalPolicy {
 
   @Override
   public Component getComponentAfter(Container aContainer, Component aComponent) {
-    return MapTool.getFrame().getCurrentZoneRenderer();
+    return MapTool.getFrame().getCurrentZoneRenderer().asSwingComponent();
   }
 
   @Override
   public Component getComponentBefore(Container aContainer, Component aComponent) {
-    return MapTool.getFrame().getCurrentZoneRenderer();
+    return MapTool.getFrame().getCurrentZoneRenderer().asSwingComponent();
   }
 
   @Override
   public Component getFirstComponent(Container aContainer) {
-    return MapTool.getFrame().getCurrentZoneRenderer();
+    return MapTool.getFrame().getCurrentZoneRenderer().asSwingComponent();
   }
 
   @Override
   public Component getLastComponent(Container aContainer) {
-    return MapTool.getFrame().getCurrentZoneRenderer();
+    return MapTool.getFrame().getCurrentZoneRenderer().asSwingComponent();
   }
 
   @Override
   public Component getDefaultComponent(Container aContainer) {
-    return MapTool.getFrame().getCurrentZoneRenderer();
+    return MapTool.getFrame().getCurrentZoneRenderer().asSwingComponent();
   }
 }

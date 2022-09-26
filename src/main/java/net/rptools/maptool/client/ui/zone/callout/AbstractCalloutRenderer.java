@@ -74,7 +74,7 @@ public abstract class AbstractCalloutRenderer implements CalloutRenderer {
     g2d = g;
     zoneRenderer = zrederer;
     /** The font metrics for the graphics context and zone renderer font. */
-    FontMetrics fontMetrics = g2d.getFontMetrics(zoneRenderer.getFont());
+    FontMetrics fontMetrics = g2d.getFontMetrics(zoneRenderer.asSwingComponent().getFont());
     widthPadding = SwingUtilities.computeStringWidth(fontMetrics, "M") * 3;
     lines = List.copyOf(text);
 

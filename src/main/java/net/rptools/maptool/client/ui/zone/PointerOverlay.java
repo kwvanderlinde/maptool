@@ -106,7 +106,7 @@ public class PointerOverlay implements ZoneOverlay {
               break;
             case THOUGHT_BUBBLE:
             case SPEECH_BUBBLE:
-              FontMetrics fm = renderer.getFontMetrics(renderer.getFont());
+              FontMetrics fm = renderer.asSwingComponent().getFontMetrics(renderer.asSwingComponent().getFont());
               String name = p.player;
               int len = SwingUtilities.computeStringWidth(fm, name);
 

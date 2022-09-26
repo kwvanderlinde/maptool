@@ -25,7 +25,7 @@ public class ZoneRendererFactory {
    * @return the new {@link ZoneRenderer}
    */
   public static ZoneRenderer newRenderer(Zone zone) {
-    ZoneRenderer renderer = new ZoneRenderer(zone);
+    ZoneRenderer renderer = new SwingZoneRenderer(zone);
     if (MapTool.getFrame() != null) {
       renderer.addOverlay(MapTool.getFrame().getPointerOverlay());
     }

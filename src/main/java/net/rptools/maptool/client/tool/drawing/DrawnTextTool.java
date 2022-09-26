@@ -116,7 +116,7 @@ public class DrawnTextTool extends AbstractDrawingTool implements MouseMotionLis
   @Override
   protected void resetTool() {
     anchorSet = false;
-    if (textPane != null) renderer.remove(textPane);
+    if (textPane != null) renderer.asSwingComponent().remove(textPane);
     textPane = null;
     renderer.repaint();
   }
@@ -141,7 +141,7 @@ public class DrawnTextTool extends AbstractDrawingTool implements MouseMotionLis
 
       // Create a text component and place it on the renderer's component
       textPane = createTextPane(bounds, getPen(), "sanserif-BOLD-20");
-      renderer.add(textPane);
+      renderer.asSwingComponent().add(textPane);
       textPane.requestFocusInWindow();
 
       // Make the enter key addthe text

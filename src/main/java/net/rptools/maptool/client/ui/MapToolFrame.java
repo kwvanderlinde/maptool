@@ -1569,11 +1569,11 @@ public class MapToolFrame extends DefaultDockableHolder
       }
       oldZone = currentRenderer.getZone();
       currentRenderer.flush();
-      zoneRendererPanel.remove(currentRenderer);
+      zoneRendererPanel.remove(currentRenderer.asSwingComponent());
     }
     if (renderer != null) {
       zoneRendererPanel.add(
-          renderer, PositionalLayout.Position.CENTER, zoneRendererPanel.getComponentCount() - 1);
+          renderer.asSwingComponent(), PositionalLayout.Position.CENTER, zoneRendererPanel.getComponentCount() - 1);
       zoneRendererPanel.doLayout();
     }
     currentRenderer = renderer;
@@ -1584,7 +1584,7 @@ public class MapToolFrame extends DefaultDockableHolder
       // Previous zone must be passed for the listeners to be properly removed. Fix #1670.
       MapTool.getEventDispatcher()
           .fireEvent(MapTool.ZoneEvent.Activated, this, oldZone, renderer.getZone());
-      renderer.requestFocusInWindow();
+      renderer.asSwingComponent().requestFocusInWindow();
       // Updates the VBL/MBL button. Fixes #1642.
       TopologyModeSelectionPanel.getInstance().setMode(renderer.getZone().getTopologyTypes());
     }

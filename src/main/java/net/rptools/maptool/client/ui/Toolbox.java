@@ -107,7 +107,7 @@ public class Toolbox {
             return;
           }
           if (currentTool != null && currentRenderer != null) {
-            currentTool.removeListeners(currentRenderer);
+            currentTool.removeListeners(currentRenderer.asSwingComponent());
             // currentTool.addGridBasedKeys(currentRenderer, false);
             currentTool.detachFrom(currentRenderer);
 
@@ -124,7 +124,7 @@ public class Toolbox {
               // keystrokes
               // to the PointerTool.
               // currentTool.addGridBasedKeys(currentRenderer, true);
-              currentTool.addListeners(currentRenderer);
+              currentTool.addListeners(currentRenderer.asSwingComponent());
               currentTool.attachTo(currentRenderer);
 
               if (currentTool instanceof ZoneOverlay) {

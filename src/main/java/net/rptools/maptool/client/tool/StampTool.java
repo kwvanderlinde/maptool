@@ -294,7 +294,7 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
       tokenLocationList.clear();
       for (int i = 0; i < tokenList.size(); i++) {
         Token token = tokenList.get(i);
-        BufferedImage image = ImageManager.getImage(token.getImageAssetId(), renderer);
+        BufferedImage image = ImageManager.getImage(token.getImageAssetId(), renderer.asSwingComponent());
 
         Dimension imgSize = new Dimension(image.getWidth(), image.getHeight());
         SwingUtil.constrainTo(imgSize, gridSize);
@@ -302,7 +302,7 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
         Rectangle bounds =
             new Rectangle(
                 x + PADDING + i * (gridSize + PADDING), y + PADDING, imgSize.width, imgSize.height);
-        g.drawImage(image, bounds.x, bounds.y, bounds.width, bounds.height, renderer);
+        g.drawImage(image, bounds.x, bounds.y, bounds.width, bounds.height, renderer.asSwingComponent());
 
         tokenLocationList.add(new TokenLocation(bounds, token));
       }
@@ -330,7 +330,7 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
     }
 
     // So that keystrokes end up in the right place
-    renderer.requestFocusInWindow();
+    renderer.asSwingComponent().requestFocusInWindow();
     if (isDraggingMap()) {
       return;
     }
@@ -458,7 +458,7 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
 
     if (SwingUtilities.isLeftMouseButton(e)) {
       try {
-        SwingUtil.showPointer(renderer);
+        SwingUtil.showPointer(renderer.asSwingComponent());
 
         // SELECTION BOUND BOX
         if (isDrawingSelectionBox) {
@@ -517,11 +517,11 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
         if (tokenUnderMouse.isStamp()) {
           new StampPopupMenu(
                   renderer.getSelectedTokenSet(), e.getX(), e.getY(), renderer, tokenUnderMouse)
-              .showPopup(renderer);
+              .showPopup(renderer.asSwingComponent());
         } else {
           new TokenPopupMenu(
                   renderer.getSelectedTokenSet(), e.getX(), e.getY(), renderer, tokenUnderMouse)
-              .showPopup(renderer);
+              .showPopup(renderer.asSwingComponent());
         }
         return;
       }
@@ -826,7 +826,7 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
 
         startTokenDrag(tokenUnderMouse);
         isDraggingToken = true;
-        SwingUtil.hidePointer(renderer);
+        SwingUtil.hidePointer(renderer.asSwingComponent());
       }
 
       return;
@@ -1306,7 +1306,7 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
           resizeBoundsArea.transform(at);
           resizeBoundsMap.put(resizeBoundsArea, token);
 
-          g.drawImage(AppStyle.resize, at, renderer);
+          g.drawImage(AppStyle.resize, at, renderer.asSwingComponent());
         }
 
         // g.setColor(Color.red);

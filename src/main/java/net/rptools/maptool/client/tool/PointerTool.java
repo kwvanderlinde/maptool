@@ -150,7 +150,7 @@ public class PointerTool extends DefaultTool {
     if (MapTool.getPlayer().isGM()) {
       MapTool.getFrame().showControlPanel(layerSelectionDialog);
     }
-    htmlRenderer.attach(renderer);
+    htmlRenderer.attach(renderer.asSwingComponent());
     layerSelectionDialog.updateViewList();
 
     if (MapTool.getFrame().getLastSelectedLayer() != Zone.Layer.TOKEN) {
@@ -209,7 +209,7 @@ public class PointerTool extends DefaultTool {
   protected void detachFrom(ZoneRenderer renderer) {
     super.detachFrom(renderer);
     MapTool.getFrame().hideControlPanel();
-    htmlRenderer.detach(renderer);
+    htmlRenderer.detach(renderer.asSwingComponent());
   }
 
   @Override
@@ -374,7 +374,7 @@ public class PointerTool extends DefaultTool {
         Set<GUID> selectedSet = new HashSet<GUID>();
         selectedSet.add(token.getId());
         new TokenPopupMenu(selectedSet, event.getX(), event.getY(), renderer, tokenUnderMouse)
-            .showPopup(renderer);
+            .showPopup(renderer.asSwingComponent());
       }
     }
 
@@ -417,7 +417,7 @@ public class PointerTool extends DefaultTool {
       for (int i = 0; i < tokenList.size(); i++) {
         Token token = tokenList.get(i);
 
-        BufferedImage image = ImageManager.getImage(token.getImageAssetId(), renderer);
+        BufferedImage image = ImageManager.getImage(token.getImageAssetId(), renderer.asSwingComponent());
 
         Dimension imgSize = new Dimension(image.getWidth(), image.getHeight());
         SwingUtil.constrainTo(imgSize, gridSize);
@@ -425,7 +425,7 @@ public class PointerTool extends DefaultTool {
         Rectangle bounds =
             new Rectangle(
                 x + PADDING + i * (gridSize + PADDING), y + PADDING, imgSize.width, imgSize.height);
-        g.drawImage(image, bounds.x, bounds.y, bounds.width, bounds.height, renderer);
+        g.drawImage(image, bounds.x, bounds.y, bounds.width, bounds.height, renderer.asSwingComponent());
 
         GraphicsUtil.drawBoxedString(
             (Graphics2D) g,
@@ -488,7 +488,7 @@ public class PointerTool extends DefaultTool {
       }
     }
     // So that keystrokes end up in the right place
-    renderer.requestFocusInWindow();
+    renderer.asSwingComponent().requestFocusInWindow();
     if (isDraggingMap()) {
       return;
     }
@@ -622,7 +622,7 @@ public class PointerTool extends DefaultTool {
         }
         // DRAG TOKEN COMPLETE
         if (isDraggingToken) {
-          SwingUtil.showPointer(renderer);
+          SwingUtil.showPointer(renderer.asSwingComponent());
           stopTokenDrag();
         } else {
           // IF SELECTING MULTIPLE, SELECT SINGLE TOKEN
@@ -667,7 +667,7 @@ public class PointerTool extends DefaultTool {
         if (tokenUnderMouse.isStamp()) {
           new StampPopupMenu(
                   renderer.getSelectedTokenSet(), e.getX(), e.getY(), renderer, tokenUnderMouse)
-              .showPopup(renderer);
+              .showPopup(renderer.asSwingComponent());
         } else if (AppUtil.playerOwns(tokenUnderMouse)) {
           // FIXME Every once in awhile we get a report on the forum of the following
           // exception:
@@ -685,7 +685,7 @@ public class PointerTool extends DefaultTool {
           // monitor?
           new TokenPopupMenu(
                   renderer.getSelectedTokenSet(), e.getX(), e.getY(), renderer, tokenUnderMouse)
-              .showPopup(renderer);
+              .showPopup(renderer.asSwingComponent());
         }
         return;
       }
@@ -873,7 +873,7 @@ public class PointerTool extends DefaultTool {
         }
         startTokenDrag(tokenUnderMouse);
         isDraggingToken = true;
-        if (AppPreferences.getHideMousePointerWhileDragging()) SwingUtil.hidePointer(renderer);
+        if (AppPreferences.getHideMousePointerWhileDragging()) SwingUtil.hidePointer(renderer.asSwingComponent());
       }
       return;
     }
