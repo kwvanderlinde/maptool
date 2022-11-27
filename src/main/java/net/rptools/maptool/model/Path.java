@@ -19,7 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.ZoneRenderer;
-import net.rptools.maptool.client.ui.zone.ZoneRenderer.SelectionSet;
+import net.rptools.maptool.client.ui.zone.viewmodel.MovementModel;
 import net.rptools.maptool.client.walker.NaiveWalker;
 import net.rptools.maptool.server.proto.PathDto;
 import net.rptools.maptool.server.proto.drawing.IntPointDto;
@@ -90,7 +90,7 @@ public class Path<T extends AbstractPoint> {
 
   @SuppressWarnings("unchecked")
   public Path<T> derive(
-      SelectionSet set,
+      MovementModel.MovementSet set,
       Token keyToken,
       Token followerToken,
       int cellOffsetX,

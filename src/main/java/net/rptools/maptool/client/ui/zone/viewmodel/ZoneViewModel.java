@@ -28,14 +28,19 @@ import net.rptools.maptool.model.Zone;
 // TODO Rename for clarity
 public class ZoneViewModel {
   private final CodeTimer timer;
-
   private final @Nonnull Zone zone;
+  private final MovementModel movementModel;
 
   public ZoneViewModel(CodeTimer timer, @Nonnull Zone zone) {
     this.timer = timer;
     this.zone = zone;
+    movementModel = new MovementModel(zone);
   }
 
   public void update() {
+  }
+
+  public MovementModel getMovementModel() {
+    return movementModel;
   }
 }

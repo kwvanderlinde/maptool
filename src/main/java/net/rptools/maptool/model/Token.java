@@ -51,7 +51,7 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
 import net.rptools.maptool.client.ui.zone.ZoneRenderer;
-import net.rptools.maptool.client.ui.zone.ZoneRenderer.SelectionSet;
+import net.rptools.maptool.client.ui.zone.viewmodel.MovementModel;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.server.Mapper;
 import net.rptools.maptool.server.proto.TerrainModifierOperationDto;
@@ -1237,7 +1237,7 @@ public class Token implements Cloneable {
    * computed. Path to be saved will be computed here instead of in ZoneRenderer
    */
   public void applyMove(
-      SelectionSet set,
+      MovementModel.MovementSet set,
       Path<? extends AbstractPoint> followerPath,
       int xOffset,
       int yOffset,

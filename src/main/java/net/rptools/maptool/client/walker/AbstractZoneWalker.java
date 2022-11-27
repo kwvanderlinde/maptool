@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
-import net.rptools.maptool.client.ui.zone.RenderPathWorker;
 import net.rptools.maptool.model.CellPoint;
 import net.rptools.maptool.model.Path;
 import net.rptools.maptool.model.Token.TerrainModifierOperation;
@@ -36,7 +35,6 @@ public abstract class AbstractZoneWalker implements ZoneWalker {
   protected Area tokenHillVbl;
   protected Area tokenPitVbl;
   protected Area tokenMbl;
-  protected RenderPathWorker renderPathWorker;
 
   public AbstractZoneWalker(Zone zone) {
     this.zone = zone;
@@ -106,11 +104,6 @@ public abstract class AbstractZoneWalker implements ZoneWalker {
     partialPaths.add(
         new PartialPath(oldPartial.start, point, calculatePath(oldPartial.start, point)));
     return oldPartial.end;
-  }
-
-  public Path<CellPoint> getPath(RenderPathWorker renderPathWorker) {
-    this.renderPathWorker = renderPathWorker;
-    return getPath();
   }
 
   public Path<CellPoint> getPath() {
