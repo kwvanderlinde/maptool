@@ -118,7 +118,7 @@ public class ZoneRenderer extends JComponent
   private boolean keepSelectedTokenSet = false;
   private final List<Set<GUID>> selectedTokenSetHistory = new ArrayList<Set<GUID>>();
   private final List<LabelLocation> labelLocationList = new LinkedList<LabelLocation>();
-  private Map<Token, Set<Token>> tokenStackMap;
+  private boolean recalculateStacks = true;
   private final Map<Token, TokenLocation> tokenLocationCache = new HashMap<Token, TokenLocation>();
   private final List<TokenLocation> markerLocationList = new ArrayList<TokenLocation>();
   private final List<Token> showPathList = new ArrayList<Token>();
@@ -632,7 +632,8 @@ public class ZoneRenderer extends JComponent
     visibleScreenArea = null;
 
     // This could also be smarter
-    tokenStackMap = null;
+    viewModel.getTokenStackModel().removeAllStacks();
+    recalculateStacks = true;
 
     drawableLights = null;
     drawableAuras = null;
@@ -2644,10 +2645,8 @@ public class ZoneRenderer extends JComponent
 
     // calculations
     boolean calculateStacks =
-        !tokenList.isEmpty() && !tokenList.get(0).isStamp() && tokenStackMap == null;
-    if (calculateStacks) {
-      tokenStackMap = new HashMap<Token, Set<Token>>();
-    }
+        !tokenList.isEmpty() && !tokenList.get(0).isStamp() && recalculateStacks;
+    recalculateStacks = false;
 
     List<Token> tokenPostProcessing = new ArrayList<Token>(tokenList.size());
     for (Token token : tokenList) {
@@ -2757,21 +2756,7 @@ public class ZoneRenderer extends JComponent
         for (TokenLocation currLocation : getTokenLocations(Zone.Layer.TOKEN)) {
           // Are we covering anyone ?
           if (location.boundsCache.contains(currLocation.boundsCache)) {
-            if (tokenStackSet == null) {
-              tokenStackSet = new HashSet<Token>();
-              // Sometimes got NPE here
-              if (tokenStackMap == null) {
-                tokenStackMap = new HashMap<Token, Set<Token>>();
-              }
-              tokenStackMap.put(token, tokenStackSet);
-              tokenStackSet.add(token);
-            }
-            tokenStackSet.add(currLocation.token);
-
-            if (tokenStackMap.get(currLocation.token) != null) {
-              tokenStackSet.addAll(tokenStackMap.get(currLocation.token));
-              tokenStackMap.remove(currLocation.token);
-            }
+            viewModel.getTokenStackModel().setTokenAsCovered(token, currLocation.token);
           }
         }
         timer.stop("tokenStack");
@@ -3327,20 +3312,18 @@ public class ZoneRenderer extends JComponent
     // Stacks
     if (!tokenList.isEmpty()
         && !tokenList.get(0).isStamp()) { // TODO: find a cleaner way to indicate token layer
-      if (tokenStackMap != null) { // FIXME Needed to prevent NPE but how can it be null?
-        for (Token token : tokenStackMap.keySet()) {
-          Area bounds = getTokenBounds(token);
-          if (bounds == null) {
-            // token is offscreen
-            continue;
-          }
-          BufferedImage stackImage = AppStyle.stackImage;
-          clippedG.drawImage(
-              stackImage,
-              bounds.getBounds().x + bounds.getBounds().width - stackImage.getWidth() + 2,
-              bounds.getBounds().y - 2,
-              null);
+      for (Token token : viewModel.getTokenStackModel().getStackTops()) {
+        Area bounds = getTokenBounds(token);
+        if (bounds == null) {
+          // token is offscreen
+          continue;
         }
+        BufferedImage stackImage = AppStyle.stackImage;
+        clippedG.drawImage(
+            stackImage,
+            bounds.getBounds().x + bounds.getBounds().width - stackImage.getWidth() + 2,
+            bounds.getBounds().y - 2,
+            null);
       }
     }
 
@@ -3695,10 +3678,16 @@ public class ZoneRenderer extends JComponent
 
   public List<Token> getTokenStackAt(int x, int y) {
     Token token = getTokenAt(x, y);
-    if (token == null || tokenStackMap == null || !tokenStackMap.containsKey(token)) {
+    if (token == null) {
       return null;
     }
-    List<Token> tokenList = new ArrayList<Token>(tokenStackMap.get(token));
+
+    final var stack = viewModel.getTokenStackModel().getStack(token);
+    if (stack.isEmpty()) {
+      return null;
+    }
+
+    List<Token> tokenList = new ArrayList<>(stack);
     tokenList.sort(Token.COMPARE_BY_NAME);
     return tokenList;
   }

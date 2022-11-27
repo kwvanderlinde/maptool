@@ -30,11 +30,13 @@ public class ZoneViewModel {
   private final CodeTimer timer;
   private final @Nonnull Zone zone;
   private final MovementModel movementModel;
+  private final TokenStackModel tokenStackModel;
 
   public ZoneViewModel(CodeTimer timer, @Nonnull Zone zone) {
     this.timer = timer;
     this.zone = zone;
     movementModel = new MovementModel(zone);
+    tokenStackModel = new TokenStackModel();
   }
 
   public void update() {
@@ -42,5 +44,9 @@ public class ZoneViewModel {
 
   public MovementModel getMovementModel() {
     return movementModel;
+  }
+
+  public TokenStackModel getTokenStackModel() {
+    return tokenStackModel;
   }
 }
