@@ -52,6 +52,7 @@ import net.rptools.maptool.client.ui.token.AbstractTokenOverlay;
 import net.rptools.maptool.client.ui.token.BarTokenOverlay;
 import net.rptools.maptool.client.ui.token.NewTokenDialog;
 import net.rptools.maptool.client.ui.zone.viewmodel.MovementModel;
+import net.rptools.maptool.client.ui.zone.viewmodel.TokenLocationModel;
 import net.rptools.maptool.client.ui.zone.viewmodel.ZoneViewModel;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.events.MapToolEventBus;
@@ -112,15 +113,11 @@ public class ZoneRenderer extends JComponent
   private final DrawableRenderer tokenDrawableRenderer = new PartitionedDrawableRenderer();
   private final DrawableRenderer gmDrawableRenderer = new PartitionedDrawableRenderer();
   private final List<ZoneOverlay> overlayList = new ArrayList<ZoneOverlay>();
-  private final Map<Zone.Layer, List<TokenLocation>> tokenLocationMap =
-      new HashMap<Zone.Layer, List<TokenLocation>>();
   private Set<GUID> selectedTokenSet = new LinkedHashSet<GUID>();
   private boolean keepSelectedTokenSet = false;
   private final List<Set<GUID>> selectedTokenSetHistory = new ArrayList<Set<GUID>>();
   private final List<LabelLocation> labelLocationList = new LinkedList<LabelLocation>();
   private boolean recalculateStacks = true;
-  private final Map<Token, TokenLocation> tokenLocationCache = new HashMap<Token, TokenLocation>();
-  private final List<TokenLocation> markerLocationList = new ArrayList<TokenLocation>();
   private final List<Token> showPathList = new ArrayList<Token>();
   // Optimizations
   private final Map<GUID, BufferedImage> labelRenderingCache = new HashMap<GUID, BufferedImage>();
@@ -171,7 +168,7 @@ public class ZoneRenderer extends JComponent
     }
     this.zone = zone;
 
-    this.viewModel = new ZoneViewModel(this.timer, this.zone);
+    this.viewModel = new ZoneViewModel(this.timer, this.zone, this);
 
     // The interval, in milliseconds, during which calls to repaint() will be debounced.
     int repaintDebounceInterval = 1000 / AppPreferences.getFrameRateCap();
@@ -294,7 +291,7 @@ public class ZoneRenderer extends JComponent
     scale.addPropertyChangeListener(
         evt -> {
           if (Scale.PROPERTY_SCALE.equals(evt.getPropertyName())) {
-            tokenLocationCache.clear();
+            viewModel.getTokenLocationModel().flush();
           }
           if (Scale.PROPERTY_OFFSET.equals(evt.getPropertyName())) {
             // flushFog = true;
@@ -619,11 +616,8 @@ public class ZoneRenderer extends JComponent
    * @param token the token to flush
    */
   public void flush(Token token) {
-    // This method can be called from a non-EDT thread so if that happens, make sure
-    // we synchronize with the EDT.
-    synchronized (tokenLocationCache) {
-      tokenLocationCache.remove(token);
-    }
+    viewModel.getTokenLocationModel().flush(token);
+
     flipImageMap.remove(token);
     flipIsoImageMap.remove(token);
     labelRenderingCache.remove(token.getId());
@@ -658,8 +652,7 @@ public class ZoneRenderer extends JComponent
     ImageManager.flushImage(zone.getMapAssetId());
 
     // MCL: I think these should be added, but I'm not sure so I'm not doing it.
-    // tokenLocationMap.clear();
-    // tokenLocationCache.clear();
+    // viewModel.getTokenLocationModel().clear();
 
     flushDrawableRenderer();
     flipImageMap.clear();
@@ -1086,8 +1079,7 @@ public class ZoneRenderer extends JComponent
     lastView = view;
 
     // Clear internal state
-    tokenLocationMap.clear();
-    markerLocationList.clear();
+    viewModel.getTokenLocationModel().clear();
     deferredLabelList.clear();
 
     timer.stop("setup");
@@ -1927,6 +1919,8 @@ public class ZoneRenderer extends JComponent
     if (movementSet.isEmpty()) {
       return;
     }
+    // This is in screen coordinates
+    Rectangle viewport = new Rectangle(0, 0, getSize().width, getSize().height);
     double scale = zoneScale.getScale();
     boolean clipInstalled = false;
     for (final var set : movementSet) {
@@ -2169,7 +2163,8 @@ public class ZoneRenderer extends JComponent
           }
           if (showLabels) {
             // if the token is visible on the screen it will be in the location cache
-            if (tokenLocationCache.containsKey(token)) {
+            final var location = viewModel.getTokenLocationModel().getTokenLocation(token);
+            if (maybeOnScreen(viewport, location)) {
               y += 10 + scaledHeight;
               x += scaledWidth / 2;
 
@@ -2506,27 +2501,22 @@ public class ZoneRenderer extends JComponent
    * @return the token list
    */
   public List<Token> getTokensOnScreen() {
-    List<Token> list = new ArrayList<Token>();
-
     // Always assume tokens, for now
-    List<TokenLocation> tokenLocationListCopy =
-        new ArrayList<TokenLocation>(getTokenLocations(getActiveLayer()));
-    for (TokenLocation location : tokenLocationListCopy) {
-      list.add(location.token);
-    }
-
-    // Sort by location on screen, top left to bottom right
-    list.sort(
-        (o1, o2) -> {
-          if (o1.getY() < o2.getY()) {
-            return -1;
-          }
-          if (o1.getY() > o2.getY()) {
-            return 1;
-          }
-          return Integer.compare(o1.getX(), o2.getX());
-        });
-    return list;
+    return viewModel
+        .getTokenLocationModel()
+        .getTokensOnLayer(getActiveLayer())
+        .sorted(
+            (o1, o2) -> {
+              // Sort by location on screen, top left to bottom right
+              if (o1.getY() < o2.getY()) {
+                return -1;
+              }
+              if (o1.getY() > o2.getY()) {
+                return 1;
+              }
+              return Integer.compare(o1.getX(), o2.getX());
+            })
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 
   public Zone.Layer getActiveLayer() {
@@ -2548,14 +2538,6 @@ public class ZoneRenderer extends JComponent
     keepSelectedTokenSet = false; // Always reset it back, temp boolean only
 
     repaintDebouncer.dispatch();
-  }
-
-  /**
-   * Get the token locations for the given layer, creates an empty list if there are not locations
-   * for the given layer
-   */
-  private List<TokenLocation> getTokenLocations(Zone.Layer layer) {
-    return tokenLocationMap.computeIfAbsent(layer, k -> new LinkedList<>());
   }
 
   // TODO: I don't like this hardwiring
@@ -2673,15 +2655,15 @@ public class ZoneRenderer extends JComponent
         timer.stop("tokenlist-1");
       }
       timer.start("tokenlist-1.1");
-      TokenLocation location = tokenLocationCache.get(token);
-      if (location != null && !location.maybeOnscreen(viewport)) {
+      final var location = viewModel.getTokenLocationModel().getTokenLocation(token);
+      if (!maybeOnScreen(viewport, location)) {
         timer.stop("tokenlist-1.1");
         continue;
       }
       timer.stop("tokenlist-1.1");
 
       timer.start("tokenlist-1a");
-      Rectangle footprintBounds = token.getBounds(zone);
+      Rectangle footprintBounds = new Rectangle(location.footprintBounds);
       timer.stop("tokenlist-1a");
 
       timer.start("tokenlist-1b");
@@ -2689,45 +2671,9 @@ public class ZoneRenderer extends JComponent
       BufferedImage image = getTokenImage(token);
       timer.stop("tokenlist-1b");
 
-      timer.start("tokenlist-1c");
-      double scaledWidth = (footprintBounds.width * scale);
-      double scaledHeight = (footprintBounds.height * scale);
-
-      ScreenPoint tokenScreenLocation =
-          ScreenPoint.fromZonePoint(this, footprintBounds.x, footprintBounds.y);
-      timer.stop("tokenlist-1c");
-
-      timer.start("tokenlist-1d");
-      // Tokens are centered on the image center point
-      double x = tokenScreenLocation.x;
-      double y = tokenScreenLocation.y;
-
-      Rectangle2D origBounds = new Rectangle2D.Double(x, y, scaledWidth, scaledHeight);
-      Area tokenBounds = new Area(origBounds);
-      if (token.hasFacing() && token.getShape() == Token.TokenShape.TOP_DOWN) {
-        double sx = scaledWidth / 2 + x - (token.getAnchor().x * scale);
-        double sy = scaledHeight / 2 + y - (token.getAnchor().y * scale);
-        // facing defaults to down, or -90 degrees
-        tokenBounds.transform(
-            AffineTransform.getRotateInstance(Math.toRadians(-token.getFacing() - 90), sx, sy));
-      }
-      timer.stop("tokenlist-1d");
-
       timer.start("tokenlist-1e");
       try {
-        location =
-            new TokenLocation(
-                tokenBounds,
-                origBounds,
-                token,
-                x,
-                y,
-                footprintBounds.width,
-                footprintBounds.height,
-                scaledWidth,
-                scaledHeight);
-        tokenLocationCache.put(token, location);
-        // Too small ?
+        // Too small to render?
         if (location.scaledHeight < 1 || location.scaledWidth < 1) {
           continue;
         }
@@ -2741,24 +2687,16 @@ public class ZoneRenderer extends JComponent
         // This ensures that the timer is always stopped
         timer.stop("tokenlist-1e");
       }
-      // Markers
-      timer.start("renderTokens:Markers");
-      if (token.isMarker() && canSeeMarker(token)) {
-        markerLocationList.add(location);
-      }
-      timer.stop("renderTokens:Markers");
 
       // Stacking check
       if (calculateStacks) {
         timer.start("tokenStack");
-
-        Set<Token> tokenStackSet = null;
-        for (TokenLocation currLocation : getTokenLocations(Zone.Layer.TOKEN)) {
-          // Are we covering anyone ?
-          if (location.boundsCache.contains(currLocation.boundsCache)) {
-            viewModel.getTokenStackModel().setTokenAsCovered(token, currLocation.token);
-          }
-        }
+        // Are we covering anyone ?
+        viewModel
+            .getTokenLocationModel()
+            .getTokensContainedIn(Layer.TOKEN, location.boundsCache)
+            .forEachOrdered(
+                currToken -> viewModel.getTokenStackModel().setTokenAsCovered(token, currToken));
         timer.stop("tokenStack");
       }
 
@@ -2766,10 +2704,7 @@ public class ZoneRenderer extends JComponent
       // Note the order -- the top most token is at the end of the list
       timer.start("renderTokens:Locations");
       Zone.Layer layer = token.getLayer();
-      List<TokenLocation> locationList = getTokenLocations(layer);
-      if (locationList != null) {
-        locationList.add(location);
-      }
+      viewModel.getTokenLocationModel().addTokenLocation(layer, location);
       timer.stop("renderTokens:Locations");
 
       // Add the token to our visible set.
@@ -2787,7 +2722,7 @@ public class ZoneRenderer extends JComponent
       timer.stop("renderTokens:OnscreenCheck");
 
       // create a per token Graphics object - normally clipped, unless always visible
-      Area tokenCellArea = zone.getGrid().getTokenCellArea(tokenBounds);
+      Area tokenCellArea = zone.getGrid().getTokenCellArea(location.bounds);
       Graphics2D tokenG;
       if (isTokenInNeedOfClipping(token, tokenCellArea, isGMView)) {
         tokenG = (Graphics2D) clippedG.create();
@@ -2896,9 +2831,13 @@ public class ZoneRenderer extends JComponent
         at.scale(getScale(), getScale());
       } else {
         if (token.getShape() == TokenShape.FIGURE) {
-          at.scale(scaledWidth / workImage.getWidth(), scaledWidth / workImage.getWidth());
+          at.scale(
+              location.scaledWidth / workImage.getWidth(),
+              location.scaledWidth / workImage.getWidth());
         } else {
-          at.scale(scaledWidth / workImage.getWidth(), scaledHeight / workImage.getHeight());
+          at.scale(
+              location.scaledWidth / workImage.getWidth(),
+              location.scaledHeight / workImage.getHeight());
         }
       }
       timer.stop("tokenlist-6");
@@ -2907,7 +2846,7 @@ public class ZoneRenderer extends JComponent
       if (token.hasHalo()) {
         tokenG.setStroke(new BasicStroke(AppPreferences.getHaloLineWidth()));
         tokenG.setColor(token.getHaloColor());
-        tokenG.draw(zone.getGrid().getTokenCellArea(tokenBounds));
+        tokenG.draw(zone.getGrid().getTokenCellArea(location.bounds));
       }
 
       // Calculate alpha Transparency from token and use opacity for indicating that token is moving
@@ -2917,7 +2856,7 @@ public class ZoneRenderer extends JComponent
       // Finally render the token image
       timer.start("tokenlist-7");
       if (!isGMView && zoneView.isUsingVision() && (token.getShape() == Token.TokenShape.FIGURE)) {
-        Area cb = zone.getGrid().getTokenCellArea(tokenBounds);
+        Area cb = zone.getGrid().getTokenCellArea(location.bounds);
         if (GraphicsUtil.intersects(visibleScreenArea, cb)) {
           // the cell intersects visible area so
           if (zone.getGrid().checkCenterRegion(cb.getBounds(), visibleScreenArea)) {
@@ -2943,7 +2882,7 @@ public class ZoneRenderer extends JComponent
         }
       } else if (!isGMView && zoneView.isUsingVision() && token.isAlwaysVisible()) {
         // Jamz: Always Visible tokens will get rendered again here to place on top of FoW
-        Area cb = zone.getGrid().getTokenCellArea(tokenBounds);
+        Area cb = zone.getGrid().getTokenCellArea(location.bounds);
         if (GraphicsUtil.intersects(visibleScreenArea, cb)) {
           // if we can see a portion of the stamp/token, draw the whole thing, defaults to 2/9ths
           if (zone.getGrid()
@@ -3088,16 +3027,18 @@ public class ZoneRenderer extends JComponent
       Graphics2D locg =
           (Graphics2D)
               tokenG.create(
-                  (int) tokenBounds.getBounds().getX(),
-                  (int) tokenBounds.getBounds().getY(),
-                  (int) tokenBounds.getBounds().getWidth(),
-                  (int) tokenBounds.getBounds().getHeight());
+                  // TODO Can we use boundsCache here instead? Note that bounds isn't updated
+                  //  over time.
+                  (int) location.bounds.getBounds().getX(),
+                  (int) location.bounds.getBounds().getY(),
+                  (int) location.bounds.getBounds().getWidth(),
+                  (int) location.bounds.getBounds().getHeight());
       Rectangle bounds =
           new Rectangle(
               0,
               0,
-              (int) tokenBounds.getBounds().getWidth(),
-              (int) tokenBounds.getBounds().getHeight());
+              (int) location.bounds.getBounds().getWidth(),
+              (int) location.bounds.getBounds().getHeight());
 
       // Check each of the set values
       for (String state : MapTool.getCampaign().getTokenStatesMap().keySet()) {
@@ -3150,12 +3091,9 @@ public class ZoneRenderer extends JComponent
     boolean useIF = MapTool.getServerPolicy().isUseIndividualFOW();
     // Selection and labels
     for (Token token : tokenPostProcessing) {
-      TokenLocation location = tokenLocationCache.get(token);
-      if (location == null) {
-        continue;
-      }
-      Area bounds = location.bounds;
+      final var location = viewModel.getTokenLocationModel().getTokenLocation(token);
 
+      Area bounds = location.bounds;
       // TODO: This isn't entirely accurate as it doesn't account for the actual text
       // to be in the clipping bounds, but I'll fix that later
       if (!bounds.getBounds().intersects(clipBounds)) {
@@ -3377,10 +3315,6 @@ public class ZoneRenderer extends JComponent
     return true;
   }
 
-  private boolean canSeeMarker(Token token) {
-    return MapTool.getPlayer().isGM() || !StringUtil.isEmpty(token.getNotes());
-  }
-
   public Set<GUID> getSelectedTokenSet() {
     return selectedTokenSet;
   }
@@ -3492,12 +3426,12 @@ public class ZoneRenderer extends JComponent
    * @param rect the selection rectangle
    */
   public void selectTokens(Rectangle rect) {
-    List<GUID> selectedList = new LinkedList<GUID>();
-    for (TokenLocation location : getTokenLocations(getActiveLayer())) {
-      if (rect.intersects(location.bounds.getBounds())) {
-        selectedList.add(location.token.getId());
-      }
-    }
+    final var selectedList =
+        viewModel
+            .getTokenLocationModel()
+            .getTokensIntersecting(getActiveLayer(), rect)
+            .map(Token::getId)
+            .toList();
     selectTokens(selectedList);
   }
 
@@ -3618,21 +3552,19 @@ public class ZoneRenderer extends JComponent
   }
 
   public Area getTokenBounds(Token token) {
-    TokenLocation location = tokenLocationCache.get(token);
-    if (location != null
-        && !location.maybeOnscreen(new Rectangle(0, 0, getSize().width, getSize().height))) {
-      location = null;
+    final var location = viewModel.getTokenLocationModel().getTokenLocation(token);
+    if (!maybeOnScreen(new Rectangle(0, 0, getSize().width, getSize().height), location)) {
+      return null;
     }
-    return location != null ? location.bounds : null;
+    return location.bounds;
   }
 
   public Area getMarkerBounds(Token token) {
-    for (TokenLocation location : markerLocationList) {
-      if (location.token == token) {
-        return location.bounds;
-      }
+    final @Nullable var location = viewModel.getTokenLocationModel().getMarkerLocation(token);
+    if (location == null) {
+      return null;
     }
-    return null;
+    return location.bounds;
   }
 
   public Rectangle getLabelBounds(Label label) {
@@ -3653,27 +3585,12 @@ public class ZoneRenderer extends JComponent
    * @param y screen location y
    * @return the token
    */
-  public Token getTokenAt(int x, int y) {
-    List<TokenLocation> locationList =
-        new ArrayList<TokenLocation>(getTokenLocations(getActiveLayer()));
-    Collections.reverse(locationList);
-    for (TokenLocation location : locationList) {
-      if (location.bounds.contains(x, y)) {
-        return location.token;
-      }
-    }
-    return null;
+  public @Nullable Token getTokenAt(int x, int y) {
+    return viewModel.getTokenLocationModel().getTokenAt(getActiveLayer(), new ScreenPoint(x, y));
   }
 
-  public Token getMarkerAt(int x, int y) {
-    List<TokenLocation> locationList = new ArrayList<TokenLocation>(markerLocationList);
-    Collections.reverse(locationList);
-    for (TokenLocation location : locationList) {
-      if (location.bounds.contains(x, y)) {
-        return location.token;
-      }
-    }
-    return null;
+  public @Nullable Token getMarkerAt(int x, int y) {
+    return viewModel.getTokenLocationModel().getMarkerAt(x, y);
   }
 
   public List<Token> getTokenStackAt(int x, int y) {
@@ -3771,7 +3688,7 @@ public class ZoneRenderer extends JComponent
       /*
        * MCL: I think it is correct to clear these caches (if not more).
        */
-      tokenLocationCache.clear();
+      viewModel.getTokenLocationModel().flush();
       invalidateCurrentViewCache();
       zoneScale.zoomScale(getWidth() / 2, getHeight() / 2, scale);
       MapTool.getFrame().getZoomStatusBar().update();
@@ -3794,6 +3711,10 @@ public class ZoneRenderer extends JComponent
     return super.imageUpdate(img, infoflags, x, y, w, h);
   }
 
+  private boolean maybeOnScreen(Rectangle viewport, TokenLocationModel.TokenLocation location) {
+    return location.boundsCache.intersects(viewport);
+  }
+
   private record LabelRenderable(
       String text,
       int x,
@@ -3804,75 +3725,6 @@ public class ZoneRenderer extends JComponent
       @Nullable GUID tokenId) {
     public LabelRenderable(String text, int x, int y) {
       this(text, x, y, SwingUtilities.CENTER, GraphicsUtil.GREY_LABEL, Color.black, null);
-    }
-  }
-
-  private class TokenLocation {
-
-    public Area bounds;
-    public Token token;
-    public Rectangle boundsCache;
-    public double scaledHeight;
-    public double scaledWidth;
-    public double x;
-    public double y;
-    public int offsetX;
-    public int offsetY;
-
-    /**
-     * Construct a TokenLocation object that caches where images are stored and what their size is
-     * so that the next rendering pass can use that information to optimize the drawing.
-     *
-     * @param bounds
-     * @param origBounds (unused)
-     * @param token
-     * @param x
-     * @param y
-     * @param width (unused)
-     * @param height (unused)
-     * @param scaledWidth
-     * @param scaledHeight
-     */
-    public TokenLocation(
-        Area bounds,
-        Rectangle2D origBounds,
-        Token token,
-        double x,
-        double y,
-        int width,
-        int height,
-        double scaledWidth,
-        double scaledHeight) {
-      this.bounds = bounds;
-      this.token = token;
-      this.scaledWidth = scaledWidth;
-      this.scaledHeight = scaledHeight;
-      this.x = x;
-      this.y = y;
-
-      offsetX = getViewOffsetX();
-      offsetY = getViewOffsetY();
-
-      boundsCache = bounds.getBounds();
-    }
-
-    public boolean maybeOnscreen(Rectangle viewport) {
-      int deltaX = getViewOffsetX() - offsetX;
-      int deltaY = getViewOffsetY() - offsetY;
-
-      boundsCache.x += deltaX;
-      boundsCache.y += deltaY;
-
-      offsetX = getViewOffsetX();
-      offsetY = getViewOffsetY();
-
-      timer.start("maybeOnsceen");
-      if (!boundsCache.intersects(viewport)) {
-        timer.stop("maybeOnsceen");
-        return false;
-      }
-      timer.stop("maybeOnsceen");
-      return true;
     }
   }
 

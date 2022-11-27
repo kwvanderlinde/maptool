@@ -15,6 +15,7 @@
 package net.rptools.maptool.client;
 
 import java.awt.geom.Point2D;
+import net.rptools.maptool.client.ui.Scale;
 import net.rptools.maptool.client.ui.zone.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
 
@@ -83,8 +84,11 @@ public class ScreenPoint extends Point2D.Double {
   }
 
   public static ScreenPoint fromZonePoint(ZoneRenderer renderer, double x, double y) {
-    double scale = renderer.getScale();
+    return fromZonePoint(renderer.getZoneScale(), x, y);
+  }
 
+  public static ScreenPoint fromZonePoint(Scale zoneScale, double x, double y) {
+    double scale = zoneScale.getScale();
     double sX = x;
     double sY = y;
 
@@ -92,8 +96,8 @@ public class ScreenPoint extends Point2D.Double {
     sY = sY * scale;
 
     // Translate
-    sX += renderer.getViewOffsetX();
-    sY += renderer.getViewOffsetY();
+    sX += zoneScale.getOffsetX();
+    sY += zoneScale.getOffsetY();
 
     return new ScreenPoint(sX, sY);
   }

@@ -16,6 +16,7 @@ package net.rptools.maptool.client.ui.zone.viewmodel;
 
 import javax.annotation.Nonnull;
 import net.rptools.lib.CodeTimer;
+import net.rptools.maptool.client.ui.zone.ZoneRenderer;
 import net.rptools.maptool.model.Zone;
 
 /**
@@ -31,12 +32,15 @@ public class ZoneViewModel {
   private final @Nonnull Zone zone;
   private final MovementModel movementModel;
   private final TokenStackModel tokenStackModel;
+  private final TokenLocationModel tokenLocationModel;
 
-  public ZoneViewModel(CodeTimer timer, @Nonnull Zone zone) {
+  // TODO Do not depend on zoneRenderer, but encapsulate the necessary bits in a model.
+  public ZoneViewModel(CodeTimer timer, @Nonnull Zone zone, @Nonnull ZoneRenderer zoneRenderer) {
     this.timer = timer;
     this.zone = zone;
     movementModel = new MovementModel(zone);
     tokenStackModel = new TokenStackModel();
+    tokenLocationModel = new TokenLocationModel(timer, zone, zoneRenderer::getZoneScale);
   }
 
   public void update() {
@@ -48,5 +52,9 @@ public class ZoneViewModel {
 
   public TokenStackModel getTokenStackModel() {
     return tokenStackModel;
+  }
+
+  public TokenLocationModel getTokenLocationModel() {
+    return tokenLocationModel;
   }
 }
