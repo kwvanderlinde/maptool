@@ -113,9 +113,7 @@ public class ZoneRenderer extends JComponent
   private final DrawableRenderer tokenDrawableRenderer = new PartitionedDrawableRenderer();
   private final DrawableRenderer gmDrawableRenderer = new PartitionedDrawableRenderer();
   private final List<ZoneOverlay> overlayList = new ArrayList<ZoneOverlay>();
-  private Set<GUID> selectedTokenSet = new LinkedHashSet<GUID>();
   private boolean keepSelectedTokenSet = false;
-  private final List<Set<GUID>> selectedTokenSetHistory = new ArrayList<Set<GUID>>();
   private final List<LabelLocation> labelLocationList = new LinkedList<LabelLocation>();
   private boolean recalculateStacks = true;
   private final List<Token> showPathList = new ArrayList<Token>();
@@ -333,10 +331,9 @@ public class ZoneRenderer extends JComponent
   public void addMoveSelectionSet(
       String playerId, GUID keyToken, Set<GUID> tokenList, boolean clearLocalSelected) {
     // I'm not supposed to be moving a token when someone else is already moving it
+    // TODO Get rid of clear local selected.
     if (clearLocalSelected) {
-      for (GUID guid : tokenList) {
-        selectedTokenSet.remove(guid);
-      }
+      viewModel.getSelectionModel().removeTokensFromSelectedSet(tokenList);
     }
     viewModel
         .getMovementModel()
@@ -2531,9 +2528,12 @@ public class ZoneRenderer extends JComponent
   public void setActiveLayer(Zone.Layer layer) {
     activeLayer = layer;
 
-    if (!keepSelectedTokenSet && !selectedTokenSet.isEmpty()) {
-      selectedTokenSet.clear();
-      updateAfterSelection();
+    if (!keepSelectedTokenSet) {
+      clearShowPaths();
+      final var anyChange = viewModel.getSelectionModel().deselectAllTokens();
+      if (anyChange) {
+        updateAfterSelection();
+      }
     }
     keepSelectedTokenSet = false; // Always reset it back, temp boolean only
 
@@ -3101,7 +3101,7 @@ public class ZoneRenderer extends JComponent
       }
       Rectangle footprintBounds = token.getBounds(zone);
 
-      boolean isSelected = selectedTokenSet.contains(token.getId());
+      boolean isSelected = viewModel.getSelectionModel().isSelected(token.getId());
       if (isSelected) {
         ScreenPoint sp = ScreenPoint.fromZonePoint(this, footprintBounds.x, footprintBounds.y);
         double width = footprintBounds.width * getScale();
@@ -3316,7 +3316,7 @@ public class ZoneRenderer extends JComponent
   }
 
   public Set<GUID> getSelectedTokenSet() {
-    return selectedTokenSet;
+    return viewModel.getSelectionModel().getSelectedTokenSet();
   }
 
   public void setKeepSelectedTokenSet(boolean keep) {
@@ -3351,7 +3351,7 @@ public class ZoneRenderer extends JComponent
   public List<Token> getSelectedTokensList() {
     List<Token> tokenList = new ArrayList<Token>();
 
-    for (GUID g : selectedTokenSet) {
+    for (GUID g : viewModel.getSelectionModel().getSelectedTokenSet()) {
       if (zone.getToken(g) != null) {
         tokenList.add(zone.getToken(g));
       }
@@ -3367,17 +3367,7 @@ public class ZoneRenderer extends JComponent
    * @return whether the token is selectable
    */
   public boolean isTokenSelectable(GUID tokenGUID) {
-    if (tokenGUID == null) {
-      return false; // doesn't exist
-    }
-    Token token = zone.getToken(tokenGUID);
-    if (token == null) {
-      return false; // doesn't exist
-    }
-    if (!zone.isTokenVisible(token)) {
-      return AppUtil.playerOwns(token); // can't own or see
-    }
-    return true;
+    return viewModel.getSelectionModel().isSelectable(tokenGUID);
   }
 
   /**
@@ -3386,8 +3376,7 @@ public class ZoneRenderer extends JComponent
    * @param tokenGUID the token to remove from the selection
    */
   public void deselectToken(GUID tokenGUID) {
-    addToSelectionHistory(selectedTokenSet);
-    selectedTokenSet.remove(tokenGUID);
+    viewModel.getSelectionModel().deselectTokens(Collections.singletonList(tokenGUID));
   }
 
   /**
@@ -3397,12 +3386,7 @@ public class ZoneRenderer extends JComponent
    * @return false if nothing was done because the token wasn't selectable, true otherwise
    */
   public boolean selectToken(GUID tokenGUID) {
-    if (!isTokenSelectable(tokenGUID)) {
-      return false;
-    }
-    addToSelectionHistory(selectedTokenSet);
-    selectedTokenSet.add(tokenGUID);
-    return true;
+    return viewModel.getSelectionModel().selectTokens(Collections.singletonList(tokenGUID));
   }
 
   /**
@@ -3411,13 +3395,7 @@ public class ZoneRenderer extends JComponent
    * @param tokens the collection of tokens to add
    */
   public void selectTokens(Collection<GUID> tokens) {
-    for (GUID tokenGUID : tokens) {
-      if (!isTokenSelectable(tokenGUID)) {
-        continue;
-      }
-      selectedTokenSet.add(tokenGUID);
-    }
-    addToSelectionHistory(selectedTokenSet);
+    viewModel.getSelectionModel().selectTokens(tokens);
   }
 
   /**
@@ -3437,9 +3415,8 @@ public class ZoneRenderer extends JComponent
 
   /** Clears the set of selected tokens. */
   public void clearSelectedTokens() {
-    addToSelectionHistory(selectedTokenSet);
     clearShowPaths();
-    selectedTokenSet.clear();
+    viewModel.getSelectionModel().deselectAllTokens();
   }
 
   /**
@@ -3449,9 +3426,9 @@ public class ZoneRenderer extends JComponent
    * @return true if the selectedTokenSet size is 1 and contains the token, false otherwise
    */
   public boolean isOnlyTokenSelected(Token token) {
-    return selectedTokenSet.size() == 1
-        && token != null
-        && selectedTokenSet.contains(token.getId())
+    return token != null
+        && viewModel.getSelectionModel().getSelectedTokenSet().size() == 1
+        && viewModel.getSelectionModel().isSelected(token.getId())
         && isTokenSelectable(token.getId());
   }
 
@@ -3464,9 +3441,9 @@ public class ZoneRenderer extends JComponent
    *     otherwise
    */
   public boolean isSubsetSelected(Token token) {
-    return selectedTokenSet.size() > 1
-        && token != null
-        && selectedTokenSet.contains(token.getId())
+    return token != null
+        && viewModel.getSelectionModel().getSelectedTokenSet().size() > 1
+        && viewModel.getSelectionModel().isSelected(token.getId())
         && isTokenSelectable(token.getId());
   }
 
@@ -3475,79 +3452,16 @@ public class ZoneRenderer extends JComponent
    * non-empty. Fires onTokenSelection events.
    */
   public void undoSelectToken() {
-
-    while (selectedTokenSetHistory.size() > 0) {
-
-      selectedTokenSet = selectedTokenSetHistory.remove(0);
-
-      // user may have deleted some of the tokens that are contained in the selection history.
-      // There could also be tokens in another than the current layer which we don't want to go
-      // back to.
-      // find them and filter them otherwise the selectionSet will have orphaned GUIDs and
-      // they will cause NPE
-      Set<GUID> invalidTokenSet = new HashSet<GUID>();
-      for (GUID guid : selectedTokenSet) {
-        Token token = zone.getToken(guid);
-        if (token == null || token.getLayer() != getActiveLayer()) {
-          invalidTokenSet.add(guid);
-        }
-      }
-      selectedTokenSet.removeAll(invalidTokenSet);
-
-      if (!selectedTokenSet.isEmpty()) break;
-    }
+    viewModel.getSelectionModel().undoSelectToken(getActiveLayer());
     // TODO: if selection history is empty, notify the selection panel to
     // disable the undo button.
     updateAfterSelection();
   }
 
-  private void addToSelectionHistory(Set<GUID> selectionSet) {
-    // don't add empty selections to history
-    if (selectionSet.size() == 0) {
-      return;
-    }
-    Set<GUID> history = new HashSet<GUID>(selectionSet);
-    selectedTokenSetHistory.add(0, history);
-
-    // limit the history to a certain size
-    if (selectedTokenSetHistory.size() > 20) {
-      selectedTokenSetHistory.subList(20, selectedTokenSetHistory.size() - 1).clear();
-    }
-  }
-
   public void cycleSelectedToken(int direction) {
-    List<Token> visibleTokens = getTokensOnScreen();
-    Set<GUID> selectedTokenSet = getSelectedTokenSet();
-    int newSelection = 0;
-
-    if (visibleTokens.size() == 0) {
-      return;
-    }
-    if (selectedTokenSet.size() > 0) {
-      // Find the first selected token on the screen
-      for (int i = 0; i < visibleTokens.size(); i++) {
-        Token token = visibleTokens.get(i);
-        if (!isTokenSelectable(token.getId())) {
-          continue;
-        }
-        if (getSelectedTokenSet().contains(token.getId())) {
-          newSelection = i;
-          break;
-        }
-      }
-      // Pick the next
-      newSelection += direction;
-    }
-    if (newSelection < 0) {
-      newSelection = visibleTokens.size() - 1;
-    }
-    if (newSelection >= visibleTokens.size()) {
-      newSelection = 0;
-    }
-
     // Make the selection
-    clearSelectedTokens();
-    selectToken(visibleTokens.get(newSelection).getId());
+    viewModel.getSelectionModel().cycleSelectedToken(getActiveLayer(), direction);
+    clearShowPaths();
     updateAfterSelection();
   }
 

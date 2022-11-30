@@ -33,6 +33,7 @@ public class ZoneViewModel {
   private final MovementModel movementModel;
   private final TokenStackModel tokenStackModel;
   private final TokenLocationModel tokenLocationModel;
+  private final SelectionModel selectionModel;
 
   // TODO Do not depend on zoneRenderer, but encapsulate the necessary bits in a model.
   public ZoneViewModel(CodeTimer timer, @Nonnull Zone zone, @Nonnull ZoneRenderer zoneRenderer) {
@@ -41,6 +42,7 @@ public class ZoneViewModel {
     movementModel = new MovementModel(zone);
     tokenStackModel = new TokenStackModel();
     tokenLocationModel = new TokenLocationModel(timer, zone, zoneRenderer::getZoneScale);
+    selectionModel = new SelectionModel(zone, tokenLocationModel);
   }
 
   public void update() {
@@ -56,5 +58,9 @@ public class ZoneViewModel {
 
   public TokenLocationModel getTokenLocationModel() {
     return tokenLocationModel;
+  }
+
+  public SelectionModel getSelectionModel() {
+    return selectionModel;
   }
 }
