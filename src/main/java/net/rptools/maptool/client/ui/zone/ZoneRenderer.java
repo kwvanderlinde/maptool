@@ -796,7 +796,7 @@ public class ZoneRenderer extends JComponent
       bufferG2d.setClip(g2d.getClip());
 
       timer.start("paintComponent:createView");
-      PlayerView pl = getPlayerView();
+      PlayerView pl = viewModel.getPlayerView();
       timer.stop("paintComponent:createView");
 
       renderZone(bufferG2d, pl);
@@ -831,18 +831,7 @@ public class ZoneRenderer extends JComponent
   }
 
   public PlayerView getPlayerView() {
-    return getPlayerView(MapTool.getPlayer().getEffectiveRole());
-  }
-
-  /**
-   * The returned {@link PlayerView} contains a list of tokens that includes all selected tokens
-   * that this player owns and that have their <code>HasSight</code> checkbox enabled.
-   *
-   * @param role the player role
-   * @return the player view
-   */
-  public PlayerView getPlayerView(Player.Role role) {
-    return getPlayerView(role, true);
+    return viewModel.makePlayerView();
   }
 
   /**
@@ -855,21 +844,7 @@ public class ZoneRenderer extends JComponent
    * @return the player view
    */
   public PlayerView getPlayerView(Player.Role role, boolean selected) {
-    List<Token> selectedTokens = null;
-    if (selected && getSelectedTokenSet() != null && !getSelectedTokenSet().isEmpty()) {
-      selectedTokens = getSelectedTokensList();
-      selectedTokens.removeIf(token -> !token.getHasSight() || !AppUtil.playerOwns(token));
-    }
-    if (selectedTokens == null || selectedTokens.isEmpty()) {
-      // if no selected token qualifying for view, use owned tokens or player tokens with sight
-      final boolean checkOwnership =
-          MapTool.getServerPolicy().isUseIndividualViews() || MapTool.isPersonalServer();
-      selectedTokens =
-          checkOwnership
-              ? zone.getOwnedTokensWithSight(MapTool.getPlayer())
-              : zone.getPlayerTokensWithSight();
-    }
-    return new PlayerView(role, selectedTokens);
+    return viewModel.makePlayerView(role, selected);
   }
 
   public Rectangle fogExtents() {
