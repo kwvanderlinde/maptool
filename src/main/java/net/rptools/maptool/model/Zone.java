@@ -338,6 +338,15 @@ public class Zone {
     return tokenVisionDistance;
   }
 
+  /**
+   * Get the vision status of the zone.
+   *
+   * @return true if the vision of the zone is not of type VisionType.OFF
+   */
+  public boolean isUsingVision() {
+    return getVisionType() != Zone.VisionType.OFF;
+  }
+
   public VisionType getVisionType() {
     return visionType;
   }

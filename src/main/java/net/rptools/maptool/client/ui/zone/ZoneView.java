@@ -134,7 +134,7 @@ public class ZoneView {
    * @return true if the vision of the zone is not of type VisionType.OFF
    */
   public boolean isUsingVision() {
-    return zone.getVisionType() != Zone.VisionType.OFF;
+    return zone.isUsingVision();
   }
 
   /**
