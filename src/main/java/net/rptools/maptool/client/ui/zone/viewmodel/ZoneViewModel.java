@@ -56,7 +56,8 @@ public class ZoneViewModel {
     tokenStackModel = new TokenStackModel();
     tokenLocationModel = new TokenLocationModel(timer, zone, zoneRenderer::getZoneScale);
     selectionModel = new SelectionModel(zone, tokenLocationModel);
-    lightingModel = new LightingModel(zone, topologyModel);
+    lightingModel =
+        new LightingModel(zone, topologyModel, guid -> MapTool.getCampaign().getLightSource(guid));
   }
 
   public void update() {

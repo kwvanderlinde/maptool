@@ -21,8 +21,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import javax.annotation.Nonnull;
-import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.DrawableLight;
 import net.rptools.maptool.client.ui.zone.FogUtil;
 import net.rptools.maptool.client.ui.zone.PlayerView;
@@ -40,10 +40,11 @@ import net.rptools.maptool.model.Zone;
  *
  * <p>Lights are defined by the campaign and attached to tokens. This model is responsible for the
  * behaviour of lights, including:
+ *
  * <ul>
- *     <li>How lumens works (light vs darkness)</li>
- *     <li>How lights interact with topology</li>
- *     <li>How lights interact with sights</li>
+ *   <li>How lumens works (light vs darkness)
+ *   <li>How lights interact with topology
+ *   <li>How lights interact with sights
  * </ul>
  *
  * <p>We do not directly expose light sources, but instead work with _drawable lights_. A drawable
@@ -57,6 +58,7 @@ public class LightingModel {
 
   private final Zone zone;
   private final TopologyModel topologyModel;
+  private final Function<GUID, LightSource> lightSourceResolver;
 
   /**
    * Caches lit areas per token and sight type.
@@ -70,9 +72,11 @@ public class LightingModel {
   /** Map each token to their personal drawable lights. */
   private final Map<GUID, Set<DrawableLight>> personalDrawableLightCache = new HashMap<>();
 
-  public LightingModel(Zone zone, TopologyModel topologyModel) {
+  public LightingModel(
+      Zone zone, TopologyModel topologyModel, Function<GUID, LightSource> lightSourceResolver) {
     this.zone = zone;
     this.topologyModel = topologyModel;
+    this.lightSourceResolver = lightSourceResolver;
   }
 
   // TODO Temporary evil. In the future, we hopefully won't need to expose the cache this way.
@@ -121,7 +125,7 @@ public class LightingModel {
    * <p>Internal: results are cached in lightSourceCache.
    *
    * @param sight The sight used to calculate light areas. Sights with multipliers will increase the
-   *             light ranges compared to their default.
+   *     light ranges compared to their default.
    * @param lightSourceToken The token holding light sources.
    * @return The areas lit by the light source token, where the keys are lumens values.
    */
@@ -142,8 +146,7 @@ public class LightingModel {
     Map<Integer, Area> lightSourceAreaMap = new HashMap<>();
 
     for (AttachedLightSource attachedLightSource : lightSourceToken.getLightSources()) {
-      LightSource lightSource =
-          MapTool.getCampaign().getLightSource(attachedLightSource.getLightSourceId());
+      LightSource lightSource = lightSourceResolver.apply(attachedLightSource.getLightSourceId());
       if (lightSource == null) {
         continue;
       }
@@ -153,7 +156,7 @@ public class LightingModel {
 
       if (visibleArea != null && lightSource.getType() == LightSource.Type.NORMAL) {
         var lumens = lightSource.getLumens();
-        // Group all the light area's by lumens so there is only one area per lumen value
+        // Group all the light areas by lumens so there is only one area per lumen value
         if (lightSourceAreaMap.containsKey(lumens)) {
           visibleArea.add(lightSourceAreaMap.get(lumens));
         }

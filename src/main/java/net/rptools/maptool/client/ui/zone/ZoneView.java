@@ -214,8 +214,7 @@ public class ZoneView {
                 return -comparison;
               });
 
-      SightType tokenSight = MapTool.getCampaign().getSightType(token.getSightType());
-      getLightAreasByLumens(allLightAreaMap, tokenSight, lightSourceTokens);
+      getLightAreasByLumens(allLightAreaMap, sight, lightSourceTokens);
 
       // Check for daylight and add it to the overall light map.
       if (zone.getVisionType() != Zone.VisionType.NIGHT) {
