@@ -62,8 +62,6 @@ public class ZoneView {
   /** Map each token to their personal drawable lights. */
   private final Map<GUID, Set<DrawableLight>> personalDrawableLightCache = new HashMap<>();
 
-  private final Map<Zone.TopologyType, Area> topologyAreas = new EnumMap<>(Zone.TopologyType.class);
-
   /** Lumen for personal vision (darkvision). */
   private static final int LUMEN_VISION = 100;
 
