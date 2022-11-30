@@ -16,7 +16,6 @@ package net.rptools.maptool.client.ui.zone;
 
 import com.google.common.eventbus.Subscribe;
 import java.awt.*;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
@@ -32,13 +31,9 @@ import net.rptools.maptool.model.zones.TokensAdded;
 import net.rptools.maptool.model.zones.TokensChanged;
 import net.rptools.maptool.model.zones.TokensRemoved;
 import net.rptools.maptool.model.zones.TopologyChanged;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /** Responsible for calculating lights and vision. */
 public class ZoneView {
-  private static final Logger log = LogManager.getLogger(ZoneView.class);
-
   /** The zone of the ZoneView. */
   private final Zone zone;
 
@@ -49,18 +44,12 @@ public class ZoneView {
   private final Map<GUID, Area> tokenVisibleAreaCache = new HashMap<>();
   /** Map each token to their current vision, depending on other lights. */
   private final Map<GUID, Area> tokenVisionCache = new HashMap<>();
-  /** Map lightSourceToken to the areaBySightMap. */
-  private final Map<GUID, Map<String, Map<Integer, Area>>> lightSourceCache = new HashMap<>();
   /** Map light source type to all tokens with that type. */
   private final Map<LightSource.Type, Set<GUID>> lightSourceMap = new HashMap<>();
-  /** Map each token to their map between sightType and set of lights. */
-  private final Map<GUID, Map<String, Set<DrawableLight>>> drawableLightCache = new HashMap<>();
   /** Map the PlayerView to its exposed area. */
   private final Map<PlayerView, Area> exposedAreaMap = new HashMap<>();
   /** Map the PlayerView to its visible area. */
   private final Map<PlayerView, VisibleAreaMeta> visibleAreaMap = new HashMap<>();
-  /** Map each token to their personal drawable lights. */
-  private final Map<GUID, Set<DrawableLight>> personalDrawableLightCache = new HashMap<>();
 
   /** Lumen for personal vision (darkvision). */
   private static final int LUMEN_VISION = 100;
@@ -131,189 +120,6 @@ public class ZoneView {
    */
   public boolean isUsingVision() {
     return zone.isUsingVision();
-  }
-
-  /**
-   * Return the lightSourceArea of a lightSourceToken for a given sight type. Fill the
-   * lightSourceCache entry if null.
-   *
-   * @param sightName the name of the sight type for which to get the light source area
-   * @param lightSourceToken the token holding the light sources.
-   * @return the lightSourceArea.
-   */
-  private Map<Integer, Area> getLightSourceArea(String sightName, Token lightSourceToken) {
-    GUID tokenId = lightSourceToken.getId();
-    Map<String, Map<Integer, Area>> areaBySightMap = lightSourceCache.get(tokenId);
-    if (areaBySightMap != null) {
-      Map<Integer, Area> lightSourceArea = areaBySightMap.get(sightName);
-      if (lightSourceArea != null) {
-        return lightSourceArea;
-      }
-    } else {
-      areaBySightMap = new HashMap<>();
-      lightSourceCache.put(lightSourceToken.getId(), areaBySightMap);
-    }
-
-    Map<Integer, Area> lightSourceAreaMap = new HashMap<>();
-
-    for (AttachedLightSource attachedLightSource : lightSourceToken.getLightSources()) {
-      LightSource lightSource =
-          MapTool.getCampaign().getLightSource(attachedLightSource.getLightSourceId());
-      if (lightSource == null) {
-        continue;
-      }
-      SightType sight = MapTool.getCampaign().getSightType(sightName);
-      Area visibleArea =
-          calculateLightSourceArea(
-              lightSource, lightSourceToken, sight, attachedLightSource.getDirection());
-
-      if (visibleArea != null && lightSource.getType() == LightSource.Type.NORMAL) {
-        var lumens = lightSource.getLumens();
-        // Group all the light area's by lumens so there is only one area per lumen value
-        if (lightSourceAreaMap.containsKey(lumens)) {
-          visibleArea.add(lightSourceAreaMap.get(lumens));
-        }
-        lightSourceAreaMap.put(lumens, visibleArea);
-      }
-    }
-
-    // Cache
-    areaBySightMap.put(sightName, lightSourceAreaMap);
-    return lightSourceAreaMap;
-  }
-
-  /**
-   * Calculate the area visible by a sight type for a given light, and put the lights in
-   * drawableLightCache.
-   *
-   * @param lightSource the personal light source.
-   * @param lightSourceToken the token holding the light source.
-   * @param sight the sight type.
-   * @param direction the direction of the light source.
-   * @return the area visible.
-   */
-  private Area calculatePersonalLightSourceArea(
-      LightSource lightSource, Token lightSourceToken, SightType sight, Direction direction) {
-    return calculateLightSourceArea(lightSource, lightSourceToken, sight, direction, true);
-  }
-
-  /**
-   * Calculate the area visible by a sight type for a given light, and put the lights in
-   * drawableLightCache.
-   *
-   * @param lightSource the light source. Not a personal light.
-   * @param lightSourceToken the token holding the light source.
-   * @param sight the sight type.
-   * @param direction the direction of the light source.
-   * @return the area visible.
-   */
-  private Area calculateLightSourceArea(
-      LightSource lightSource, Token lightSourceToken, SightType sight, Direction direction) {
-    return calculateLightSourceArea(lightSource, lightSourceToken, sight, direction, false);
-  }
-
-  /**
-   * Calculate the area visible by a sight type for a given lightSource, and put the lights in
-   * drawableLightCache.
-   *
-   * @param lightSource the light source. Not a personal light.
-   * @param lightSourceToken the token holding the light source.
-   * @param sight the sight type.
-   * @param direction the direction of the light source.
-   * @param isPersonalLight is the light a personal light?
-   * @return the area visible.
-   */
-  private Area calculateLightSourceArea(
-      LightSource lightSource,
-      Token lightSourceToken,
-      SightType sight,
-      Direction direction,
-      boolean isPersonalLight) {
-    if (sight == null) {
-      return null;
-    }
-    Point p = FogUtil.calculateVisionCenter(lightSourceToken, zone);
-    Area lightSourceArea = lightSource.getArea(lightSourceToken, zone, direction);
-
-    // Calculate exposed area
-    // Jamz: OK, let not have lowlight vision type multiply darkness radius
-    if (sight.getMultiplier() != 1 && lightSource.getLumens() >= 0) {
-      lightSourceArea.transform(
-          AffineTransform.getScaleInstance(sight.getMultiplier(), sight.getMultiplier()));
-    }
-    Area visibleArea =
-        FogUtil.calculateVisibility(
-            p.x,
-            p.y,
-            lightSourceArea,
-            viewModel.getTopologyModel().getTopologyTree(Zone.TopologyType.WALL_VBL),
-            viewModel.getTopologyModel().getTopologyTree(Zone.TopologyType.HILL_VBL),
-            viewModel.getTopologyModel().getTopologyTree(Zone.TopologyType.PIT_VBL));
-
-    if (visibleArea != null && lightSource.getType() == LightSource.Type.NORMAL) {
-      addLightSourceToCache(
-          visibleArea, p, lightSource, lightSourceToken, sight, direction, isPersonalLight);
-    }
-    return visibleArea;
-  }
-
-  /**
-   * Adds the light source as seen by a given sight to the corresponding cache. Lights (but not
-   * darkness) with a color CSS value are stored in the drawableLightCache.
-   *
-   * @param visibleArea the area visible from the light source token
-   * @param p the vision center of the light source token
-   * @param lightSource the light source
-   * @param lightSourceToken the light source token
-   * @param sight the sight
-   * @param direction the direction of the light source
-   */
-  private void addLightSourceToCache(
-      Area visibleArea,
-      Point p,
-      LightSource lightSource,
-      Token lightSourceToken,
-      SightType sight,
-      Direction direction,
-      boolean isPersonalLight) {
-    // Keep track of colored light
-    Set<DrawableLight> lightSet = new HashSet<DrawableLight>();
-    for (Light light : lightSource.getLightList()) {
-      Area lightArea = lightSource.getArea(lightSourceToken, zone, direction, light);
-      if (sight.getMultiplier() != 1) {
-        lightArea.transform(
-            AffineTransform.getScaleInstance(sight.getMultiplier(), sight.getMultiplier()));
-      }
-      lightArea.transform(AffineTransform.getTranslateInstance(p.x, p.y));
-      lightArea.intersect(visibleArea);
-
-      // If a light has no paint, it's a "bright light" that just reveal FoW but doesn't need to be
-      // rendered.
-      if (light.getPaint() != null || lightSource.getLumens() < 0) {
-        lightSet.add(
-            new DrawableLight(
-                lightSource.getType(), light.getPaint(), lightArea, lightSource.getLumens()));
-      }
-    }
-    // FIXME There was a bug report of a ConcurrentModificationException regarding
-    // drawableLightCache.
-    // I don't see how, but perhaps this code -- and the ones in flush() and flush(Token) -- should
-    // be
-    // wrapped in a synchronization block? This method is probably called only on the same thread as
-    // getDrawableLights() but the two flush() methods may be called from different threads. How to
-    // verify this with Eclipse? Maybe the flush() methods should defer modifications to the
-    // EventDispatchingThread?
-    if (isPersonalLight) {
-      personalDrawableLightCache.put(lightSourceToken.getId(), lightSet);
-    } else {
-      Map<String, Set<DrawableLight>> lightMap =
-          drawableLightCache.computeIfAbsent(lightSourceToken.getId(), k -> new HashMap<>());
-      if (lightMap.get(sight.getName()) != null) {
-        lightMap.get(sight.getName()).addAll(lightSet);
-      } else {
-        lightMap.put(sight.getName(), lightSet);
-      }
-    }
   }
 
   /**
@@ -419,8 +225,10 @@ public class ZoneView {
       // Check for personal vision and add to overall light map
       if (sight.hasPersonalLightSource()) {
         Area lightArea =
-            calculatePersonalLightSourceArea(
-                sight.getPersonalLightSource(), token, sight, Direction.CENTER);
+            viewModel
+                .getLightingModel()
+                .calculatePersonalLightSourceArea(
+                    sight.getPersonalLightSource(), token, sight, Direction.CENTER);
         if (lightArea != null) {
           var lumens = sight.getPersonalLightSource().getLumens();
           lumens = (lumens == 0) ? LUMEN_VISION : lumens;
@@ -468,9 +276,10 @@ public class ZoneView {
   private void getLightAreasByLumens(
       Map<Integer, Path2D> allLightPathMap, String sightName, List<Token> lightSourceTokens) {
     for (Token lightSourceToken : lightSourceTokens) {
-      Map<Integer, Area> lightArea = getLightSourceArea(sightName, lightSourceToken);
+      final Map<Integer, Area> lightArea =
+          viewModel.getLightingModel().getLumensToLitAreas(sightName, lightSourceToken);
 
-      for (Entry<Integer, Area> light : lightArea.entrySet()) {
+      for (final var light : lightArea.entrySet()) {
         // Add the token's light area to the global area in `allLightPathMap`.
         addLightAreaByLumens(allLightPathMap, light.getKey(), light.getValue());
       }
@@ -567,23 +376,7 @@ public class ZoneView {
    * @return the set of drawable lights.
    */
   public Set<DrawableLight> getDrawableLights(PlayerView view) {
-    Set<DrawableLight> lightSet = new HashSet<DrawableLight>();
-
-    for (Map<String, Set<DrawableLight>> map : drawableLightCache.values()) {
-      for (Set<DrawableLight> set : map.values()) {
-        lightSet.addAll(set);
-      }
-    }
-    if (view != null && view.isUsingTokenView()) {
-      // Get the personal drawable lights of the tokens of the player view
-      for (Token token : view.getTokens()) {
-        Set<DrawableLight> lights = personalDrawableLightCache.get(token.getId());
-        if (lights != null) {
-          lightSet.addAll(lights);
-        }
-      }
-    }
-    return lightSet;
+    return viewModel.getLightingModel().getDrawableLights(view);
   }
 
   /**
@@ -593,11 +386,11 @@ public class ZoneView {
   public void flush() {
     tokenVisibleAreaCache.clear();
     tokenVisionCache.clear();
-    lightSourceCache.clear();
     exposedAreaMap.clear();
     visibleAreaMap.clear();
-    drawableLightCache.clear();
-    personalDrawableLightCache.clear();
+
+    // TODO Temporary evil. The model should decide in which circumstances it needs to flush.
+    viewModel.getLightingModel().flush();
   }
 
   public void flushFog() {
@@ -612,13 +405,15 @@ public class ZoneView {
    * @param token the token to flush.
    */
   public void flush(Token token) {
-    boolean hadLightSource = lightSourceCache.get(token.getId()) != null;
+    boolean hadLightSource = viewModel.getLightingModel().isKnownLightSource(token);
+
+    // TODO Temporary evil. The model should figure out when it should flush. And once we do that,
+    //  we'll need some way to tell whether the token lost a light source (another event?), so that
+    //  we can clear the other models too.
+    viewModel.getLightingModel().flush(token);
 
     tokenVisionCache.remove(token.getId());
     tokenVisibleAreaCache.remove(token.getId());
-    lightSourceCache.remove(token.getId());
-    drawableLightCache.remove(token.getId());
-    personalDrawableLightCache.remove(token.getId());
 
     if (hadLightSource || token.hasLightSources()) {
       // Have to recalculate all token vision
