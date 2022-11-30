@@ -63,8 +63,6 @@ public class ZoneView {
   private final Map<GUID, Set<DrawableLight>> personalDrawableLightCache = new HashMap<>();
 
   private final Map<Zone.TopologyType, Area> topologyAreas = new EnumMap<>(Zone.TopologyType.class);
-  private final Map<Zone.TopologyType, AreaTree> topologyTrees =
-      new EnumMap<>(Zone.TopologyType.class);
 
   /** Lumen for personal vision (darkvision). */
   private static final int LUMEN_VISION = 100;
@@ -135,61 +133,6 @@ public class ZoneView {
    */
   public boolean isUsingVision() {
     return zone.isUsingVision();
-  }
-
-  /**
-   * Get the map and token topology of the requested type.
-   *
-   * <p>The topology is cached and should only regenerate when not yet present, which should happen
-   * on flush calls.
-   *
-   * @param topologyType The type of topology tree to get.
-   * @return the area of the topology.
-   */
-  public synchronized Area getTopology(Zone.TopologyType topologyType) {
-    var topology = topologyAreas.get(topologyType);
-
-    if (topology == null) {
-      log.debug("ZoneView topology area for {} is null, generating...", topologyType.name());
-
-      topology = new Area(zone.getTopology(topologyType));
-      List<Token> topologyTokens =
-          MapTool.getFrame().getCurrentZoneRenderer().getZone().getTokensWithTopology(topologyType);
-      for (Token topologyToken : topologyTokens) {
-        topology.add(topologyToken.getTransformedTopology(topologyType));
-      }
-
-      topologyAreas.put(topologyType, topology);
-    }
-
-    return topology;
-  }
-
-  /**
-   * Get the topology tree of the requested type.
-   *
-   * <p>The topology tree is cached and should only regenerate when the tree is not present, which
-   * should happen on flush calls.
-   *
-   * <p>This method is equivalent to building an AreaTree from the results of getTopology(), but the
-   * results are cached.
-   *
-   * @param topologyType The type of topology tree to get.
-   * @return the AreaTree (topology tree).
-   */
-  private synchronized AreaTree getTopologyTree(Zone.TopologyType topologyType) {
-    var topologyTree = topologyTrees.get(topologyType);
-
-    if (topologyTree == null) {
-      log.debug("ZoneView topology tree for {} is null, generating...", topologyType.name());
-
-      var topology = getTopology(topologyType);
-
-      topologyTree = new AreaTree(topology);
-      topologyTrees.put(topologyType, topologyTree);
-    }
-
-    return topologyTree;
   }
 
   /**
@@ -305,9 +248,9 @@ public class ZoneView {
             p.x,
             p.y,
             lightSourceArea,
-            getTopologyTree(Zone.TopologyType.WALL_VBL),
-            getTopologyTree(Zone.TopologyType.HILL_VBL),
-            getTopologyTree(Zone.TopologyType.PIT_VBL));
+            viewModel.getTopologyModel().getTopologyTree(Zone.TopologyType.WALL_VBL),
+            viewModel.getTopologyModel().getTopologyTree(Zone.TopologyType.HILL_VBL),
+            viewModel.getTopologyModel().getTopologyTree(Zone.TopologyType.PIT_VBL));
 
     if (visibleArea != null && lightSource.getType() == LightSource.Type.NORMAL) {
       addLightSourceToCache(
@@ -410,9 +353,9 @@ public class ZoneView {
               p.x,
               p.y,
               visibleArea,
-              getTopologyTree(Zone.TopologyType.WALL_VBL),
-              getTopologyTree(Zone.TopologyType.HILL_VBL),
-              getTopologyTree(Zone.TopologyType.PIT_VBL));
+              viewModel.getTopologyModel().getTopologyTree(Zone.TopologyType.WALL_VBL),
+              viewModel.getTopologyModel().getTopologyTree(Zone.TopologyType.HILL_VBL),
+              viewModel.getTopologyModel().getTopologyTree(Zone.TopologyType.PIT_VBL));
 
       tokenVisibleAreaCache.put(token.getId(), tokenVisibleArea);
     }
@@ -565,9 +508,9 @@ public class ZoneView {
                     p.x,
                     p.y,
                     lightSourceArea,
-                    getTopologyTree(Zone.TopologyType.WALL_VBL),
-                    getTopologyTree(Zone.TopologyType.HILL_VBL),
-                    getTopologyTree(Zone.TopologyType.PIT_VBL));
+                    viewModel.getTopologyModel().getTopologyTree(Zone.TopologyType.WALL_VBL),
+                    viewModel.getTopologyModel().getTopologyTree(Zone.TopologyType.HILL_VBL),
+                    viewModel.getTopologyModel().getTopologyTree(Zone.TopologyType.PIT_VBL));
             if (visibleArea == null) {
               continue;
             }
@@ -750,8 +693,6 @@ public class ZoneView {
     }
 
     flush();
-    topologyAreas.clear();
-    topologyTrees.clear();
   }
 
   private boolean flushExistingTokens(List<Token> tokens) {
@@ -779,8 +720,6 @@ public class ZoneView {
     // it should also trip a Topology change
     if (tokenChangedTopology) {
       flush();
-      topologyAreas.clear();
-      topologyTrees.clear();
     }
   }
 
@@ -811,8 +750,6 @@ public class ZoneView {
     // it should also trip a Topology change
     if (tokenChangedTopology) {
       flush();
-      topologyAreas.clear();
-      topologyTrees.clear();
     }
   }
 
@@ -831,8 +768,6 @@ public class ZoneView {
     // it should also trip a Topology change
     if (tokenChangedTopology) {
       flush();
-      topologyAreas.clear();
-      topologyTrees.clear();
     }
   }
 

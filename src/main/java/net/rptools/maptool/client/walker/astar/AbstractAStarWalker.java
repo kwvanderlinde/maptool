@@ -185,17 +185,18 @@ public abstract class AbstractAStarWalker extends AbstractZoneWalker {
     final var zoneRenderer = MapTool.getFrame().getCurrentZoneRenderer();
     if (zoneRenderer != null) {
       final var zoneView = zoneRenderer.getZoneView();
+      final var viewModel = zoneRenderer.getViewModel();
 
-      var mbl = zoneView.getTopology(Zone.TopologyType.MBL);
+      var mbl = viewModel.getTopologyModel().getTopology(Zone.TopologyType.MBL);
       if (tokenMbl != null) {
         mbl = new Area(mbl);
         mbl.subtract(tokenMbl);
       }
 
       if (MapTool.getServerPolicy().getVblBlocksMove()) {
-        var wallVbl = zoneView.getTopology(Zone.TopologyType.WALL_VBL);
-        var hillVbl = zoneView.getTopology(Zone.TopologyType.HILL_VBL);
-        var pitVbl = zoneView.getTopology(Zone.TopologyType.PIT_VBL);
+        var wallVbl = viewModel.getTopologyModel().getTopology(Zone.TopologyType.WALL_VBL);
+        var hillVbl = viewModel.getTopologyModel().getTopology(Zone.TopologyType.HILL_VBL);
+        var pitVbl = viewModel.getTopologyModel().getTopology(Zone.TopologyType.PIT_VBL);
 
         // A token's topology should not be used to block itself!
         if (tokenWallVbl != null) {

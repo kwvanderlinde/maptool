@@ -39,6 +39,7 @@ public class ZoneViewModel {
   private final CodeTimer timer;
   private final @Nonnull Zone zone;
   private @Nonnull PlayerView view;
+  private final TopologyModel topologyModel;
   private final MovementModel movementModel;
   private final TokenStackModel tokenStackModel;
   private final TokenLocationModel tokenLocationModel;
@@ -49,6 +50,7 @@ public class ZoneViewModel {
     this.timer = timer;
     this.zone = zone;
     view = new PlayerView(MapTool.getPlayer().getEffectiveRole(), Collections.emptyList());
+    topologyModel = new TopologyModel(zone);
     movementModel = new MovementModel(zone);
     tokenStackModel = new TokenStackModel();
     tokenLocationModel = new TokenLocationModel(timer, zone, zoneRenderer::getZoneScale);
@@ -57,6 +59,10 @@ public class ZoneViewModel {
 
   public void update() {
     view = makePlayerView(MapTool.getPlayer().getEffectiveRole(), true);
+  }
+
+  public TopologyModel getTopologyModel() {
+    return topologyModel;
   }
 
   public MovementModel getMovementModel() {
