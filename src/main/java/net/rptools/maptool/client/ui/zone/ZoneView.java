@@ -214,7 +214,8 @@ public class ZoneView {
                 return -comparison;
               });
 
-      getLightAreasByLumens(allLightAreaMap, token.getSightType(), lightSourceTokens);
+      SightType tokenSight = MapTool.getCampaign().getSightType(token.getSightType());
+      getLightAreasByLumens(allLightAreaMap, tokenSight, lightSourceTokens);
 
       // Check for daylight and add it to the overall light map.
       if (zone.getVisionType() != Zone.VisionType.NIGHT) {
@@ -274,10 +275,10 @@ public class ZoneView {
   }
 
   private void getLightAreasByLumens(
-      Map<Integer, Path2D> allLightPathMap, String sightName, List<Token> lightSourceTokens) {
+      Map<Integer, Path2D> allLightPathMap, SightType sight, List<Token> lightSourceTokens) {
     for (Token lightSourceToken : lightSourceTokens) {
       final Map<Integer, Area> lightArea =
-          viewModel.getLightingModel().getLumensToLitAreas(sightName, lightSourceToken);
+          viewModel.getLightingModel().getLumensToLitAreas(sight, lightSourceToken);
 
       for (final var light : lightArea.entrySet()) {
         // Add the token's light area to the global area in `allLightPathMap`.
@@ -292,6 +293,7 @@ public class ZoneView {
    * @param type the type of lights to get.
    * @return the list of drawable lights of the given type.
    */
+  // TODO Only used for auras, so no need to interact with sights or anything.
   public List<DrawableLight> getLights(LightSource.Type type) {
     List<DrawableLight> lightList = new LinkedList<DrawableLight>();
     if (lightSourceMap.get(type) != null) {

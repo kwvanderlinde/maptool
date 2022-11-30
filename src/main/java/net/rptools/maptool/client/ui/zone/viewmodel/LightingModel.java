@@ -36,7 +36,15 @@ import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
 
 /**
- * Manages a zone's lighting, caching important information.
+ * Manages a zone's lighting.
+ *
+ * <p>Lights are defined by the campaign and attached to tokens. This model is responsible for the
+ * behaviour of lights, including:
+ * <ul>
+ *     <li>How lumens works (light vs darkness)</li>
+ *     <li>How lights interact with topology</li>
+ *     <li>How lights interact with sights</li>
+ * </ul>
  *
  * <p>We do not directly expose light sources, but instead work with _drawable lights_. A drawable
  * light is little more than a paint combined with an area, so it is something that can be easily
@@ -56,9 +64,6 @@ public class LightingModel {
    * <p>The lit areas are a mapping from lumens to corresponding areas.
    */
   private final Map<GUID, Map<String, Map<Integer, Area>>> lightSourceCache = new HashMap<>();
-  /** Map light source type to all tokens with that type. */
-  private final Map<LightSource.Type, Set<GUID>> lightSourceMap = new HashMap<>();
-
   // TODO Are these even caches? I think they are just drawable light storage.
   /** Map each token to their map between sightType and set of lights. */
   private final Map<GUID, Map<String, Set<DrawableLight>>> drawableLightCache = new HashMap<>();
@@ -115,17 +120,17 @@ public class LightingModel {
    *
    * <p>Internal: results are cached in lightSourceCache.
    *
-   * @param sightName The name of the sight used to calculate light areas. Sights with multipliers
-   *     will increase the light ranges compared to their default.
+   * @param sight The sight used to calculate light areas. Sights with multipliers will increase the
+   *             light ranges compared to their default.
    * @param lightSourceToken The token holding light sources.
    * @return The areas lit by the light source token, where the keys are lumens values.
    */
   // TODO Accept a SightType instead of a String for first parameter.
-  public Map<Integer, Area> getLumensToLitAreas(String sightName, Token lightSourceToken) {
+  public Map<Integer, Area> getLumensToLitAreas(SightType sight, Token lightSourceToken) {
     GUID tokenId = lightSourceToken.getId();
     Map<String, Map<Integer, Area>> areaBySightMap = lightSourceCache.get(tokenId);
     if (areaBySightMap != null) {
-      Map<Integer, Area> lightSourceArea = areaBySightMap.get(sightName);
+      Map<Integer, Area> lightSourceArea = areaBySightMap.get(sight.getName());
       if (lightSourceArea != null) {
         return lightSourceArea;
       }
@@ -142,7 +147,6 @@ public class LightingModel {
       if (lightSource == null) {
         continue;
       }
-      SightType sight = MapTool.getCampaign().getSightType(sightName);
       Area visibleArea =
           calculateLightSourceArea(
               lightSource, lightSourceToken, sight, attachedLightSource.getDirection());
@@ -158,7 +162,7 @@ public class LightingModel {
     }
 
     // Cache
-    areaBySightMap.put(sightName, lightSourceAreaMap);
+    areaBySightMap.put(sight.getName(), lightSourceAreaMap);
     return lightSourceAreaMap;
   }
 
@@ -279,7 +283,7 @@ public class LightingModel {
       Direction direction,
       boolean isPersonalLight) {
     // Keep track of colored light
-    Set<DrawableLight> lightSet = new HashSet<DrawableLight>();
+    Set<DrawableLight> lightSet = new HashSet<>();
     for (Light light : lightSource.getLightList()) {
       Area lightArea = lightSource.getArea(lightSourceToken, zone, direction, light);
       if (sight.getMultiplier() != 1) {
