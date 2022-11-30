@@ -148,7 +148,7 @@ public class ZoneRenderer extends JComponent
   private final List<LabelRenderable> deferredLabelList = new ArrayList<>();
   private PlayerView lastView;
   private Set<GUID> visibleTokenSet = new HashSet<>();
-  private CodeTimer timer;
+  private final CodeTimer timer = new CodeTimer("ZoneRenderer.renderZone");
 
   private boolean autoResizeStamp = false;
 
@@ -796,9 +796,6 @@ public class ZoneRenderer extends JComponent
 
   @Override
   public void paintComponent(Graphics g) {
-    if (timer == null) {
-      timer = new CodeTimer("ZoneRenderer.renderZone");
-    }
     timer.setEnabled(AppState.isCollectProfilingData() || log.isDebugEnabled());
     timer.clear();
     timer.setThreshold(10);
