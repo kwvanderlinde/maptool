@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.vbl.AreaTree;
+import net.rptools.maptool.client.ui.zone.viewmodel.ZoneViewModel;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.zones.TokensAdded;
@@ -41,6 +42,7 @@ public class ZoneView {
 
   /** The zone of the ZoneView. */
   private final Zone zone;
+  private final ZoneViewModel viewModel;
 
   // VISION
   /** Map each token to the area they can see by themselves. */
@@ -72,8 +74,9 @@ public class ZoneView {
    *
    * @param zone the Zone to add.
    */
-  public ZoneView(Zone zone) {
+  public ZoneView(Zone zone, ZoneViewModel viewModel) {
     this.zone = zone;
+    this.viewModel = viewModel;
     findLightSources();
 
     new MapToolEventBus().getMainEventBus().register(this);

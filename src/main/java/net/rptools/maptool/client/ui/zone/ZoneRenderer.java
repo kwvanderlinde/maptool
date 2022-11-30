@@ -53,6 +53,7 @@ import net.rptools.maptool.client.ui.htmlframe.HTMLFrameFactory;
 import net.rptools.maptool.client.ui.token.AbstractTokenOverlay;
 import net.rptools.maptool.client.ui.token.BarTokenOverlay;
 import net.rptools.maptool.client.ui.token.NewTokenDialog;
+import net.rptools.maptool.client.ui.zone.viewmodel.ZoneViewModel;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
@@ -160,6 +161,8 @@ public class ZoneRenderer extends JComponent
 
   private ZonePoint previousZonePoint;
 
+  private final ZoneViewModel viewModel;
+
   /**
    * Constructor for the ZoneRenderer from a zone.
    *
@@ -171,13 +174,15 @@ public class ZoneRenderer extends JComponent
     }
     this.zone = zone;
 
+    this.viewModel = new ZoneViewModel(this.timer, this.zone);
+
     // The interval, in milliseconds, during which calls to repaint() will be debounced.
     int repaintDebounceInterval = 1000 / AppPreferences.getFrameRateCap();
     repaintDebouncer = new DebounceExecutor(repaintDebounceInterval, this::repaint);
 
     setFocusable(true);
     setZoneScale(new Scale());
-    zoneView = new ZoneView(zone);
+    zoneView = new ZoneView(zone, viewModel);
 
     // add(MapTool.getFrame().getFxPanel(), PositionalLayout.Position.NW);
 
@@ -662,6 +667,10 @@ public class ZoneRenderer extends JComponent
     return zoneView;
   }
 
+  public ZoneViewModel getViewModel() {
+    return viewModel;
+  }
+
   /** Clear internal caches and backbuffers */
   public void flush() {
     if (zone.getBackgroundPaint() instanceof DrawableTexturePaint) {
@@ -800,6 +809,8 @@ public class ZoneRenderer extends JComponent
     timer.clear();
     timer.setThreshold(10);
     timer.start("paintComponent");
+
+    viewModel.update();
 
     Graphics2D g2d = (Graphics2D) g;
 
