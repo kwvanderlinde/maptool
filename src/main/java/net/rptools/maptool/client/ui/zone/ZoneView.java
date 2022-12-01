@@ -287,16 +287,12 @@ public class ZoneView {
   }
 
   /**
-   * Get the lists of drawable light from lightSourceMap.
-   *
-   * @param type the type of lights to get.
-   * @return the list of drawable lights of the given type.
+   * @return the list of drawable lights for auras.
    */
-  // TODO Only used for auras, so no need to interact with sights or anything.
-  public List<DrawableLight> getLights(LightSource.Type type) {
+  public List<DrawableLight> getAuras() {
     List<DrawableLight> lightList = new LinkedList<DrawableLight>();
-    if (lightSourceMap.get(type) != null) {
-      for (GUID lightSourceToken : lightSourceMap.get(type)) {
+    if (lightSourceMap.get(LightSource.Type.AURA) != null) {
+      for (GUID lightSourceToken : lightSourceMap.get(LightSource.Type.AURA)) {
         Token token = zone.getToken(lightSourceToken);
         if (token == null) {
           continue;
@@ -308,7 +304,7 @@ public class ZoneView {
           if (lightSource == null) {
             continue;
           }
-          if (lightSource.getType() == type) {
+          if (lightSource.getType() == LightSource.Type.AURA) {
             // This needs to be cached somehow
             Area lightSourceArea = lightSource.getArea(token, zone, Direction.CENTER);
             Area visibleArea =
@@ -340,7 +336,7 @@ public class ZoneView {
                 continue;
               }
               lightList.add(
-                  new DrawableLight(type, light.getPaint(), visibleArea, lightSource.getLumens()));
+                  new DrawableLight(LightSource.Type.AURA, light.getPaint(), visibleArea, lightSource.getLumens()));
             }
           }
         }
