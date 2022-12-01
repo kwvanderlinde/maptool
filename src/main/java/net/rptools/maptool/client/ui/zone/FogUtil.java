@@ -111,6 +111,7 @@ public class FogUtil {
       final var isVisionCompletelyBlocked = consumer.apply(accumulator);
       if (!isVisionCompletelyBlocked) {
         // Vision has been completely blocked by this topology. Short circuit.
+        // TODO Just return an empty area instead?
         return null;
       }
 
