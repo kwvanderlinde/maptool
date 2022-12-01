@@ -286,9 +286,7 @@ public class ZoneView {
     }
   }
 
-  /**
-   * @return the list of drawable lights for auras.
-   */
+  /** @return the list of drawable lights for auras. */
   public List<DrawableLight> getAuras() {
     List<DrawableLight> lightList = new LinkedList<DrawableLight>();
     if (lightSourceMap.get(LightSource.Type.AURA) != null) {
@@ -336,7 +334,11 @@ public class ZoneView {
                 continue;
               }
               lightList.add(
-                  new DrawableLight(LightSource.Type.AURA, light.getPaint(), visibleArea, lightSource.getLumens()));
+                  new DrawableLight(
+                      LightSource.Type.AURA,
+                      light.getPaint(),
+                      visibleArea,
+                      lightSource.getLumens()));
             }
           }
         }
