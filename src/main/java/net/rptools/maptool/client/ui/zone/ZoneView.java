@@ -161,78 +161,22 @@ public class ZoneView {
       tokenVisibleAreaCache.put(token.getId(), tokenVisibleArea);
     }
 
-    // Stopwatch stopwatch = Stopwatch.createStarted();
-
-    // Combine in the visible light areas
+    final var allLightAreaMap =
+        viewModel
+            .getLightingModel()
+            .addSightedToken(
+                token,
+                (tokenVisibleArea != null && zone.getVisionType() != Zone.VisionType.NIGHT)
+                    ? tokenVisibleArea
+                    : new Area());
     if (tokenVisibleArea != null) {
       Rectangle2D origBounds = tokenVisibleArea.getBounds();
-      List<Token> lightSourceTokens = new ArrayList<Token>();
-
-      // Add the tokens from the lightSourceMap with normal (not aura) lights
-      viewModel.getLightingModel().getLightSources().forEach(lightSourceTokens::add);
-
-      if (token.hasLightSources() && !lightSourceTokens.contains(token)) {
-        // This accounts for temporary tokens (such as during an Expose Last Path)
-        lightSourceTokens.add(token);
-      }
-
-      // stopwatch.reset();
-      // stopwatch.start();
-      // Jamz: Iterate through all tokens and combine light areas by lumens
-      /* Hold all of our lights combined by lumens. Used for hard FoW reveal. */
-      final SortedMap<Integer, Path2D> allLightAreaMap =
-          new TreeMap<>(
-              (lhsLumens, rhsLumens) -> {
-                int comparison = Integer.compare(lhsLumens, rhsLumens);
-                if (comparison == 0) {
-                  // Values are equal. Not much else to do.
-                  return 0;
-                }
-
-                // Primarily order lumens by magnitude.
-                int absComparison = Integer.compare(Math.abs(lhsLumens), Math.abs(rhsLumens));
-                if (absComparison != 0) {
-                  return absComparison;
-                }
-
-                // At this point we know have different values with the same magnitude. I.e., one
-                // value is
-                // positive and the other negative. We want negative values to come after positive
-                // values,
-                // which is simply the opposite of the natural order.
-                return -comparison;
-              });
-
-      getLightAreasByLumens(allLightAreaMap, sight, lightSourceTokens);
-
-      // Check for daylight and add it to the overall light map.
-      if (zone.getVisionType() != Zone.VisionType.NIGHT) {
-        // Treat the entire visible area like a light source of minimal lumens.
-        addLightAreaByLumens(allLightAreaMap, 1, tokenVisibleArea);
-      }
-
-      // Check for personal vision and add to overall light map
-      if (sight.hasPersonalLightSource()) {
-        Area lightArea =
-            viewModel
-                .getLightingModel()
-                .calculatePersonalLightSourceArea(
-                    sight.getPersonalLightSource(), token, sight, Direction.CENTER);
-        if (lightArea != null) {
-          var lumens = sight.getPersonalLightSource().getLumens();
-          lumens = (lumens == 0) ? LUMEN_VISION : lumens;
-          // maybe some kind of imposed blindness?  Anyway, make sure to handle personal darkness..
-          addLightAreaByLumens(allLightAreaMap, lumens, lightArea);
-        }
-      }
-
       // Jamz: OK, we should have ALL light areas in one map sorted by lumens. Lets apply it to the
       // map
       Area allLightArea = new Area();
       for (Entry<Integer, Path2D> light : allLightAreaMap.entrySet()) {
         final var lightPath = light.getValue();
-        boolean isDarkness = false;
-        if (light.getKey() < 0) isDarkness = true;
+        final var isDarkness = light.getKey() < 0;
 
         if (origBounds.intersects(lightPath.getBounds2D())) {
           Area intersection = new Area(tokenVisibleArea);
@@ -248,31 +192,11 @@ public class ZoneView {
 
       tokenVisibleArea = allLightArea;
     }
-
     tokenVisionCache.put(token.getId(), tokenVisibleArea);
 
     // log.info("getVisibleArea: \t\t" + stopwatch);
 
     return tokenVisibleArea;
-  }
-
-  private static void addLightAreaByLumens(
-      Map<Integer, Path2D> lightAreasByLumens, int lumens, Shape area) {
-    var totalPath = lightAreasByLumens.computeIfAbsent(lumens, key -> new Path2D.Double());
-    totalPath.append(area.getPathIterator(null, 1), false);
-  }
-
-  private void getLightAreasByLumens(
-      Map<Integer, Path2D> allLightPathMap, SightType sight, List<Token> lightSourceTokens) {
-    for (Token lightSourceToken : lightSourceTokens) {
-      final Map<Integer, Area> lightArea =
-          viewModel.getLightingModel().getLumensToLitAreas(sight, lightSourceToken);
-
-      for (final var light : lightArea.entrySet()) {
-        // Add the token's light area to the global area in `allLightPathMap`.
-        addLightAreaByLumens(allLightPathMap, light.getKey(), light.getValue());
-      }
-    }
   }
 
   /** @return the list of drawable lights for auras. */

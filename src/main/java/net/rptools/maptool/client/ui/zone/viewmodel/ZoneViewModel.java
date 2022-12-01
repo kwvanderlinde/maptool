@@ -57,7 +57,11 @@ public class ZoneViewModel {
     tokenLocationModel = new TokenLocationModel(timer, zone, zoneRenderer::getZoneScale);
     selectionModel = new SelectionModel(zone, tokenLocationModel);
     lightingModel =
-        new LightingModel(zone, topologyModel, guid -> MapTool.getCampaign().getLightSource(guid));
+        new LightingModel(
+            zone,
+            topologyModel,
+            guid -> MapTool.getCampaign().getLightSource(guid),
+            lightId -> MapTool.getCampaign().getSightType(lightId));
   }
 
   public void update() {

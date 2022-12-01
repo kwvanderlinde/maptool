@@ -16,14 +16,20 @@ package net.rptools.maptool.client.ui.zone.viewmodel;
 
 import com.google.common.eventbus.Subscribe;
 import java.awt.Point;
+import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
+import java.awt.geom.Path2D;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -77,10 +83,16 @@ public class LightingModel {
   //  Big question is: do we hold onto the set of sights/sighted tokens? The current model is to
   //  flush aggressively and rely on the fact that ZoneView will add them back. We can stick with
   //  that for now, it's food for thought.
+  //  Auras tbd, those red-headed step-children of lights :p
+
+  /** Lumen for personal vision (darkvision). */
+  // TODO Better name.
+  private static final int LUMEN_VISION = 100;
 
   private final Zone zone;
   private final TopologyModel topologyModel;
   private final Function<GUID, LightSource> lightSourceResolver;
+  private final Function<String, SightType> sightResolver;
 
   /**
    * Map light source type to all tokens with that type.
@@ -96,23 +108,34 @@ public class LightingModel {
    *
    * <p>The lit areas are a mapping from lumens to corresponding areas.
    */
+  // TODO Ensure that each light source always exists in this cache. It's just sights that need to
+  //  be added beneath it.
   private final Map<GUID, Map<String, Map<Integer, Area>>> lightSourceCache = new HashMap<>();
   // TODO Are these even caches? I think they are just drawable light storage.
   /** Map each token to their map between sightType and set of lights. */
+  // TODO Ensure that each light source always exists in this cache. It's just sights that need to
+  //  be added beneath it.
   private final Map<GUID, Map<String, Set<DrawableLight>>> drawableLightCache = new HashMap<>();
   /**
    * Map each token to their personal drawable lights.
    *
    * <p>Unlike the other caches, we don't need to include the sight type because a token only has
    * one sight, and the personal sight only applies to that token.
+   *
+   * <p>Also unlike the other caches, the top-level GUID identifies any old token, not necessarily a
+   * light source token.
    */
   private final Map<GUID, Set<DrawableLight>> personalDrawableLightCache = new HashMap<>();
 
   public LightingModel(
-      Zone zone, TopologyModel topologyModel, Function<GUID, LightSource> lightSourceResolver) {
+      Zone zone,
+      TopologyModel topologyModel,
+      Function<GUID, LightSource> lightSourceResolver,
+      Function<String, SightType> sightResolver) {
     this.zone = zone;
     this.topologyModel = topologyModel;
     this.lightSourceResolver = lightSourceResolver;
+    this.sightResolver = sightResolver;
 
     new MapToolEventBus().getMainEventBus().register(this);
 
@@ -136,6 +159,8 @@ public class LightingModel {
       }
     }
   }
+
+  // region Events
 
   /**
    * Update the known light sources according to the new zone state.
@@ -206,10 +231,9 @@ public class LightingModel {
     processTokenAddChangeRemoveEvent(event.tokens(), true, false);
   }
 
-  // TODO Temporary evil. In the future, we hopefully won't need to expose the cache this way.
-  public boolean isKnownLightSource(Token token) {
-    return lightSourceCache.get(token.getId()) != null;
-  }
+  // endregion
+
+  // region Cache invalidation
 
   public void flush() {
     lightSourceCache.clear();
@@ -223,6 +247,124 @@ public class LightingModel {
     lightSourceCache.remove(token.getId());
     drawableLightCache.remove(token.getId());
     personalDrawableLightCache.remove(token.getId());
+  }
+
+  // endregion
+
+  /**
+   * Add a sighted token to the lighting model.
+   *
+   * <p>Internal: the token will be matched up with each known light source, and each light is added
+   * to lightSourceCache, drawableLightCache and personalDrawableLightCache along with the token's
+   * sight.
+   *
+   * @param token The token with the sight.
+   * @param tokenDaylightVision Any daylight to associate with the token's vision.
+   */
+  public Map<Integer, Path2D> addSightedToken(
+      @Nonnull Token token, @Nonnull Area tokenDaylightVision) {
+    // TODO Rework this method to fit the concept:
+    //  1. Add to lightSourceCache
+    //  2. Add to drawable lights cache / personal drawable lights cache.
+    //  3. Return the lumens areas (as paths; we don't want to convert to areas if they might be
+    // discarded anyways).
+    //  Beyond that, store the lumens association rather than returning it. Have the caller retrieve
+    //  the map after making sure it is added, as that will free them up to do things in different
+    //  orders.
+    // TODO Another way of handling daylight. The only real reason we need tokenVisibleArea to have
+    //  already been calculated for us is so we can add daylight to the map. If another strategy is
+    //  devised, we might be okay.
+
+    // Sanity
+    if (!token.getHasSight()) {
+      return Collections.emptyMap();
+    }
+
+    // TODO Check if already added and skip. We should be able to assume that tokenVisibleArea is
+    //  the same unless things are going really wrong.
+
+    SightType sight = sightResolver.apply(token.getSightType());
+    // More sanity checks; maybe sight type removed from campaign after token set?
+    if (sight == null) {
+      return Collections.emptyMap();
+    }
+
+    // Combine in the visible light areas
+    final var lightSourceTokens = new ArrayList<Token>();
+    // Add the tokens from the lightSourceMap with normal (not aura) lights
+    getLightSources().forEach(lightSourceTokens::add);
+    if (token.hasLightSources() && !lightSourceTokens.contains(token)) {
+      // This accounts for temporary tokens (such as during an "Expose Last Path" operation)
+      lightSourceTokens.add(token);
+    }
+
+    /* Hold all of our lights combined by lumens. Used for hard FoW reveal. */
+    final SortedMap<Integer, Path2D> allLightAreaMap =
+        new TreeMap<>(
+            (lhsLumens, rhsLumens) -> {
+              int comparison = Integer.compare(lhsLumens, rhsLumens);
+              if (comparison == 0) {
+                // Values are equal. Not much else to do.
+                return 0;
+              }
+
+              // Primarily order lumens by magnitude.
+              int absComparison = Integer.compare(Math.abs(lhsLumens), Math.abs(rhsLumens));
+              if (absComparison != 0) {
+                return absComparison;
+              }
+
+              // At this point we know have different values with the same magnitude. I.e., one
+              // value is positive and the other negative. We want negative values to come after
+              // positive values, which is simply the opposite of the natural order.
+              return -comparison;
+            });
+
+    getLightAreasByLumens(allLightAreaMap, sight, lightSourceTokens);
+
+    if (!tokenDaylightVision.isEmpty()) {
+      // Treat daylight as a light source of minimal lumens.
+      addLightAreaByLumens(allLightAreaMap, 1, tokenDaylightVision);
+    }
+
+    // Check for personal vision and add to overall light map
+    if (sight.hasPersonalLightSource()) {
+      Area lightArea =
+          calculatePersonalLightSourceArea(
+              sight.getPersonalLightSource(), token, sight, Direction.CENTER);
+      if (lightArea != null) {
+        var lumens = sight.getPersonalLightSource().getLumens();
+        lumens = (lumens == 0) ? LUMEN_VISION : lumens;
+        // maybe some kind of imposed blindness?  Anyway, make sure to handle personal darkness.
+        addLightAreaByLumens(allLightAreaMap, lumens, lightArea);
+      }
+    }
+
+    return allLightAreaMap;
+  }
+
+  private static void addLightAreaByLumens(
+      Map<Integer, Path2D> lightAreasByLumens, int lumens, Shape area) {
+    var totalPath = lightAreasByLumens.computeIfAbsent(lumens, key -> new Path2D.Double());
+    totalPath.append(area.getPathIterator(null, 1), false);
+  }
+
+  private void getLightAreasByLumens(
+      Map<Integer, Path2D> allLightPathMap, SightType sight, List<Token> lightSourceTokens) {
+    for (Token lightSourceToken : lightSourceTokens) {
+      final Map<Integer, Area> lightArea = getLumensToLitAreas(sight, lightSourceToken);
+
+      for (final var light : lightArea.entrySet()) {
+        // Add the token's light area to the global area in `allLightPathMap`.
+        addLightAreaByLumens(allLightPathMap, light.getKey(), light.getValue());
+      }
+    }
+  }
+
+  // TODO Temporary evil. Only used by ZoneView deciding when to flush. That's why we get away with
+  //  returning from the cache, but in principle we should return from lightSourceMap.
+  public boolean isKnownLightSource(Token token) {
+    return lightSourceCache.get(token.getId()) != null;
   }
 
   public Stream<Token> getLightSources() {
@@ -276,8 +418,7 @@ public class LightingModel {
    * @param lightSourceToken The token holding light sources.
    * @return The areas lit by the light source token, where the keys are lumens values.
    */
-  // TODO Accept a SightType instead of a String for first parameter.
-  public Map<Integer, Area> getLumensToLitAreas(SightType sight, Token lightSourceToken) {
+  private Map<Integer, Area> getLumensToLitAreas(SightType sight, Token lightSourceToken) {
     GUID tokenId = lightSourceToken.getId();
     Map<String, Map<Integer, Area>> areaBySightMap = lightSourceCache.get(tokenId);
     if (areaBySightMap != null) {
@@ -330,7 +471,7 @@ public class LightingModel {
    * @param direction the direction of the light source.
    * @return the area visible.
    */
-  public Area calculatePersonalLightSourceArea(
+  private Area calculatePersonalLightSourceArea(
       LightSource lightSource, Token lightSourceToken, SightType sight, Direction direction) {
     return calculateLightSourceArea(lightSource, lightSourceToken, sight, direction, true);
   }
