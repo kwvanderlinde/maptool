@@ -62,9 +62,21 @@ import net.rptools.maptool.model.zones.TokensRemoved;
  * rendered. Each range of a light corresponds to a different drawable light.
  */
 public class LightingModel {
-  // TODO At least some of the "caches" were relied upon by ZoneRenderer to have been explicitly
-  //  added to. But no more! We must manage them ourselves, or else give up the guise of being a
-  //  cache!
+  // TODO I don't think I'm pulling the drawable light caches out of here, so I should include them
+  //  as a core feature. They can't simply be thought of a "caches" because they are relied upon by
+  //  other components. Also DrawableLight is Swing-specific, we should expose something that is
+  //  just as convenient, but which doesn't require a drawable light. E.g., a KnownLightSource that
+  //  carries the same information as the parameters to addLightSourceToCache()
+  //  So what does this model look like? I think the important part is that we avoid plain get-style
+  //  operations if they also are required to add to the drawable caches. Rather we should have
+  //  operations that are explicit as "adding" lights.
+  //  Even better, the model should be adding _sights_. When a sight is added, then for each light
+  //  source (plus the current token which may not be included) we calculate the lit areas by
+  //  lumens, and add each light to the drawableLightCache. Additionally, we add the sight's
+  //  personal light source to the personalDrawableLightCache.
+  //  Big question is: do we hold onto the set of sights/sighted tokens? The current model is to
+  //  flush aggressively and rely on the fact that ZoneView will add them back. We can stick with
+  //  that for now, it's food for thought.
 
   private final Zone zone;
   private final TopologyModel topologyModel;
