@@ -69,7 +69,12 @@ public class LightingModel {
   // TODO Are these even caches? I think they are just drawable light storage.
   /** Map each token to their map between sightType and set of lights. */
   private final Map<GUID, Map<String, Set<DrawableLight>>> drawableLightCache = new HashMap<>();
-  /** Map each token to their personal drawable lights. */
+  /**
+   * Map each token to their personal drawable lights.
+   *
+   * <p>Unlike the other caches, we don't need to include the sight type because a token only has
+   * one sight, and the personal sight only applies to that token.</p>
+   */
   private final Map<GUID, Set<DrawableLight>> personalDrawableLightCache = new HashMap<>();
 
   public LightingModel(
