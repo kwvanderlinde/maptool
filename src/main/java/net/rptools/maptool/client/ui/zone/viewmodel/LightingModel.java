@@ -14,18 +14,25 @@
  */
 package net.rptools.maptool.client.ui.zone.viewmodel;
 
+import com.google.common.eventbus.Subscribe;
 import java.awt.Point;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import net.rptools.maptool.client.AppUtil;
+import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.DrawableLight;
 import net.rptools.maptool.client.ui.zone.FogUtil;
 import net.rptools.maptool.client.ui.zone.PlayerView;
+import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.AttachedLightSource;
 import net.rptools.maptool.model.Direction;
 import net.rptools.maptool.model.GUID;
@@ -34,6 +41,9 @@ import net.rptools.maptool.model.LightSource;
 import net.rptools.maptool.model.SightType;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.zones.TokensAdded;
+import net.rptools.maptool.model.zones.TokensChanged;
+import net.rptools.maptool.model.zones.TokensRemoved;
 
 /**
  * Manages a zone's lighting.
@@ -61,6 +71,15 @@ public class LightingModel {
   private final Function<GUID, LightSource> lightSourceResolver;
 
   /**
+   * Map light source type to all tokens with that type.
+   *
+   * <p>This is a reflection of zone state, so it must be kept in sync with the zone.
+   */
+  private final Map<LightSource.Type, Set<GUID>> lightSourceMap = new HashMap<>();
+
+  // TODO Consider reversing the nesting of these maps. Look up by sight first, then token. That
+  //  could enable better sight-sharing.
+  /**
    * Caches lit areas per token and sight type.
    *
    * <p>The lit areas are a mapping from lumens to corresponding areas.
@@ -73,7 +92,7 @@ public class LightingModel {
    * Map each token to their personal drawable lights.
    *
    * <p>Unlike the other caches, we don't need to include the sight type because a token only has
-   * one sight, and the personal sight only applies to that token.</p>
+   * one sight, and the personal sight only applies to that token.
    */
   private final Map<GUID, Set<DrawableLight>> personalDrawableLightCache = new HashMap<>();
 
@@ -82,6 +101,97 @@ public class LightingModel {
     this.zone = zone;
     this.topologyModel = topologyModel;
     this.lightSourceResolver = lightSourceResolver;
+
+    new MapToolEventBus().getMainEventBus().register(this);
+
+    // Add all light sources right away.
+    for (final var token : zone.getAllTokens()) {
+      if (token.hasLightSources() && token.isVisible()) {
+        // TODO Would love to not depend on AppUtil here and instead require a current player to be
+        //  passed in somehow.
+        if (!token.isVisibleOnlyToOwner() || AppUtil.playerOwns(token)) {
+          for (AttachedLightSource als : token.getLightSources()) {
+            // TODO Should we unify this with the logic in getLumensToLitAreas()?
+            LightSource lightSource = lightSourceResolver.apply(als.getLightSourceId());
+            if (lightSource == null) {
+              continue;
+            }
+            Set<GUID> lightSet =
+                lightSourceMap.computeIfAbsent(lightSource.getType(), k -> new HashSet<>());
+            lightSet.add(token.getId());
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Update the known light sources according to the new zone state.
+   *
+   * @param tokens the list of tokens that were added, changed or removed from the zone.
+   */
+  private void processTokenAddChangeRemoveEvent(
+      List<Token> tokens, boolean flushTokens, boolean forceLightRemoval) {
+    boolean topologyChanged = tokens.stream().anyMatch(Token::hasAnyTopology);
+    if (flushTokens) {
+      tokens.forEach(this::flush);
+    }
+
+    // TODO Don't rely on MapTool.getPlayer(), but get the view model's player.
+    for (Token token : tokens) {
+      final var hasLightSource =
+          token.hasLightSources() && (token.isVisible() || MapTool.getPlayer().isEffectiveGM());
+      final var removeLight = forceLightRemoval || !hasLightSource;
+      for (AttachedLightSource als : token.getLightSources()) {
+        // TODO Can we unify this with the logic in the three other places?
+        LightSource lightSource = lightSourceResolver.apply(als.getLightSourceId());
+        if (lightSource != null) {
+          Set<GUID> lightSet = lightSourceMap.get(lightSource.getType());
+          if (removeLight) {
+            if (lightSet != null) {
+              lightSet.remove(token.getId());
+            }
+          } else {
+            if (lightSet == null) {
+              lightSet = new HashSet<>();
+              lightSourceMap.put(lightSource.getType(), lightSet);
+            }
+            lightSet.add(token.getId());
+          }
+        }
+      }
+    }
+
+    if (topologyChanged) {
+      flush();
+    }
+  }
+
+  @Subscribe
+  private void onTokensAdded(TokensAdded event) {
+    if (event.zone() != zone) {
+      return;
+    }
+
+    processTokenAddChangeRemoveEvent(event.tokens(), false, false);
+  }
+
+  @Subscribe
+  private void onTokensRemoved(TokensRemoved event) {
+    if (event.zone() != zone) {
+      return;
+    }
+
+    processTokenAddChangeRemoveEvent(event.tokens(), true, true);
+  }
+
+  @Subscribe
+  private void onTokensChanged(TokensChanged event) {
+    if (event.zone() != zone) {
+      return;
+    }
+
+    processTokenAddChangeRemoveEvent(event.tokens(), true, false);
   }
 
   // TODO Temporary evil. In the future, we hopefully won't need to expose the cache this way.
@@ -101,6 +211,26 @@ public class LightingModel {
     lightSourceCache.remove(token.getId());
     drawableLightCache.remove(token.getId());
     personalDrawableLightCache.remove(token.getId());
+  }
+
+  public Stream<Token> getLightSources() {
+    final var guids = lightSourceMap.get(LightSource.Type.NORMAL);
+    if (guids == null) {
+      return Stream.empty();
+    }
+
+    return guids.stream().map(zone::getToken).filter(Objects::nonNull);
+  }
+
+  // TODO I know auras are _like_ lights, and are defined as lights, but let's be real they are not.
+  //  Notably, they should never be subject to light-vs-darkness and lumens never matter.
+  public Stream<Token> getAuras() {
+    final var guids = lightSourceMap.get(LightSource.Type.AURA);
+    if (guids == null) {
+      return Stream.empty();
+    }
+
+    return guids.stream().map(zone::getToken).filter(Objects::nonNull);
   }
 
   // TODO Ideally this can move into its own data structure.

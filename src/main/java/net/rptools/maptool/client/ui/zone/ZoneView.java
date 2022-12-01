@@ -44,8 +44,6 @@ public class ZoneView {
   private final Map<GUID, Area> tokenVisibleAreaCache = new HashMap<>();
   /** Map each token to their current vision, depending on other lights. */
   private final Map<GUID, Area> tokenVisionCache = new HashMap<>();
-  /** Map light source type to all tokens with that type. */
-  private final Map<LightSource.Type, Set<GUID>> lightSourceMap = new HashMap<>();
   /** Map the PlayerView to its exposed area. */
   private final Map<PlayerView, Area> exposedAreaMap = new HashMap<>();
   /** Map the PlayerView to its visible area. */
@@ -62,7 +60,6 @@ public class ZoneView {
   public ZoneView(Zone zone, ZoneViewModel viewModel) {
     this.zone = zone;
     this.viewModel = viewModel;
-    findLightSources();
 
     new MapToolEventBus().getMainEventBus().register(this);
   }
@@ -172,15 +169,7 @@ public class ZoneView {
       List<Token> lightSourceTokens = new ArrayList<Token>();
 
       // Add the tokens from the lightSourceMap with normal (not aura) lights
-      if (lightSourceMap.get(LightSource.Type.NORMAL) != null) {
-        for (GUID lightSourceTokenId : lightSourceMap.get(LightSource.Type.NORMAL)) {
-          Token lightSourceToken = zone.getToken(lightSourceTokenId);
-          // Verify if the token still exists
-          if (lightSourceToken != null) {
-            lightSourceTokens.add(lightSourceToken);
-          }
-        }
-      }
+      viewModel.getLightingModel().getLightSources().forEach(lightSourceTokens::add);
 
       if (token.hasLightSources() && !lightSourceTokens.contains(token)) {
         // This accounts for temporary tokens (such as during an Expose Last Path)
@@ -289,83 +278,62 @@ public class ZoneView {
   /** @return the list of drawable lights for auras. */
   public List<DrawableLight> getAuras() {
     List<DrawableLight> lightList = new LinkedList<DrawableLight>();
-    if (lightSourceMap.get(LightSource.Type.AURA) != null) {
-      for (GUID lightSourceToken : lightSourceMap.get(LightSource.Type.AURA)) {
-        Token token = zone.getToken(lightSourceToken);
-        if (token == null) {
-          continue;
-        }
-        Point p = FogUtil.calculateVisionCenter(token, zone);
+    viewModel
+        .getLightingModel()
+        .getAuras()
+        .forEach(
+            token -> {
+              Point p = FogUtil.calculateVisionCenter(token, zone);
 
-        for (AttachedLightSource als : token.getLightSources()) {
-          LightSource lightSource = MapTool.getCampaign().getLightSource(als.getLightSourceId());
-          if (lightSource == null) {
-            continue;
-          }
-          if (lightSource.getType() == LightSource.Type.AURA) {
-            // This needs to be cached somehow
-            Area lightSourceArea = lightSource.getArea(token, zone, Direction.CENTER);
-            Area visibleArea =
-                FogUtil.calculateVisibility(
-                    p.x,
-                    p.y,
-                    lightSourceArea,
-                    viewModel.getTopologyModel().getTopologyTree(Zone.TopologyType.WALL_VBL),
-                    viewModel.getTopologyModel().getTopologyTree(Zone.TopologyType.HILL_VBL),
-                    viewModel.getTopologyModel().getTopologyTree(Zone.TopologyType.PIT_VBL));
-            if (visibleArea == null) {
-              continue;
-            }
-            for (Light light : lightSource.getLightList()) {
-              boolean isOwner = token.getOwners().contains(MapTool.getPlayer().getName());
-              if ((light.isGM() && !MapTool.getPlayer().isEffectiveGM())) {
-                continue;
+              for (AttachedLightSource als : token.getLightSources()) {
+                LightSource lightSource =
+                    MapTool.getCampaign().getLightSource(als.getLightSourceId());
+                if (lightSource == null) {
+                  continue;
+                }
+                if (lightSource.getType() == LightSource.Type.AURA) {
+                  // This needs to be cached somehow
+                  Area lightSourceArea = lightSource.getArea(token, zone, Direction.CENTER);
+                  Area visibleArea =
+                      FogUtil.calculateVisibility(
+                          p.x,
+                          p.y,
+                          lightSourceArea,
+                          viewModel.getTopologyModel().getTopologyTree(Zone.TopologyType.WALL_VBL),
+                          viewModel.getTopologyModel().getTopologyTree(Zone.TopologyType.HILL_VBL),
+                          viewModel.getTopologyModel().getTopologyTree(Zone.TopologyType.PIT_VBL));
+                  if (visibleArea == null) {
+                    continue;
+                  }
+                  for (Light light : lightSource.getLightList()) {
+                    boolean isOwner = token.getOwners().contains(MapTool.getPlayer().getName());
+                    if ((light.isGM() && !MapTool.getPlayer().isEffectiveGM())) {
+                      continue;
+                    }
+                    if ((!token.isVisible()) && !MapTool.getPlayer().isEffectiveGM()) {
+                      continue;
+                    }
+                    if (token.isVisibleOnlyToOwner() && !AppUtil.playerOwns(token)) {
+                      continue;
+                    }
+                    if (light.isOwnerOnly()
+                        && lightSource.getType() == LightSource.Type.AURA
+                        && !isOwner
+                        && !MapTool.getPlayer().isEffectiveGM()) {
+                      continue;
+                    }
+                    lightList.add(
+                        new DrawableLight(
+                            LightSource.Type.AURA,
+                            light.getPaint(),
+                            visibleArea,
+                            lightSource.getLumens()));
+                  }
+                }
               }
-              if ((!token.isVisible()) && !MapTool.getPlayer().isEffectiveGM()) {
-                continue;
-              }
-              if (token.isVisibleOnlyToOwner() && !AppUtil.playerOwns(token)) {
-                continue;
-              }
-              if (light.isOwnerOnly()
-                  && lightSource.getType() == LightSource.Type.AURA
-                  && !isOwner
-                  && !MapTool.getPlayer().isEffectiveGM()) {
-                continue;
-              }
-              lightList.add(
-                  new DrawableLight(
-                      LightSource.Type.AURA,
-                      light.getPaint(),
-                      visibleArea,
-                      lightSource.getLumens()));
-            }
-          }
-        }
-      }
-    }
+            });
+
     return lightList;
-  }
-
-  /** Find the light sources from all appropriate tokens, and store them in lightSourceMap. */
-  private void findLightSources() {
-    lightSourceMap.clear();
-
-    for (Token token : zone.getAllTokens()) {
-      if (token.hasLightSources() && token.isVisible()) {
-        if (!token.isVisibleOnlyToOwner() || AppUtil.playerOwns(token)) {
-          for (AttachedLightSource als : token.getLightSources()) {
-            LightSource lightSource = MapTool.getCampaign().getLightSource(als.getLightSourceId());
-            if (lightSource == null) {
-              continue;
-            }
-            Set<GUID> lightSet =
-                lightSourceMap.computeIfAbsent(lightSource.getType(), k -> new HashSet<>());
-            lightSet.add(token.getId());
-          }
-        }
-      }
-    }
   }
 
   /**
@@ -487,30 +455,20 @@ public class ZoneView {
     flush();
   }
 
-  private boolean flushExistingTokens(List<Token> tokens) {
-    boolean tokenChangedTopology = false;
-    for (Token token : tokens) {
-      if (token.hasAnyTopology()) tokenChangedTopology = true;
-      flush(token);
-    }
-    // Ug, stupid hack here, can't find a bug where if a NPC token is moved before lights are
-    // cleared on another token, changes aren't pushed to client?
-    // tokenVisionCache.clear();
-    return tokenChangedTopology;
-  }
-
   @Subscribe
   private void onTokensAdded(TokensAdded event) {
     if (event.zone() != zone) {
       return;
     }
 
-    boolean tokenChangedTopology = processTokenAddChangeEvent(event.tokens());
-
-    // Moved this event to the bottom so we can check the other events
-    // since if a token that has topology is added/removed/edited (rotated/moved/etc)
-    // it should also trip a Topology change
-    if (tokenChangedTopology) {
+    // What if all tokens lost their sight? Shouldn't we clear in that case too?
+    final var hasSight = event.tokens().stream().anyMatch(Token::getHasSight);
+    if (hasSight) {
+      exposedAreaMap.clear();
+      visibleAreaMap.clear();
+    }
+    boolean topologyChanged = event.tokens().stream().anyMatch(Token::hasAnyTopology);
+    if (topologyChanged) {
       flush();
     }
   }
@@ -521,26 +479,9 @@ public class ZoneView {
       return;
     }
 
-    boolean tokenChangedTopology = flushExistingTokens(event.tokens());
-
-    for (Token token : event.tokens()) {
-      if (token.hasAnyTopology()) tokenChangedTopology = true;
-      for (AttachedLightSource als : token.getLightSources()) {
-        LightSource lightSource = MapTool.getCampaign().getLightSource(als.getLightSourceId());
-        if (lightSource == null) {
-          continue;
-        }
-        Set<GUID> lightSet = lightSourceMap.get(lightSource.getType());
-        if (lightSet != null) {
-          lightSet.remove(token.getId());
-        }
-      }
-    }
-
-    // Moved this event to the bottom so we can check the other events
-    // since if a token that has topology is added/removed/edited (rotated/moved/etc)
-    // it should also trip a Topology change
-    if (tokenChangedTopology) {
+    event.tokens().forEach(this::flush);
+    boolean topologyChanged = event.tokens().stream().anyMatch(Token::hasAnyTopology);
+    if (topologyChanged) {
       flush();
     }
   }
@@ -551,56 +492,17 @@ public class ZoneView {
       return;
     }
 
-    flushExistingTokens(event.tokens());
-
-    boolean tokenChangedTopology = processTokenAddChangeEvent(event.tokens());
-
-    // Moved this event to the bottom so we can check the other events
-    // since if a token that has topology is added/removed/edited (rotated/moved/etc)
-    // it should also trip a Topology change
-    if (tokenChangedTopology) {
-      flush();
-    }
-  }
-
-  /**
-   * Update lightSourceMap with the light sources of the tokens, and clear visibleAreaMap if one of
-   * the tokens has sight.
-   *
-   * @param tokens the list of tokens
-   * @return if one of the token has topology or not
-   */
-  private boolean processTokenAddChangeEvent(List<Token> tokens) {
-    boolean hasSight = false;
-    boolean hasTopology = false;
-    Campaign c = MapTool.getCampaign();
-
-    for (Token token : tokens) {
-      boolean hasLightSource =
-          token.hasLightSources() && (token.isVisible() || MapTool.getPlayer().isEffectiveGM());
-      if (token.hasAnyTopology()) hasTopology = true;
-      for (AttachedLightSource als : token.getLightSources()) {
-        LightSource lightSource = c.getLightSource(als.getLightSourceId());
-        if (lightSource != null) {
-          Set<GUID> lightSet = lightSourceMap.get(lightSource.getType());
-          if (hasLightSource) {
-            if (lightSet == null) {
-              lightSet = new HashSet<GUID>();
-              lightSourceMap.put(lightSource.getType(), lightSet);
-            }
-            lightSet.add(token.getId());
-          } else if (lightSet != null) lightSet.remove(token.getId());
-        }
-      }
-      hasSight |= token.getHasSight();
-    }
-
+    event.tokens().forEach(this::flush);
+    // What if all tokens lost their sight? Shouldn't we clear in that case too?
+    final var hasSight = event.tokens().stream().anyMatch(Token::getHasSight);
     if (hasSight) {
       exposedAreaMap.clear();
       visibleAreaMap.clear();
     }
-
-    return hasTopology;
+    boolean topologyChanged = event.tokens().stream().anyMatch(Token::hasAnyTopology);
+    if (topologyChanged) {
+      flush();
+    }
   }
 
   /** Has a single field: the visibleArea area */
