@@ -35,7 +35,6 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.ui.zone.DrawableLight;
 import net.rptools.maptool.client.ui.zone.FogUtil;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.events.MapToolEventBus;
@@ -63,9 +62,8 @@ import net.rptools.maptool.model.zones.TokensRemoved;
  *   <li>How lights interact with sights
  * </ul>
  *
- * <p>We do not directly expose light sources, but instead work with _drawable lights_. A drawable
- * light is little more than a paint combined with an area, so it is something that can be easily
- * rendered. Each range of a light corresponds to a different drawable light.
+ * <p>We do not directly expose light sources, but instead work with _lit regions_. A lit region is
+ * an area of the map with an associated light and lumens value.
  */
 public class LightingModel {
   // TODO I don't think I'm pulling the drawable light caches out of here, so I should include them
@@ -84,6 +82,8 @@ public class LightingModel {
   //  flush aggressively and rely on the fact that ZoneView will add them back. We can stick with
   //  that for now, it's food for thought.
   //  Auras tbd, those red-headed step-children of lights :p
+
+  public record LitRegion(Area lightArea, int lumens, Light light) {}
 
   /** Lumen for personal vision (darkvision). */
   // TODO Better name.
@@ -111,13 +111,12 @@ public class LightingModel {
   // TODO Ensure that each light source always exists in this cache. It's just sights that need to
   //  be added beneath it.
   private final Map<GUID, Map<String, Map<Integer, Area>>> lightSourceCache = new HashMap<>();
-  // TODO Are these even caches? I think they are just drawable light storage.
-  /** Map each token to their map between sightType and set of lights. */
+  /** Map each token to their map between sight and set of lit regions. */
   // TODO Ensure that each light source always exists in this cache. It's just sights that need to
   //  be added beneath it.
-  private final Map<GUID, Map<String, Set<DrawableLight>>> drawableLightCache = new HashMap<>();
+  private final Map<GUID, Map<String, Set<LitRegion>>> litRegionsCache = new HashMap<>();
   /**
-   * Map each token to their personal drawable lights.
+   * Map each token to their personal lit regions.
    *
    * <p>Unlike the other caches, we don't need to include the sight type because a token only has
    * one sight, and the personal sight only applies to that token.
@@ -125,7 +124,7 @@ public class LightingModel {
    * <p>Also unlike the other caches, the top-level GUID identifies any old token, not necessarily a
    * light source token.
    */
-  private final Map<GUID, Set<DrawableLight>> personalDrawableLightCache = new HashMap<>();
+  private final Map<GUID, Set<LitRegion>> personalLitRegionsCache = new HashMap<>();
 
   public LightingModel(
       Zone zone,
@@ -239,14 +238,14 @@ public class LightingModel {
     lightSourceCache.clear();
     // TODO Consider whether these are truly caches and whether they actually belong in a
     //  dedicated data structure.
-    drawableLightCache.clear();
-    personalDrawableLightCache.clear();
+    litRegionsCache.clear();
+    personalLitRegionsCache.clear();
   }
 
   public void flush(Token token) {
     lightSourceCache.remove(token.getId());
-    drawableLightCache.remove(token.getId());
-    personalDrawableLightCache.remove(token.getId());
+    litRegionsCache.remove(token.getId());
+    personalLitRegionsCache.remove(token.getId());
   }
 
   // endregion
@@ -255,8 +254,7 @@ public class LightingModel {
    * Add a sighted token to the lighting model.
    *
    * <p>Internal: the token will be matched up with each known light source, and each light is added
-   * to lightSourceCache, drawableLightCache and personalDrawableLightCache along with the token's
-   * sight.
+   * to lightSourceCache, litRegionsCache and personalLitRegionsCache along with the token's sight.
    *
    * @param token The token with the sight.
    * @param tokenDaylightVision Any daylight to associate with the token's vision.
@@ -388,18 +386,18 @@ public class LightingModel {
   }
 
   // TODO Ideally this can move into its own data structure.
-  public Set<DrawableLight> getDrawableLights(@Nonnull PlayerView view) {
-    Set<DrawableLight> lightSet = new HashSet<>();
+  public Set<LitRegion> getLitRegions(@Nonnull PlayerView view) {
+    Set<LitRegion> lightSet = new HashSet<>();
 
-    for (Map<String, Set<DrawableLight>> map : drawableLightCache.values()) {
-      for (Set<DrawableLight> set : map.values()) {
+    for (Map<String, Set<LitRegion>> map : litRegionsCache.values()) {
+      for (Set<LitRegion> set : map.values()) {
         lightSet.addAll(set);
       }
     }
     if (view.isUsingTokenView()) {
-      // Get the personal drawable lights of the tokens of the player view
+      // Get the personal lit regions of the tokens of the player view
       for (Token token : view.getTokens()) {
-        Set<DrawableLight> lights = personalDrawableLightCache.get(token.getId());
+        Set<LitRegion> lights = personalLitRegionsCache.get(token.getId());
         if (lights != null) {
           lightSet.addAll(lights);
         }
@@ -458,12 +456,12 @@ public class LightingModel {
   }
 
   /**
-   * Get the area visible to a token given its sight, and add a corresponding drawable light.
+   * Get the area visible to a token given its sight, and cache a corresponding lit region.
    *
    * <p>The given sight must be the sight for the given token.
    *
-   * <p>Internal: the results will be added to personalDrawableLightCache. Note that the calculated
-   * area is <emph>not</emph> cached.
+   * <p>Internal: the results will be added to personalLitRegionCache. Note that the calculated area
+   * is <emph>not</emph> cached.
    *
    * @param lightSource the personal light source.
    * @param lightSourceToken the token holding the light source.
@@ -477,9 +475,9 @@ public class LightingModel {
   }
 
   /**
-   * Get the area visible for a given sight and light, and add a corresponding drawable light.
+   * Get the area visible for a given sight and light, and cache a corresponding lit region.
    *
-   * <p>Internal: the results will be added to drawableLightCache. Note that the calculated area is
+   * <p>Internal: the results will be added to litRegionCache. Note that the calculated area is
    * <emph>not</emph> cached.
    *
    * @param lightSource the personal light source.
@@ -497,7 +495,7 @@ public class LightingModel {
 
   /**
    * Calculate the area visible by a sight type for a given lightSource, and put the lights in
-   * drawableLightCache.
+   * litRegionsCache (for lights) or personalLitRegionsCache (for personal lights).
    *
    * @param lightSource the light source. Not a personal light.
    * @param lightSourceToken the token holding the light source.
@@ -533,12 +531,8 @@ public class LightingModel {
             topologyModel.getTopologyTree(Zone.TopologyType.HILL_VBL),
             topologyModel.getTopologyTree(Zone.TopologyType.PIT_VBL));
 
-    // TODO I don't want to cache drawables here. I would rather have the caller iterate over
-    //  known lights and build the drawables on-demand, it may well be outside the scope of the
-    //  LightingModel altogether. Then again, might as well do it in here rather than elsewhere,
-    //  but I still don't like how this "cache" is ultimately used as the source of truth.
     if (visibleArea != null && lightSource.getType() == LightSource.Type.NORMAL) {
-      addLightSourceToCache(
+      addLitRegion(
           visibleArea, p, lightSource, lightSourceToken, sight, direction, isPersonalLight);
     }
     return visibleArea;
@@ -546,7 +540,7 @@ public class LightingModel {
 
   /**
    * Adds the light source as seen by a given sight to the corresponding cache. Lights (but not
-   * darkness) with a color CSS value are stored in the drawableLightCache.
+   * darkness) with a color CSS value are stored in the litRegionsCache or personalLitRegionsCache.
    *
    * @param visibleArea the area visible from the light source token
    * @param p the vision center of the light source token
@@ -555,17 +549,7 @@ public class LightingModel {
    * @param sight the sight
    * @param direction the direction of the light source
    */
-  // TODO I don't like it. Lots of work being done eagerly here for a "cache". Also, IIRC, the
-  //  drawable light "caches" are taken as a source of truth during rendering, potentially a big
-  //  no-no.
-  //  Except... it seems the idea is that the same lights that had their areas calculated for
-  //  exposure are the ones that need to be drawn. Not a bad assumption, but I would assert that
-  //  it would be easier to follow this class and the general flow if this caching/stashing was
-  //  done on an as-needed basis.
-  // TODO Rename this. This isn't caching light sources, it is building a source-of-truth of
-  //  drawable lights that the renderer can rely on. In principle this should be its own data
-  //  structure that the caller builds.
-  private void addLightSourceToCache(
+  private void addLitRegion(
       Area visibleArea,
       Point p,
       LightSource lightSource,
@@ -574,7 +558,7 @@ public class LightingModel {
       Direction direction,
       boolean isPersonalLight) {
     // Keep track of colored light
-    Set<DrawableLight> lightSet = new HashSet<>();
+    Set<LitRegion> lightSet = new HashSet<>();
     for (Light light : lightSource.getLightList()) {
       Area lightArea = lightSource.getArea(lightSourceToken, zone, direction, light);
       if (sight.getMultiplier() != 1) {
@@ -587,24 +571,15 @@ public class LightingModel {
       // If a light has no paint, it's a "bright light" that just reveal FoW but doesn't need to be
       // rendered.
       if (light.getPaint() != null || lightSource.getLumens() < 0) {
-        lightSet.add(
-            new DrawableLight(
-                lightSource.getType(), light.getPaint(), lightArea, lightSource.getLumens()));
+        lightSet.add(new LitRegion(lightArea, lightSource.getLumens(), light));
       }
     }
-    // FIXME There was a bug report of a ConcurrentModificationException regarding
-    // drawableLightCache.
-    // I don't see how, but perhaps this code -- and the ones in flush() and flush(Token) -- should
-    // be
-    // wrapped in a synchronization block? This method is probably called only on the same thread as
-    // getDrawableLights() but the two flush() methods may be called from different threads. How to
-    // verify this with Eclipse? Maybe the flush() methods should defer modifications to the
-    // EventDispatchingThread?
+
     if (isPersonalLight) {
-      personalDrawableLightCache.put(lightSourceToken.getId(), lightSet);
+      personalLitRegionsCache.put(lightSourceToken.getId(), lightSet);
     } else {
-      Map<String, Set<DrawableLight>> lightMap =
-          drawableLightCache.computeIfAbsent(lightSourceToken.getId(), k -> new HashMap<>());
+      Map<String, Set<LitRegion>> lightMap =
+          litRegionsCache.computeIfAbsent(lightSourceToken.getId(), k -> new HashMap<>());
       if (lightMap.get(sight.getName()) != null) {
         lightMap.get(sight.getName()).addAll(lightSet);
       } else {

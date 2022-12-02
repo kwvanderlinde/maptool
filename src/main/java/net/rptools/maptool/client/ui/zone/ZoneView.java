@@ -22,6 +22,7 @@ import java.awt.geom.Rectangle2D;
 import java.util.*;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.viewmodel.ZoneViewModel;
@@ -267,7 +268,15 @@ public class ZoneView {
    * @return the set of drawable lights.
    */
   public Set<DrawableLight> getDrawableLights(PlayerView view) {
-    return viewModel.getLightingModel().getDrawableLights(view);
+    return viewModel.getLightingModel().getLitRegions(view).stream()
+        .map(
+            litArea ->
+                new DrawableLight(
+                    LightSource.Type.NORMAL,
+                    litArea.light().getPaint(),
+                    litArea.lightArea(),
+                    litArea.lumens()))
+        .collect(Collectors.toSet());
   }
 
   /**
