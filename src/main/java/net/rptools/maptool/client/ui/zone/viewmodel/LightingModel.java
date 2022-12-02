@@ -94,6 +94,11 @@ public class LightingModel {
   private final Function<GUID, LightSource> lightSourceResolver;
   private final Function<String, SightType> sightResolver;
 
+  // TODO Rework lightSourceCache and litRegionsCache to be one map so that the set of lighting keys
+  //  is unambiguous and can be easily enforced to be identical to the GUIDs in lightSourceMap.
+  //  personalLitRegionCache is not specifically for light-bearing token, so don't give it the same
+  //  treatment.
+
   /**
    * Map light source type to all tokens with that type.
    *
