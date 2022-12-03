@@ -342,61 +342,40 @@ public class ZoneRenderer extends JComponent
         selectedTokenSet.remove(guid);
       }
     }
-    selectionSetMap.put(keyToken, new SelectionSet(zone, playerId, keyToken, tokenList));
+    viewModel.addMoveSelectionSet(playerId, keyToken, tokenList);
     repaintDebouncer.dispatch(); // Jamz: Seems to have no affect?
   }
 
   public boolean hasMoveSelectionSetMoved(GUID keyToken, ZonePoint point) {
-    SelectionSet set = selectionSetMap.get(keyToken);
-    if (set == null) {
-      return false;
-    }
-    Token token = zone.getToken(keyToken);
-    int x = point.x - token.getX();
-    int y = point.y - token.getY();
-
-    return set.getOffsetX() != x || set.getOffsetY() != y;
+    return viewModel.hasMoveSelectionSetMoved(keyToken, point);
   }
 
   public void updateMoveSelectionSet(GUID keyToken, ZonePoint offset) {
-    SelectionSet set = selectionSetMap.get(keyToken);
-    if (set == null) {
-      return;
-    }
-    Token token = zone.getToken(keyToken);
-    set.setOffset(
-        offset.x - token.getX(),
-        offset.y - token.getY(),
-        // Skip AI Pathfinding if not on the token layer...
-        ZoneRenderer.this.getActiveLayer().equals(Layer.TOKEN)
-            && MapTool.getServerPolicy().isUsingAstarPathfinding(),
-        this::repaint);
+    viewModel.setMoveSelectionSetOffset(
+            keyToken,
+            offset,
+            // Skip AI Pathfinding if not on the token layer...
+            ZoneRenderer.this.getActiveLayer().equals(Layer.TOKEN)
+                    && MapTool.getServerPolicy().isUsingAstarPathfinding(),
+            this::repaint
+    );
     repaintDebouncer.dispatch(); // Jamz: may cause flicker when using AI
   }
 
   public void toggleMoveSelectionSetWaypoint(GUID keyToken, ZonePoint location) {
-    SelectionSet set = selectionSetMap.get(keyToken);
-    if (set == null) {
-      return;
-    }
-    set.toggleWaypoint(location);
+    viewModel.toggleMoveSelectionSetWaypoint(keyToken, location);
     repaintDebouncer.dispatch();
   }
 
   public ZonePoint getLastWaypoint(GUID keyToken) {
-    SelectionSet set = selectionSetMap.get(keyToken);
-    if (set == null) {
-      return null;
-    }
-    return set.getLastWaypoint();
+    return viewModel.getLastWaypoint(keyToken);
   }
 
   public void removeMoveSelectionSet(GUID keyToken) {
-    SelectionSet set = selectionSetMap.remove(keyToken);
-    if (set == null) {
-      return;
+    final var removedSet = viewModel.removeMoveSelectionSet(keyToken);
+    if (removedSet != null) {
+      repaintDebouncer.dispatch();
     }
-    repaintDebouncer.dispatch();
   }
 
   /**
@@ -610,12 +589,7 @@ public class ZoneRenderer extends JComponent
   }
 
   public boolean isTokenMoving(Token token) {
-    for (SelectionSet set : selectionSetMap.values()) {
-      if (set.contains(token)) {
-        return true;
-      }
-    }
-    return false;
+    return viewModel.isTokenMoving(token);
   }
 
   protected void setViewOffset(int x, int y) {
@@ -1940,36 +1914,21 @@ public class ZoneRenderer extends JComponent
   }
 
   private Set<SelectionSet> getOwnedMovementSet(PlayerView view) {
-    Set<SelectionSet> movementSet = new HashSet<SelectionSet>();
-    for (SelectionSet selection : selectionSetMap.values()) {
-      if (selection.getPlayerId().equals(MapTool.getPlayer().getName())) {
-        movementSet.add(selection);
-      }
-    }
-    return movementSet;
+    return viewModel.getOwnedMovementSet(MapTool.getPlayer());
   }
 
   private Set<SelectionSet> getUnOwnedMovementSet(PlayerView view) {
-    Set<SelectionSet> movementSet = new HashSet<SelectionSet>();
-    for (SelectionSet selection : selectionSetMap.values()) {
-      if (!selection.getPlayerId().equals(MapTool.getPlayer().getName())) {
-        movementSet.add(selection);
-      }
-    }
-    return movementSet;
+    return viewModel.getUnOwnedMovementSet(MapTool.getPlayer());
   }
 
   protected void showBlockedMoves(Graphics2D g, PlayerView view, Set<SelectionSet> movementSet) {
-    if (selectionSetMap.isEmpty()) {
-      return;
-    }
     double scale = zoneScale.getScale();
     boolean clipInstalled = false;
     for (SelectionSet set : movementSet) {
       Token keyToken = zone.getToken(set.getKeyToken());
       if (keyToken == null) {
         // It was removed ?
-        selectionSetMap.remove(set.getKeyToken());
+        viewModel.removeMoveSelectionSet(set.getKeyToken());
         continue;
       }
       // Hide the hidden layer
