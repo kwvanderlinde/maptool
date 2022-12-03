@@ -160,6 +160,8 @@ public class ZoneRenderer extends JComponent
 
   private ZonePoint previousZonePoint;
 
+  private final ZoneViewModel viewModel;
+
   /**
    * Constructor for the ZoneRenderer from a zone.
    *
@@ -214,6 +216,8 @@ public class ZoneRenderer extends JComponent
         });
 
     new MapToolEventBus().getMainEventBus().register(this);
+
+    this.viewModel = new ZoneViewModel(timer, zone);
   }
 
   public void setAutoResizeStamp(boolean value) {
