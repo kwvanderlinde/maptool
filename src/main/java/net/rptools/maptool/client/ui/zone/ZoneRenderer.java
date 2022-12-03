@@ -344,7 +344,7 @@ public class ZoneRenderer extends JComponent
         selectedTokenSet.remove(guid);
       }
     }
-    selectionSetMap.put(keyToken, new SelectionSet(playerId, keyToken, tokenList));
+    selectionSetMap.put(keyToken, new SelectionSet(zone, playerId, keyToken, tokenList));
     repaintDebouncer.dispatch(); // Jamz: Seems to have no affect?
   }
 
@@ -366,7 +366,12 @@ public class ZoneRenderer extends JComponent
       return;
     }
     Token token = zone.getToken(keyToken);
-    set.setOffset(offset.x - token.getX(), offset.y - token.getY());
+    set.setOffset(
+            offset.x - token.getX(),
+            offset.y - token.getY(),
+            // Skip AI Pathfinding if not on the token layer...
+            ZoneRenderer.this.getActiveLayer().equals(Layer.TOKEN) && MapTool.getServerPolicy().isUsingAstarPathfinding(),
+            this::repaint);
     repaintDebouncer.dispatch(); // Jamz: may cause flicker when using AI
   }
 
@@ -3855,10 +3860,11 @@ public class ZoneRenderer extends JComponent
   }
 
   /** Represents a movement set */
-  public class SelectionSet {
+  public static class SelectionSet {
 
     private final Logger log = LogManager.getLogger(ZoneRenderer.SelectionSet.class);
 
+    private final Zone zone;
     private final Set<GUID> selectionSet = new HashSet<GUID>();
     private final GUID keyToken;
     private final String playerId;
@@ -3873,7 +3879,8 @@ public class ZoneRenderer extends JComponent
     private RenderPathWorker renderPathTask;
     private ExecutorService renderPathThreadPool = Executors.newSingleThreadExecutor();
 
-    public SelectionSet(String playerId, GUID tokenGUID, Set<GUID> selectionList) {
+    public SelectionSet(Zone zone, String playerId, GUID tokenGUID, Set<GUID> selectionList) {
+      this.zone = zone;
       selectionSet.addAll(selectionList);
       keyToken = tokenGUID;
       this.playerId = playerId;
@@ -3918,7 +3925,7 @@ public class ZoneRenderer extends JComponent
     // This is called when movement is committed/done. It'll let the last thread either finish or
     // timeout
     public void renderFinalPath() {
-      if (ZoneRenderer.this.zone.getGrid().getCapabilities().isPathingSupported()
+      if (zone.getGrid().getCapabilities().isPathingSupported()
           && token.isSnapToGrid()
           && renderPathTask != null) {
         while (!renderPathTask.isDone()) {
@@ -3932,13 +3939,12 @@ public class ZoneRenderer extends JComponent
       }
     }
 
-    public void setOffset(int x, int y) {
+    public void setOffset(int x, int y, boolean restrictMovement, Runnable onComplete) {
       offsetX = x;
       offsetY = y;
 
       ZonePoint zp = new ZonePoint(token.getX() + x, token.getY() + y);
-      if (ZoneRenderer.this.zone.getGrid().getCapabilities().isPathingSupported()
-          && token.isSnapToGrid()) {
+      if (zone.getGrid().getCapabilities().isPathingSupported() && token.isSnapToGrid()) {
         CellPoint point = zone.getGrid().convert(zp);
         // walker.replaceLastWaypoint(point, restrictMovement); // OLD WAY
 
@@ -3947,26 +3953,19 @@ public class ZoneRenderer extends JComponent
           renderPathTask.cancel(true);
         }
 
-        boolean restictMovement = MapTool.getServerPolicy().isUsingAstarPathfinding();
-
         Set<TerrainModifierOperation> terrainModifiersIgnored = token.getTerrainModifiersIgnored();
-
-        // Skip AI Pathfinding if not on the token layer...
-        if (!ZoneRenderer.this.getActiveLayer().equals(Layer.TOKEN)) {
-          restictMovement = false;
-        }
 
         renderPathTask =
             new RenderPathWorker(
                 walker,
                 point,
-                restictMovement,
+                restrictMovement,
                 terrainModifiersIgnored,
                 token.getTransformedTopology(Zone.TopologyType.WALL_VBL),
                 token.getTransformedTopology(Zone.TopologyType.HILL_VBL),
                 token.getTransformedTopology(Zone.TopologyType.PIT_VBL),
                 token.getTransformedTopology(Zone.TopologyType.MBL),
-                ZoneRenderer.this);
+                onComplete);
         renderPathThreadPool.execute(renderPathTask);
       } else {
         if (gridlessPath.getCellPath().size() > 1) {
@@ -3983,8 +3982,8 @@ public class ZoneRenderer extends JComponent
      * @param location The point where the waypoint is toggled.
      */
     public void toggleWaypoint(ZonePoint location) {
-      if (walker != null && token.isSnapToGrid() && getZone().getGrid() != null) {
-        walker.toggleWaypoint(getZone().getGrid().convert(location));
+      if (walker != null && token.isSnapToGrid() && zone.getGrid() != null) {
+        walker.toggleWaypoint(zone.getGrid().convert(location));
       } else {
         gridlessPath.addWayPoint(location);
         gridlessPath.addPathCell(location);
@@ -3999,7 +3998,7 @@ public class ZoneRenderer extends JComponent
      */
     public ZonePoint getLastWaypoint() {
       ZonePoint zp;
-      if (walker != null && token.isSnapToGrid() && getZone().getGrid() != null) {
+      if (walker != null && token.isSnapToGrid() && zone.getGrid() != null) {
         CellPoint cp = walker.getLastPoint();
 
         if (cp == null) {
@@ -4009,7 +4008,7 @@ public class ZoneRenderer extends JComponent
           // log.info("So I set it to: " + cp);
         }
 
-        zp = getZone().getGrid().convert(cp);
+        zp = zone.getGrid().convert(cp);
       } else {
         zp = gridlessPath.getLastJunctionPoint();
       }

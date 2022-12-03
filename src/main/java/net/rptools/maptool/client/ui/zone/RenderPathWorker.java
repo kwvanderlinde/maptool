@@ -24,7 +24,7 @@ import net.rptools.maptool.model.Token.TerrainModifierOperation;
 public class RenderPathWorker extends SwingWorker<Void, Void> {
   // private static final Logger log = LogManager.getLogger(RenderPathWorker.class);
 
-  ZoneRenderer zoneRenderer;
+  Runnable onComplete;
   ZoneWalker walker;
   CellPoint startPoint, endPoint;
   private final boolean restrictMovement;
@@ -43,11 +43,11 @@ public class RenderPathWorker extends SwingWorker<Void, Void> {
       Area tokenHillVbl,
       Area tokenPitVbl,
       Area tokenMbl,
-      ZoneRenderer zoneRenderer) {
+      Runnable onComplete) {
     this.walker = walker;
     this.endPoint = endPoint;
     this.restrictMovement = restrictMovement;
-    this.zoneRenderer = zoneRenderer;
+    this.onComplete = onComplete;
     this.terrainModifiersIgnored = terrainModifiersIgnored;
     this.tokenWallVbl = tokenWallVbl;
     this.tokenHillVbl = tokenHillVbl;
@@ -70,6 +70,6 @@ public class RenderPathWorker extends SwingWorker<Void, Void> {
 
   @Override
   protected void done() {
-    zoneRenderer.repaint();
+    onComplete.run();
   }
 }
