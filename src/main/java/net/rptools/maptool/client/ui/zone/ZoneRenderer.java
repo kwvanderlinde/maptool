@@ -29,8 +29,6 @@ import java.awt.image.BufferedImage;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.swing.*;
@@ -53,6 +51,7 @@ import net.rptools.maptool.client.ui.htmlframe.HTMLFrameFactory;
 import net.rptools.maptool.client.ui.token.AbstractTokenOverlay;
 import net.rptools.maptool.client.ui.token.BarTokenOverlay;
 import net.rptools.maptool.client.ui.token.NewTokenDialog;
+import net.rptools.maptool.client.ui.zone.viewmodel.SelectionSet;
 import net.rptools.maptool.client.ui.zone.viewmodel.ZoneViewModel;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.events.MapToolEventBus;
@@ -60,7 +59,6 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.Label;
 import net.rptools.maptool.model.LookupTable.LookupEntry;
-import net.rptools.maptool.model.Token.TerrainModifierOperation;
 import net.rptools.maptool.model.Token.TokenShape;
 import net.rptools.maptool.model.Zone.Layer;
 import net.rptools.maptool.model.drawing.*;
@@ -357,7 +355,7 @@ public class ZoneRenderer extends JComponent
     int x = point.x - token.getX();
     int y = point.y - token.getY();
 
-    return set.offsetX != x || set.offsetY != y;
+    return set.getOffsetX() != x || set.getOffsetY() != y;
   }
 
   public void updateMoveSelectionSet(GUID keyToken, ZonePoint offset) {
@@ -367,11 +365,12 @@ public class ZoneRenderer extends JComponent
     }
     Token token = zone.getToken(keyToken);
     set.setOffset(
-            offset.x - token.getX(),
-            offset.y - token.getY(),
-            // Skip AI Pathfinding if not on the token layer...
-            ZoneRenderer.this.getActiveLayer().equals(Layer.TOKEN) && MapTool.getServerPolicy().isUsingAstarPathfinding(),
-            this::repaint);
+        offset.x - token.getX(),
+        offset.y - token.getY(),
+        // Skip AI Pathfinding if not on the token layer...
+        ZoneRenderer.this.getActiveLayer().equals(Layer.TOKEN)
+            && MapTool.getServerPolicy().isUsingAstarPathfinding(),
+        this::repaint);
     repaintDebouncer.dispatch(); // Jamz: may cause flicker when using AI
   }
 
@@ -453,7 +452,7 @@ public class ZoneRenderer extends JComponent
       }
 
       Path<? extends AbstractPoint> path =
-          set.getWalker() != null ? set.getWalker().getPath() : set.gridlessPath;
+          set.getWalker() != null ? set.getWalker().getPath() : set.getGridlessPath();
       // Jamz: add final path render here?
 
       List<GUID> filteredTokens = new ArrayList<GUID>();
@@ -2050,7 +2049,7 @@ public class ZoneRenderer extends JComponent
         if (token == keyToken && !token.isStamp()) {
           renderPath(
               g,
-              walker != null ? walker.getPath() : set.gridlessPath,
+              walker != null ? walker.getPath() : set.getGridlessPath(),
               token.getFootprint(zone.getGrid()));
         }
 
@@ -2170,7 +2169,7 @@ public class ZoneRenderer extends JComponent
           boolean showLabels = isOwner;
           if (checkForFog) {
             Path<? extends AbstractPoint> path =
-                set.getWalker() != null ? set.getWalker().getPath() : set.gridlessPath;
+                set.getWalker() != null ? set.getWalker().getPath() : set.getGridlessPath();
             List<? extends AbstractPoint> thePoints = path.getCellPath();
             /*
              * now that we have the last point, we can check to see if it's gridless or not. If not gridless, get the last point the token was at and see if the token's footprint is inside
@@ -2225,7 +2224,7 @@ public class ZoneRenderer extends JComponent
                 } else {
                   double c = 0;
                   ZonePoint lastPoint = null;
-                  for (ZonePoint zp : set.gridlessPath.getCellPath()) {
+                  for (ZonePoint zp : set.getGridlessPath().getCellPath()) {
                     if (lastPoint == null) {
                       lastPoint = zp;
                       continue;
@@ -3856,175 +3855,6 @@ public class ZoneRenderer extends JComponent
       @Nullable GUID tokenId) {
     public LabelRenderable(String text, int x, int y) {
       this(text, x, y, SwingUtilities.CENTER, GraphicsUtil.GREY_LABEL, Color.black, null);
-    }
-  }
-
-  /** Represents a movement set */
-  public static class SelectionSet {
-
-    private final Logger log = LogManager.getLogger(ZoneRenderer.SelectionSet.class);
-
-    private final Zone zone;
-    private final Set<GUID> selectionSet = new HashSet<GUID>();
-    private final GUID keyToken;
-    private final String playerId;
-    private ZoneWalker walker;
-    private final Token token;
-    private Path<ZonePoint> gridlessPath;
-    /** Pixel distance (x) from keyToken's origin. */
-    private int offsetX;
-    /** Pixel distance (y) from keyToken's origin. */
-    private int offsetY;
-    // private boolean restrictMovement = true;
-    private RenderPathWorker renderPathTask;
-    private ExecutorService renderPathThreadPool = Executors.newSingleThreadExecutor();
-
-    public SelectionSet(Zone zone, String playerId, GUID tokenGUID, Set<GUID> selectionList) {
-      this.zone = zone;
-      selectionSet.addAll(selectionList);
-      keyToken = tokenGUID;
-      this.playerId = playerId;
-
-      token = zone.getToken(tokenGUID);
-
-      if (token.isSnapToGrid() && zone.getGrid().getCapabilities().isSnapToGridSupported()) {
-        if (zone.getGrid().getCapabilities().isPathingSupported()) {
-          CellPoint tokenPoint = zone.getGrid().convert(new ZonePoint(token.getX(), token.getY()));
-
-          walker = zone.getGrid().createZoneWalker();
-          walker.setFootprint(token.getFootprint(zone.getGrid()));
-          walker.setWaypoints(tokenPoint, tokenPoint);
-        }
-      } else {
-        gridlessPath = new Path<ZonePoint>();
-        gridlessPath.addPathCell(new ZonePoint(token.getX(), token.getY()));
-      }
-    }
-
-    /** @return path computation. */
-    public Path<ZonePoint> getGridlessPath() {
-      return gridlessPath;
-    }
-
-    public ZoneWalker getWalker() {
-      return walker;
-    }
-
-    public GUID getKeyToken() {
-      return keyToken;
-    }
-
-    public Set<GUID> getTokens() {
-      return selectionSet;
-    }
-
-    public boolean contains(Token token) {
-      return selectionSet.contains(token.getId());
-    }
-
-    // This is called when movement is committed/done. It'll let the last thread either finish or
-    // timeout
-    public void renderFinalPath() {
-      if (zone.getGrid().getCapabilities().isPathingSupported()
-          && token.isSnapToGrid()
-          && renderPathTask != null) {
-        while (!renderPathTask.isDone()) {
-          log.trace("Waiting on Path Rendering... ");
-          try {
-            Thread.sleep(10);
-          } catch (InterruptedException e) {
-            e.printStackTrace();
-          }
-        }
-      }
-    }
-
-    public void setOffset(int x, int y, boolean restrictMovement, Runnable onComplete) {
-      offsetX = x;
-      offsetY = y;
-
-      ZonePoint zp = new ZonePoint(token.getX() + x, token.getY() + y);
-      if (zone.getGrid().getCapabilities().isPathingSupported() && token.isSnapToGrid()) {
-        CellPoint point = zone.getGrid().convert(zp);
-        // walker.replaceLastWaypoint(point, restrictMovement); // OLD WAY
-
-        // New way threaded, off the swing UI thread...
-        if (renderPathTask != null) {
-          renderPathTask.cancel(true);
-        }
-
-        Set<TerrainModifierOperation> terrainModifiersIgnored = token.getTerrainModifiersIgnored();
-
-        renderPathTask =
-            new RenderPathWorker(
-                walker,
-                point,
-                restrictMovement,
-                terrainModifiersIgnored,
-                token.getTransformedTopology(Zone.TopologyType.WALL_VBL),
-                token.getTransformedTopology(Zone.TopologyType.HILL_VBL),
-                token.getTransformedTopology(Zone.TopologyType.PIT_VBL),
-                token.getTransformedTopology(Zone.TopologyType.MBL),
-                onComplete);
-        renderPathThreadPool.execute(renderPathTask);
-      } else {
-        if (gridlessPath.getCellPath().size() > 1) {
-          gridlessPath.replaceLastPoint(zp);
-        } else {
-          gridlessPath.addPathCell(zp);
-        }
-      }
-    }
-
-    /**
-     * Add the waypoint if it is a new waypoint. If it is an old waypoint remove it.
-     *
-     * @param location The point where the waypoint is toggled.
-     */
-    public void toggleWaypoint(ZonePoint location) {
-      if (walker != null && token.isSnapToGrid() && zone.getGrid() != null) {
-        walker.toggleWaypoint(zone.getGrid().convert(location));
-      } else {
-        gridlessPath.addWayPoint(location);
-        gridlessPath.addPathCell(location);
-      }
-    }
-
-    /**
-     * Retrieves the last waypoint, or if there isn't one then the start point of the first path
-     * segment.
-     *
-     * @return the ZonePoint.
-     */
-    public ZonePoint getLastWaypoint() {
-      ZonePoint zp;
-      if (walker != null && token.isSnapToGrid() && zone.getGrid() != null) {
-        CellPoint cp = walker.getLastPoint();
-
-        if (cp == null) {
-          // log.info("cellpoint is null! FIXME! You have Walker class updating outside of
-          // thread..."); // Why not save last waypoint to this class?
-          cp = zone.getGrid().convert(new ZonePoint(token.getX(), token.getY()));
-          // log.info("So I set it to: " + cp);
-        }
-
-        zp = zone.getGrid().convert(cp);
-      } else {
-        zp = gridlessPath.getLastJunctionPoint();
-      }
-      return zp;
-    }
-
-    public int getOffsetX() {
-      return offsetX;
-    }
-
-    public int getOffsetY() {
-      return offsetY;
-    }
-
-    public String getPlayerId() {
-      return playerId;
     }
   }
 
