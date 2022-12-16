@@ -32,8 +32,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 import javax.swing.*;
 import net.rptools.lib.FileUtil;
+import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.AppConstants;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.swing.AbeillePanel;
@@ -48,7 +50,6 @@ import net.rptools.maptool.model.Light;
 import net.rptools.maptool.model.LightSource;
 import net.rptools.maptool.model.ShapeType;
 import net.rptools.maptool.model.SightType;
-import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.util.PersistenceUtil;
 import net.rptools.maptool.util.StringUtil;
 
@@ -285,6 +286,12 @@ public class CampaignPropertiesDialog extends JDialog {
       if (sight.isScaleWithToken()) {
         builder.append("scale ");
       }
+
+      if (sight.hasPersonalLightSource()
+          && sight.getPersonalLightSource().getType() != LightSource.Type.NORMAL) {
+        builder.append(sight.getPersonalLightSource().getType().name().toLowerCase()).append(' ');
+      }
+
       // Multiplier
       if (sight.getMultiplier() != 1 && sight.getMultiplier() != 0) {
         builder.append("x").append(StringUtil.formatDecimal(sight.getMultiplier())).append(' ');
@@ -299,17 +306,20 @@ public class CampaignPropertiesDialog extends JDialog {
 
             builder.append("r").append(StringUtil.formatDecimal(range));
 
-            if (light.getPaint() != null && light.getPaint() instanceof DrawableColorPaint) {
-              Color color = (Color) light.getPaint().getPaint();
-              builder.append(toHex(color));
+            if (light.getColor() != null) {
+              builder.append(toHex(light.getColor()));
             }
-
+            final var lumens = light.getLumens();
+            if (lumens >= 0) {
+              builder.append('+');
+            }
+            builder.append(Integer.toString(lumens, 10));
             builder.append(' ');
           }
         }
 
-        if (source.getLumens() != 0) {
-          builder.append("lumens=").append(source.getLumens()).append(' ');
+        if (source.getTextureAssetId() != null) {
+          builder.append(" texture=asset://").append(source.getTextureAssetId());
         }
       }
       builder.append('\n');
@@ -377,13 +387,19 @@ public class CampaignPropertiesDialog extends JDialog {
             lastShape = shape;
           }
           builder.append(' ').append(StringUtil.formatDecimal(light.getRadius()));
-          if (light.getPaint() instanceof DrawableColorPaint) {
-            Color color = (Color) light.getPaint().getPaint();
-            builder.append(toHex(color));
+          if (light.getColor() != null) {
+            builder.append(toHex(light.getColor()));
+          }
+          if (lightSource.getType() == LightSource.Type.NORMAL) {
+            final var lumens = light.getLumens();
+            if (lumens >= 0) {
+              builder.append('+');
+            }
+            builder.append(Integer.toString(lumens, 10));
           }
         }
-        if (lightSource.getLumens() != 0) {
-          builder.append(" lumens=").append(lightSource.getLumens());
+        if (lightSource.getTextureAssetId() != null) {
+          builder.append(" texture=asset://").append(lightSource.getTextureAssetId());
         }
         builder.append('\n');
       }
@@ -476,6 +492,7 @@ public class CampaignPropertiesDialog extends JDialog {
         String[] args = value.split("\\s+");
         ShapeType shape = ShapeType.CIRCLE;
         boolean scaleWithToken = false;
+        var lightType = LightSource.Type.NORMAL;
         int arc = 90;
         float range = 0;
         int offset = 0;
@@ -494,6 +511,7 @@ public class CampaignPropertiesDialog extends JDialog {
             scaleWithToken = true;
             continue;
           }
+
           try {
 
             if (arg.startsWith("x")) {
@@ -502,32 +520,68 @@ public class CampaignPropertiesDialog extends JDialog {
               magnifier = StringUtil.parseDecimal(toBeParsed);
             } else if (arg.startsWith("r")) { // XXX Why not "r=#" instead of "r#"??
               Color personalLightColor = null;
+              int perRangeLumens = 100;
               toBeParsed = arg.substring(1);
-
-              split = toBeParsed.indexOf('#');
-              if (split > 0) {
-                String colorString = toBeParsed.substring(split); // Keep the '#'
-                toBeParsed = toBeParsed.substring(0, split);
-                personalLightColor = Color.decode(colorString);
-              }
-
               errmsg = "msg.error.mtprops.sight.range";
-              pLightRange = StringUtil.parseDecimal(toBeParsed);
 
-              if (personalLight == null) {
-                personalLight = new LightSource();
-              }
-              DrawableColorPaint personalLightPaint =
-                  personalLightColor != null ? new DrawableColorPaint(personalLightColor) : null;
-              personalLight.add(new Light(shape, 0, pLightRange, arc, personalLightPaint));
-              personalLight.setScaleWithToken(scaleWithToken);
-            } else if (arg.toUpperCase().startsWith("LUMENS=")) {
-              if (personalLight != null) {
-                personalLight.setLumens(Integer.parseInt(arg.substring(7)));
+              final var rangeRegex = Pattern.compile("([^#+]*)(#[0-9a-fA-F]{6})?([+-]\\d*)?");
+              final var matcher = rangeRegex.matcher(toBeParsed);
+              // Only need the first occurrence.
+              if (matcher.find()) {
+                pLightRange = StringUtil.parseDecimal(matcher.group(1));
+                final var colorString = matcher.group(2);
+                final var lumensString = matcher.group(3);
+                // Note that Color.decode() _wants_ the leading "#", otherwise it might treat things
+                // like octal.
+                if (colorString != null) personalLightColor = Color.decode(colorString);
+                if (lumensString != null) {
+                  perRangeLumens = Integer.parseInt(lumensString, 10);
+                  if (perRangeLumens == 0) {
+                    // TODO Add this translation key.
+                    errlog.add(
+                            I18N.getText(
+                                    "msg.error.mtprops.sight.zerolumens", reader.getLineNumber()));
+                    perRangeLumens = 100;
+                  }
+                }
+
+                if (personalLight == null) {
+                  personalLight = new LightSource();
+                  personalLight.setType(lightType);
+                }
+                personalLight.add(
+                    new Light(
+                        shape,
+                        0,
+                        pLightRange,
+                        arc,
+                        personalLightColor,
+                        perRangeLumens,
+                        false,
+                        false));
+                personalLight.setScaleWithToken(scaleWithToken);
               } else {
+                throw new ParseException(
+                    String.format("Unrecognized personal light syntax: %s", arg), 0);
+              }
+            } else if (arg.toUpperCase().startsWith("TEXTURE=")) {
+              if (personalLight == null) {
+                // TODO Add this translation key.
                 errlog.add(
                     I18N.getText(
-                        "msg.error.mtprops.sight.lumensWithoutLight", reader.getLineNumber()));
+                        "msg.error.mtprops.sight.textureWithoutLight", reader.getLineNumber()));
+              } else {
+                final var assetUrl = arg.substring("TEXTURE=".length());
+                final String assetId;
+                // TODO Either require the asset:// or disallow it.
+                //  Better yet, allow keywords "flat", "fade" in addition to asset URLs
+                if (assetUrl.startsWith("asset://")) {
+                  assetId = assetUrl.substring("asset://".length());
+                } else {
+                  assetId = assetUrl;
+                }
+                // TODO Validate that assetID is a valid MD5, so user can have a good error message.
+                personalLight.setTextureAssetId(new MD5Key(assetId));
               }
             } else if (arg.startsWith("arc=") && arg.length() > 4) {
               toBeParsed = arg.substring(4);
@@ -663,15 +717,20 @@ public class CampaignPropertiesDialog extends JDialog {
             lightSource.setScaleWithToken(true);
             continue;
           }
-          // Lumens designation
-          if (arg.toUpperCase().startsWith("LUMENS=")) {
-            try {
-              lightSource.setLumens(Integer.parseInt(arg.substring(7)));
-              continue;
-            } catch (NullPointerException noe) {
-              errlog.add(
-                  I18N.getText("msg.error.mtprops.light.lumens", reader.getLineNumber(), arg));
+          // Texture designation
+          if (arg.toUpperCase().startsWith("TEXTURE=")) {
+            final var assetUrl = arg.substring("TEXTURE=".length());
+            final String assetId;
+            // TODO Either require the asset:// or disallow it.
+            //  Better yet, allow keywords "flat", "fade" in addition to asset URLs
+            if (assetUrl.startsWith("asset://")) {
+              assetId = assetUrl.substring("asset://".length());
+            } else {
+              assetId = assetUrl;
             }
+            // TODO Validate that assetID is a valid MD5, so user can have a good error message.
+            lightSource.setTextureAssetId(new MD5Key(assetId));
+            continue;
           }
           // Shape designation ?
           try {
@@ -719,14 +778,33 @@ public class CampaignPropertiesDialog extends JDialog {
             }
             continue;
           }
+
           Color color = null;
+          int perRangeLumens = 100;
           distance = arg;
-          split = arg.indexOf('#');
-          if (split > 0) {
-            String colorString = arg.substring(split); // Keep the '#'
-            distance = arg.substring(0, split);
-            color = Color.decode(colorString);
+
+          final var rangeRegex = Pattern.compile("([^#+]*)(#[0-9a-fA-F]{6})?([+-]\\d*)?");
+          final var matcher = rangeRegex.matcher(arg);
+          // Only need the first occurrence.
+          if (matcher.find()) {
+            distance = matcher.group(1);
+            final var colorString = matcher.group(2);
+            final var lumensString = matcher.group(3);
+            // Note that Color.decode() _wants_ the leading "#", otherwise it might treat things
+            // like octal.
+            if (colorString != null) color = Color.decode(colorString);
+            if (lumensString != null) {
+              perRangeLumens = Integer.parseInt(lumensString, 10);
+              if (perRangeLumens == 0) {
+                // TODO Add this translation key.
+                errlog.add(
+                        I18N.getText(
+                                "msg.error.mtprops.light.zerolumens", reader.getLineNumber()));
+                perRangeLumens = 100;
+              }
+            }
           }
+
           boolean isAura = lightSource.getType() == LightSource.Type.AURA;
           if (!isAura && (gmOnly || owner)) {
             errlog.add(I18N.getText("msg.error.mtprops.light.gmOrOwner", reader.getLineNumber()));
@@ -741,7 +819,8 @@ public class CampaignPropertiesDialog extends JDialog {
                     offset,
                     StringUtil.parseDecimal(distance),
                     arc,
-                    color != null ? new DrawableColorPaint(color) : null,
+                    color,
+                    perRangeLumens,
                     gmOnly,
                     owner);
             lightSource.add(t);
@@ -980,7 +1059,7 @@ public class CampaignPropertiesDialog extends JDialog {
           System.out.print(", gm=" + light.isGM());
           System.out.print(", owner=" + light.isOwnerOnly());
           System.out.print(", radius=" + light.getRadius());
-          System.out.print(", color=" + light.getPaint() + "]\n");
+          System.out.print(", color=" + light.getColor() + "]\n");
         }
       }
     }

@@ -43,6 +43,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import net.rptools.maptool.model.AStarCellPointConverter;
+import net.rptools.maptool.model.Light;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
@@ -508,6 +509,7 @@ public class FileUtil {
     XStream.setupDefaultSecurity(xStream);
     xStream.allowTypesByWildcard(new String[] {"net.rptools.**", "java.awt.**", "sun.awt.**"});
     xStream.registerConverter(new AStarCellPointConverter());
+    xStream.processAnnotations(Light.class);
     return xStream;
   }
 }

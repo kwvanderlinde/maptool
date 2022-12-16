@@ -14,107 +14,98 @@
  */
 package net.rptools.maptool.model;
 
+import com.thoughtworks.xstream.annotations.XStreamConverter;
+import com.thoughtworks.xstream.converters.Converter;
+import com.thoughtworks.xstream.converters.MarshallingContext;
+import com.thoughtworks.xstream.converters.UnmarshallingContext;
+import com.thoughtworks.xstream.io.HierarchicalStreamReader;
+import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+import java.awt.Color;
 import java.awt.geom.Area;
-import net.rptools.maptool.model.drawing.DrawablePaint;
+import java.io.Serial;
+import java.io.Serializable;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.server.proto.LightDto;
 import net.rptools.maptool.server.proto.ShapeTypeDto;
 
-public class Light {
-  private DrawablePaint paint;
-  private double facingOffset;
-  private double radius;
-  private double arcAngle;
-  private ShapeType shape;
-  private boolean isGM;
-  private boolean ownerOnly;
-
-  public Light() {
-    // For serialization
-  }
-
-  public Light(
-      ShapeType shape, double facingOffset, double radius, double arcAngle, DrawablePaint paint) {
-    this.facingOffset = facingOffset;
-    this.shape = shape;
-    this.radius = radius;
-    this.arcAngle = arcAngle;
-    this.paint = paint;
-    this.isGM = false;
-    this.ownerOnly = false;
-
-    if (arcAngle == 0) {
-      this.arcAngle = 90;
-    }
-  }
+public class Light implements Serializable {
+  // The name is "paint" for backwards compatibility, would rather call it "color".
+  @XStreamConverter(DrawableColorPaintUnwrapper.class)
+  private final @Nullable Color paint;
+  private final int lumens;
+  private final double facingOffset;
+  private final double radius;
+  private final double arcAngle;
+  private final @Nonnull ShapeType shape;
+  private final boolean isGM;
+  private final boolean ownerOnly;
 
   public Light(
-      ShapeType shape,
+      @Nonnull ShapeType shape,
       double facingOffset,
       double radius,
       double arcAngle,
-      DrawablePaint paint,
+      @Nullable Color color,
+      int lumens,
       boolean isGM,
       boolean owner) {
     this.facingOffset = facingOffset;
     this.shape = shape;
     this.radius = radius;
-    this.arcAngle = arcAngle;
-    this.paint = paint;
+    this.arcAngle = (arcAngle == 0) ? 90 : arcAngle;
+
+    this.paint = color;
+
+    this.lumens = lumens;
     this.isGM = isGM;
     this.ownerOnly = owner;
-    if (arcAngle == 0) {
-      this.arcAngle = 90;
-    }
   }
 
-  public DrawablePaint getPaint() {
-    return paint;
+  @Serial
+  private Object readResolve() {
+    // In case any fields aren't initialized (i.e., shape), build a replacement light.
+    return new Light(
+            shape == null ? ShapeType.CIRCLE : shape,
+            facingOffset,
+            radius,
+            arcAngle,
+            paint,
+            lumens == 0 ? 100 : lumens,
+            isGM,
+            ownerOnly
+    );
   }
 
-  public void setPaint(DrawablePaint paint) {
-    this.paint = paint;
+  public Color getColor() {
+    return this.paint;
+  }
+
+  public int getLumens() {
+    return lumens;
   }
 
   public double getFacingOffset() {
     return facingOffset;
   }
 
-  public void setFacingOffset(double facingOffset) {
-    this.facingOffset = facingOffset;
-  }
-
   public double getRadius() {
     return radius;
-  }
-
-  public void setRadius(double radius) {
-    this.radius = radius;
   }
 
   public double getArcAngle() {
     return arcAngle;
   }
 
-  public void setArcAngle(double arcAngle) {
-    this.arcAngle = arcAngle;
-  }
-
-  public ShapeType getShape() {
+  public @Nonnull ShapeType getShape() {
     return shape;
-  }
-
-  public void setShape(ShapeType shape) {
-    this.shape = shape;
   }
 
   public Area getArea(Token token, Zone zone, boolean scaleWithToken) {
     return zone.getGrid()
         .getShapedArea(
             getShape(), token, getRadius(), getArcAngle(), (int) getFacingOffset(), scaleWithToken);
-  }
-
-  public void setGM(boolean b) {
-    isGM = b;
   }
 
   public boolean isGM() {
@@ -125,33 +116,68 @@ public class Light {
     return ownerOnly;
   }
 
-  public void setOwnerOnly(boolean owner) {
-    ownerOnly = owner;
-  }
-
   public static Light fromDto(LightDto dto) {
-    var light = new Light();
-    light.paint = dto.hasPaint() ? DrawablePaint.fromDto(dto.getPaint()) : null;
-    light.facingOffset = dto.getFacingOffset();
-    light.radius = dto.getRadius();
-    light.arcAngle = dto.getArcAngle();
-    light.shape = ShapeType.valueOf(dto.getShape().name());
-    light.isGM = dto.getIsGm();
-    light.ownerOnly = dto.getOwnerOnly();
-    return light;
+    return new Light(
+            ShapeType.valueOf(dto.getShape().name()),
+            dto.getFacingOffset(),
+            dto.getRadius(),
+            dto.getArcAngle(),
+            dto.hasColor() ? new Color(dto.getColor(), true) : null,
+            dto.getLumens(),
+            dto.getIsGm(),
+            dto.getOwnerOnly()
+    );
   }
 
   public LightDto toDto() {
     var dto = LightDto.newBuilder();
-    if (paint != null) dto.setPaint(paint.toDto());
+    if (paint != null) dto.setColor(paint.getRGB());
     dto.setFacingOffset(facingOffset);
     dto.setRadius(radius);
     dto.setArcAngle(arcAngle);
-    // default shape is circle
-    if (shape == null) shape = ShapeType.CIRCLE;
     dto.setShape(ShapeTypeDto.valueOf(shape.name()));
     dto.setIsGm(isGM);
     dto.setOwnerOnly(ownerOnly);
+    dto.setLumens(lumens);
     return dto.build();
+  }
+
+  public static final class DrawableColorPaintUnwrapper implements Converter {
+    private final Class<?> fieldType;
+
+    public DrawableColorPaintUnwrapper(Class<?> fieldType) {
+      this.fieldType = fieldType;
+    }
+
+    @Override
+    public boolean canConvert(Class type) {
+      // When reading, the serialized field type could be Color (new) or DrawableColorPaint (old).
+      // Either way, this converter expects to fill in a Color field.
+      return Color.class.equals(fieldType)
+          && (Color.class.equals(type) || DrawableColorPaint.class.equals(type));
+    }
+
+    @Override
+    public void marshal(
+        Object source, HierarchicalStreamWriter writer, MarshallingContext context) {
+      // Just write the color back out.
+      context.convertAnother(source);
+    }
+
+    @Override
+    public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
+      // Lights have only ever supported DrawableColorPaint, and now also Color. So unwrap the
+      // DrawableColorPaint into a Color, or use the existing Color, otherwise set to null.
+      final @Nullable var deserialized = context.convertAnother(null, context.getRequiredType());
+      final @Nullable Color result;
+      if (deserialized instanceof Color color) {
+        result = color;
+      } else if (deserialized instanceof DrawableColorPaint paint) {
+        result = new Color(paint.getColor(), true);
+      } else {
+        result = null;
+      }
+      return result;
+    }
   }
 }
