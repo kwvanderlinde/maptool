@@ -29,10 +29,12 @@ import org.apache.logging.log4j.Logger;
 public abstract class DrawablePaint implements Serializable {
   private static final Logger log = LogManager.getLogger(DrawablePaint.class);
 
-  public abstract Paint getPaint(ImageObserver... observers);
+  public Paint getPaint(ImageObserver... observers) {
+    return getPaint(0, 0, 1, observers);
+  }
 
   public abstract Paint getPaint(
-      int offsetX, int offsetY, double scale, ImageObserver... observers);
+      double offsetX, double offsetY, double scale, ImageObserver... observers);
 
   public static DrawablePaint convertPaint(Paint paint) {
     if (paint == null) {
@@ -65,6 +67,12 @@ public abstract class DrawablePaint implements Serializable {
         var texturePaintDto = dto.getTexturePaint();
         return new DrawableTexturePaint(
             new MD5Key(texturePaintDto.getAssetId()), texturePaintDto.getScale());
+      }
+      case LIGHT_PAINT -> {
+        var texturePaintDto = dto.getLightPaint();
+        return new DrawableTexturePaint(
+            texturePaintDto.hasAssetId() ? new MD5Key(texturePaintDto.getAssetId()) : null,
+            texturePaintDto.getTint());
       }
       default -> {
         log.warn("unknown DrawablePaintDto type: " + dto.getPaintTypeCase());

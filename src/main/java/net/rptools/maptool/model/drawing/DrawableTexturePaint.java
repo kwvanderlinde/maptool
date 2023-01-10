@@ -57,7 +57,7 @@ public class DrawableTexturePaint extends DrawablePaint implements Serializable 
   }
 
   @Override
-  public Paint getPaint(int offsetX, int offsetY, double scale, ImageObserver... observers) {
+  public Paint getPaint(double offsetX, double offsetY, double scale, ImageObserver... observers) {
     BufferedImage texture = null;
     if (image != null) {
       texture = image;
@@ -82,11 +82,6 @@ public class DrawableTexturePaint extends DrawablePaint implements Serializable 
     var textureDto =
         DrawableTexturePaintDto.newBuilder().setAssetId(assetId.toString()).setScale(scale);
     return dto.setTexturePaint(textureDto).build();
-  }
-
-  @Override
-  public Paint getPaint(ImageObserver... observers) {
-    return getPaint(0, 0, 1, observers);
   }
 
   public Asset getAsset() {
