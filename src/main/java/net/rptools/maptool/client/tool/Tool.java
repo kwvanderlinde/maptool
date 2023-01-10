@@ -34,6 +34,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.KeyStroke;
+import net.rptools.maptool.client.AppActions;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
@@ -91,6 +92,7 @@ public abstract class Tool extends JToggleButton implements ActionListener, KeyL
       comp.addMouseWheelListener((MouseWheelListener) this);
     }
     // Keystrokes
+    comp.setFocusTraversalKeysEnabled(false);
     comp.addKeyListener(this);
     comp.setActionMap(createActionMap(keyActionMap));
     comp.setInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, createInputMap(keyActionMap));
