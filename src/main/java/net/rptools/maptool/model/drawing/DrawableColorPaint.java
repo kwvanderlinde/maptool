@@ -46,16 +46,11 @@ public class DrawableColorPaint extends DrawablePaint implements Serializable {
   }
 
   @Override
-  public Paint getPaint(ImageObserver... observers) {
+  public Paint getPaint(double offsetX, double offsetY, double scale, ImageObserver... observer) {
     if (colorCache == null) {
       colorCache = new Color(color);
     }
     return colorCache;
-  }
-
-  @Override
-  public Paint getPaint(int offsetX, int offsetY, double scale, ImageObserver... observer) {
-    return getPaint();
   }
 
   @Override
