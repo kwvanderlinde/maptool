@@ -14,6 +14,7 @@
  */
 package net.rptools.maptool.client.ui.zone;
 
+import com.google.common.collect.Lists;
 import com.google.common.eventbus.Subscribe;
 import java.awt.*;
 import java.awt.Rectangle;
@@ -707,6 +708,7 @@ public class ZoneRenderer extends JComponent
   public void flushLight() {
     drawableLights = null;
     drawableAuras = null;
+    // TODO Reevaluate call.
     zoneView.flush();
     repaintDebouncer.dispatch();
   }
@@ -1446,44 +1448,65 @@ public class ZoneRenderer extends JComponent
    * @param view the player view
    */
   private void renderLights(Graphics2D g, PlayerView view) {
-    // Collect and organize lights
-    timer.start("renderLights:getLights");
-    if (drawableLights == null) {
-      timer.start("renderLights:populateCache");
-      drawableLights = new ArrayList<>(zoneView.getDrawableLights(view));
-      timer.stop("renderLights:populateCache");
+    if (AppState.isShowLights()) {
+      // Lighting enabled.
+      // Collect and organize lights
+      timer.start("renderLights:getLights");
+      if (drawableLights == null) {
+        timer.start("renderLights:populateCache");
+        drawableLights = new ArrayList<>(zoneView.getDrawableLights(view));
+        timer.stop("renderLights:populateCache");
+      }
+      timer.start("renderLights:filterLights");
+      final var nonDarknessLights =
+          drawableLights.stream().filter(light -> light.getLumens() > 0).toList();
+      final var darknessLights =
+          drawableLights.stream().filter(light -> light.getLumens() <= 0).toList();
+      timer.stop("renderLights:filterLights");
+      timer.stop("renderLights:getLights");
+
+      timer.start("renderLights:renderLightOverlay");
+      renderLightOverlay(
+          g,
+          LightingComposite.BlendedLights,
+          LightingComposite.OverlaidLights,
+          view.isGMView() ? null : LightOverlayClipStyle.CLIP_TO_VISIBLE_AREA,
+          nonDarknessLights,
+          new Color(255, 255, 255, 255));
+      timer.stop("renderLights:renderLightOverlay");
+
+      // Players should not be able to discern the nature of the darkness, so we always render it as
+      // black for them.
+      timer.start("renderLights:renderDarknessOverlay");
+      // TODO There is a visible white ring between darkness ranges. When not a player view, we
+      //  should render the entire darkness area as black in one go, no blending or chances for
+      //  gapping. In particular, start with the full area of the darkness, then punch out the areas
+      //  that light needs to get in.
+      // TODO In a similar vein, we should render textured lights in one go, with only a single
+      //  controllable color (my preference anyways). This avoids any possibility of artifacts.
+      // TODO Even when only the lumens overlay is enabled, we still need the "fake hard FoW" in
+      //  order to hide the map.
+      renderLightOverlay(
+          g,
+          view.isGMView() ? AlphaComposite.SrcOver : new SolidColorComposite(0xff000000),
+          view.isGMView() ? LightingComposite.OverlaidLights : AlphaComposite.SrcOver,
+          view.isGMView() ? null : LightOverlayClipStyle.CLIP_TO_NOT_VISIBLE_AREA,
+          darknessLights,
+          new Color(0, 0, 0, 255));
+      timer.stop("renderLights:renderDarknessOverlay");
     }
-    timer.start("renderLights:filterLights");
-    final var darknessLights =
-        drawableLights.stream().filter(light -> light.getLumens() < 0).toList();
-    final var nonDarknessLights =
-        drawableLights.stream().filter(light -> light.getLumens() >= 0).toList();
-    timer.stop("renderLights:filterLights");
-    timer.stop("renderLights:getLights");
 
-    timer.start("renderLights:renderLightOverlay");
-    renderLightOverlay(
-        g,
-        AlphaComposite.SrcOver.derive(AppPreferences.getLightOverlayOpacity() / 255.0f),
-        view.isGMView() ? null : LightOverlayClipStyle.CLIP_TO_VISIBLE_AREA,
-        nonDarknessLights,
-        new Color(255, 255, 255, 255),
-        1.0f);
-    timer.stop("renderLights:renderLightOverlay");
-
-    // Players should not be able to discern the nature of the darkness, so we always render it as
-    // black for them.
-    timer.start("renderLights:renderDarknessOverlay");
-    renderLightOverlay(
-        g,
-        view.isGMView()
-            ? AlphaComposite.SrcOver.derive(AppPreferences.getDarknessOverlayOpacity() / 255.0f)
-            : new SolidColorComposite(0xff000000),
-        view.isGMView() ? null : LightOverlayClipStyle.CLIP_TO_NOT_VISIBLE_AREA,
-        darknessLights,
-        new Color(0, 0, 0, 255),
-        1.0f);
-    timer.stop("renderLights:renderDarknessOverlay");
+    if (AppState.isShowLumensOverlay()) {
+      // Lumens overlay enabled.
+      timer.start("renderLights:renderLumensOverlay");
+      renderLumensOverlay(
+          g,
+          view,
+          AlphaComposite.SrcOver,
+          view.isGMView() ? null : LightOverlayClipStyle.CLIP_TO_VISIBLE_AREA,
+          AppPreferences.getLightOverlayOpacity() / 255.0f);
+      timer.stop("renderLights:renderLumensOverlay");
+    }
   }
 
   /** Caches the lights to be drawn as returned ZoneView. */
@@ -1506,39 +1529,193 @@ public class ZoneRenderer extends JComponent
     }
     timer.stop("renderAuras:getAuras");
 
-    timer.start("renderAuras:renderAuraOverlay");
-    renderLightOverlay(
-        g,
-        AlphaComposite.SrcOver.derive(AppPreferences.getAuraOverlayOpacity() / 255.0f),
-        view.isGMView() ? null : LightOverlayClipStyle.CLIP_TO_VISIBLE_AREA,
-        drawableAuras,
-        new Color(255, 255, 255, 150),
-        1.0f);
-    timer.stop("renderAuras:renderAuraOverlay");
+    if (false) {
+      timer.start("renderAuras:renderAuraOverlay");
+      renderLightOverlay(
+          g,
+          AlphaComposite.SrcOver.derive(AppPreferences.getAuraOverlayOpacity() / 255.0f),
+          LightingComposite.OverlaidLights,
+          view.isGMView() ? null : LightOverlayClipStyle.CLIP_TO_VISIBLE_AREA,
+          drawableAuras,
+          new Color(255, 255, 255, 150));
+      timer.stop("renderAuras:renderAuraOverlay");
+    }
+  }
+
+  private void renderLumensOverlay(
+      Graphics2D g,
+      PlayerView view,
+      Composite composite,
+      @Nullable LightOverlayClipStyle clipStyle,
+      float overlayOpacity) {
+    // TODO
+    //    final boolean isGMview = view.isGMView();
+    //    final boolean checkOwnership =
+    //            MapTool.getServerPolicy().isUseIndividualViews() || MapTool.isPersonalServer();
+    //    List<Token> tokenList =
+    //            view.isUsingTokenView()
+    //                    ? view.getTokens()
+    //                    : zone.getTokensFiltered(
+    //                    t -> t.isToken() && t.getHasSight() && (isGMview || t.isVisible()));
+    //  THEN...
+    //     (Token token : tokenList) {
+    //      boolean weOwnIt = AppUtil.playerOwns(token);
+    //      // Permission
+    //      if (checkOwnership) {
+    //        if (!weOwnIt) {
+    //          continue;
+    //        }
+    //      } else {
+    //        // If we're viewing the map as a player and the token is not a PC, then skip it.
+    //        if (!isGMview && token.getType() != Token.Type.PC && !AppUtil.ownedByOnePlayer(token))
+    // {
+    //          continue;
+    //        }
+    //      }
+
+    // TODO theLumens include empty areas in case, e.g., there was no darkness. The ZoneView should
+    //  really not be adding those.
+    g = (Graphics2D) g.create();
+
+    final var theLumens = zoneView.getLumensLevels(view);
+
+    // Set up a buffer image for lights to be drawn onto before the map
+    timer.start("renderLumensOverlay:allocateBuffer");
+    try (final var bufferHandle = tempBufferPool.acquire()) {
+      BufferedImage lightOverlay = bufferHandle.get();
+      timer.stop("renderLumensOverlay:allocateBuffer");
+
+      Graphics2D newG = lightOverlay.createGraphics();
+      SwingUtil.useAntiAliasing(newG);
+
+      // At night, show any unexplict areas as dark. In daylight, show them as light.
+      if (zone.getVisionType() == Zone.VisionType.NIGHT) {
+        newG.setPaint(new Color(0, 0, 0, overlayOpacity));
+      }
+      else {
+        newG.setPaint(new Color(1.f, 1.f, 1.f, 0.f));
+      }
+      newG.fillRect(0, 0, lightOverlay.getWidth(), lightOverlay.getHeight());
+
+      if (clipStyle != null && visibleScreenArea != null) {
+        timer.start("renderLumensOverlay:setClip");
+        Area clip = new Area(g.getClip());
+        switch (clipStyle) {
+          case CLIP_TO_VISIBLE_AREA -> clip.intersect(visibleScreenArea);
+          case CLIP_TO_NOT_VISIBLE_AREA -> clip.subtract(visibleScreenArea);
+        }
+        newG.setClip(clip);
+        g.setClip(clip);
+        timer.stop("renderLumensOverlay:setClip");
+      }
+
+      timer.start("renderLumensOverlay:setTransform");
+      AffineTransform af = new AffineTransform();
+      af.translate(getViewOffsetX(), getViewOffsetY());
+      af.scale(getScale(), getScale());
+      newG.setTransform(af);
+      timer.stop("renderLumensOverlay:setTransform");
+
+      // Draw lights onto the buffer image so the map doesn't affect how they blend
+      timer.start("renderLumensOverlay:drawLights");
+      // Lumens are guaranteed to be weak to strong. We'll reverse that for the sake of punch outs.
+      // Punch outs aren't necessary, though, so we could always remove that logic and iterate
+      // forwards instead.
+      final var runningArea = new Area();
+      // Using Src is the meat of the operation. Since the various lumens levels are not
+      // necessarily disjoint, we want stronger lumens to override existing ones.
+      newG.setComposite(AlphaComposite.Src);
+      for (final var lumensLevel : Lists.reverse(theLumens)) {
+        final var lumensStrength = lumensLevel.lumensStrength();
+
+        {
+          final var darkness = new Area(lumensLevel.darknessArea());
+          darkness.subtract(runningArea);
+          runningArea.add(lumensLevel.darknessArea());
+
+          newG.setPaint(new Color(0, 0, 0, overlayOpacity));
+          timer.start("renderLumensOverlay:drawLights:fillArea");
+          newG.fill(darkness);
+          timer.stop("renderLumensOverlay:drawLights:fillArea");
+
+          timer.start("renderLumensOverlay:drawLights:initBorder");
+          newG.setComposite(AlphaComposite.Src);
+          newG.setStroke(new BasicStroke(5.f));
+          newG.setPaint(Color.black);
+          timer.stop("renderLumensOverlay:drawLights:initBorder");
+          timer.start("renderLumensOverlay:drawLights:drawArea");
+          newG.draw(darkness);
+          timer.stop("renderLumensOverlay:drawLights:drawArea");
+        }
+
+        {
+          final var light = new Area(lumensLevel.lightArea());
+          light.subtract(runningArea);
+          runningArea.add(lumensLevel.lightArea());
+
+          var opacity = overlayOpacity;
+          float shade = Math.max(0.f, Math.min(lumensStrength / 100.f, 1.f));
+          shade *= shade;
+          if (lumensStrength == 0) {
+            // This area represents daylight, so draw it as bright despite the low value.
+            shade = 1.f;
+            opacity = 0;
+          }
+          else if (lumensStrength >= 100) {
+            // Bright light, render specially;
+            opacity /= 3.f;
+          }
+
+          newG.setPaint(new Color(shade, shade, shade, opacity));
+
+          timer.start("renderLumensOverlay:drawLights:fillArea");
+          newG.fill(light);
+          timer.stop("renderLumensOverlay:drawLights:fillArea");
+
+          timer.start("renderLumensOverlay:drawLights:initBorder");
+          newG.setComposite(AlphaComposite.Src);
+          newG.setStroke(new BasicStroke(5.f));
+          newG.setPaint(Color.black);
+          timer.stop("renderLumensOverlay:drawLights:initBorder");
+          timer.start("renderLumensOverlay:drawLights:drawArea");
+          newG.draw(light);
+          timer.stop("renderLumensOverlay:drawLights:drawArea");
+        }
+      }
+      timer.stop("renderLumensOverlay:drawLights");
+      newG.dispose();
+
+      // Draw the buffer image with all the lights onto the map
+      timer.start("renderLumensOverlay:drawBuffer");
+      g.setComposite(composite);
+      g.drawImage(lightOverlay, null, 0, 0);
+      timer.stop("renderLumensOverlay:drawBuffer");
+    }
   }
 
   /**
    * Combines a set of lights into an image that is then rendered into the zone.
    *
    * @param g The graphics object used to render the zone.
-   * @param composite The composite used to blend lights together.
+   * @param lightBlending The composite used to blend lights together.
    * @param clipStyle How to clip the overlay relative to the visible area. Set to null for no extra
    *     clipping.
    * @param lights The lights that will be rendered and blended.
    * @param defaultPaint A default paint for lights without a paint.
-   * @param overlayOpacity The opacity used when rendering the final overlay on top of the zone.
    */
   private void renderLightOverlay(
       Graphics2D g,
-      Composite composite,
+      Composite lightBlending,
+      Composite overlayBlending,
       @Nullable LightOverlayClipStyle clipStyle,
-      List<DrawableLight> lights,
-      Paint defaultPaint,
-      float overlayOpacity) {
+      Collection<DrawableLight> lights,
+      Paint defaultPaint) {
     if (lights.isEmpty()) {
       // No points spending resources accomplishing nothing.
       return;
     }
+
+    g = (Graphics2D) g.create();
 
     // Set up a buffer image for lights to be drawn onto before the map
     timer.start("renderLightOverlay:allocateBuffer");
@@ -1547,7 +1724,6 @@ public class ZoneRenderer extends JComponent
       timer.stop("renderLightOverlay:allocateBuffer");
 
       Graphics2D newG = lightOverlay.createGraphics();
-      SwingUtil.useAntiAliasing(newG);
 
       if (clipStyle != null && visibleScreenArea != null) {
         timer.start("renderLightOverlay:setClip");
@@ -1567,24 +1743,29 @@ public class ZoneRenderer extends JComponent
       newG.setTransform(af);
       timer.stop("renderLightOverlay:setTransform");
 
-      newG.setComposite(composite);
+      newG.setComposite(lightBlending);
 
       // Draw lights onto the buffer image so the map doesn't affect how they blend
       timer.start("renderLightOverlay:drawLights");
       for (var light : lights) {
-        var paint = light.getPaint() != null ? light.getPaint().getPaint() : defaultPaint;
+        var bounds = light.getFullLightArea().getBounds();
+        var scale = Math.min(bounds.width, bounds.height);
+        var paint =
+            light.getPaint() != null
+                ? light.getPaint().getPaint(-bounds.getCenterX(), -bounds.getCenterY(), scale)
+                : defaultPaint;
         newG.setPaint(paint);
+        timer.start("renderLightOverlay:fillLight");
         newG.fill(light.getArea());
+        timer.stop("renderLightOverlay:fillLight");
       }
       timer.stop("renderLightOverlay:drawLights");
       newG.dispose();
 
       // Draw the buffer image with all the lights onto the map
       timer.start("renderLightOverlay:drawBuffer");
-      Composite previousComposite = g.getComposite();
-      g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, overlayOpacity));
+      g.setComposite(overlayBlending);
       g.drawImage(lightOverlay, null, 0, 0);
-      g.setComposite(previousComposite);
       timer.stop("renderLightOverlay:drawBuffer");
     }
   }

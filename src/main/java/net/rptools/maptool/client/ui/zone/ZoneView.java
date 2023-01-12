@@ -32,6 +32,7 @@ import net.rptools.maptool.client.ui.zone.Illuminator.LitArea;
 import net.rptools.maptool.client.ui.zone.vbl.AreaTree;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
+import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.zones.TokensAdded;
 import net.rptools.maptool.model.zones.TokensChanged;
 import net.rptools.maptool.model.zones.TokensRemoved;
@@ -54,7 +55,7 @@ public class ZoneView {
   private record ContributedLight(LitArea litArea, LightInfo lightInfo) {
 
     public static ContributedLight forDaylight(Area visibleArea) {
-      return new ContributedLight(new LitArea(1, visibleArea), null);
+      return new ContributedLight(new LitArea(0, visibleArea), null);
     }
   }
 
@@ -63,8 +64,9 @@ public class ZoneView {
    *
    * @param lightSource
    * @param light
+   * @param lightSourceArea
    */
-  private record LightInfo(LightSource lightSource, Light light) {}
+  private record LightInfo(LightSource lightSource, Light light, Area lightSourceArea) {}
 
   /**
    * Represents the important aspects of a sight for the purposes of calculating illumination.
@@ -82,10 +84,8 @@ public class ZoneView {
   // VISION
 
   // region These fields track light sources and their illuminated areas.
-
   /** Map light source type to all tokens with that type. */
   private final Map<LightSource.Type, Set<GUID>> lightSourceMap = new HashMap<>();
-
   // endregion
 
   // region The fields cache information about tokens themselves. They do incorporate illumination
@@ -161,9 +161,6 @@ public class ZoneView {
 
   private final Map<Zone.TopologyType, AreaTree> topologyTrees =
       new EnumMap<>(Zone.TopologyType.class);
-
-  /** Lumen for personal vision (darkvision). */
-  private static final int LUMEN_VISION = 100;
 
   /**
    * Construct ZoneView from zone. Build lightSourceMap, and add ZoneView to Zone as listener.
@@ -368,13 +365,11 @@ public class ZoneView {
     }
 
     final var litAreas = new ArrayList<ContributedLight>();
-    var lumens = lightSource.getLumens();
-    if (lumens == 0) {
-      lumens = LUMEN_VISION;
-    }
 
     // Tracks the cummulative inner ranges of light sources so that we can cut them out of the
     // outer ranges and end up with disjoint sets, even when magnifying.
+    // Note that this "hole punching" has nothing to do with lumens, it's just a way of making
+    // smaller ranges act as lower bounds for larger ranges.
     final var cummulativeNotTransformedArea = new Area();
     for (final var light : lightSource.getLightList()) {
       final var notScaledLightArea =
@@ -383,18 +378,58 @@ public class ZoneView {
         continue;
       }
       final var lightArea = new Area(notScaledLightArea);
-      lightArea.subtract(cummulativeNotTransformedArea);
 
-      if (lightSource.getType() == LightSource.Type.NORMAL && multiplier != 1) {
+      // Lowlight vision does not magnify darkness.
+      if (multiplier != 1
+          && lightSource.getType() == LightSource.Type.NORMAL
+          && light.getLumens() >= 0) {
         lightArea.transform(magnifyTransform);
       }
+
+      lightArea.subtract(cummulativeNotTransformedArea);
       lightArea.transform(translateTransform);
       lightArea.intersect(lightSourceVisibleArea);
 
       litAreas.add(
-          new ContributedLight(new LitArea(lumens, lightArea), new LightInfo(lightSource, light)));
+          new ContributedLight(
+              new LitArea(light.getLumens(), lightArea),
+              new LightInfo(lightSource, light, lightSourceArea)));
 
       cummulativeNotTransformedArea.add(notScaledLightArea);
+    }
+
+    // Magnification can cause different ranges for a single light source to overlap. This is not
+    // fundamentally a problem, but does open the possibility that different ranges are rendered
+    // overtop one another. So here we subtract any stronger ranges (higher lumens values) from
+    // weaker ranges (lower lumens values).
+
+    final var cummulativeStrongerArea = new Area();
+    // The light source may have produced both light and darkness, so make sure darkness is treated
+    // as stronger than light.
+    litAreas.sort(
+        (lhs, rhs) -> {
+          final var lhsLumens = lhs.litArea().lumens();
+          final var rhsLumens = rhs.litArea().lumens();
+          final var comparison = Integer.compare(lhsLumens, rhsLumens);
+          if (comparison == 0) {
+            // Exactly equal.
+            return 0;
+          }
+
+          final var absComparison = Integer.compare(Math.abs(lhsLumens), Math.abs(rhsLumens));
+          if (absComparison != 0) {
+            // Different magnitudes. Order large to small.
+            return -absComparison;
+          }
+
+          // Same magnitude, different sight. Put light (positive) after darkness as it's weaker.
+          return comparison;
+        });
+    for (final var litArea : litAreas) {
+      // Update to not include any stronger areas.
+      final var originalArea = new Area(litArea.litArea().area());
+      litArea.litArea().area().subtract(cummulativeStrongerArea);
+      cummulativeStrongerArea.add(originalArea);
     }
 
     return litAreas;
@@ -472,8 +507,8 @@ public class ZoneView {
       final var tokenVisibleArea = getTokenVisibleArea(token);
 
       if (zone.getVisionType() != Zone.VisionType.NIGHT) {
-        final var contributedLight = ContributedLight.forDaylight(tokenVisibleArea);
         // Treat the entire visible area like a light source of minimal lumens.
+        final var contributedLight = ContributedLight.forDaylight(tokenVisibleArea);
         personalLights.add(contributedLight);
       }
 
@@ -641,6 +676,9 @@ public class ZoneView {
   /**
    * Get the lists of drawable auras.
    *
+   * <p>TODO Lights are quickly leaving auras behind. Make sure any representational changes made
+   * for lights are handled here as well (e.g., scaling punch-outs, etc).
+   *
    * @return the list of drawable auras.
    */
   public List<DrawableLight> getDrawableAuras() {
@@ -678,7 +716,7 @@ public class ZoneView {
           for (Light light : lightSource.getLightList()) {
             // If there is no paint, it's a "bright aura" that just shows whatever is beneath it and
             //  doesn't need to be rendered.
-            if (light.getPaint() == null) {
+            if (light.getColor() == null) {
               continue;
             }
             boolean isOwner = token.getOwners().contains(MapTool.getPlayer().getName());
@@ -704,7 +742,11 @@ public class ZoneView {
             lightArea.intersect(visibleArea);
             lightList.add(
                 new DrawableLight(
-                    LightSource.Type.AURA, light.getPaint(), visibleArea, lightSource.getLumens()));
+                    LightSource.Type.AURA,
+                    new DrawableColorPaint(light.getColor()),
+                    visibleArea,
+                    lightArea,
+                    light.getLumens()));
           }
         }
       }
@@ -775,9 +817,10 @@ public class ZoneView {
                       : lumensLevel.get().lightArea());
               return new DrawableLight(
                   laud.lightInfo().lightSource().getType(),
-                  laud.lightInfo().light().getPaint(),
+                  laud.lightInfo().lightSource().getPaint(laud.lightInfo().light()),
                   obscuredArea,
-                  laud.litArea.lumens());
+                  laud.lightInfo().lightSourceArea(),
+                  laud.lightInfo().light().getLumens());
             })
         .filter(Objects::nonNull)
         .toList();
@@ -866,6 +909,7 @@ public class ZoneView {
     if (visibleAreaMap.get(view) != null && !visibleAreaMap.get(view).visibleArea.isEmpty()) {
       return;
     }
+
     // Cache it
     final var illumination = getIllumination(view);
     // We _could_ instead union up all the individual token's areas, but we already have the same

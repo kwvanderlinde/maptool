@@ -22,13 +22,16 @@ public class DrawableLight {
 
   private DrawablePaint paint;
   private Area area;
+  private Area fullLightArea;
   private LightSource.Type type;
   private int lumens;
 
-  public DrawableLight(LightSource.Type type, DrawablePaint paint, Area area, int lumens) {
+  public DrawableLight(
+      LightSource.Type type, DrawablePaint paint, Area area, Area fullLightArea, int lumens) {
     super();
     this.paint = paint;
     this.area = area;
+    this.fullLightArea = fullLightArea;
     this.type = type;
     this.lumens = lumens;
   }
@@ -41,12 +44,17 @@ public class DrawableLight {
     return area;
   }
 
+  public Area getFullLightArea() {
+    return fullLightArea;
+  }
+
+  // TODO Looks like getType can go the way of the dodo bird.
   public LightSource.Type getType() {
     return type;
   }
 
   public int getLumens() {
-    return lumens;
+    return this.lumens;
   }
 
   @Override

@@ -66,6 +66,37 @@ public class FogUtil {
   private static final Logger log = LogManager.getLogger(FogUtil.class);
   private static final GeometryFactory geometryFactory = GeometryUtil.getGeometryFactory();
 
+  /*
+   * TODO Some potential areas for improvement with calculateVisibility()
+   *  - Instead of calculating a subset of vision, try just calculating an area that can be
+   *    intersected with vision _outside_ of this method. Would still want to be able to constrain
+   *    our segments to vision, but that could be done via bounding box rather than precise vision
+   *    intersections.
+   *  - Following on from that, the calculated area would (in well defined cases) be guaranteed to
+   *    be a simple polygon (that's how we build it up per topology type - that's for technical
+   *    degeneracy reasons only, in principle we can do one polygon for all at once). Thus, we can
+   *    return a Path2D instead of an Area. Callers could probably take advantage of this by
+   *    delaying expensive Area operations and instead preferring disconnected Path2D objects, only
+   *    converting to Area when intersections are required.
+   *  - On a related note, the x/y parameters can be removed in favour of having the caller pass in
+   *    `origin`. They also should only define the center of vision. We SHOULD NOT be transforming
+   *    the vision area here, that should be the caller's responsibility. If the caller has the
+   *    opportunity to cache the transformed area, they should have that choice without having to
+   *    worry about untransforming it first just show calculateVisibility() can work.
+   *  - Combine the topologies' BL segments back into a single set for one run of the sweep
+   *    algorithm. Yes, there is a degeneracy issue since there can be perfect overlaps, but that
+   *    will also be true when we move to editable/overlappable areas of VBL and VBL would become
+   *    objects that can be perfectly aligned atop one another even within one type. I'm sure there
+   *    is something I'm overlooking for being able to merge overlapping lines, and it may be a
+   *    matter of settling on a reasonable snap-to-grid precision that will make colinear lines
+   *    handlable. But I do _need_ to figure this out, or else avoid JTS and gain some performance
+   *    elsewhere.
+   *  - Package the various AreaTree topologies into a single data structure. The ADT would
+   *    basically just expose a means for getting all BL segments for the algorithm to run on.
+   *    Ideally, this would happen after merging the BL segments as stated above, but could be made
+   *    to work regardless.
+   */
+
   /**
    * Return the visible area for an origin, a lightSourceArea and a VBL.
    *
