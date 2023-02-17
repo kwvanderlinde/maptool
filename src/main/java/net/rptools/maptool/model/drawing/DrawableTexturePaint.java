@@ -33,10 +33,6 @@ public class DrawableTexturePaint extends DrawablePaint implements Serializable 
   private transient BufferedImage image;
   private transient Asset asset;
 
-  public DrawableTexturePaint() {
-    // Serializable
-  }
-
   public DrawableTexturePaint(MD5Key id) {
     this(id, 1);
   }
@@ -48,11 +44,6 @@ public class DrawableTexturePaint extends DrawablePaint implements Serializable 
 
   public DrawableTexturePaint(Asset asset) {
     this(asset != null ? asset.getMD5Key() : null);
-    this.asset = asset;
-  }
-
-  public DrawableTexturePaint(Asset asset, double scale) {
-    this(asset.getMD5Key(), 1);
     this.asset = asset;
   }
 

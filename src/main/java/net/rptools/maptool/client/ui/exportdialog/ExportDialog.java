@@ -797,10 +797,9 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
     boolean drawBoard = ExportLayers.LAYER_BOARD.isChecked();
     if (drawBoard) {
       DrawablePaint paint = renderer.getZone().getBackgroundPaint();
-      DrawableTexturePaint dummy = new DrawableTexturePaint();
       int tileX = 0, tileY = 0;
 
-      if (paint.getClass() == dummy.getClass()) {
+      if (paint.getClass() == DrawableTexturePaint.class) {
         Image bgTexture =
             ImageManager.getImage(((DrawableTexturePaint) paint).getAsset().getMD5Key());
         tileX = bgTexture.getWidth(null);

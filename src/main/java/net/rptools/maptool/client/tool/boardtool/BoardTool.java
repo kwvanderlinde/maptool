@@ -122,8 +122,7 @@ public class BoardTool extends DefaultTool {
 
     if (zone != null) {
       DrawablePaint paint = zone.getBackgroundPaint();
-      DrawableTexturePaint dummy = new DrawableTexturePaint();
-      if (paint.getClass() == dummy.getClass()) {
+      if (paint.getClass() == DrawableTexturePaint.class) {
         Image bgTexture =
             ImageManager.getImage(((DrawableTexturePaint) paint).getAsset().getMD5Key());
         tileSize = new Dimension(bgTexture.getWidth(null), bgTexture.getHeight(null));
