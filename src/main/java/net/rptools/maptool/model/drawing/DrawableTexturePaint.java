@@ -27,6 +27,8 @@ import net.rptools.maptool.server.proto.drawing.DrawablePaintDto;
 import net.rptools.maptool.server.proto.drawing.DrawableTexturePaintDto;
 import net.rptools.maptool.util.ImageManager;
 
+import javax.annotation.Nonnull;
+
 public class DrawableTexturePaint extends DrawablePaint implements Serializable {
   private MD5Key assetId;
   private transient BufferedImage image;
@@ -41,8 +43,7 @@ public class DrawableTexturePaint extends DrawablePaint implements Serializable 
     this.asset = asset;
   }
 
-  @Override
-  public Paint getPaint(double offsetX, double offsetY, double scale, ImageObserver... observers) {
+  private @Nonnull BufferedImage getTexture(ImageObserver... observers) {
     BufferedImage texture = null;
     if (image != null) {
       texture = image;
@@ -52,6 +53,12 @@ public class DrawableTexturePaint extends DrawablePaint implements Serializable 
         image = texture;
       }
     }
+    return texture;
+  }
+
+  @Override
+  public Paint getPaint(double offsetX, double offsetY, double scale, ImageObserver... observers) {
+    BufferedImage texture = getTexture(observers);
 
     return new TexturePaint(
         texture,
@@ -60,6 +67,12 @@ public class DrawableTexturePaint extends DrawablePaint implements Serializable 
             offsetY,
             texture.getWidth() * scale,
             texture.getHeight() * scale));
+  }
+
+  @Override
+  public Paint getCenteredPaint(double centerX, double centerY, double width, double height, ImageObserver... observers) {
+    BufferedImage texture = getTexture(observers);
+    return new TexturePaint(texture, new Rectangle2D.Double(-width / 2 - centerX, -height / 2 - centerY, width, height));
   }
 
   @Override
