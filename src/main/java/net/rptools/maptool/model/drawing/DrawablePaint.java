@@ -65,14 +65,13 @@ public abstract class DrawablePaint implements Serializable {
       }
       case TEXTURE_PAINT -> {
         var texturePaintDto = dto.getTexturePaint();
-        return new DrawableTexturePaint(
-            new MD5Key(texturePaintDto.getAssetId()), texturePaintDto.getScale());
+        return new DrawableTexturePaint(new MD5Key(texturePaintDto.getAssetId()));
       }
       case LIGHT_PAINT -> {
         var texturePaintDto = dto.getLightPaint();
-        return new DrawableTexturePaint(
+        return new DrawableLightPaint(
             texturePaintDto.hasAssetId() ? new MD5Key(texturePaintDto.getAssetId()) : null,
-            texturePaintDto.getTint());
+            new Color(texturePaintDto.getTint(), true));
       }
       default -> {
         log.warn("unknown DrawablePaintDto type: " + dto.getPaintTypeCase());

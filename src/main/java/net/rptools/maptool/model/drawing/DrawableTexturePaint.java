@@ -29,17 +29,11 @@ import net.rptools.maptool.util.ImageManager;
 
 public class DrawableTexturePaint extends DrawablePaint implements Serializable {
   private MD5Key assetId;
-  private double scale;
   private transient BufferedImage image;
   private transient Asset asset;
 
   public DrawableTexturePaint(MD5Key id) {
-    this(id, 1);
-  }
-
-  public DrawableTexturePaint(MD5Key id, double scale) {
     assetId = id;
-    this.scale = scale;
   }
 
   public DrawableTexturePaint(Asset asset) {
@@ -58,20 +52,20 @@ public class DrawableTexturePaint extends DrawablePaint implements Serializable 
         image = texture;
       }
     }
+
     return new TexturePaint(
         texture,
         new Rectangle2D.Double(
             offsetX,
             offsetY,
-            texture.getWidth() * scale * this.scale,
-            texture.getHeight() * scale * this.scale));
+            texture.getWidth() * scale,
+            texture.getHeight() * scale));
   }
 
   @Override
   public DrawablePaintDto toDto() {
     var dto = DrawablePaintDto.newBuilder();
-    var textureDto =
-        DrawableTexturePaintDto.newBuilder().setAssetId(assetId.toString()).setScale(scale);
+    var textureDto = DrawableTexturePaintDto.newBuilder().setAssetId(assetId.toString());
     return dto.setTexturePaint(textureDto).build();
   }
 
@@ -80,10 +74,6 @@ public class DrawableTexturePaint extends DrawablePaint implements Serializable 
       asset = AssetManager.getAsset(assetId);
     }
     return asset;
-  }
-
-  public double getScale() {
-    return scale;
   }
 
   public MD5Key getAssetId() {

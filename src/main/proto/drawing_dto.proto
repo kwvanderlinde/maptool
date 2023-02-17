@@ -291,7 +291,6 @@ message DrawableColorPaintDto {
 
 message DrawableTexturePaintDto {
   string asset_id = 1;
-  double scale = 2;
 }
 
 message DrawableLightPaintDto {
