@@ -46,7 +46,8 @@ public class GetRolledTest {
           "[h: rolls_1 = getNewRolls()]",
           "[h: 1d20]",
           "[h: rolls_2 = getNewRolls()]",
-          "[r: macro.return = json.set('', 'priors', priors, 'rolls_1', rolls_1, 'rolls_2', rolls_2, 'all_rolls', getRolled())]");
+          "[r: macro.return = json.set('', 'priors', priors, 'rolls_1', rolls_1, 'rolls_2',"
+              + " rolls_2, 'all_rolls', getRolled())]");
 
   @BeforeAll
   private static void setUp() {

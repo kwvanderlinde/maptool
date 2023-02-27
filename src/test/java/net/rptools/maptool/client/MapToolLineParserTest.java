@@ -74,7 +74,8 @@ public class MapToolLineParserTest {
     assertEquals(
         "a d10 roll is always a No Critical Hit",
         parseLine(
-            "a d10 roll[h: d20roll = 1d10] is always a [r,if(d20roll == 20): output = \"Critical Hit\"; output = \"No Critical Hit\"]",
+            "a d10 roll[h: d20roll = 1d10] is always a [r,if(d20roll == 20): output = \"Critical"
+                + " Hit\"; output = \"No Critical Hit\"]",
             null,
             null));
     assertEquals(

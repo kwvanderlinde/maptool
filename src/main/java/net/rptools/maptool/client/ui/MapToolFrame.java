@@ -1454,7 +1454,9 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     return currentRenderer;
   }
 
-  /** @return the HTML Overlay Panel */
+  /**
+   * @return the HTML Overlay Panel
+   */
   public HTMLOverlayPanel getOverlayPanel() {
     return overlayPanel;
   }
@@ -2072,7 +2074,9 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     updateKeyStrokes();
   }
 
-  /** @return Getter for initiativePanel */
+  /**
+   * @return Getter for initiativePanel
+   */
   public InitiativePanel getInitiativePanel() {
     return initiativePanel;
   }

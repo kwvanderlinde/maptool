@@ -96,9 +96,11 @@ public class PlayerDatabaseDialogController extends AbstractSwingJavaFXDialogCon
   @FXML // This method is called by the FXMLLoader when initialization is complete
   void initialize() {
     assert playersTable != null
-        : "fx:id=\"playersTable\" was not injected: check your FXML file 'PlayerDatabaseDialog.fxml'.";
+        : "fx:id=\"playersTable\" was not injected: check your FXML file"
+              + " 'PlayerDatabaseDialog.fxml'.";
     assert saveChangesButton != null
-        : "fx:id=\"saveChangesButton\" was not injected: check your FXML file 'PlayerDatabaseDialog.fxml'.";
+        : "fx:id=\"saveChangesButton\" was not injected: check your FXML file"
+              + " 'PlayerDatabaseDialog.fxml'.";
     assert addButton != null
         : "fx:id=\"addButton\" was not injected: check your FXML file 'PlayerDatabaseDialog.fxml'.";
   }

@@ -161,23 +161,31 @@ public class PlayerDatabaseEditController implements SwingJavaFXDialogController
     assert okButton != null
         : "fx:id=\"okButton\" was not injected: check your FXML file 'PlayerDatabaseEdit.fxml'.";
     assert cancelButton != null
-        : "fx:id=\"cancelButton\" was not injected: check your FXML file 'PlayerDatabaseEdit.fxml'.";
+        : "fx:id=\"cancelButton\" was not injected: check your FXML file"
+              + " 'PlayerDatabaseEdit.fxml'.";
     assert playerNameText != null
-        : "fx:id=\"playerNameText\" was not injected: check your FXML file 'PlayerDatabaseEdit.fxml'.";
+        : "fx:id=\"playerNameText\" was not injected: check your FXML file"
+              + " 'PlayerDatabaseEdit.fxml'.";
     assert blockedCheckBox != null
-        : "fx:id=\"blockedCheckBoc\" was not injected: check your FXML file 'PlayerDatabaseEdit.fxml'.";
+        : "fx:id=\"blockedCheckBoc\" was not injected: check your FXML file"
+              + " 'PlayerDatabaseEdit.fxml'.";
     assert blockedReasonText != null
-        : "fx:id=\"blockedReasonText\" was not injected: check your FXML file 'PlayerDatabaseEdit.fxml'.";
+        : "fx:id=\"blockedReasonText\" was not injected: check your FXML file"
+              + " 'PlayerDatabaseEdit.fxml'.";
     assert roleCombo != null
         : "fx:id=\"roleCombo\" was not injected: check your FXML file 'PlayerDatabaseEdit.fxml'.";
     assert authTypeCombo != null
-        : "fx:id=\"authTypeCombo\" was not injected: check your FXML file 'PlayerDatabaseEdit.fxml'.";
+        : "fx:id=\"authTypeCombo\" was not injected: check your FXML file"
+              + " 'PlayerDatabaseEdit.fxml'.";
     assert passwordText != null
-        : "fx:id=\"passwordText\" was not injected: check your FXML file 'PlayerDatabaseEdit.fxml'.";
+        : "fx:id=\"passwordText\" was not injected: check your FXML file"
+              + " 'PlayerDatabaseEdit.fxml'.";
     assert generatePasswordButton != null
-        : "fx:id=\"generatePasswordButton\" was not injected: check your FXML file 'PlayerDatabaseEdit.fxml'.";
+        : "fx:id=\"generatePasswordButton\" was not injected: check your FXML file"
+              + " 'PlayerDatabaseEdit.fxml'.";
     assert publicKeyText != null
-        : "fx:id=\"publicKeyText\" was not injected: check your FXML file 'PlayerDatabaseEdit.fxml'.";
+        : "fx:id=\"publicKeyText\" was not injected: check your FXML file"
+              + " 'PlayerDatabaseEdit.fxml'.";
     assert labelErrors != null
         : "fx:id=\"labelErrors\" was not injected: check your FXML "
             + "file 'PlayerDatabaseEdit.fxml'.";

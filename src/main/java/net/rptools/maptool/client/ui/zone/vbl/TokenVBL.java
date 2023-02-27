@@ -133,7 +133,8 @@ public class TokenVBL {
         // .buffer(1); // helps creating valid geometry and prevent self-intersecting polygons
         if (!topologyGeometry.isValid()) {
           log.debug(
-              "topology geometry is invalid! May cause issues. Check for self-intersecting polygons.");
+              "topology geometry is invalid! May cause issues. Check for self-intersecting"
+                  + " polygons.");
         }
       } catch (Exception e) {
         log.error("There is a problem reading topology geometry: ", e);

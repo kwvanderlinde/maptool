@@ -23,7 +23,8 @@ public class PromiseUtil {
         (JSObject)
             window.call(
                 "eval",
-                "(()=>{let p={}; p.promise = new Promise((r, f)=>{p.resolve=r; p.reject=f;}); return p;})();");
+                "(()=>{let p={}; p.promise = new Promise((r, f)=>{p.resolve=r; p.reject=f;});"
+                    + " return p;})();");
     JSObject promise = (JSObject) deferred.getMember("promise");
 
     future.thenApply(

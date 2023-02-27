@@ -69,7 +69,8 @@ public class MTXMLHttpRequest {
   public void setResponseType(String typ) {
     if (readyState > 1) {
       throw new JSException(
-          "Failed to set the 'responseType' property on 'XMLHttpRequest': The response type cannot be set if the object's state is LOADING or DONE");
+          "Failed to set the 'responseType' property on 'XMLHttpRequest': The response type cannot"
+              + " be set if the object's state is LOADING or DONE");
     }
     this.responseType = typ;
   }
