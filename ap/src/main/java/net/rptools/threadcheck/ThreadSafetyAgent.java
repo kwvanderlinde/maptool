@@ -1,6 +1,5 @@
-package ap.agents;
+package net.rptools.threadcheck;
 
-import ap.interceptors.Interceptor;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.matcher.ElementMatchers;

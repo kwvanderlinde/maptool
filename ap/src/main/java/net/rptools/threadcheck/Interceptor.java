@@ -1,4 +1,4 @@
-package ap.interceptors;
+package net.rptools.threadcheck;
 
 import net.bytebuddy.implementation.bind.annotation.Origin;
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;

@@ -30,7 +30,7 @@ dependencies {
 jar {
     manifest {
         attributes(
-            "Premain-Class": "ap.agents.ThreadSafetyAgent"
+            "Premain-Class": "net.rptools.threadcheck.ThreadSafetyAgent"
         )
     }
 }
