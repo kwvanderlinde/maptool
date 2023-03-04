@@ -142,6 +142,7 @@ sourceSets {
 run {
     args = ['-v=' + appSemVer]
     applicationDefaultJvmArgs = ["-Xss8M", "-Dsun.java2d.d3d=false", "-Dsentry.environment=Development", "-Dfile.encoding=UTF-8",
+                                 "-javaagent:${project.rootDir}/ap/build/libs/ap.jar",
                                  "-Dpolyglot.engine.WarnInterpreterOnly=false",
                                  "-DMAPTOOL_DATADIR=.maptool-" + vendor.toLowerCase(), "-XX:+ShowCodeDetailsInExceptionMessages",
                                  "--add-opens=java.desktop/java.awt=ALL-UNNAMED", "--add-opens=java.desktop/java.awt.geom=ALL-UNNAMED",
@@ -286,6 +287,11 @@ repositories {
 
 // In this section you declare the dependencies for your production and test code
 dependencies {
+    annotationProcessor project(':ap')
+    implementation project(':ap')
+    implementation group: 'net.bytebuddy', name: 'byte-buddy', version: '1.11.3'
+    implementation group: 'net.bytebuddy', name: 'byte-buddy-agent', version: '1.11.3'
+
     implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.15.0'
     implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.15.0'
 
