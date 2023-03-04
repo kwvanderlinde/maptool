@@ -11,9 +11,9 @@ public class ThreadSafetyAgent {
     public static void premain(String arguments, Instrumentation instrumentation) {
         // TODO Intercept classes with specific annotation that declare the thread they should be on.
         new AgentBuilder.Default()
-                .type(ElementMatchers.nameStartsWith("net.rptools.maptool.model"))
+                .type(ElementMatchers.nameStartsWith("net.rptools.maptool.model").and(ElementMatchers.not(ElementMatchers.nameContains(".proto."))))
                 .transform((builder, type, classLoader, module) ->
-                                   builder.method(ElementMatchers.any())
+                                   builder.method(ElementMatchers.not(ElementMatchers.named("toDto").or(ElementMatchers.named("fromDto"))))
                                           .intercept(MethodDelegation.to(Interceptor.class)))
                 .installOn(instrumentation);
     }

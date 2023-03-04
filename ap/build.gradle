@@ -9,7 +9,7 @@ buildscript {
 
 
 plugins {
-    id "java"
+    id "java-library"
 }
 
 repositories {
@@ -23,11 +23,6 @@ repositories {
 }
 
 dependencies {
-    annotationProcessor 'com.google.auto.service:auto-service:1.0.1'
-    implementation 'com.google.auto.service:auto-service:1.0.1'
-    implementation 'com.google.auto.service:auto-service-annotations:1.0.1'
-    implementation 'com.squareup:javapoet:1.13.0'
-
     implementation group: 'net.bytebuddy', name: 'byte-buddy', version: '1.11.3'
     implementation group: 'net.bytebuddy', name: 'byte-buddy-agent', version: '1.11.3'
 }

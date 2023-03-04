@@ -13,7 +13,8 @@ public class Interceptor {
                                    @SuperCall Callable<?> callable) throws Exception {
         final var threadName = Thread.currentThread().getName();
         if (!threadName.startsWith("AWT-EventQueue")) {
-            System.err.printf("Call to method %s must be made on the EDT thread, but this one is on thread %s%n", method, threadName);
+            // Yes, this is noisy. How observant.
+            new Exception(String.format("Call to method %s must be made on the EDT thread, but this one is on thread %s", method, threadName)).printStackTrace(System.err);
         }
 
         return callable.call();
