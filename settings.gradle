@@ -23,3 +23,5 @@ sourceControl {
         producesModule("net.rptools.dicelib:dicelib")
     }
 }
+
+include 'ap'
