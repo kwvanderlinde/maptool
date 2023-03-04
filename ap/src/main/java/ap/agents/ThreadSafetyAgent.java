@@ -13,7 +13,7 @@ public class ThreadSafetyAgent {
         new AgentBuilder.Default()
                 .type(ElementMatchers.nameStartsWith("net.rptools.maptool.model").and(ElementMatchers.not(ElementMatchers.nameContains(".proto."))))
                 .transform((builder, type, classLoader, module) ->
-                                   builder.method(ElementMatchers.not(ElementMatchers.named("toDto").or(ElementMatchers.named("fromDto"))))
+                                   builder.method(ElementMatchers.any())
                                           .intercept(MethodDelegation.to(Interceptor.class)))
                 .installOn(instrumentation);
     }
