@@ -27,7 +27,7 @@ jobs:
         with:
           java-version: "17"
       - name: spotlessCheck
-        run: ./gradlew spotlessCheck
+        run: ./gradlew spotlessCheck --no-daemon
   build:
     name: ${{ matrix.os }} w/JDK ${{ matrix.java }}
     runs-on:  ${{ matrix.os }}
