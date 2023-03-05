@@ -28,10 +28,12 @@ import net.rptools.maptool.server.proto.Message;
 import net.rptools.maptool.server.proto.PlayerConnectedMsg;
 import net.rptools.maptool.server.proto.PlayerDisconnectedMsg;
 import net.rptools.maptool.server.proto.SetCampaignMsg;
+import net.rptools.threadcheck.RequiresThread;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /** @author trevor */
+@RequiresThread("SocketClientConnection.ReceiveThread")
 public class MapToolServerConnection
     implements ServerObserver, HandshakeProvider, HandshakeObserver {
   private static final Logger log = LogManager.getLogger(MapToolServerConnection.class);
