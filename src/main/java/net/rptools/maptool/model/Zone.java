@@ -76,7 +76,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class Zone {
 
-  private static final Logger log = LogManager.getLogger(Zone.class);
+private static final Logger log = LogManager.getLogger(Zone.class);
 
   /** The vision type (OFF, DAY, NIGHT). */
   public enum VisionType {
