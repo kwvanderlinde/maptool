@@ -421,7 +421,9 @@ public class AppMenuBar extends JMenuBar {
     return menu;
   }
 
-  /** @return an overlay menu. */
+  /**
+   * @return an overlay menu.
+   */
   protected JMenu createOverlayMenu() {
     overlayMenu = I18N.createMenu("menu.overlay");
     overlayMenu.setEnabled(false); // empty by default

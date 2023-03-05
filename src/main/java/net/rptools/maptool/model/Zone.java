@@ -117,7 +117,9 @@ public class Zone {
     /** A simple interface to allow layers to be turned on/off */
     private boolean drawEnabled = true;
 
-    /** @return drawEnabled */
+    /**
+     * @return drawEnabled
+     */
     public boolean isEnabled() {
       return drawEnabled;
     }
@@ -354,7 +356,9 @@ public class Zone {
     this.tokenSelection = tokenSelection;
   }
 
-  /** @return the distance in map pixels at a 1:1 zoom */
+  /**
+   * @return the distance in map pixels at a 1:1 zoom
+   */
   public int getTokenVisionInPixels() {
     if (tokenVisionDistance == 0) {
       // TODO: This is here to provide transition between pre 1.3b19 an 1.3b19. Remove later
@@ -367,7 +371,9 @@ public class Zone {
     fogPaint = paint;
   }
 
-  /** @return name of the zone */
+  /**
+   * @return name of the zone
+   */
   public String getName() {
     return name;
   }
@@ -1691,7 +1697,9 @@ public class Zone {
     return Collections.unmodifiableList(originalList);
   }
 
-  /** @return list of non-stamp tokens, both pc and npc */
+  /**
+   * @return list of non-stamp tokens, both pc and npc
+   */
   public List<Token> getTokens() {
     return getTokens(true);
   }
@@ -1815,7 +1823,9 @@ public class Zone {
         });
   }
 
-  /** @return list of PCs tokens with sight. For FogUtil.exposePCArea to skip sight test. */
+  /**
+   * @return list of PCs tokens with sight. For FogUtil.exposePCArea to skip sight test.
+   */
   public List<Token> getPlayerTokensWithSight() {
     return getTokensFiltered(t -> t.getType() == Token.Type.PC && t.getHasSight());
   }
@@ -1973,17 +1983,23 @@ public class Zone {
     return bottom - centre;
   }
 
-  /** @return this */
+  /**
+   * @return this
+   */
   private Zone getZone() {
     return this;
   }
 
-  /** @return Getter for initiativeList */
+  /**
+   * @return Getter for initiativeList
+   */
   public InitiativeList getInitiativeList() {
     return initiativeList;
   }
 
-  /** @param initiativeList Setter for the initiativeList */
+  /**
+   * @param initiativeList Setter for the initiativeList
+   */
   public void setInitiativeList(InitiativeList initiativeList) {
     this.initiativeList = initiativeList;
     new MapToolEventBus().getMainEventBus().post(new InitiativeListChanged(initiativeList));
@@ -2134,7 +2150,9 @@ public class Zone {
     return this;
   }
 
-  /** @return the exposedAreaMeta. */
+  /**
+   * @return the exposedAreaMeta.
+   */
   public Map<GUID, ExposedAreaMetaData> getExposedAreaMetaData() {
     if (exposedAreaMeta == null) {
       exposedAreaMeta = new HashMap<GUID, ExposedAreaMetaData>();

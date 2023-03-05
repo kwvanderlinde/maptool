@@ -1018,7 +1018,9 @@ public class Token implements Cloneable {
     return false;
   }
 
-  /** @return false if lightSourceList is null or empty, and true otherwise */
+  /**
+   * @return false if lightSourceList is null or empty, and true otherwise
+   */
   public boolean hasLightSources() {
     return !lightSourceList.isEmpty();
   }
@@ -1032,7 +1034,9 @@ public class Token implements Cloneable {
     ownerList.add(playerId);
   }
 
-  /** @return true if the token is owned by all or has explicit owners. */
+  /**
+   * @return true if the token is owned by all or has explicit owners.
+   */
   public synchronized boolean hasOwners() {
     return ownerType == OWNER_TYPE_ALL || !ownerList.isEmpty();
   }
@@ -1051,7 +1055,9 @@ public class Token implements Cloneable {
     }
   }
 
-  /** @return the set of owner names of the token. */
+  /**
+   * @return the set of owner names of the token.
+   */
   public Set<String> getOwners() {
     return Collections.unmodifiableSet(ownerList);
   }
@@ -1291,12 +1297,16 @@ public class Token implements Cloneable {
     this.scaleY = scaleY;
   }
 
-  /** @return Returns the snapScale. */
+  /**
+   * @return Returns the snapScale.
+   */
   public boolean isSnapToScale() {
     return snapToScale;
   }
 
-  /** @param snapScale The snapScale to set. */
+  /**
+   * @param snapScale The snapScale to set.
+   */
   public void setSnapToScale(boolean snapScale) {
     this.snapToScale = snapScale;
   }
@@ -1305,17 +1315,23 @@ public class Token implements Cloneable {
     this.isVisible = visible;
   }
 
-  /** @return isVisible */
+  /**
+   * @return isVisible
+   */
   public boolean isVisible() {
     return isVisible;
   }
 
-  /** @return the visibleOnlyToOwner */
+  /**
+   * @return the visibleOnlyToOwner
+   */
   public boolean isVisibleOnlyToOwner() {
     return visibleOnlyToOwner;
   }
 
-  /** @param visibleOnlyToOwner the visibleOnlyToOwner to set */
+  /**
+   * @param visibleOnlyToOwner the visibleOnlyToOwner to set
+   */
   public void setVisibleOnlyToOwner(boolean visibleOnlyToOwner) {
     this.visibleOnlyToOwner = visibleOnlyToOwner;
   }
@@ -1662,7 +1678,9 @@ public class Token implements Cloneable {
     return new Point2D.Double(offsetX, offsetY);
   }
 
-  /** @return the String of the sightType */
+  /**
+   * @return the String of the sightType
+   */
   public String getSightType() {
     return sightType;
   }
@@ -1856,12 +1874,16 @@ public class Token implements Cloneable {
     return val;
   }
 
-  /** @return all property names, all in lowercase. */
+  /**
+   * @return all property names, all in lowercase.
+   */
   public Set<String> getPropertyNames() {
     return getPropertyMap().keySet();
   }
 
-  /** @return all property names, preserving their case. */
+  /**
+   * @return all property names, preserving their case.
+   */
   public Set<String> getPropertyNamesRaw() {
     return getPropertyMap().keySetRaw();
   }
@@ -2046,12 +2068,16 @@ public class Token implements Cloneable {
     return matches.keySet();
   }
 
-  /** @return Getter for notes */
+  /**
+   * @return Getter for notes
+   */
   public String getNotes() {
     return notes;
   }
 
-  /** @param aNotes Setter for notes */
+  /**
+   * @param aNotes Setter for notes
+   */
   public void setNotes(String aNotes) {
     notes = aNotes;
   }
@@ -2121,7 +2147,9 @@ public class Token implements Cloneable {
     return anchorY;
   }
 
-  /** @return the scale of the token layout */
+  /**
+   * @return the scale of the token layout
+   */
   public double getSizeScale() {
     return sizeScale;
   }
@@ -2493,12 +2521,16 @@ public class Token implements Cloneable {
     return this;
   }
 
-  /** @param exposedAreaGUID the exposedAreaGUID to set */
+  /**
+   * @param exposedAreaGUID the exposedAreaGUID to set
+   */
   public void setExposedAreaGUID(GUID exposedAreaGUID) {
     this.exposedAreaGUID = exposedAreaGUID;
   }
 
-  /** @return the exposedAreaGUID */
+  /**
+   * @return the exposedAreaGUID
+   */
   public GUID getExposedAreaGUID() {
     return exposedAreaGUID;
   }
@@ -2517,7 +2549,9 @@ public class Token implements Cloneable {
     }
   }
 
-  /** @return is token an image/lib token */
+  /**
+   * @return is token an image/lib token
+   */
   public boolean isImgOrLib() {
     return (getName().toLowerCase().startsWith("image:")
         || getName().toLowerCase().startsWith("lib:"));

@@ -20,7 +20,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/** @author Tylere */
+/**
+ * @author Tylere
+ */
 public class StringUtil {
   private static NumberFormat nf = NumberFormat.getNumberInstance();
   private static final int MIN_FRACTION_DIGITS = 0;
