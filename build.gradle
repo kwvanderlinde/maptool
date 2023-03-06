@@ -142,7 +142,6 @@ sourceSets {
 run {
     args = ['-v=' + appSemVer]
     applicationDefaultJvmArgs = ["-Xss8M", "-Dsun.java2d.d3d=false", "-Dsentry.environment=Development", "-Dfile.encoding=UTF-8",
-                                 "-javaagent:${project.rootDir}/ap/build/libs/ap.jar",
                                  "-Dpolyglot.engine.WarnInterpreterOnly=false",
                                  "-DMAPTOOL_DATADIR=.maptool-" + vendor.toLowerCase(), "-XX:+ShowCodeDetailsInExceptionMessages",
                                  "--add-opens=java.desktop/java.awt=ALL-UNNAMED", "--add-opens=java.desktop/java.awt.geom=ALL-UNNAMED",
