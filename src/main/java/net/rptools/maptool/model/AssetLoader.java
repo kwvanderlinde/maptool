@@ -39,10 +39,12 @@ import net.rptools.lib.FileUtil;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.threadcheck.ThreadSafe;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+@ThreadSafe  // TODO Now I actually have to make this threadsafe.
 public class AssetLoader {
   private static final Logger log = LogManager.getLogger(AssetLoader.class);
 

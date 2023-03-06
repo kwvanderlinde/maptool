@@ -44,6 +44,7 @@ import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.language.I18N;
+import net.rptools.threadcheck.ThreadSafe;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -54,6 +55,7 @@ import org.apache.logging.log4j.Logger;
  *
  * @author RPTools Team
  */
+@ThreadSafe  // TODO Now I actually have to make this threadsafe.
 public class AssetManager {
 
   /** {@link MD5Key} to use for assets trying to specify a location outside of asset cache. */

@@ -38,6 +38,7 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.model.library.addon.AddOnLibraryImporter;
 import net.rptools.maptool.server.proto.AssetDto;
 import net.rptools.maptool.server.proto.AssetDtoType;
+import net.rptools.threadcheck.ThreadSafe;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
@@ -46,9 +47,11 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
 /** Asset used in the campaign. */
+@ThreadSafe  // TODO Now I actually have to make this threadsafe.
 public final class Asset {
 
   /** The type of {@code Asset}. */
+  @ThreadSafe  // TODO Now I actually have to make this threadsafe.
   public enum Type {
 
     /** The {@code Asset} is an image. */
