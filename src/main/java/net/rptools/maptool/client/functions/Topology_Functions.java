@@ -32,6 +32,7 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
 import net.rptools.maptool.client.functions.util.MacroFunction;
+import net.rptools.maptool.client.functions.util.Trusted;
 import net.rptools.maptool.client.ui.zone.ZoneRenderer;
 import net.rptools.maptool.client.ui.zone.vbl.TokenVBL;
 import net.rptools.maptool.client.ui.zone.vbl.TokenVBL.JTS_SimplifyMethodType;
@@ -196,7 +197,43 @@ public class Topology_Functions extends AbstractFunction {
   }
 
   @MacroFunction
+  @Trusted
   public void drawVBL(JsonElement shapes) {
+  }
+
+  @MacroFunction
+  @Trusted
+  public void drawHillVBL(JsonElement shapes) {
+  }
+
+  @MacroFunction
+  @Trusted
+  public void drawPitVBL(JsonElement shapes) {
+  }
+
+  @MacroFunction
+  @Trusted
+  public void drawMBL(JsonElement shapes) {
+  }
+
+  @MacroFunction
+  @Trusted
+  public void eraseVBL(JsonElement shapes) {
+  }
+
+  @MacroFunction
+  @Trusted
+  public void eraseHillVBL(JsonElement shapes) {
+  }
+
+  @MacroFunction
+  @Trusted
+  public void erasePitVBL(JsonElement shapes) {
+  }
+
+  @MacroFunction
+  @Trusted
+  public void eraseMBL(JsonElement shapes) {
   }
 
   private void childEvaluateDrawEraseTopology(String functionName, List<Object> parameters)
