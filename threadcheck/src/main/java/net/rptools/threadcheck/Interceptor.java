@@ -12,9 +12,14 @@ public class Interceptor {
     public static Object intercept(@Origin Method method,
                                    @SuperCall Callable<?> callable) throws Exception {
         final var clazz = method.getDeclaringClass();
-        final var annotation = clazz.getAnnotation(RequiresThread.class);
+        final var threadSafeAnnotation = clazz.getAnnotation(ThreadSafe.class);
+        if (threadSafeAnnotation != null) {
+            return callable.call();
+        }
+
+        final var requiresThreadAnnotation = clazz.getAnnotation(RequiresThread.class);
         // TODO I actually want this to be a regex I think.
-        final var requiredThreadName = annotation == null ? "AWT-EventQueue" : annotation.value();
+        final var requiredThreadName = requiresThreadAnnotation == null ? "AWT-EventQueue" : requiresThreadAnnotation.value();
         final var threadName = Thread.currentThread().getName();
         if (!threadName.startsWith(requiredThreadName)) {
             // Yes, this is noisy. How observant.
