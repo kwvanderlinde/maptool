@@ -287,8 +287,8 @@ repositories {
 
 // In this section you declare the dependencies for your production and test code
 dependencies {
-    annotationProcessor project(':ap')
-    implementation project(':ap')
+    annotationProcessor project(':annotatedmacros')
+    implementation project(':annotatedmacros')
     implementation group: 'net.bytebuddy', name: 'byte-buddy', version: '1.11.3'
     implementation group: 'net.bytebuddy', name: 'byte-buddy-agent', version: '1.11.3'
 

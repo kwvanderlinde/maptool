@@ -1,4 +1,4 @@
-package ap;
+package annotatedmacros;
 
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.JavaFile;
@@ -17,13 +17,14 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.ExecutableType;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import java.io.IOException;
 import java.util.Set;
 
-@SupportedAnnotationTypes("ap.Test")
+@SupportedAnnotationTypes("net.rptools.maptool.client.functions.util.MacroFunction")
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
 @AutoService(Processor.class)
 public class TestAP extends AbstractProcessor {
@@ -44,16 +45,20 @@ public class TestAP extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        System.out.printf("Processing %s annotations%n", annotations.size());
         for (TypeElement annotation : annotations) {
             Set<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(annotation);
+            System.out.printf("Processing %s elements%n", annotatedElements.size());
             for (final Element element : annotatedElements) {
-                if (element.getKind() != ElementKind.CLASS) {
+                if (element.getKind() != ElementKind.METHOD) {
                     messager.printMessage(Diagnostic.Kind.ERROR, String.format("@%s annotation must be applied to classes", Test.class), element);
                     continue;
                 }
-                final var type = (TypeElement) element;
+
+                final var executable = (ExecutableType) element.asType();
+
                 try {
-                    generateCode(type);
+                    generateCode(element, executable);
                 }
                 catch (IOException e) {
                     messager.printMessage(Diagnostic.Kind.ERROR, String.format("Unexpected error writing class %s: %s", Test.class, e), element);
@@ -75,18 +80,16 @@ public class TestAP extends AbstractProcessor {
         return true;
     }
 
-    private void generateCode(TypeElement typeElement) throws IOException {
-        // TODO https://www.baeldung.com/byte-buddy#redefining-an-existing-class
-        //  We'll want to use byte-buddy or something to get the confined version to be loaded.
+    private void generateCode(Element element, ExecutableType methodType) throws IOException {
+        // TODO We actually want to collect all definitions into a centralized class.
+        final var newTypeName = "AllMacroFunctions";
 
-        final var newTypeName = typeElement.getSimpleName().toString() + "_CONFINED";
-
-        TypeSpec hello = TypeSpec.classBuilder(newTypeName)
+        TypeSpec macroFunctionContainer = TypeSpec.classBuilder(newTypeName)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                                  .build();
 
-        JavaFile javaFile = JavaFile.builder(elementUtils.getPackageOf(typeElement).getQualifiedName().toString(), hello).build();
-        javaFile.writeTo(filer);
+        JavaFile javaFile = JavaFile.builder("net.rptools.maptool.client.functions", macroFunctionContainer).build();
+        //javaFile.writeTo(filer);
         javaFile.writeTo(System.out);
     }
 }
