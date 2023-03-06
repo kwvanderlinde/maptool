@@ -27,6 +27,10 @@ import java.util.Set;
 @SupportedAnnotationTypes("net.rptools.maptool.client.functions.util.MacroFunction")
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
 @AutoService(Processor.class)
+// TODO this is cool, but I don't think codegen is the right approach for us. Instead do a runtime
+//  annotation processor that just registers functions and does conversions. Also, the best first
+//  step is to be as minimal as possible. So just handle function name dispatching, and pass the
+//  parameter list along. Future enhancements can have us add typing to the functions and such.
 public class TestAP extends AbstractProcessor {
     private Types typeUtils;
     private Elements elementUtils;
