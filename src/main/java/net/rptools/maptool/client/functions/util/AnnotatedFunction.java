@@ -6,7 +6,6 @@ import net.rptools.parser.VariableResolver;
 import net.rptools.parser.function.AbstractFunction;
 
 import java.util.List;
-import java.util.function.BiFunction;
 
 public class AnnotatedFunction extends AbstractFunction {
     public interface Callback {

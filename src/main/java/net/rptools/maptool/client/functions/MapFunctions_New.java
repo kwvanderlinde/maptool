@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonPrimitive;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.functions.util.MacroFunction;
+import net.rptools.maptool.client.functions.util.Transitional;
 import net.rptools.maptool.client.functions.util.Trusted;
 import net.rptools.maptool.client.ui.zone.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
@@ -19,8 +20,8 @@ import java.util.function.Predicate;
 
 public class MapFunctions_New {
     @MacroFunction
+    @Transitional(minParameters = 0, maxParameters = 0)
     public Object getCurrentMapName(List<Object> parameters) throws ParserException {
-        FunctionUtil.checkNumberParam("getCurrentMapName", parameters, 0, 0);
         ZoneRenderer currentZR = MapTool.getFrame().getCurrentZoneRenderer();
         if (currentZR == null) {
             throw new ParserException(I18N.getText("macro.function.map.none", "getCurrentMapName"));
@@ -31,10 +32,9 @@ public class MapFunctions_New {
 
     @MacroFunction
     @Trusted
+    @Transitional(minParameters = 0, maxParameters = 1)
     public Object getMapDisplayName(List<Object> parameters) throws ParserException {
         final var functionName = "getMapDisplayName";
-        checkTrusted(functionName);
-        FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
         if (parameters.size() == 0) {
             ZoneRenderer currentZR = MapTool.getFrame().getCurrentZoneRenderer();
             if (currentZR == null) {
@@ -65,10 +65,9 @@ public class MapFunctions_New {
 
     @MacroFunction
     @Trusted
+    @Transitional(minParameters = 1, maxParameters = 1)
     public Object setCurrentMap(List<Object> parameters) throws ParserException {
         final var functionName = "setCurrentMap";
-        checkTrusted(functionName);
-        FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
         String mapName = parameters.get(0).toString();
         ZoneRenderer zr = getNamedMap(functionName, mapName);
         MapTool.getFrame().setCurrentZoneRenderer(zr);
@@ -76,10 +75,9 @@ public class MapFunctions_New {
     }
 
     @MacroFunction
-    @Trusted
+    @Transitional(minParameters = 0, maxParameters = 1)
     public Object getMapVisible(List<Object> parameters) throws ParserException {
         final var functionName = "getMapVisible";
-        FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
         if (parameters.size() > 0) {
             String mapName = parameters.get(0).toString();
             return getNamedMap(functionName, mapName).getZone().isVisible()
@@ -98,10 +96,9 @@ public class MapFunctions_New {
 
     @MacroFunction
     @Trusted
+    @Transitional(minParameters = 1, maxParameters = 2)
     public Object setMapVisible(List<Object> parameters) throws ParserException {
         final var functionName = "setMapVisible";
-        checkTrusted(functionName);
-        FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
         boolean visible = FunctionUtil.getBooleanValue(parameters.get(0).toString());
         Zone zone;
         if (parameters.size() > 1) {
@@ -125,10 +122,9 @@ public class MapFunctions_New {
 
     @MacroFunction
     @Trusted
+    @Transitional(minParameters = 2, maxParameters = 2)
     public Object setMapName(List<Object> parameters) throws ParserException {
         final var functionName = "setMapName";
-        checkTrusted(functionName);
-        FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
         String oldMapName = parameters.get(0).toString();
         String newMapName = parameters.get(1).toString();
         Zone zone = getNamedMap(functionName, oldMapName).getZone();
@@ -141,10 +137,9 @@ public class MapFunctions_New {
 
     @MacroFunction
     @Trusted
+    @Transitional(minParameters = 2, maxParameters = 2)
     public Object setMapDisplayName(List<Object> parameters) throws ParserException {
         final var functionName = "setMapDisplayName";
-        checkTrusted(functionName);
-        FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
         String mapName = parameters.get(0).toString();
         String newMapDisplayName = parameters.get(1).toString();
         Zone zone = getNamedMap(functionName, mapName).getZone();
@@ -163,10 +158,9 @@ public class MapFunctions_New {
 
     @MacroFunction
     @Trusted
+    @Transitional(minParameters = 2, maxParameters = 2)
     public Object copyMap(List<Object> parameters) throws ParserException {
         final var functionName = "copyMap";
-        checkTrusted(functionName);
-        FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
         String oldName = parameters.get(0).toString();
         String newName = parameters.get(1).toString();
         Zone oldMap = getNamedMap(functionName, oldName).getZone();
@@ -178,32 +172,34 @@ public class MapFunctions_New {
     }
 
     @MacroFunction
+    @Trusted
+    @Transitional(minParameters = 0, maxParameters = 1)
     public Object getAllMapNames(List<Object> parameters) throws ParserException {
-        FunctionUtil.checkNumberParam("getAllMapNames", parameters, 0, 1);
         final var mapNames = getMapAttributes(zone -> true, Zone::getName);
         final var delim = parameters.size() > 0 ? parameters.get(0).toString() : ",";
         return delimited(delim, mapNames);
     }
 
     @MacroFunction
+    @Transitional(minParameters = 0, maxParameters = 1)
     public Object getVisibleMapNames(List<Object> parameters) throws ParserException {
-        FunctionUtil.checkNumberParam("getVisibleMapNames", parameters, 0, 1);
         final var mapNames = getMapAttributes(Zone::isVisible, Zone::getName);
         final var delim = parameters.size() > 0 ? parameters.get(0).toString() : ",";
         return delimited(delim, mapNames);
     }
 
     @MacroFunction
+    @Trusted
+    @Transitional(minParameters = 0, maxParameters = 1)
     public Object getAllMapDisplayNames(List<Object> parameters) throws ParserException {
-        FunctionUtil.checkNumberParam("getAllMapDisplayNames", parameters, 0, 1);
         final var mapNames = getMapAttributes(zone -> true, Zone::getPlayerAlias);
         final var delim = parameters.size() > 0 ? parameters.get(0).toString() : ",";
         return delimited(delim, mapNames);
     }
 
     @MacroFunction
+    @Transitional(minParameters = 0, maxParameters = 1)
     public Object getVisibleMapDisplayNames(List<Object> parameters) throws ParserException {
-        FunctionUtil.checkNumberParam("getAllMapDisplayNames", parameters, 0, 1);
         final var mapNames = getMapAttributes(Zone::isVisible, Zone::getPlayerAlias);
         final var delim = parameters.size() > 0 ? parameters.get(0).toString() : ",";
         return delimited(delim, mapNames);
@@ -211,11 +207,10 @@ public class MapFunctions_New {
 
     @MacroFunction
     @Trusted
+    @Transitional(minParameters = 1, maxParameters = 1)
     public Object getMapName(List<Object> parameters) throws ParserException {
         final var functionName = "getMapName";
-        FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
         String dispName = parameters.get(0).toString();
-        checkTrusted(functionName);
 
         for (ZoneRenderer zr : MapTool.getFrame().getZoneRenderers()) {
             if (zr.getZone().getPlayerAlias().equals(dispName)) {
@@ -227,11 +222,10 @@ public class MapFunctions_New {
 
     @MacroFunction
     @Trusted
+    @Transitional(minParameters = 1, maxParameters = 1)
     public Object setMapSelectButton(List<Object> parameters) throws ParserException {
         final var functionName = "setMapSelectButton";
         // this is kind of a map function? :)
-        checkTrusted(functionName);
-        FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
         boolean vis = !parameters.get(0).toString().equals("0");
         if (MapTool.getFrame().getFullsZoneButton() != null)
             MapTool.getFrame().getFullsZoneButton().setVisible(vis);
@@ -278,18 +272,6 @@ public class MapFunctions_New {
             return jarr;
         } else {
             return StringFunctions.getInstance().join(strings, delim);
-        }
-    }
-
-    /**
-     * Checks whether or not the function is trusted
-     *
-     * @param functionName Name of the macro function
-     * @throws ParserException Returns trust error message and function name
-     */
-    private void checkTrusted(String functionName) throws ParserException {
-        if (!MapTool.getParser().isMacroTrusted()) {
-            throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
         }
     }
 

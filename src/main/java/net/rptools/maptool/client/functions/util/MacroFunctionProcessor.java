@@ -1,9 +1,9 @@
 package net.rptools.maptool.client.functions.util;
 
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.functions.MapFunctions;
 import net.rptools.maptool.client.functions.MapFunctions_New;
 import net.rptools.maptool.language.I18N;
+import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.function.Function;
 
@@ -39,22 +39,42 @@ public class MacroFunctionProcessor {
 				}
 
 				final var isTrusted = method.getAnnotation(Trusted.class) != null;
+				final var transitional = method.getAnnotation(Transitional.class);
 
 				// TODO Allow the annotation to override the name.
 				final var name = method.getName();
 				// TODO Read from annotations or the method signature.
-				final var minParameters = 0;
-				final var maxParameters = -1;
+				final int minParameters;
+				final int maxParameters;
+				if (transitional != null) {
+					minParameters = transitional.minParameters();
+					maxParameters = transitional.maxParameters();
+				}
+				else {
+					minParameters = 0;
+					maxParameters = -1;
+				}
 
-				// We build this per-function name so the parser can enforce arguments for us.
-				final var function = new AnnotatedFunction(name, minParameters, maxParameters, parameters -> {
+				// Note that we lie to the parser about argument counts because it does not use
+				// translated error messages.
+				final var function = new AnnotatedFunction(name, 0, -1, parameters -> {
+					// Although the parser will check these for us, this also gives us the
+					// ability for translated messages, assuming we lie to the parser.
+					FunctionUtil.checkNumberParam(name, parameters, minParameters, maxParameters);
+					if (isTrusted && !MapTool.getParser().isMacroTrusted()) {
+						throw new ParserException(I18N.getText("macro.function.general.noPerm", name));
+					}
+
 					try {
-						if (isTrusted && !MapTool.getParser().isMacroTrusted()) {
-							throw new ParserException(I18N.getText("macro.function.general.noPerm", name));
-						}
 						return method.invoke(instance, parameters);
 					}
-					catch (IllegalAccessException | InvocationTargetException e) {
+					catch (IllegalAccessException e) {
+						throw new ParserException(e);
+					}
+					catch (InvocationTargetException e) {
+						if (e.getTargetException() instanceof ParserException pe) {
+							throw pe;
+						}
 						throw new ParserException(e);
 					}
 				});
