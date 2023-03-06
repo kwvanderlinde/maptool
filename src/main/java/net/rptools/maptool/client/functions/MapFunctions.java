@@ -17,11 +17,8 @@ package net.rptools.maptool.client.functions;
 import java.math.BigDecimal;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.Predicate;
 
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.functions.util.Delimiter;
-import net.rptools.maptool.client.functions.util.MacroFunction;
 import net.rptools.maptool.client.ui.zone.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Zone;
@@ -56,36 +53,6 @@ public class MapFunctions extends AbstractFunction {
 
   public static MapFunctions getInstance() {
     return instance;
-  }
-
-  @MacroFunction
-  public List<String> getAllMapNames() {
-    return getAllMapNames(",");
-  }
-
-  @MacroFunction
-  public List<String> getAllMapNames(@Delimiter String delim) {
-    return getMapNames(zone -> true);
-  }
-
-  @MacroFunction
-  public List<String> getVisibleMapNames() {
-    return getVisibleMapNames(",");
-  }
-
-  @MacroFunction
-  public List<String> getVisibleMapNames(@Delimiter String delim) {
-    return getMapNames(Zone::isVisible);
-  }
-
-  private List<String> getMapNames(Predicate<Zone> predicate) {
-    List<String> mapNames = new LinkedList<String>();
-    for (ZoneRenderer zr : MapTool.getFrame().getZoneRenderers()) {
-      if (predicate.test(zr.getZone())) {
-        mapNames.add(zr.getZone().getName());
-      }
-    }
-    return mapNames;
   }
 
   @Override
