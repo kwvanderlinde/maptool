@@ -1,13 +1,17 @@
 package net.rptools.maptool.client.functions.util;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonPrimitive;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.functions.MapFunctions_New;
+import net.rptools.maptool.client.functions.StringFunctions;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.function.Function;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -40,10 +44,10 @@ public class MacroFunctionProcessor {
 
 				final var isTrusted = method.getAnnotation(Trusted.class) != null;
 				final var transitional = method.getAnnotation(Transitional.class);
+				final var delimited = method.getAnnotation(Delimited.class);
 
 				// TODO Allow the annotation to override the name.
 				final var name = method.getName();
-				// TODO Read from annotations or the method signature.
 				final int minParameters;
 				final int maxParameters;
 				if (transitional != null) {
@@ -53,6 +57,43 @@ public class MacroFunctionProcessor {
 				else {
 					minParameters = 0;
 					maxParameters = -1;
+				}
+
+				final java.util.function.BiFunction<Object, List<Object>, Object> resultTransformation;
+				if (delimited != null) {
+					// TODO Allow Iterable? Collection?
+					var isValid = false;
+					if (method.getGenericReturnType() instanceof ParameterizedType returnType) {
+						final var containerType = returnType.getRawType();
+						final var typeArgs = returnType.getActualTypeArguments();
+						isValid = List.class.equals(containerType)
+								&& typeArgs.length == 1 && String.class.equals(typeArgs[0]);
+					}
+
+					if (!isValid) {
+						System.err.printf("Found @Delimited method %s, but the return type is not a list. Skipping this function", name);
+						continue;
+					}
+					final var index = delimited.parameterIndex();
+					final var defaultDelim = delimited.ifMissing();
+
+					resultTransformation = (list, parameters) -> {
+						// TODO Can we enforce that this is List<String> somehow?
+						final var strings = (List<String>) list;
+						// TODO This lookup will need to be robust when we have overloads.
+						final var delim = (parameters.size() > index ? parameters.get(index) : defaultDelim).toString();
+						if ("json".equals(delim)) {
+							JsonArray jarr = new JsonArray();
+							strings.forEach(m -> jarr.add(new JsonPrimitive(m)));
+							return jarr;
+						}
+						else {
+							return StringFunctions.getInstance().join(strings, delim);
+						}
+					};
+				}
+				else {
+					resultTransformation = (a, p) -> a;
 				}
 
 				// Note that we lie to the parser about argument counts because it does not use
@@ -65,8 +106,9 @@ public class MacroFunctionProcessor {
 						throw new ParserException(I18N.getText("macro.function.general.noPerm", name));
 					}
 
+					final Object result;
 					try {
-						return method.invoke(instance, parameters);
+						result = method.invoke(instance, parameters);
 					}
 					catch (IllegalAccessException e) {
 						throw new ParserException(e);
@@ -77,6 +119,8 @@ public class MacroFunctionProcessor {
 						}
 						throw new ParserException(e);
 					}
+
+					return resultTransformation.apply(result, parameters);
 				});
 
 				add.accept(function);

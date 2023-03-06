@@ -3,6 +3,7 @@ package net.rptools.maptool.client.functions;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonPrimitive;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.functions.util.Delimited;
 import net.rptools.maptool.client.functions.util.MacroFunction;
 import net.rptools.maptool.client.functions.util.Transitional;
 import net.rptools.maptool.client.functions.util.Trusted;
@@ -174,35 +175,31 @@ public class MapFunctions_New {
     @MacroFunction
     @Trusted
     @Transitional(minParameters = 0, maxParameters = 1)
-    public Object getAllMapNames(List<Object> parameters) throws ParserException {
-        final var mapNames = getMapAttributes(zone -> true, Zone::getName);
-        final var delim = parameters.size() > 0 ? parameters.get(0).toString() : ",";
-        return delimited(delim, mapNames);
+    @Delimited(parameterIndex = 0, ifMissing = ",")
+    public List<String> getAllMapNames(List<Object> parameters) throws ParserException {
+        return getMapAttributes(zone -> true, Zone::getName);
     }
 
     @MacroFunction
     @Transitional(minParameters = 0, maxParameters = 1)
-    public Object getVisibleMapNames(List<Object> parameters) throws ParserException {
-        final var mapNames = getMapAttributes(Zone::isVisible, Zone::getName);
-        final var delim = parameters.size() > 0 ? parameters.get(0).toString() : ",";
-        return delimited(delim, mapNames);
+    @Delimited(parameterIndex = 0, ifMissing = ",")
+    public List<String> getVisibleMapNames(List<Object> parameters) throws ParserException {
+        return getMapAttributes(Zone::isVisible, Zone::getName);
     }
 
     @MacroFunction
     @Trusted
     @Transitional(minParameters = 0, maxParameters = 1)
-    public Object getAllMapDisplayNames(List<Object> parameters) throws ParserException {
-        final var mapNames = getMapAttributes(zone -> true, Zone::getPlayerAlias);
-        final var delim = parameters.size() > 0 ? parameters.get(0).toString() : ",";
-        return delimited(delim, mapNames);
+    @Delimited(parameterIndex = 0, ifMissing = ",")
+    public List<String> getAllMapDisplayNames(List<Object> parameters) throws ParserException {
+        return getMapAttributes(zone -> true, Zone::getPlayerAlias);
     }
 
     @MacroFunction
     @Transitional(minParameters = 0, maxParameters = 1)
-    public Object getVisibleMapDisplayNames(List<Object> parameters) throws ParserException {
-        final var mapNames = getMapAttributes(Zone::isVisible, Zone::getPlayerAlias);
-        final var delim = parameters.size() > 0 ? parameters.get(0).toString() : ",";
-        return delimited(delim, mapNames);
+    @Delimited(parameterIndex = 0, ifMissing = ",")
+    public List<String> getVisibleMapDisplayNames(List<Object> parameters) throws ParserException {
+        return getMapAttributes(Zone::isVisible, Zone::getPlayerAlias);
     }
 
     @MacroFunction
