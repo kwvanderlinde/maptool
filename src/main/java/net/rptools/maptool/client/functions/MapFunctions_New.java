@@ -259,18 +259,4 @@ public class MapFunctions_New {
         throw new ParserException(
                 I18N.getText("macro.function.moveTokenMap.unknownMap", functionName, mapName));
     }
-
-    // region TODO These are useful for other types of functions too.
-
-    private Object delimited(String delim, List<String> strings) {
-        if ("json".equals(delim)) {
-            JsonArray jarr = new JsonArray();
-            strings.forEach(m -> jarr.add(new JsonPrimitive(m)));
-            return jarr;
-        } else {
-            return StringFunctions.getInstance().join(strings, delim);
-        }
-    }
-
-    // endregion
 }
