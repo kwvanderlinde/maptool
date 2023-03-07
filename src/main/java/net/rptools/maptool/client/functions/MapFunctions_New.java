@@ -164,31 +164,39 @@ public class MapFunctions_New {
     @MacroFunction
     @Trusted
     @Transitional(minParameters = 0, maxParameters = 1)
-    @Delimited(parameterIndex = 0, ifMissing = ",")
-    public List<String> getAllMapNames(List<Object> parameters) {
-        return getMapAttributes(zone -> true, Zone::getName);
+    public Object getAllMapNames(List<Object> parameters) {
+        return FunctionUtil.delimited(
+                getMapAttributes(zone -> true, Zone::getName),
+                parameters.size() > 0 ? parameters.get(0).toString() : ","
+        );
     }
 
     @MacroFunction
     @Transitional(minParameters = 0, maxParameters = 1)
-    @Delimited(parameterIndex = 0, ifMissing = ",")
-    public List<String> getVisibleMapNames(List<Object> parameters) {
-        return getMapAttributes(Zone::isVisible, Zone::getName);
+    public Object getVisibleMapNames(List<Object> parameters) {
+        return FunctionUtil.delimited(
+                getMapAttributes(Zone::isVisible, Zone::getName),
+                parameters.size() > 0 ? parameters.get(0).toString() : ","
+        );
     }
 
     @MacroFunction
     @Trusted
     @Transitional(minParameters = 0, maxParameters = 1)
-    @Delimited(parameterIndex = 0, ifMissing = ",")
-    public List<String> getAllMapDisplayNames(List<Object> parameters) {
-        return getMapAttributes(zone -> true, Zone::getPlayerAlias);
+    public Object getAllMapDisplayNames(List<Object> parameters) {
+        return FunctionUtil.delimited(
+                getMapAttributes(zone -> true, Zone::getPlayerAlias),
+                parameters.size() > 0 ? parameters.get(0).toString() : ","
+        );
     }
 
     @MacroFunction
     @Transitional(minParameters = 0, maxParameters = 1)
-    @Delimited(parameterIndex = 0, ifMissing = ",")
-    public List<String> getVisibleMapDisplayNames(List<Object> parameters) {
-        return getMapAttributes(Zone::isVisible, Zone::getPlayerAlias);
+    public Object getVisibleMapDisplayNames(List<Object> parameters) {
+        return FunctionUtil.delimited(
+                getMapAttributes(Zone::isVisible, Zone::getPlayerAlias),
+                parameters.size() > 0 ? parameters.get(0).toString() : ","
+        );
     }
 
     @MacroFunction
