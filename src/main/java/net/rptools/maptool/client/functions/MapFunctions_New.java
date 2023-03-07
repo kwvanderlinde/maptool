@@ -163,39 +163,57 @@ public class MapFunctions_New {
 
     @MacroFunction
     @Trusted
-    @Transitional(minParameters = 0, maxParameters = 1)
-    public Object getAllMapNames(List<Object> parameters) {
+    public Object getAllMapNames() {
+        return getAllMapNames(",");
+    }
+
+    @MacroFunction
+    @Trusted
+    public Object getAllMapNames(Object delimiter) {
         return FunctionUtil.delimited(
                 getMapAttributes(zone -> true, Zone::getName),
-                parameters.size() > 0 ? parameters.get(0).toString() : ","
+                delimiter.toString()
         );
     }
 
     @MacroFunction
-    @Transitional(minParameters = 0, maxParameters = 1)
-    public Object getVisibleMapNames(List<Object> parameters) {
+    public Object getVisibleMapNames() {
+        return getVisibleMapNames(",");
+    }
+
+    @MacroFunction
+    public Object getVisibleMapNames(Object delimiter) {
         return FunctionUtil.delimited(
                 getMapAttributes(Zone::isVisible, Zone::getName),
-                parameters.size() > 0 ? parameters.get(0).toString() : ","
+                delimiter.toString()
         );
     }
 
     @MacroFunction
     @Trusted
-    @Transitional(minParameters = 0, maxParameters = 1)
-    public Object getAllMapDisplayNames(List<Object> parameters) {
+    public Object getAllMapDisplayNames() {
+        return getAllMapDisplayNames(",");
+    }
+
+    @MacroFunction
+    @Trusted
+    public Object getAllMapDisplayNames(Object delimiter) {
         return FunctionUtil.delimited(
                 getMapAttributes(zone -> true, Zone::getPlayerAlias),
-                parameters.size() > 0 ? parameters.get(0).toString() : ","
+                delimiter.toString()
         );
     }
 
     @MacroFunction
-    @Transitional(minParameters = 0, maxParameters = 1)
-    public Object getVisibleMapDisplayNames(List<Object> parameters) {
+    public Object getVisibleMapDisplayNames() {
+        return getVisibleMapDisplayNames(",");
+    }
+
+    @MacroFunction
+    public Object getVisibleMapDisplayNames(Object delimiter) {
         return FunctionUtil.delimited(
                 getMapAttributes(Zone::isVisible, Zone::getPlayerAlias),
-                parameters.size() > 0 ? parameters.get(0).toString() : ","
+                delimiter.toString()
         );
     }
 

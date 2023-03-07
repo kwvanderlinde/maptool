@@ -1,10 +1,6 @@
 package net.rptools.maptool.client.functions.util;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonPrimitive;
-import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.functions.MapFunctions_New;
-import net.rptools.maptool.client.functions.StringFunctions;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.ParserException;
@@ -13,9 +9,12 @@ import net.rptools.parser.function.Function;
 import javax.annotation.Nullable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.function.BiFunction;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 
 public class MacroFunctionProcessor {
@@ -39,10 +38,7 @@ public class MacroFunctionProcessor {
 			return;
 		}
 
-		// We build a separate Function implementation for each method so that the parser can
-		// enforce parameter counts for us... in the future once we have those. Also in the
-		// future we will need to support multiple overloads for a given name, all part of the
-		// same Function presumably.
+		Map<String, List<Method>> overloadSets = new HashMap<>();
 
 		for (final var method : type.getDeclaredMethods()) {
 			final var annotation = method.getAnnotation(MacroFunction.class);
@@ -50,35 +46,50 @@ public class MacroFunctionProcessor {
 				continue;
 			}
 
-			final var trusted = method.getAnnotation(Trusted.class);
-			final var transitional = method.getAnnotation(Transitional.class);
+			// TODO Allow the @MacroFunction annotation to override the name.
+			final var name = method.getName();
+			overloadSets.computeIfAbsent(name, n -> new ArrayList<>()).add(method);
+		}
 
-			// TODO We actually need to group methods by name, then process as a group. Transitional
-			//  functions do not support overloading.
-			Function function;
-			if (transitional != null) {
-				function = processTransitional(instance, type, method, trusted, transitional);
-			}
-			else {
-				function = processTyped(instance, type, method, trusted);
-			}
-
-
+		for (final var entry : overloadSets.entrySet()) {
+			final var name = entry.getKey();
+			final var methods = entry.getValue();
+			final var function = processOverloadSet(name, instance, type, methods);
 			add.accept(function);
 		}
 	}
 
-	private <T> @Nullable Function processTransitional(T instance, Class<T> type, Method method, Trusted trusted, Transitional transitional) {
-		// TODO Allow the annotation to override the name.
-		final var name = method.getName();
+	private <T> @Nullable Function processOverloadSet(String name, T instance, Class<T> type, List<Method> methods) {
+		boolean anyTransitional = methods.stream().anyMatch(method -> method.getAnnotation(Transitional.class) != null);
+		if (anyTransitional) {
+			if (methods.size() > 1) {
+				System.err.println("Macro function marked @Transitional but has overloads. Skipping.");
+				return null;
+			}
+
+			return processTransitional(name, instance, type, methods.get(0));
+		}
+		else {
+			return processTypedOverload(name, instance, type, methods);
+		}
+	}
+
+	private <T> @Nullable Function processTransitional(String name, T instance, Class<T> type, Method method) {
+		final var trusted = method.getAnnotation(Trusted.class);
+		final var transitional = method.getAnnotation(Transitional.class);
+
 		final int minParameters = transitional.minParameters();
 		final int maxParameters = transitional.maxParameters();
 		final var isTrusted = trusted != null;
 
 		// Note that we lie to the parser about argument counts because it does not use
 		// translated error messages.
-		return new AnnotatedFunction(name, minParameters, maxParameters, isTrusted, parameters -> {
+		return new TransitionalFunction(name, minParameters, maxParameters, parameters -> {
 			try {
+				if (isTrusted) {
+					FunctionUtil.blockUntrustedMacro(name);
+				}
+
 				return method.invoke(instance, parameters);
 			}
 			catch (IllegalAccessException e) {
@@ -96,33 +107,50 @@ public class MacroFunctionProcessor {
 		});
 	}
 
-	private <T> @Nullable Function processTyped(T instance, Class<?> type, Method method, Trusted trusted) {
-		// TODO Support more than nullary functions.
-		// TODO Allow the annotation to override the name.
-		final var name = method.getName();
-		final int minParameters = 0;
-		final int maxParameters = 0;
-		final var isTrusted = trusted != null;
+	private <T> @Nullable Function processTypedOverload(String name, T instance, Class<?> type, List<Method> methods) {
+		SortedMap<Integer, AnnotatedMacroFunctionImplementation> callbacksByParameterCount = new TreeMap<>(Integer::compare);
+		for (final var method : methods) {
+			final int parameterCount = method.getParameterCount();
+			// For now we just assume that all parameters are Object. I.e., no conversions.
+			if (callbacksByParameterCount.containsKey(parameterCount)) {
+				// TODO Invent a system where we care more about types than parameter counts.
+				System.err.printf("Overloaded @MacroFunction %s has multiple overloads with %d parameters. I can't deal with this right now.%n", name, parameterCount);
+				return null;
+			}
 
-		// Note that we lie to the parser about argument counts because it does not use
-		// translated error messages.
-		return new AnnotatedFunction(name, minParameters, maxParameters, isTrusted, parameters -> {
-			try {
-				return method.invoke(instance, parameters);
-			}
-			catch (IllegalAccessException e) {
-				throw new ParserException(e);
-			}
-			catch (InvocationTargetException e) {
-				if (e.getTargetException() instanceof AnnotatedFunctionException afe) {
-					throw new ParserException(I18N.getText(afe.getKey(), name, afe.getParameters()));
-				}
-				if (e.getTargetException() instanceof ParserException pe) {
-					throw pe;
-				}
-				throw new ParserException(e);
-			}
-		});
+			final var isTrusted = method.getAnnotation(Trusted.class) != null;
 
+			// Note that we lie to the parser about argument counts because it does not use
+			// translated error messages.
+			final AnnotatedMacroFunctionImplementation callback = parameters -> {
+				try {
+					if (isTrusted) {
+						FunctionUtil.blockUntrustedMacro(name);
+					}
+
+					return method.invoke(instance, parameters.toArray(Object[]::new));
+				}
+				catch (IllegalAccessException e) {
+					throw new ParserException(e);
+				}
+				catch (InvocationTargetException e) {
+					if (e.getTargetException() instanceof AnnotatedFunctionException afe) {
+						throw new ParserException(I18N.getText(afe.getKey(), name, afe.getParameters()));
+					}
+					if (e.getTargetException() instanceof ParserException pe) {
+						throw pe;
+					}
+					throw new ParserException(e);
+				}
+			};
+
+			callbacksByParameterCount.put(parameterCount, callback);
+		}
+
+		return new OverloadedFunction(
+				name,
+				callbacksByParameterCount.firstKey(),
+				callbacksByParameterCount.values().toArray(AnnotatedMacroFunctionImplementation[]::new)
+		);
 	}
 }
