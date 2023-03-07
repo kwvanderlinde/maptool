@@ -1,17 +1,14 @@
 package net.rptools.maptool.client.functions;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonPrimitive;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.functions.util.AnnotatedFunctionException;
 import net.rptools.maptool.client.functions.util.Delimited;
 import net.rptools.maptool.client.functions.util.MacroFunction;
 import net.rptools.maptool.client.functions.util.Transitional;
 import net.rptools.maptool.client.functions.util.Trusted;
 import net.rptools.maptool.client.ui.zone.ZoneRenderer;
-import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.util.FunctionUtil;
-import net.rptools.parser.ParserException;
 
 import java.math.BigDecimal;
 import java.util.LinkedList;
@@ -22,10 +19,10 @@ import java.util.function.Predicate;
 public class MapFunctions_New {
     @MacroFunction
     @Transitional(minParameters = 0, maxParameters = 0)
-    public Object getCurrentMapName(List<Object> parameters) throws ParserException {
+    public Object getCurrentMapName(List<Object> parameters) throws AnnotatedFunctionException {
         ZoneRenderer currentZR = MapTool.getFrame().getCurrentZoneRenderer();
         if (currentZR == null) {
-            throw new ParserException(I18N.getText("macro.function.map.none", "getCurrentMapName"));
+            throw new AnnotatedFunctionException("macro.function.map.none");
         } else {
             return currentZR.getZone().getName();
         }
@@ -34,12 +31,11 @@ public class MapFunctions_New {
     @MacroFunction
     @Trusted
     @Transitional(minParameters = 0, maxParameters = 1)
-    public Object getMapDisplayName(List<Object> parameters) throws ParserException {
-        final var functionName = "getMapDisplayName";
+    public Object getMapDisplayName(List<Object> parameters) throws AnnotatedFunctionException {
         if (parameters.size() == 0) {
             ZoneRenderer currentZR = MapTool.getFrame().getCurrentZoneRenderer();
             if (currentZR == null) {
-                throw new ParserException(I18N.getText("macro.function.map.none", functionName));
+                throw new AnnotatedFunctionException("macro.function.map.none");
             }
             else {
                 return currentZR.getZone().getPlayerAlias();
@@ -57,7 +53,7 @@ public class MapFunctions_New {
                 }
             }
             if (foundMap == null) {
-                throw new ParserException(I18N.getText("macro.function.map.notFound", functionName));
+                throw new AnnotatedFunctionException("macro.function.map.notFound");
             } else {
                 return foundMap;
             }
@@ -67,28 +63,26 @@ public class MapFunctions_New {
     @MacroFunction
     @Trusted
     @Transitional(minParameters = 1, maxParameters = 1)
-    public Object setCurrentMap(List<Object> parameters) throws ParserException {
-        final var functionName = "setCurrentMap";
+    public Object setCurrentMap(List<Object> parameters) throws AnnotatedFunctionException {
         String mapName = parameters.get(0).toString();
-        ZoneRenderer zr = getNamedMap(functionName, mapName);
+        ZoneRenderer zr = getNamedMap(mapName);
         MapTool.getFrame().setCurrentZoneRenderer(zr);
         return mapName;
     }
 
     @MacroFunction
     @Transitional(minParameters = 0, maxParameters = 1)
-    public Object getMapVisible(List<Object> parameters) throws ParserException {
-        final var functionName = "getMapVisible";
+    public Object getMapVisible(List<Object> parameters) throws AnnotatedFunctionException {
         if (parameters.size() > 0) {
             String mapName = parameters.get(0).toString();
-            return getNamedMap(functionName, mapName).getZone().isVisible()
+            return getNamedMap(mapName).getZone().isVisible()
                     ? BigDecimal.ONE
                     : BigDecimal.ZERO;
         } else {
             // Return the visibility of the current map/zone
             ZoneRenderer currentZR = MapTool.getFrame().getCurrentZoneRenderer();
             if (currentZR == null) {
-                throw new ParserException(I18N.getText("macro.function.map.none", functionName));
+                throw new AnnotatedFunctionException("macro.function.map.none");
             } else {
                 return currentZR.getZone().isVisible() ? BigDecimal.ONE : BigDecimal.ZERO;
             }
@@ -98,17 +92,16 @@ public class MapFunctions_New {
     @MacroFunction
     @Trusted
     @Transitional(minParameters = 1, maxParameters = 2)
-    public Object setMapVisible(List<Object> parameters) throws ParserException {
-        final var functionName = "setMapVisible";
+    public Object setMapVisible(List<Object> parameters) throws AnnotatedFunctionException {
         boolean visible = FunctionUtil.getBooleanValue(parameters.get(0).toString());
         Zone zone;
         if (parameters.size() > 1) {
             String mapName = parameters.get(1).toString();
-            zone = getNamedMap(functionName, mapName).getZone();
+            zone = getNamedMap(mapName).getZone();
         } else {
             ZoneRenderer currentZR = MapTool.getFrame().getCurrentZoneRenderer();
             if (currentZR == null) {
-                throw new ParserException(I18N.getText("macro.function.map.none", functionName));
+                throw new AnnotatedFunctionException("macro.function.map.none");
             } else {
                 zone = currentZR.getZone();
             }
@@ -124,11 +117,10 @@ public class MapFunctions_New {
     @MacroFunction
     @Trusted
     @Transitional(minParameters = 2, maxParameters = 2)
-    public Object setMapName(List<Object> parameters) throws ParserException {
-        final var functionName = "setMapName";
+    public Object setMapName(List<Object> parameters) throws AnnotatedFunctionException {
         String oldMapName = parameters.get(0).toString();
         String newMapName = parameters.get(1).toString();
-        Zone zone = getNamedMap(functionName, oldMapName).getZone();
+        Zone zone = getNamedMap(oldMapName).getZone();
         zone.setName(newMapName);
         MapTool.serverCommand().renameZone(zone.getId(), newMapName);
         if (zone == MapTool.getFrame().getCurrentZoneRenderer().getZone())
@@ -139,11 +131,10 @@ public class MapFunctions_New {
     @MacroFunction
     @Trusted
     @Transitional(minParameters = 2, maxParameters = 2)
-    public Object setMapDisplayName(List<Object> parameters) throws ParserException {
-        final var functionName = "setMapDisplayName";
+    public Object setMapDisplayName(List<Object> parameters) throws AnnotatedFunctionException {
         String mapName = parameters.get(0).toString();
         String newMapDisplayName = parameters.get(1).toString();
-        Zone zone = getNamedMap(functionName, mapName).getZone();
+        Zone zone = getNamedMap(mapName).getZone();
         String oldName;
         oldName = zone.getPlayerAlias();
         zone.setPlayerAlias(newMapDisplayName);
@@ -152,19 +143,17 @@ public class MapFunctions_New {
         if (zone == MapTool.getFrame().getCurrentZoneRenderer().getZone())
             MapTool.getFrame().setCurrentZoneRenderer(MapTool.getFrame().getCurrentZoneRenderer());
         if (oldName.equals(zone.getPlayerAlias()))
-            throw new ParserException(
-                    I18N.getText("macro.function.map.duplicateDisplay", functionName));
+            throw new AnnotatedFunctionException("macro.function.map.duplicateDisplay");
         return zone.getPlayerAlias();
     }
 
     @MacroFunction
     @Trusted
     @Transitional(minParameters = 2, maxParameters = 2)
-    public Object copyMap(List<Object> parameters) throws ParserException {
-        final var functionName = "copyMap";
+    public Object copyMap(List<Object> parameters) throws AnnotatedFunctionException {
         String oldName = parameters.get(0).toString();
         String newName = parameters.get(1).toString();
-        Zone oldMap = getNamedMap(functionName, oldName).getZone();
+        Zone oldMap = getNamedMap(oldName).getZone();
         Zone newMap = new Zone(oldMap);
         newMap.setName(newName);
         MapTool.addZone(newMap, false);
@@ -176,14 +165,14 @@ public class MapFunctions_New {
     @Trusted
     @Transitional(minParameters = 0, maxParameters = 1)
     @Delimited(parameterIndex = 0, ifMissing = ",")
-    public List<String> getAllMapNames(List<Object> parameters) throws ParserException {
+    public List<String> getAllMapNames(List<Object> parameters) {
         return getMapAttributes(zone -> true, Zone::getName);
     }
 
     @MacroFunction
     @Transitional(minParameters = 0, maxParameters = 1)
     @Delimited(parameterIndex = 0, ifMissing = ",")
-    public List<String> getVisibleMapNames(List<Object> parameters) throws ParserException {
+    public List<String> getVisibleMapNames(List<Object> parameters) {
         return getMapAttributes(Zone::isVisible, Zone::getName);
     }
 
@@ -191,22 +180,21 @@ public class MapFunctions_New {
     @Trusted
     @Transitional(minParameters = 0, maxParameters = 1)
     @Delimited(parameterIndex = 0, ifMissing = ",")
-    public List<String> getAllMapDisplayNames(List<Object> parameters) throws ParserException {
+    public List<String> getAllMapDisplayNames(List<Object> parameters) {
         return getMapAttributes(zone -> true, Zone::getPlayerAlias);
     }
 
     @MacroFunction
     @Transitional(minParameters = 0, maxParameters = 1)
     @Delimited(parameterIndex = 0, ifMissing = ",")
-    public List<String> getVisibleMapDisplayNames(List<Object> parameters) throws ParserException {
+    public List<String> getVisibleMapDisplayNames(List<Object> parameters) {
         return getMapAttributes(Zone::isVisible, Zone::getPlayerAlias);
     }
 
     @MacroFunction
     @Trusted
     @Transitional(minParameters = 1, maxParameters = 1)
-    public Object getMapName(List<Object> parameters) throws ParserException {
-        final var functionName = "getMapName";
+    public Object getMapName(List<Object> parameters) throws AnnotatedFunctionException {
         String dispName = parameters.get(0).toString();
 
         for (ZoneRenderer zr : MapTool.getFrame().getZoneRenderers()) {
@@ -214,18 +202,18 @@ public class MapFunctions_New {
                 return zr.getZone().getName();
             }
         }
-        throw new ParserException(I18N.getText("macro.function.map.notFound", functionName));
+        throw new AnnotatedFunctionException("macro.function.map.notFound");
     }
 
     @MacroFunction
     @Trusted
     @Transitional(minParameters = 1, maxParameters = 1)
-    public Object setMapSelectButton(List<Object> parameters) throws ParserException {
-        final var functionName = "setMapSelectButton";
+    public Object setMapSelectButton(List<Object> parameters) {
         // this is kind of a map function? :)
         boolean vis = !parameters.get(0).toString().equals("0");
-        if (MapTool.getFrame().getFullsZoneButton() != null)
+        if (MapTool.getFrame().getFullsZoneButton() != null) {
             MapTool.getFrame().getFullsZoneButton().setVisible(vis);
+        }
         MapTool.getFrame().getToolbarPanel().getMapselect().setVisible(vis);
         return (MapTool.getFrame().getToolbarPanel().getMapselect().isVisible()
                 ? BigDecimal.ONE
@@ -245,18 +233,16 @@ public class MapFunctions_New {
     /**
      * Find the map/zone for a given map name
      *
-     * @param functionName String Name of the calling function.
      * @param mapName String Name of the searched for map.
      * @return ZoneRenderer The map/zone.
-     * @throws ParserException if the map is not found
+     * @throws net.rptools.maptool.client.functions.util.AnnotatedFunctionException if the map is not found
      */
-    private ZoneRenderer getNamedMap(final String functionName, final String mapName)
-            throws ParserException {
+    private ZoneRenderer getNamedMap(final String mapName)
+            throws AnnotatedFunctionException {
         ZoneRenderer zr = MapTool.getFrame().getZoneRenderer(mapName);
 
         if (zr != null) return zr;
 
-        throw new ParserException(
-                I18N.getText("macro.function.moveTokenMap.unknownMap", functionName, mapName));
+        throw new AnnotatedFunctionException("macro.function.moveTokenMap.unknownMap", mapName);
     }
 }

@@ -114,6 +114,9 @@ public class MacroFunctionProcessor {
 						throw new ParserException(e);
 					}
 					catch (InvocationTargetException e) {
+						if (e.getTargetException() instanceof AnnotatedFunctionException afe) {
+							throw new ParserException(I18N.getText(afe.getKey(), name, afe.getParameters()));
+						}
 						if (e.getTargetException() instanceof ParserException pe) {
 							throw pe;
 						}
