@@ -14,8 +14,6 @@
  */
 package net.rptools.maptool.client.functions;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonPrimitive;
 import java.math.BigDecimal;
 import java.util.LinkedList;
 import java.util.List;
@@ -60,81 +58,40 @@ public class MapFunctions extends AbstractFunction {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
+    if (functionName.equalsIgnoreCase("getCurrentMapId")) {
+      FunctionUtil.checkNumberParam(functionName, parameters, 0, 0);
+      ZoneRenderer currentZR = FunctionUtil.getZoneRendererFromParam(functionName, parameters, -1);
+      return currentZR.getZone().getId();
+    }
     if (functionName.equalsIgnoreCase("getCurrentMapName")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 0);
-      ZoneRenderer currentZR = MapTool.getFrame().getCurrentZoneRenderer();
-      if (currentZR == null) {
-        throw new ParserException(I18N.getText("macro.function.map.none", functionName));
-      } else {
-        return currentZR.getZone().getName();
-      }
+      ZoneRenderer currentZR = FunctionUtil.getZoneRendererFromParam(functionName, parameters, -1);
+      return currentZR.getZone().getName();
     } else if (functionName.equalsIgnoreCase("getMapDisplayName")) {
-      checkTrusted(functionName);
+      FunctionUtil.blockUntrustedMacro(functionName);
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
-      if (parameters.size() == 0) {
-        ZoneRenderer currentZR = MapTool.getFrame().getCurrentZoneRenderer();
-        if (currentZR == null) {
-          throw new ParserException(I18N.getText("macro.function.map.none", functionName));
-        } else {
-          return currentZR.getZone().getPlayerAlias();
-        }
-      } else {
-        List<ZoneRenderer> rendererList =
-            new LinkedList<ZoneRenderer>(
-                MapTool.getFrame().getZoneRenderers()); // copied from ZoneSelectionPopup
-        String searchMap = parameters.get(0).toString();
-        String foundMap = null;
-        for (int i = 0; i < rendererList.size(); i++) {
-          if (rendererList.get(i).getZone().getName().equals(searchMap)) {
-            foundMap = rendererList.get(i).getZone().getPlayerAlias();
-            break;
-          }
-        }
-        if (foundMap == null) {
-          throw new ParserException(I18N.getText("macro.function.map.notFound", functionName));
-        } else {
-          return foundMap;
-        }
-      }
+      final ZoneRenderer zr = FunctionUtil.getZoneRendererFromParam(functionName, parameters, 0);
+      return zr.getZone().getPlayerAlias();
     } else if (functionName.equalsIgnoreCase("setCurrentMap")) {
-      checkTrusted(functionName);
+      FunctionUtil.blockUntrustedMacro(functionName);
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
-      String mapName = parameters.get(0).toString();
-      ZoneRenderer zr = getNamedMap(functionName, mapName);
+      String mapNameOrId = parameters.get(0).toString();
+      ZoneRenderer zr = FunctionUtil.getZoneRenderer(functionName, mapNameOrId);
       MapTool.getFrame().setCurrentZoneRenderer(zr);
-      return mapName;
+      return mapNameOrId;
     } else if ("getMapVisible".equalsIgnoreCase(functionName)) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
-      if (parameters.size() > 0) {
-        String mapName = parameters.get(0).toString();
-        return getNamedMap(functionName, mapName).getZone().isVisible()
-            ? BigDecimal.ONE
-            : BigDecimal.ZERO;
-      } else {
-        // Return the visibility of the current map/zone
-        ZoneRenderer currentZR = MapTool.getFrame().getCurrentZoneRenderer();
-        if (currentZR == null) {
-          throw new ParserException(I18N.getText("macro.function.map.none", functionName));
-        } else {
-          return currentZR.getZone().isVisible() ? BigDecimal.ONE : BigDecimal.ZERO;
-        }
-      }
+
+      final ZoneRenderer zr = FunctionUtil.getZoneRendererFromParam(functionName, parameters, 0);
+      return zr.getZone().isVisible() ? BigDecimal.ONE : BigDecimal.ZERO;
     } else if ("setMapVisible".equalsIgnoreCase(functionName)) {
-      checkTrusted(functionName);
+      FunctionUtil.blockUntrustedMacro(functionName);
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
       boolean visible = FunctionUtil.getBooleanValue(parameters.get(0).toString());
-      Zone zone;
-      if (parameters.size() > 1) {
-        String mapName = parameters.get(1).toString();
-        zone = getNamedMap(functionName, mapName).getZone();
-      } else {
-        ZoneRenderer currentZR = MapTool.getFrame().getCurrentZoneRenderer();
-        if (currentZR == null) {
-          throw new ParserException(I18N.getText("macro.function.map.none", functionName));
-        } else {
-          zone = currentZR.getZone();
-        }
-      }
+
+      final ZoneRenderer zr = FunctionUtil.getZoneRendererFromParam(functionName, parameters, 1);
+      final var zone = zr.getZone();
+
       // Set the zone and return the visibility of the current map/zone
       zone.setVisible(visible);
       MapTool.serverCommand().setZoneVisibility(zone.getId(), zone.isVisible());
@@ -143,41 +100,45 @@ public class MapFunctions extends AbstractFunction {
       return zone.isVisible() ? BigDecimal.ONE : BigDecimal.ZERO;
 
     } else if ("setMapName".equalsIgnoreCase(functionName)) {
-      checkTrusted(functionName);
+      FunctionUtil.blockUntrustedMacro(functionName);
       FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
-      String oldMapName = parameters.get(0).toString();
+      String oldMapNameOrGuid = parameters.get(0).toString();
       String newMapName = parameters.get(1).toString();
-      Zone zone = getNamedMap(functionName, oldMapName).getZone();
+      Zone zone = FunctionUtil.getZoneRenderer(functionName, oldMapNameOrGuid).getZone();
       zone.setName(newMapName);
       MapTool.serverCommand().renameZone(zone.getId(), newMapName);
-      if (zone == MapTool.getFrame().getCurrentZoneRenderer().getZone())
+      if (zone == MapTool.getFrame().getCurrentZoneRenderer().getZone()) {
         MapTool.getFrame().setCurrentZoneRenderer(MapTool.getFrame().getCurrentZoneRenderer());
+      }
       return zone.getName();
 
     } else if ("setMapDisplayName".equalsIgnoreCase(functionName)) {
-      checkTrusted(functionName);
+      FunctionUtil.blockUntrustedMacro(functionName);
       FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
       String mapName = parameters.get(0).toString();
       String newMapDisplayName = parameters.get(1).toString();
-      Zone zone = getNamedMap(functionName, mapName).getZone();
-      String oldName;
-      oldName = zone.getPlayerAlias();
+      Zone zone = FunctionUtil.getZoneRenderer(functionName, mapName).getZone();
+      String oldName = zone.getPlayerAlias();
       zone.setPlayerAlias(newMapDisplayName);
-      if (oldName.equals(newMapDisplayName)) return zone.getPlayerAlias();
+      if (oldName.equals(newMapDisplayName)) {
+        return zone.getPlayerAlias();
+      }
       MapTool.serverCommand().changeZoneDispName(zone.getId(), newMapDisplayName);
-      if (zone == MapTool.getFrame().getCurrentZoneRenderer().getZone())
+      if (zone == MapTool.getFrame().getCurrentZoneRenderer().getZone()) {
         MapTool.getFrame().setCurrentZoneRenderer(MapTool.getFrame().getCurrentZoneRenderer());
-      if (oldName.equals(zone.getPlayerAlias()))
+      }
+      if (oldName.equals(zone.getPlayerAlias())) {
         throw new ParserException(
             I18N.getText("macro.function.map.duplicateDisplay", functionName));
+      }
       return zone.getPlayerAlias();
 
     } else if ("copyMap".equalsIgnoreCase(functionName)) {
-      checkTrusted(functionName);
+      FunctionUtil.blockUntrustedMacro(functionName);
       FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
       String oldName = parameters.get(0).toString();
       String newName = parameters.get(1).toString();
-      Zone oldMap = getNamedMap(functionName, oldName).getZone();
+      Zone oldMap = FunctionUtil.getZoneRenderer(functionName, oldName).getZone();
       Zone newMap = new Zone(oldMap);
       newMap.setName(newName);
       MapTool.addZone(newMap, false);
@@ -189,7 +150,9 @@ public class MapFunctions extends AbstractFunction {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
       boolean allMaps = functionName.equalsIgnoreCase("getAllMapNames");
 
-      if (allMaps) checkTrusted(functionName);
+      if (allMaps) {
+        FunctionUtil.blockUntrustedMacro(functionName);
+      }
 
       List<String> mapNames = new LinkedList<String>();
       for (ZoneRenderer zr : MapTool.getFrame().getZoneRenderers()) {
@@ -197,21 +160,17 @@ public class MapFunctions extends AbstractFunction {
           mapNames.add(zr.getZone().getName());
         }
       }
-      String delim = parameters.size() > 0 ? parameters.get(0).toString() : ",";
-      if ("json".equals(delim)) {
-        JsonArray jarr = new JsonArray();
-        mapNames.forEach(m -> jarr.add(new JsonPrimitive(m)));
-        return jarr;
-      } else {
-        return StringFunctions.getInstance().join(mapNames, delim);
-      }
 
+      return FunctionUtil.delimited(
+          mapNames, parameters.size() > 0 ? parameters.get(0).toString() : ",");
     } else if ("getVisibleMapDisplayNames".equalsIgnoreCase(functionName)
         || "getAllMapDisplayNames".equalsIgnoreCase(functionName)) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
       boolean allMaps = functionName.equalsIgnoreCase("getAllMapDisplayNames");
 
-      if (allMaps) checkTrusted(functionName);
+      if (allMaps) {
+        FunctionUtil.blockUntrustedMacro(functionName);
+      }
 
       List<String> mapNames = new LinkedList<String>();
       for (ZoneRenderer zr : MapTool.getFrame().getZoneRenderers()) {
@@ -219,28 +178,24 @@ public class MapFunctions extends AbstractFunction {
           mapNames.add(zr.getZone().getPlayerAlias());
         }
       }
-      String delim = parameters.size() > 0 ? parameters.get(0).toString() : ",";
-      if ("json".equals(delim)) {
-        JsonArray jarr = new JsonArray();
-        mapNames.forEach(m -> jarr.add(new JsonPrimitive(m)));
-        return jarr;
-      } else {
-        return StringFunctions.getInstance().join(mapNames, delim);
-      }
+
+      return FunctionUtil.delimited(
+          mapNames, parameters.size() > 0 ? parameters.get(0).toString() : ",");
     } else if ("getMapName".equalsIgnoreCase(functionName)) {
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
-      String dispName = parameters.get(0).toString();
-      checkTrusted(functionName);
+      FunctionUtil.blockUntrustedMacro(functionName);
 
+      String displayName = parameters.get(0).toString();
       for (ZoneRenderer zr : MapTool.getFrame().getZoneRenderers()) {
-        if (zr.getZone().getPlayerAlias().equals(dispName)) {
+        if (zr.getZone().getPlayerAlias().equals(displayName)) {
           return zr.getZone().getName();
         }
       }
-      throw new ParserException(I18N.getText("macro.function.map.notFound", functionName));
+      throw new ParserException(
+          I18N.getText("macro.function.moveTokenMap.unknownMap", functionName, displayName));
     } else if ("setMapSelectButton".equalsIgnoreCase(functionName)) {
       // this is kind of a map function? :)
-      checkTrusted(functionName);
+      FunctionUtil.blockUntrustedMacro(functionName);
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
       boolean vis = !parameters.get(0).toString().equals("0");
       if (MapTool.getFrame().getFullsZoneButton() != null)
@@ -251,35 +206,5 @@ public class MapFunctions extends AbstractFunction {
           : BigDecimal.ZERO);
     }
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));
-  }
-
-  /**
-   * Find the map/zone for a given map name
-   *
-   * @param functionName String Name of the calling function.
-   * @param mapName String Name of the searched for map.
-   * @return ZoneRenderer The map/zone.
-   * @throws ParserException if the map is not found
-   */
-  private ZoneRenderer getNamedMap(final String functionName, final String mapName)
-      throws ParserException {
-    ZoneRenderer zr = MapTool.getFrame().getZoneRenderer(mapName);
-
-    if (zr != null) return zr;
-
-    throw new ParserException(
-        I18N.getText("macro.function.moveTokenMap.unknownMap", functionName, mapName));
-  }
-
-  /**
-   * Checks whether or not the function is trusted
-   *
-   * @param functionName Name of the macro function
-   * @throws ParserException Returns trust error message and function name
-   */
-  private void checkTrusted(String functionName) throws ParserException {
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
-    }
   }
 }

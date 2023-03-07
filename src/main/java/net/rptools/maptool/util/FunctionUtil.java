@@ -17,11 +17,13 @@ package net.rptools.maptool.util;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import java.math.BigDecimal;
 import java.util.List;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.functions.FindTokenFunctions;
+import net.rptools.maptool.client.functions.StringFunctions;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
 import net.rptools.maptool.client.ui.zone.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
@@ -79,6 +81,24 @@ public class FunctionUtil {
         throw new ParserException(I18N.getText(KEY_NOT_ENOUGH_PARAM, functionName, min, size));
       if (size > max && max != Function.UNLIMITED_PARAMETERS)
         throw new ParserException(I18N.getText(KEY_TOO_MANY_PARAM, functionName, max, size));
+    }
+  }
+
+  /**
+   * Combines a list of strings into string list or JSON array.
+   *
+   * @param strings The strings to combine.
+   * @param delim The delimiter to use in the resulting string list, or "json" to make a JSON array.
+   * @return A JsonArray containing all of results if delim is "json". Otherwise a string list
+   *     containing all of results.
+   */
+  public static Object delimited(List<String> strings, String delim) {
+    if ("json".equals(delim)) {
+      JsonArray jarr = new JsonArray();
+      strings.forEach(m -> jarr.add(new JsonPrimitive(m)));
+      return jarr;
+    } else {
+      return StringFunctions.getInstance().join(strings, delim);
     }
   }
 
