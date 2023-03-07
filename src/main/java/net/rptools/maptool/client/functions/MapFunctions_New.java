@@ -30,33 +30,33 @@ public class MapFunctions_New {
 
     @MacroFunction
     @Trusted
-    @Transitional(minParameters = 0, maxParameters = 1)
-    public Object getMapDisplayName(List<Object> parameters) throws AnnotatedFunctionException {
-        if (parameters.size() == 0) {
-            ZoneRenderer currentZR = MapTool.getFrame().getCurrentZoneRenderer();
-            if (currentZR == null) {
-                throw new AnnotatedFunctionException("macro.function.map.none");
+    public Object getMapDisplayName() throws AnnotatedFunctionException {
+        ZoneRenderer currentZR = MapTool.getFrame().getCurrentZoneRenderer();
+        if (currentZR == null) {
+            throw new AnnotatedFunctionException("macro.function.map.none");
+        }
+        else {
+            return currentZR.getZone().getPlayerAlias();
+        }
+    }
+
+    @MacroFunction
+    @Trusted
+    public Object getMapDisplayName(Object searchMap) throws AnnotatedFunctionException {
+        List<ZoneRenderer> rendererList =
+                new LinkedList<ZoneRenderer>(
+                        MapTool.getFrame().getZoneRenderers()); // copied from ZoneSelectionPopup
+        String foundMap = null;
+        for (int i = 0; i < rendererList.size(); i++) {
+            if (rendererList.get(i).getZone().getName().equals(searchMap)) {
+                foundMap = rendererList.get(i).getZone().getPlayerAlias();
+                break;
             }
-            else {
-                return currentZR.getZone().getPlayerAlias();
-            }
+        }
+        if (foundMap == null) {
+            throw new AnnotatedFunctionException("macro.function.map.notFound");
         } else {
-            List<ZoneRenderer> rendererList =
-                    new LinkedList<ZoneRenderer>(
-                            MapTool.getFrame().getZoneRenderers()); // copied from ZoneSelectionPopup
-            String searchMap = parameters.get(0).toString();
-            String foundMap = null;
-            for (int i = 0; i < rendererList.size(); i++) {
-                if (rendererList.get(i).getZone().getName().equals(searchMap)) {
-                    foundMap = rendererList.get(i).getZone().getPlayerAlias();
-                    break;
-                }
-            }
-            if (foundMap == null) {
-                throw new AnnotatedFunctionException("macro.function.map.notFound");
-            } else {
-                return foundMap;
-            }
+            return foundMap;
         }
     }
 
@@ -71,47 +71,50 @@ public class MapFunctions_New {
     }
 
     @MacroFunction
-    @Transitional(minParameters = 0, maxParameters = 1)
-    public Object getMapVisible(List<Object> parameters) throws AnnotatedFunctionException {
-        if (parameters.size() > 0) {
-            String mapName = parameters.get(0).toString();
-            return getNamedMap(mapName).getZone().isVisible()
-                    ? BigDecimal.ONE
-                    : BigDecimal.ZERO;
+    public Object getMapVisible() throws AnnotatedFunctionException {
+        // Return the visibility of the current map/zone
+        ZoneRenderer currentZR = MapTool.getFrame().getCurrentZoneRenderer();
+        if (currentZR == null) {
+            throw new AnnotatedFunctionException("macro.function.map.none");
         } else {
-            // Return the visibility of the current map/zone
-            ZoneRenderer currentZR = MapTool.getFrame().getCurrentZoneRenderer();
-            if (currentZR == null) {
-                throw new AnnotatedFunctionException("macro.function.map.none");
-            } else {
-                return currentZR.getZone().isVisible() ? BigDecimal.ONE : BigDecimal.ZERO;
-            }
+            return currentZR.getZone().isVisible() ? BigDecimal.ONE : BigDecimal.ZERO;
         }
     }
 
     @MacroFunction
+    public Object getMapVisible(Object mapName) throws AnnotatedFunctionException {
+        return getNamedMap(mapName.toString()).getZone().isVisible()
+                ? BigDecimal.ONE
+                : BigDecimal.ZERO;
+    }
+
+    @MacroFunction
     @Trusted
-    @Transitional(minParameters = 1, maxParameters = 2)
-    public Object setMapVisible(List<Object> parameters) throws AnnotatedFunctionException {
-        boolean visible = FunctionUtil.getBooleanValue(parameters.get(0).toString());
-        Zone zone;
-        if (parameters.size() > 1) {
-            String mapName = parameters.get(1).toString();
-            zone = getNamedMap(mapName).getZone();
-        } else {
-            ZoneRenderer currentZR = MapTool.getFrame().getCurrentZoneRenderer();
-            if (currentZR == null) {
-                throw new AnnotatedFunctionException("macro.function.map.none");
-            } else {
-                zone = currentZR.getZone();
-            }
+    public Object setMapVisible(Object isVisible) throws AnnotatedFunctionException {
+        boolean visible = FunctionUtil.getBooleanValue(isVisible.toString());
+        ZoneRenderer currentZR = MapTool.getFrame().getCurrentZoneRenderer();
+        if (currentZR == null) {
+            throw new AnnotatedFunctionException("macro.function.map.none");
         }
+        Zone zone = currentZR.getZone();
+        return setMapVisibility(visible, zone) ? BigDecimal.ONE : BigDecimal.ZERO;
+    }
+
+    @MacroFunction
+    @Trusted
+    public Object setMapVisible(Object isVisible, Object mapName) throws AnnotatedFunctionException {
+        boolean visible = FunctionUtil.getBooleanValue(isVisible.toString());
+        Zone zone = getNamedMap(mapName.toString()).getZone();
+        return setMapVisibility(visible, zone) ? BigDecimal.ONE : BigDecimal.ZERO;
+    }
+
+    private boolean setMapVisibility(boolean visibility, Zone zone) {
         // Set the zone and return the visibility of the current map/zone
-        zone.setVisible(visible);
+        zone.setVisible(visibility);
         MapTool.serverCommand().setZoneVisibility(zone.getId(), zone.isVisible());
         MapTool.getFrame().getZoneMiniMapPanel().flush();
         MapTool.getFrame().repaint();
-        return zone.isVisible() ? BigDecimal.ONE : BigDecimal.ZERO;
+        return zone.isVisible();
     }
 
     @MacroFunction
