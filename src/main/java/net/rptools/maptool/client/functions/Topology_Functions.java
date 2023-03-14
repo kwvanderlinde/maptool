@@ -25,9 +25,7 @@ import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiConsumer;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
@@ -324,12 +322,8 @@ public class Topology_Functions extends AbstractFunction {
       return getAreaPoints(topologyArea);
     } else {
       // Build separate objects for each area.
-      JsonArray allShapes = new JsonArray();
-      var areaShape = getAreaShapeObject(topologyArea);
-      if (areaShape != null) {
-        allShapes.add(areaShape);
-      }
-      return allShapes.toString();
+      final var shapes = getAreaShapeObjects(topologyArea);
+      return shapes.toString();
     }
   }
 
@@ -373,10 +367,8 @@ public class Topology_Functions extends AbstractFunction {
     JsonArray allShapes = new JsonArray();
     Area topologyArea = token.getTopology(topologyType);
     if (topologyArea != null) {
-      var areaShape = getAreaShapeObject(topologyArea);
-      if (areaShape != null) {
-        allShapes.add(areaShape);
-      }
+      // Build separate objects for each area.
+      allShapes = getAreaShapeObjects(topologyArea);
     }
     return allShapes;
   }
@@ -1121,46 +1113,70 @@ public class Topology_Functions extends AbstractFunction {
     return area;
   }
 
-  private JsonObject getAreaShapeObject(Area area) {
+  interface PointConsumer {
+    void addPoint(double x, double y);
+
+    void complete(boolean close);
+  }
+
+  private JsonArray getAreaShapeObjects(Area area) {
+    JsonArray polygons = new JsonArray();
+
     // Each shape will be its own json object which each object contains an  array of x,y coords
-    JsonObject polygon = new JsonObject();
-
-    polygon.addProperty("generated", 1);
-    polygon.addProperty("shape", "polygon");
-    polygon.addProperty("fill", 1);
-    polygon.addProperty("close", 1);
-    polygon.addProperty("thickness", 0);
-
-    JsonArray points = new JsonArray();
     consumeAreaPoints(
         area,
-        (x, y) -> {
-          var point = new JsonObject();
-          point.addProperty("x", x);
-          point.addProperty("y", y);
-          points.add(point);
-        });
-    if (points.isEmpty()) {
-      return null;
-    }
-    polygon.add("points", points);
+        new PointConsumer() {
+          private JsonArray points = new JsonArray();
 
-    return polygon;
+          @Override
+          public void addPoint(double x, double y) {
+            var point = new JsonObject();
+            point.addProperty("x", x);
+            point.addProperty("y", y);
+            points.add(point);
+          }
+
+          @Override
+          public void complete(boolean close) {
+            if (points.isEmpty()) {
+              return;
+            }
+
+            final var completedPoints = points;
+            points = new JsonArray();
+
+            final var polygon = new JsonObject();
+            polygon.addProperty("generated", 1);
+            polygon.addProperty("shape", "polygon");
+            polygon.addProperty("fill", 1);
+            polygon.addProperty("thickness", 0);
+            polygon.addProperty("close", close ? 1 : 0);
+            polygon.add("points", completedPoints);
+            polygons.add(polygon);
+          }
+        });
+
+    return polygons;
   }
 
   private JsonArray getAreaPoints(Area area) {
     JsonArray allPoints = new JsonArray();
     consumeAreaPoints(
         area,
-        (x, y) -> {
-          allPoints.add(x);
-          allPoints.add(y);
+        new PointConsumer() {
+          @Override
+          public void addPoint(double x, double y) {
+            allPoints.add(x);
+            allPoints.add(y);
+          }
+
+          @Override
+          public void complete(boolean close) {}
         });
     return allPoints;
   }
 
-  private void consumeAreaPoints(Area area, BiConsumer<Double, Double> pointConsumer) {
-    ArrayList<double[]> areaPoints = new ArrayList<>();
+  private void consumeAreaPoints(Area area, PointConsumer pointConsumer) {
     double[] coords = new double[6];
 
     for (PathIterator pi = area.getPathIterator(null); !pi.isDone(); pi.next()) {
@@ -1168,34 +1184,24 @@ public class Topology_Functions extends AbstractFunction {
       // Because the Area is composed of straight lines
       int type = pi.currentSegment(coords);
 
-      // We record a double array of {segment type, x coord, y coord}
-      double[] pathIteratorCoords = {type, coords[0], coords[1]};
-      areaPoints.add(pathIteratorCoords);
-    }
-    // Now that we have the Area defined as commands, lets record the points
-
-    double[] defaultPos = null;
-    double[] moveTo = null;
-
-    for (double[] currentElement : areaPoints) {
-      // Make the lines
-      if (currentElement[0] == PathIterator.SEG_MOVETO) {
-        if (defaultPos == null) {
-          defaultPos = currentElement;
-        } else {
-          pointConsumer.accept(defaultPos[1], defaultPos[2]);
+      switch (type) {
+        case PathIterator.SEG_MOVETO -> {
+          pointConsumer.complete(false);
+          pointConsumer.addPoint(coords[0], coords[1]);
         }
-        moveTo = currentElement;
-
-        pointConsumer.accept(currentElement[1], currentElement[2]);
-      } else if (currentElement[0] == PathIterator.SEG_LINETO) {
-        pointConsumer.accept(currentElement[1], currentElement[2]);
-      } else if (currentElement[0] == PathIterator.SEG_CLOSE) {
-        pointConsumer.accept(moveTo[1], moveTo[2]);
-      } else {
-        // System.out.println("in getAreaPoints(): found a curve, ignoring");
+        case PathIterator.SEG_LINETO -> {
+          pointConsumer.addPoint(coords[0], coords[1]);
+        }
+        case PathIterator.SEG_CLOSE -> {
+          pointConsumer.complete(true);
+        }
+        default -> {
+          // TODO Should log this case.
+        }
       }
     }
+    // Just in case we didn't hit a SEG_CLOSE, we don't want to leave an open polygon hanging.
+    pointConsumer.complete(false);
   }
 
   /**
