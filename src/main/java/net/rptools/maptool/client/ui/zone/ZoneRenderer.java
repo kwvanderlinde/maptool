@@ -3023,7 +3023,7 @@ public class ZoneRenderer extends JComponent
       // Markers
       timer.start("renderTokens:Markers");
       // System.out.println("Token " + token.getName() + " is a marker? " + token.isMarker());
-      if (token.isMarker() && canSeeMarker(token)) {
+      if (token.isMarker()) {
         markerLocationList.add(location);
       }
       timer.stop("renderTokens:Markers");
@@ -3701,10 +3701,6 @@ public class ZoneRenderer extends JComponent
 
     // clipping needed
     return true;
-  }
-
-  private boolean canSeeMarker(Token token) {
-    return MapTool.getPlayer().isGM() || !StringUtil.isEmpty(token.getNotes());
   }
 
   public Set<GUID> getSelectedTokenSet() {
