@@ -691,7 +691,7 @@ public abstract class Grid implements Cloneable {
             return false;
           }
         } else {
-          if (++openSpace > tolerance) {
+          if (++openSpace >= tolerance) {
             return true;
           }
         }
