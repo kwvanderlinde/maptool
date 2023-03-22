@@ -3208,78 +3208,23 @@ public class ZoneRenderer extends JComponent
       if (token.hasHalo()) {
         tokenG.setStroke(new BasicStroke(AppPreferences.getHaloLineWidth()));
         tokenG.setColor(token.getHaloColor());
-        tokenG.draw(zone.getGrid().getTokenCellArea(tokenBounds));
+        tokenG.draw(tokenCellArea);
       }
 
       // Calculate alpha Transparency from token and use opacity for indicating that token is moving
       float opacity = token.getTokenOpacity();
-      if (isTokenMoving(token)) opacity = opacity / 2.0f;
+      if (isTokenMoving(token)) {
+        opacity = opacity / 2.0f;
+      }
 
       // Finally render the token image
       timer.start("tokenlist-7");
-      if (!isGMView && zoneView.isUsingVision() && (token.getShape() == Token.TokenShape.FIGURE)) {
-        Area cb = zone.getGrid().getTokenCellArea(tokenBounds);
-        if (GraphicsUtil.intersects(visibleScreenArea, cb)) {
-          // the cell intersects visible area so
-          if (zone.getGrid().checkCenterRegion(cb.getBounds(), visibleScreenArea)) {
-            // if we can see the centre, draw the whole token
-            Composite oldComposite = tokenG.getComposite();
-            if (opacity < 1.0f) {
-              tokenG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
-            }
-            tokenG.drawImage(workImage, at, this);
-            tokenG.setComposite(oldComposite);
-            // g.draw(cb); // debugging
-          } else {
-            // else draw the clipped token
-            Area cellArea = new Area(visibleScreenArea);
-            cellArea.intersect(cb);
-            tokenG.setClip(cellArea);
-            Composite oldComposite = tokenG.getComposite();
-            if (opacity < 1.0f) {
-              tokenG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
-            }
-            tokenG.drawImage(workImage, at, this);
-            tokenG.setComposite(oldComposite);
-          }
-        }
-      } else if (!isGMView && zoneView.isUsingVision() && token.isAlwaysVisible()) {
-        // Jamz: Always Visible tokens will get rendered again here to place on top of FoW
-        Area cb = zone.getGrid().getTokenCellArea(tokenBounds);
-        if (GraphicsUtil.intersects(visibleScreenArea, cb)) {
-          // if we can see a portion of the stamp/token, draw the whole thing, defaults to 2/9ths
-          if (zone.getGrid()
-              .checkRegion(cb.getBounds(), visibleScreenArea, token.getAlwaysVisibleTolerance())) {
-            Composite oldComposite = tokenG.getComposite();
-            if (opacity < 1.0f) {
-              tokenG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
-            }
-            tokenG.drawImage(workImage, at, this);
-            tokenG.setComposite(oldComposite);
-          } else {
-            // else draw the clipped stamp/token
-            // This will only show the part of the token that does not have VBL on it
-            // as any VBL on the token will block LOS, affecting the clipping.
-            Area cellArea = new Area(visibleScreenArea);
-            cellArea.intersect(cb);
-            tokenG.setClip(cellArea);
-            Composite oldComposite = tokenG.getComposite();
-            if (opacity < 1.0f) {
-              tokenG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
-            }
-            tokenG.drawImage(workImage, at, this);
-            tokenG.setComposite(oldComposite);
-          }
-        }
-      } else {
-        // fallthrough normal token rendered against visible area
-        Composite oldComposite = tokenG.getComposite();
-        if (opacity < 1.0f) {
-          tokenG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
-        }
-        tokenG.drawImage(workImage, at, this);
-        tokenG.setComposite(oldComposite);
+      final Composite oldComposite = tokenG.getComposite();
+      if (opacity < 1.0f) {
+        tokenG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
       }
+      tokenG.drawImage(workImage, at, this);
+      tokenG.setComposite(oldComposite);
       timer.stop("tokenlist-7");
 
       timer.start("tokenlist-8");
@@ -3677,7 +3622,9 @@ public class ZoneRenderer extends JComponent
   private boolean isTokenInNeedOfClipping(Token token, Area tokenCellArea, boolean isGMView) {
 
     // can view everything or zone is not using vision = no clipping needed
-    if (isGMView || !zoneView.isUsingVision()) return false;
+    if (isGMView || !zoneView.isUsingVision()) {
+      return false;
+    }
 
     // no clipping if there is no visible screen area
     if (visibleScreenArea == null) {
@@ -3692,11 +3639,16 @@ public class ZoneRenderer extends JComponent
 
     // Jamz: Always Visible tokens will get rendered fully to place on top of FoW
     // if we can see a portion of the stamp/token, defaults to 2/9ths, don't clip at all
-    if (token.isAlwaysVisible()
-        && zone.getGrid()
-            .checkRegion(
-                tokenCellArea.getBounds(), visibleScreenArea, token.getAlwaysVisibleTolerance())) {
-      return false;
+    if (token.isAlwaysVisible()) {
+      final var bounds = tokenCellArea.getBounds();
+      // If VBL exactly covers the token bounds, then sometimes the visible area might be considered
+      // intersecting the bounds, and sometimes not, depending on precision. So we the shrink the
+      // bounds by a pixel to make sure that any detected intersections are definitely real.
+      bounds.grow(-1, -1);
+      if (zone.getGrid()
+          .checkRegion(bounds, visibleScreenArea, token.getAlwaysVisibleTolerance())) {
+        return false;
+      }
     }
 
     // clipping needed
