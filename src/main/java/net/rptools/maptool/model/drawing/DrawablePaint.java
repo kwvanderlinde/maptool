@@ -37,7 +37,7 @@ public abstract class DrawablePaint implements Serializable {
       double offsetX, double offsetY, double scale, ImageObserver... observers);
 
   public abstract Paint getCenteredPaint(
-          double centerX, double centerY, double width, double height, ImageObserver... observers);
+      double centerX, double centerY, double width, double height, ImageObserver... observers);
 
   public static DrawablePaint convertPaint(Paint paint) {
     if (paint == null) {

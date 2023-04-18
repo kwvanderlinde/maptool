@@ -204,12 +204,14 @@ public class DrawableLightPaint extends DrawablePaint implements Serializable {
   }
 
   @Override
-  public Paint getCenteredPaint(double centerX, double centerY, double width, double height, ImageObserver... observers) {
+  public Paint getCenteredPaint(
+      double centerX, double centerY, double width, double height, ImageObserver... observers) {
     BufferedImage texture = getTexture(observers);
 
     // We center the texture around the offset.
     return new TexturePaint(
-            texture, new Rectangle2D.Double(-width / 2 - centerX, -height / 2 - centerY, width, height));
+        texture,
+        new Rectangle2D.Double(-width / 2 - centerX, -height / 2 - centerY, width, height));
   }
 
   @Override

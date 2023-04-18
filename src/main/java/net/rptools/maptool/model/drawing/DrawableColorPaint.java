@@ -58,7 +58,8 @@ public class DrawableColorPaint extends DrawablePaint implements Serializable {
   }
 
   @Override
-  public Paint getCenteredPaint(double centerX, double centerY, double width, double height, ImageObserver... observers) {
+  public Paint getCenteredPaint(
+      double centerX, double centerY, double width, double height, ImageObserver... observers) {
     return getPaint();
   }
 

@@ -20,14 +20,13 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.io.Serializable;
+import javax.annotation.Nonnull;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.AssetManager;
 import net.rptools.maptool.server.proto.drawing.DrawablePaintDto;
 import net.rptools.maptool.server.proto.drawing.DrawableTexturePaintDto;
 import net.rptools.maptool.util.ImageManager;
-
-import javax.annotation.Nonnull;
 
 public class DrawableTexturePaint extends DrawablePaint implements Serializable {
   private MD5Key assetId;
@@ -63,16 +62,16 @@ public class DrawableTexturePaint extends DrawablePaint implements Serializable 
     return new TexturePaint(
         texture,
         new Rectangle2D.Double(
-            offsetX,
-            offsetY,
-            texture.getWidth() * scale,
-            texture.getHeight() * scale));
+            offsetX, offsetY, texture.getWidth() * scale, texture.getHeight() * scale));
   }
 
   @Override
-  public Paint getCenteredPaint(double centerX, double centerY, double width, double height, ImageObserver... observers) {
+  public Paint getCenteredPaint(
+      double centerX, double centerY, double width, double height, ImageObserver... observers) {
     BufferedImage texture = getTexture(observers);
-    return new TexturePaint(texture, new Rectangle2D.Double(-width / 2 - centerX, -height / 2 - centerY, width, height));
+    return new TexturePaint(
+        texture,
+        new Rectangle2D.Double(-width / 2 - centerX, -height / 2 - centerY, width, height));
   }
 
   @Override
