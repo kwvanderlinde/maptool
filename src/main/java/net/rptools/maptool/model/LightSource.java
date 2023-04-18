@@ -30,6 +30,8 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import net.rptools.lib.FileUtil;
+import net.rptools.maptool.model.drawing.DrawableColorPaint;
+import net.rptools.maptool.model.drawing.DrawablePaint;
 import net.rptools.maptool.server.proto.LightSourceDto;
 import org.apache.commons.lang.math.NumberUtils;
 
@@ -129,6 +131,13 @@ public class LightSource implements Comparable<LightSource>, Serializable {
       return false;
     }
     return Objects.equals(((LightSource) obj).id, id);
+  }
+
+  public @Nullable DrawablePaint getPaint(Light light) {
+    assert lightList.contains(light);
+
+    final var color = light.getColor();
+    return color == null ? null : new DrawableColorPaint(color);
   }
 
   public double getMaxRange() {
