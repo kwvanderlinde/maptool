@@ -34,6 +34,7 @@ import net.rptools.maptool.client.ui.zone.Illuminator.LitArea;
 import net.rptools.maptool.client.ui.zone.vbl.AreaTree;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
+import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.zones.TokensAdded;
 import net.rptools.maptool.model.zones.TokensChanged;
 import net.rptools.maptool.model.zones.TokensRemoved;
@@ -665,7 +666,8 @@ public class ZoneView {
             for (Light light : lightSource.getLightList()) {
               // If there is no paint, it's a "bright aura" that just shows whatever is beneath it
               // and doesn't need to be rendered.
-              if (light.getPaint() == null) {
+              final var color = light.getColor();
+              if (color == null) {
                 continue;
               }
               boolean isOwner = token.getOwners().contains(MapTool.getPlayer().getName());
@@ -686,7 +688,8 @@ public class ZoneView {
               Area lightArea = lightSource.getArea(token, zone, light);
               lightArea.transform(AffineTransform.getTranslateInstance(p.x, p.y));
               lightArea.intersect(visibleArea);
-              lightList.add(new DrawableLight(light.getPaint(), lightArea, light.getLumens()));
+              lightList.add(
+                  new DrawableLight(new DrawableColorPaint(color), lightArea, light.getLumens()));
             }
           }
         }
@@ -757,7 +760,7 @@ public class ZoneView {
                                 ? lumensLevel.get().darknessArea()
                                 : lumensLevel.get().lightArea());
                         return new DrawableLight(
-                            laud.lightInfo().light().getPaint(),
+                            new DrawableColorPaint(laud.lightInfo().light().getColor()),
                             obscuredArea,
                             laud.litArea().lumens());
                       })

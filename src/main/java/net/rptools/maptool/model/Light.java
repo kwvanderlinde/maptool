@@ -14,12 +14,19 @@
  */
 package net.rptools.maptool.model;
 
+import com.thoughtworks.xstream.annotations.XStreamConverter;
+import com.thoughtworks.xstream.converters.Converter;
+import com.thoughtworks.xstream.converters.MarshallingContext;
+import com.thoughtworks.xstream.converters.UnmarshallingContext;
+import com.thoughtworks.xstream.io.HierarchicalStreamReader;
+import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+import java.awt.Color;
 import java.awt.geom.Area;
 import java.io.Serial;
 import java.io.Serializable;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import net.rptools.maptool.model.drawing.DrawablePaint;
+import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.server.proto.LightDto;
 import net.rptools.maptool.server.proto.ShapeTypeDto;
 
@@ -28,7 +35,10 @@ public class Light implements Serializable {
   private final double facingOffset;
   private final double radius;
   private final double arcAngle;
-  private final @Nullable DrawablePaint paint;
+  // The name is "paint" for backwards compatibility, would rather call it "color".
+  @XStreamConverter(DrawableColorPaintUnwrapper.class)
+  private final @Nullable Color paint;
+
   private final int lumens;
   private final boolean isGM;
   private final boolean ownerOnly;
@@ -38,7 +48,7 @@ public class Light implements Serializable {
       double facingOffset,
       double radius,
       double arcAngle,
-      @Nullable DrawablePaint paint,
+      @Nullable Color color,
       int lumens,
       boolean isGM,
       boolean owner) {
@@ -46,7 +56,7 @@ public class Light implements Serializable {
     this.facingOffset = facingOffset;
     this.radius = radius;
     this.arcAngle = (arcAngle == 0) ? 90 : arcAngle;
-    this.paint = paint;
+    this.paint = color;
     this.lumens = lumens;
     this.isGM = isGM;
     this.ownerOnly = owner;
@@ -68,7 +78,7 @@ public class Light implements Serializable {
         ownerOnly);
   }
 
-  public @Nullable DrawablePaint getPaint() {
+  public @Nullable Color getColor() {
     return paint;
   }
 
@@ -112,7 +122,7 @@ public class Light implements Serializable {
         dto.getFacingOffset(),
         dto.getRadius(),
         dto.getArcAngle(),
-        dto.hasPaint() ? DrawablePaint.fromDto(dto.getPaint()) : null,
+        dto.hasColor() ? new Color(dto.getColor(), true) : null,
         dto.getLumens(),
         dto.getIsGm(),
         dto.getOwnerOnly());
@@ -121,7 +131,7 @@ public class Light implements Serializable {
   public @Nonnull LightDto toDto() {
     var dto = LightDto.newBuilder();
     if (paint != null) {
-      dto.setPaint(paint.toDto());
+      dto.setColor(paint.getRGB());
     }
     dto.setFacingOffset(facingOffset);
     dto.setRadius(radius);
@@ -131,5 +141,44 @@ public class Light implements Serializable {
     dto.setOwnerOnly(ownerOnly);
     dto.setLumens(lumens);
     return dto.build();
+  }
+
+  public static final class DrawableColorPaintUnwrapper implements Converter {
+    private final Class<?> fieldType;
+
+    public DrawableColorPaintUnwrapper(Class<?> fieldType) {
+      this.fieldType = fieldType;
+    }
+
+    @Override
+    public boolean canConvert(Class type) {
+      // When reading, the serialized field type could be Color (new) or DrawableColorPaint (old).
+      // Either way, this converter expects to fill in a Color field.
+      return Color.class.equals(fieldType)
+          && (Color.class.equals(type) || DrawableColorPaint.class.equals(type));
+    }
+
+    @Override
+    public void marshal(
+        Object source, HierarchicalStreamWriter writer, MarshallingContext context) {
+      // Just write the color back out.
+      context.convertAnother(source);
+    }
+
+    @Override
+    public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
+      // Lights have only ever supported DrawableColorPaint, and now also Color. So unwrap the
+      // DrawableColorPaint into a Color, or use the existing Color, otherwise set to null.
+      final @Nullable var deserialized = context.convertAnother(null, context.getRequiredType());
+      final @Nullable Color result;
+      if (deserialized instanceof Color color) {
+        result = color;
+      } else if (deserialized instanceof DrawableColorPaint paint) {
+        result = new Color(paint.getColor(), true);
+      } else {
+        result = null;
+      }
+      return result;
+    }
   }
 }

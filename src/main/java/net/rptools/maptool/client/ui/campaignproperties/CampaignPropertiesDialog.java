@@ -49,7 +49,6 @@ import net.rptools.maptool.model.Light;
 import net.rptools.maptool.model.LightSource;
 import net.rptools.maptool.model.ShapeType;
 import net.rptools.maptool.model.SightType;
-import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.util.PersistenceUtil;
 import net.rptools.maptool.util.StringUtil;
 
@@ -306,8 +305,8 @@ public class CampaignPropertiesDialog extends JDialog {
 
             builder.append("r").append(StringUtil.formatDecimal(range));
 
-            if (light.getPaint() != null && light.getPaint() instanceof DrawableColorPaint) {
-              Color color = (Color) light.getPaint().getPaint();
+            final var color = light.getColor();
+            if (color != null) {
               builder.append(toHex(color));
             }
             final var lumens = light.getLumens();
@@ -384,8 +383,8 @@ public class CampaignPropertiesDialog extends JDialog {
             lastShape = shape;
           }
           builder.append(' ').append(StringUtil.formatDecimal(light.getRadius()));
-          if (light.getPaint() instanceof DrawableColorPaint) {
-            Color color = (Color) light.getPaint().getPaint();
+          final var color = light.getColor();
+          if (color != null) {
             builder.append(toHex(color));
           }
           if (lightSource.getType() == LightSource.Type.NORMAL) {
@@ -547,9 +546,7 @@ public class CampaignPropertiesDialog extends JDialog {
                         0,
                         pLightRange,
                         arc,
-                        personalLightColor == null
-                            ? null
-                            : new DrawableColorPaint(personalLightColor),
+                        personalLightColor,
                         perRangeLumens,
                         false,
                         false));
@@ -778,7 +775,7 @@ public class CampaignPropertiesDialog extends JDialog {
                     offset,
                     StringUtil.parseDecimal(distance),
                     arc,
-                    color == null ? null : new DrawableColorPaint(color),
+                    color,
                     perRangeLumens,
                     gmOnly,
                     owner);
@@ -1018,7 +1015,7 @@ public class CampaignPropertiesDialog extends JDialog {
           System.out.print(", gm=" + light.isGM());
           System.out.print(", owner=" + light.isOwnerOnly());
           System.out.print(", radius=" + light.getRadius());
-          System.out.print(", color=" + light.getPaint() + "]\n");
+          System.out.print(", color=" + light.getColor() + "]\n");
         }
       }
     }

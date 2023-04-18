@@ -24,7 +24,6 @@ import net.rptools.lib.FileUtil;
 import net.rptools.maptool.model.Light;
 import net.rptools.maptool.model.LightSource;
 import net.rptools.maptool.model.ShapeType;
-import net.rptools.maptool.model.drawing.DrawableColorPaint;
 
 public class LightSourceCreator {
   public static void main(String[] args) {
@@ -70,14 +69,7 @@ public class LightSourceCreator {
     source.add(new Light(ShapeType.CIRCLE, 0, radius, arcAngle, null, 100, false, false));
     source.add(
         new Light(
-            ShapeType.CIRCLE,
-            0,
-            radius * 2,
-            arcAngle,
-            new DrawableColorPaint(new Color(0, 0, 0, 100)),
-            100,
-            false,
-            false));
+            ShapeType.CIRCLE, 0, radius * 2, arcAngle, new Color(0, 0, 0, 100), 100, false, false));
 
     return source;
   }

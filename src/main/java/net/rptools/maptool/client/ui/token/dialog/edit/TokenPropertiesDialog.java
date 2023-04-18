@@ -91,7 +91,7 @@ public class TokenPropertiesDialog {
         panel3.add(label1, new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new GridLayoutManager(17, 5, new Insets(4, 4, 4, 4), -1, -1));
-        panel4.setVisible(false);
+        panel4.setVisible(true);
         tabPanel.addTab(this.$$$getMessageFromBundle$$$("net/rptools/maptool/language/i18n", "EditTokenDialog.tab.vbl"), panel4);
         final JPanel panel5 = new JPanel();
         panel5.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
@@ -109,21 +109,25 @@ public class TokenPropertiesDialog {
         toggleButton1.setName("mblToggle");
         toggleButton1.setToolTipText(this.$$$getMessageFromBundle$$$("net/rptools/maptool/language/i18n", "EditTokenDialog.button.movembltoggle.tooltip"));
         toggleButton1.setText("");
+        toggleButton1.setToolTipText(this.$$$getMessageFromBundle$$$("net/rptools/maptool/language/i18n", "EditTokenDialog.button.movembltoggle.tooltip"));
         panel6.add(toggleButton1, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JToggleButton toggleButton2 = new JToggleButton();
         toggleButton2.setName("wallVblToggle");
         toggleButton2.setToolTipText(this.$$$getMessageFromBundle$$$("net/rptools/maptool/language/i18n", "EditTokenDialog.button.movevbltoggle.tooltip"));
         toggleButton2.setText("");
+        toggleButton2.setToolTipText(this.$$$getMessageFromBundle$$$("net/rptools/maptool/language/i18n", "EditTokenDialog.button.movevbltoggle.tooltip"));
         panel6.add(toggleButton2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JToggleButton toggleButton3 = new JToggleButton();
         toggleButton3.setName("hillVblToggle");
         toggleButton3.setToolTipText(this.$$$getMessageFromBundle$$$("net/rptools/maptool/language/i18n", "EditTokenDialog.button.movehbltoggle.tooltip"));
         toggleButton3.setText("");
+        toggleButton3.setToolTipText(this.$$$getMessageFromBundle$$$("net/rptools/maptool/language/i18n", "EditTokenDialog.button.movehbltoggle.tooltip"));
         panel6.add(toggleButton3, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JToggleButton toggleButton4 = new JToggleButton();
         toggleButton4.setName("pitVblToggle");
         toggleButton4.setToolTipText(this.$$$getMessageFromBundle$$$("net/rptools/maptool/language/i18n", "EditTokenDialog.button.movepbltoggle.tooltip"));
         toggleButton4.setText("");
+        toggleButton4.setToolTipText(this.$$$getMessageFromBundle$$$("net/rptools/maptool/language/i18n", "EditTokenDialog.button.movepbltoggle.tooltip"));
         panel6.add(toggleButton4, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JCheckBox checkBox1 = new JCheckBox();
         checkBox1.setActionCommand("Hide Preview");
@@ -258,6 +262,7 @@ public class TokenPropertiesDialog {
         button3.setToolTipText(this.$$$getMessageFromBundle$$$("net/rptools/maptool/language/i18n", "EditTokenDialog.button.movetomap.tooltip"));
         button3.setName("transferVblToMap");
         this.$$$loadButtonText$$$(button3, this.$$$getMessageFromBundle$$$("net/rptools/maptool/language/i18n", "EditTokenDialog.button.vbl.tomap"));
+        button3.setToolTipText(this.$$$getMessageFromBundle$$$("net/rptools/maptool/language/i18n", "EditTokenDialog.button.movetomap.tooltip"));
         button3.setVisible(true);
         panel4.add(button3, new GridConstraints(14, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JButton button4 = new JButton();
@@ -265,11 +270,12 @@ public class TokenPropertiesDialog {
         button4.setToolTipText(this.$$$getMessageFromBundle$$$("net/rptools/maptool/language/i18n", "EditTokenDialog.button.movefrommap.tooltip"));
         button4.setName("transferVblFromMap");
         this.$$$loadButtonText$$$(button4, this.$$$getMessageFromBundle$$$("net/rptools/maptool/language/i18n", "EditTokenDialog.button.vbl.frommap"));
+        button4.setToolTipText(this.$$$getMessageFromBundle$$$("net/rptools/maptool/language/i18n", "EditTokenDialog.button.movefrommap.tooltip"));
         button4.setVisible(true);
         panel4.add(button4, new GridConstraints(15, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JPanel panel7 = new JPanel();
         panel7.setLayout(new GridLayoutManager(1, 1, new Insets(4, 4, 4, 4), -1, -1));
-        panel7.setVisible(true);
+        panel7.setVisible(false);
         tabPanel.addTab(this.$$$getMessageFromBundle$$$("net/rptools/maptool/language/i18n", "EditTokenDialog.tab.state"), panel7);
         final JScrollPane scrollPane1 = new JScrollPane();
         scrollPane1.setHorizontalScrollBarPolicy(31);
@@ -704,11 +710,13 @@ public class TokenPropertiesDialog {
         String resultName;
         if (fontName == null) {
             resultName = currentFont.getName();
-        } else {
+        }
+        else {
             Font testFont = new Font(fontName, Font.PLAIN, 10);
             if (testFont.canDisplay('a') && testFont.canDisplay('1')) {
                 resultName = fontName;
-            } else {
+            }
+            else {
                 resultName = currentFont.getName();
             }
         }
@@ -729,7 +737,8 @@ public class TokenPropertiesDialog {
                 $$$cachedGetBundleMethod$$$ = dynamicBundleClass.getMethod("getBundle", String.class, Class.class);
             }
             bundle = (ResourceBundle) $$$cachedGetBundleMethod$$$.invoke(null, path, thisClass);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             bundle = ResourceBundle.getBundle(path);
         }
         return bundle.getString(key);
