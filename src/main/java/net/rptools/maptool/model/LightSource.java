@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import net.rptools.lib.FileUtil;
+import net.rptools.lib.MD5Key;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.drawing.DrawablePaint;
 import net.rptools.maptool.server.proto.LightSourceDto;
@@ -41,10 +42,36 @@ public class LightSource implements Comparable<LightSource>, Serializable {
     AURA
   }
 
+  public sealed interface Texture {
+    public String asString();
+  }
+
+  public record FlatTexture() implements Texture {
+    @Override
+    public String asString() {
+      return "flat";
+    }
+  }
+  // Expectation is that we could add parameters to control the fade curve.
+  public record FadeTexture() implements Texture {
+    @Override
+    public String asString() {
+      return "fade";
+    }
+  }
+
+  public record AssetTexture(MD5Key assetKey) implements Texture {
+    @Override
+    public String asString() {
+      return "asset://" + assetKey.toString();
+    }
+  }
+
   private @Nullable String name;
   private @Nullable GUID id;
   private @Nonnull Type type;
   private boolean scaleWithToken;
+  private Texture texture;
   private final @Nonnull List<Light> lightList;
 
   // Lumens are now in the individual Lights. This field is only here for backwards compatibility
@@ -58,7 +85,7 @@ public class LightSource implements Comparable<LightSource>, Serializable {
    * need (or have) names and GUIDs.
    */
   public LightSource() {
-    this(null, null, Type.NORMAL, false, Collections.emptyList());
+    this(null, null, Type.NORMAL, false, new FlatTexture(), Collections.emptyList());
   }
 
   /**
@@ -70,7 +97,7 @@ public class LightSource implements Comparable<LightSource>, Serializable {
    * @param name The name of the light source.
    */
   public LightSource(@Nonnull String name) {
-    this(name, new GUID(), Type.NORMAL, false, Collections.emptyList());
+    this(name, new GUID(), Type.NORMAL, false, new FlatTexture(), Collections.emptyList());
   }
 
   private LightSource(
@@ -78,11 +105,13 @@ public class LightSource implements Comparable<LightSource>, Serializable {
       @Nullable GUID id,
       @Nonnull Type type,
       boolean scaleWithToken,
+      @Nonnull Texture texture,
       @Nonnull Collection<Light> lights) {
     this.name = name;
     this.id = id;
     this.type = type;
     this.scaleWithToken = scaleWithToken;
+    this.texture = texture;
 
     this.lightList = new LinkedList<>();
     this.lightList.addAll(lights);
@@ -122,6 +151,7 @@ public class LightSource implements Comparable<LightSource>, Serializable {
         this.id,
         Objects.requireNonNullElse(this.type, Type.NORMAL),
         this.scaleWithToken,
+        Objects.requireNonNullElse(this.texture, new FlatTexture()),
         lights);
   }
 
@@ -192,6 +222,14 @@ public class LightSource implements Comparable<LightSource>, Serializable {
     this.type = type;
   }
 
+  public Texture getTexture() {
+    return this.texture;
+  }
+
+  public void setTexture(Texture texture) {
+    this.texture = texture;
+  }
+
   public void setScaleWithToken(boolean scaleWithToken) {
     this.scaleWithToken = scaleWithToken;
   }
@@ -259,17 +297,25 @@ public class LightSource implements Comparable<LightSource>, Serializable {
   }
 
   public static @Nonnull LightSource fromDto(@Nonnull LightSourceDto dto) {
+    final var texture =
+        switch (dto.getTextureCase()) {
+          case FLAT_TEXTURE, TEXTURE_NOT_SET -> new FlatTexture();
+          case FADE_TEXTURE -> new FadeTexture();
+          case ASSET_TEXTURE -> new AssetTexture(new MD5Key(dto.getAssetTexture().getMd5Key()));
+        };
+
     return new LightSource(
         dto.hasName() ? dto.getName().getValue() : null,
         dto.hasId() ? GUID.valueOf(dto.getId().getValue()) : null,
         Type.valueOf(dto.getType().name()),
         dto.getScaleWithToken(),
+        texture,
         dto.getLightsList().stream().map(Light::fromDto).toList());
   }
 
   public @Nonnull LightSourceDto toDto() {
     var dto = LightSourceDto.newBuilder();
-    dto.addAllLights(lightList.stream().map(l -> l.toDto()).collect(Collectors.toList()));
+    dto.addAllLights(lightList.stream().map(Light::toDto).collect(Collectors.toList()));
     if (name != null) {
       dto.setName(StringValue.of(name));
     }
@@ -278,6 +324,18 @@ public class LightSource implements Comparable<LightSource>, Serializable {
     }
     dto.setType(LightSourceDto.LightTypeDto.valueOf(type.name()));
     dto.setScaleWithToken(scaleWithToken);
+
+    if (texture instanceof FlatTexture) {
+      dto.setFlatTexture(LightSourceDto.FlatTexture.newBuilder().build());
+    } else if (texture instanceof FadeTexture) {
+      dto.setFadeTexture(LightSourceDto.FadeTexture.newBuilder().build());
+    } else if (texture instanceof AssetTexture assetTexture) {
+      dto.setAssetTexture(
+          LightSourceDto.AssetTexture.newBuilder()
+              .setMd5Key(assetTexture.assetKey().toString())
+              .build());
+    }
+
     return dto.build();
   }
 }

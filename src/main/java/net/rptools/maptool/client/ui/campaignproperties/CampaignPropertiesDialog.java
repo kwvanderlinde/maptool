@@ -35,6 +35,7 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 import javax.swing.*;
 import net.rptools.lib.FileUtil;
+import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.AppConstants;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.swing.AbeillePanel;
@@ -317,6 +318,8 @@ public class CampaignPropertiesDialog extends JDialog {
             builder.append(' ');
           }
         }
+
+        builder.append(" texture=").append(source.getTexture().asString());
       }
       builder.append('\n');
     }
@@ -395,6 +398,9 @@ public class CampaignPropertiesDialog extends JDialog {
             builder.append(Integer.toString(lumens, 10));
           }
         }
+
+        builder.append(" texture=").append(lightSource.getTexture().asString());
+
         builder.append('\n');
       }
       builder.append('\n');
@@ -567,6 +573,24 @@ public class CampaignPropertiesDialog extends JDialog {
               toBeParsed = arg.substring(7);
               errmsg = "msg.error.mtprops.sight.offset";
               offset = StringUtil.parseInteger(toBeParsed);
+            } else if (arg.toUpperCase().startsWith("TEXTURE=")) {
+              final var textureString = arg.substring("TEXTURE=".length());
+              LightSource.Texture texture = new LightSource.FlatTexture();
+              if ("flat".equalsIgnoreCase(textureString)) {
+                texture = new LightSource.FlatTexture();
+              } else if ("fade".equalsIgnoreCase(textureString)) {
+                texture = new LightSource.FadeTexture();
+              } else if (textureString.startsWith("asset://")) {
+                texture =
+                    new LightSource.AssetTexture(
+                        new MD5Key(textureString.substring("asset://".length())));
+              }
+
+              if (personalLight == null) {
+                personalLight = new LightSource();
+                personalLight.setType(LightSource.Type.NORMAL);
+              }
+              personalLight.setTexture(texture);
             } else {
               toBeParsed = arg;
               errmsg =
@@ -715,6 +739,23 @@ public class CampaignPropertiesDialog extends JDialog {
               errlog.add(
                   I18N.getText("msg.error.mtprops.light.offset", reader.getLineNumber(), arg));
             }
+          }
+
+          // texture designation
+          if (arg.toUpperCase().startsWith("TEXTURE=")) {
+            final var textureString = arg.substring("TEXTURE=".length());
+            LightSource.Texture texture = new LightSource.FlatTexture();
+            if ("flat".equalsIgnoreCase(textureString)) {
+              texture = new LightSource.FlatTexture();
+            } else if ("fade".equalsIgnoreCase(textureString)) {
+              texture = new LightSource.FadeTexture();
+            } else if (textureString.startsWith("asset://")) {
+              texture =
+                  new LightSource.AssetTexture(
+                      new MD5Key(textureString.substring("asset://".length())));
+            }
+            lightSource.setTexture(texture);
+            continue;
           }
 
           // Parameters
