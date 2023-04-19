@@ -21,27 +21,25 @@ import java.awt.image.ImageObserver;
 import net.rptools.maptool.server.proto.drawing.DrawablePaintDto;
 
 public class DrawableRadialPaint extends DrawablePaint {
+  private final float[] fractions;
+  private final Color[] colors;
+
+  public DrawableRadialPaint(float[] fractions, Color[] colors) {
+    this.fractions = fractions.clone();
+    this.colors = colors.clone();
+  }
 
   @Override
   public Paint getPaint(double offsetX, double offsetY, double scale, ImageObserver... observers) {
     return new RadialGradientPaint(
-        (float) -offsetX,
-        (float) -offsetY,
-        (float) scale,
-        new float[] {0.f, 1.f},
-        new Color[] {Color.white, Color.black});
+        (float) -offsetX, (float) -offsetY, (float) scale, fractions, colors);
   }
 
   @Override
   public Paint getCenteredPaint(
       double centerX, double centerY, double width, double height, ImageObserver... observers) {
     return new RadialGradientPaint(
-        (float) -centerX,
-        (float) -centerY,
-        (float) Math.max(width, height) / 2,
-        // Non-linear fade (soft)
-        new float[] {0.f, 0.75f, 1.f},
-        new Color[] {Color.white, new Color(0xFF_80_80_80, true), Color.black});
+        (float) -centerX, (float) -centerY, (float) Math.max(width, height) / 2, fractions, colors);
   }
 
   @Override
