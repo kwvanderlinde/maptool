@@ -39,8 +39,9 @@ public class DrawableRadialPaint extends DrawablePaint {
         (float) -centerX,
         (float) -centerY,
         (float) Math.max(width, height) / 2,
-        new float[] {0.f, 1.f},
-        new Color[] {Color.white, Color.black});
+        // Non-linear fade (soft)
+        new float[] {0.f, 0.75f, 1.f},
+        new Color[] {Color.white, new Color(0xFF_80_80_80, true), Color.black});
   }
 
   @Override
