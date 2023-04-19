@@ -15,6 +15,7 @@
 package net.rptools.maptool.model;
 
 import com.google.protobuf.StringValue;
+import java.awt.Color;
 import java.awt.geom.Area;
 import java.io.IOException;
 import java.io.Serial;
@@ -82,7 +83,7 @@ public class LightSource implements Comparable<LightSource>, Serializable {
   // and should not otherwise be used.
   @Deprecated private int lumens = Integer.MIN_VALUE;
 
-  private transient Map<Integer, DrawablePaint> paintsByColor = new HashMap<>();
+  private transient Map<Color, DrawablePaint> paintsByColor = new HashMap<>();
 
   /**
    * Constructs a personal light source.
@@ -172,27 +173,21 @@ public class LightSource implements Comparable<LightSource>, Serializable {
   public @Nullable DrawablePaint getPaint(Light light) {
     assert lightList.contains(light);
 
-    final var color = light.getColor();
-    if (color == null) {
-      // TODO Consider whether this is the right choice for textures that come with their own
-      //  colour.
-      return null;
-    }
-
     return paintsByColor.computeIfAbsent(
-        color.getRGB(),
-        argb -> {
+        light.getColor(),
+        color -> {
           DrawablePaint paint;
           if (texture instanceof FlatTexture) {
-            paint = new DrawableColorPaint(color);
+            paint = color == null ? null : new DrawableColorPaint(color);
           } else if (texture instanceof FadeTexture) {
-            paint = new DrawableTintedPaint(new DrawableRadialPaint(), color);
+            final var radialPaint = new DrawableRadialPaint();
+            paint = color == null ? radialPaint : new DrawableTintedPaint(radialPaint, color);
           } else if (texture instanceof AssetTexture assetTexture) {
             // TODO Tint.
             paint = new DrawableTexturePaint(assetTexture.assetKey());
           } else {
             // Shouldn't happen, but just in case.
-            paint = new DrawableColorPaint(color);
+            paint = color == null ? null : new DrawableColorPaint(color);
           }
           return paint;
         });
