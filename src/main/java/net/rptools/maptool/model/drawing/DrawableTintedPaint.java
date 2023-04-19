@@ -31,12 +31,10 @@ import net.rptools.maptool.server.proto.drawing.DrawablePaintDto;
 
 public class DrawableTintedPaint extends DrawablePaint {
   private final DrawablePaint baseDrawablePaint;
-  private final Color tint;
   private final RasterOp tintOp;
 
   public DrawableTintedPaint(DrawablePaint baseDrawablePaint, Color tint) {
     this.baseDrawablePaint = baseDrawablePaint;
-    this.tint = tint;
     this.tintOp = new TintOp(tint);
   }
 
@@ -75,7 +73,7 @@ public class DrawableTintedPaint extends DrawablePaint {
         Rectangle2D userBounds,
         AffineTransform xform,
         RenderingHints hints) {
-      return new Context(
+      return new TransformPaintContext(
           basePaint.createContext(cm, deviceBounds, userBounds, xform, hints), rasterOp);
     }
 
@@ -173,11 +171,11 @@ public class DrawableTintedPaint extends DrawablePaint {
     }
   }
 
-  private static class Context implements PaintContext {
+  private static class TransformPaintContext implements PaintContext {
     private final PaintContext base;
     private final RasterOp rasterOp;
 
-    public Context(PaintContext base, RasterOp rasterOp) {
+    public TransformPaintContext(PaintContext base, RasterOp rasterOp) {
       this.base = base;
       this.rasterOp = rasterOp;
     }
