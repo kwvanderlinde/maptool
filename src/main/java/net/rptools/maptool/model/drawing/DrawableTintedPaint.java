@@ -71,9 +71,7 @@ public class DrawableTintedPaint extends DrawablePaint {
         Rectangle2D userBounds,
         AffineTransform xform,
         RenderingHints hints) {
-      return new Context(
-          basePaint.createContext(cm, deviceBounds, userBounds, xform, hints),
-          tint.createContext(cm, deviceBounds, userBounds, xform, hints));
+      return new Context(basePaint.createContext(cm, deviceBounds, userBounds, xform, hints), tint);
     }
 
     @Override
@@ -84,9 +82,9 @@ public class DrawableTintedPaint extends DrawablePaint {
 
   private static class Context implements PaintContext {
     private final PaintContext base;
-    private final PaintContext tint;
+    private final Color tint;
 
-    public Context(PaintContext base, PaintContext tint) {
+    public Context(PaintContext base, Color tint) {
       this.base = base;
       this.tint = tint;
     }
@@ -94,7 +92,6 @@ public class DrawableTintedPaint extends DrawablePaint {
     @Override
     public void dispose() {
       base.dispose();
-      tint.dispose();
     }
 
     @Override
@@ -105,25 +102,17 @@ public class DrawableTintedPaint extends DrawablePaint {
     @Override
     public Raster getRaster(int x, int y, int w, int h) {
       final var baseRaster = (WritableRaster) this.base.getRaster(x, y, w, h);
-      final var tintRaster = this.tint.getRaster(x, y, w, h);
 
       int[] basePixelBuffer = new int[4];
-      int[] tintPixelBuffer = new int[4];
-      int[] resultPixelBuffer = new int[4];
       for (int i = 0; i < h; ++i) {
         for (int j = 0; j < w; ++j) {
-          final var currX = /*x +*/ j;
-          final var currY = /*y +*/ i;
+          basePixelBuffer = baseRaster.getPixel(j, i, basePixelBuffer);
 
-          basePixelBuffer = baseRaster.getPixel(currX, currY, basePixelBuffer);
-          tintPixelBuffer = tintRaster.getPixel(currX, currY, tintPixelBuffer);
+          basePixelBuffer[0] = basePixelBuffer[0] * tint.getRed() / 255;
+          basePixelBuffer[1] = basePixelBuffer[1] * tint.getGreen() / 255;
+          basePixelBuffer[2] = basePixelBuffer[2] * tint.getBlue() / 255;
 
-          resultPixelBuffer[0] = basePixelBuffer[0];
-          for (int k = 1; k < resultPixelBuffer.length; ++k) {
-            resultPixelBuffer[k] = basePixelBuffer[k] * tintPixelBuffer[k] / 255;
-          }
-
-          baseRaster.setPixel(currX, currY, resultPixelBuffer);
+          baseRaster.setPixel(j, i, basePixelBuffer);
         }
       }
 
