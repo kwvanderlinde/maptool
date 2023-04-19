@@ -33,6 +33,9 @@ import net.rptools.lib.FileUtil;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.drawing.DrawablePaint;
+import net.rptools.maptool.model.drawing.DrawableRadialPaint;
+import net.rptools.maptool.model.drawing.DrawableTexturePaint;
+import net.rptools.maptool.model.drawing.DrawableTintedPaint;
 import net.rptools.maptool.server.proto.LightSourceDto;
 import org.apache.commons.lang.math.NumberUtils;
 
@@ -167,7 +170,27 @@ public class LightSource implements Comparable<LightSource>, Serializable {
     assert lightList.contains(light);
 
     final var color = light.getColor();
-    return color == null ? null : new DrawableColorPaint(color);
+    if (color == null) {
+      // TODO Consider whether this is the right choice for textures that come with their own
+      //  colour.
+      return null;
+    }
+
+    DrawablePaint paint;
+    if (texture instanceof FlatTexture) {
+      paint = new DrawableColorPaint(color);
+    } else if (texture instanceof FadeTexture) {
+      // TODO Incorporate color.
+      paint = new DrawableTintedPaint(new DrawableRadialPaint(), color);
+    } else if (texture instanceof AssetTexture assetTexture) {
+      // TODO Tint.
+      paint = new DrawableTexturePaint(assetTexture.assetKey());
+    } else {
+      // Shouldn't happen, but just in case.
+      paint = new DrawableColorPaint(color);
+    }
+
+    return paint;
   }
 
   public double getMaxRange() {

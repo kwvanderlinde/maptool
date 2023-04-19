@@ -353,7 +353,8 @@ public class ZoneView {
 
       litAreas.add(
           new ContributedLight(
-              new LitArea(light.getLumens(), lightArea), new LightInfo(lightSource, light)));
+              new LitArea(light.getLumens(), lightArea),
+              new LightInfo(lightSource, light, lightSourceArea)));
 
       cummulativeNotTransformedArea.add(notScaledLightArea);
     }
@@ -687,7 +688,8 @@ public class ZoneView {
               Area lightArea = lightSource.getArea(token, zone, light);
               lightArea.transform(AffineTransform.getTranslateInstance(p.x, p.y));
               lightArea.intersect(visibleArea);
-              lightList.add(new DrawableLight(paint, lightArea, light.getLumens()));
+              lightList.add(
+                  new DrawableLight(paint, lightArea, lightSourceArea, light.getLumens()));
             }
           }
         }
@@ -760,6 +762,7 @@ public class ZoneView {
                         return new DrawableLight(
                             laud.lightInfo().lightSource().getPaint(laud.lightInfo().light()),
                             obscuredArea,
+                            laud.lightInfo().lightSourceArea(),
                             laud.litArea().lumens());
                       })
                   .filter(Objects::nonNull)

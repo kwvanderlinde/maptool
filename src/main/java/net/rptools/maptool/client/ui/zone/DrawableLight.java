@@ -21,12 +21,14 @@ public class DrawableLight {
 
   private DrawablePaint paint;
   private Area area;
+  private Area fullLightArea;
   private int lumens;
 
-  public DrawableLight(DrawablePaint paint, Area area, int lumens) {
+  public DrawableLight(DrawablePaint paint, Area area, Area fullLightArea, int lumens) {
     super();
     this.paint = paint;
     this.area = area;
+    this.fullLightArea = fullLightArea;
     this.lumens = lumens;
   }
 
@@ -36,6 +38,10 @@ public class DrawableLight {
 
   public Area getArea() {
     return area;
+  }
+
+  public Area getFullLightArea() {
+    return fullLightArea;
   }
 
   public int getLumens() {

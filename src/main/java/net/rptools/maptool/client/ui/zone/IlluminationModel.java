@@ -14,6 +14,7 @@
  */
 package net.rptools.maptool.client.ui.zone;
 
+import java.awt.geom.Area;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -53,7 +54,7 @@ public class IlluminationModel {
    * @param lightSource
    * @param light
    */
-  public record LightInfo(LightSource lightSource, Light light) {}
+  public record LightInfo(LightSource lightSource, Light light, Area lightSourceArea) {}
 
   /**
    * The data structure for calculating lit areas according to lumens. Lit areas can be added and
