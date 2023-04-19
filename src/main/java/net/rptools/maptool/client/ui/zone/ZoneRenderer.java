@@ -1656,7 +1656,17 @@ public class ZoneRenderer extends JComponent
       // Draw lights onto the buffer image so the map doesn't affect how they blend
       timer.start("renderLightOverlay:drawLights");
       for (var light : lights) {
-        var paint = light.getPaint() != null ? light.getPaint().getPaint() : defaultPaint;
+        final var bounds = light.getFullLightArea().getBounds();
+        var paint =
+            light.getPaint() != null
+                ? light
+                    .getPaint()
+                    .getCenteredPaint(
+                        bounds.getCenterX(),
+                        bounds.getCenterY(),
+                        bounds.getWidth(),
+                        bounds.getHeight())
+                : defaultPaint;
         newG.setPaint(paint);
         timer.start("renderLightOverlay:fillLight");
         newG.fill(light.getArea());
