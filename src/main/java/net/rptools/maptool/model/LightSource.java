@@ -22,6 +22,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -80,6 +81,8 @@ public class LightSource implements Comparable<LightSource>, Serializable {
   // Lumens are now in the individual Lights. This field is only here for backwards compatibility
   // and should not otherwise be used.
   @Deprecated private int lumens = Integer.MIN_VALUE;
+
+  private transient Map<Integer, DrawablePaint> paintsByColor = new HashMap<>();
 
   /**
    * Constructs a personal light source.
@@ -176,21 +179,23 @@ public class LightSource implements Comparable<LightSource>, Serializable {
       return null;
     }
 
-    DrawablePaint paint;
-    if (texture instanceof FlatTexture) {
-      paint = new DrawableColorPaint(color);
-    } else if (texture instanceof FadeTexture) {
-      // TODO Incorporate color.
-      paint = new DrawableTintedPaint(new DrawableRadialPaint(), color);
-    } else if (texture instanceof AssetTexture assetTexture) {
-      // TODO Tint.
-      paint = new DrawableTexturePaint(assetTexture.assetKey());
-    } else {
-      // Shouldn't happen, but just in case.
-      paint = new DrawableColorPaint(color);
-    }
-
-    return paint;
+    return paintsByColor.computeIfAbsent(
+        color.getRGB(),
+        argb -> {
+          DrawablePaint paint;
+          if (texture instanceof FlatTexture) {
+            paint = new DrawableColorPaint(color);
+          } else if (texture instanceof FadeTexture) {
+            paint = new DrawableTintedPaint(new DrawableRadialPaint(), color);
+          } else if (texture instanceof AssetTexture assetTexture) {
+            // TODO Tint.
+            paint = new DrawableTexturePaint(assetTexture.assetKey());
+          } else {
+            // Shouldn't happen, but just in case.
+            paint = new DrawableColorPaint(color);
+          }
+          return paint;
+        });
   }
 
   public double getMaxRange() {
@@ -251,6 +256,7 @@ public class LightSource implements Comparable<LightSource>, Serializable {
 
   public void setTexture(Texture texture) {
     this.texture = texture;
+    paintsByColor.clear();
   }
 
   public void setScaleWithToken(boolean scaleWithToken) {
