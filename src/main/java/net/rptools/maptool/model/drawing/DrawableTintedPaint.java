@@ -20,26 +20,30 @@ import java.awt.PaintContext;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.ColorModel;
 import java.awt.image.ImageObserver;
 import java.awt.image.Raster;
+import java.awt.image.RasterOp;
 import java.awt.image.WritableRaster;
 import net.rptools.maptool.server.proto.drawing.DrawablePaintDto;
 
 public class DrawableTintedPaint extends DrawablePaint {
   private final DrawablePaint baseDrawablePaint;
   private final Color tint;
+  private final RasterOp tintOp;
 
   public DrawableTintedPaint(DrawablePaint baseDrawablePaint, Color tint) {
     this.baseDrawablePaint = baseDrawablePaint;
     this.tint = tint;
+    this.tintOp = new TintOp(tint);
   }
 
   @Override
   public Paint getPaint(double offsetX, double offsetY, double scale, ImageObserver... observers) {
     return new TintedPaint(
-        this.baseDrawablePaint.getPaint(offsetX, offsetY, scale, observers), this.tint);
+        this.baseDrawablePaint.getPaint(offsetX, offsetY, scale, observers), tintOp);
   }
 
   @Override
@@ -47,7 +51,7 @@ public class DrawableTintedPaint extends DrawablePaint {
       double centerX, double centerY, double width, double height, ImageObserver... observers) {
     return new TintedPaint(
         this.baseDrawablePaint.getCenteredPaint(centerX, centerY, width, height, observers),
-        this.tint);
+        tintOp);
   }
 
   @Override
@@ -57,11 +61,11 @@ public class DrawableTintedPaint extends DrawablePaint {
 
   private static class TintedPaint implements Paint {
     private final Paint basePaint;
-    private final Color tint;
+    private final RasterOp rasterOp;
 
-    public TintedPaint(Paint basePaint, Color tint) {
+    public TintedPaint(Paint basePaint, RasterOp rasterOp) {
       this.basePaint = basePaint;
-      this.tint = tint;
+      this.rasterOp = rasterOp;
     }
 
     @Override
@@ -71,7 +75,8 @@ public class DrawableTintedPaint extends DrawablePaint {
         Rectangle2D userBounds,
         AffineTransform xform,
         RenderingHints hints) {
-      return new Context(basePaint.createContext(cm, deviceBounds, userBounds, xform, hints), tint);
+      return new Context(
+          basePaint.createContext(cm, deviceBounds, userBounds, xform, hints), rasterOp);
     }
 
     @Override
@@ -80,13 +85,102 @@ public class DrawableTintedPaint extends DrawablePaint {
     }
   }
 
+  private static class TintOp implements RasterOp {
+    private int[] buffer = null;
+    private final int[] premultipliedRed = new int[256];
+    private final int[] premultipliedGreen = new int[256];
+    private final int[] premultipliedBlue = new int[256];
+
+    public TintOp(Color tint) {
+      final var tr = tint.getRed();
+      final var tg = tint.getGreen();
+      final var tb = tint.getBlue();
+      for (int i = 0; i < 256; ++i) {
+        premultipliedRed[i] = i * tr / 255;
+        premultipliedGreen[i] = i * tg / 255;
+        premultipliedBlue[i] = i * tb / 255;
+      }
+    }
+
+    private int[] getPixels(Raster src, int x, int y, int w, int h, int[] buffer) {
+      if (w == 0 || h == 0) {
+        return new int[0];
+      }
+      if (buffer == null || buffer.length < w * h) {
+        // In practice I only need buffers up to ~2000, so I don't need exponential progression.
+        // I just need to avoid incrementing by 1 at a time.
+        final var bufferIncrement = 256;
+        final var newSize = bufferIncrement * (1 + (w * h) / bufferIncrement);
+        buffer = new int[newSize];
+      }
+
+      // TODO Why this instead of getPixels()?
+      return (int[]) src.getDataElements(x, y, w, h, buffer);
+    }
+
+    public static void setPixels(WritableRaster dest, int x, int y, int w, int h, int[] pixels) {
+      if (pixels == null || w == 0 || h == 0) {
+        return;
+      }
+      if (pixels.length < w * h) {
+        throw new IllegalArgumentException("pixels array must have a length >= w*h");
+      }
+
+      dest.setDataElements(x, y, w, h, pixels);
+    }
+
+    @Override
+    public WritableRaster filter(Raster src, WritableRaster dest) {
+      final int width = src.getWidth();
+      final int height = src.getHeight();
+
+      buffer = getPixels(src, 0, 0, width, height, buffer);
+      for (int i = 0; i < (width * height); ++i) {
+        int argb = buffer[i];
+        buffer[i] =
+            (argb & 0xFF_00_00_00)
+                | premultipliedRed[(argb >> 16) & 0xFF] << 16
+                | premultipliedGreen[(argb >> 8) & 0xFF] << 8
+                | premultipliedBlue[(argb >> 0) & 0xFF] << 0;
+      }
+      setPixels(dest, 0, 0, width, height, buffer);
+
+      return dest;
+    }
+
+    @Override
+    public Rectangle2D getBounds2D(Raster src) {
+      return src.getBounds();
+    }
+
+    @Override
+    public WritableRaster createCompatibleDestRaster(Raster src) {
+      return src.createCompatibleWritableRaster();
+    }
+
+    @Override
+    public Point2D getPoint2D(Point2D srcPt, Point2D dstPt) {
+      if (dstPt == null) {
+        dstPt = new Point2D.Float();
+      }
+      dstPt.setLocation(srcPt.getX(), srcPt.getY());
+
+      return dstPt;
+    }
+
+    @Override
+    public RenderingHints getRenderingHints() {
+      return null;
+    }
+  }
+
   private static class Context implements PaintContext {
     private final PaintContext base;
-    private final Color tint;
+    private final RasterOp rasterOp;
 
-    public Context(PaintContext base, Color tint) {
+    public Context(PaintContext base, RasterOp rasterOp) {
       this.base = base;
-      this.tint = tint;
+      this.rasterOp = rasterOp;
     }
 
     @Override
@@ -101,22 +195,12 @@ public class DrawableTintedPaint extends DrawablePaint {
 
     @Override
     public Raster getRaster(int x, int y, int w, int h) {
-      final var baseRaster = (WritableRaster) this.base.getRaster(x, y, w, h);
-
-      int[] basePixelBuffer = new int[4];
-      for (int i = 0; i < h; ++i) {
-        for (int j = 0; j < w; ++j) {
-          basePixelBuffer = baseRaster.getPixel(j, i, basePixelBuffer);
-
-          basePixelBuffer[0] = basePixelBuffer[0] * tint.getRed() / 255;
-          basePixelBuffer[1] = basePixelBuffer[1] * tint.getGreen() / 255;
-          basePixelBuffer[2] = basePixelBuffer[2] * tint.getBlue() / 255;
-
-          baseRaster.setPixel(j, i, basePixelBuffer);
-        }
+      final var baseRaster = this.base.getRaster(x, y, w, h);
+      if (baseRaster instanceof WritableRaster writableRaster) {
+        return rasterOp.filter(baseRaster, writableRaster);
+      } else {
+        return rasterOp.filter(baseRaster, rasterOp.createCompatibleDestRaster(baseRaster));
       }
-
-      return baseRaster;
     }
   }
 }
