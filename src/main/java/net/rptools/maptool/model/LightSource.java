@@ -51,21 +51,33 @@ public class LightSource implements Comparable<LightSource>, Serializable {
     public String asString();
   }
 
-  public record FlatTexture() implements Texture {
+  // I wish the following could be records, but XStream doesn't like deserializing them.
+
+  public static final class FlatTexture implements Texture {
     @Override
     public String asString() {
       return "flat";
     }
   }
   // Expectation is that we could add parameters to control the fade curve.
-  public record FadeTexture() implements Texture {
+  public static final class FadeTexture implements Texture {
     @Override
     public String asString() {
       return "fade";
     }
   }
 
-  public record AssetTexture(MD5Key assetKey) implements Texture {
+  public static final class AssetTexture implements Texture {
+    private final MD5Key assetKey;
+
+    public AssetTexture(MD5Key assetKey) {
+      this.assetKey = assetKey;
+    }
+
+    public MD5Key assetKey() {
+      return assetKey;
+    }
+
     @Override
     public String asString() {
       return "asset://" + assetKey.toString();
