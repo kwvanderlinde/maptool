@@ -25,8 +25,8 @@ public class DrawableRadialPaint extends DrawablePaint {
   @Override
   public Paint getPaint(double offsetX, double offsetY, double scale, ImageObserver... observers) {
     return new RadialGradientPaint(
-        (float) offsetX,
-        (float) offsetY,
+        (float) -offsetX,
+        (float) -offsetY,
         (float) scale,
         new float[] {0.f, 1.f},
         new Color[] {Color.white, Color.black});
@@ -36,8 +36,8 @@ public class DrawableRadialPaint extends DrawablePaint {
   public Paint getCenteredPaint(
       double centerX, double centerY, double width, double height, ImageObserver... observers) {
     return new RadialGradientPaint(
-        (float) centerX,
-        (float) centerY,
+        (float) -centerX,
+        (float) -centerY,
         (float) Math.max(width, height) / 2,
         new float[] {0.f, 1.f},
         new Color[] {Color.white, Color.black});

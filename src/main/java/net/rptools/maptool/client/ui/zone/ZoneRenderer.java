@@ -1662,8 +1662,8 @@ public class ZoneRenderer extends JComponent
                 ? light
                     .getPaint()
                     .getCenteredPaint(
-                        bounds.getCenterX(),
-                        bounds.getCenterY(),
+                        -bounds.getCenterX(),
+                        -bounds.getCenterY(),
                         bounds.getWidth(),
                         bounds.getHeight())
                 : defaultPaint;
