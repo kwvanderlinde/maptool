@@ -128,12 +128,12 @@ public class DrawableTintedPaint extends DrawablePaint {
 
     @Override
     public WritableRaster filter(Raster src, WritableRaster dest) {
-      final int width = src.getWidth();
-      final int height = src.getHeight();
+      final var width = src.getWidth();
+      final var height = src.getHeight();
 
       buffer = getPixels(src, src.getMinX(), src.getMinY(), width, height, buffer);
       for (int i = 0; i < (width * height); ++i) {
-        int argb = buffer[i];
+        final var argb = buffer[i];
         buffer[i] =
             (argb & 0xFF_00_00_00)
                 | premultipliedRed[(argb >> 16) & 0xFF] << 16
