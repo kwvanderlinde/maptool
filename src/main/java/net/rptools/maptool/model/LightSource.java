@@ -195,8 +195,8 @@ public class LightSource implements Comparable<LightSource>, Serializable {
             final var radialPaint = new DrawableRadialPaint();
             paint = color == null ? radialPaint : new DrawableTintedPaint(radialPaint, color);
           } else if (texture instanceof AssetTexture assetTexture) {
-            // TODO Tint.
-            paint = new DrawableTexturePaint(assetTexture.assetKey());
+            final var texturePaint = new DrawableTexturePaint(assetTexture.assetKey());
+            paint = color == null ? texturePaint : new DrawableTintedPaint(texturePaint, color);
           } else {
             // Shouldn't happen, but just in case.
             paint = color == null ? null : new DrawableColorPaint(color);
