@@ -96,13 +96,13 @@ public class DrawableTintedPaint extends DrawablePaint {
       final var tg = tint.getGreen();
       final var tb = tint.getBlue();
       for (int i = 0; i < 256; ++i) {
-        premultipliedRed[i] = i * tr / 255;
-        premultipliedGreen[i] = i * tg / 255;
-        premultipliedBlue[i] = i * tb / 255;
+        premultipliedRed[i] = (i * tr) / 255;
+        premultipliedGreen[i] = (i * tg) / 255;
+        premultipliedBlue[i] = (i * tb) / 255;
       }
     }
 
-    private int[] getPixels(Raster src, int x, int y, int w, int h, int[] buffer) {
+    private static int[] getPixels(Raster src, int x, int y, int w, int h, int[] buffer) {
       if (w == 0 || h == 0) {
         return new int[0];
       }
@@ -114,7 +114,6 @@ public class DrawableTintedPaint extends DrawablePaint {
         buffer = new int[newSize];
       }
 
-      // TODO Why this instead of getPixels()?
       return (int[]) src.getDataElements(x, y, w, h, buffer);
     }
 
@@ -134,7 +133,7 @@ public class DrawableTintedPaint extends DrawablePaint {
       final int width = src.getWidth();
       final int height = src.getHeight();
 
-      buffer = getPixels(src, 0, 0, width, height, buffer);
+      buffer = getPixels(src, src.getMinX(), src.getMinY(), width, height, buffer);
       for (int i = 0; i < (width * height); ++i) {
         int argb = buffer[i];
         buffer[i] =
@@ -143,7 +142,7 @@ public class DrawableTintedPaint extends DrawablePaint {
                 | premultipliedGreen[(argb >> 8) & 0xFF] << 8
                 | premultipliedBlue[(argb >> 0) & 0xFF] << 0;
       }
-      setPixels(dest, 0, 0, width, height, buffer);
+      setPixels(dest, dest.getMinX(), dest.getMinY(), width, height, buffer);
 
       return dest;
     }
