@@ -82,6 +82,8 @@ public class LightSource implements Comparable<LightSource>, Serializable {
     @Nullable
     @Override
     public DrawablePaint getUntintedPaint() {
+      // TODO This works for circle, but there may be better options for other shapes.
+
       return new DrawableRadialPaint(
           // This is a two-piece linear interpolation of a circular arc.
           new float[] {0.f, 0.968245837f, 1.f},
