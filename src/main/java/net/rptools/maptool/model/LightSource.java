@@ -48,22 +48,44 @@ public class LightSource implements Comparable<LightSource>, Serializable {
   }
 
   public sealed interface Texture {
-    public String asString();
+    @Nonnull
+    String asString();
+
+    /** @return null to indicate a flat color that does not require expensive tinting. */
+    @Nullable
+    DrawablePaint getUntintedPaint();
   }
 
   // I wish the following could be records, but XStream doesn't like deserializing them.
 
   public static final class FlatTexture implements Texture {
+    @Nonnull
     @Override
     public String asString() {
       return "flat";
     }
+
+    @Nullable
+    @Override
+    public DrawablePaint getUntintedPaint() {
+      return null;
+    }
   }
   // Expectation is that we could add parameters to control the fade curve.
   public static final class FadeTexture implements Texture {
+    @Nonnull
     @Override
     public String asString() {
       return "fade";
+    }
+
+    @Nullable
+    @Override
+    public DrawablePaint getUntintedPaint() {
+      return new DrawableRadialPaint(
+          // This is a two-piece linear interpolation of a circular arc.
+          new float[] {0.f, 0.968245837f, 1.f},
+          new Color[] {Color.white, new Color(0xFF_40_40_40, true), Color.black});
     }
   }
 
@@ -78,9 +100,16 @@ public class LightSource implements Comparable<LightSource>, Serializable {
       return assetKey;
     }
 
+    @Nonnull
     @Override
     public String asString() {
       return "asset://" + assetKey.toString();
+    }
+
+    @Nullable
+    @Override
+    public DrawablePaint getUntintedPaint() {
+      return new DrawableTexturePaint(assetKey);
     }
   }
 
@@ -188,22 +217,15 @@ public class LightSource implements Comparable<LightSource>, Serializable {
     return paintsByColor.computeIfAbsent(
         light.getColor(),
         color -> {
-          DrawablePaint paint;
-          if (texture instanceof FlatTexture) {
+          final var untintedPaint = texture.getUntintedPaint();
+          final @Nullable DrawablePaint paint;
+          if (untintedPaint == null) {
+            // Solid color
             paint = color == null ? null : new DrawableColorPaint(color);
-          } else if (texture instanceof FadeTexture) {
-            final var radialPaint =
-                new DrawableRadialPaint(
-                    // This is a two-piece linear interpolation of a circular arc.
-                    new float[] {0.f, 0.968245837f, 1.f},
-                    new Color[] {Color.white, new Color(0xFF_40_40_40, true), Color.black});
-            paint = color == null ? radialPaint : new DrawableTintedPaint(radialPaint, color);
-          } else if (texture instanceof AssetTexture assetTexture) {
-            final var texturePaint = new DrawableTexturePaint(assetTexture.assetKey());
-            paint = color == null ? texturePaint : new DrawableTintedPaint(texturePaint, color);
+          } else if (color == null) {
+            paint = untintedPaint;
           } else {
-            // Shouldn't happen, but just in case.
-            paint = color == null ? null : new DrawableColorPaint(color);
+            paint = new DrawableTintedPaint(untintedPaint, color);
           }
           return paint;
         });
