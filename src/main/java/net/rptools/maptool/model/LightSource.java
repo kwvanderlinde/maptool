@@ -194,9 +194,9 @@ public class LightSource implements Comparable<LightSource>, Serializable {
           } else if (texture instanceof FadeTexture) {
             final var radialPaint =
                 new DrawableRadialPaint(
-                    // Two-part linear fade
-                    new float[] {0.f, 0.75f, 1.f},
-                    new Color[] {Color.white, new Color(0xFF_80_80_80, true), Color.black});
+                    // This is a two-piece linear interpolation of a circular arc.
+                    new float[] {0.f, 0.968245837f, 1.f},
+                    new Color[] {Color.white, new Color(0xFF_40_40_40, true), Color.black});
             paint = color == null ? radialPaint : new DrawableTintedPaint(radialPaint, color);
           } else if (texture instanceof AssetTexture assetTexture) {
             final var texturePaint = new DrawableTexturePaint(assetTexture.assetKey());
