@@ -51,7 +51,9 @@ public class LightSource implements Comparable<LightSource>, Serializable {
     @Nonnull
     String asString();
 
-    /** @return null to indicate a flat color that does not require expensive tinting. */
+    /**
+     * @return null to indicate a flat color that does not require expensive tinting.
+     */
     @Nullable
     DrawablePaint getUntintedPaint();
   }
