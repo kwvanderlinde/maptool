@@ -240,7 +240,8 @@ public class GetRolledTest {
   @Test
   public void testExec() throws ParserException {
     String result =
-        parser.parseLine(String.format("[h: 3d4]\n[r: execMacro(\"%s\")]", UDF_CONTENTS));
+        parser.parseLine(
+            null, String.format("[h: 3d4]\n[r: execMacro(\"%s\")]", UDF_CONTENTS), null);
     JsonObject json =
         JSONMacroFunctions.getInstance().asJsonElement(result.trim()).getAsJsonObject();
     assertEquals(
@@ -259,7 +260,8 @@ public class GetRolledTest {
   @Test
   public void testEvalMacro() throws ParserException {
     String result =
-        parser.parseLine(String.format("[h: 4d6]\n[r: evalMacro(\"%s\")]", UDF_CONTENTS));
+        parser.parseLine(
+            null, String.format("[h: 4d6]\n[r: evalMacro(\"%s\")]", UDF_CONTENTS), null);
     JsonObject json =
         JSONMacroFunctions.getInstance().asJsonElement(result.trim()).getAsJsonObject();
     assertEquals(

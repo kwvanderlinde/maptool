@@ -310,7 +310,7 @@ public class MapToolVariableResolver implements VariableResolver {
       if (evaluate) {
         // Try parse the value if we can not parse it then just return it as a string.
         try {
-          value = MapTool.getParser().parseLine(tokenInContext, result.toString());
+          value = MapTool.getParser().parseLine(tokenInContext, result.toString(), null);
         } catch (Exception e) {
           value = result.toString();
         }

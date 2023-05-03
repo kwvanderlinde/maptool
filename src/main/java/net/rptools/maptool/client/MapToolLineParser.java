@@ -208,22 +208,9 @@ public class MapToolLineParser {
     }
   }
 
-  public String parseLine(String line) throws ParserException {
-    return parseLine(null, line);
-  }
-
-  public String parseLine(Token tokenInContext, String line) throws ParserException {
-    return parseLine(tokenInContext, line, null);
-  }
-
   public String parseLine(Token tokenInContext, String line, MapToolMacroContext context)
       throws ParserException {
-    return parseLine(null, tokenInContext, line, context);
-  }
-
-  public String parseLine(MapToolVariableResolver res, Token tokenInContext, String line)
-      throws ParserException {
-    return parseLine(res, tokenInContext, line, null);
+    return parseLine(new MapToolVariableResolver(tokenInContext), tokenInContext, line, context);
   }
 
   public String parseLine(
