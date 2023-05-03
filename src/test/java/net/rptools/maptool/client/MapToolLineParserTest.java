@@ -30,14 +30,10 @@ public class MapToolLineParserTest {
   private static final MapToolLineParser parser = MapTool.getParser();
 
   private Result parseExpression(
-      String expression,
-      boolean makeDeterministic,
-      Token tokenInContext,
-      MapToolVariableResolver resolver)
+      String expression, boolean makeDeterministic, MapToolVariableResolver resolver)
       throws ParserException {
     return parser.parseExpression(
         resolver == null ? new MapToolVariableResolver(null) : resolver,
-        tokenInContext,
         expression,
         makeDeterministic);
   }
@@ -135,7 +131,7 @@ public class MapToolLineParserTest {
           }
         };
 
-    Result result = parseExpression("Strength = 6", false, token, res);
+    Result result = parseExpression("Strength = 6", false, res);
 
     assertEquals(new BigDecimal(6), result.getValue());
     assertEquals("6", token.getProperty("Strength"));
@@ -202,26 +198,26 @@ public class MapToolLineParserTest {
 
     // if , deterministic
     String ifcondition = "if(1==1,\"match\",\"no match\")";
-    Result result = parseExpression(ifcondition, true, null, null);
+    Result result = parseExpression(ifcondition, true, null);
     assertEquals(result.getValue(), "match");
     assertEquals(result.getDetailExpression(), "match");
 
     // if, non deterministic
     ifcondition = "if(1==1,\"match\",\"no match\")";
-    result = parseExpression(ifcondition, false, null, null);
+    result = parseExpression(ifcondition, false, null);
     assertEquals("match", result.getValue());
     assertEqualsIgnoreSpaces(ifcondition, result.getDetailExpression());
 
     // if, deterministic
     ifcondition = "if(1<2,\"match\",\"no match\")";
-    result = parseExpression(ifcondition, true, null, null);
+    result = parseExpression(ifcondition, true, null);
     assertEquals("match", result.getValue());
     assertEquals("match", result.getDetailExpression());
 
     // if, non deterministic, the result is equal to deterministic but detailed expression is not
     // resolved to a deterministic value
     ifcondition = "if(1<2,\"match\",\"no match\")";
-    result = parseExpression(ifcondition, false, null, null);
+    result = parseExpression(ifcondition, false, null);
     assertEquals("match", result.getValue());
     assertEqualsIgnoreSpaces(ifcondition, result.getDetailExpression());
   }
@@ -232,12 +228,12 @@ public class MapToolLineParserTest {
     MapToolVariableResolver resolver = new MapToolVariableResolver(null);
 
     // "match" + "this", deterministic
-    Result result = parseExpression("\"match\"+\"this\"", true, null, resolver);
+    Result result = parseExpression("\"match\"+\"this\"", true, resolver);
     assertEquals("matchthis", result.getValue());
     assertEquals("\"match\" + \"this\"", result.getDetailExpression());
 
     // "match" + "this", non deterministic
-    result = parseExpression("\"match\"+\"this\"", false, null, resolver);
+    result = parseExpression("\"match\"+\"this\"", false, resolver);
     assertEquals("matchthis", result.getValue());
     assertEquals("\"match\" + \"this\"", result.getDetailExpression());
   }
@@ -248,25 +244,25 @@ public class MapToolLineParserTest {
     MapToolVariableResolver resolver = new MapToolVariableResolver(null);
 
     // a = 1, deterministic
-    Result result = parseExpression("a = 1", true, null, resolver);
+    Result result = parseExpression("a = 1", true, resolver);
     assertEquals(result.getValue(), BigDecimal.ONE);
     assertEquals(resolver.getVariable("a"), BigDecimal.ONE);
     assertEquals(result.getDetailExpression(), "a = 1");
 
     // a = a * 10, deterministic
-    result = parseExpression("a = a * 10", true, null, resolver);
+    result = parseExpression("a = a * 10", true, resolver);
     assertEquals(result.getValue(), BigDecimal.TEN);
     assertEquals(resolver.getVariable("a"), BigDecimal.TEN);
     assertEquals(result.getDetailExpression(), "a = (1 * 10)");
 
     // a = 1, non-deterministic
-    result = parseExpression("a = 1", false, null, resolver);
+    result = parseExpression("a = 1", false, resolver);
     assertEquals(result.getValue(), BigDecimal.ONE);
     assertEquals(resolver.getVariable("a"), BigDecimal.ONE);
     assertEquals(result.getDetailExpression(), "a = 1");
 
     // a = a * 10
-    result = parseExpression("a = a * 10", false, null, resolver);
+    result = parseExpression("a = a * 10", false, resolver);
     assertEquals(result.getValue(), BigDecimal.TEN);
     assertEquals(resolver.getVariable("a"), BigDecimal.TEN);
     assertEquals(result.getDetailExpression(), "a = (a * 10)");

@@ -21,6 +21,8 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import net.rptools.dicelib.expression.Result;
 import net.rptools.maptool.client.functions.*;
 import net.rptools.maptool.client.functions.exceptions.*;
@@ -344,7 +346,7 @@ public class MapToolLineParser {
                   outputOpts.add("w");
                   for (int i = 0; i < option.getParamCount(); i++) {
                     String arg =
-                        parseExpression(resolver, tokenInContext, option.getStringParam(i), false)
+                        parseExpression(resolver, option.getStringParam(i), false)
                             .getValue()
                             .toString();
                     if (arg.trim().startsWith("[")) {
@@ -441,10 +443,7 @@ public class MapToolLineParser {
                     loopSep = option.getStringParam(2);
                     String listDelim = option.getStringParam(3);
                     if (listDelim.trim().startsWith("\"")) {
-                      listDelim =
-                          parseExpression(resolver, tokenInContext, listDelim, false)
-                              .getValue()
-                              .toString();
+                      listDelim = parseExpression(resolver, listDelim, false).getValue().toString();
                     }
 
                     foreachList = null;
@@ -637,7 +636,7 @@ public class MapToolLineParser {
                     (loopCondition == null) ? null : String.format("if(%s, 1, 0)", loopCondition);
                 // Stop loop if the while condition is false
                 try {
-                  Result result = parseExpression(resolver, tokenInContext, hackCondition, false);
+                  Result result = parseExpression(resolver, hackCondition, false);
                   loopConditionValue = ((Number) result.getValue()).intValue();
                   if (loopConditionValue == 0) {
                     doLoop = false;
@@ -650,8 +649,7 @@ public class MapToolLineParser {
 
             // Output the loop separator
             if (doLoop && iteration != 0 && output != Output.NONE) {
-              expressionBuilder.append(
-                  parseExpression(resolver, tokenInContext, loopSep, false).getValue());
+              expressionBuilder.append(parseExpression(resolver, loopSep, false).getValue());
             }
 
             if (!doLoop) {
@@ -672,7 +670,7 @@ public class MapToolLineParser {
               }
               Result result;
               try {
-                result = parseExpression(resolver, tokenInContext, hackCondition, false);
+                result = parseExpression(resolver, hackCondition, false);
               } catch (Exception e) {
                 throw doError(
                     I18N.getText(
@@ -818,10 +816,10 @@ public class MapToolLineParser {
                      * TODO: If you're adding a new formatting option, add a new case to build the output
                      */
                   case NONE:
-                    parseExpression(resolver, tokenInContext, rollBranch, false);
+                    parseExpression(resolver, rollBranch, false);
                     break;
                   case RESULT:
-                    result = parseExpression(resolver, tokenInContext, rollBranch, false);
+                    result = parseExpression(resolver, rollBranch, false);
                     output_text = result != null ? result.getValue().toString() : "";
                     if (!this.isMacroTrusted()) {
                       output_text =
@@ -839,7 +837,7 @@ public class MapToolLineParser {
                   case TOOLTIP:
                     String tooltip = rollBranch + " = ";
                     output_text = null;
-                    result = parseExpression(resolver, tokenInContext, rollBranch, true);
+                    result = parseExpression(resolver, rollBranch, true);
                     tooltip += result.getDetailExpression();
                     if (text == null) {
                       output_text = result.getValue().toString();
@@ -848,10 +846,7 @@ public class MapToolLineParser {
                         tooltip += " = " + result.getValue();
                       }
                       resolver.setVariable("roll.result", result.getValue());
-                      output_text =
-                          parseExpression(resolver, tokenInContext, text, false)
-                              .getValue()
-                              .toString();
+                      output_text = parseExpression(resolver, text, false).getValue().toString();
                     }
                     tooltip = tooltip.replaceAll("'", "&#39;");
                     expressionBuilder.append(
@@ -879,9 +874,9 @@ public class MapToolLineParser {
                  */
               case MACRO:
                 // [MACRO("macroName@location"): args]
-                result = parseExpression(resolver, tokenInContext, macroName, false);
+                result = parseExpression(resolver, macroName, false);
                 String callName = result.getValue().toString();
-                result = parseExpression(resolver, tokenInContext, rollBranch, false);
+                result = parseExpression(resolver, rollBranch, false);
                 String macroArgs = result.getValue().toString();
 
                 try {
@@ -963,7 +958,7 @@ public class MapToolLineParser {
           }
         } else if (match.getMatch().startsWith("{")) {
           roll = match.getRoll();
-          Result result = parseExpression(resolver, tokenInContext, roll, false);
+          Result result = parseExpression(resolver, roll, false);
           if (isMacroTrusted()) {
             builder.append(result != null ? result.getValue().toString() : "");
           } else {
@@ -1000,22 +995,15 @@ public class MapToolLineParser {
     }
   }
 
-  public Result parseExpression(String expression, boolean makeDeterministic)
-      throws ParserException {
-    return parseExpression(null, expression, makeDeterministic);
-  }
-
-  public Result parseExpression(Token tokenInContext, String expression, boolean makeDeterministic)
+  public Result parseExpression(
+      @Nullable Token tokenInContext, String expression, boolean makeDeterministic)
       throws ParserException {
     return parseExpression(
-        new MapToolVariableResolver(tokenInContext), tokenInContext, expression, makeDeterministic);
+        new MapToolVariableResolver(tokenInContext), expression, makeDeterministic);
   }
 
   public Result parseExpression(
-      MapToolVariableResolver resolver,
-      Token tokenInContext,
-      String expression,
-      boolean makeDeterministic)
+      @Nonnull MapToolVariableResolver resolver, String expression, boolean makeDeterministic)
       throws ParserException {
     if (parserRecurseDepth > maxRecursionDepth) {
       parserRecurseDepth = 0;
@@ -1082,10 +1070,11 @@ public class MapToolLineParser {
     return expandRoll(new MapToolVariableResolver(tokenInContext), tokenInContext, roll);
   }
 
+  // TODO Unused tokenInContext
   public String expandRoll(MapToolVariableResolver resolver, Token tokenInContext, String roll)
       throws ParserException {
     try {
-      Result result = parseExpression(resolver, tokenInContext, roll, true);
+      Result result = parseExpression(resolver, roll, true);
       StringBuilder sb = new StringBuilder();
 
       if (result.getDetailExpression().equals(result.getValue().toString())) {
