@@ -1038,7 +1038,7 @@ public class JSONMacroFunctionsOld extends AbstractFunction {
         if (o instanceof JSONObject || o instanceof JSONArray) {
           jobj.put(key, JSONEvaluate(res, o));
         } else if (o instanceof String) {
-          jobj.put(key, EvalMacroFunctions.evalMacro(res, res.getTokenInContext(), o.toString()));
+          jobj.put(key, EvalMacroFunctions.evalMacro(res, o.toString()));
         }
       }
     } else {
@@ -1051,7 +1051,7 @@ public class JSONMacroFunctionsOld extends AbstractFunction {
           // For arrays we may have an extra "" so it can be stored in the array
           String line = o.toString();
           line = line.replaceFirst("^\"", "").replaceFirst("\"$", "");
-          jarr.set(i, EvalMacroFunctions.evalMacro(res, res.getTokenInContext(), line));
+          jarr.set(i, EvalMacroFunctions.evalMacro(res, line));
         }
       }
     }
