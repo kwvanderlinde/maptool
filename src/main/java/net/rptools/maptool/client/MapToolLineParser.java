@@ -855,12 +855,10 @@ public class MapToolLineParser {
                   case EXPANDED:
                     expressionBuilder.append(
                         rollString(
-                            outputOpts,
-                            rollBranch + " = " + expandRoll(resolver, tokenInContext, rollBranch)));
+                            outputOpts, rollBranch + " = " + expandRoll(resolver, rollBranch)));
                     break;
                   case UNFORMATTED:
-                    output_text =
-                        rollBranch + " = " + expandRoll(resolver, tokenInContext, rollBranch);
+                    output_text = rollBranch + " = " + expandRoll(resolver, rollBranch);
 
                     // Escape quotes so that the result can be used in a title attribute
                     output_text = output_text.replaceAll("'", "&#39;");
@@ -1063,16 +1061,10 @@ public class MapToolLineParser {
   }
 
   public String expandRoll(String roll) throws ParserException {
-    return expandRoll(null, roll);
+    return expandRoll(new MapToolVariableResolver(null), roll);
   }
 
-  public String expandRoll(Token tokenInContext, String roll) throws ParserException {
-    return expandRoll(new MapToolVariableResolver(tokenInContext), tokenInContext, roll);
-  }
-
-  // TODO Unused tokenInContext
-  public String expandRoll(MapToolVariableResolver resolver, Token tokenInContext, String roll)
-      throws ParserException {
+  public String expandRoll(MapToolVariableResolver resolver, String roll) throws ParserException {
     try {
       Result result = parseExpression(resolver, roll, true);
       StringBuilder sb = new StringBuilder();
