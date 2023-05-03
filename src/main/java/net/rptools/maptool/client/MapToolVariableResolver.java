@@ -87,6 +87,7 @@ public class MapToolVariableResolver implements VariableResolver {
   private List<Runnable> delayedActionList;
 
   private Token tokenInContext;
+  private boolean propertiesAsVariables = false;
 
   private boolean autoPrompt;
 
@@ -227,7 +228,7 @@ public class MapToolVariableResolver implements VariableResolver {
         return TokenInitHoldFunction.getInitiativeHold(tokenInContext);
       } // endif
 
-      if (this.validTokenProperty(name, tokenInContext)) {
+      if (propertiesAsVariables && this.validTokenProperty(name, tokenInContext)) {
         result = tokenInContext.getEvaluatedProperty(name);
       } else {
         // If the token has no property of that name check to see if there s a defaulted
@@ -350,7 +351,9 @@ public class MapToolVariableResolver implements VariableResolver {
       throw new ParserException(I18N.getText("lineParser.cantAssignToConstant", varname));
     }
 
-    if (tokenInContext != null && validTokenProperty(varname, tokenInContext)) {
+    if (propertiesAsVariables
+        && tokenInContext != null
+        && validTokenProperty(varname, tokenInContext)) {
       updateTokenProperty(tokenInContext, varname, value.toString());
     }
 
