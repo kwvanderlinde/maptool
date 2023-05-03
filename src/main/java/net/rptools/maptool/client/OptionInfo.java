@@ -421,7 +421,7 @@ class OptionInfo {
     Object retval = params[index];
     // No parsing is done if the param isn't a String (e.g. it's already a BigDecimal)
     if (params[index] instanceof String) {
-      Result result = parser.parseExpression(res, tokenInContext, (String) params[index], false);
+      Result result = parser.parseExpression(res, (String) params[index], false);
       retval = result.getValue();
     }
     return retval;

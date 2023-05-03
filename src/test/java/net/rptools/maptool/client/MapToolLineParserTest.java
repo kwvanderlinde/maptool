@@ -36,8 +36,7 @@ public class MapToolLineParserTest {
       MapToolVariableResolver resolver)
       throws ParserException {
     return parser.parseExpression(
-        resolver == null ? new MapToolVariableResolver(null) : resolver,
-        tokenInContext,
+        resolver == null ? new MapToolVariableResolver(tokenInContext) : resolver,
         expression,
         makeDeterministic);
   }
