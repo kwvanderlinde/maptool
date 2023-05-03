@@ -128,8 +128,8 @@ public class UserDefinedMacroFunctions implements Function, AdditionalFunctionDe
       output =
           MapTool.getParser()
               .runMacro(
+                  // TODO Uh..., shouldn't this be newResolver?
                   (MapToolVariableResolver) resolver,
-                  newResolver.getTokenInContext(),
                   funcDef.macroName,
                   macroArgs,
                   funcDef.newVariableContext);

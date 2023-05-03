@@ -21,6 +21,7 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
 import net.rptools.dicelib.expression.Result;
 import net.rptools.maptool.client.functions.*;
 import net.rptools.maptool.client.functions.exceptions.*;
@@ -28,11 +29,9 @@ import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
 import net.rptools.maptool.client.ui.htmlframe.HTMLFrameFactory;
 import net.rptools.maptool.client.ui.htmlframe.HTMLFrameFactory.FrameType;
 import net.rptools.maptool.client.ui.macrobuttons.buttons.MacroButtonPrefs;
-import net.rptools.maptool.client.ui.zone.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.MacroButtonProperties;
 import net.rptools.maptool.model.Token;
-import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.library.LibraryManager;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.function.Function;
@@ -872,7 +871,7 @@ public class MapToolLineParser {
                 String macroArgs = result.getValue().toString();
 
                 try {
-                  output_text = runMacro(resolver, tokenInContext, callName, macroArgs);
+                  output_text = runMacro(resolver, callName, macroArgs);
                 } catch (AbortFunctionException e) {
                   // required to catch abort that are not
                   // in a (UDF)function call
@@ -905,7 +904,7 @@ public class MapToolLineParser {
                 break;
 
               case CODEBLOCK:
-                output_text = runMacroBlock(resolver, tokenInContext, rollBranch);
+                output_text = runMacroBlock(resolver, tokenInContext, rollBranch, null);
                 resolver.setVariable(
                     "roll.count", iteration); // reset this because called code might change it
                 if (output != Output.NONE) {
@@ -1088,10 +1087,9 @@ public class MapToolLineParser {
     }
   }
 
-  public String runMacro(
-      MapToolVariableResolver resolver, Token tokenInContext, String qMacroName, String args)
+  public String runMacro(MapToolVariableResolver resolver, String qMacroName, String args)
       throws ParserException {
-    return runMacro(resolver, tokenInContext, qMacroName, args, true);
+    return runMacro(resolver, qMacroName, args, true);
   }
 
   /**
@@ -1099,7 +1097,6 @@ public class MapToolLineParser {
    *
    * @param resolver the {@link MapToolVariableResolver} used for resolving variables in the macro
    *     being run.
-   * @param tokenInContext the {@code Token} if any that is the "current" token for the macro.
    * @param qMacroName the qualified macro name. (i.e. macro name and location of macro).
    * @param args the arguments to pass to the macro when executing it.
    * @param createNewVariableContext if {@code true} a new varaible scope is created for the macro,
@@ -1109,12 +1106,12 @@ public class MapToolLineParser {
    * @throws ParserException when an error occurs parsing or executing the macro.
    */
   public String runMacro(
-      MapToolVariableResolver resolver,
-      Token tokenInContext,
+      @Nonnull MapToolVariableResolver resolver,
       String qMacroName,
       String args,
       boolean createNewVariableContext)
       throws ParserException {
+    final var tokenInContext = resolver.getTokenInContext();
     MapToolMacroContext macroContext;
     String macroBody = null;
     String[] macroParts = qMacroName.split("@", 2);
@@ -1291,37 +1288,8 @@ public class MapToolLineParser {
     }
   }
 
-  /**
-   * Run a block of text as a macro.
-   *
-   * @param tokenInContext the token in context.
-   * @param macroBody the macro text to run.
-   * @param contextName the name of the macro context to use.
-   * @param contextSource the source of the macro block.
-   * @param trusted is the context trusted or not.
-   * @return the macro output.
-   * @throws ParserException when an error occurs parsing or executing the macro.
-   */
-  public String runMacroBlock(
-      Token tokenInContext,
-      String macroBody,
-      String contextName,
-      String contextSource,
-      boolean trusted)
-      throws ParserException {
-    MapToolVariableResolver resolver = new MapToolVariableResolver(tokenInContext);
-    MapToolMacroContext context = new MapToolMacroContext(contextName, contextSource, trusted);
-    return runMacroBlock(resolver, tokenInContext, macroBody, context);
-  }
-
   /** Executes a string as a block of macro code. */
-  String runMacroBlock(MapToolVariableResolver resolver, Token tokenInContext, String macroBody)
-      throws ParserException {
-    return runMacroBlock(resolver, tokenInContext, macroBody, null);
-  }
-
-  /** Executes a string as a block of macro code. */
-  String runMacroBlock(
+  private String runMacroBlock(
       MapToolVariableResolver resolver,
       Token tokenInContext,
       String macroBody,
@@ -1329,89 +1297,6 @@ public class MapToolLineParser {
       throws ParserException {
     String macroOutput = parseLine(resolver, tokenInContext, macroBody, context);
     return macroOutput;
-  }
-
-  /**
-   * Searches all maps for a token and returns the the requested lib: macro.
-   *
-   * @param location the location of the library macro.
-   * @return The token which holds the library.
-   * @throws ParserException if the token name is illegal, the token appears multiple times, or if
-   *     the caller doesn't have access to the token.
-   */
-  public Token getTokenMacroLib(String location) throws ParserException {
-    if (location == null) {
-      return null;
-    }
-    if (!location.matches("(?i)^lib:.*")) {
-      throw new ParserException(I18N.getText("lineParser.notALibToken"));
-    }
-    final String libTokenName = location;
-    Token libToken = null;
-    if (libTokenName.length() > 0) {
-      List<ZoneRenderer> zrenderers = MapTool.getFrame().getZoneRenderers();
-      for (ZoneRenderer zr : zrenderers) {
-        List<Token> tokenList =
-            zr.getZone().getTokensFiltered(t -> t.getName().equalsIgnoreCase(libTokenName));
-
-        for (Token token : tokenList) {
-          // If we are not the GM and the token is not visible to players then we don't
-          // let them get functions from it.
-          if (!MapTool.getPlayer().isGM() && !token.isVisible()) {
-            throw new ParserException(I18N.getText("lineParser.libUnableToExec", libTokenName));
-          }
-          if (libToken != null) {
-            throw new ParserException(I18N.getText("lineParser.duplicateLibTokens", libTokenName));
-          }
-
-          libToken = token;
-        }
-      }
-      return libToken;
-    }
-    return null;
-  }
-
-  /**
-   * Searches all maps for a token and returns the zone that the lib: macro is in.
-   *
-   * @param location the location of the library macro.
-   * @return The zone which holds the library.
-   * @throws ParserException if the token name is illegal, the token appears multiple times, or if
-   *     the caller doesn't have access to the token.
-   */
-  public Zone getTokenMacroLibZone(String location) throws ParserException {
-    if (location == null) {
-      return null;
-    }
-    if (!location.matches("(?i)^lib:.*")) {
-      throw new ParserException(I18N.getText("lineParser.notALibToken"));
-    }
-    final String libTokenName = location;
-    Zone libTokenZone = null;
-    if (libTokenName.length() > 0) {
-      List<ZoneRenderer> zrenderers = MapTool.getFrame().getZoneRenderers();
-      for (ZoneRenderer zr : zrenderers) {
-        List<Token> tokenList =
-            zr.getZone().getTokensFiltered(t -> t.getName().equalsIgnoreCase(libTokenName));
-
-        for (Token token : tokenList) {
-          // If we are not the GM and the token is not visible to players then we don't
-          // let them get functions from it.
-          if (!MapTool.getPlayer().isGM() && !token.isVisible()) {
-            throw new ParserException(I18N.getText("lineParser.libUnableToExec", libTokenName));
-          }
-
-          if (libTokenZone != null) {
-            throw new ParserException(I18N.getText("lineParser.duplicateLibTokens", libTokenName));
-          }
-
-          libTokenZone = zr.getZone();
-        }
-      }
-      return libTokenZone;
-    }
-    return null;
   }
 
   /**

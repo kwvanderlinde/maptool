@@ -213,8 +213,7 @@ public class EventMacroUtil {
                               "library.error.noEventHandler", eventName, libraryNamespace)));
       String macroTarget = eventTarget + "@lib:" + libraryNamespace;
 
-      String resultVal =
-          MapTool.getParser().runMacro(newResolver, tokenInContext, macroTarget, args, false);
+      String resultVal = MapTool.getParser().runMacro(newResolver, macroTarget, args, false);
       if (!suppressChatOutput && resultVal != null && !resultVal.equals("")) {
         MapTool.addMessage(
             new TextMessage(
@@ -280,8 +279,7 @@ public class EventMacroUtil {
       for (Map.Entry<String, Object> entry : varsToSet.entrySet()) {
         newResolver.setVariable(entry.getKey(), entry.getValue());
       }
-      String resultVal =
-          MapTool.getParser().runMacro(newResolver, tokenInContext, macroTarget, args, false);
+      String resultVal = MapTool.getParser().runMacro(newResolver, macroTarget, args, false);
       if (!suppressChatOutput && resultVal != null && !resultVal.equals("")) {
         MapTool.addMessage(
             new TextMessage(

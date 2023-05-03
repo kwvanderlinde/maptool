@@ -21,6 +21,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import java.math.BigDecimal;
 import java.util.*;
+import javax.annotation.Nullable;
 import javax.swing.JOptionPane;
 import net.rptools.CaseInsensitiveHashMap;
 import net.rptools.maptool.client.functions.*;
@@ -177,7 +178,7 @@ public class MapToolVariableResolver implements VariableResolver {
    *
    * @return the token in context
    */
-  public Token getTokenInContext() {
+  public @Nullable Token getTokenInContext() {
     return tokenInContext;
   }
 
