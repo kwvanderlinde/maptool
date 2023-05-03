@@ -893,7 +893,7 @@ public class MapToolLineParser {
                 break;
 
               case CODEBLOCK:
-                output_text = runMacroBlock(resolver, tokenInContext, rollBranch, null);
+                output_text = parseLine(resolver, tokenInContext, rollBranch, null);
                 resolver.setVariable(
                     "roll.count", iteration); // reset this because called code might change it
                 if (output != Output.NONE) {
@@ -1224,7 +1224,7 @@ public class MapToolLineParser {
       String macroOutput = null;
 
       try {
-        macroOutput = runMacroBlock(macroResolver, tokenInContext, macroBody, macroContext);
+        macroOutput = parseLine(macroResolver, tokenInContext, macroBody, macroContext);
         // Copy the return value of the macro into our current variable scope.
         resolver.setVariable("macro.return", macroResolver.getVariable("macro.return"));
       } catch (ReturnFunctionException returnEx) {
@@ -1262,17 +1262,6 @@ public class MapToolLineParser {
     } else {
       return JSONMacroFunctions.getInstance().asScriptType(jsonElement);
     }
-  }
-
-  /** Executes a string as a block of macro code. */
-  private String runMacroBlock(
-      MapToolVariableResolver resolver,
-      Token tokenInContext,
-      String macroBody,
-      MapToolMacroContext context)
-      throws ParserException {
-    String macroOutput = parseLine(resolver, tokenInContext, macroBody, context);
-    return macroOutput;
   }
 
   /**
