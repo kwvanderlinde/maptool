@@ -909,7 +909,7 @@ public class MapToolLineParser {
                 break;
 
               case CODEBLOCK:
-                output_text = runMacroBlock(resolver, tokenInContext, rollBranch);
+                output_text = parseLine(resolver, tokenInContext, rollBranch, null);
                 resolver.setVariable(
                     "roll.count", iteration); // reset this because called code might change it
                 if (output != Output.NONE) {
@@ -1243,7 +1243,7 @@ public class MapToolLineParser {
       String macroOutput = null;
 
       try {
-        macroOutput = runMacroBlock(macroResolver, tokenInContext, macroBody, macroContext);
+        macroOutput = parseLine(macroResolver, tokenInContext, macroBody, macroContext);
         // Copy the return value of the macro into our current variable scope.
         resolver.setVariable("macro.return", macroResolver.getVariable("macro.return"));
       } catch (ReturnFunctionException returnEx) {
@@ -1281,46 +1281,6 @@ public class MapToolLineParser {
     } else {
       return JSONMacroFunctions.getInstance().asScriptType(jsonElement);
     }
-  }
-
-  /**
-   * Run a block of text as a macro.
-   *
-   * @param tokenInContext the token in context.
-   * @param macroBody the macro text to run.
-   * @param contextName the name of the macro context to use.
-   * @param contextSource the source of the macro block.
-   * @param trusted is the context trusted or not.
-   * @return the macro output.
-   * @throws ParserException when an error occurs parsing or executing the macro.
-   */
-  public String runMacroBlock(
-      Token tokenInContext,
-      String macroBody,
-      String contextName,
-      String contextSource,
-      boolean trusted)
-      throws ParserException {
-    MapToolVariableResolver resolver = new MapToolVariableResolver(tokenInContext);
-    MapToolMacroContext context = new MapToolMacroContext(contextName, contextSource, trusted);
-    return runMacroBlock(resolver, tokenInContext, macroBody, context);
-  }
-
-  /** Executes a string as a block of macro code. */
-  String runMacroBlock(MapToolVariableResolver resolver, Token tokenInContext, String macroBody)
-      throws ParserException {
-    return runMacroBlock(resolver, tokenInContext, macroBody, null);
-  }
-
-  /** Executes a string as a block of macro code. */
-  String runMacroBlock(
-      MapToolVariableResolver resolver,
-      Token tokenInContext,
-      String macroBody,
-      MapToolMacroContext context)
-      throws ParserException {
-    String macroOutput = parseLine(resolver, tokenInContext, macroBody, context);
-    return macroOutput;
   }
 
   /**
