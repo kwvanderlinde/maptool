@@ -364,7 +364,7 @@ public class MapToolLineParser {
                   loopType = LoopType.COUNT;
                   error = null;
                   try {
-                    loopCount = option.getParsedIntParam(0, resolver, tokenInContext, this);
+                    loopCount = option.getParsedIntParam(0, resolver, this);
                     if (loopCount < 0) error = I18N.getText("lineParser.countNonNeg", loopCount);
 
                   } catch (ParserException pe) {
@@ -382,10 +382,10 @@ public class MapToolLineParser {
                   error = null;
                   try {
                     loopVar = option.getIdentifierParam(0);
-                    loopStart = option.getParsedIntParam(1, resolver, tokenInContext, this);
-                    loopEnd = option.getParsedIntParam(2, resolver, tokenInContext, this);
+                    loopStart = option.getParsedIntParam(1, resolver, this);
+                    loopEnd = option.getParsedIntParam(2, resolver, this);
                     try {
-                      loopStep = option.getParsedIntParam(3, resolver, tokenInContext, this);
+                      loopStep = option.getParsedIntParam(3, resolver, this);
                     } catch (ParserException pe) {
                       // Build a more informative error message for this common mistake
                       String msg = pe.getMessage();
@@ -422,8 +422,7 @@ public class MapToolLineParser {
                   error = null;
                   try {
                     loopVar = option.getIdentifierParam(0);
-                    String listString =
-                        option.getParsedParam(1, resolver, tokenInContext, this).toString();
+                    String listString = option.getParsedParam(1, resolver, this).toString();
                     loopSep = option.getStringParam(2);
                     String listDelim = option.getStringParam(3);
                     if (listDelim.trim().startsWith("\"")) {
@@ -487,32 +486,32 @@ public class MapToolLineParser {
                   ///////////////////////////////////////////////////
                 case FRAME:
                   codeType = CodeType.CODEBLOCK;
-                  frameName = option.getParsedParam(0, resolver, tokenInContext, this).toString();
-                  frameOpts = option.getParsedParam(1, resolver, tokenInContext, this).toString();
+                  frameName = option.getParsedParam(0, resolver, this).toString();
+                  frameOpts = option.getParsedParam(1, resolver, this).toString();
                   outputTo = OutputLoc.FRAME;
                   break;
                 case DIALOG:
                   codeType = CodeType.CODEBLOCK;
-                  frameName = option.getParsedParam(0, resolver, tokenInContext, this).toString();
-                  frameOpts = option.getParsedParam(1, resolver, tokenInContext, this).toString();
+                  frameName = option.getParsedParam(0, resolver, this).toString();
+                  frameOpts = option.getParsedParam(1, resolver, this).toString();
                   outputTo = OutputLoc.DIALOG;
                   break;
                 case DIALOG5:
                   codeType = CodeType.CODEBLOCK;
-                  frameName = option.getParsedParam(0, resolver, tokenInContext, this).toString();
-                  frameOpts = option.getParsedParam(1, resolver, tokenInContext, this).toString();
+                  frameName = option.getParsedParam(0, resolver, this).toString();
+                  frameOpts = option.getParsedParam(1, resolver, this).toString();
                   outputTo = OutputLoc.DIALOG5;
                   break;
                 case FRAME5:
                   codeType = CodeType.CODEBLOCK;
-                  frameName = option.getParsedParam(0, resolver, tokenInContext, this).toString();
-                  frameOpts = option.getParsedParam(1, resolver, tokenInContext, this).toString();
+                  frameName = option.getParsedParam(0, resolver, this).toString();
+                  frameOpts = option.getParsedParam(1, resolver, this).toString();
                   outputTo = OutputLoc.FRAME5;
                   break;
                 case OVERLAY:
                   codeType = CodeType.CODEBLOCK;
-                  frameName = option.getParsedParam(0, resolver, tokenInContext, this).toString();
-                  frameOpts = option.getParsedParam(1, resolver, tokenInContext, this).toString();
+                  frameName = option.getParsedParam(0, resolver, this).toString();
+                  frameOpts = option.getParsedParam(1, resolver, this).toString();
                   outputTo = OutputLoc.OVERLAY;
                   break;
                   ///////////////////////////////////////////////////
@@ -537,8 +536,7 @@ public class MapToolLineParser {
                       MapTool.getFrame()
                           .getCurrentZoneRenderer()
                           .getZone()
-                          .resolveToken(
-                              option.getParsedParam(0, resolver, tokenInContext, this).toString());
+                          .resolveToken(option.getParsedParam(0, resolver, this).toString());
                   if (newToken != null) {
                     contextTokenStack.push(resolver.getTokenInContext());
                     resolver.setTokenIncontext(newToken);
