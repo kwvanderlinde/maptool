@@ -208,6 +208,14 @@ public class MapToolLineParser {
     }
   }
 
+  public MapToolVariableResolver createResolver() {
+    return new MapToolVariableResolver(null);
+  }
+
+  public MapToolVariableResolver createResolver(@Nonnull Token tokenInContext) {
+    return new MapToolVariableResolver(tokenInContext);
+  }
+
   public String parseLine(String line) throws ParserException {
     return parseLine(new MapToolVariableResolver(null), line);
   }
