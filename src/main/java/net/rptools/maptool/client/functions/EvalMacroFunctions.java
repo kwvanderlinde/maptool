@@ -93,7 +93,7 @@ public class EvalMacroFunctions extends AbstractFunction {
 
     MapToolMacroContext context =
         new MapToolMacroContext("<dynamic>", MapTool.getParser().getContext().getSource(), true);
-    String ret = MapTool.getParser().parseLine(res, tokenInContext, line, context);
+    String ret = MapTool.getParser().parseLine(res, line, context);
 
     // Try to convert to a number
     try {

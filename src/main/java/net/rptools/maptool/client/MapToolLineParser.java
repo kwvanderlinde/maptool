@@ -209,25 +209,24 @@ public class MapToolLineParser {
   }
 
   public String parseLine(String line) throws ParserException {
-    return parseLine(null, line);
+    return parseLine(new MapToolVariableResolver(null), line);
   }
 
   public String parseLine(Token tokenInContext, String line) throws ParserException {
-    return parseLine(tokenInContext, line, null);
+    return parseLine(new MapToolVariableResolver(tokenInContext), line, null);
   }
 
   public String parseLine(Token tokenInContext, String line, MapToolMacroContext context)
       throws ParserException {
-    return parseLine(null, tokenInContext, line, context);
+    return parseLine(new MapToolVariableResolver(tokenInContext), line, context);
   }
 
-  public String parseLine(MapToolVariableResolver res, Token tokenInContext, String line)
-      throws ParserException {
-    return parseLine(res, tokenInContext, line, null);
+  public String parseLine(MapToolVariableResolver res, String line) throws ParserException {
+    return parseLine(res, line, null);
   }
 
   public String parseLine(
-      MapToolVariableResolver res, Token tokenInContext, String line, MapToolMacroContext context)
+      MapToolVariableResolver resolver, String line, MapToolMacroContext context)
       throws ParserException {
     // copy previous rolls and clear out for new rolls.
     if (parserRecurseDepth == 0 && macroRecurseDepth == 0) {
@@ -246,13 +245,10 @@ public class MapToolLineParser {
     }
     Stack<Token> contextTokenStack = new Stack<Token>();
     context = enterContext(context);
-    MapToolVariableResolver resolver = null;
     boolean resolverInitialized = false;
     String opts = null;
     String roll = null;
     try {
-      // Keep the same variable context for this line
-      resolver = (res == null) ? new MapToolVariableResolver(tokenInContext) : res;
       resolverInitialized = resolver.initialize();
       StringBuilder builder = new StringBuilder();
       int start = 0;
@@ -907,7 +903,7 @@ public class MapToolLineParser {
                 break;
 
               case CODEBLOCK:
-                output_text = parseLine(resolver, tokenInContext, rollBranch, null);
+                output_text = parseLine(resolver, rollBranch, null);
                 resolver.setVariable(
                     "roll.count", iteration); // reset this because called code might change it
                 if (output != Output.NONE) {
@@ -1239,7 +1235,7 @@ public class MapToolLineParser {
       String macroOutput = null;
 
       try {
-        macroOutput = parseLine(macroResolver, tokenInContext, macroBody, macroContext);
+        macroOutput = parseLine(macroResolver, macroBody, macroContext);
         // Copy the return value of the macro into our current variable scope.
         resolver.setVariable("macro.return", macroResolver.getVariable("macro.return"));
       } catch (ReturnFunctionException returnEx) {

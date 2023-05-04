@@ -214,7 +214,6 @@ public class GetRolledTest {
     String result =
         parser.parseLine(
             resolver,
-            token,
             "[h: 1d6]\n[h, macro('testMacro@TOKEN'):'']\n[r: macro.return]",
             new MapToolMacroContext("test", "test", true));
     JsonObject json =

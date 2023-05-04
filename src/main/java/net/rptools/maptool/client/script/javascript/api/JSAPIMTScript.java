@@ -110,7 +110,7 @@ public class JSAPIMTScript implements MapToolJSAPIInterface {
             "<javascript>",
             MapTool.getParser().getContext().getSource(),
             JSScriptEngine.inTrustedContext());
-    String ret = MapTool.getParser().parseLine(res, tokenInContext, line, context);
+    String ret = MapTool.getParser().parseLine(res, line, context);
     try {
       return new BigDecimal(ret);
     } catch (Exception e) {

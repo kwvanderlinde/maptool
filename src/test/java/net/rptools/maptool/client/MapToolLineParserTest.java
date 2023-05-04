@@ -51,10 +51,7 @@ public class MapToolLineParserTest {
       throws ParserException {
     MapToolMacroContext ctx = new MapToolMacroContext("test", line, true);
     return parser.parseLine(
-        resolver == null ? new MapToolVariableResolver(tokenInContext) : resolver,
-        tokenInContext,
-        line,
-        ctx);
+        resolver == null ? new MapToolVariableResolver(tokenInContext) : resolver, line, ctx);
   }
 
   @Test
