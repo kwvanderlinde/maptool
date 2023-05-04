@@ -121,7 +121,6 @@ public class UserDefinedMacroFunctions implements Function, AdditionalFunctionDe
           MapTool.getParser()
               .runMacro(
                   (MapToolVariableResolver) resolver,
-                  newResolver.getTokenInContext(),
                   funcDef.macroName,
                   macroArgs,
                   funcDef.newVariableContext);

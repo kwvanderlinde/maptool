@@ -874,7 +874,7 @@ public class MapToolLineParser {
                 String macroArgs = result.getValue().toString();
 
                 try {
-                  output_text = runMacro(resolver, tokenInContext, callName, macroArgs);
+                  output_text = runMacro(resolver, callName, macroArgs);
                 } catch (AbortFunctionException e) {
                   // required to catch abort that are not
                   // in a (UDF)function call
@@ -1078,10 +1078,9 @@ public class MapToolLineParser {
     }
   }
 
-  public String runMacro(
-      MapToolVariableResolver resolver, Token tokenInContext, String qMacroName, String args)
+  public String runMacro(MapToolVariableResolver resolver, String qMacroName, String args)
       throws ParserException {
-    return runMacro(resolver, tokenInContext, qMacroName, args, true);
+    return runMacro(resolver, qMacroName, args, true);
   }
 
   /**
@@ -1089,7 +1088,6 @@ public class MapToolLineParser {
    *
    * @param resolver the {@link MapToolVariableResolver} used for resolving variables in the macro
    *     being run.
-   * @param tokenInContext the {@code Token} if any that is the "current" token for the macro.
    * @param qMacroName the qualified macro name. (i.e. macro name and location of macro).
    * @param args the arguments to pass to the macro when executing it.
    * @param createNewVariableContext if {@code true} a new varaible scope is created for the macro,
@@ -1100,11 +1098,11 @@ public class MapToolLineParser {
    */
   public String runMacro(
       MapToolVariableResolver resolver,
-      Token tokenInContext,
       String qMacroName,
       String args,
       boolean createNewVariableContext)
       throws ParserException {
+    final var tokenInContext = resolver.getTokenInContext();
     MapToolMacroContext macroContext;
     String macroBody = null;
     String[] macroParts = qMacroName.split("@", 2);
