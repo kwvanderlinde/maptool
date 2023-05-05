@@ -234,8 +234,6 @@ public class LightingComposite implements Composite {
    * </ul>
    */
   private static final class ConstrainedBrightenBlender implements Blender {
-    private static final int MAX_DARKNESS_BOOST_PER_128 = 128;
-
     public void blendRow(int[] dstPixels, int[] srcPixels, int[] outPixels, int samples) {
       for (int x = 0; x < samples; ++x) {
         final int srcPixel = srcPixels[x];
@@ -246,9 +244,7 @@ public class LightingComposite implements Composite {
           final var dstC = (dstPixel >>> shift) & 0xFF;
           final var srcC = (srcPixel >>> shift) & 0xFF;
 
-          tmpPixel |=
-              (renorm5(srcC * Math.min(MAX_DARKNESS_BOOST_PER_128 * dstC / 128, 255 - dstC))
-                  << shift);
+          tmpPixel |= (renorm5(srcC * Math.min(dstC, 255 - dstC)) << shift);
         }
         // This deliberately keeps the bottom alpha around.
         tmpPixel += dstPixel;
