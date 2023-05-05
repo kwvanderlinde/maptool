@@ -106,6 +106,47 @@ public class LightingComposite implements Composite {
     public void dispose() {}
   }
 
+  /**
+   * Magical division by 255.
+   *
+   * <p>Rather than literally dividing by 255, we do bit hack that prefer multiplication and bit
+   * shifts to arrive at the same result.
+   *
+   * <p>Example: if x = 6888, x / 255 = 27. In this method: <code>
+   *     6888 * 65793   = 453182184
+   *          + 1 << 23 = 461570792
+   *          >>> 24    = 27
+   * </code>
+   *
+   * @param x The number to renormalize.
+   * @return x divided by 255.
+   */
+  private static int renorm1(int x) {
+    return (x * 65793 + (1 << 23)) >>> 24;
+  }
+
+  // renrom1, but decomposed a little differently.
+  private static int renorm2(int x) {
+    return ((x + 128)) * 257 >>> 16;
+  }
+
+  // renorm2, but where x * 257 is instead (x * 256) + x, as bit hacks.
+  private static int renorm3(int x) {
+    x += 128;
+    return ((x << 8) + x) >>> 16;
+  }
+
+  // renorm3, but avoids left shifts.
+  private static int renorm4(int x) {
+    x += 128;
+    return (x + (x >>> 8)) >>> 8;
+  }
+
+  // renorm4, but not rounding addition.
+  private static int renorm5(int x) {
+    return (x + (x >>> 8)) >>> 8;
+  }
+
   public interface Blender {
     /**
      * Blend source and destination pixels for a row of pixels.
@@ -139,17 +180,15 @@ public class LightingComposite implements Composite {
         final int srcPixel = srcPixels[x];
         final int dstPixel = dstPixels[x];
 
-        // This keeps the light alpha around.
-        int resultPixel = srcPixel & (0xFF << 24);
-
+        int resultPixel = 0;
         for (int shift = 0; shift < 24; shift += 8) {
           final var dstC = (dstPixel >>> shift) & 0xFF;
           final var srcC = (srcPixel >>> shift) & 0xFF;
 
-          final var resultC = dstC + srcC - (dstC * srcC) / 255;
-
-          resultPixel |= (resultC << shift);
+          resultPixel |= (renorm5((255 - srcC) * dstC) << shift);
         }
+        // This keeps the light alpha around instead of the base.
+        resultPixel += srcPixel;
 
         outPixels[x] = resultPixel;
       }
@@ -193,25 +232,20 @@ public class LightingComposite implements Composite {
    * </ul>
    */
   private static final class ConstrainedBrightenBlender implements Blender {
-    private static final int MAX_DARKNESS_BOOST_PER_128 = 128;
-
     public void blendRow(int[] dstPixels, int[] srcPixels, int[] outPixels, int samples) {
       for (int x = 0; x < samples; ++x) {
         final int srcPixel = srcPixels[x];
         final int dstPixel = dstPixels[x];
 
-        // This keeps the bottom alpha around.
-        int resultPixel = dstPixel & (0xFF << 24);
-
+        int resultPixel = 0;
         for (int shift = 0; shift < 24; shift += 8) {
           final var dstC = (dstPixel >>> shift) & 0xFF;
           final var srcC = (srcPixel >>> shift) & 0xFF;
 
-          final var resultC =
-              dstC + srcC * Math.min(MAX_DARKNESS_BOOST_PER_128 * dstC / 128, 255 - dstC) / 255;
-
-          resultPixel |= (resultC << shift);
+          resultPixel |= (renorm5(srcC * Math.min(dstC, 255 - dstC)) << shift);
         }
+        // This deliberately keeps the bottom alpha around.
+        resultPixel += dstPixel;
 
         outPixels[x] = resultPixel;
       }
