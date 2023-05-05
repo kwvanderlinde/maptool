@@ -180,17 +180,15 @@ public class LightingComposite implements Composite {
         final int srcPixel = srcPixels[x];
         final int dstPixel = dstPixels[x];
 
-        int tmpPixel = 0;
+        int resultPixel = 0;
         for (int shift = 0; shift < 24; shift += 8) {
           final var dstC = (dstPixel >>> shift) & 0xFF;
           final var srcC = (srcPixel >>> shift) & 0xFF;
 
-          tmpPixel |= (renorm5((255 - dstC) * srcC) << shift);
+          resultPixel |= (renorm5((255 - srcC) * dstC) << shift);
         }
-        tmpPixel += dstPixel;
-
-        // Keep the light alpha around instead of the base.
-        final var resultPixel = (srcPixel & 0xFF_00_00_00) | (tmpPixel & 0x00_FF_FF_FF);
+        // This keeps the light alpha around instead of the base.
+        resultPixel += srcPixel;
 
         outPixels[x] = resultPixel;
       }
@@ -239,17 +237,17 @@ public class LightingComposite implements Composite {
         final int srcPixel = srcPixels[x];
         final int dstPixel = dstPixels[x];
 
-        int tmpPixel = 0;
+        int resultPixel = 0;
         for (int shift = 0; shift < 24; shift += 8) {
           final var dstC = (dstPixel >>> shift) & 0xFF;
           final var srcC = (srcPixel >>> shift) & 0xFF;
 
-          tmpPixel |= (renorm5(srcC * Math.min(dstC, 255 - dstC)) << shift);
+          resultPixel |= (renorm5(srcC * Math.min(dstC, 255 - dstC)) << shift);
         }
         // This deliberately keeps the bottom alpha around.
-        tmpPixel += dstPixel;
+        resultPixel += dstPixel;
 
-        outPixels[x] = tmpPixel;
+        outPixels[x] = resultPixel;
       }
     }
   }
