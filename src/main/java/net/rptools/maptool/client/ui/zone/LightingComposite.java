@@ -142,6 +142,11 @@ public class LightingComposite implements Composite {
     return (x + (x >>> 8)) >>> 8;
   }
 
+  // renorm3, but not rounding addition.
+  private static int renorm5(int x) {
+    return (x + (x >>> 8)) >>> 8;
+  }
+
   public interface Blender {
     /**
      * Blend source and destination pixels for a row of pixels.
@@ -182,7 +187,7 @@ public class LightingComposite implements Composite {
           final var dstC = (dstPixel >>> shift) & 0xFF;
           final var srcC = (srcPixel >>> shift) & 0xFF;
 
-          final var resultC = dstC + renorm4((255 - dstC) * srcC);
+          final var resultC = dstC + renorm5((255 - dstC) * srcC);
 
           resultPixel |= (resultC << shift);
         }
@@ -244,7 +249,7 @@ public class LightingComposite implements Composite {
           final var srcC = (srcPixel >>> shift) & 0xFF;
 
           final var resultC =
-              dstC + renorm4(srcC * Math.min(MAX_DARKNESS_BOOST_PER_128 * dstC / 128, 255 - dstC));
+              dstC + renorm5(srcC * Math.min(MAX_DARKNESS_BOOST_PER_128 * dstC / 128, 255 - dstC));
 
           resultPixel |= (resultC << shift);
         }
