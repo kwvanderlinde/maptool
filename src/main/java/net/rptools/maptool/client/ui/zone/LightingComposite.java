@@ -23,6 +23,11 @@ import java.awt.image.DirectColorModel;
 import java.awt.image.Raster;
 import java.awt.image.RasterFormatException;
 import java.awt.image.WritableRaster;
+import jdk.incubator.vector.ByteVector;
+import jdk.incubator.vector.IntVector;
+import jdk.incubator.vector.ShortVector;
+import jdk.incubator.vector.VectorOperators;
+import jdk.incubator.vector.VectorSpecies;
 
 /**
  * A custom Composite class to replace AlphaComposite for the purposes of mixing lights, auras, and
@@ -175,23 +180,88 @@ public class LightingComposite implements Composite {
    * </ul>
    */
   private static final class ScreenBlender implements Blender {
+    private static final VectorSpecies<Integer> INT_SPECIES = IntVector.SPECIES_128;
+    private static final VectorSpecies<Byte> BYTE_SPECIES = ByteVector.SPECIES_128;
+    private static final VectorSpecies<Short> SHORT_SPECIES = ShortVector.SPECIES_256;
+
     public void blendRow(int[] dstPixels, int[] srcPixels, int[] outPixels, int samples) {
-      for (int x = 0; x < samples; ++x) {
-        final int srcPixel = srcPixels[x];
-        final int dstPixel = dstPixels[x];
-
-        int resultPixel = 0;
-        for (int shift = 0; shift < 24; shift += 8) {
-          final var dstC = (dstPixel >>> shift) & 0xFF;
-          final var srcC = (srcPixel >>> shift) & 0xFF;
-
-          resultPixel |= (renorm5((255 - srcC) * dstC) << shift);
-        }
-        // This keeps the light alpha around instead of the base.
-        resultPixel += srcPixel;
-
-        outPixels[x] = resultPixel;
+      if (dstPixels.length < samples || srcPixels.length < samples || outPixels.length < samples) {
+        return;
       }
+      if (dstPixels[0] != 0xFF_00_00_00) {
+        final int i = 0;
+      }
+
+      int offset = 0;
+      final var noAlpha =
+          IntVector.fromArray(
+                  INT_SPECIES,
+                  new int[] {
+                    0x00_FF_FF_FF, 0x00_FF_FF_FF, 0x00_FF_FF_FF, 0x00_FF_FF_FF,
+                  },
+                  0)
+              .reinterpretAsBytes();
+      final var twofivefive =
+          ((ShortVector) ByteVector.broadcast(BYTE_SPECIES, -1).castShape(SHORT_SPECIES, 0))
+              .and((short) 0x00FF);
+
+      final var upperBound = INT_SPECIES.loopBound(samples);
+      for (; offset < upperBound; offset += INT_SPECIES.length()) {
+        final var allSrc = IntVector.fromArray(INT_SPECIES, srcPixels, offset).reinterpretAsBytes();
+        final var allDst = IntVector.fromArray(INT_SPECIES, dstPixels, offset).reinterpretAsBytes();
+
+        // Note: converting to short preserves the sign. So, e.g., (byte) 0x96 becomes (short)
+        // 0xFF96.
+        // So to get the correct positive value back, we just mask off the upper bits.
+        final var shortSrc = ((ShortVector) allSrc.castShape(SHORT_SPECIES, 0)).and((short) 0x00FF);
+        final var shortDst = ((ShortVector) allDst.castShape(SHORT_SPECIES, 0)).and((short) 0x00FF);
+
+        final var x = twofivefive.sub(shortSrc).mul(shortDst);
+        final var y = x.lanewise(VectorOperators.LSHR, 8).add(x).lanewise(VectorOperators.LSHR, 8);
+        final var contracted = (ByteVector) y.castShape(BYTE_SPECIES, 0);
+        final var justColor = contracted.and(noAlpha);
+        final var withSrc = justColor.add(allSrc);
+        final var result = (IntVector) withSrc.reinterpretShape(INT_SPECIES, 0);
+
+        result.intoArray(outPixels, offset);
+
+        //        var allResult = IntVector.zero(INT_SPECIES);
+        //        for (int part = 0; part < 3; ++part) {
+        //          final var shift = 8 * part;
+        //          final var srcC = allSrc.lanewise(VectorOperators.LSHR, shift)
+        //                                 .castShape(BYTE_SPECIES, 0);
+        //          final var dstC = allDst.lanewise(VectorOperators.LSHR, shift)
+        //                                 .castShape(BYTE_SPECIES, 0);
+        //
+        //          final var x = twofivefive.sub(srcC).mul(dstC);
+        //          final var resultC = x.lanewise(VectorOperators.LSHR,
+        // 8).add(x).lanewise(VectorOperators.LSHR, 8);
+        //          final var resultInt = resultC.castShape(INT_SPECIES,
+        // 0).lanewise(VectorOperators.LSHL, shift);
+        //
+        //          allResult = allResult.or(resultInt);
+        //        }
+        //        allResult = allResult.add(allSrc);
+        //
+        //        allResult.intoArray(outPixels, offset);
+      }
+
+      //      for (var x = 0; x < samples; ++x) {
+      //        final int srcPixel = srcPixels[x];
+      //        final int dstPixel = dstPixels[x];
+      //
+      //        int resultPixel = 0;
+      //        for (int shift = 0; shift < 24; shift += 8) {
+      //          final var dstC = (dstPixel >>> shift) & 0xFF;
+      //          final var srcC = (srcPixel >>> shift) & 0xFF;
+      //
+      //          resultPixel |= (renorm5((255 - srcC) * dstC) << shift);
+      //        }
+      //        // This keeps the light alpha around instead of the base.
+      //        resultPixel += srcPixel;
+      //
+      //        outPixels[x] = resultPixel;
+      //      }
     }
   }
 
