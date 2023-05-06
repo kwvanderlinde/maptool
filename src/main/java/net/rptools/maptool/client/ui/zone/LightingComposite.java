@@ -194,13 +194,14 @@ public class LightingComposite implements Composite {
 
       int offset = 0;
       final var noAlpha =
-          IntVector.fromArray(
+              ((ShortVector) IntVector.fromArray(
                   INT_SPECIES,
                   new int[] {
                     0x00_FF_FF_FF, 0x00_FF_FF_FF, 0x00_FF_FF_FF, 0x00_FF_FF_FF,
                   },
                   0)
-              .reinterpretAsBytes();
+              .reinterpretAsBytes().castShape(SHORT_SPECIES, 0))
+              .and((short) 0x00FF);
       final var twofivefive =
           ((ShortVector) ByteVector.broadcast(BYTE_SPECIES, -1).castShape(SHORT_SPECIES, 0))
               .and((short) 0x00FF);
@@ -218,10 +219,11 @@ public class LightingComposite implements Composite {
 
         final var x = twofivefive.sub(shortSrc).mul(shortDst);
         final var y = x.lanewise(VectorOperators.LSHR, 8).add(x).lanewise(VectorOperators.LSHR, 8);
-        final var contracted = (ByteVector) y.castShape(BYTE_SPECIES, 0);
-        final var justColor = contracted.and(noAlpha);
-        final var withSrc = justColor.add(allSrc);
-        final var result = (IntVector) withSrc.reinterpretShape(INT_SPECIES, 0);
+        final var justColor = y.and(noAlpha);
+        final var withSrc = justColor.add(shortSrc);
+
+        final var contracted = (ByteVector) withSrc.castShape(BYTE_SPECIES, 0);
+        final var result = (IntVector) contracted.reinterpretShape(INT_SPECIES, 0);
 
         result.intoArray(outPixels, offset);
 
