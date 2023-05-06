@@ -142,7 +142,7 @@ public class LightingComposite implements Composite {
     return (x + (x >>> 8)) >>> 8;
   }
 
-  // renorm3, but not rounding addition.
+  // renorm4, but not rounding addition.
   private static int renorm5(int x) {
     return (x + (x >>> 8)) >>> 8;
   }
