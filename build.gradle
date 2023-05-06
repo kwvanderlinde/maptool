@@ -42,6 +42,11 @@ applicationDefaultJvmArgs = ["-Xss8M"]
 def appSemVer = ""
 def winUpgradeUUID = UUID.randomUUID().toString();
 
+compileJava {
+    options.compilerArgs += ["--add-modules", "jdk.incubator.vector"]
+}
+
+
 // Custom properties
 ext {
     // Allow packagers to build from the source code tarball, which doesn't
@@ -142,6 +147,8 @@ sourceSets {
 run {
     args = ['-v=' + appSemVer]
     applicationDefaultJvmArgs = ["-Xss8M", "-Dsun.java2d.d3d=false", "-Dsentry.environment=Development", "-Dfile.encoding=UTF-8",
+                                 //"-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintAssembly",
+                                 "--add-modules=jdk.incubator.vector",
                                  "-Dpolyglot.engine.WarnInterpreterOnly=false",
                                  "-DMAPTOOL_DATADIR=.maptool-" + vendor.toLowerCase(), "-XX:+ShowCodeDetailsInExceptionMessages",
                                  "--add-opens=java.desktop/java.awt=ALL-UNNAMED", "--add-opens=java.desktop/java.awt.geom=ALL-UNNAMED",
