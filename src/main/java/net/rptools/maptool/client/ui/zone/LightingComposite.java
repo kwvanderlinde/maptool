@@ -23,7 +23,6 @@ import java.awt.image.DirectColorModel;
 import java.awt.image.Raster;
 import java.awt.image.RasterFormatException;
 import java.awt.image.WritableRaster;
-import jdk.incubator.vector.ByteVector;
 import jdk.incubator.vector.IntVector;
 import jdk.incubator.vector.ShortVector;
 import jdk.incubator.vector.VectorOperators;
@@ -39,8 +38,7 @@ public class LightingComposite implements Composite {
   private static final VectorSpecies<Short> SHORT_SPECIES = ShortVector.SPECIES_PREFERRED;
   private static final VectorSpecies<Integer> INT_SPECIES =
       VectorSpecies.of(int.class, VectorShape.forBitSize(SHORT_SPECIES.vectorBitSize() / 2));
-  private static final VectorSpecies<Byte> BYTE_SPECIES =
-      VectorSpecies.of(byte.class, INT_SPECIES.vectorShape());
+  private static final VectorSpecies<Byte> BYTE_SPECIES = INT_SPECIES.withLanes(byte.class);
 
   /**
    * Used to blend lights together to give an additive effect.
@@ -159,6 +157,17 @@ public class LightingComposite implements Composite {
     return (x + (x >>> 8)) >>> 8;
   }
 
+  private static ShortVector expand(IntVector vector) {
+    // Note: converting to short preserves the sign. So, e.g., (byte) 0x96 becomes (short)
+    // 0xFF96. So to get the correct positive value back, we just mask off the upper bits.
+    return ((ShortVector) vector.reinterpretShape(BYTE_SPECIES, 0).castShape(SHORT_SPECIES, 0))
+        .and((short) 0x00FF);
+  }
+
+  private static IntVector contract(ShortVector vector) {
+    return (IntVector) vector.castShape(BYTE_SPECIES, 0).reinterpretShape(INT_SPECIES, 0);
+  }
+
   public interface Blender {
     /**
      * Blend source and destination pixels for a row of pixels.
@@ -194,35 +203,19 @@ public class LightingComposite implements Composite {
       assert samples % INT_SPECIES.length() == 0;
 
       int offset = 0;
-      final var noAlpha =
-          ((ShortVector)
-                  IntVector.fromArray(
-                          INT_SPECIES,
-                          new int[] {
-                            0x00_FF_FF_FF, 0x00_FF_FF_FF, 0x00_FF_FF_FF, 0x00_FF_FF_FF,
-                          },
-                          0)
-                      .reinterpretAsBytes()
-                      .castShape(SHORT_SPECIES, 0))
-              .and((short) 0x00FF);
+      final var noAlpha = expand(IntVector.zero(INT_SPECIES).add(0x00_FF_FF_FF));
 
       final var upperBound = INT_SPECIES.loopBound(samples);
       for (; offset < upperBound; offset += INT_SPECIES.length()) {
-        final var allSrc = IntVector.fromArray(INT_SPECIES, srcPixels, offset).reinterpretAsBytes();
-        final var allDst = IntVector.fromArray(INT_SPECIES, dstPixels, offset).reinterpretAsBytes();
+        final var srcC = expand(IntVector.fromArray(INT_SPECIES, srcPixels, offset));
+        final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset));
 
-        // Note: converting to short preserves the sign. So, e.g., (byte) 0x96 becomes (short)
-        // 0xFF96. So to get the correct positive value back, we just mask off the upper bits.
-        final var shortSrc = ((ShortVector) allSrc.castShape(SHORT_SPECIES, 0)).and((short) 0x00FF);
-        final var shortDst = ((ShortVector) allDst.castShape(SHORT_SPECIES, 0)).and((short) 0x00FF);
-
-        final var x = shortSrc.neg().add((short) 255).mul(shortDst);
+        final var x = srcC.neg().add((short) 255).mul(dstC);
         final var y = x.lanewise(VectorOperators.LSHR, 8).add(x).lanewise(VectorOperators.LSHR, 8);
         final var justColor = y.and(noAlpha);
-        final var withSrc = justColor.add(shortSrc);
+        final var withSrc = justColor.add(srcC);
 
-        final var contracted = (ByteVector) withSrc.castShape(BYTE_SPECIES, 0);
-        final var result = (IntVector) contracted.reinterpretShape(INT_SPECIES, 0);
+        final var result = contract(withSrc);
 
         result.intoArray(outPixels, offset);
       }
