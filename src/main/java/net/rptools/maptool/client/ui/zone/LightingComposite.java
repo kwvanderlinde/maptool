@@ -36,16 +36,34 @@ import jdk.incubator.vector.VectorSpecies;
  * href="http://www.java2s.com/Code/Java/2D-Graphics-GUI/BlendCompositeDemo.htm">...</a>
  */
 public class LightingComposite implements Composite {
-  private static final VectorSpecies<Short> SHORT_SPECIES = ShortVector.SPECIES_PREFERRED;
-  private static final VectorSpecies<Integer> INT_SPECIES =
-      VectorSpecies.of(int.class, VectorShape.forBitSize(SHORT_SPECIES.vectorBitSize() / 2));
-  private static final VectorSpecies<Byte> BYTE_SPECIES = INT_SPECIES.withLanes(byte.class);
-  // Note that we deliberately want sign extension in this case.
-  private static final Vector<Short> NO_ALPHA_MASK =
-      IntVector.zero(INT_SPECIES)
-          .add(0x00_FF_FF_FF)
-          .reinterpretAsBytes()
-          .castShape(SHORT_SPECIES, 0);
+  private static final VectorSpecies<Short> SHORT_SPECIES;
+  private static final VectorSpecies<Integer> INT_SPECIES;
+  private static final VectorSpecies<Byte> BYTE_SPECIES;
+  private static final int PART_COUNT;
+  private static final Vector<Short> NO_ALPHA_MASK;
+
+  static {
+    // It's possible the preferred width is only 64. If so, we can't make our integer species half
+    // the width, since 32 bits is too small to be valid. So instead we'll have to make it the same
+    // width, and do composition-by-parts.
+    SHORT_SPECIES = ShortVector.SPECIES_PREFERRED;
+    if (SHORT_SPECIES.vectorBitSize() < 128) {
+      PART_COUNT = 2;
+      INT_SPECIES = SHORT_SPECIES.withLanes(int.class);
+    } else {
+      PART_COUNT = 1;
+      INT_SPECIES =
+          VectorSpecies.of(int.class, VectorShape.forBitSize(SHORT_SPECIES.vectorBitSize() / 2));
+    }
+    BYTE_SPECIES = INT_SPECIES.withLanes(byte.class);
+
+    // Note that we want sign extension in this case, so that we can mask an entire short.
+    NO_ALPHA_MASK =
+        IntVector.zero(INT_SPECIES)
+            .add(0x00_FF_FF_FF)
+            .reinterpretAsBytes()
+            .castShape(SHORT_SPECIES, 0);
+  }
 
   /**
    * Used to blend lights together to give an additive effect.
@@ -167,15 +185,15 @@ public class LightingComposite implements Composite {
     return (x + (x >>> 8)) >>> 8;
   }
 
-  private static ShortVector expand(IntVector vector) {
+  private static ShortVector expand(IntVector vector, int part) {
     // Note: converting to short preserves the sign. So, e.g., (byte) 0x96 becomes (short)
     // 0xFF96. So to get the correct positive value back, we just mask off the upper bits.
-    return ((ShortVector) vector.reinterpretShape(BYTE_SPECIES, 0).castShape(SHORT_SPECIES, 0))
+    return ((ShortVector) vector.reinterpretShape(BYTE_SPECIES, 0).castShape(SHORT_SPECIES, part))
         .and((short) 0x00FF);
   }
 
-  private static IntVector contract(ShortVector vector) {
-    return (IntVector) vector.castShape(BYTE_SPECIES, 0).reinterpretShape(INT_SPECIES, 0);
+  private static IntVector contract(ShortVector vector, int part) {
+    return (IntVector) vector.castShape(BYTE_SPECIES, -part).reinterpretShape(INT_SPECIES, 0);
   }
 
   private static ShortVector renormalize(ShortVector vector) {
@@ -219,12 +237,15 @@ public class LightingComposite implements Composite {
       int offset = 0;
       final var upperBound = INT_SPECIES.loopBound(samples);
       for (; offset < upperBound; offset += INT_SPECIES.length()) {
-        final var srcC = expand(IntVector.fromArray(INT_SPECIES, srcPixels, offset));
-        final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset));
+        var result = (IntVector) INT_SPECIES.zero();
+        for (int part = 0; part < PART_COUNT; ++part) {
+          final var srcC = expand(IntVector.fromArray(INT_SPECIES, srcPixels, offset), part);
+          final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset), part);
 
-        final var x = renormalize(srcC.neg().add((short) 255).mul(dstC).and(NO_ALPHA_MASK)).add(srcC);
-        final var result = contract(x);
-
+          final var x =
+              renormalize(srcC.neg().add((short) 255).mul(dstC).and(NO_ALPHA_MASK)).add(srcC);
+          result = result.or(contract(x, part));
+        }
         result.intoArray(outPixels, offset);
       }
     }
@@ -276,18 +297,21 @@ public class LightingComposite implements Composite {
       int offset = 0;
       final var upperBound = INT_SPECIES.loopBound(samples);
       for (; offset < upperBound; offset += INT_SPECIES.length()) {
-        final var srcC = expand(IntVector.fromArray(INT_SPECIES, srcPixels, offset));
-        final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset));
+        var result = (IntVector) INT_SPECIES.zero();
+        for (int part = 0; part < PART_COUNT; ++part) {
+          final var srcC = expand(IntVector.fromArray(INT_SPECIES, srcPixels, offset), part);
+          final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset), part);
 
-        // 0 if < 128, 1 if >= 128. Picks between the up and down cases.
-        final var predicate = dstC.lanewise(VectorOperators.LSHR, 7);
-        final var up = dstC;
-        final var down = dstC.neg().add((short) 255);
+          // 0 if < 128, 1 if >= 128. Picks between the up and down cases.
+          final var predicate = dstC.lanewise(VectorOperators.LSHR, 7);
+          final var up = dstC;
+          final var down = dstC.neg().add((short) 255);
 
-        final var x =
-            renormalize(down.sub(up).mul(predicate).add(up).mul(srcC).and(NO_ALPHA_MASK)).add(dstC);
-        final var result = contract(x);
-
+          final var x =
+              renormalize(down.sub(up).mul(predicate).add(up).mul(srcC).and(NO_ALPHA_MASK))
+                  .add(dstC);
+          result = result.or(contract(x, part));
+        }
         result.intoArray(outPixels, offset);
       }
     }
