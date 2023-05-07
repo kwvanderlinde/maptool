@@ -98,15 +98,18 @@ public class LightingComposite implements Composite {
       final int w = Math.min(src.getWidth(), dstIn.getWidth());
       final int h = Math.min(src.getHeight(), dstIn.getHeight());
 
-      final int[] srcPixels = new int[w];
-      final int[] dstPixels = new int[w];
-      final int[] dstOutPixels = new int[w];
+      // Make the buffers a multiple of the vector width so we don't have to do any scalar touch-up.
+      final int bufferSize = -Math.floorDiv(-w, INT_SPECIES.length()) * INT_SPECIES.length();
+
+      final int[] srcPixels = new int[bufferSize];
+      final int[] dstPixels = new int[bufferSize];
+      final int[] dstOutPixels = new int[bufferSize];
 
       for (int y = 0; y < h; y++) {
         src.getDataElements(src.getMinX(), y + src.getMinY(), w, 1, srcPixels);
         dstIn.getDataElements(dstIn.getMinX(), y + dstIn.getMinY(), w, 1, dstPixels);
 
-        blender.blendRow(dstPixels, srcPixels, dstOutPixels, w);
+        blender.blendRow(dstPixels, srcPixels, dstOutPixels, bufferSize);
 
         dstOut.setDataElements(dstOut.getMinX(), y + dstOut.getMinY(), w, 1, dstOutPixels);
       }
