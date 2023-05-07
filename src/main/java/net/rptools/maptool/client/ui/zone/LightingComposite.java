@@ -171,6 +171,10 @@ public class LightingComposite implements Composite {
     return (IntVector) vector.castShape(BYTE_SPECIES, 0).reinterpretShape(INT_SPECIES, 0);
   }
 
+  private static ShortVector renormalize(ShortVector vector) {
+    return vector.lanewise(VectorOperators.LSHR, 8).add(vector).lanewise(VectorOperators.LSHR, 8);
+  }
+
   public interface Blender {
     /**
      * Blend source and destination pixels for a row of pixels.
@@ -214,7 +218,7 @@ public class LightingComposite implements Composite {
         final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset));
 
         final var x = srcC.neg().add((short) 255).mul(dstC);
-        final var y = x.lanewise(VectorOperators.LSHR, 8).add(x).lanewise(VectorOperators.LSHR, 8);
+        final var y = renormalize(x);
         final var justColor = y.and(noAlpha);
         final var withSrc = justColor.add(srcC);
 
