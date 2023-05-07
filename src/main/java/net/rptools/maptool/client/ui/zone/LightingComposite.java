@@ -25,6 +25,7 @@ import java.awt.image.RasterFormatException;
 import java.awt.image.WritableRaster;
 import jdk.incubator.vector.IntVector;
 import jdk.incubator.vector.ShortVector;
+import jdk.incubator.vector.Vector;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorShape;
 import jdk.incubator.vector.VectorSpecies;
@@ -39,6 +40,12 @@ public class LightingComposite implements Composite {
   private static final VectorSpecies<Integer> INT_SPECIES =
       VectorSpecies.of(int.class, VectorShape.forBitSize(SHORT_SPECIES.vectorBitSize() / 2));
   private static final VectorSpecies<Byte> BYTE_SPECIES = INT_SPECIES.withLanes(byte.class);
+  // Note that we deliberately want sign extension in this case.
+  private static final Vector<Short> NO_ALPHA_MASK =
+      IntVector.zero(INT_SPECIES)
+          .add(0x00_FF_FF_FF)
+          .reinterpretAsBytes()
+          .castShape(SHORT_SPECIES, 0);
 
   /**
    * Used to blend lights together to give an additive effect.
@@ -210,19 +217,12 @@ public class LightingComposite implements Composite {
       assert samples % INT_SPECIES.length() == 0;
 
       int offset = 0;
-      // Note that we deliberately want sign extension in this case.
-      final var noAlpha =
-          IntVector.zero(INT_SPECIES)
-              .add(0x00_FF_FF_FF)
-              .reinterpretAsBytes()
-              .castShape(SHORT_SPECIES, 0);
-
       final var upperBound = INT_SPECIES.loopBound(samples);
       for (; offset < upperBound; offset += INT_SPECIES.length()) {
         final var srcC = expand(IntVector.fromArray(INT_SPECIES, srcPixels, offset));
         final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset));
 
-        final var x = renormalize(srcC.neg().add((short) 255).mul(dstC).and(noAlpha)).add(srcC);
+        final var x = renormalize(srcC.neg().add((short) 255).mul(dstC).and(NO_ALPHA_MASK)).add(srcC);
         final var result = contract(x);
 
         result.intoArray(outPixels, offset);
@@ -274,13 +274,6 @@ public class LightingComposite implements Composite {
       assert samples % INT_SPECIES.length() == 0;
 
       int offset = 0;
-      // Note that we deliberately want sign extension in this case.
-      final var noAlpha =
-          IntVector.zero(INT_SPECIES)
-              .add(0x00_FF_FF_FF)
-              .reinterpretAsBytes()
-              .castShape(SHORT_SPECIES, 0);
-
       final var upperBound = INT_SPECIES.loopBound(samples);
       for (; offset < upperBound; offset += INT_SPECIES.length()) {
         final var srcC = expand(IntVector.fromArray(INT_SPECIES, srcPixels, offset));
@@ -292,7 +285,7 @@ public class LightingComposite implements Composite {
         final var down = dstC.neg().add((short) 255);
 
         final var x =
-            renormalize(down.sub(up).mul(predicate).add(up).mul(srcC).and(noAlpha)).add(dstC);
+            renormalize(down.sub(up).mul(predicate).add(up).mul(srcC).and(NO_ALPHA_MASK)).add(dstC);
         final var result = contract(x);
 
         result.intoArray(outPixels, offset);
