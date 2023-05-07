@@ -268,21 +268,34 @@ public class LightingComposite implements Composite {
    */
   private static final class ConstrainedBrightenBlender implements Blender {
     public void blendRow(int[] dstPixels, int[] srcPixels, int[] outPixels, int samples) {
-      for (int x = 0; x < samples; ++x) {
-        final int srcPixel = srcPixels[x];
-        final int dstPixel = dstPixels[x];
+      assert dstPixels.length >= samples
+          && srcPixels.length >= samples
+          && outPixels.length >= samples;
+      assert samples % INT_SPECIES.length() == 0;
 
-        int resultPixel = 0;
-        for (int shift = 0; shift < 24; shift += 8) {
-          final var dstC = (dstPixel >>> shift) & 0xFF;
-          final var srcC = (srcPixel >>> shift) & 0xFF;
+      int offset = 0;
+      // Note that we deliberately want sign extension in this case.
+      final var noAlpha =
+          IntVector.zero(INT_SPECIES)
+              .add(0x00_FF_FF_FF)
+              .reinterpretAsBytes()
+              .castShape(SHORT_SPECIES, 0);
 
-          resultPixel |= (renorm5(srcC * Math.min(dstC, 255 - dstC)) << shift);
-        }
-        // This deliberately keeps the bottom alpha around.
-        resultPixel += dstPixel;
+      final var upperBound = INT_SPECIES.loopBound(samples);
+      for (; offset < upperBound; offset += INT_SPECIES.length()) {
+        final var srcC = expand(IntVector.fromArray(INT_SPECIES, srcPixels, offset));
+        final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset));
 
-        outPixels[x] = resultPixel;
+        // 0 if < 128, 1 if >= 128. Picks between the up and down cases.
+        final var predicate = dstC.lanewise(VectorOperators.LSHR, 7);
+        final var up = dstC;
+        final var down = dstC.neg().add((short) 255);
+
+        final var x =
+            renormalize(down.sub(up).mul(predicate).add(up).mul(srcC).and(noAlpha)).add(dstC);
+        final var result = contract(x);
+
+        result.intoArray(outPixels, offset);
       }
     }
   }
