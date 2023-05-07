@@ -210,19 +210,20 @@ public class LightingComposite implements Composite {
       assert samples % INT_SPECIES.length() == 0;
 
       int offset = 0;
-      final var noAlpha = expand(IntVector.zero(INT_SPECIES).add(0x00_FF_FF_FF));
+      // Note that we deliberately want sign extension in this case.
+      final var noAlpha =
+          IntVector.zero(INT_SPECIES)
+              .add(0x00_FF_FF_FF)
+              .reinterpretAsBytes()
+              .castShape(SHORT_SPECIES, 0);
 
       final var upperBound = INT_SPECIES.loopBound(samples);
       for (; offset < upperBound; offset += INT_SPECIES.length()) {
         final var srcC = expand(IntVector.fromArray(INT_SPECIES, srcPixels, offset));
         final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset));
 
-        final var x = srcC.neg().add((short) 255).mul(dstC);
-        final var y = renormalize(x);
-        final var justColor = y.and(noAlpha);
-        final var withSrc = justColor.add(srcC);
-
-        final var result = contract(withSrc);
+        final var x = renormalize(srcC.neg().add((short) 255).mul(dstC).and(noAlpha)).add(srcC);
+        final var result = contract(x);
 
         result.intoArray(outPixels, offset);
       }
