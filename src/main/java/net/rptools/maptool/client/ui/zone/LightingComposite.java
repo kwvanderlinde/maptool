@@ -170,12 +170,12 @@ public class LightingComposite implements Composite {
   private static ShortVector expand(IntVector vector) {
     // Note: converting to short preserves the sign. So, e.g., (byte) 0x96 becomes (short)
     // 0xFF96. So to get the correct positive value back, we just mask off the upper bits.
-    return ((ShortVector) vector.reinterpretShape(BYTE_SPECIES, 0).castShape(SHORT_SPECIES, 0))
+    return ((ShortVector) vector.reinterpretAsBytes().castShape(SHORT_SPECIES, 0))
         .and((short) 0x00FF);
   }
 
   private static IntVector contract(ShortVector vector) {
-    return (IntVector) vector.castShape(BYTE_SPECIES, 0).reinterpretShape(INT_SPECIES, 0);
+    return vector.castShape(BYTE_SPECIES, 0).reinterpretAsInts();
   }
 
   private static ShortVector renormalize(ShortVector vector) {
@@ -216,13 +216,13 @@ public class LightingComposite implements Composite {
           && outPixels.length >= samples;
       assert samples % INT_SPECIES.length() == 0;
 
-      int offset = 0;
       final var upperBound = INT_SPECIES.loopBound(samples);
-      for (; offset < upperBound; offset += INT_SPECIES.length()) {
+      for (int offset = 0; offset < upperBound; offset += INT_SPECIES.length()) {
         final var srcC = expand(IntVector.fromArray(INT_SPECIES, srcPixels, offset));
         final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset));
 
-        final var x = renormalize(srcC.neg().add((short) 255).mul(dstC).and(NO_ALPHA_MASK)).add(srcC);
+        final var x =
+            renormalize(srcC.neg().add((short) 255).mul(dstC).and(NO_ALPHA_MASK)).add(srcC);
         final var result = contract(x);
 
         result.intoArray(outPixels, offset);
@@ -273,9 +273,8 @@ public class LightingComposite implements Composite {
           && outPixels.length >= samples;
       assert samples % INT_SPECIES.length() == 0;
 
-      int offset = 0;
       final var upperBound = INT_SPECIES.loopBound(samples);
-      for (; offset < upperBound; offset += INT_SPECIES.length()) {
+      for (int offset = 0; offset < upperBound; offset += INT_SPECIES.length()) {
         final var srcC = expand(IntVector.fromArray(INT_SPECIES, srcPixels, offset));
         final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset));
 
