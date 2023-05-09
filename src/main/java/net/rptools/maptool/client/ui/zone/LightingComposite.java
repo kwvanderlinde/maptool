@@ -168,14 +168,12 @@ public class LightingComposite implements Composite {
   }
 
   private static ShortVector expand(IntVector vector) {
-    // Note: converting to short preserves the sign. So, e.g., (byte) 0x96 becomes (short)
-    // 0xFF96. So to get the correct positive value back, we just mask off the upper bits.
-    return ((ShortVector) vector.reinterpretAsBytes().castShape(SHORT_SPECIES, 0))
-        .and((short) 0x00FF);
+    return (ShortVector)
+        vector.reinterpretAsBytes().convertShape(VectorOperators.ZERO_EXTEND_B2S, SHORT_SPECIES, 0);
   }
 
   private static IntVector contract(ShortVector vector) {
-    return vector.castShape(BYTE_SPECIES, 0).reinterpretAsInts();
+    return vector.convertShape(VectorOperators.S2B, BYTE_SPECIES, 0).reinterpretAsInts();
   }
 
   private static ShortVector renormalize(ShortVector vector) {
