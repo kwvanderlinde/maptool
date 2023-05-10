@@ -254,15 +254,13 @@ public class LightingComposite implements Composite {
    * components by no more than some multiple of the component.
    *
    * <p>When the bottom component ({@code dstC}) is low, the result is between the bottom component
-   * and a multiple of the bottom component controlled by {@link #MAX_DARKNESS_BOOST_PER_128}. The
-   * exact result is determined by using the top component ({@code srcC}) to interpolate between the
-   * two bounds.
+   * and twice the bottom component. The exact result is determined by using the top component
+   * ({@code srcC}) to interpolate between the two bounds.
    *
    * <p>When the bottom component is high, the result is between the bottom component and 255, again
    * using the top component to interpolate between the two.
    *
-   * <p>The transition point from low to high depends on the value of {@link
-   * #MAX_DARKNESS_BOOST_PER_128} - the higher that value, the lower the transition point.
+   * <p>The transition point from low to high is at 0.5 (or 128 as an int).
    *
    * <p>When viewed as a function of the bottom component, this blend mode is built from two linear
    * pieces. The first piece has a slope no less than 1, and the second piece has a slope no greater
@@ -271,10 +269,8 @@ public class LightingComposite implements Composite {
    *
    * <p>The behaviour is actually is very similar to overlay, but where the value at the transition
    * point is always greater than the bottom component (in overlay it can be greater than or less
-   * than the bottom component). The relation can be best seen when {@link
-   * #MAX_DARKNESS_BOOST_PER_128} is set to 128. It also has a much looser relation to the soft
-   * light blend mode, which inspired the idea of constraining the increase of dark components by
-   * some multiple.
+   * than the bottom component). It also has a much looser relation to the soft light blend mode,
+   * which inspired the idea of constraining the increase of dark components by some multiple.
    *
    * <p>Special cases:
    *
