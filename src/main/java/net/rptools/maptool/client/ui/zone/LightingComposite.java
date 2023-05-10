@@ -299,8 +299,8 @@ public class LightingComposite implements Composite {
           // -    up = dstC
           // -  down = 255 - dstC
           // -   min = up + predicate * (down - up)
-          final var predicate = dstC.lanewise(VectorOperators.LSHR, (short) 7);
-          final var dstContribution = TWO_FIVE_FIVE.sub(dstC).sub(dstC).mul(predicate).add(dstC);
+          final var predicate = dstC.and((short) (0x1 << 7)).compare(VectorOperators.EQ, 0);
+          final var dstContribution = TWO_FIVE_FIVE.sub(dstC).blend(dstC, predicate);
 
           final var x = renormalize(dstContribution.mul(srcC)).and(NO_ALPHA_MASK).add(dstC);
           final var y = contract(x, part);
