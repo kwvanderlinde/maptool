@@ -25,7 +25,6 @@ import java.awt.image.RasterFormatException;
 import java.awt.image.WritableRaster;
 import jdk.incubator.vector.IntVector;
 import jdk.incubator.vector.ShortVector;
-import jdk.incubator.vector.Vector;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorShape;
 import jdk.incubator.vector.VectorSpecies;
@@ -37,16 +36,31 @@ import jdk.incubator.vector.VectorSpecies;
  */
 public class LightingComposite implements Composite {
   private static final VectorSpecies<Short> SHORT_SPECIES = ShortVector.SPECIES_PREFERRED;
-  private static final VectorSpecies<Integer> INT_SPECIES =
-      VectorSpecies.of(int.class, VectorShape.forBitSize(SHORT_SPECIES.vectorBitSize() / 2));
-  private static final VectorSpecies<Byte> BYTE_SPECIES = INT_SPECIES.withLanes(byte.class);
-  // Note that we deliberately want sign extension in this case.
-  private static final Vector<Short> NO_ALPHA_MASK =
-      IntVector.zero(INT_SPECIES)
-          .add(0x00_FF_FF_FF)
-          .reinterpretAsBytes()
-          // We deliberately sign extend to get an all-1's mask.
-          .convertShape(VectorOperators.B2S, SHORT_SPECIES, 0);
+  private static final int PART_COUNT;
+  private static final VectorSpecies<Integer> INT_SPECIES;
+  private static final VectorSpecies<Byte> BYTE_SPECIES;
+  private static final ShortVector TWO_FIVE_FIVE;
+  private static final ShortVector NO_ALPHA_MASK;
+
+  static {
+    // We need to convert our ints to the constituent four bytes, than expand those to four shorts.
+    // So we need the bit size of the int and byte species to be half that of the short species. If
+    // there's no room to make a smaller one, we must act in parts instead, at a penalty.
+    PART_COUNT = (SHORT_SPECIES.vectorBitSize() < 128) ? 2 : 1;
+    INT_SPECIES =
+        VectorSpecies.of(
+            int.class, VectorShape.forBitSize(SHORT_SPECIES.vectorBitSize() * PART_COUNT / 2));
+
+    BYTE_SPECIES = INT_SPECIES.withLanes(byte.class);
+    TWO_FIVE_FIVE = ShortVector.broadcast(SHORT_SPECIES, (short) 0xFF);
+    NO_ALPHA_MASK =
+        (ShortVector)
+            IntVector.broadcast(INT_SPECIES, 0x00_FF_FF_FF)
+                .reinterpretAsBytes()
+                // We deliberately sign extend to get an all-1's mask. Not that it matters much
+                // since we mask after renormalizing.
+                .convertShape(VectorOperators.B2S, SHORT_SPECIES, 0);
+  }
 
   /**
    * Used to blend lights together to give an additive effect.
@@ -168,13 +182,15 @@ public class LightingComposite implements Composite {
     return (x + (x >>> 8)) >>> 8;
   }
 
-  private static ShortVector expand(IntVector vector) {
+  private static ShortVector expand(IntVector vector, int part) {
     return (ShortVector)
-        vector.reinterpretAsBytes().convertShape(VectorOperators.ZERO_EXTEND_B2S, SHORT_SPECIES, 0);
+        vector
+            .reinterpretAsBytes()
+            .convertShape(VectorOperators.ZERO_EXTEND_B2S, SHORT_SPECIES, part);
   }
 
-  private static IntVector contract(ShortVector vector) {
-    return vector.convertShape(VectorOperators.S2B, BYTE_SPECIES, 0).reinterpretAsInts();
+  private static IntVector contract(ShortVector vector, int part) {
+    return vector.convertShape(VectorOperators.S2B, BYTE_SPECIES, -part).reinterpretAsInts();
   }
 
   private static ShortVector renormalize(ShortVector vector) {
@@ -217,12 +233,16 @@ public class LightingComposite implements Composite {
 
       final var upperBound = INT_SPECIES.loopBound(samples);
       for (int offset = 0; offset < upperBound; offset += INT_SPECIES.length()) {
-        final var srcC = expand(IntVector.fromArray(INT_SPECIES, srcPixels, offset));
-        final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset));
+        var result = IntVector.zero(INT_SPECIES);
+        for (int part = 0; part < PART_COUNT; ++part) {
+          final var srcC = expand(IntVector.fromArray(INT_SPECIES, srcPixels, offset), part);
+          final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset), part);
 
-        final var x =
-            renormalize(srcC.neg().add((short) 255).mul(dstC).and(NO_ALPHA_MASK)).add(srcC);
-        final var result = contract(x);
+          final var x = renormalize(TWO_FIVE_FIVE.sub(srcC).mul(dstC).and(NO_ALPHA_MASK)).add(srcC);
+          final var y = contract(x, part);
+
+          result = result.or(y);
+        }
 
         result.intoArray(outPixels, offset);
       }
@@ -274,17 +294,22 @@ public class LightingComposite implements Composite {
 
       final var upperBound = INT_SPECIES.loopBound(samples);
       for (int offset = 0; offset < upperBound; offset += INT_SPECIES.length()) {
-        final var srcC = expand(IntVector.fromArray(INT_SPECIES, srcPixels, offset));
-        final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset));
+        var result = IntVector.zero(INT_SPECIES);
+        for (int part = 0; part < PART_COUNT; ++part) {
+          final var srcC = expand(IntVector.fromArray(INT_SPECIES, srcPixels, offset), part);
+          final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset), part);
 
-        // 0 if < 128, 1 if >= 128. Picks between the up and down cases.
-        final var predicate = dstC.lanewise(VectorOperators.LSHR, 7);
-        final var up = dstC;
-        final var down = dstC.neg().add((short) 255);
+          // 0 if < 128, 1 if >= 128. Picks between the up and down cases.
+          final var predicate = dstC.lanewise(VectorOperators.LSHR, (short) 7);
+          final var up = dstC;
+          final var down = TWO_FIVE_FIVE.sub(dstC);
 
-        final var x =
-            renormalize(down.sub(up).mul(predicate).add(up).mul(srcC).and(NO_ALPHA_MASK)).add(dstC);
-        final var result = contract(x);
+          final var x =
+              renormalize(down.sub(up).mul(predicate).add(up).mul(srcC).and(NO_ALPHA_MASK))
+                  .add(dstC);
+          final var y = contract(x, part);
+          result = result.or(y);
+        }
 
         result.intoArray(outPixels, offset);
       }
