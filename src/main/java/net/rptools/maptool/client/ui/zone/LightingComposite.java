@@ -238,7 +238,7 @@ public class LightingComposite implements Composite {
           final var srcC = expand(IntVector.fromArray(INT_SPECIES, srcPixels, offset), part);
           final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset), part);
 
-          final var x = renormalize(TWO_FIVE_FIVE.sub(srcC).mul(dstC).and(NO_ALPHA_MASK)).add(srcC);
+          final var x = renormalize(TWO_FIVE_FIVE.sub(srcC).mul(dstC)).and(NO_ALPHA_MASK).add(srcC);
           final var y = contract(x, part);
 
           result = result.or(y);
@@ -295,14 +295,14 @@ public class LightingComposite implements Composite {
           final var srcC = expand(IntVector.fromArray(INT_SPECIES, srcPixels, offset), part);
           final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset), part);
 
-          // 0 if < 128, 1 if >= 128. Picks between the up and down cases.
+          // Vectorized calculation of min(dstC, 255 - dstC), calculated as
+          // -    up = dstC
+          // -  down = 255 - dstC
+          // -   min = up + predicate * (down - up)
           final var predicate = dstC.lanewise(VectorOperators.LSHR, (short) 7);
-          final var up = dstC;
-          final var down = TWO_FIVE_FIVE.sub(dstC);
+          final var dstContribution = TWO_FIVE_FIVE.sub(dstC).sub(dstC).mul(predicate).add(dstC);
 
-          final var x =
-              renormalize(down.sub(up).mul(predicate).add(up).mul(srcC).and(NO_ALPHA_MASK))
-                  .add(dstC);
+          final var x = renormalize(dstContribution.mul(srcC)).and(NO_ALPHA_MASK).add(dstC);
           final var y = contract(x, part);
           result = result.or(y);
         }
