@@ -25,6 +25,7 @@ import java.awt.image.RasterFormatException;
 import java.awt.image.WritableRaster;
 import jdk.incubator.vector.IntVector;
 import jdk.incubator.vector.ShortVector;
+import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorShape;
 import jdk.incubator.vector.VectorSpecies;
@@ -40,7 +41,7 @@ public class LightingComposite implements Composite {
   private static final VectorSpecies<Integer> INT_SPECIES;
   private static final VectorSpecies<Byte> BYTE_SPECIES;
   private static final ShortVector TWO_FIVE_FIVE;
-  private static final ShortVector NO_ALPHA_MASK;
+  private static final VectorMask<Short> COLOR_ONLY_MASK;
 
   static {
     // We need to convert our ints to the constituent four bytes, than expand those to four shorts.
@@ -53,13 +54,8 @@ public class LightingComposite implements Composite {
 
     BYTE_SPECIES = INT_SPECIES.withLanes(byte.class);
     TWO_FIVE_FIVE = ShortVector.broadcast(SHORT_SPECIES, (short) 0xFF);
-    NO_ALPHA_MASK =
-        (ShortVector)
-            IntVector.broadcast(INT_SPECIES, 0x00_FF_FF_FF)
-                .reinterpretAsBytes()
-                // We deliberately sign extend to get an all-1's mask. Not that it matters much
-                // since we mask after renormalizing.
-                .convertShape(VectorOperators.B2S, SHORT_SPECIES, 0);
+    COLOR_ONLY_MASK =
+        expand(IntVector.broadcast(INT_SPECIES, 0x00_FF_FF_FF), 0).compare(VectorOperators.NE, 0);
   }
 
   /**
@@ -238,7 +234,7 @@ public class LightingComposite implements Composite {
           final var srcC = expand(IntVector.fromArray(INT_SPECIES, srcPixels, offset), part);
           final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset), part);
 
-          final var x = renormalize(TWO_FIVE_FIVE.sub(srcC).mul(dstC)).and(NO_ALPHA_MASK).add(srcC);
+          final var x = srcC.add(renormalize(TWO_FIVE_FIVE.sub(srcC).mul(dstC)), COLOR_ONLY_MASK);
           final var y = contract(x, part);
 
           result = result.or(y);
@@ -299,7 +295,7 @@ public class LightingComposite implements Composite {
           final var predicate = dstC.compare(VectorOperators.LT, 128);
           final var dstContribution = TWO_FIVE_FIVE.sub(dstC).blend(dstC, predicate);
 
-          final var x = renormalize(dstContribution.mul(srcC)).and(NO_ALPHA_MASK).add(dstC);
+          final var x = dstC.add(renormalize(dstContribution.mul(srcC)), COLOR_ONLY_MASK);
           final var y = contract(x, part);
           result = result.or(y);
         }
