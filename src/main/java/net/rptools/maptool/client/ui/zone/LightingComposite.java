@@ -55,7 +55,8 @@ public class LightingComposite implements Composite {
     BYTE_SPECIES = INT_SPECIES.withLanes(byte.class);
     TWO_FIVE_FIVE = ShortVector.broadcast(SHORT_SPECIES, (short) 0xFF);
     COLOR_ONLY_MASK =
-        expand(IntVector.broadcast(INT_SPECIES, 0x00_FF_FF_FF), 0).compare(VectorOperators.NE, 0);
+        unpackFromArgb(IntVector.broadcast(INT_SPECIES, 0x00_FF_FF_FF), 0)
+            .compare(VectorOperators.NE, 0);
   }
 
   /**
@@ -138,57 +139,45 @@ public class LightingComposite implements Composite {
   }
 
   /**
-   * Magical division by 255.
+   * Converts a vector of ARGB pixels into a vector of individual components.
    *
-   * <p>Rather than literally dividing by 255, we do bit hack that prefer multiplication and bit
-   * shifts to arrive at the same result.
-   *
-   * <p>Example: if x = 6888, x / 255 = 27. In this method: <code>
-   *     6888 * 65793   = 453182184
-   *          + 1 << 23 = 461570792
-   *          >>> 24    = 27
-   * </code>
-   *
-   * @param x The number to renormalize.
-   * @return x divided by 255.
+   * @param vector The ARGB vector to convert.
+   * @param part The part to pick if the expansion won't fit into SHORT_SPECIES.
+   * @return The color component vector for the chosen part of {@code vector}.
    */
-  private static int renorm1(int x) {
-    return (x * 65793 + (1 << 23)) >>> 24;
-  }
-
-  // renrom1, but decomposed a little differently.
-  private static int renorm2(int x) {
-    return ((x + 128)) * 257 >>> 16;
-  }
-
-  // renorm2, but where x * 257 is instead (x * 256) + x, as bit hacks.
-  private static int renorm3(int x) {
-    x += 128;
-    return ((x << 8) + x) >>> 16;
-  }
-
-  // renorm3, but avoids left shifts.
-  private static int renorm4(int x) {
-    x += 128;
-    return (x + (x >>> 8)) >>> 8;
-  }
-
-  // renorm4, but not rounding addition.
-  private static int renorm5(int x) {
-    return (x + (x >>> 8)) >>> 8;
-  }
-
-  private static ShortVector expand(IntVector vector, int part) {
+  private static ShortVector unpackFromArgb(IntVector vector, int part) {
     return (ShortVector)
         vector
             .reinterpretAsBytes()
             .convertShape(VectorOperators.ZERO_EXTEND_B2S, SHORT_SPECIES, part);
   }
 
-  private static IntVector contract(ShortVector vector, int part) {
+  /**
+   * Converts a vector of color components into a vector of ARGB pixels.
+   *
+   * @param vector The color components vector to pack.
+   * @param part If there is extra space in the result, decides where to put the converted values
+   *     within the result.
+   * @return The packed ARGB equivalent of {@code vector}.
+   */
+  private static IntVector packToArgb(ShortVector vector, int part) {
     return vector.convertShape(VectorOperators.S2B, BYTE_SPECIES, -part).reinterpretAsInts();
   }
 
+  /**
+   * Renormalizes a product of bytes by magically dividing by 255.
+   *
+   * <p>This is very non-obvious, but is described well in this course sheet: <a
+   * href="https://docs.google.com/document/d/1tNrMWShq55rfltcZxAx1N-6f82Dt7MWLDHm-5GQVEnE/edit">Dividing
+   * by 255</a>.
+   *
+   * <p>The SWAR technique of multiplying in parallel is inapplicable to our operations, so that is
+   * not represented anywhere.
+   *
+   * @param vector A vector contains results of byte products, where each value must be in the range
+   *     0 .. 0xFFFF.
+   * @return A vector containing the normalized values in the range 0 .. 0xFF.
+   */
   private static ShortVector renormalize(ShortVector vector) {
     return vector.lanewise(VectorOperators.LSHR, 8).add(vector).lanewise(VectorOperators.LSHR, 8);
   }
@@ -231,11 +220,13 @@ public class LightingComposite implements Composite {
       for (int offset = 0; offset < upperBound; offset += INT_SPECIES.length()) {
         var result = IntVector.zero(INT_SPECIES);
         for (int part = 0; part < PART_COUNT; ++part) {
-          final var srcC = expand(IntVector.fromArray(INT_SPECIES, srcPixels, offset), part);
-          final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset), part);
+          final var srcC =
+              unpackFromArgb(IntVector.fromArray(INT_SPECIES, srcPixels, offset), part);
+          final var dstC =
+              unpackFromArgb(IntVector.fromArray(INT_SPECIES, dstPixels, offset), part);
 
           final var x = srcC.add(renormalize(TWO_FIVE_FIVE.sub(srcC).mul(dstC)), COLOR_ONLY_MASK);
-          result = result.or(contract(x, part));
+          result = result.or(packToArgb(x, part));
         }
 
         result.intoArray(outPixels, offset);
@@ -286,15 +277,17 @@ public class LightingComposite implements Composite {
       for (int offset = 0; offset < upperBound; offset += INT_SPECIES.length()) {
         var result = IntVector.zero(INT_SPECIES);
         for (int part = 0; part < PART_COUNT; ++part) {
-          final var srcC = expand(IntVector.fromArray(INT_SPECIES, srcPixels, offset), part);
-          final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset), part);
+          final var srcC =
+              unpackFromArgb(IntVector.fromArray(INT_SPECIES, srcPixels, offset), part);
+          final var dstC =
+              unpackFromArgb(IntVector.fromArray(INT_SPECIES, dstPixels, offset), part);
 
           // Vectorized calculation of min(dstC, 255 - dstC)
           final var predicate = dstC.compare(VectorOperators.LT, 128);
           final var dstContribution = TWO_FIVE_FIVE.sub(dstC).blend(dstC, predicate);
 
           final var x = dstC.add(renormalize(dstContribution.mul(srcC)), COLOR_ONLY_MASK);
-          result = result.or(contract(x, part));
+          result = result.or(packToArgb(x, part));
         }
 
         result.intoArray(outPixels, offset);
