@@ -295,11 +295,8 @@ public class LightingComposite implements Composite {
           final var srcC = expand(IntVector.fromArray(INT_SPECIES, srcPixels, offset), part);
           final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset), part);
 
-          // Vectorized calculation of min(dstC, 255 - dstC), calculated as
-          // -    up = dstC
-          // -  down = 255 - dstC
-          // -   min = up + predicate * (down - up)
-          final var predicate = dstC.and((short) (0x1 << 7)).compare(VectorOperators.EQ, 0);
+          // Vectorized calculation of min(dstC, 255 - dstC)
+          final var predicate = dstC.compare(VectorOperators.LT, 128);
           final var dstContribution = TWO_FIVE_FIVE.sub(dstC).blend(dstC, predicate);
 
           final var x = renormalize(dstContribution.mul(srcC)).and(NO_ALPHA_MASK).add(dstC);
