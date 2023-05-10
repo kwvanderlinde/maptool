@@ -235,9 +235,7 @@ public class LightingComposite implements Composite {
           final var dstC = expand(IntVector.fromArray(INT_SPECIES, dstPixels, offset), part);
 
           final var x = srcC.add(renormalize(TWO_FIVE_FIVE.sub(srcC).mul(dstC)), COLOR_ONLY_MASK);
-          final var y = contract(x, part);
-
-          result = result.or(y);
+          result = result.or(contract(x, part));
         }
 
         result.intoArray(outPixels, offset);
@@ -296,8 +294,7 @@ public class LightingComposite implements Composite {
           final var dstContribution = TWO_FIVE_FIVE.sub(dstC).blend(dstC, predicate);
 
           final var x = dstC.add(renormalize(dstContribution.mul(srcC)), COLOR_ONLY_MASK);
-          final var y = contract(x, part);
-          result = result.or(y);
+          result = result.or(contract(x, part));
         }
 
         result.intoArray(outPixels, offset);
