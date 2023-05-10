@@ -45,7 +45,8 @@ public class LightingComposite implements Composite {
       IntVector.zero(INT_SPECIES)
           .add(0x00_FF_FF_FF)
           .reinterpretAsBytes()
-          .castShape(SHORT_SPECIES, 0);
+          // We deliberately sign extend to get an all-1's mask.
+          .convertShape(VectorOperators.B2S, SHORT_SPECIES, 0);
 
   /**
    * Used to blend lights together to give an additive effect.
