@@ -387,20 +387,29 @@ public class LightingComposite implements Composite {
         final int srcPixel = srcPixels[x];
         final int dstPixel = dstPixels[x];
 
-        int resultPixel = 0;
-        for (int shift = 0; shift < 24; shift += 8) {
-          final var dstC = (dstPixel >>> shift) & 0xFF;
-          final var srcC = (srcPixel >>> shift) & 0xFF;
+        final int resultR, resultG, resultB;
 
-          // dstPart is the minimum of dstC and 255 - dstC.
-          final var dstPart = dstC + (dstC >>> 7) * (255 - 2 * dstC);
-
-          resultPixel |= (renormalize(srcC * dstPart) << shift);
+        {
+          final var dstC = (dstPixel >>> 16) & 0xFF;
+          final var srcC = (srcPixel >>> 16) & 0xFF;
+          final var dstPart = dstC + ((dstC < 128) ? 0 : 1) * ((255 - dstC) - dstC);
+          resultR = (renormalize(srcC * dstPart) << 16);
         }
-        // This deliberately keeps the bottom alpha around.
-        resultPixel += dstPixel;
+        {
+          final var dstC = (dstPixel >>> 8) & 0xFF;
+          final var srcC = (srcPixel >>> 8) & 0xFF;
+          final var dstPart = dstC + ((dstC < 128) ? 0 : 1) * ((255 - dstC) - dstC);
+          resultG = (renormalize(srcC * dstPart) << 8);
+        }
+        {
+          final var dstC = dstPixel & 0xFF;
+          final var srcC = srcPixel & 0xFF;
+          final var dstPart = dstC + ((dstC < 128) ? 0 : 1) * ((255 - dstC) - dstC);
+          resultB = renormalize(srcC * dstPart);
+        }
 
-        outPixels[x] = resultPixel;
+        // This deliberately keeps the bottom alpha around.
+        outPixels[x] = dstPixel + (resultR | resultG | resultB);
       }
     }
   }

@@ -617,11 +617,11 @@ public class AppPreferences {
     return renderQuality;
   }
 
-  public static void setUseExperimentalVectorOperations(boolean useVectorApi) {
-    prefs.putBoolean(KEY_ALLOW_VECTOR_API, useVectorApi);
+  public static void allowVectorApi(boolean allowVectorApi) {
+    prefs.putBoolean(KEY_ALLOW_VECTOR_API, allowVectorApi);
   }
 
-  public static boolean getUseExperimentalVectorOperations() {
+  public static boolean allowVectorApi() {
     return prefs.getBoolean(KEY_ALLOW_VECTOR_API, DEFAULT_ALLOW_VECTOR_API);
   }
 

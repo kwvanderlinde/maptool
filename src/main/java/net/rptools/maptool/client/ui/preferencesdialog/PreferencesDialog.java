@@ -142,6 +142,7 @@ public class PreferencesDialog extends JDialog {
   // Application
   private final JCheckBox fitGMView;
   private final JCheckBox fillSelectionCheckBox;
+  private final JCheckBox enableVectorApiCheckBox;
   private final JTextField frameRateCapTextField;
 
   private final JComboBox<LocalizedComboItem> renderPerformanceComboBox;
@@ -305,6 +306,7 @@ public class PreferencesDialog extends JDialog {
     showNumberingCombo = panel.getComboBox("showNumberingCombo");
     saveReminderCheckBox = panel.getCheckBox("saveReminderCheckBox");
     fillSelectionCheckBox = panel.getCheckBox("fillSelectionCheckBox");
+    enableVectorApiCheckBox = panel.getCheckBox("enableVectorApiCheckBox");
     frameRateCapTextField = panel.getTextField("frameRateCapTextField");
     renderPerformanceComboBox = panel.getComboBox("renderPerformanceComboBox");
 
@@ -548,6 +550,8 @@ public class PreferencesDialog extends JDialog {
         e -> AppPreferences.setSaveReminder(saveReminderCheckBox.isSelected()));
     fillSelectionCheckBox.addActionListener(
         e -> AppPreferences.setFillSelectionBox(fillSelectionCheckBox.isSelected()));
+    enableVectorApiCheckBox.addActionListener(
+        e -> AppPreferences.allowVectorApi(enableVectorApiCheckBox.isSelected()));
     frameRateCapTextField
         .getDocument()
         .addDocumentListener(
@@ -1077,6 +1081,7 @@ public class PreferencesDialog extends JDialog {
     showDialogOnNewToken.setSelected(AppPreferences.getShowDialogOnNewToken());
     saveReminderCheckBox.setSelected(AppPreferences.getSaveReminder());
     fillSelectionCheckBox.setSelected(AppPreferences.getFillSelectionBox());
+    enableVectorApiCheckBox.setSelected(AppPreferences.allowVectorApi());
     frameRateCapTextField.setText(Integer.toString(AppPreferences.getFrameRateCap()));
     defaultUsername.setText(AppPreferences.getDefaultUserName());
     // initEnableServerSyncCheckBox.setSelected(AppPreferences.getInitEnableServerSync());
