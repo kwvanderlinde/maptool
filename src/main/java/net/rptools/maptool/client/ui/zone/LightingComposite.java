@@ -59,27 +59,26 @@ public class LightingComposite implements Composite {
             .compare(VectorOperators.NE, 0);
   }
 
-  private static final Composite BlendedLights =
+  private static final Composite BlendedLightsVectorized =
       new LightingComposite(new ScreenBlenderVectorized());
-  private static final Composite BlendedLightsScalar =
-      new LightingComposite(new ScreenBlenderScalar());
-  public static final Composite OverlaidLights =
+  private static final Composite BlendedLights = new LightingComposite(new ScreenBlender());
+  public static final Composite OverlaidLightsVectorized =
       new LightingComposite(new ConstrainedBrightenBlenderVectorized());
-  public static final Composite OverlaidLightsScalar =
-      new LightingComposite(new ConstrainedBrightenBlenderScalar());
+  public static final Composite OverlaidLights =
+      new LightingComposite(new ConstrainedBrightenBlender());
 
   /**
    * Used to blend lights together to give an additive effect.
    *
    * <p>To use to good effect, the initial image should be black (when used together with {@link
-   * #OverlaidLights}) or clear (when used with {@link java.awt.AlphaComposite}) and then lights
-   * should be added to it one-by-one.
+   * #OverlaidLightsVectorized}) or clear (when used with {@link java.awt.AlphaComposite}) and then
+   * lights should be added to it one-by-one.
    *
    * @param allowVectorized If true, an explicitly vectorized implementation may be returned. This
    *     flag can be ignored if suitable conditions for vectorization are not present.
    */
   public static Composite getBlendedLights(boolean allowVectorized) {
-    return allowVectorized ? BlendedLights : BlendedLightsScalar;
+    return allowVectorized ? BlendedLightsVectorized : BlendedLights;
   }
 
   /**
@@ -89,7 +88,7 @@ public class LightingComposite implements Composite {
    *     flag can be ignored if suitable conditions for vectorization are not present.
    */
   public static Composite getOverlaidLights(boolean allowVectorized) {
-    return allowVectorized ? OverlaidLights : OverlaidLightsScalar;
+    return allowVectorized ? OverlaidLightsVectorized : OverlaidLights;
   }
 
   // Blenders are stateless, so no point making new ones all the time.
@@ -240,7 +239,7 @@ public class LightingComposite implements Composite {
    *   <li>When either the top component or the bottom component is maxed, the result is maxed.
    * </ul>
    */
-  private static final class ScreenBlenderScalar implements Blender {
+  private static final class ScreenBlender implements Blender {
     public void blendRow(int[] dstPixels, int[] srcPixels, int[] outPixels, int samples) {
       assert dstPixels.length >= samples
           && srcPixels.length >= samples
@@ -365,7 +364,7 @@ public class LightingComposite implements Composite {
     }
   }
 
-  private static final class ConstrainedBrightenBlenderScalar implements Blender {
+  private static final class ConstrainedBrightenBlender implements Blender {
     public void blendRow(int[] dstPixels, int[] srcPixels, int[] outPixels, int samples) {
       assert dstPixels.length >= samples
           && srcPixels.length >= samples
