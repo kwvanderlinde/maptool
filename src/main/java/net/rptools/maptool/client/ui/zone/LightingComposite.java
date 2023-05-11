@@ -388,20 +388,17 @@ public class LightingComposite implements Composite {
         {
           final var dstC = (dstPixel >>> 16) & 0xFF;
           final var srcC = (srcPixel >>> 16) & 0xFF;
-          final var dstPart = dstC < 128 ? dstC : 255 - dstC;
-          resultR = renormalize(srcC * dstPart);
+          resultR = renormalize(srcC * (dstC < 128 ? dstC : 255 - dstC));
         }
         {
           final var dstC = (dstPixel >>> 8) & 0xFF;
           final var srcC = (srcPixel >>> 8) & 0xFF;
-          final var dstPart = dstC < 128 ? dstC : 255 - dstC;
-          resultG = renormalize(srcC * dstPart);
+          resultG = renormalize(srcC * (dstC < 128 ? dstC : 255 - dstC));
         }
         {
           final var dstC = dstPixel & 0xFF;
           final var srcC = srcPixel & 0xFF;
-          final var dstPart = dstC < 128 ? dstC : 255 - dstC;
-          resultB = renormalize(srcC * dstPart);
+          resultB = renormalize(srcC * (dstC < 128 ? dstC : 255 - dstC));
         }
 
         // This deliberately keeps the bottom alpha around.
