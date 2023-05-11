@@ -44,7 +44,7 @@ public class LightingComposite implements Composite {
   private static final VectorMask<Short> COLOR_ONLY_MASK;
 
   static {
-    // We need to convert our ints to the constituent four bytes, than expand those to four shorts.
+    // We need to convert our ints to the constituent four bytes, then expand those to four shorts.
     // So we need the bit size of the int and byte species to be half that of the short species. If
     // there's no room to make a smaller one, we must act in parts instead, at a penalty.
     PART_COUNT = (SHORT_SPECIES.vectorBitSize() < 128) ? 2 : 1;
@@ -59,11 +59,14 @@ public class LightingComposite implements Composite {
             .compare(VectorOperators.NE, 0);
   }
 
-  private static final Composite BlendedLights = new LightingComposite(new ScreenBlender());
-
-  /** Used to blend lighting results with an underlying image. */
+  private static final Composite BlendedLights =
+      new LightingComposite(new ScreenBlenderVectorized());
+  private static final Composite BlendedLightsScalar =
+      new LightingComposite(new ScreenBlenderScalar());
   public static final Composite OverlaidLights =
-      new LightingComposite(new ConstrainedBrightenBlender());
+      new LightingComposite(new ConstrainedBrightenBlenderVectorized());
+  public static final Composite OverlaidLightsScalar =
+      new LightingComposite(new ConstrainedBrightenBlenderScalar());
 
   /**
    * Used to blend lights together to give an additive effect.
@@ -76,8 +79,7 @@ public class LightingComposite implements Composite {
    *     flag can be ignored if suitable conditions for vectorization are not present.
    */
   public static Composite getBlendedLights(boolean allowVectorized) {
-    // TODO Return a scalar version.
-    return allowVectorized ? BlendedLights : BlendedLights;
+    return allowVectorized ? BlendedLights : BlendedLightsScalar;
   }
 
   /**
@@ -87,8 +89,7 @@ public class LightingComposite implements Composite {
    *     flag can be ignored if suitable conditions for vectorization are not present.
    */
   public static Composite getOverlaidLights(boolean allowVectorized) {
-    // TODO Return a scalar version.
-    return allowVectorized ? OverlaidLights : OverlaidLights;
+    return allowVectorized ? OverlaidLights : OverlaidLightsScalar;
   }
 
   // Blenders are stateless, so no point making new ones all the time.
@@ -201,6 +202,17 @@ public class LightingComposite implements Composite {
     return vector.lanewise(VectorOperators.LSHR, 8).add(vector).lanewise(VectorOperators.LSHR, 8);
   }
 
+  /**
+   * Equivalent of {@link ##renormalize(jdk.incubator.vector.ShortVector)}, but converting an int to
+   * a byte.
+   *
+   * @param x The result of a byte product, in the range 0 .. 0xFFFF.
+   * @return The normalized value of x, in the range 0 .. 0xFF.
+   */
+  private static int renormalize(int x) {
+    return (x + (x >>> 8)) >>> 8;
+  }
+
   public interface Blender {
     /**
      * Blend source and destination pixels for a row of pixels.
@@ -228,7 +240,46 @@ public class LightingComposite implements Composite {
    *   <li>When either the top component or the bottom component is maxed, the result is maxed.
    * </ul>
    */
-  private static final class ScreenBlender implements Blender {
+  private static final class ScreenBlenderScalar implements Blender {
+    public void blendRow(int[] dstPixels, int[] srcPixels, int[] outPixels, int samples) {
+      assert dstPixels.length >= samples
+          && srcPixels.length >= samples
+          && outPixels.length >= samples;
+      assert samples % INT_SPECIES.length() == 0;
+
+      for (int x = 0; x < samples; ++x) {
+        final int srcPixel = srcPixels[x];
+        final int dstPixel = dstPixels[x];
+
+        int resultPixel = 0;
+        for (int shift = 0; shift < 24; shift += 8) {
+          final var dstC = (dstPixel >>> shift) & 0xFF;
+          final var srcC = (srcPixel >>> shift) & 0xFF;
+
+          resultPixel |= (renormalize((255 - srcC) * dstC) << shift);
+        }
+        // This keeps the light alpha around instead of the base.
+        resultPixel += srcPixel;
+
+        outPixels[x] = resultPixel;
+      }
+    }
+  }
+
+  /**
+   * Additive lights based on the screen blend mode.
+   *
+   * <p>The result of screen blending is always greater than the top and bottom inputs.
+   *
+   * <p>Special cases:
+   *
+   * <ul>
+   *   <li>When the bottom component is 0, the result is the top component.
+   *   <li>When the top component is 0, the result is the bottom component.
+   *   <li>When either the top component or the bottom component is maxed, the result is maxed.
+   * </ul>
+   */
+  private static final class ScreenBlenderVectorized implements Blender {
     public void blendRow(int[] dstPixels, int[] srcPixels, int[] outPixels, int samples) {
       assert dstPixels.length >= samples
           && srcPixels.length >= samples
@@ -285,7 +336,7 @@ public class LightingComposite implements Composite {
    *   <li>
    * </ul>
    */
-  private static final class ConstrainedBrightenBlender implements Blender {
+  private static final class ConstrainedBrightenBlenderVectorized implements Blender {
     public void blendRow(int[] dstPixels, int[] srcPixels, int[] outPixels, int samples) {
       assert dstPixels.length >= samples
           && srcPixels.length >= samples
@@ -310,6 +361,35 @@ public class LightingComposite implements Composite {
         }
 
         result.intoArray(outPixels, offset);
+      }
+    }
+  }
+
+  private static final class ConstrainedBrightenBlenderScalar implements Blender {
+    public void blendRow(int[] dstPixels, int[] srcPixels, int[] outPixels, int samples) {
+      assert dstPixels.length >= samples
+          && srcPixels.length >= samples
+          && outPixels.length >= samples;
+      assert samples % INT_SPECIES.length() == 0;
+
+      for (int x = 0; x < samples; ++x) {
+        final int srcPixel = srcPixels[x];
+        final int dstPixel = dstPixels[x];
+
+        int resultPixel = 0;
+        for (int shift = 0; shift < 24; shift += 8) {
+          final var dstC = (dstPixel >>> shift) & 0xFF;
+          final var srcC = (srcPixel >>> shift) & 0xFF;
+
+          // dstPart is the minimum of dstC and 255 - dstC.
+          final var dstPart = dstC + (dstC >>> 7) * (255 - 2 * dstC);
+
+          resultPixel |= (renormalize(srcC * dstPart) << shift);
+        }
+        // This deliberately keeps the bottom alpha around.
+        resultPixel += dstPixel;
+
+        outPixels[x] = resultPixel;
       }
     }
   }
