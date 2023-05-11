@@ -255,12 +255,12 @@ public class LightingComposite implements Composite {
         {
           final var dstC = (dstPixel >>> 16) & 0xFF;
           final var srcC = (srcPixel >>> 16) & 0xFF;
-          resultR = (renormalize((255 - srcC) * dstC) << 16);
+          resultR = renormalize((255 - srcC) * dstC);
         }
         {
           final var dstC = (dstPixel >>> 8) & 0xFF;
           final var srcC = (srcPixel >>> 8) & 0xFF;
-          resultG = (renormalize((255 - srcC) * dstC) << 8);
+          resultG = renormalize((255 - srcC) * dstC);
         }
         {
           final var dstC = dstPixel & 0xFF;
@@ -268,7 +268,7 @@ public class LightingComposite implements Composite {
           resultB = renormalize((255 - srcC) * dstC);
         }
 
-        outPixels[x] = srcPixel + (resultR | resultG | resultB);
+        outPixels[x] = srcPixel + ((resultR << 16) | (resultG << 8) | resultB);
       }
     }
   }
@@ -386,26 +386,26 @@ public class LightingComposite implements Composite {
         final int resultR, resultG, resultB;
 
         {
-          final var dstC = (dstPixel >>> 16) & 0xFF;
-          final var srcC = (srcPixel >>> 16) & 0xFF;
+          final int dstC = (dstPixel >>> 16) & 0xFF;
+          final int srcC = (srcPixel >>> 16) & 0xFF;
           final var dstPart = dstC < 128 ? dstC : 255 - dstC;
-          resultR = (renormalize(srcC * dstPart) << 16);
+          resultR = renormalize(srcC * dstPart);
         }
         {
-          final var dstC = (dstPixel >>> 8) & 0xFF;
-          final var srcC = (srcPixel >>> 8) & 0xFF;
+          final int dstC = (dstPixel >>> 8) & 0xFF;
+          final int srcC = (srcPixel >>> 8) & 0xFF;
           final var dstPart = dstC < 128 ? dstC : 255 - dstC;
-          resultG = (renormalize(srcC * dstPart) << 8);
+          resultG = renormalize(srcC * dstPart);
         }
         {
-          final var dstC = dstPixel & 0xFF;
-          final var srcC = srcPixel & 0xFF;
+          final int dstC = dstPixel & 0xFF;
+          final int srcC = srcPixel & 0xFF;
           final var dstPart = dstC < 128 ? dstC : 255 - dstC;
           resultB = renormalize(srcC * dstPart);
         }
 
         // This deliberately keeps the bottom alpha around.
-        outPixels[x] = dstPixel + (resultR | resultG | resultB);
+        outPixels[x] = dstPixel + ((resultR << 16) | (resultG << 8) | resultB);
       }
     }
   }
