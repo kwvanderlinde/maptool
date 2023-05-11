@@ -246,10 +246,6 @@ public class LightingComposite implements Composite {
           && outPixels.length >= samples;
       assert samples % INT_SPECIES.length() == 0;
 
-      // Motivation: can't use SWAR multiplication on three color components at once.
-      // Idea: mixed outer and inner bit hacks so that we can multiply three bytes by a single other
-      // byte.
-
       for (int x = 0; x < samples; ++x) {
         final int srcPixel = srcPixels[x];
         final int dstPixel = dstPixels[x];
