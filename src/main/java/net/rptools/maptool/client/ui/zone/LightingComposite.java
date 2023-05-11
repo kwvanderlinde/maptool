@@ -388,19 +388,19 @@ public class LightingComposite implements Composite {
         {
           final var dstC = (dstPixel >>> 16) & 0xFF;
           final var srcC = (srcPixel >>> 16) & 0xFF;
-          final var dstPart = dstC + (dstC < 128 ? 0 : 1) * (255 - dstC - dstC);
+          final var dstPart = dstC < 128 ? dstC : 255 - dstC;
           resultR = (renormalize(srcC * dstPart) << 16);
         }
         {
           final var dstC = (dstPixel >>> 8) & 0xFF;
           final var srcC = (srcPixel >>> 8) & 0xFF;
-          final var dstPart = dstC + (dstC < 128 ? 0 : 1) * (255 - dstC - dstC);
+          final var dstPart = dstC < 128 ? dstC : 255 - dstC;
           resultG = (renormalize(srcC * dstPart) << 8);
         }
         {
           final var dstC = dstPixel & 0xFF;
           final var srcC = srcPixel & 0xFF;
-          final var dstPart = dstC + (dstC < 128 ? 0 : 1) * (255 - dstC - dstC);
+          final var dstPart = dstC < 128 ? dstC : 255 - dstC;
           resultB = renormalize(srcC * dstPart);
         }
 
