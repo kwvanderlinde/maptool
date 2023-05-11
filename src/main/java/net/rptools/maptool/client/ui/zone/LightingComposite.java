@@ -246,21 +246,33 @@ public class LightingComposite implements Composite {
           && outPixels.length >= samples;
       assert samples % INT_SPECIES.length() == 0;
 
+      // Motivation: can't use SWAR multiplication on three color components at once.
+      // Idea: mixed outer and inner bit hacks so that we can multiply three bytes by a single other
+      // byte.
+
       for (int x = 0; x < samples; ++x) {
         final int srcPixel = srcPixels[x];
         final int dstPixel = dstPixels[x];
 
-        int resultPixel = 0;
-        for (int shift = 0; shift < 24; shift += 8) {
-          final var dstC = (dstPixel >>> shift) & 0xFF;
-          final var srcC = (srcPixel >>> shift) & 0xFF;
+        final int resultR, resultG, resultB;
 
-          resultPixel |= (renormalize((255 - srcC) * dstC) << shift);
+        {
+          final var dstC = (dstPixel >>> 16) & 0xFF;
+          final var srcC = (srcPixel >>> 16) & 0xFF;
+          resultR = (renormalize((255 - srcC) * dstC) << 16);
         }
-        // This keeps the light alpha around instead of the base.
-        resultPixel += srcPixel;
+        {
+          final var dstC = (dstPixel >>> 8) & 0xFF;
+          final var srcC = (srcPixel >>> 8) & 0xFF;
+          resultG = (renormalize((255 - srcC) * dstC) << 8);
+        }
+        {
+          final var dstC = dstPixel & 0xFF;
+          final var srcC = srcPixel & 0xFF;
+          resultB = renormalize((255 - srcC) * dstC);
+        }
 
-        outPixels[x] = resultPixel;
+        outPixels[x] = srcPixel + (resultR | resultG | resultB);
       }
     }
   }
