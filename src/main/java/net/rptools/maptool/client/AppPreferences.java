@@ -536,7 +536,7 @@ public class AppPreferences {
   private static final String KEY_ALLOW_EXTERNAL_MACRO_ACCESS = "allowExternalMacroAccess";
   private static final boolean DEFAULT_ALLOW_EXTERNAL_MACRO_ACCESS = false;
 
-  private static final String KEY_ALLOW_VECTOR_API = "allowIncubatingVectorApi";
+  private static final String KEY_ALLOW_VECTOR_API = "dev-allowIncubatingVectorApi";
   private static final boolean DEFAULT_ALLOW_VECTOR_API = true;
 
   private static final String KEY_RENDER_QUALITY = "renderScaleQuality";
