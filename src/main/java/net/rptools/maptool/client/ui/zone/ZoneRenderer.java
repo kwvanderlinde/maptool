@@ -1425,7 +1425,8 @@ public class ZoneRenderer extends JComponent
           switch (zone.getLightingStyle()) {
             case OVERTOP -> AlphaComposite.SrcOver.derive(
                 AppPreferences.getLightOverlayOpacity() / 255.f);
-            case ENVIRONMENTAL -> LightingComposite.OverlaidLights;
+            case ENVIRONMENTAL -> LightingComposite.getOverlaidLights(
+                AppPreferences.getUseExperimentalVectorOperations());
           };
       final var overlayFillColor =
           switch (zone.getLightingStyle()) {
@@ -1435,7 +1436,7 @@ public class ZoneRenderer extends JComponent
 
       renderLightOverlay(
           g,
-          LightingComposite.BlendedLights,
+          LightingComposite.getBlendedLights(AppPreferences.getUseExperimentalVectorOperations()),
           overlayBlending,
           view.isGMView() ? null : LightOverlayClipStyle.CLIP_TO_VISIBLE_AREA,
           drawableLights,

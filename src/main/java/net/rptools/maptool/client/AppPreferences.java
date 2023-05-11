@@ -536,6 +536,9 @@ public class AppPreferences {
   private static final String KEY_ALLOW_EXTERNAL_MACRO_ACCESS = "allowExternalMacroAccess";
   private static final boolean DEFAULT_ALLOW_EXTERNAL_MACRO_ACCESS = false;
 
+  private static final String KEY_ALLOW_VECTOR_API = "allowIncubatingVectorApi";
+  private static final boolean DEFAULT_ALLOW_VECTOR_API = true;
+
   private static final String KEY_RENDER_QUALITY = "renderScaleQuality";
 
   private static final RenderQuality DEFAULT_RENDER_QUALITY = RenderQuality.LOW_SCALING;
@@ -612,6 +615,14 @@ public class AppPreferences {
       }
     }
     return renderQuality;
+  }
+
+  public static void setUseExperimentalVectorOperations(boolean useVectorApi) {
+    prefs.putBoolean(KEY_ALLOW_VECTOR_API, useVectorApi);
+  }
+
+  public static boolean getUseExperimentalVectorOperations() {
+    return prefs.getBoolean(KEY_ALLOW_VECTOR_API, DEFAULT_ALLOW_VECTOR_API);
   }
 
   public static void setTypingNotificationDuration(int ms) {

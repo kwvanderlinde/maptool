@@ -59,18 +59,37 @@ public class LightingComposite implements Composite {
             .compare(VectorOperators.NE, 0);
   }
 
+  private static final Composite BlendedLights = new LightingComposite(new ScreenBlender());
+
+  /** Used to blend lighting results with an underlying image. */
+  public static final Composite OverlaidLights =
+      new LightingComposite(new ConstrainedBrightenBlender());
+
   /**
    * Used to blend lights together to give an additive effect.
    *
    * <p>To use to good effect, the initial image should be black (when used together with {@link
    * #OverlaidLights}) or clear (when used with {@link java.awt.AlphaComposite}) and then lights
    * should be added to it one-by-one.
+   *
+   * @param allowVectorized If true, an explicitly vectorized implementation may be returned. This
+   *     flag can be ignored if suitable conditions for vectorization are not present.
    */
-  public static final Composite BlendedLights = new LightingComposite(new ScreenBlender());
+  public static Composite getBlendedLights(boolean allowVectorized) {
+    // TODO Return a scalar version.
+    return allowVectorized ? BlendedLights : BlendedLights;
+  }
 
-  /** Used to blend lighting results with an underlying image. */
-  public static final Composite OverlaidLights =
-      new LightingComposite(new ConstrainedBrightenBlender());
+  /**
+   * Used to blend lighting results with an underlying image.
+   *
+   * @param allowVectorized If true, an explicitly vectorized implementation may be returned. This
+   *     flag can be ignored if suitable conditions for vectorization are not present.
+   */
+  public static Composite getOverlaidLights(boolean allowVectorized) {
+    // TODO Return a scalar version.
+    return allowVectorized ? OverlaidLights : OverlaidLights;
+  }
 
   // Blenders are stateless, so no point making new ones all the time.
   private final Blender blender;
