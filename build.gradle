@@ -147,7 +147,12 @@ sourceSets {
 run {
     args = ['-v=' + appSemVer]
     applicationDefaultJvmArgs = ["-Xss8M", "-Dsun.java2d.d3d=false", "-Dsentry.environment=Development", "-Dfile.encoding=UTF-8",
-                                 //"-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintAssembly",
+//                                 "-XX:+UnlockDiagnosticVMOptions", //"-XX:+PrintAssembly",
+//                                 "-XX:PrintAssemblyOptions=intel",
+//                                 "-XX:CompileCommand=print,*LightingComposite.*",
+//                                 "-XX:CompileCommand=print,*BlenderContext.*",
+//                                 "-XX:CompileCommand=print,*ScreenBlender.*",
+//                                 "-XX:CompileCommand=print,*ConstrainedBrightenBlender.*",
                                  "--add-modules=jdk.incubator.vector",
                                  "-Dpolyglot.engine.WarnInterpreterOnly=false",
                                  "-DMAPTOOL_DATADIR=.maptool-" + vendor.toLowerCase(), "-XX:+ShowCodeDetailsInExceptionMessages",
