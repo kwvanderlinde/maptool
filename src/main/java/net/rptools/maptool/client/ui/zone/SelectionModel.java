@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import net.rptools.maptool.client.AppUtil;
+import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Zone;
@@ -120,7 +121,7 @@ public class SelectionModel {
    * @param tokenGuid The ID of the token to check.
    * @return {@code true} if the token is allowed to be selected, otherwise {@code false}.
    */
-  private boolean isSelectable(GUID tokenGuid) {
+  public boolean isSelectable(GUID tokenGuid) {
     if (tokenGuid == null) {
       return false; // doesn't exist
     }
@@ -128,7 +129,8 @@ public class SelectionModel {
     if (token == null) {
       return false; // doesn't exist
     }
-    if (!zone.isTokenVisible(token)) {
+    final var view = MapTool.getFrame().getZoneRenderer(zone).getPlayerView();
+    if (!zone.isTokenVisible(token, view)) {
       return AppUtil.playerOwns(token); // can't own or see
     }
     return true;

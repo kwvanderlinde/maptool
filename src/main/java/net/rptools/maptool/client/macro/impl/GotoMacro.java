@@ -21,6 +21,7 @@ import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.macro.Macro;
 import net.rptools.maptool.client.macro.MacroContext;
 import net.rptools.maptool.client.macro.MacroDefinition;
+import net.rptools.maptool.client.ui.zone.ZoneRenderer;
 import net.rptools.maptool.model.CellPoint;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
@@ -35,25 +36,26 @@ public class GotoMacro implements Macro {
 
   public void execute(
       MacroContext context, String parameter, MapToolMacroContext executionContext) {
+    ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
     Matcher m = COORD_PATTERN.matcher(parameter.trim());
     if (m.matches()) {
       // goto coordinate locations
       int x = Integer.parseInt(m.group(1));
       int y = Integer.parseInt(m.group(2));
 
-      MapTool.getFrame().getCurrentZoneRenderer().centerOn(new CellPoint(x, y));
+      renderer.centerOn(new CellPoint(x, y));
     } else {
       // goto token location
-      Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
+      Zone zone = renderer.getZone();
       Token token = zone.getTokenByName(parameter);
 
-      if (!MapTool.getPlayer().isGM() && !zone.isTokenVisible(token)) {
+      if (!MapTool.getPlayer().isGM() && !zone.isTokenVisible(token, renderer.getPlayerView())) {
         return;
       }
       if (token != null) {
         int x = token.getX();
         int y = token.getY();
-        MapTool.getFrame().getCurrentZoneRenderer().centerOn(new ZonePoint(x, y));
+        renderer.centerOn(new ZonePoint(x, y));
       }
     }
   }

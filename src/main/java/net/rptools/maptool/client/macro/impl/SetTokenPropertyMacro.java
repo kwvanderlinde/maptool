@@ -25,6 +25,7 @@ import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.macro.Macro;
 import net.rptools.maptool.client.macro.MacroContext;
 import net.rptools.maptool.client.macro.MacroDefinition;
+import net.rptools.maptool.client.ui.zone.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Token;
@@ -108,16 +109,17 @@ public class SetTokenPropertyMacro implements Macro {
    */
   protected Set<Token> getTokens(String tokenName) {
     Set<Token> selectedTokenSet = new HashSet<Token>();
-
+    ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
+    Zone zone = renderer.getZone();
     if (tokenName != null && tokenName.length() > 0) {
-      Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
       Token token = zone.getTokenByName(tokenName);
       /*
        * Give the player the benefit of the doubt. If they specified a token that is invisible then try the name as a property. This will also stop players that are trying to "guess" token names
        * and trying to change properties figuring out that there is a token there because they are getting a different error message (benefit of the doubt only goes so far ;) )
        */
       if (!MapTool.getPlayer().isGM()) {
-        if ((!zone.isTokenVisible(token) || token.getLayer() == Zone.Layer.GM)) {
+        if ((!zone.isTokenVisible(token, renderer.getPlayerView())
+            || token.getLayer() == Zone.Layer.GM)) {
           token = null;
         }
         if (!token.isOwner(MapTool.getPlayer().getName())) {
@@ -131,9 +133,9 @@ public class SetTokenPropertyMacro implements Macro {
     }
     // Use the selected tokens.
     selectedTokenSet = new HashSet<Token>();
-    Set<GUID> sTokenSet = MapTool.getFrame().getCurrentZoneRenderer().getSelectedTokenSet();
+    Set<GUID> sTokenSet = renderer.getSelectedTokenSet();
     for (GUID tokenId : sTokenSet) {
-      Token tok = MapTool.getFrame().getCurrentZoneRenderer().getZone().getToken(tokenId);
+      Token tok = zone.getToken(tokenId);
       selectedTokenSet.add(tok);
     }
     return selectedTokenSet;

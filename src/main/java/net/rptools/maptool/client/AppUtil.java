@@ -336,7 +336,7 @@ public class AppUtil {
     if (view.isGMView()) {
       return true;
     }
-    return zone.isTokenVisible(token);
+    return zone.isTokenVisible(token, view);
   }
 
   /**

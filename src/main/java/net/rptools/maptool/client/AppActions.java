@@ -68,6 +68,7 @@ import net.rptools.maptool.client.ui.theme.Icons;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.ui.transferprogressdialog.TransferProgressDialog;
 import net.rptools.maptool.client.ui.zone.FogUtil;
+import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.ZoneRenderer;
 import net.rptools.maptool.client.utilities.DungeonDraftImporter;
 import net.rptools.maptool.language.I18N;
@@ -150,10 +151,14 @@ public class AppActions {
         protected void executeAction() {
           Token chosenOne = null;
           ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
+          PlayerView view = renderer.getPlayerView();
           List<Token> myPlayers = new ArrayList<Token>();
           for (Token t : renderer.getZone().getPlayerTokens()) {
-            if (AppUtil.playerOwns(t) && t.isVisible() && renderer.getZone().isTokenVisible(t))
+            if (AppUtil.playerOwns(t)
+                && t.isVisible()
+                && renderer.getZone().isTokenVisible(t, view)) {
               myPlayers.add(t);
+            }
           }
           if (myPlayers.size() > 0) {
             // We want to wrap round the list of player tokens.

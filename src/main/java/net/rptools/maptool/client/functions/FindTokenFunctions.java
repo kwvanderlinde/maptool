@@ -25,6 +25,7 @@ import java.util.*;
 import java.util.List;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolVariableResolver;
+import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.*;
@@ -154,15 +155,17 @@ public class FindTokenFunctions extends AbstractFunction {
   /** Filter for player exposed tokens. */
   private static class ExposedFilter implements Zone.Filter {
     private final Zone zone;
+    private final PlayerView view;
     private final boolean match;
 
-    public ExposedFilter(Zone zone, boolean match) {
+    public ExposedFilter(Zone zone, PlayerView view, boolean match) {
       this.zone = zone;
+      this.view = view;
       this.match = match;
     }
 
     public boolean matchToken(Token t) {
-      boolean isExposed = zone.isTokenVisible(t) && !t.isImgOrLib();
+      boolean isExposed = zone.isTokenVisible(t, view) && !t.isImgOrLib();
       return match == isExposed;
     }
   }
@@ -765,7 +768,9 @@ public class FindTokenFunctions extends AbstractFunction {
         } else if (!match) tokenList = originalList;
         break;
       case EXPOSED:
-        tokenList = getTokensFiltered(new ExposedFilter(zone, match), originalList);
+        tokenList =
+            getTokensFiltered(
+                new ExposedFilter(zone, zoneRenderer.getPlayerView(), match), originalList);
         break;
       case STATE:
         tokenList = getTokensFiltered(new StateFilter(findArgs, match), originalList);

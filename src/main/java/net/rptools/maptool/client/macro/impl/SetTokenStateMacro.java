@@ -21,6 +21,7 @@ import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.macro.Macro;
 import net.rptools.maptool.client.macro.MacroContext;
 import net.rptools.maptool.client.macro.MacroDefinition;
+import net.rptools.maptool.client.ui.zone.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Token;
@@ -73,21 +74,22 @@ public class SetTokenStateMacro implements Macro {
       stateName = args[0];
       value = null;
     } else {
-      Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
+      ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
+      Zone zone = renderer.getZone();
       Token token = zone.getTokenByName(args[0]);
       // Give the player the benefit of the doubt. If they specified a token that is invisible
       // then try the name as a state. This will also stop players that are trying to "guess" token
-      // names
-      // and trying to change state figuring out that there is a token there because they are
+      // names and trying to change state figuring out that there is a token there because they are
       // getting a different error message (benefit of the doubt only goes so far ;) )
       if (!MapTool.getPlayer().isGM()
-          && (!zone.isTokenVisible(token) || token.getLayer() == Zone.Layer.GM)) {
+          && (!zone.isTokenVisible(token, renderer.getPlayerView())
+              || token.getLayer() == Zone.Layer.GM)) {
         token = null;
       }
-      if (token
-          == null) { // Doesn't match a token? No problem lets grab selected tokens and see if it
-        // matches a state.
-        selectedTokenSet = MapTool.getFrame().getCurrentZoneRenderer().getSelectedTokenSet();
+      if (token == null) {
+        // Doesn't match a token? No problem lets grab selected tokens and see if it matches a
+        // state.
+        selectedTokenSet = renderer.getSelectedTokenSet();
         if (selectedTokenSet.size() == 0) {
           MapTool.addLocalMessage(I18N.getText("settokenstate.param"));
           return;

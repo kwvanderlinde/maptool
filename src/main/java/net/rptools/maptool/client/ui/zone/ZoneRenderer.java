@@ -3516,7 +3516,7 @@ public class ZoneRenderer extends JComponent
       if (showCurrentTokenLabel
           && !isGMView
           && (!zoneView.isUsingVision() || !MapTool.getServerPolicy().isAutoRevealOnMovement())
-          && !zone.isTokenVisible(token)) {
+          && !zone.isTokenVisible(token, view)) {
         showCurrentTokenLabel = false;
       }
       if (showCurrentTokenLabel) {
@@ -3735,26 +3735,6 @@ public class ZoneRenderer extends JComponent
   }
 
   /**
-   * Verifies if a token is selectable based on existence, visibility and ownership.
-   *
-   * @param tokenGUID the token
-   * @return whether the token is selectable
-   */
-  public boolean isTokenSelectable(GUID tokenGUID) {
-    if (tokenGUID == null) {
-      return false; // doesn't exist
-    }
-    Token token = zone.getToken(tokenGUID);
-    if (token == null) {
-      return false; // doesn't exist
-    }
-    if (!zone.isTokenVisible(token)) {
-      return AppUtil.playerOwns(token); // can't own or see
-    }
-    return true;
-  }
-
-  /**
    * Selects the tokens inside a selection rectangle.
    *
    * @param rect the selection rectangle
@@ -3780,7 +3760,7 @@ public class ZoneRenderer extends JComponent
       // Find the first selected token on the screen
       for (int i = 0; i < visibleTokens.size(); i++) {
         Token token = visibleTokens.get(i);
-        if (!isTokenSelectable(token.getId())) {
+        if (!selectionModel.isSelectable(token.getId())) {
           continue;
         }
         if (selectionModel.isSelected(token.getId())) {

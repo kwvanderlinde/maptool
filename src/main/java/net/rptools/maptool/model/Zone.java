@@ -840,9 +840,10 @@ public class Zone {
    * </ol>
    *
    * @param token the token to test.
+   * @param view the view that determines visibility.
    * @return is the token visible?
    */
-  public boolean isTokenVisible(Token token) {
+  public boolean isTokenVisible(Token token, PlayerView view) {
     if (token == null) {
       return false;
     }
@@ -865,7 +866,6 @@ public class Zone {
     // Token is visible, and there is fog
     Rectangle tokenSize = token.getBounds(this);
     Area combined = new Area(exposedArea);
-    PlayerView view = MapTool.getFrame().getZoneRenderer(this).getPlayerView();
     if (MapTool.getServerPolicy().isUseIndividualFOW() && getVisionType() != VisionType.OFF) {
       // Jamz: Lets change the logic a bit looking for ownerships
       if (view.isUsingTokenView()) {
@@ -880,44 +880,6 @@ public class Zone {
       }
     }
     return combined.intersects(tokenSize);
-  }
-
-  public boolean isTokenFootprintVisible(Token token) {
-    if (token == null) {
-      return false;
-    }
-    // Base case, nothing is visible
-    if (!token.isVisible()) {
-      return false;
-    }
-    // Base case, everything is visible
-    if (!hasFog()) {
-      return true;
-    }
-    if (token.isVisibleOnlyToOwner() && !AppUtil.playerOwns(token)) {
-      return false;
-    }
-    // Token is visible, and there is fog
-    Rectangle tokenSize = token.getBounds(this);
-    Area tokenFootprint = getGrid().getTokenCellArea(tokenSize);
-    Area combined = new Area(exposedArea);
-    PlayerView view = MapTool.getFrame().getZoneRenderer(this).getPlayerView();
-    if (MapTool.getServerPolicy().isUseIndividualFOW() && getVisionType() != VisionType.OFF) {
-      if (view.isUsingTokenView()) {
-        // Should this use FindTokenFunctions.OwnedFilter and zone.getTokenList()?
-        for (Token tok : view.getTokens()) {
-          if (!AppUtil.playerOwns(tok)) {
-            continue;
-          }
-          if (exposedAreaMeta.containsKey(tok.getExposedAreaGUID())) {
-            combined.add(exposedAreaMeta.get(tok.getExposedAreaGUID()).getExposedAreaHistory());
-          }
-        }
-      }
-    }
-    combined.intersect(tokenFootprint);
-    return !combined.isEmpty();
-    // return combined.intersects(tokenSize);
   }
 
   public Area getTopology(TopologyType topologyType) {
