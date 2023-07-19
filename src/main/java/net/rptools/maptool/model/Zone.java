@@ -859,6 +859,7 @@ public class Zone {
     }
 
     // Token is visible to owner only and client isn't that player
+    // TODO This depends on out-of-model information, including current player and server settings.
     if (token.isVisibleOnlyToOwner() && !AppUtil.playerOwns(token)) {
       return false;
     }
