@@ -1,0 +1,13 @@
+# Concept
+    
+We have some things in our data model which depend on the current state of the client. Especially we depend on which zone is current in order to do our stuff, and sometimes even require access to the zone _renderer_ that is current. In addition to just being a poor separation of concerns, it also means we can't do interesting things with our model such as run it headlessly without any renderers.
+
+In general, we should consider not only a separation of concerns (i.e., which components are responsible for what) but also a separation of units / operations (i.e., which functionality should be co-located). As an example of both, consider `Zone.isTokenVisible()`. The lack separation of concerns can be seen by the method needing to reach out to the frame in order to get the current `PlayerView`. The lack of separation of units can be seen by asking whether the token is owned by the current player. We could easily separate that out as a completely separate concept from regular visibility.
+
+# Details
+
+## `Zone.isTokenVisible(Token)`
+
+One option is to keep this method inside `Zone` and then rework it to `Zone.isTokenVisible(Token, PlayerView)` while also separating out the only-visible-to-owner logic. Note that some callers actually alraedy have a `PlayerView` but it is thrown away, e.g., `AppUtil.isTokenVisible(Zone, Token, PlayerView)`.
+
+The other option is to move this question somewhere else. This is tempting because we aren't really asking the model whether the token is visible, but rather whether the view can be expected to show the token (save for bounds).
