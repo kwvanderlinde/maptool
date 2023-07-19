@@ -28,10 +28,8 @@ import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.tool.drawing.UndoPerZone;
-import net.rptools.maptool.client.ui.MapToolFrame;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.ZoneRenderer;
-import net.rptools.maptool.client.ui.zone.ZoneView;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.InitiativeList.TokenInitiative;
@@ -1074,12 +1072,6 @@ public class Zone {
       boolean isAllowed =
           MapTool.getPlayer().isGM() || !MapTool.getServerPolicy().useStrictTokenManagement();
       String playerId = MapTool.getPlayer().getName();
-      MapToolFrame frame = MapTool.getFrame();
-      // FIXME 'zr' was null -- how can this happen? Fix is to use getId() instead of 'this'
-      ZoneRenderer zr = frame.getZoneRenderer(getId());
-      ZoneView zoneView = zr.getZoneView();
-      ExposedAreaMetaData meta = null;
-
       for (GUID guid : selectedToks) {
         Token tok = getToken(guid);
         if (tok == null) {
@@ -1087,7 +1079,7 @@ public class Zone {
         }
         if ((isAllowed || tok.isOwner(playerId)) && tok.getHasSight()) {
           GUID tea = tok.getExposedAreaGUID();
-          meta = exposedAreaMeta.get(tea);
+          ExposedAreaMetaData meta = exposedAreaMeta.get(tea);
           if (meta == null) {
             meta = new ExposedAreaMetaData();
             exposedAreaMeta.put(tea, meta);
