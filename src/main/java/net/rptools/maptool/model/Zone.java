@@ -1023,29 +1023,24 @@ public class Zone {
     if (area == null || area.isEmpty()) {
       return;
     }
-    if (tok != null) {
-      if (MapTool.isPersonalServer()
-          || (MapTool.getServerPolicy().isUseIndividualFOW() && AppUtil.playerOwns(tok))) {
-        GUID tea = tok.getExposedAreaGUID();
-        ExposedAreaMetaData meta = exposedAreaMeta.get(tea);
-        if (meta == null) {
-          meta = new ExposedAreaMetaData();
-          exposedAreaMeta.put(tea, meta);
-        }
-        meta.addToExposedAreaHistory(area);
-        ZoneRenderer zr = MapTool.getFrame().getZoneRenderer(this.getId());
-        if (zr != null) // Could be null if the AutoSaveManager is saving the campaign by copying
-        // Zones, but not
-        // ZoneRenderers
-        {
-          zr.getZoneView().flush();
-        }
-        putToken(tok);
-        new MapToolEventBus().getMainEventBus().post(new FogChanged(this));
-        return; // FJE Added so that TEA isn't added to the GEA, below.
+
+    final var exposeForTokenOnly =
+        tok != null
+            && (MapTool.isPersonalServer()
+                || (MapTool.getServerPolicy().isUseIndividualFOW() && AppUtil.playerOwns(tok)));
+    if (exposeForTokenOnly) {
+      GUID tea = tok.getExposedAreaGUID();
+      ExposedAreaMetaData meta = exposedAreaMeta.get(tea);
+      if (meta == null) {
+        meta = new ExposedAreaMetaData();
+        exposedAreaMeta.put(tea, meta);
       }
+      meta.addToExposedAreaHistory(area);
+      putToken(tok);
+    } else {
+      exposedArea.add(area);
     }
-    exposedArea.add(area);
+
     new MapToolEventBus().getMainEventBus().post(new FogChanged(this));
   }
 

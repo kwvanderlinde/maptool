@@ -4626,6 +4626,7 @@ public class ZoneRenderer extends JComponent
       return;
     }
 
+    // TODO Zone.exposeArea() calls zoneView.flush(), but that seems excessive.
     zoneView.flushFog();
     MapTool.getFrame().updateTokenTree(); // for any event
     repaintDebouncer.dispatch();
