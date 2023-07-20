@@ -1131,7 +1131,6 @@ public class Zone {
         meta.clearExposedAreaHistory();
         meta.addToExposedAreaHistory(area);
         exposedAreaMeta.put(tok.getExposedAreaGUID(), meta);
-        MapTool.getFrame().getZoneRenderer(this.getId()).getZoneView().flush(tok);
         putToken(tok);
       }
       event = FogChanged.forTokens(this, allToks);
@@ -1173,7 +1172,6 @@ public class Zone {
         }
         meta.removeExposedAreaHistory(area);
         exposedAreaMeta.put(tok.getExposedAreaGUID(), meta);
-        MapTool.getFrame().getZoneRenderer(this.getId()).getZoneView().flush(tok);
         putToken(tok);
       }
       event = FogChanged.forTokens(this, allToks);
@@ -2025,7 +2023,6 @@ public class Zone {
 
   public void optimize() {
     log.debug("Optimizing Map " + getName());
-    MapTool.getFrame().setStatusMessage(I18N.getText("Zone.status.optimizing", getName()));
     collapseDrawables();
   }
 

@@ -232,7 +232,7 @@ public class PersistenceUtil {
         String n = fixupZoneName(z.getName());
         z.setName(n);
         z.imported(); // Resets creation timestamp and init panel, among other things
-        z.optimize(); // Collapses overlaid or redundant drawables
+        optimizeZone(z);
       } else {
         // TODO: Not a map but it is something with a property.xml file in it.
         // Should we have a filetype property in there?
@@ -460,7 +460,7 @@ public class PersistenceUtil {
         Set<MD5Key> allAssetIds = persistedCampaign.assetMap.keySet();
         loadAssets(allAssetIds, pakFile);
         for (Zone zone : persistedCampaign.campaign.getZones()) {
-          zone.optimize();
+          optimizeZone(zone);
         }
 
         new CampaignManager().clearCampaignData();
@@ -501,6 +501,11 @@ public class PersistenceUtil {
       MapTool.showWarning("PersistenceUtil.warn.campaignNotLoaded");
     }
     return persistedCampaign;
+  }
+
+  private static void optimizeZone(Zone zone) {
+    MapTool.getFrame().setStatusMessage(I18N.getText("Zone.status.optimizing", zone.getName()));
+    zone.optimize(); // Collapses overlaid or redundant drawables
   }
 
   private static String getThumbFilename(PackedFile pakFile) throws IOException {
