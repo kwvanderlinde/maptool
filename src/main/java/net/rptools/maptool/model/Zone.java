@@ -1112,6 +1112,8 @@ public class Zone {
     if (area == null) {
       return;
     }
+
+    final FogChanged event;
     if (selectedToks != null && !selectedToks.isEmpty()) {
       List<Token> allToks = new ArrayList<Token>();
 
@@ -1132,11 +1134,13 @@ public class Zone {
         MapTool.getFrame().getZoneRenderer(this.getId()).getZoneView().flush(tok);
         putToken(tok);
       }
+      event = FogChanged.forTokens(this, allToks);
     } else {
       exposedArea.reset();
       exposedArea.add(area);
+      event = FogChanged.global(this);
     }
-    new MapToolEventBus().getMainEventBus().post(new FogChanged(this));
+    new MapToolEventBus().getMainEventBus().post(event);
   }
 
   public void hideArea(Area area, Set<GUID> selectedToks) {
@@ -1146,6 +1150,8 @@ public class Zone {
     if (getVisionType() == VisionType.OFF) {
       exposedArea.subtract(area);
     }
+
+    final FogChanged event;
     if (selectedToks != null
         && !selectedToks.isEmpty()
         && (MapTool.getServerPolicy().isUseIndividualFOW() || MapTool.isPersonalServer())) {
@@ -1170,10 +1176,12 @@ public class Zone {
         MapTool.getFrame().getZoneRenderer(this.getId()).getZoneView().flush(tok);
         putToken(tok);
       }
+      event = FogChanged.forTokens(this, allToks);
     } else {
       exposedArea.subtract(area);
+      event = FogChanged.global(this);
     }
-    new MapToolEventBus().getMainEventBus().post(new FogChanged(this));
+    new MapToolEventBus().getMainEventBus().post(event);
   }
 
   public long getCreationTime() {
@@ -2206,7 +2214,9 @@ public class Zone {
       exposedAreaMeta = new HashMap<GUID, ExposedAreaMetaData>();
     }
     exposedAreaMeta.put(tokenExposedAreaGUID, meta);
-    new MapToolEventBus().getMainEventBus().post(new FogChanged(this));
+    new MapToolEventBus()
+        .getMainEventBus()
+        .post(FogChanged.forTokens(this, Collections.emptyList()));
   }
 
   /**
