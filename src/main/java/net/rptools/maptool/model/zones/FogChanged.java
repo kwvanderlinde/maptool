@@ -14,6 +14,27 @@
  */
 package net.rptools.maptool.model.zones;
 
+import java.util.Collection;
+import java.util.Collections;
+import javax.annotation.Nonnull;
+import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
 
-public record FogChanged(Zone zone) {}
+/**
+ * Fired when a zone's fog of war (FOW) has changed.
+ *
+ * @param zone The zone whose FOW has changed.
+ * @param isGlobal If true, the zone's global FOW has changed. Otherwise a specific token's FOW has
+ *     changed.
+ * @param tokens The token's whose FOW has changed. If not empty, {@code isGlobal} must be {@code
+ *     false}.
+ */
+public record FogChanged(Zone zone, boolean isGlobal, @Nonnull Collection<Token> tokens) {
+  public static FogChanged global(Zone zone) {
+    return new FogChanged(zone, true, Collections.emptyList());
+  }
+
+  public static FogChanged forTokens(Zone zone, @Nonnull Collection<Token> tokens) {
+    return new FogChanged(zone, false, tokens);
+  }
+}

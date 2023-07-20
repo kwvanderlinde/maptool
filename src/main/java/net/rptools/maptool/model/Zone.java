@@ -29,7 +29,6 @@ import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.tool.drawing.UndoPerZone;
 import net.rptools.maptool.client.ui.zone.PlayerView;
-import net.rptools.maptool.client.ui.zone.ZoneRenderer;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.InitiativeList.TokenInitiative;
@@ -774,7 +773,7 @@ public class Zone {
 
   public void setHasFog(boolean flag) {
     hasFog = flag;
-    new MapToolEventBus().getMainEventBus().post(new FogChanged(this));
+    new MapToolEventBus().getMainEventBus().post(FogChanged.global(this));
   }
 
   /**
@@ -982,10 +981,14 @@ public class Zone {
    */
   public void clearExposedArea(boolean globalOnly) {
     exposedArea = new Area();
+    new MapToolEventBus().getMainEventBus().post(FogChanged.global(this));
+
     if (!globalOnly) {
+      final var tokens =
+          exposedAreaMeta.keySet().stream().map(this::getToken).filter(Objects::nonNull).toList();
       exposedAreaMeta.clear();
+      new MapToolEventBus().getMainEventBus().post(FogChanged.forTokens(this, tokens));
     }
-    new MapToolEventBus().getMainEventBus().post(new FogChanged(this));
   }
 
   /**
@@ -997,19 +1000,19 @@ public class Zone {
     // Jamz: Clear FoW for set tokens only, for use by
     // ExposeVisibleAreaOnlyAction Menu action and exposePCOnlyArea() macro
 
+    final var tokens = new ArrayList<Token>(tokenSet.size());
     for (GUID tea : tokenSet) {
       ExposedAreaMetaData meta = getExposedAreaMetaData(tea);
       if (meta != null) {
         meta.clearExposedAreaHistory();
         Token token = getToken(tea);
-        ZoneRenderer zr = MapTool.getFrame().getZoneRenderer(this.getId());
-        zr.flush(token);
+        tokens.add(token);
         setExposedAreaMetaData(token.getExposedAreaGUID(), meta);
         MapTool.serverCommand().updateExposedAreaMeta(getId(), token.getExposedAreaGUID(), meta);
       }
     }
 
-    new MapToolEventBus().getMainEventBus().post(new FogChanged(this));
+    new MapToolEventBus().getMainEventBus().post(FogChanged.forTokens(this, tokens));
   }
 
   /**
@@ -1024,6 +1027,7 @@ public class Zone {
       return;
     }
 
+    final FogChanged event;
     final var exposeForTokenOnly =
         tok != null
             && (MapTool.isPersonalServer()
@@ -1037,11 +1041,13 @@ public class Zone {
       }
       meta.addToExposedAreaHistory(area);
       putToken(tok);
+      event = FogChanged.forTokens(this, List.of(tok));
     } else {
       exposedArea.add(area);
+      event = FogChanged.global(this);
     }
 
-    new MapToolEventBus().getMainEventBus().post(new FogChanged(this));
+    new MapToolEventBus().getMainEventBus().post(event);
   }
 
   /**
@@ -1061,17 +1067,21 @@ public class Zone {
       // Jamz: if this exposedArea isn't done then it breaks getExposedTokens when vision is off...
       exposedArea.add(area);
     }
+
+    final FogChanged event;
     if (selectedToks != null
         && !selectedToks.isEmpty()
         && (MapTool.getServerPolicy().isUseIndividualFOW() || MapTool.isPersonalServer())) {
       boolean isAllowed =
           MapTool.getPlayer().isGM() || !MapTool.getServerPolicy().useStrictTokenManagement();
       String playerId = MapTool.getPlayer().getName();
+      final var tokens = new ArrayList<Token>();
       for (GUID guid : selectedToks) {
         Token tok = getToken(guid);
         if (tok == null) {
           continue;
         }
+        tokens.add(tok);
         if ((isAllowed || tok.isOwner(playerId)) && tok.getHasSight()) {
           GUID tea = tok.getExposedAreaGUID();
           ExposedAreaMetaData meta = exposedAreaMeta.get(tea);
@@ -1082,11 +1092,13 @@ public class Zone {
           meta.addToExposedAreaHistory(area);
         }
       }
+      event = FogChanged.forTokens(this, tokens);
     } else {
       // Not using IF so add the EA to the GEA instead of a TEA.
       exposedArea.add(area);
+      event = FogChanged.global(this);
     }
-    new MapToolEventBus().getMainEventBus().post(new FogChanged(this));
+    new MapToolEventBus().getMainEventBus().post(event);
   }
 
   /**
