@@ -21,11 +21,16 @@ import com.jidesoft.docking.DockableFrame;
 import com.jidesoft.docking.DockingManager;
 import com.jidesoft.docking.event.DockableFrameAdapter;
 import com.jidesoft.docking.event.DockableFrameEvent;
+import com.twelvemonkeys.image.BufferedImageIcon;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Stream;
+import javax.imageio.ImageIO;
+import javax.swing.*;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.functions.MacroLinkFunction;
 import net.rptools.maptool.client.ui.MapToolFrame;
@@ -164,7 +169,25 @@ public class HTMLFrame extends DockableFrame implements HTMLPanelContainer {
       }
 
       // Only set size on creation so we don't override players resizing.
-      frame = new HTMLFrame(name, width, height, isHTML5);
+      Icon icon = RessourceManager.getSmallIcon(Icons.WINDOW_HTML);
+      // Parse the data URI if one is passed.
+      // TODO Allow passing an icon parameter.
+      // TODO Also support keywords for built-in icons.
+      // TODO Consider propagating the originating Lib icon to the frame.
+      {
+        String svgStr =
+            "data:image/svg+xml,<?xml version=\"1.0\" encoding=\"UTF-8\"?>%0D%0A<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\"100\" height=\"100\">%0D%0A<path d=\"M77.926,94.924H8.217C6.441,94.924,5,93.484,5,91.706V21.997c0-1.777,1.441-3.217,3.217-3.217h34.854 c1.777,0,3.217,1.441,3.217,3.217s-1.441,3.217-3.217,3.217H11.435v63.275h63.274V56.851c0-1.777,1.441-3.217,3.217-3.217 c1.777,0,3.217,1.441,3.217,3.217v34.855C81.144,93.484,79.703,94.924,77.926,94.924z\"/>%0D%0A<path d=\"M94.059,16.034L84.032,6.017c-1.255-1.255-3.292-1.255-4.547,0l-9.062,9.073L35.396,50.116 c-0.29,0.29-0.525,0.633-0.686,1.008l-7.496,17.513c-0.526,1.212-0.247,2.617,0.676,3.539c0.622,0.622,1.437,0.944,2.274,0.944 c0.429,0,0.858-0.086,1.276-0.257l17.513-7.496c0.375-0.161,0.719-0.397,1.008-0.686l35.026-35.026l9.073-9.062 C95.314,19.326,95.314,17.289,94.059,16.034z M36.286,63.79l2.928-6.821l3.893,3.893L36.286,63.79z M46.925,58.621l-5.469-5.469 L73.007,21.6l5.47,5.469L46.925,58.621z M81.511,24.034l-5.469-5.469l5.716-5.716l5.469,5.459L81.511,24.034z\"/>%0D%0A</svg>";
+        final var b64Str =
+            "data:image/png;base64,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";
+        try {
+          icon = buildFrameIcon(b64Str);
+        } catch (IOException e) {
+          // TODO Log it, but don't fail completely due to missing icon.
+          throw new RuntimeException(e);
+        }
+      }
+
+      frame = new HTMLFrame(name, width, height, isHTML5, icon);
       frames.put(name, frame);
 
       frame.getDockingManager().showFrame(name);
@@ -173,6 +196,28 @@ public class HTMLFrame extends DockableFrame implements HTMLPanelContainer {
     }
     frame.updateContents(html, title, tabTitle, temp, scrollReset, isHTML5, val);
     return frame;
+  }
+
+  private static Icon buildFrameIcon(String iconString) throws IOException {
+    Icon defaultIcon = RessourceManager.getSmallIcon(Icons.WINDOW_HTML);
+
+    Icon icon = defaultIcon;
+    if (iconString.startsWith("data:")) {
+      // After the "data:" part is media type and optional base64 extension. Actual data begins
+      // after a comma.
+      final var commaIndex = iconString.indexOf(",");
+      final var data = iconString.substring(1 + commaIndex);
+      final var isBase64 = "base64".equals(iconString.substring(commaIndex - 6, commaIndex));
+      // Only support base64 for now.
+      if (isBase64) {
+        // Small icons are 16x16.
+        final var size = RessourceManager.smallIconSize;
+        final var imageData = Base64.getDecoder().decode(data);
+        icon = new BufferedImageIcon(ImageIO.read(new ByteArrayInputStream(imageData)), size, size);
+      }
+    }
+
+    return icon;
   }
 
   @Override
@@ -218,8 +263,8 @@ public class HTMLFrame extends DockableFrame implements HTMLPanelContainer {
    * @param height the height of the frame
    * @param isHTML5 whether the frame is HTML5 (JavaFx)
    */
-  private HTMLFrame(String name, int width, int height, boolean isHTML5) {
-    super(name, RessourceManager.getSmallIcon(Icons.WINDOW_HTML));
+  private HTMLFrame(String name, int width, int height, boolean isHTML5, Icon icon) {
+    super(name, icon);
     this.name = name;
     this.isHTML5 = isHTML5;
     width = width < 100 ? 400 : width;
