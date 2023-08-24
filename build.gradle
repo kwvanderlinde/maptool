@@ -47,6 +47,7 @@ ext {
     tagVersion = project.findProperty('gitTag')
     environment = 'Production'
     sentryDSN = sentry_production_dsn
+    winInstallDir = 'Local/RPTools/' + project.name + '-' + tagVersion + developerRelease
 
     if (!project.hasProperty('noGit')) {
         // Get tag and commit info from Git to use for version numbering
@@ -249,6 +250,7 @@ runtime {
 
         if (osdetector.os.is('windows')) {
             println "Setting Windows installer options with upgrade uuid = " + winUpgradeUUID
+            println "Install Dir =" + winInstallDir
             resourceDir = file('package/windows')
             imageOptions += ['--icon', 'package/windows/' + project.name + developerRelease + '.ico']
             installerOptions += [
@@ -258,7 +260,7 @@ runtime {
                     '--win-menu',
                     '--win-menu-group', vendor,
                     '--win-upgrade-uuid', winUpgradeUUID,
-                    '--install-dir', 'Local/RPTools/' + project.name + '-' + tagVersion + developerRelease,
+                    '--install-dir', winInstallDir
             ]
             targetPlatform('win') {
                 jdkHome = jdkDownload('https://github.com/adoptium/temurin20-binaries/releases/download/jdk-20.0.1%2B9/OpenJDK20U-jdk_x64_windows_hotspot_20.0.1_9.zip');
