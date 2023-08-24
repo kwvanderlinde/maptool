@@ -235,7 +235,7 @@ runtime {
 
         imageOptions = []
         imageName = project.name + developerRelease
-        installerName = project.name + tagVersion
+        installerName = project.name
         installerOptions = [
                 //'--temp', 'releases/temp-files',
                 '--verbose',
@@ -244,7 +244,8 @@ runtime {
                 '--license-file', 'package/license/COPYING.AFFERO',
                 '--app-version', appSemVer,
                 '--vendor', vendor,
-                '--file-associations', 'package/associations.properties'
+                '--file-associations', 'package/associations.properties',
+                '--install-dir', 'Local/RPTools/' + project.name + '-' + tagVersion + developerRelease,
         ]
 
         if (osdetector.os.is('windows')) {
