@@ -76,6 +76,13 @@ public class ResourceFunction extends AbstractFunction {
       final String glob = StringUtils.stripStart(parameters.get(1).toString(), "/");
 
       // TODO Look this up in the asset panel somehow.
+      //  Need to create a model to capture asset roots. Currently it's directly exposed in
+      //  AppPreferences, but we would want a proper way to model and control it. Each added library
+      //  (whether newly installed or loaded from preferences) is associated with an internal ID
+      //  that is unique to the current MapTool instance. Resource URIs will not include the library
+      //  name in the hostname component, but will instead use the internal ID.
+      //  Also note that resource library names can be repeated. So we potentially have multiple
+      //  root directories we should look at when globbing.
       final var resourceLibraryRoot =
           Paths.get(
               "/home/kenneth/Nextcloud/RPGs/tools/MapTool/Resource Packs/Forgotten Adventures");
