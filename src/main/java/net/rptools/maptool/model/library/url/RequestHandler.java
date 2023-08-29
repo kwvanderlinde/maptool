@@ -162,6 +162,37 @@ public class RequestHandler {
         return c;
       }
     }
+
+    if (scheme.equalsIgnoreCase("resource")) {
+      if (!("get".equalsIgnoreCase(method))) {
+        responseHeaders.put(":Status", "0");
+        c.complete("Only GET method can retrieve assets");
+        return c;
+      }
+      try {
+        stream = uri.toURL().openConnection().getInputStream();
+      } catch (IOException ioe) {
+        responseHeaders.put(":Status", "404 Not Found");
+        c.complete(ioe.getMessage());
+        return c;
+      }
+      try {
+        byte[] bytes = stream.readAllBytes();
+        byte[] outBytes = new byte[bytes.length * 2];
+        for (int i = 0; i < bytes.length; i++) {
+          outBytes[i * 2] = 0;
+          outBytes[i * 2 + 1] = bytes[i];
+        }
+        responseHeaders.put(":Status", "200 OK");
+        c.complete(new String(outBytes, StandardCharsets.UTF_16));
+        return c;
+      } catch (IOException e) {
+        responseHeaders.put(":Status", "500 Internal Exception");
+        c.complete(e.getMessage());
+        return c;
+      }
+    }
+
     c.complete(null);
     return c;
   }

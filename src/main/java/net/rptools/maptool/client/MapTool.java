@@ -1749,6 +1749,7 @@ public class MapTool {
     // cp:// is registered by the RPTURLStreamHandlerFactory constructor (why?)
     RPTURLStreamHandlerFactory factory = new RPTURLStreamHandlerFactory();
     factory.registerProtocol("asset", new AssetURLStreamHandler());
+    factory.registerProtocol("resource", new ResourceURLStreamHandler());
     factory.registerProtocol("lib", new LibraryURLStreamHandler());
 
     // Syrinscape Protocols
