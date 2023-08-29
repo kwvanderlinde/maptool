@@ -61,6 +61,10 @@ public class ResourceFunction extends AbstractFunction {
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
     if (functionName.equalsIgnoreCase("getResourceURI")) {
+      // TODO Library names are not unique. I don't accept that this is a good interface.
+      //  Perhaps a better alternative (for this and getGlobbedResourceURIs) is to have a separate
+      //  function for getting resource library IDs, and then use the ID when building resource
+      //  URIs.
       FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
 
       final String resourceLibraryName = parameters.get(0).toString();
@@ -90,6 +94,7 @@ public class ResourceFunction extends AbstractFunction {
         }
       }
       final var globTopPath = (i == 0) ? null : globPath.subpath(0, i);
+      // TODO I don't actually need to modify the glob... might not be worth it.
       final var newGlob = globTopPath == null ? glob : globPath.subpath(i, n).toString();
 
       for (final var library :
@@ -112,9 +117,11 @@ public class ResourceFunction extends AbstractFunction {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                     throws IOException {
-                  file = rootDir.relativize(file);
-                  if (pathMatcher.matches(file)) {
-                    matchedPaths.add(file);
+                  // Glob doesn't include the top directories anymore, so relativize relative to the
+                  // new glob root.
+                  if (pathMatcher.matches(rootDir.relativize(file))) {
+                    // Results should be relative to the library root, not the new glob root.
+                    matchedPaths.add(library.path().relativize(file));
                   }
                   return FileVisitResult.CONTINUE;
                 }
