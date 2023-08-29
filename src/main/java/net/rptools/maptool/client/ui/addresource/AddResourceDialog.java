@@ -24,11 +24,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.swing.AbstractListModel;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
@@ -40,10 +42,10 @@ import javax.swing.ListModel;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingWorker;
 import net.rptools.lib.FileUtil;
-import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.AppSetup;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.RemoteFileDownloader;
+import net.rptools.maptool.client.ResourceLibraryManager;
 import net.rptools.maptool.client.WebDownloader;
 import net.rptools.maptool.client.swing.AbeillePanel;
 import net.rptools.maptool.client.swing.GenericDialog;
@@ -196,7 +198,10 @@ public class AddResourceDialog extends AbeillePanel<AddResourceDialog.Model> {
           new DownloadListWorker(
               getLibraryList(),
               new WebDownloader(new URL(LIBRARY_LIST_URL)),
-              AppPreferences.getAssetRoots());
+              MapTool.getResourceLibraryManager().getLibraries().stream()
+                  .map(ResourceLibraryManager.ResourceLibrary::path)
+                  .map(Path::toFile)
+                  .collect(Collectors.toSet()));
       worker.execute();
     } catch (MalformedURLException e) {
       MapTool.showMessage(

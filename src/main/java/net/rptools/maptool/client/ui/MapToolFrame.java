@@ -1122,9 +1122,8 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
   }
 
   private void restorePreferences() {
-    Set<File> assetRootList = AppPreferences.getAssetRoots();
-    for (File file : assetRootList) {
-      addAssetRoot(file);
+    for (final var library : MapTool.getResourceLibraryManager().getLibraries()) {
+      addAssetRoot(library.path().toFile());
     }
   }
 
@@ -1484,6 +1483,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
   }
 
   public void addAssetRoot(File rootDir) {
+    // TODO Better semantics. Pass both a name and a root dir.
     assetPanel.addAssetRoot(new AssetDirectory(rootDir, AppConstants.IMAGE_FILE_FILTER));
   }
 

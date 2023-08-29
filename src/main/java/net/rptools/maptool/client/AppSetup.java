@@ -141,7 +141,8 @@ public class AppSetup {
 
   public static void installLibrary(final String libraryName, final File root) {
     // Add as a resource root
-    AppPreferences.addAssetRoot(root);
+    MapTool.getResourceLibraryManager().addLibrary(root.toPath());
+
     if (MapTool.getFrame() != null) {
       MapTool.getFrame().addAssetRoot(root);
 

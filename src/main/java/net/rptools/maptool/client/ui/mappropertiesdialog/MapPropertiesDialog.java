@@ -21,7 +21,6 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.io.File;
 import java.io.IOException;
-import java.util.Set;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import net.rptools.maptool.client.*;
@@ -185,9 +184,9 @@ public class MapPropertiesDialog extends JDialog {
     // Color picker
     paintChooser = new PaintChooser();
     AssetPanelModel model = new AssetPanelModel();
-    Set<File> assetRootList = AppPreferences.getAssetRoots();
-    for (File file : assetRootList) {
-      model.addRootGroup(new AssetDirectory(file, AppConstants.IMAGE_FILE_FILTER));
+    for (final var library : MapTool.getResourceLibraryManager().getLibraries()) {
+      model.addRootGroup(
+          new AssetDirectory(library.path().toFile(), AppConstants.IMAGE_FILE_FILTER));
     }
 
     TextureChooserPanel textureChooserPanel =
@@ -677,9 +676,9 @@ public class MapPropertiesDialog extends JDialog {
 
     private JComponent createImageExplorerPanel() {
       AssetPanelModel model = new AssetPanelModel();
-      Set<File> assetRootList = AppPreferences.getAssetRoots();
-      for (File file : assetRootList) {
-        model.addRootGroup(new AssetDirectory(file, AppConstants.IMAGE_FILE_FILTER));
+      for (final var library : MapTool.getResourceLibraryManager().getLibraries()) {
+        model.addRootGroup(
+            new AssetDirectory(library.path().toFile(), AppConstants.IMAGE_FILE_FILTER));
       }
       final AssetPanel assetPanel =
           new AssetPanel("mapPropertiesImageExplorer", model, JSplitPane.HORIZONTAL_SPLIT);

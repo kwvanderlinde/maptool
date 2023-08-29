@@ -173,6 +173,7 @@ public class MapTool {
 
   private static BackupManager backupManager;
   private static AssetTransferManager assetTransferManager;
+  private static ResourceLibraryManager resourceLibraryManager;
   private static ServiceAnnouncer announcer;
   private static AutoSaveManager autoSaveManager;
   private static TaskBarFlasher taskbarFlasher;
@@ -666,6 +667,8 @@ public class MapTool {
     } catch (IOException ioe) {
       MapTool.showError("While initializing (configuring sound)", ioe);
     }
+
+    resourceLibraryManager = new ResourceLibraryManager();
 
     assetTransferManager = new AssetTransferManager();
     assetTransferManager.addConsumerListener(new AssetTransferHandler());
@@ -1277,6 +1280,10 @@ public class MapTool {
     if (!isPersonalServer) {
       addLocalMessage(MessageUtil.getFormattedSystemMsg(I18N.getText("msg.info.disconnected")));
     }
+  }
+
+  public static ResourceLibraryManager getResourceLibraryManager() {
+    return resourceLibraryManager;
   }
 
   public static MapToolFrame getFrame() {
