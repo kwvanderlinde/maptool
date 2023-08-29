@@ -134,8 +134,11 @@ public class ResourceFunction extends AbstractFunction {
         for (final var path : matchedPaths) {
           final var uri =
               String.format(
-                  "resource://%s-%d/%s",
-                  URLEncoder.encode(library.name(), StandardCharsets.UTF_8), library.id(), path);
+                  "resource://%s/%s-%d/%s",
+                  URLEncoder.encode(MapTool.getClientId(), StandardCharsets.UTF_8),
+                  URLEncoder.encode(library.name(), StandardCharsets.UTF_8),
+                  library.id(),
+                  path);
           result.add(uri);
         }
       }

@@ -21,7 +21,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
-import org.apache.commons.lang.StringUtils;
 
 public class ResourceURLStreamHandler extends URLStreamHandler {
   @Override
@@ -42,16 +41,26 @@ public class ResourceURLStreamHandler extends URLStreamHandler {
 
     @Override
     public InputStream getInputStream() throws IOException {
-      final var host = url.getHost(); // Contains resource library name and id
-      final var path = StringUtils.stripStart(url.getPath(), "/"); // Relative to library root.
+      final var host = url.getHost(); // Is the URL encoded client ID.
+      // Leading slash, then first part is the library name plus the library identifiers, then path
+      // relative to the library root.
+      final var parts = url.getPath().split("/", 3);
+      final var libraryHandle = parts[1];
+      final var path = parts[2];
 
       // TODO Could use a regex pattern for clarity, though it will be slower.
-      final var index = host.lastIndexOf('-');
-      if (index < 0 || index >= host.length() - 1) {
+      final var index = libraryHandle.lastIndexOf('-');
+      if (index < 0 || index >= libraryHandle.length() - 1) {
         throw new FileNotFoundException(url.toString());
       }
 
-      final var id = Integer.parseInt(host.substring(index + 1));
+      final int id;
+      try {
+        id = Integer.parseInt(libraryHandle.substring(index + 1));
+      } catch (NumberFormatException nfe) {
+        throw new FileNotFoundException(url.toString());
+      }
+
       final var library =
           MapTool.getResourceLibraryManager()
               .getLibraryById(id)
