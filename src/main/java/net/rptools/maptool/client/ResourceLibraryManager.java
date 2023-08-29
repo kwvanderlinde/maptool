@@ -18,6 +18,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import net.rptools.maptool.client.events.ResourceLibraryAdded;
@@ -65,6 +66,18 @@ public class ResourceLibraryManager {
     }
 
     return this.libraries;
+  }
+
+  // Case-insensitive lookup for maximum flexibility.
+  public Optional<ResourceLibrary> getLibraryById(int id) {
+    final List<ResourceLibrary> result = new ArrayList<>();
+    for (final var library : getLibraries()) {
+      if (library.id() == id) {
+        return Optional.of(library);
+      }
+    }
+
+    return Optional.empty();
   }
 
   // Case-insensitive lookup for maximum flexibility.
