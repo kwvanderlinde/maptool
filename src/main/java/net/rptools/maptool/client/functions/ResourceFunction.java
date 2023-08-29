@@ -88,13 +88,6 @@ public class ResourceFunction extends AbstractFunction {
           Paths.get(
               "/home/kenneth/Nextcloud/RPGs/tools/MapTool/Resource Packs/Forgotten Adventures");
 
-      // TODO Define our own glob syntax. Constrain to *, ** and /, possibly ?. Validate that and
-      //  pull the top path out. Notably this will naturally prevent use of .. and should avoid
-      //  arbitrary directory traversal, though we should also be explicit in checking that.
-      //  Never mind, we are actually in control of which files get enumerated, so the glob has no
-      //  capacity to escape. All we need to do is to make sure that when we are grabbing the top
-      //  path we don't escape.
-
       var topPath = resourceLibraryRoot;
       var globPath = Paths.get(glob);
 
