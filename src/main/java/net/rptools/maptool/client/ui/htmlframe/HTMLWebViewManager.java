@@ -164,7 +164,7 @@ public class HTMLWebViewManager {
   private static final String SCRIPT_BLOCK_EXT =
       "<meta http-equiv=\"Content-Security-Policy\" "
           + "content=\" "
-          + " default-src asset: lib: "
+          + " default-src asset: resource: lib: "
           + " https://code.jquery.com " // JQuery CDN
           + " https://cdn.jsdelivr.net " // JSDelivr CDN
           + " https://stackpath.bootstrapcdn.com " // Bootstrap CDN
@@ -173,7 +173,7 @@ public class HTMLWebViewManager {
           + " https://ajax.googleapis.com " // Google CDN
           + " https://fonts.googleapis.com  https://fonts.gstatic.com " // Google Fonts
           + " 'unsafe-inline' 'unsafe-eval' ; "
-          + " img-src * asset: lib: ; "
+          + " img-src * asset: resource: lib: ; "
           + " font-src https://fonts.gstatic.com 'self'"
           + "\">\n";
 
