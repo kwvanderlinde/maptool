@@ -20,7 +20,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLDecoder;
 import java.net.URLStreamHandler;
+import java.nio.charset.StandardCharsets;
 
 public class ResourceURLStreamHandler extends URLStreamHandler {
   @Override
@@ -41,38 +43,45 @@ public class ResourceURLStreamHandler extends URLStreamHandler {
 
     @Override
     public InputStream getInputStream() throws IOException {
-      final var host = url.getHost(); // Is the URL encoded client ID.
-      // Leading slash, then first part is the library name plus the library identifiers, then path
-      // relative to the library root.
-      final var parts = url.getPath().split("/", 3);
-      final var libraryHandle = parts[1];
-      final var path = parts[2];
+      final var host = URLDecoder.decode(url.getHost(), StandardCharsets.UTF_8);
+      if (MapTool.getClientId().equals(host)) {
+        // Leading slash, then first part is the library name plus the library identifiers, then
+        // path relative to the library root.
+        final var parts = url.getPath().split("/", 3);
+        final var libraryHandle = parts[1];
+        final var path = parts[2];
 
-      // TODO Could use a regex pattern for clarity, though it will be slower.
-      final var index = libraryHandle.lastIndexOf('-');
-      if (index < 0 || index >= libraryHandle.length() - 1) {
+        // TODO Could use a regex pattern for clarity, though it will be slower.
+        final var index = libraryHandle.lastIndexOf('-');
+        if (index < 0 || index >= libraryHandle.length() - 1) {
+          throw new FileNotFoundException(url.toString());
+        }
+
+        final int id;
+        try {
+          id = Integer.parseInt(libraryHandle.substring(index + 1));
+        } catch (NumberFormatException nfe) {
+          throw new FileNotFoundException(url.toString());
+        }
+
+        final var library =
+            MapTool.getResourceLibraryManager()
+                .getLibraryById(id)
+                .orElseThrow(() -> new FileNotFoundException(url.toString()));
+
+        final var fullPath = library.path().resolve(path);
+        if (!fullPath.startsWith(library.path())) {
+          // Tried to escape the library root.
+          throw new FileNotFoundException(url.toString());
+        }
+
+        return new FileInputStream(fullPath.toFile());
+      } else {
+        // TODO Pull and cache the resource from the identified client.
+        // TODO Can we do it be direct URL to remote file, and tee it to a file? Not robust...
+        // TODO Doesn't matter, this is a POC for now we can implement it later.
         throw new FileNotFoundException(url.toString());
       }
-
-      final int id;
-      try {
-        id = Integer.parseInt(libraryHandle.substring(index + 1));
-      } catch (NumberFormatException nfe) {
-        throw new FileNotFoundException(url.toString());
-      }
-
-      final var library =
-          MapTool.getResourceLibraryManager()
-              .getLibraryById(id)
-              .orElseThrow(() -> new FileNotFoundException(url.toString()));
-
-      final var fullPath = library.path().resolve(path);
-      if (!fullPath.startsWith(library.path())) {
-        // Tried to escape the library root.
-        throw new FileNotFoundException(url.toString());
-      }
-
-      return new FileInputStream(fullPath.toFile());
     }
   }
 }
