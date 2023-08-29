@@ -67,6 +67,17 @@ public class ResourceLibraryManager {
     return this.libraries;
   }
 
+  // Case-insensitive lookup for maximum flexibility.
+  public List<ResourceLibrary> getLibrariesByName(String name) {
+    final List<ResourceLibrary> result = new ArrayList<>();
+    for (final var library : getLibraries()) {
+      if (library.name().equalsIgnoreCase(name)) {
+        result.add(library);
+      }
+    }
+    return result;
+  }
+
   public void addLibrary(Path root) {
     root = root.toAbsolutePath();
 
