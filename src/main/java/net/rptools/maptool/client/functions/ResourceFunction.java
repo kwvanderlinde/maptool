@@ -26,6 +26,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
@@ -74,85 +75,65 @@ public class ResourceFunction extends AbstractFunction {
 
       final String resourceLibraryName = parameters.get(0).toString();
       final String glob = StringUtils.stripStart(parameters.get(1).toString(), "/");
+      final var result = new ArrayList<String>();
 
-      // TODO Look this up in the asset panel somehow.
-      //  Need to create a model to capture asset roots. Currently it's directly exposed in
-      //  AppPreferences, but we would want a proper way to model and control it. Each added library
-      //  (whether newly installed or loaded from preferences) is associated with an internal ID
-      //  that is unique to the current MapTool instance. Resource URIs will not include the library
-      //  name in the hostname component, but will instead use the internal ID.
-      //  Also note that resource library names can be repeated. So we potentially have multiple
-      //  root directories we should look at when globbing.
-      // TODO When we no longer hardcode this, make sure it is still absolute.
-      final var resourceLibraryRoot =
-          Paths.get(
-              "/home/kenneth/Nextcloud/RPGs/tools/MapTool/Resource Packs/Forgotten Adventures");
-
-      var topPath = resourceLibraryRoot;
-      var globPath = Paths.get(glob);
-
-      final var matchedPaths = new ArrayList<Path>();
-
+      final var globPath = Paths.get(glob);
       int i;
       final var n = globPath.getNameCount();
       final var pattern = Pattern.compile(".*?[*?\\[\\]{}].*");
       // Only to n-1 because we don't want the top path to take the last component in case it is
-      // actually a direct references to a single file instead of a glob.
+      // actually a direct reference to a single file instead of a glob. Saves some case work later.
       for (i = 0; i < n - 1; ++i) {
         final var name = globPath.getName(i);
         if (pattern.matcher(name.toString()).matches()) {
           break;
         }
       }
+      final var globTopPath = (i == 0) ? null : globPath.subpath(0, i);
+      final var newGlob = globTopPath == null ? glob : globPath.subpath(i, n).toString();
 
-      if (i > 0) {
-        // Glob not present in the first element, only in some later element.
-        topPath = resourceLibraryRoot.resolve(globPath.subpath(0, i)).normalize();
-        if (!topPath.startsWith(resourceLibraryRoot)) {
+      for (final var library :
+          MapTool.getResourceLibraryManager().getLibrariesByName(resourceLibraryName)) {
+        final var rootDir =
+            ((globTopPath == null) ? library.path() : library.path().resolve(globTopPath))
+                .normalize();
+        if (!rootDir.startsWith(library.path())) {
           // Trying to escape. That's no good.
-          log.error("Glob {} escapes the library root {}", glob, resourceLibraryRoot);
-          throw new ParserException("Invalid path");
+          log.error("Glob {} escapes the library root {}", glob, library.path());
+          continue;
         }
 
-        globPath = globPath.subpath(i, n);
-      }
-
-      final var rootDir = topPath;
-
-      try {
-        final var newGlob = globPath.toString();
-        final var pathMatcher = rootDir.getFileSystem().getPathMatcher("glob:" + newGlob);
-        Files.walkFileTree(
-            rootDir,
-            new SimpleFileVisitor<Path>() {
-              @Override
-              public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                  throws IOException {
-                file = rootDir.relativize(file);
-                if (pathMatcher.matches(file)) {
-                  matchedPaths.add(file);
+        final var matchedPaths = new ArrayList<Path>();
+        try {
+          final var pathMatcher = rootDir.getFileSystem().getPathMatcher("glob:" + newGlob);
+          Files.walkFileTree(
+              rootDir,
+              new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
+                  file = rootDir.relativize(file);
+                  if (pathMatcher.matches(file)) {
+                    matchedPaths.add(file);
+                  }
+                  return FileVisitResult.CONTINUE;
                 }
-                return FileVisitResult.CONTINUE;
-              }
-            });
-      } catch (Exception e) {
-        log.error(e);
-        throw new ParserException(e);
-      }
+              });
+        } catch (Exception e) {
+          log.error(e);
+          throw new ParserException(e);
+        }
 
-      final var result = new ArrayList<String>();
-      for (final var path : matchedPaths) {
-        // TOOD Incorporate an ephemeral nonce.
-        final var uri =
-            String.format(
-                "resource://%s/%s",
-                URLEncoder.encode(resourceLibraryName, StandardCharsets.UTF_8), path);
-        result.add(uri);
+        for (final var path : matchedPaths) {
+          final var uri =
+              String.format(
+                  "resource://%s-%d/%s",
+                  URLEncoder.encode(library.name(), StandardCharsets.UTF_8), library.id(), path);
+          result.add(uri);
+        }
       }
 
       return FunctionUtil.delimitedResult("json", result);
-
-      // TOOD Incorporate an ephemeral nonce.
     }
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));
   }
