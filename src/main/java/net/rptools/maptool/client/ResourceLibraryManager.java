@@ -40,6 +40,12 @@ public class ResourceLibraryManager {
 
   public ResourceLibraryManager() {}
 
+  private int newId() {
+    // TODO Make sure it is definitely unique.
+    // IDs are between 100,000,000 and 999,999,999, i.e., is a 9-digit number.
+    return random.nextInt(100_000_000, 1_000_000_000);
+  }
+
   public List<ResourceLibrary> getLibraries() {
     if (libraries == null) {
       final List<ResourceLibrary> libraries = new ArrayList<>();
@@ -50,8 +56,8 @@ public class ResourceLibraryManager {
           continue;
         }
 
-        // TODO Make sure it is definitely unique.
-        final var id = random.nextInt();
+        final var id = newId();
+        System.out.printf("Resource library: %d is %s%n", id, root);
         final var name = root.getName();
         libraries.add(new ResourceLibrary(id, name, root.toPath()));
       }
@@ -69,8 +75,8 @@ public class ResourceLibraryManager {
       return;
     }
 
-    // TODO Make sure it is definitely unique.
-    final var id = random.nextInt();
+    final var id = newId();
+    System.out.printf("Resource library: %d is %s%n", id, root);
     final var resourceLibrary = new ResourceLibrary(id, root.getFileName().toString(), root);
     this.getLibraries().add(resourceLibrary);
 
