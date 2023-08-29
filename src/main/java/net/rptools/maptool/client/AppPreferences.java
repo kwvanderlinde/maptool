@@ -20,8 +20,6 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -1396,15 +1394,13 @@ public class AppPreferences {
     prefs.put(KEY_ADD_ON_LOAD_DIR, file.toString());
   }
 
-  public static void addAssetRootPath(Path root) {
-    root = root.toAbsolutePath();
-
+  public static void addAssetRoot(File root) {
     String list = prefs.get(KEY_ASSET_ROOTS, "");
     if (!list.isEmpty()) {
       // Add the new one and then remove all duplicates.
-      list += ";" + root.toString();
+      list += ";" + root.getPath();
       String[] roots = list.split(";");
-      StringBuilder result = new StringBuilder(list.length() + root.toString().length() + 10);
+      StringBuilder result = new StringBuilder(list.length() + root.getPath().length() + 10);
       Set<String> rootList = new HashSet<String>(roots.length);
 
       // This loop ensures that each path only appears once. If there are currently
@@ -1417,33 +1413,36 @@ public class AppPreferences {
       }
       list = result.substring(1);
     } else {
-      list += root.toString();
+      list += root.getPath();
     }
     prefs.put(KEY_ASSET_ROOTS, list);
   }
 
-  public static List<Path> getAssetRootPaths() {
+  public static Set<File> getAssetRoots() {
     String list = prefs.get(KEY_ASSET_ROOTS, "");
     String[] roots = list.split(";"); // FJE Probably should be File.path_separator ...
-    final var rootList = new ArrayList<Path>();
+
+    Set<File> rootList = new HashSet<File>();
     for (String root : roots) {
-      // TODO Make sure they are absolute when written as well.
-      final var path = Paths.get(root).toAbsolutePath();
-      rootList.add(path);
+      File file = new File(root);
+
+      // LATER: Should this actually remove it from the pref list ?
+      if (!file.exists()) {
+        continue;
+      }
+      rootList.add(file);
     }
     return rootList;
   }
 
-  public static void removeAssetRootPath(Path root) {
-    root = root.toAbsolutePath();
-
+  public static void removeAssetRoot(File root) {
     String list = prefs.get(KEY_ASSET_ROOTS, "");
     if (!list.isEmpty()) {
       // Add the new one and then remove all duplicates.
       String[] roots = list.split(";");
       StringBuilder result = new StringBuilder(list.length());
       Set<String> rootList = new HashSet<String>(roots.length);
-      String rootPath = root.toString();
+      String rootPath = root.getPath();
 
       // This loop ensures that each path only appears once. If there are
       // duplicates in the list, only the first one is kept.

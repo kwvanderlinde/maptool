@@ -14,10 +14,12 @@
  */
 package net.rptools.maptool.client;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import net.rptools.maptool.client.events.ResourceLibraryAdded;
 import net.rptools.maptool.events.MapToolEventBus;
 
@@ -27,7 +29,7 @@ public class ResourceLibraryManager {
    *
    * @param id An internal ephemeral identifier for the library. Unique.
    * @param name A human-readable name for the library. Not unique.
-   * @param path The absolute path to the libray on the local system.
+   * @param path The absolute path to the library on the local system.
    */
   public record ResourceLibrary(int id, String name, Path path) {}
 
@@ -41,17 +43,17 @@ public class ResourceLibraryManager {
   public List<ResourceLibrary> getLibraries() {
     if (libraries == null) {
       final List<ResourceLibrary> libraries = new ArrayList<>();
-      final List<Path> roots = AppPreferences.getAssetRootPaths();
+      final Set<File> roots = AppPreferences.getAssetRoots();
       for (final var root : roots) {
-        if (!root.toFile().exists()) {
+        if (!root.exists()) {
           // No point including missing roots.
           continue;
         }
 
         // TODO Make sure it is definitely unique.
         final var id = random.nextInt();
-        final var name = root.getFileName().toString();
-        libraries.add(new ResourceLibrary(id, name, root));
+        final var name = root.getName();
+        libraries.add(new ResourceLibrary(id, name, root.toPath()));
       }
       this.libraries = libraries;
     }
@@ -59,19 +61,22 @@ public class ResourceLibraryManager {
     return this.libraries;
   }
 
-  public ResourceLibrary addLibrary(Path root) {
+  public void addLibrary(Path root) {
     root = root.toAbsolutePath();
+
+    final var file = root.toFile();
+    if (!file.exists()) {
+      return;
+    }
 
     // TODO Make sure it is definitely unique.
     final var id = random.nextInt();
     final var resourceLibrary = new ResourceLibrary(id, root.getFileName().toString(), root);
     this.getLibraries().add(resourceLibrary);
 
-    AppPreferences.addAssetRootPath(root);
+    AppPreferences.addAssetRoot(file);
 
     new MapToolEventBus().getMainEventBus().post(new ResourceLibraryAdded(resourceLibrary));
-
-    return resourceLibrary;
   }
 
   public void removeLibrary(Path root) {
@@ -85,6 +90,6 @@ public class ResourceLibraryManager {
       }
     }
 
-    AppPreferences.removeAssetRootPath(root);
+    AppPreferences.removeAssetRoot(root.toFile());
   }
 }
