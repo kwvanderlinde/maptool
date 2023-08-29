@@ -83,6 +83,7 @@ public class ResourceFunction extends AbstractFunction {
       //  name in the hostname component, but will instead use the internal ID.
       //  Also note that resource library names can be repeated. So we potentially have multiple
       //  root directories we should look at when globbing.
+      // TODO When we no longer hardcode this, make sure it is still absolute.
       final var resourceLibraryRoot =
           Paths.get(
               "/home/kenneth/Nextcloud/RPGs/tools/MapTool/Resource Packs/Forgotten Adventures");
@@ -90,6 +91,9 @@ public class ResourceFunction extends AbstractFunction {
       // TODO Define our own glob syntax. Constrain to *, ** and /, possibly ?. Validate that and
       //  pull the top path out. Notably this will naturally prevent use of .. and should avoid
       //  arbitrary directory traversal, though we should also be explicit in checking that.
+      //  Never mind, we are actually in control of which files get enumerated, so the glob has no
+      //  capacity to escape. All we need to do is to make sure that when we are grabbing the top
+      //  path we don't escape.
 
       var topPath = resourceLibraryRoot;
       var globPath = Paths.get(glob);
@@ -110,7 +114,13 @@ public class ResourceFunction extends AbstractFunction {
 
       if (i > 0) {
         // Glob not present in the first element, only in some later element.
-        topPath = resourceLibraryRoot.resolve(globPath.subpath(0, i));
+        topPath = resourceLibraryRoot.resolve(globPath.subpath(0, i)).normalize();
+        if (!topPath.startsWith(resourceLibraryRoot)) {
+          // Trying to escape. That's no good.
+          log.error("Glob {} escapes the library root {}", glob, resourceLibraryRoot);
+          throw new ParserException("Invalid path");
+        }
+
         globPath = globPath.subpath(i, n);
       }
 
