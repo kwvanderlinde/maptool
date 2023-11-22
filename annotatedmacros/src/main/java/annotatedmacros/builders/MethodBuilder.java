@@ -71,7 +71,6 @@ public class MethodBuilder {
         final var parameters = original.getParameters();
 
         final var executable = (ExecutableType) original.asType();
-        final var parameterTypes = executable.getParameterTypes();
         final var variableResolverVar = "resolver";
         final var functionNameVar = "functionName";
 
