@@ -14,7 +14,7 @@
  */
 package net.rptools.maptool.client.functions;
 
-import annotatedmacros.annotations.ContextFor;
+import annotatedmacros.annotations.ContextGivenBy;
 import annotatedmacros.annotations.FunctionName;
 import annotatedmacros.annotations.MacroFunction;
 import java.awt.Rectangle;
@@ -59,7 +59,7 @@ public class TokenLocationFunctions_New {
   }
 
   @MacroFunction
-  public Object getTokenX(boolean inPixelsElseCells, Token token, @ContextFor("token") Zone zone) {
+  public Object getTokenX(boolean inPixelsElseCells, @ContextGivenBy("zone") Token token, Zone zone) {
     return BigDecimal.valueOf(getTokenLocation(inPixelsElseCells, token, zone).x);
   }
 
@@ -81,12 +81,12 @@ public class TokenLocationFunctions_New {
   }
 
   @MacroFunction
-  public Object getTokenY(boolean inPixelsElseCells, Token token, @ContextFor("token") Zone zone) {
+  public Object getTokenY(boolean inPixelsElseCells, @ContextGivenBy("zone") Token token, Zone zone) {
     return BigDecimal.valueOf(getTokenLocation(inPixelsElseCells, token, zone).y);
   }
 
   @MacroFunction
-  public Object getTokenDrawOrder(Token token, @ContextFor("token") Zone zone) {
+  public Object getTokenDrawOrder(@ContextGivenBy("zone") Token token, Zone zone) {
     return null;
   }
 
@@ -131,7 +131,7 @@ public class TokenLocationFunctions_New {
 
   @MacroFunction
   public Object moveTokenFromMap(
-      Token token, @ContextFor("token") Zone zone, BigDecimal x, BigDecimal y, BigDecimal z) {
+      @ContextGivenBy("zone") Token token, Zone zone, BigDecimal x, BigDecimal y, BigDecimal z) {
     return null;
   }
 
