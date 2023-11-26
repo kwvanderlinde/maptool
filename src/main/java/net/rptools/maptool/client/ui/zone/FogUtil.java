@@ -83,55 +83,74 @@ public class FogUtil {
       AreaTree hillVbl,
       AreaTree pitVbl,
       AreaTree coverVbl) {
-    // We could use the vision envelope instead, but vision geometry tends to be pretty simple.
-    final var visionGeometry = PreparedGeometryFactory.prepare(GeometryUtil.toJts(vision));
+    var timer = CodeTimer.get();
+    timer.start("FogUtil::calculateVisibility");
+    try {
+      // We could use the vision envelope instead, but vision geometry tends to be pretty simple.
+      timer.start("get vision geometry");
+      final var visionGeometry = PreparedGeometryFactory.prepare(GeometryUtil.toJts(vision));
+      timer.stop("get vision geometry");
 
-    /*
-     * Find the visible area for each topology type independently.
-     *
-     * In principle, we could also combine all the vision blocking segments for all topology types
-     * and run the sweep algorithm once. But this is subject to some pathological cases that JTS
-     * cannot handle. These cases do not exist within a single type of topology, but can arise when
-     * we combine them.
-     */
-    List<Geometry> visibleAreas = new ArrayList<>();
-    final List<Function<VisionBlockingAccumulator, Boolean>> topologyConsumers = new ArrayList<>();
-    topologyConsumers.add(acc -> acc.addWallBlocking(topology));
-    topologyConsumers.add(acc -> acc.addHillBlocking(hillVbl));
-    topologyConsumers.add(acc -> acc.addPitBlocking(pitVbl));
-    topologyConsumers.add(acc -> acc.addCoverBlocking(coverVbl));
-    for (final var consumer : topologyConsumers) {
-      final var accumulator =
-          new VisionBlockingAccumulator(geometryFactory, origin, visionGeometry);
-      final var isVisionCompletelyBlocked = consumer.apply(accumulator);
-      if (!isVisionCompletelyBlocked) {
-        // Vision has been completely blocked by this topology. Short circuit.
-        return new Area();
+      /*
+       * Find the visible area for each topology type independently.
+       *
+       * In principle, we could also combine all the vision blocking segments for all topology types
+       * and run the sweep algorithm once. But this is subject to some pathological cases that JTS
+       * cannot handle. These cases do not exist within a single type of topology, but can arise when
+       * we combine them.
+       */
+      List<Geometry> visibleAreas = new ArrayList<>();
+      final List<Function<VisionBlockingAccumulator, Boolean>> topologyConsumers =
+          new ArrayList<>();
+      topologyConsumers.add(acc -> acc.addWallBlocking(topology));
+      topologyConsumers.add(acc -> acc.addHillBlocking(hillVbl));
+      topologyConsumers.add(acc -> acc.addPitBlocking(pitVbl));
+      topologyConsumers.add(acc -> acc.addCoverBlocking(coverVbl));
+      for (final var consumer : topologyConsumers) {
+        timer.start("accumulate blocking walls");
+        final var accumulator =
+            new VisionBlockingAccumulator(geometryFactory, origin, visionGeometry);
+        final var isVisionCompletelyBlocked = consumer.apply(accumulator);
+        timer.stop("accumulate blocking walls");
+        if (!isVisionCompletelyBlocked) {
+          // Vision has been completely blocked by this topology. Short circuit.
+          return new Area();
+        }
+
+        timer.start("calculate visible area");
+        final var visibleArea =
+            calculateVisibleArea(
+                new Coordinate(origin.getX(), origin.getY()),
+                accumulator.getVisionBlockingSegments(),
+                visionGeometry);
+        timer.stop("calculate visible area");
+        timer.start("add visibility polygon");
+        if (visibleArea != null) {
+          visibleAreas.add(visibleArea);
+        }
+        timer.stop("add visibility polygon");
       }
 
-      final var visibleArea =
-          calculateVisibleArea(
-              new Coordinate(origin.getX(), origin.getY()),
-              accumulator.getVisionBlockingSegments(),
-              visionGeometry);
-      if (visibleArea != null) {
-        visibleAreas.add(visibleArea);
+      // We have to intersect all the results in order to find the true remaining visible area.
+      timer.start("clone existing vision");
+      vision = new Area(vision);
+      timer.stop("clone existing vision");
+      if (!visibleAreas.isEmpty()) {
+        // We intersect in AWT space because JTS can be really finicky about intersection precision.
+        timer.start("combine visibility polygons with vision");
+        var shapeWriter = new ShapeWriter();
+        for (final var visibleArea : visibleAreas) {
+          var area = new Area(shapeWriter.toShape(visibleArea));
+          vision.intersect(area);
+        }
+        timer.stop("combine visibility polygons with vision");
       }
+
+      // For simplicity, this catches some of the edge cases
+      return vision;
+    } finally {
+      timer.stop("FogUtil::calculateVisibility");
     }
-
-    // We have to intersect all the results in order to find the true remaining visible area.
-    vision = new Area(vision);
-    if (!visibleAreas.isEmpty()) {
-      // We intersect in AWT space because JTS can be really finicky about intersection precision.
-      var shapeWriter = new ShapeWriter();
-      for (final var visibleArea : visibleAreas) {
-        var area = new Area(shapeWriter.toShape(visibleArea));
-        vision.intersect(area);
-      }
-    }
-
-    // For simplicity, this catches some of the edge cases
-    return vision;
   }
 
   private record NearestWallResult(LineSegment wall, Coordinate point, double distance) {}
@@ -217,6 +236,8 @@ public class FogUtil {
 
   private static @Nullable Geometry calculateVisibleArea(
       Coordinate origin, List<LineString> visionBlockingSegments, PreparedGeometry visionGeometry) {
+    final var timer = CodeTimer.get();
+
     if (visionBlockingSegments.isEmpty()) {
       // No topology, apparently.
       return null;
@@ -234,6 +255,7 @@ public class FogUtil {
     visionBlockingSegments = new ArrayList<>();
     LineStringExtracter.getLines(allWallGeometry, visionBlockingSegments);
 
+    timer.start("add bounds");
     /*
      * The algorithm requires walls in every direction. The easiest way to accomplish this is to add
      * the boundary of the bounding box.
@@ -245,21 +267,29 @@ public class FogUtil {
     envelope.expandBy(1.0);
     // Because we definitely have geometry, the envelope will always be a non-trivial rectangle.
     visionBlockingSegments.add(((Polygon) geometryFactory.toGeometry(envelope)).getExteriorRing());
+    timer.stop("add bounds");
 
     // Now that we have valid geometry and a bounding box, we can continue with the sweep.
-
+    timer.start("build network");
     final var endpoints = getSweepEndpoints(origin, visionBlockingSegments);
-    Set<LineSegment> openWalls = Collections.newSetFromMap(new IdentityHashMap<>());
+    timer.stop("build network");
 
+    timer.start("initialize");
+    Set<LineSegment> openWalls = Collections.newSetFromMap(new IdentityHashMap<>());
     // This initial sweep just makes sure we have the correct open set to start.
     for (final var endpoint : endpoints) {
       openWalls.addAll(endpoint.getStartsWalls());
       openWalls.removeAll(endpoint.getEndsWalls());
     }
+    // Make sure to process the first point once more at the end to ensure the sweep covers the full
+    // 360 degrees.
+    endpoints.add(endpoints.get(0));
+    timer.stop("initialize");
 
+    timer.start("sweep");
     // Now for the real sweep. Make sure to process the first point once more at the end to ensure
     // the sweep covers the full 360 degrees.
-    endpoints.add(endpoints.get(0));
+    timer.start("sweep");
     List<Coordinate> visionPoints = new ArrayList<>();
     for (final var endpoint : endpoints) {
       assert !openWalls.isEmpty();
@@ -295,14 +325,31 @@ public class FogUtil {
         }
       }
     }
-    if (visionPoints.size() < 3) {
-      // This shouldn't happen, but just in case.
-      log.warn("Sweep produced too few points: {}", visionPoints);
-      return null;
-    }
-    visionPoints.add(visionPoints.get(0)); // Ensure a closed loop.
+    timer.stop("sweep");
 
-    return geometryFactory.createPolygon(visionPoints.toArray(Coordinate[]::new));
+    timer.start("sanity check");
+    try {
+      if (visionPoints.size() < 3) {
+        // This shouldn't happen, but just in case.
+        log.warn("Sweep produced too few points: {}", visionPoints);
+        return null;
+      }
+    } finally {
+      timer.stop("sanity check");
+    }
+
+    timer.start("close polygon");
+    // Ensure a closed loop.
+    // TODO Are there not cases where this is already done?
+    visionPoints.add(visionPoints.get(0));
+    timer.stop("close polygon");
+
+    timer.start("build result");
+    try {
+      return geometryFactory.createPolygon(visionPoints.toArray(Coordinate[]::new));
+    } finally {
+      timer.stop("build result");
+    }
   }
 
   /**
@@ -509,82 +556,84 @@ public class FogUtil {
   }
 
   public static void exposeLastPath(final ZoneRenderer renderer, final Set<GUID> tokenSet) {
-    CodeTimer timer = new CodeTimer("exposeLastPath");
+    CodeTimer.using(
+        "exposeLastPath",
+        timer -> {
+          renderer.getZoneView().flushTopology();
 
-    final Zone zone = renderer.getZone();
-    final Grid grid = zone.getGrid();
-    GridCapabilities caps = grid.getCapabilities();
+          final Zone zone = renderer.getZone();
+          final Grid grid = zone.getGrid();
+          GridCapabilities caps = grid.getCapabilities();
 
-    if (!caps.isPathingSupported() || !caps.isSnapToGridSupported()) {
-      return;
-    }
+          if (!caps.isPathingSupported() || !caps.isSnapToGridSupported()) {
+            return;
+          }
 
-    final Set<GUID> filteredToks = new HashSet<GUID>(2);
+          final Set<GUID> filteredToks = new HashSet<GUID>(2);
 
-    for (final GUID tokenGUID : tokenSet) {
-      final Token token = zone.getToken(tokenGUID);
-      timer.start("exposeLastPath-" + token.getName());
+          for (final GUID tokenGUID : tokenSet) {
+            final Token token = zone.getToken(tokenGUID);
+            timer.start("exposeLastPath-" + token.getName());
 
-      Path<? extends AbstractPoint> lastPath = token.getLastPath();
+            Path<? extends AbstractPoint> lastPath = token.getLastPath();
 
-      if (lastPath == null) return;
+            if (lastPath == null) return;
 
-      Map<GUID, ExposedAreaMetaData> fullMeta = zone.getExposedAreaMetaData();
-      GUID exposedGUID = token.getExposedAreaGUID();
-      final ExposedAreaMetaData meta =
-          fullMeta.computeIfAbsent(exposedGUID, guid -> new ExposedAreaMetaData());
+            Map<GUID, ExposedAreaMetaData> fullMeta = zone.getExposedAreaMetaData();
+            GUID exposedGUID = token.getExposedAreaGUID();
+            final ExposedAreaMetaData meta =
+                fullMeta.computeIfAbsent(exposedGUID, guid -> new ExposedAreaMetaData());
 
-      final Token tokenClone = new Token(token);
-      final ZoneView zoneView = renderer.getZoneView();
-      Area visionArea = new Area();
+            final Token tokenClone = new Token(token);
+            final ZoneView zoneView = renderer.getZoneView();
+            Area visionArea = new Area();
 
-      // Lee: get path according to zone's way point exposure toggle...
-      List<? extends AbstractPoint> processPath =
-          zone.getWaypointExposureToggle() ? lastPath.getWayPointList() : lastPath.getCellPath();
+            // Lee: get path according to zone's way point exposure toggle...
+            List<? extends AbstractPoint> processPath =
+                zone.getWaypointExposureToggle()
+                    ? lastPath.getWayPointList()
+                    : lastPath.getCellPath();
 
-      int stepCount = processPath.size();
-      log.debug("Path size = " + stepCount);
+            int stepCount = processPath.size();
+            log.debug("Path size = " + stepCount);
 
-      Consumer<ZonePoint> revealAt =
-          zp -> {
-            tokenClone.setX(zp.x);
-            tokenClone.setY(zp.y);
+            Consumer<ZonePoint> revealAt =
+                zp -> {
+                  tokenClone.setX(zp.x);
+                  tokenClone.setY(zp.y);
 
-            Area currVisionArea = zoneView.getVisibleArea(tokenClone, renderer.getPlayerView());
-            if (currVisionArea != null) {
-              visionArea.add(currVisionArea);
-              meta.addToExposedAreaHistory(currVisionArea);
+                  Area currVisionArea =
+                      zoneView.getVisibleArea(tokenClone, renderer.getPlayerView());
+                  if (currVisionArea != null) {
+                    visionArea.add(currVisionArea);
+                    meta.addToExposedAreaHistory(currVisionArea);
+                  }
+
+                  zoneView.flush(tokenClone);
+                };
+            if (token.isSnapToGrid()) {
+              // For each cell point along the path, reveal FoW.
+              for (final AbstractPoint cell : processPath) {
+                assert cell instanceof CellPoint;
+                revealAt.accept(grid.convert((CellPoint) cell));
+              }
+            } else {
+              // Only reveal the final position.
+              final AbstractPoint finalCell = processPath.get(processPath.size() - 1);
+              assert finalCell instanceof ZonePoint;
+              revealAt.accept((ZonePoint) finalCell);
             }
 
-            zoneView.flush(tokenClone);
-          };
-      if (token.isSnapToGrid()) {
-        // For each cell point along the path, reveal FoW.
-        for (final AbstractPoint cell : processPath) {
-          assert cell instanceof CellPoint;
-          revealAt.accept(grid.convert((CellPoint) cell));
-        }
-      } else {
-        // Only reveal the final position.
-        final AbstractPoint finalCell = processPath.get(processPath.size() - 1);
-        assert finalCell instanceof ZonePoint;
-        revealAt.accept((ZonePoint) finalCell);
-      }
+            timer.stop("exposeLastPath-" + token.getName());
+            renderer.flush(tokenClone);
 
-      timer.stop("exposeLastPath-" + token.getName());
-      renderer.flush(tokenClone);
-
-      filteredToks.clear();
-      filteredToks.add(token.getId());
-      zone.putToken(token);
-      MapTool.serverCommand().exposeFoW(zone.getId(), visionArea, filteredToks);
-      MapTool.serverCommand().updateExposedAreaMeta(zone.getId(), exposedGUID, meta);
-    }
-
-    String results = timer.toString();
-    MapTool.getProfilingNoteFrame().addText(results);
-    // System.out.println(results);
-    timer.clear();
+            filteredToks.clear();
+            filteredToks.add(token.getId());
+            zone.putToken(token);
+            MapTool.serverCommand().exposeFoW(zone.getId(), visionArea, filteredToks);
+            MapTool.serverCommand().updateExposedAreaMeta(zone.getId(), exposedGUID, meta);
+          }
+        });
   }
 
   /**
