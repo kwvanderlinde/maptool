@@ -19,8 +19,32 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+import net.rptools.maptool.client.MapTool;
 
 public class CodeTimer {
+  private static final CodeTimer BASIC = new CodeTimer();
+  private static final ScopedValue<CodeTimer> SCOPED = ScopedValue.newInstance();
+
+  public static void using(String name, Consumer<CodeTimer> callback) {
+    var timer = new CodeTimer(name);
+    timer.start(name);
+    try {
+      ScopedValue.runWhere(SCOPED, timer, () -> callback.accept(timer));
+    } finally {
+      timer.stop(name);
+      if (timer.isEnabled()) {
+        String results = timer.toString();
+        MapTool.getProfilingNoteFrame().addText(results);
+      }
+      timer.clear();
+    }
+  }
+
+  public static CodeTimer get() {
+    return SCOPED.orElse(BASIC);
+  }
+
   private final Map<String, Timer> timeMap = new HashMap<String, Timer>();
   private final Map<String, Integer> orderMap = new HashMap<String, Integer>();
   private final String name;

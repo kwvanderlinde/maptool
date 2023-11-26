@@ -34,6 +34,7 @@ java {
 }
 
 def javaArgs = [
+        "--enable-preview",
         "-Xss8M", "-Dsun.java2d.d3d=false", "-Dsentry.environment=Production", "-Dfile.encoding=UTF-8",
         "-Dpolyglot.engine.WarnInterpreterOnly=false",
         "-Djava.util.Arrays.useLegacyMergeSort=true",
@@ -167,6 +168,7 @@ run {
 }
 
 compileJava.configure {
+    options.compilerArgs += ["--enable-preview"]
     // Keep the uninstrumented .class files out of the final destination directory. Otherwise we
     // might instrument the same file twice, resulting in duplicate methods.
     destinationDirectory = file("${layout.buildDirectory.get()}/classes/java/main-uninstrumented")
