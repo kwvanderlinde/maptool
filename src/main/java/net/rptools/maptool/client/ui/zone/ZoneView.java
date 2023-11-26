@@ -25,6 +25,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+
+import net.rptools.lib.CodeTimer;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.Illumination.LumensLevel;
@@ -257,10 +259,15 @@ public class ZoneView {
     if (topologyTree == null) {
       log.debug("ZoneView topology tree for {} is null, generating...", topologyType.name());
 
+      var timer = CodeTimer.get();
+      timer.start("buildAreaTree");
+
       var topology = getTopology(topologyType);
 
       topologyTree = new AreaTree(topology);
       topologyTrees.put(topologyType, topologyTree);
+
+      timer.stop("buildAreaTree");
     }
 
     return topologyTree;
@@ -789,6 +796,10 @@ public class ZoneView {
                   .filter(Objects::nonNull)
                   .toList();
             }));
+  }
+
+  public void flushTopology() {
+    topologyTrees.clear();
   }
 
   /**

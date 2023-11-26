@@ -83,6 +83,9 @@ public class FogUtil {
       AreaTree hillVbl,
       AreaTree pitVbl,
       AreaTree coverVbl) {
+    var timer = CodeTimer.get();
+    timer.start("FogUtil::calculateVisibility");
+    try {
     // We could use the vision envelope instead, but vision geometry tends to be pretty simple.
     final var visionGeometry = PreparedGeometryFactory.prepare(GeometryUtil.toJts(vision));
 
@@ -132,6 +135,10 @@ public class FogUtil {
 
     // For simplicity, this catches some of the edge cases
     return vision;
+    }
+    finally {
+      timer.stop("FogUtil::calculateVisibility");
+    }
   }
 
   private record NearestWallResult(LineSegment wall, Coordinate point, double distance) {}
@@ -509,7 +516,8 @@ public class FogUtil {
   }
 
   public static void exposeLastPath(final ZoneRenderer renderer, final Set<GUID> tokenSet) {
-    CodeTimer timer = new CodeTimer("exposeLastPath");
+    CodeTimer.using("exposeLastPath", timer -> {
+      renderer.getZoneView().flushTopology();
 
     final Zone zone = renderer.getZone();
     final Grid grid = zone.getGrid();
@@ -580,11 +588,7 @@ public class FogUtil {
       MapTool.serverCommand().exposeFoW(zone.getId(), visionArea, filteredToks);
       MapTool.serverCommand().updateExposedAreaMeta(zone.getId(), exposedGUID, meta);
     }
-
-    String results = timer.toString();
-    MapTool.getProfilingNoteFrame().addText(results);
-    // System.out.println(results);
-    timer.clear();
+    });
   }
 
   /**
