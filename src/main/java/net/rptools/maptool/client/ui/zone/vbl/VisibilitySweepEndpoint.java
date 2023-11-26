@@ -29,22 +29,11 @@ import org.locationtech.jts.geom.LineSegment;
  */
 public final class VisibilitySweepEndpoint {
   private final Coordinate point;
-  private final double pseudoangle;
-  private final double distance;
   private final List<LineSegment> startsWalls = new ArrayList<>();
   private final List<LineSegment> endsWalls = new ArrayList<>();
 
-  public VisibilitySweepEndpoint(Coordinate point, Coordinate origin) {
+  public VisibilitySweepEndpoint(Coordinate point) {
     this.point = point;
-
-    final var dx = point.getX() - origin.getX();
-    final var dy = point.getY() - origin.getY();
-    final var p = dx / (Math.abs(dx) + Math.abs(dy)); // -1 .. 1 increasing with x
-    this.pseudoangle =
-        (dy <= 0)
-            ? p - 1 // -2 .. 0 increasing with x
-            : 1 - p; // 0 .. 2 decreasing with x
-    this.distance = point.distance(origin);
   }
 
   public Coordinate getPoint() {
@@ -65,14 +54,6 @@ public final class VisibilitySweepEndpoint {
 
   public void endsWall(LineSegment wall) {
     endsWalls.add(wall);
-  }
-
-  public double getPseudoangle() {
-    return pseudoangle;
-  }
-
-  public double getDistance() {
-    return distance;
   }
 
   @Override
