@@ -34,7 +34,7 @@ java {
 }
 
 def javaArgs = [
-        "--enable-preview",
+        "-ea", "--enable-preview",
         "-Xss8M", "-Dsun.java2d.d3d=false", "-Dsentry.environment=Production", "-Dfile.encoding=UTF-8",
         "-Dpolyglot.engine.WarnInterpreterOnly=false",
         "-Djava.util.Arrays.useLegacyMergeSort=true",
