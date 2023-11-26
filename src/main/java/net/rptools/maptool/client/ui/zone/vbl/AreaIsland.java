@@ -19,9 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nonnull;
 import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LineString;
-import org.locationtech.jts.geom.prep.PreparedGeometry;
+import org.locationtech.jts.geom.Envelope;
 
 /**
  * Represents a piece of solid topology.
@@ -64,9 +62,9 @@ public final class AreaIsland implements AreaContainer<AreaIsland, AreaOcean> {
   }
 
   @Override
-  public List<LineString> getVisionBlockingBoundarySegments(
-      GeometryFactory geometryFactory, Coordinate origin, Facing facing, PreparedGeometry vision) {
-    return meta.getFacingSegments(geometryFactory, origin, facing, vision);
+  public VisionBlockingSet getVisionBlockingBoundarySegments(
+      Coordinate origin, Facing facing, Envelope visionBounds) {
+    return meta.getFacingSegments(origin, facing, visionBounds);
   }
 
   public @Nonnull AreaContainer<?, ?> getDeepestContainingContainerIn(AreaOcean root) {

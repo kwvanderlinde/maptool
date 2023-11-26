@@ -14,11 +14,8 @@
  */
 package net.rptools.maptool.client.ui.zone.vbl;
 
-import java.util.List;
 import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LineString;
-import org.locationtech.jts.geom.prep.PreparedGeometry;
+import org.locationtech.jts.geom.Envelope;
 
 public sealed interface AreaContainer<
         SelfT extends AreaContainer<SelfT, ChildT>, ChildT extends AreaContainer<ChildT, SelfT>>
@@ -52,9 +49,6 @@ public sealed interface AreaContainer<
    * @return A list of segments, which together represent the complete set of boundary faces that
    *     block vision.
    */
-  public List<LineString> getVisionBlockingBoundarySegments(
-      GeometryFactory geometryFactory,
-      Coordinate origin,
-      Facing facing,
-      PreparedGeometry visionGeometry);
+  public VisionBlockingSet getVisionBlockingBoundarySegments(
+      Coordinate origin, Facing facing, Envelope visionBounds);
 }

@@ -16,13 +16,10 @@ package net.rptools.maptool.client.ui.zone.vbl;
 
 import com.google.common.collect.Iterables;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import javax.annotation.Nonnull;
 import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LineString;
-import org.locationtech.jts.geom.prep.PreparedGeometry;
+import org.locationtech.jts.geom.Envelope;
 
 /**
  * Represents a hole in the topology.
@@ -70,13 +67,13 @@ public final class AreaOcean implements AreaContainer<AreaOcean, AreaIsland> {
   }
 
   @Override
-  public List<LineString> getVisionBlockingBoundarySegments(
-      GeometryFactory geometryFactory, Coordinate origin, Facing facing, PreparedGeometry vision) {
+  public VisionBlockingSet getVisionBlockingBoundarySegments(
+      Coordinate origin, Facing facing, Envelope visionBounds) {
     if (meta == null) {
-      return Collections.emptyList();
+      return new VisionBlockingSet();
     }
 
-    return meta.getFacingSegments(geometryFactory, origin, facing, vision);
+    return meta.getFacingSegments(origin, facing, visionBounds);
   }
 
   public void addIsland(AreaIsland island) {

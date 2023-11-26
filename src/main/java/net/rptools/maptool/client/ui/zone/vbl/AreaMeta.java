@@ -14,17 +14,13 @@
  */
 package net.rptools.maptool.client.ui.zone.vbl;
 
-import java.util.ArrayList;
-import java.util.List;
 import net.rptools.lib.GeometryUtil;
 import org.locationtech.jts.algorithm.Orientation;
 import org.locationtech.jts.algorithm.PointLocation;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.CoordinateArrays;
 import org.locationtech.jts.geom.Envelope;
-import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineSegment;
-import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.LinearRing;
 import org.locationtech.jts.geom.Location;
 import org.locationtech.jts.geom.prep.PreparedGeometry;
@@ -96,53 +92,35 @@ public class AreaMeta {
    * @return All line segments with a facing that matches {@code facing} based on the position of
    *     {@code origin}. The line segments are joined into continguous line strings where possible.
    */
-  public List<LineString> getFacingSegments(
-      GeometryFactory geometryFactory, Coordinate origin, Facing facing, PreparedGeometry vision) {
+  public VisionBlockingSet getFacingSegments(
+      Coordinate origin, Facing facing, Envelope visionBounds) {
     final var requiredOrientation =
         facing == Facing.ISLAND_SIDE_FACES_ORIGIN
             ? Orientation.CLOCKWISE
             : Orientation.COUNTERCLOCKWISE;
-    List<LineString> segments = new ArrayList<>();
-    List<Coordinate> currentSegmentPoints = new ArrayList<>();
+    final var result = new VisionBlockingSet();
 
-    Coordinate current = null;
-    for (Coordinate coordinate : vertices) {
-      assert currentSegmentPoints.size() == 0 || currentSegmentPoints.size() >= 2;
+    for (int i = 1; i < vertices.length; ++i) {
+      final var faceLineSegment = new LineSegment(vertices[i - 1], vertices[i]);
+      final var orientation = faceLineSegment.orientationIndex(origin);
 
-      final var previous = current;
-      current = coordinate;
-      if (previous == null) {
+      final var shouldIncludeFace =
+          (orientation == requiredOrientation)
+              // Don't need to be especially precise with the vision check.
+              && visionBounds.intersects(faceLineSegment.p0, faceLineSegment.p1);
+      if (!shouldIncludeFace) {
         continue;
       }
 
-      final var faceLineSegment = new LineSegment(previous, coordinate);
-      final var orientation = faceLineSegment.orientationIndex(origin);
-      final var shouldIncludeFace =
-          (orientation == requiredOrientation)
-              && vision.intersects(faceLineSegment.toGeometry(geometryFactory));
-
-      if (shouldIncludeFace) {
-        // Since we're including this face, the existing segment can be extended.
-        if (currentSegmentPoints.isEmpty()) {
-          // Also need the first point.
-          currentSegmentPoints.add(faceLineSegment.p0);
-        }
-        currentSegmentPoints.add(faceLineSegment.p1);
-      } else if (!currentSegmentPoints.isEmpty()) {
-        // Since we're skipping this face, the segment is broken and we must start a new one.
-        segments.add(
-            geometryFactory.createLineString(currentSegmentPoints.toArray(Coordinate[]::new)));
-        currentSegmentPoints.clear();
+      // Regardless of the orientation required for inclusion, the vision algorithm wants the
+      // segment oriented counterclockwise.
+      if (orientation != Orientation.COUNTERCLOCKWISE) {
+        faceLineSegment.reverse();
       }
-    }
-    assert currentSegmentPoints.size() == 0 || currentSegmentPoints.size() >= 2;
-    // In case there is still current segment, we add it.
-    if (!currentSegmentPoints.isEmpty()) {
-      segments.add(
-          geometryFactory.createLineString(currentSegmentPoints.toArray(Coordinate[]::new)));
+      result.add(faceLineSegment);
     }
 
-    return segments;
+    return result;
   }
 
   public boolean isHole() {

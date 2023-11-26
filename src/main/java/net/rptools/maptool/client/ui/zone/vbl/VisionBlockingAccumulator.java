@@ -15,32 +15,24 @@
 package net.rptools.maptool.client.ui.zone.vbl;
 
 import java.awt.Point;
-import java.util.ArrayList;
-import java.util.List;
 import javax.annotation.Nonnull;
 import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LineString;
-import org.locationtech.jts.geom.prep.PreparedGeometry;
+import org.locationtech.jts.geom.Envelope;
 
 public final class VisionBlockingAccumulator {
-  private final GeometryFactory geometryFactory;
   private final Coordinate origin;
-  private final PreparedGeometry vision;
-  private final List<LineString> visionBlockingSegments;
+  private final Envelope visionBounds;
+  private final VisionBlockingSet visionBlockingSet;
 
-  public VisionBlockingAccumulator(
-      GeometryFactory geometryFactory, Point origin, PreparedGeometry vision) {
-    this.geometryFactory = geometryFactory;
+  public VisionBlockingAccumulator(Point origin, Envelope visionBounds) {
     this.origin = new Coordinate(origin.getX(), origin.getY());
+    this.visionBounds = new Envelope(visionBounds);
 
-    this.vision = vision;
-
-    this.visionBlockingSegments = new ArrayList<>();
+    this.visionBlockingSet = new VisionBlockingSet();
   }
 
-  public List<LineString> getVisionBlockingSegments() {
-    return visionBlockingSegments;
+  public VisionBlockingSet getVisionBlockingSegments() {
+    return visionBlockingSet;
   }
 
   private @Nonnull AreaTree.LocateResult locateOriginIn(AreaTree topology) {
@@ -51,12 +43,12 @@ public final class VisionBlockingAccumulator {
     final var facing =
         container.isOcean() ? Facing.OCEAN_SIDE_FACES_ORIGIN : Facing.ISLAND_SIDE_FACES_ORIGIN;
 
-    visionBlockingSegments.addAll(
-        container.getVisionBlockingBoundarySegments(geometryFactory, origin, facing, vision));
+    visionBlockingSet.union(
+        container.getVisionBlockingBoundarySegments(origin, facing, visionBounds));
 
     for (var child : container.getChildren()) {
-      visionBlockingSegments.addAll(
-          child.getVisionBlockingBoundarySegments(geometryFactory, origin, facing, vision));
+      visionBlockingSet.union(
+          child.getVisionBlockingBoundarySegments(origin, facing, visionBounds));
     }
   }
 

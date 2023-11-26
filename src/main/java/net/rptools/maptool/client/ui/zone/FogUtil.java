@@ -18,6 +18,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.Area;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -38,6 +39,7 @@ import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.client.ui.zone.vbl.AreaTree;
 import net.rptools.maptool.client.ui.zone.vbl.VisibilitySweepEndpoint;
 import net.rptools.maptool.client.ui.zone.vbl.VisionBlockingAccumulator;
+import net.rptools.maptool.client.ui.zone.vbl.VisionBlockingSet;
 import net.rptools.maptool.model.AbstractPoint;
 import net.rptools.maptool.model.CellPoint;
 import net.rptools.maptool.model.ExposedAreaMetaData;
@@ -54,15 +56,9 @@ import org.apache.logging.log4j.Logger;
 import org.locationtech.jts.algorithm.Orientation;
 import org.locationtech.jts.awt.ShapeWriter;
 import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineSegment;
-import org.locationtech.jts.geom.LineString;
-import org.locationtech.jts.geom.Polygon;
-import org.locationtech.jts.geom.prep.PreparedGeometry;
-import org.locationtech.jts.geom.prep.PreparedGeometryFactory;
-import org.locationtech.jts.geom.util.LineStringExtracter;
-import org.locationtech.jts.operation.union.UnaryUnionOp;
 
 public class FogUtil {
   private static final Logger log = LogManager.getLogger(FogUtil.class);
@@ -86,10 +82,16 @@ public class FogUtil {
     var timer = CodeTimer.get();
     timer.start("FogUtil::calculateVisibility");
     try {
-    // We could use the vision envelope instead, but vision geometry tends to be pretty simple.
-    timer.start("get vision geometry");
-    final var visionGeometry = PreparedGeometryFactory.prepare(GeometryUtil.toJts(vision));
-    timer.stop("get vision geometry");
+    timer.start("get vision bounds");
+    Envelope visionBounds;
+    {
+      var awtBounds = vision.getBounds2D();
+      visionBounds =
+          new Envelope(
+              new Coordinate(awtBounds.getMinX(), awtBounds.getMinY()),
+              new Coordinate(awtBounds.getMaxX(), awtBounds.getMaxY()));
+    }
+    timer.stop("get vision bounds");
 
     /*
      * Find the visible area for each topology type independently.
@@ -99,7 +101,7 @@ public class FogUtil {
      * cannot handle. These cases do not exist within a single type of topology, but can arise when
      * we combine them.
      */
-    List<Geometry> visibleAreas = new ArrayList<>();
+    List<Coordinate[]> visibilityPolygons = new ArrayList<>();
     final List<Function<VisionBlockingAccumulator, Boolean>> topologyConsumers = new ArrayList<>();
     topologyConsumers.add(acc -> acc.addWallBlocking(topology));
     topologyConsumers.add(acc -> acc.addHillBlocking(hillVbl));
@@ -107,8 +109,7 @@ public class FogUtil {
     topologyConsumers.add(acc -> acc.addCoverBlocking(coverVbl));
     for (final var consumer : topologyConsumers) {
       timer.start("accumulate blocking walls");
-      final var accumulator =
-          new VisionBlockingAccumulator(geometryFactory, origin, visionGeometry);
+      final var accumulator = new VisionBlockingAccumulator(origin, visionBounds);
       final var isVisionCompletelyBlocked = consumer.apply(accumulator);
       timer.stop("accumulate blocking walls");
       if (!isVisionCompletelyBlocked) {
@@ -121,29 +122,34 @@ public class FogUtil {
           calculateVisibleArea(
               new Coordinate(origin.getX(), origin.getY()),
               accumulator.getVisionBlockingSegments(),
-              visionGeometry);
+              visionBounds);
       timer.stop("calculate visible area");
       timer.start("add visibility polygon");
       if (visibleArea != null) {
-        visibleAreas.add(visibleArea);
+        visibilityPolygons.add(visibleArea);
       }
       timer.stop("add visibility polygon");
+    }
+
+    if (visibilityPolygons.isEmpty()) {
+      return vision;
     }
 
     // We have to intersect all the results in order to find the true remaining visible area.
     timer.start("clone existing vision");
     vision = new Area(vision);
     timer.stop("clone existing vision");
-    if (!visibleAreas.isEmpty()) {
-      // We intersect in AWT space because JTS can be really finicky about intersection precision.
-      timer.start("combine visibility polygons with vision");
-      var shapeWriter = new ShapeWriter();
-      for (final var visibleArea : visibleAreas) {
-        var area = new Area(shapeWriter.toShape(visibleArea));
-        vision.intersect(area);
-      }
-      timer.stop("combine visibility polygons with vision");
+    timer.start("combine visibility polygons with vision");
+    // We intersect in AWT space because JTS can be really finicky about intersection precision.
+    var shapeWriter = new ShapeWriter();
+    for (var visibilityPolygon : visibilityPolygons) {
+      // Even though linear ring is just the boundary, the Area constructor uses the entire
+      // enclosed region.
+      var area = new Area(shapeWriter.toShape(geometryFactory.createLinearRing(visibilityPolygon)));
+      vision.intersect(area);
     }
+    timer.stop("combine visibility polygons with vision");
+
 
     // For simplicity, this catches some of the edge cases
     return vision;
@@ -194,36 +200,18 @@ public class FogUtil {
    * @return A list of all endpoints in counterclockwise order.
    */
   private static List<VisibilitySweepEndpoint> getSweepEndpoints(
-      Coordinate origin, List<LineString> visionBlockingSegments) {
+      Coordinate origin, Collection<LineSegment> visionBlockingSegments) {
     final Map<Coordinate, VisibilitySweepEndpoint> endpointsByPosition = new HashMap<>();
-    for (final var segment : visionBlockingSegments) {
-      VisibilitySweepEndpoint current = null;
-      for (final var coordinate : segment.getCoordinates()) {
-        final var previous = current;
-        current =
-            endpointsByPosition.computeIfAbsent(
-                coordinate, c -> new VisibilitySweepEndpoint(c, origin));
-        if (previous == null) {
-          // We just started this segment; still need a second point.
-          continue;
-        }
+    for (final var wall : visionBlockingSegments) {
+      assert wall.orientationIndex(origin) == Orientation.COUNTERCLOCKWISE;
 
-        final var isForwards =
-            Orientation.COUNTERCLOCKWISE
-                == Orientation.index(origin, previous.getPoint(), current.getPoint());
-        // Make sure the wall always goes in the counterclockwise direction.
-        final LineSegment wall =
-            isForwards
-                ? new LineSegment(previous.getPoint(), coordinate)
-                : new LineSegment(coordinate, previous.getPoint());
-        if (isForwards) {
-          previous.startsWall(wall);
-          current.endsWall(wall);
-        } else {
-          previous.endsWall(wall);
-          current.startsWall(wall);
-        }
-      }
+      var start =
+          endpointsByPosition.computeIfAbsent(wall.p0, c -> new VisibilitySweepEndpoint(c, origin));
+      var end =
+          endpointsByPosition.computeIfAbsent(wall.p1, c -> new VisibilitySweepEndpoint(c, origin));
+
+      start.startsWall(wall);
+      end.endsWall(wall);
     }
     final List<VisibilitySweepEndpoint> endpoints = new ArrayList<>(endpointsByPosition.values());
 
@@ -234,40 +222,44 @@ public class FogUtil {
     return endpoints;
   }
 
-  private static @Nullable Geometry calculateVisibleArea(
-      Coordinate origin, List<LineString> visionBlockingSegments, PreparedGeometry visionGeometry) {
+  private static @Nullable Coordinate[] calculateVisibleArea(
+      Coordinate origin, VisionBlockingSet visionBlockingSet, Envelope visionBounds) {
     final var timer = CodeTimer.get();
 
-    if (visionBlockingSegments.isEmpty()) {
+    if (visionBlockingSet.isEmpty()) {
       // No topology, apparently.
       return null;
     }
-
-    /*
-     * Unioning all the line segments has the nice effect of noding any intersections between line
-     * segments. Without this, it may not be valid.
-     * Note: if the geometry were only composed of one topology, it would certainly be valid due to
-     * its "flat" nature. But even in that case, it is more robust to due the union in case this
-     * flatness assumption ever changes.
-     */
-    final var allWallGeometry = new UnaryUnionOp(visionBlockingSegments).union();
-    // Replace the original geometry with the well-defined geometry.
-    visionBlockingSegments = new ArrayList<>();
-    LineStringExtracter.getLines(allWallGeometry, visionBlockingSegments);
 
     timer.start("add bounds");
     /*
      * The algorithm requires walls in every direction. The easiest way to accomplish this is to add
      * the boundary of the bounding box.
      */
-    final var envelope = allWallGeometry.getEnvelopeInternal();
-    envelope.expandToInclude(visionGeometry.getGeometry().getEnvelopeInternal());
+    final var envelope = visionBlockingSet.getEnvelope();
+    envelope.expandToInclude(visionBounds);
     // Exact expansion distance doesn't matter, we just don't want the boundary walls to overlap
     // endpoints from real walls.
     envelope.expandBy(1.0);
-    // Because we definitely have geometry, the envelope will always be a non-trivial rectangle.
-    visionBlockingSegments.add(((Polygon) geometryFactory.toGeometry(envelope)).getExteriorRing());
+    // Because we definitely have geometry, the envelope will always be a non-trivial rectangle. Add
+    // the rectangle's sides as wall so the sweep is well-defined. Careful to create the segments
+    // counterclockwise!
+    var coordinates =
+        new Coordinate[] {
+          new Coordinate(envelope.getMinX(), envelope.getMinY()),
+          new Coordinate(envelope.getMaxX(), envelope.getMinY()),
+          new Coordinate(envelope.getMaxX(), envelope.getMaxY()),
+          new Coordinate(envelope.getMinX(), envelope.getMaxY()),
+          new Coordinate(envelope.getMinX(), envelope.getMinY())
+        };
+    for (int i = 1, n = coordinates.length; i < n; ++i) {
+      visionBlockingSet.add(new LineSegment(coordinates[i - 1], coordinates[i]));
+    }
     timer.stop("add bounds");
+
+    timer.start("get segments");
+    var visionBlockingSegments = visionBlockingSet.getSegments();
+    timer.stop("get segments");
 
     // Now that we have valid geometry and a bounding box, we can continue with the sweep.
     timer.start("build network");
@@ -337,7 +329,7 @@ public class FogUtil {
 
     timer.start("build result");
     try {
-      return geometryFactory.createPolygon(visionPoints.toArray(Coordinate[]::new));
+      return visionPoints.toArray(Coordinate[]::new);
     }
     finally {
       timer.stop("build result");
