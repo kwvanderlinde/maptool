@@ -15,7 +15,6 @@
 package net.rptools.maptool.client.ui.zone.vbl;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import net.rptools.lib.GeometryUtil;
 import org.locationtech.jts.algorithm.Orientation;
@@ -23,9 +22,6 @@ import org.locationtech.jts.algorithm.PointLocation;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.CoordinateArrays;
 import org.locationtech.jts.geom.Envelope;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LineSegment;
-import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.LinearRing;
 import org.locationtech.jts.geom.Location;
 import org.locationtech.jts.geom.prep.PreparedGeometry;
@@ -115,64 +111,63 @@ public class AreaMeta {
    *
    * <p>If {@code origin} is colinear with a line segment, that segment will never be returned.
    *
+   * @param vbs The set to add blocking segments to.
    * @param origin The vision origin, which is the point by which line segment orientation is
    *     measured.
    * @param facing Whether the island-side or the ocean-side of the returned segments must face
    *     {@code origin}.
-   * @return All line segments with a facing that matches {@code facing} based on the position of
-   *     {@code origin}. The line segments are joined into continguous line strings where possible.
+   * @param visionBounds The bounding box for vision, used to avoid adding unnecessary far away
+   *     segments.
    */
-  public List<LineString> getFacingSegments(
-      GeometryFactory geometryFactory, Coordinate origin, Facing facing, PreparedGeometry vision) {
+  public void getFacingSegments(
+      VisionBlockingSet vbs, Coordinate origin, Facing facing, Envelope visionBounds) {
     if (vertices.length == 0) {
-      return Collections.emptyList();
+      return;
     }
 
     final var requiredOrientation =
         facing == Facing.ISLAND_SIDE_FACES_ORIGIN
             ? Orientation.CLOCKWISE
             : Orientation.COUNTERCLOCKWISE;
-    List<LineString> segments = new ArrayList<>();
-    List<Coordinate> currentSegmentPoints = new ArrayList<>();
 
-    Coordinate current = null;
-    for (Coordinate coordinate : vertices) {
+    List<Coordinate> currentSegmentPoints = new ArrayList<>();
+    for (int i = 1; i < vertices.length; ++i) {
       assert currentSegmentPoints.size() == 0 || currentSegmentPoints.size() >= 2;
 
-      final var previous = current;
-      current = coordinate;
-      if (previous == null) {
-        continue;
-      }
+      final var previous = vertices[i - 1];
+      final var current = vertices[i];
 
-      final var faceLineSegment = new LineSegment(previous, coordinate);
-      final var orientation = faceLineSegment.orientationIndex(origin);
       final var shouldIncludeFace =
-          (orientation == requiredOrientation)
-              && vision.intersects(faceLineSegment.toGeometry(geometryFactory));
+          // Don't need to be especially precise with the vision check.
+          visionBounds.intersects(previous, current)
+              && requiredOrientation == Orientation.index(origin, previous, current);
 
       if (shouldIncludeFace) {
         // Since we're including this face, the existing segment can be extended.
         if (currentSegmentPoints.isEmpty()) {
           // Also need the first point.
-          currentSegmentPoints.add(faceLineSegment.p0);
+          currentSegmentPoints.add(previous);
         }
-        currentSegmentPoints.add(faceLineSegment.p1);
+        currentSegmentPoints.add(current);
       } else if (!currentSegmentPoints.isEmpty()) {
         // Since we're skipping this face, the segment is broken and we must start a new one.
-        segments.add(
-            geometryFactory.createLineString(currentSegmentPoints.toArray(Coordinate[]::new)));
+        var string = currentSegmentPoints;
+        if (requiredOrientation != Orientation.COUNTERCLOCKWISE) {
+          string = string.reversed();
+        }
+        vbs.add(string);
         currentSegmentPoints.clear();
       }
     }
-    assert currentSegmentPoints.size() == 0 || currentSegmentPoints.size() >= 2;
-    // In case there is still current segment, we add it.
-    if (!currentSegmentPoints.isEmpty()) {
-      segments.add(
-          geometryFactory.createLineString(currentSegmentPoints.toArray(Coordinate[]::new)));
-    }
 
-    return segments;
+    assert currentSegmentPoints.size() == 0 || currentSegmentPoints.size() >= 2;
+    if (!currentSegmentPoints.isEmpty()) {
+      var string = currentSegmentPoints;
+      if (requiredOrientation != Orientation.COUNTERCLOCKWISE) {
+        string = string.reversed();
+      }
+      vbs.add(string);
+    }
   }
 
   public boolean isOcean() {
