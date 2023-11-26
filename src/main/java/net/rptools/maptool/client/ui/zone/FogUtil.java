@@ -18,26 +18,18 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.Area;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import net.rptools.lib.CodeTimer;
 import net.rptools.lib.GeometryUtil;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.client.ui.zone.vbl.AreaTree;
-import net.rptools.maptool.client.ui.zone.vbl.VisibilitySweepEndpoint;
 import net.rptools.maptool.client.ui.zone.vbl.VisionBlockingAccumulator;
 import net.rptools.maptool.client.ui.zone.vbl.VisionBlockingSet;
 import net.rptools.maptool.model.AbstractPoint;
@@ -53,16 +45,28 @@ import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.player.Player.Role;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.locationtech.jts.algorithm.Orientation;
 import org.locationtech.jts.awt.ShapeWriter;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LineSegment;
 
 public class FogUtil {
   private static final Logger log = LogManager.getLogger(FogUtil.class);
   private static final GeometryFactory geometryFactory = GeometryUtil.getGeometryFactory();
+
+  private static VisionBlockingSet pooledSet = new VisionBlockingSet();
+
+  private static VisionBlockingSet getProblemSet(Coordinate origin) {
+    VisionBlockingSet set = (pooledSet == null) ? new VisionBlockingSet() : pooledSet;
+    set.init(origin);
+    return set;
+  }
+
+  private static void releaseProblemSet(VisionBlockingSet set) {
+    if (pooledSet == null) {
+      pooledSet = set;
+    }
+  }
 
   /**
    * Return the visible area for an origin, a lightSourceArea and a VBL.
@@ -91,6 +95,8 @@ public class FogUtil {
       AreaTree coverVbl) {
     var timer = CodeTimer.get();
     timer.start("FogUtil::calculateVisibility");
+    var originCoordinate = new Coordinate(origin.x, origin.y);
+
     try {
       timer.start("get vision bounds");
       Envelope visionBounds;
@@ -115,27 +121,30 @@ public class FogUtil {
       List<Coordinate[]> visibilityPolygons = new ArrayList<>();
       final List<AreaTree> topologies = List.of(wallVbl, hillVbl, pitVbl, coverVbl);
       for (final var topology : topologies) {
+        timer.start("get pooled vision blocking set");
+        // TODO Should we do a proper checkout / check back in?
+        final var visionBlockingSet = getProblemSet(originCoordinate);
+        timer.stop("get pooled vision blocking set");
         timer.start("accumulate blocking walls");
-        final var accumulator = new VisionBlockingAccumulator(origin, visionBounds);
+        final var accumulator =
+            new VisionBlockingAccumulator(visionBlockingSet, originCoordinate, visionBounds);
         final var isVisionCompletelyBlocked = accumulator.add(topology);
         timer.stop("accumulate blocking walls");
         if (!isVisionCompletelyBlocked) {
           // Vision has been completely blocked by this topology. Short circuit.
+          releaseProblemSet(visionBlockingSet);
           return new Area();
         }
 
         timer.start("calculate visible area");
-        final var visibleArea =
-            calculateVisibleArea(
-                new Coordinate(origin.getX(), origin.getY()),
-                accumulator.getVisionBlockingSegments(),
-                visionBounds);
+        final var visibleArea = accumulator.getVisionBlockingSegments().solve(visionBounds);
         timer.stop("calculate visible area");
         timer.start("add visibility polygon");
         if (visibleArea != null) {
           visibilityPolygons.add(visibleArea);
         }
         timer.stop("add visibility polygon");
+        releaseProblemSet(visionBlockingSet);
       }
 
       if (visibilityPolygons.isEmpty()) {
@@ -162,189 +171,6 @@ public class FogUtil {
       return vision;
     } finally {
       timer.stop("FogUtil::calculateVisibility");
-    }
-  }
-
-  private record NearestWallResult(LineSegment wall, Coordinate point, double distance) {}
-
-  private static NearestWallResult findNearestOpenWall(
-      Set<LineSegment> openWalls, LineSegment ray) {
-    assert !openWalls.isEmpty();
-
-    @Nullable LineSegment currentNearest = null;
-    @Nullable Coordinate currentNearestPoint = null;
-    double nearestDistance = Double.MAX_VALUE;
-    for (final var openWall : openWalls) {
-      final var intersection = ray.lineIntersection(openWall);
-      if (intersection == null) {
-        continue;
-      }
-
-      final var distance = ray.p0.distance(intersection);
-      if (distance < nearestDistance) {
-        currentNearest = openWall;
-        currentNearestPoint = intersection;
-        nearestDistance = distance;
-      }
-    }
-
-    assert currentNearest != null;
-    return new NearestWallResult(currentNearest, currentNearestPoint, nearestDistance);
-  }
-
-  /**
-   * Builds a list of endpoints for the sweep algorithm to consume.
-   *
-   * <p>The endpoints will be unique (i.e., no coordinate is represented more than once) and in a
-   * consistent orientation (i.e., counterclockwise around the origin). In addition, all endpoints
-   * will have their starting and ending walls filled according to which walls are incident to the
-   * corresponding point.
-   *
-   * @param origin The center of vision, by which orientation can be determined.
-   * @param visionBlockingSegments The "walls" that are able to block vision. All points in these
-   *     walls will be present in the returned list.
-   * @return A list of all endpoints in counterclockwise order.
-   */
-  private static List<VisibilitySweepEndpoint> getSweepEndpoints(
-      Coordinate origin, Collection<LineSegment> visionBlockingSegments) {
-    final Map<Coordinate, VisibilitySweepEndpoint> endpointsByPosition = new HashMap<>();
-    for (final var wall : visionBlockingSegments) {
-      assert wall.orientationIndex(origin) == Orientation.COUNTERCLOCKWISE;
-
-      var start =
-          endpointsByPosition.computeIfAbsent(wall.p0, c -> new VisibilitySweepEndpoint(c, origin));
-      var end =
-          endpointsByPosition.computeIfAbsent(wall.p1, c -> new VisibilitySweepEndpoint(c, origin));
-
-      start.startsWall(wall);
-      end.endsWall(wall);
-    }
-    final List<VisibilitySweepEndpoint> endpoints = new ArrayList<>(endpointsByPosition.values());
-
-    endpoints.sort(
-        Comparator.comparingDouble(VisibilitySweepEndpoint::getPseudoangle)
-            .thenComparing(VisibilitySweepEndpoint::getDistance));
-
-    return endpoints;
-  }
-
-  private static @Nullable Coordinate[] calculateVisibleArea(
-      Coordinate origin, VisionBlockingSet visionBlockingSet, Envelope visionBounds) {
-    final var timer = CodeTimer.get();
-
-    if (visionBlockingSet.isEmpty()) {
-      // No topology, apparently.
-      return null;
-    }
-
-    timer.start("add bounds");
-    /*
-     * The algorithm requires walls in every direction. The easiest way to accomplish this is to add
-     * the boundary of the bounding box.
-     */
-    final var envelope = visionBlockingSet.getEnvelope();
-    envelope.expandToInclude(visionBounds);
-    // Exact expansion distance doesn't matter, we just don't want the boundary walls to overlap
-    // endpoints from real walls.
-    envelope.expandBy(1.0);
-    // Because we definitely have geometry, the envelope will always be a non-trivial rectangle. Add
-    // the rectangle's sides as wall so the sweep is well-defined. Careful to create the segments
-    // counterclockwise!
-    var coordinates =
-        new Coordinate[] {
-          new Coordinate(envelope.getMinX(), envelope.getMinY()),
-          new Coordinate(envelope.getMaxX(), envelope.getMinY()),
-          new Coordinate(envelope.getMaxX(), envelope.getMaxY()),
-          new Coordinate(envelope.getMinX(), envelope.getMaxY()),
-          new Coordinate(envelope.getMinX(), envelope.getMinY())
-        };
-    visionBlockingSet.add(Arrays.asList(coordinates));
-    timer.stop("add bounds");
-
-    timer.start("get segments");
-    var visionBlockingSegments = visionBlockingSet.getSegments();
-    timer.stop("get segments");
-
-    // Now that we have valid geometry and a bounding box, we can continue with the sweep.
-    timer.start("build network");
-    final var endpoints = getSweepEndpoints(origin, visionBlockingSegments);
-    timer.stop("build network");
-
-    timer.start("initialize");
-    Set<LineSegment> openWalls = Collections.newSetFromMap(new IdentityHashMap<>());
-    // This initial sweep just makes sure we have the correct open set to start.
-    for (final var endpoint : endpoints) {
-      openWalls.addAll(endpoint.getStartsWalls());
-      openWalls.removeAll(endpoint.getEndsWalls());
-    }
-    // Make sure to process the first point once more at the end to ensure the sweep covers the full
-    // 360 degrees.
-    endpoints.add(endpoints.get(0));
-    timer.stop("initialize");
-
-    timer.start("sweep");
-    // Now for the real sweep. Make sure to process the first point once more at the end to ensure
-    // the sweep covers the full 360 degrees.
-    timer.start("sweep");
-    List<Coordinate> visionPoints = new ArrayList<>();
-    for (final var endpoint : endpoints) {
-      assert !openWalls.isEmpty();
-
-      final var ray = new LineSegment(origin, endpoint.getPoint());
-      final var nearestWallResult = findNearestOpenWall(openWalls, ray);
-
-      openWalls.addAll(endpoint.getStartsWalls());
-      openWalls.removeAll(endpoint.getEndsWalls());
-
-      // Find a new nearest wall.
-      final var newNearestWallResult = findNearestOpenWall(openWalls, ray);
-
-      if (newNearestWallResult.wall != nearestWallResult.wall) {
-        // Implies we have changed which wall we are at. Need to figure out projections.
-
-        if (openWalls.contains(nearestWallResult.wall())) {
-          // The previous nearest wall is still open. I.e., we didn't fall of its end but
-          // encountered a new closer wall. So we project the current point to the previous
-          // nearest wall, then step to the current point.
-          visionPoints.add(nearestWallResult.point());
-          visionPoints.add(endpoint.getPoint());
-        } else {
-          // The previous nearest wall is now closed. I.e., we "fell off" it and therefore have
-          // encountered a different wall. So we step from the current point (which is on the
-          // previous wall) to the projection on the new wall.
-          visionPoints.add(endpoint.getPoint());
-          // Special case: if the two walls are adjacent, they share the current point. We don't
-          // need to add the point twice, so just skip in that case.
-          if (!endpoint.getStartsWalls().contains(newNearestWallResult.wall())) {
-            visionPoints.add(newNearestWallResult.point());
-          }
-        }
-      }
-    }
-    timer.stop("sweep");
-
-    timer.start("sanity check");
-    try {
-      if (visionPoints.size() < 3) {
-        // This shouldn't happen, but just in case.
-        log.warn("Sweep produced too few points: {}", visionPoints);
-        return null;
-      }
-    } finally {
-      timer.stop("sanity check");
-    }
-
-    timer.start("close polygon");
-    // Ensure a closed loop.
-    // TODO Are there not cases where this is already done?
-    visionPoints.add(visionPoints.get(0));
-    timer.stop("close polygon");
-
-    timer.start("build result");
-    try {
-      return visionPoints.toArray(Coordinate[]::new);
-    } finally {
-      timer.stop("build result");
     }
   }
 
