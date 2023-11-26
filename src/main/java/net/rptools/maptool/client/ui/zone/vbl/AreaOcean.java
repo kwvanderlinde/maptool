@@ -14,13 +14,11 @@
  */
 package net.rptools.maptool.client.ui.zone.vbl;
 
-import java.awt.geom.Area;
-import java.awt.geom.Point2D;
+import com.google.common.collect.Iterables;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
@@ -32,28 +30,43 @@ import org.locationtech.jts.geom.prep.PreparedGeometry;
  * <p>An ocean may contain islands of topology within it, and may or may not be contained within an
  * island.
  */
-public class AreaOcean implements AreaContainer {
+public final class AreaOcean implements AreaContainer<AreaOcean, AreaIsland> {
 
-  private AreaMeta meta;
-  private AreaIsland parentIsland = null;
-  private Set<AreaIsland> islandSet = new HashSet<AreaIsland>();
+  private final AreaMeta meta;
+  private final List<AreaIsland> islands = new ArrayList<>();
+
+  public AreaOcean() {
+    this.meta = null;
+  }
 
   /**
    * Creates a new ocean with a given boundary.
    *
    * @param meta The boundary of a hole.
    */
-  public AreaOcean(@Nullable AreaMeta meta) {
-    assert meta == null || meta.isHole();
+  public AreaOcean(@Nonnull AreaMeta meta) {
+    assert meta.isHole();
     this.meta = meta;
   }
 
-  public @Nullable AreaIsland getParentIsland() {
-    return parentIsland;
+  @Override
+  public boolean isOcean() {
+    return true;
   }
 
-  public void setParentIsland(AreaIsland parentIsland) {
-    this.parentIsland = parentIsland;
+  @Override
+  public Iterable<AreaIsland> getChildren() {
+    return Iterables.unmodifiableIterable(this.islands);
+  }
+
+  @Override
+  public boolean contains(Coordinate point) {
+    return meta == null || meta.contains(point);
+  }
+
+  @Override
+  public boolean contains(AreaMeta other) {
+    return meta == null || meta.contains(other);
   }
 
   @Override
@@ -66,34 +79,7 @@ public class AreaOcean implements AreaContainer {
     return meta.getFacingSegments(geometryFactory, origin, facing, vision);
   }
 
-  @Override
-  public @Nullable AreaContainer getDeepestContainerAt(Point2D point) {
-    if (meta != null && !meta.contains(point)) {
-      // Point not contained within this ocean, so nothing to return.
-      return null;
-    }
-
-    // If the point is in an island, then let the island figure it out
-    for (AreaIsland island : islandSet) {
-      AreaContainer ocean = island.getDeepestContainerAt(point);
-      if (ocean != null) {
-        return ocean;
-      }
-    }
-
-    return this;
-  }
-
-  public Set<AreaIsland> getIslands() {
-    return new HashSet<AreaIsland>(islandSet);
-  }
-
   public void addIsland(AreaIsland island) {
-    islandSet.add(island);
-  }
-
-  @Override
-  public Area getBounds() {
-    return meta != null ? meta.getBounds() : null;
+    islands.add(island);
   }
 }

@@ -14,27 +14,28 @@
  */
 package net.rptools.maptool.client.ui.zone.vbl;
 
-import java.awt.geom.Area;
-import java.awt.geom.Point2D;
 import java.util.List;
-import javax.annotation.Nullable;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.prep.PreparedGeometry;
 
-public interface AreaContainer {
+public sealed interface AreaContainer<
+        SelfT extends AreaContainer<SelfT, ChildT>, ChildT extends AreaContainer<ChildT, SelfT>>
+    permits AreaOcean, AreaIsland {
+  public boolean isOcean();
 
-  public Area getBounds();
+  public Iterable<ChildT> getChildren();
 
   /**
-   * Get the smallest child container containing `point`.
+   * Checks whether {@code point} is contained in the container.
    *
-   * @param point The point to check for containment.
-   * @return If `point` is not within `this`, then `null`. Otherwise, the most nested descendant
-   *     container of `this` that contains `point` (possibly `this` itself).
+   * @param point The point to test.
+   * @return {@code true} if {@code point} is within the boundary of this container.
    */
-  public @Nullable AreaContainer getDeepestContainerAt(Point2D point);
+  public boolean contains(Coordinate point);
+
+  public boolean contains(AreaMeta meta);
 
   /**
    * Find sections of the container's boundary that block vision.
@@ -45,8 +46,6 @@ public interface AreaContainer {
    *
    * <p>The segments that are returned depend on `origin`, and `frontSegments`.
    *
-   * @param geometryFactory The strategy for creating geometries, which is used by the
-   *     `VisibleAreaSegment` in creating areas of blocked vision.
    * @param origin The point from which visibility is calculated.
    * @param facing Whether the returned segments must have their island side or their ocean side
    *     facing the origin.
@@ -54,5 +53,8 @@ public interface AreaContainer {
    *     block vision.
    */
   public List<LineString> getVisionBlockingBoundarySegments(
-      GeometryFactory geometryFactory, Coordinate origin, Facing facing, PreparedGeometry vision);
+      GeometryFactory geometryFactory,
+      Coordinate origin,
+      Facing facing,
+      PreparedGeometry visionGeometry);
 }

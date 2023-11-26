@@ -48,10 +48,10 @@ public class VisibilityInspector extends JPanel {
   private double visionRange;
 
   public VisibilityInspector() {
-    wallVblTree = new AreaTree(new Area());
-    hillVblTree = new AreaTree(new Area());
-    pitVblTree = new AreaTree(new Area());
-    coverVblTree = new AreaTree(new Area());
+    wallVblTree = new AreaTree();
+    hillVblTree = new AreaTree();
+    pitVblTree = new AreaTree();
+    coverVblTree = new AreaTree();
     affineTransform = new AffineTransform();
     point = new Point(0, 0);
     visionRange = 200;
@@ -103,10 +103,10 @@ public class VisibilityInspector extends JPanel {
     }
     affineTransform.scale(scale, scale);
 
-    wallVblTree = new AreaTree(wallVbl);
-    hillVblTree = new AreaTree(hillVbl);
-    pitVblTree = new AreaTree(pitVbl);
-    coverVblTree = new AreaTree(coverVbl);
+    wallVblTree = AreaTree.digest(wallVbl);
+    hillVblTree = AreaTree.digest(hillVbl);
+    pitVblTree = AreaTree.digest(pitVbl);
+    coverVblTree = AreaTree.digest(coverVbl);
   }
 
   @Override

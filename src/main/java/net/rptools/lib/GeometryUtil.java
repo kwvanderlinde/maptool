@@ -17,12 +17,14 @@ package net.rptools.lib;
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import org.locationtech.jts.awt.ShapeReader;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.locationtech.jts.operation.polygonize.Polygonizer;
 
@@ -61,7 +63,7 @@ public class GeometryUtil {
     return geometryFactory;
   }
 
-  public static Geometry toJts(Area area) {
+  private static Polygonizer toPolygonizer(Area area) {
     final var pathIterator = area.getPathIterator(null);
     final var polygonizer = new Polygonizer(true);
     final var coords = (List<Coordinate[]>) ShapeReader.toCoordinates(pathIterator);
@@ -74,6 +76,14 @@ public class GeometryUtil {
       geometries.add(lineString);
     }
     polygonizer.add(geometries);
-    return polygonizer.getGeometry();
+    return polygonizer;
+  }
+
+  public static Geometry toJts(Area area) {
+    return toPolygonizer(area).getGeometry();
+  }
+
+  public static Collection<Polygon> toJtsPolygons(Area area) {
+    return toPolygonizer(area).getPolygons();
   }
 }
