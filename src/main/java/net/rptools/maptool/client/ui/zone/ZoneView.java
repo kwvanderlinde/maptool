@@ -263,7 +263,7 @@ public class ZoneView {
 
       var topology = getTopology(topologyType);
 
-      topologyTree = new AreaTree(topology);
+      topologyTree = AreaTree.digest(topologyType, topology);
       topologyTrees.put(topologyType, topologyTree);
 
       timer.stop("buildAreaTree");

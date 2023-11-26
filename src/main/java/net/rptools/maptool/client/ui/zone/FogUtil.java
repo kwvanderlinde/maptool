@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import net.rptools.lib.CodeTimer;
@@ -73,7 +72,7 @@ public class FogUtil {
    *
    * @param origin the vision origin.
    * @param vision the lightSourceArea.
-   * @param topology the VBL topology.
+   * @param wallVbl the VBL topology.
    * @return the visible area.
    */
   // TODO Accept a LinearRing to represent the vision bounds to use. That will allow us to construct
@@ -89,7 +88,7 @@ public class FogUtil {
   public static @Nonnull Area calculateVisibility(
       Point origin,
       Area vision,
-      AreaTree topology,
+      AreaTree wallVbl,
       AreaTree hillVbl,
       AreaTree pitVbl,
       AreaTree coverVbl) {
@@ -110,17 +109,12 @@ public class FogUtil {
        * we combine them.
        */
       List<Geometry> visibleAreas = new ArrayList<>();
-      final List<Function<VisionBlockingAccumulator, Boolean>> topologyConsumers =
-          new ArrayList<>();
-      topologyConsumers.add(acc -> acc.addWallBlocking(topology));
-      topologyConsumers.add(acc -> acc.addHillBlocking(hillVbl));
-      topologyConsumers.add(acc -> acc.addPitBlocking(pitVbl));
-      topologyConsumers.add(acc -> acc.addCoverBlocking(coverVbl));
-      for (final var consumer : topologyConsumers) {
+      final List<AreaTree> topologies = List.of(wallVbl, hillVbl, pitVbl, coverVbl);
+      for (final var topology : topologies) {
         timer.start("accumulate blocking walls");
         final var accumulator =
             new VisionBlockingAccumulator(geometryFactory, origin, visionGeometry);
-        final var isVisionCompletelyBlocked = consumer.apply(accumulator);
+        final var isVisionCompletelyBlocked = accumulator.add(topology);
         timer.stop("accumulate blocking walls");
         if (!isVisionCompletelyBlocked) {
           // Vision has been completely blocked by this topology. Short circuit.

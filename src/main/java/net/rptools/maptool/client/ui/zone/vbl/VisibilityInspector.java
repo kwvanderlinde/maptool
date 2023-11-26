@@ -34,6 +34,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.ui.zone.FogUtil;
+import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.util.GraphicsUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,10 +49,10 @@ public class VisibilityInspector extends JPanel {
   private double visionRange;
 
   public VisibilityInspector() {
-    wallVblTree = new AreaTree(new Area());
-    hillVblTree = new AreaTree(new Area());
-    pitVblTree = new AreaTree(new Area());
-    coverVblTree = new AreaTree(new Area());
+    wallVblTree = new AreaTree(Zone.TopologyType.WALL_VBL);
+    hillVblTree = new AreaTree(Zone.TopologyType.HILL_VBL);
+    pitVblTree = new AreaTree(Zone.TopologyType.PIT_VBL);
+    coverVblTree = new AreaTree(Zone.TopologyType.COVER_VBL);
     affineTransform = new AffineTransform();
     point = new Point(0, 0);
     visionRange = 200;
@@ -103,10 +104,10 @@ public class VisibilityInspector extends JPanel {
     }
     affineTransform.scale(scale, scale);
 
-    wallVblTree = new AreaTree(wallVbl);
-    hillVblTree = new AreaTree(hillVbl);
-    pitVblTree = new AreaTree(pitVbl);
-    coverVblTree = new AreaTree(coverVbl);
+    wallVblTree = AreaTree.digest(Zone.TopologyType.WALL_VBL, wallVbl);
+    hillVblTree = AreaTree.digest(Zone.TopologyType.HILL_VBL, hillVbl);
+    pitVblTree = AreaTree.digest(Zone.TopologyType.PIT_VBL, pitVbl);
+    coverVblTree = AreaTree.digest(Zone.TopologyType.COVER_VBL, coverVbl);
   }
 
   @Override
