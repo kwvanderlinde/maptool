@@ -87,7 +87,9 @@ public class FogUtil {
     timer.start("FogUtil::calculateVisibility");
     try {
     // We could use the vision envelope instead, but vision geometry tends to be pretty simple.
+    timer.start("get vision geometry");
     final var visionGeometry = PreparedGeometryFactory.prepare(GeometryUtil.toJts(vision));
+    timer.stop("get vision geometry");
 
     /*
      * Find the visible area for each topology type independently.
@@ -104,33 +106,43 @@ public class FogUtil {
     topologyConsumers.add(acc -> acc.addPitBlocking(pitVbl));
     topologyConsumers.add(acc -> acc.addCoverBlocking(coverVbl));
     for (final var consumer : topologyConsumers) {
+      timer.start("accumulate blocking walls");
       final var accumulator =
           new VisionBlockingAccumulator(geometryFactory, origin, visionGeometry);
       final var isVisionCompletelyBlocked = consumer.apply(accumulator);
+      timer.stop("accumulate blocking walls");
       if (!isVisionCompletelyBlocked) {
         // Vision has been completely blocked by this topology. Short circuit.
         return new Area();
       }
 
+      timer.start("calculate visible area");
       final var visibleArea =
           calculateVisibleArea(
               new Coordinate(origin.getX(), origin.getY()),
               accumulator.getVisionBlockingSegments(),
               visionGeometry);
+      timer.stop("calculate visible area");
+      timer.start("add visibility polygon");
       if (visibleArea != null) {
         visibleAreas.add(visibleArea);
       }
+      timer.stop("add visibility polygon");
     }
 
     // We have to intersect all the results in order to find the true remaining visible area.
+    timer.start("clone existing vision");
     vision = new Area(vision);
+    timer.stop("clone existing vision");
     if (!visibleAreas.isEmpty()) {
       // We intersect in AWT space because JTS can be really finicky about intersection precision.
+      timer.start("combine visibility polygons with vision");
       var shapeWriter = new ShapeWriter();
       for (final var visibleArea : visibleAreas) {
         var area = new Area(shapeWriter.toShape(visibleArea));
         vision.intersect(area);
       }
+      timer.stop("combine visibility polygons with vision");
     }
 
     // For simplicity, this catches some of the edge cases
@@ -224,6 +236,8 @@ public class FogUtil {
 
   private static @Nullable Geometry calculateVisibleArea(
       Coordinate origin, List<LineString> visionBlockingSegments, PreparedGeometry visionGeometry) {
+    final var timer = CodeTimer.get();
+
     if (visionBlockingSegments.isEmpty()) {
       // No topology, apparently.
       return null;
@@ -241,6 +255,7 @@ public class FogUtil {
     visionBlockingSegments = new ArrayList<>();
     LineStringExtracter.getLines(allWallGeometry, visionBlockingSegments);
 
+    timer.start("add bounds");
     /*
      * The algorithm requires walls in every direction. The easiest way to accomplish this is to add
      * the boundary of the bounding box.
@@ -252,21 +267,28 @@ public class FogUtil {
     envelope.expandBy(1.0);
     // Because we definitely have geometry, the envelope will always be a non-trivial rectangle.
     visionBlockingSegments.add(((Polygon) geometryFactory.toGeometry(envelope)).getExteriorRing());
+    timer.stop("add bounds");
 
     // Now that we have valid geometry and a bounding box, we can continue with the sweep.
-
+    timer.start("build network");
     final var endpoints = getSweepEndpoints(origin, visionBlockingSegments);
-    Set<LineSegment> openWalls = Collections.newSetFromMap(new IdentityHashMap<>());
+    timer.stop("build network");
 
+    timer.start("initialize");
+    Set<LineSegment> openWalls = Collections.newSetFromMap(new IdentityHashMap<>());
     // This initial sweep just makes sure we have the correct open set to start.
     for (final var endpoint : endpoints) {
       openWalls.addAll(endpoint.getStartsWalls());
       openWalls.removeAll(endpoint.getEndsWalls());
     }
+    // Make sure to process the first point once more at the end to ensure the sweep covers the full
+    // 360 degrees.
+    endpoints.add(endpoints.get(0));
+    timer.stop("initialize");
 
+    timer.start("sweep");
     // Now for the real sweep. Make sure to process the first point once more at the end to ensure
     // the sweep covers the full 360 degrees.
-    endpoints.add(endpoints.get(0));
     List<Coordinate> visionPoints = new ArrayList<>();
     for (final var endpoint : endpoints) {
       assert !openWalls.isEmpty();
@@ -302,14 +324,24 @@ public class FogUtil {
         }
       }
     }
+    timer.stop("sweep");
     if (visionPoints.size() < 3) {
       // This shouldn't happen, but just in case.
       log.warn("Sweep produced too few points: {}", visionPoints);
       return null;
     }
-    visionPoints.add(visionPoints.get(0)); // Ensure a closed loop.
+    timer.start("close polygon");
+    // Ensure a closed loop.
+    visionPoints.add(visionPoints.get(0));
+    timer.stop("close polygon");
 
-    return geometryFactory.createPolygon(visionPoints.toArray(Coordinate[]::new));
+    timer.start("build result");
+    try {
+      return geometryFactory.createPolygon(visionPoints.toArray(Coordinate[]::new));
+    }
+    finally {
+      timer.stop("build result");
+    }
   }
 
   /**
