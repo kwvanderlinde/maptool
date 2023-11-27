@@ -158,7 +158,6 @@ public class FogUtil {
     }
     timer.stop("combine visibility polygons with vision");
 
-
     // For simplicity, this catches some of the edge cases
     return vision;
     }
@@ -343,6 +342,7 @@ public class FogUtil {
     // Make sure to process the first point once more at the end to ensure the sweep covers the full
     // 360 degrees.
     endpoints.add(endpoints.get(0));
+    timer.stop("build network");
 
     // Note: we are essentially this collection as a priority queue, so we can always operate on the
     // closest wall. However, TreeSet is faster than PriorityQueue in this case, likely since the
@@ -358,6 +358,7 @@ public class FogUtil {
     // done the sweep all the way around. I.e., such a wall would have just ended, or straddles the
     // starting ray. IOW, the wall's first point must be strictly CLOCKWISE, while the second point
     // must be COLINEAR or COUNTERCLOCKWISE.
+    timer.start("initialize");
     {
       final var initialRay = new LineSegment(origin, endpoints.getFirst().getPoint());
       for (final var wall : visionBlockingSegments) {
@@ -371,10 +372,12 @@ public class FogUtil {
     }
     timer.stop("initialize");
     var previousNearestWall = openWalls.getFirst();
+    timer.stop("initialize");
 
     timer.start("sweep");
     // Now for the real sweep. Make sure to process the first point once more at the end to ensure
     // the sweep covers the full 360 degrees.
+    timer.start("sweep");
     List<Coordinate> visionPoints = new ArrayList<>();
     for (final var endpoint : endpoints) {
       assert !openWalls.isEmpty();
@@ -418,13 +421,22 @@ public class FogUtil {
       previousNearestWall = currentNearestWall;
     }
     timer.stop("sweep");
-    if (visionPoints.size() < 3) {
-      // This shouldn't happen, but just in case.
-      log.warn("Sweep produced too few points: {}", visionPoints);
-      return null;
+
+    timer.start("sanity check");
+    try {
+      if (visionPoints.size() < 3) {
+        // This shouldn't happen, but just in case.
+        log.warn("Sweep produced too few points: {}", visionPoints);
+        return null;
+      }
     }
+    finally {
+      timer.stop("sanity check");
+    }
+
     timer.start("close polygon");
     // Ensure a closed loop.
+    // TODO Are there not cases where this is already done?
     visionPoints.add(visionPoints.get(0));
     timer.stop("close polygon");
 
