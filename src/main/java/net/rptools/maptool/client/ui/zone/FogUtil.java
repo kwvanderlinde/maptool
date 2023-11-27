@@ -342,7 +342,7 @@ public class FogUtil {
     // Make sure to process the first point once more at the end to ensure the sweep covers the full
     // 360 degrees.
     endpoints.add(endpoints.get(0));
-    timer.stop("build network");
+    timer.stop("initialize");
 
     // Note: we are essentially this collection as a priority queue, so we can always operate on the
     // closest wall. However, TreeSet is faster than PriorityQueue in this case, likely since the
