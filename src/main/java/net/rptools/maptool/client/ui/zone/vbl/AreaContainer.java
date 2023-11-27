@@ -49,6 +49,6 @@ public sealed interface AreaContainer<
    * @return A list of segments, which together represent the complete set of boundary faces that
    *     block vision.
    */
-  public VisionBlockingSet getVisionBlockingBoundarySegments(
-      Coordinate origin, Facing facing, Envelope visionBounds);
+  public void getVisionBlockingBoundarySegments(
+      VisionBlockingSet vbs, Coordinate origin, Facing facing, Envelope visionBounds);
 }

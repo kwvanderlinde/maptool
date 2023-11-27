@@ -67,13 +67,13 @@ public final class AreaOcean implements AreaContainer<AreaOcean, AreaIsland> {
   }
 
   @Override
-  public VisionBlockingSet getVisionBlockingBoundarySegments(
-      Coordinate origin, Facing facing, Envelope visionBounds) {
+  public void getVisionBlockingBoundarySegments(
+      VisionBlockingSet vbs, Coordinate origin, Facing facing, Envelope visionBounds) {
     if (meta == null) {
-      return new VisionBlockingSet();
+      return;
     }
 
-    return meta.getFacingSegments(origin, facing, visionBounds);
+    meta.getFacingSegments(vbs, origin, facing, visionBounds);
   }
 
   public void addIsland(AreaIsland island) {

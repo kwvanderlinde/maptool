@@ -14,7 +14,6 @@
  */
 package net.rptools.maptool.client.ui.zone.vbl;
 
-import java.awt.Point;
 import javax.annotation.Nonnull;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Envelope;
@@ -24,11 +23,12 @@ public final class VisionBlockingAccumulator {
   private final Envelope visionBounds;
   private final VisionBlockingSet visionBlockingSet;
 
-  public VisionBlockingAccumulator(Point origin, Envelope visionBounds) {
-    this.origin = new Coordinate(origin.getX(), origin.getY());
+  public VisionBlockingAccumulator(
+      VisionBlockingSet visionBlockingSet, Coordinate origin, Envelope visionBounds) {
+    this.origin = origin;
     this.visionBounds = new Envelope(visionBounds);
 
-    this.visionBlockingSet = new VisionBlockingSet();
+    this.visionBlockingSet = visionBlockingSet;
   }
 
   public VisionBlockingSet getVisionBlockingSegments() {
@@ -43,12 +43,10 @@ public final class VisionBlockingAccumulator {
     final var facing =
         container.isOcean() ? Facing.OCEAN_SIDE_FACES_ORIGIN : Facing.ISLAND_SIDE_FACES_ORIGIN;
 
-    visionBlockingSet.union(
-        container.getVisionBlockingBoundarySegments(origin, facing, visionBounds));
+    container.getVisionBlockingBoundarySegments(visionBlockingSet, origin, facing, visionBounds);
 
     for (var child : container.getChildren()) {
-      visionBlockingSet.union(
-          child.getVisionBlockingBoundarySegments(origin, facing, visionBounds));
+      child.getVisionBlockingBoundarySegments(visionBlockingSet, origin, facing, visionBounds);
     }
   }
 

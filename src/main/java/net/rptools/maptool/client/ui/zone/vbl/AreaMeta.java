@@ -67,6 +67,7 @@ public class AreaMeta {
     // On the other hand it makes Pit VBL still not behave correctly: vision can extend both into
     // and out of the region, though only through the one line.
     final var location = PointLocation.locateInRing(point, vertices);
+
     if (isHole) {
       return location == Location.INTERIOR;
     } else {
@@ -92,35 +93,30 @@ public class AreaMeta {
    * @return All line segments with a facing that matches {@code facing} based on the position of
    *     {@code origin}. The line segments are joined into continguous line strings where possible.
    */
-  public VisionBlockingSet getFacingSegments(
-      Coordinate origin, Facing facing, Envelope visionBounds) {
+  public void getFacingSegments(
+      VisionBlockingSet vbs, Coordinate origin, Facing facing, Envelope visionBounds) {
     final var requiredOrientation =
         facing == Facing.ISLAND_SIDE_FACES_ORIGIN
             ? Orientation.CLOCKWISE
             : Orientation.COUNTERCLOCKWISE;
-    final var result = new VisionBlockingSet();
-
     for (int i = 1; i < vertices.length; ++i) {
-      final var faceLineSegment = new LineSegment(vertices[i - 1], vertices[i]);
-      final var orientation = faceLineSegment.orientationIndex(origin);
+      final var p0 = vertices[i - 1];
+      final var p1 = vertices[i];
+
+      final var orientation = Orientation.index(p0, p1, origin);
 
       final var shouldIncludeFace =
           (orientation == requiredOrientation)
               // Don't need to be especially precise with the vision check.
-              && visionBounds.intersects(faceLineSegment.p0, faceLineSegment.p1);
-      if (!shouldIncludeFace) {
-        continue;
+              && visionBounds.intersects(p0, p1);
+      if (shouldIncludeFace) {
+        var segment = new LineSegment(p0, p1);
+        if (requiredOrientation != Orientation.COUNTERCLOCKWISE) {
+          segment.reverse();
+        }
+        vbs.add(segment);
       }
-
-      // Regardless of the orientation required for inclusion, the vision algorithm wants the
-      // segment oriented counterclockwise.
-      if (orientation != Orientation.COUNTERCLOCKWISE) {
-        faceLineSegment.reverse();
-      }
-      result.add(faceLineSegment);
     }
-
-    return result;
   }
 
   public boolean isHole() {

@@ -62,9 +62,9 @@ public final class AreaIsland implements AreaContainer<AreaIsland, AreaOcean> {
   }
 
   @Override
-  public VisionBlockingSet getVisionBlockingBoundarySegments(
-      Coordinate origin, Facing facing, Envelope visionBounds) {
-    return meta.getFacingSegments(origin, facing, visionBounds);
+  public void getVisionBlockingBoundarySegments(
+      VisionBlockingSet vbs, Coordinate origin, Facing facing, Envelope visionBounds) {
+    meta.getFacingSegments(vbs, origin, facing, visionBounds);
   }
 
   public @Nonnull AreaContainer<?, ?> getDeepestContainingContainerIn(AreaOcean root) {
