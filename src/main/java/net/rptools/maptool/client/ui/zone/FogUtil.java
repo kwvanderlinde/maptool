@@ -76,6 +76,16 @@ public class FogUtil {
    * @param topology the VBL topology.
    * @return the visible area.
    */
+  // TODO Accept a LinearRing to represent the vision bounds to use. That will allow us to construct
+  //  a precise visibility polygon for the case of calculating vision specifically. In that case, do
+  //  not intersect with any provided vision Area (actually that should just not be provided), but
+  //  still return the created Area.
+  //  Note that this does not work for light sources (normal, personal, or aura) as they can have
+  //  gaps (e.g., light exterior with a gooey darkness interior). Although, in that case, a
+  //  LinearRing may still provide certain efficiencies and may also enable intersecting all vision
+  //  sweeps in JTS-land. If we do provide a ring for those cases as well, then we should push the
+  //  final Area intersection to the caller, keeping this algorithm strictly about visibility
+  //  _polygons_.
   public static @Nonnull Area calculateVisibility(
       Point origin,
       Area vision,
