@@ -16,11 +16,8 @@ package net.rptools.maptool.client.ui.zone.vbl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.TreeSet;
-import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import net.rptools.lib.CodeTimer;
@@ -36,12 +33,13 @@ public class VisionBlockingSet {
 
   private int mostOpenWalls = 0;
   private int wallChangeCount = 0;
+  private int endpointCount = 0;
+  private int duplicateEndpointCount = 0;
 
   private final Coordinate origin;
   private final LineSegment initialRay;
   private final Envelope envelope;
   private final List<VisibilitySweepEndpoint> endpoints;
-  private final Map<Coordinate, VisibilitySweepEndpoint> endpointsByPosition;
 
   // Note: we are essentially this collection as a priority queue, so we can always operate on the
   // closest wall. However, TreeSet is faster than PriorityQueue in this case, likely since the
@@ -58,19 +56,20 @@ public class VisionBlockingSet {
     this.initialRay = new LineSegment(origin, new Coordinate(origin.x - 1, origin.y));
     this.envelope = new Envelope();
     this.endpoints = new ArrayList<>();
-    this.endpointsByPosition = new HashMap<>();
     this.openWalls = new TreeSet<>(this::compareOpenWalls);
   }
 
   public void init(Coordinate origin) {
     this.mostOpenWalls = 0;
     this.wallChangeCount = 0;
+    this.endpointCount = 0;
+    this.duplicateEndpointCount = 0;
+
     this.origin.setCoordinate(origin);
     this.initialRay.p0 = this.origin;
     this.initialRay.p1 = new Coordinate(this.origin.x - 1, this.origin.y);
     this.envelope.init();
     this.endpoints.clear();
-    this.endpointsByPosition.clear();
     this.openWalls.clear();
   }
 
@@ -89,32 +88,28 @@ public class VisionBlockingSet {
     if (string.size() < 2) {
       return;
     }
-    final Function<Coordinate, VisibilitySweepEndpoint> createEndpoint =
-        c -> {
-          var newEndpoint = new VisibilitySweepEndpoint(c);
-          endpoints.add(newEndpoint);
-          this.envelope.expandToInclude(c);
-          return newEndpoint;
-        };
 
-    var previous = endpointsByPosition.computeIfAbsent(string.get(0), createEndpoint);
-    for (var i = 1; i < string.size(); ++i) {
-      var current = endpointsByPosition.computeIfAbsent(string.get(i), createEndpoint);
+    // Always plainly add the first point.
+    VisibilitySweepEndpoint previous = new VisibilitySweepEndpoint(string.get(0));
+    this.envelope.expandToInclude(previous.getPoint());
+    endpoints.add(previous);
 
-      var segment = new LineSegment(previous.getPoint(), current.getPoint());
-      assert segment.orientationIndex(origin) == Orientation.COUNTERCLOCKWISE;
+    for (int i = 1; i < string.size(); ++i) {
+      var endpoint = new VisibilitySweepEndpoint(string.get(i));
+      this.envelope.expandToInclude(endpoint.getPoint());
+      endpoints.add(endpoint);
 
-      previous.startsWall(current);
-      current.endsWall(previous);
+      previous.startsWall(endpoint);
+      endpoint.endsWall(previous);
 
       final var isOpen =
-          Orientation.CLOCKWISE != initialRay.orientationIndex(segment.p1)
-              && Orientation.CLOCKWISE == initialRay.orientationIndex(segment.p0);
+          Orientation.CLOCKWISE != initialRay.orientationIndex(endpoint.getPoint())
+              && Orientation.CLOCKWISE == initialRay.orientationIndex(previous.getPoint());
       if (isOpen) {
-        openWalls.add(segment);
+        openWalls.add(new LineSegment(previous.getPoint(), endpoint.getPoint()));
       }
 
-      previous = current;
+      previous = endpoint;
     }
   }
 
@@ -127,6 +122,49 @@ public class VisionBlockingSet {
       for (var otherEndpoint : endpoint.getEndsWalls()) {
         assert otherEndpoint.getStartsWalls().contains(endpoint);
       }
+    }
+  }
+
+  private void deduplicateEndpoints() {
+    // We might have duplicates we we don't want.
+    VisibilitySweepEndpoint previous = null;
+    for (var i = 0; i < endpoints.size(); ++i) {
+      final var endpoint = endpoints.get(i);
+      if (previous == null) {
+        previous = endpoint;
+        continue;
+      }
+
+      if (previous.getPoint().equals(endpoint.getPoint())) {
+        duplicateEndpointCount += 1;
+
+        // Merge with the existing one. Don't keep the duplicate.
+        // Need to replace all references to endpoint with references to previous.
+        for (final var otherEndpoint : endpoint.getStartsWalls()) {
+          previous.getStartsWalls().add(otherEndpoint);
+          otherEndpoint.getEndsWalls().remove(endpoint);
+          otherEndpoint.getEndsWalls().add(previous);
+        }
+        for (final var otherEndpoint : endpoint.getEndsWalls()) {
+          previous.getEndsWalls().add(otherEndpoint);
+          otherEndpoint.getStartsWalls().remove(endpoint);
+          otherEndpoint.getStartsWalls().add(previous);
+        }
+
+        // I could also .remove(), but that's expensive for long lists. We're just as well to skip
+        // this while iterating later.
+        endpoints.set(i, null);
+        continue;
+      }
+
+      // Haven't seen this endpoint yet. Add it to the map.
+      previous = endpoint;
+      endpointCount += 1;
+    }
+
+    // Don't keep trailing nulls, those will mess things up.
+    while (endpoints.getLast() == null) {
+      endpoints.removeLast();
     }
   }
 
@@ -169,13 +207,19 @@ public class VisionBlockingSet {
     timer.stop("add bounds");
 
     timer.start("initialize");
-    endpoints.sort((l, r) -> comparePolar(l.getPoint(), r.getPoint()));
-    var previousNearestWall = openWalls.getFirst();
+    // verifyEndpoints();
+    timer.start("sort");
+    endpoints.sort((l, r) -> -comparePolar(l.getPoint(), r.getPoint()));
+    timer.stop("sort");
+    timer.start("deduplicate");
+    deduplicateEndpoints();
+    timer.stop("deduplicate");
     timer.stop("initialize");
 
     // Now for the real sweep. Make sure to process the first point once more at the end to ensure
     // the sweep covers the full 360 degrees.
     timer.start("sweep");
+    var previousNearestWall = openWalls.getFirst();
     List<Coordinate> visionPoints = new ArrayList<>();
     for (final var endpoint : endpoints) {
       previousNearestWall = consumeEndpoint(endpoint, previousNearestWall, visionPoints);
@@ -195,13 +239,12 @@ public class VisionBlockingSet {
       timer.stop("sanity check");
     }
     timer.start("close polygon");
-    // TODO Are there not cases where this is already done?
     visionPoints.add(visionPoints.get(0)); // Ensure a closed loop.
     timer.stop("close polygon");
 
     System.out.printf(
-        "%d endpoints; at most %d open walls; %d wall changes%n",
-        endpoints.size(), mostOpenWalls, wallChangeCount);
+        "%d endpoints; %d duplicated; at most %d open walls; %d wall changes%n",
+        endpointCount, duplicateEndpointCount, mostOpenWalls, wallChangeCount);
 
     timer.start("build result");
     try {
@@ -222,7 +265,7 @@ public class VisionBlockingSet {
     for (final var otherEndpoint : endpoint.getEndsWalls()) {
       var removed =
           openWalls.remove(new LineSegment(otherEndpoint.getPoint(), endpoint.getPoint()));
-      //assert removed : "The endpoint's ended walls should be open just prior to this point";
+      // assert removed : "The endpoint's ended walls should be open just prior to this point";
     }
     for (var otherEndpoint : endpoint.getStartsWalls()) {
       openWalls.add(new LineSegment(endpoint.getPoint(), otherEndpoint.getPoint()));
