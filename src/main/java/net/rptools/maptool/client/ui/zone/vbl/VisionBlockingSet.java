@@ -89,7 +89,6 @@ public class VisionBlockingSet {
     if (string.size() < 2) {
       return;
     }
-
     final Function<Coordinate, VisibilitySweepEndpoint> createEndpoint =
         c -> {
           var newEndpoint = new VisibilitySweepEndpoint(c);
@@ -105,8 +104,8 @@ public class VisionBlockingSet {
       var segment = new LineSegment(previous.getPoint(), current.getPoint());
       assert segment.orientationIndex(origin) == Orientation.COUNTERCLOCKWISE;
 
-      previous.startsWall(segment);
-      current.endsWall(segment);
+      previous.startsWall(current);
+      current.endsWall(previous);
 
       final var isOpen =
           Orientation.CLOCKWISE != initialRay.orientationIndex(segment.p1)
@@ -116,6 +115,18 @@ public class VisionBlockingSet {
       }
 
       previous = current;
+    }
+  }
+
+  // Don't actually call this, it's for testing purposes.
+  private void verifyEndpoints() {
+    for (var endpoint : endpoints) {
+      for (var otherEndpoint : endpoint.getStartsWalls()) {
+        assert otherEndpoint.getEndsWalls().contains(endpoint);
+      }
+      for (var otherEndpoint : endpoint.getEndsWalls()) {
+        assert otherEndpoint.getStartsWalls().contains(endpoint);
+      }
     }
   }
 
@@ -208,8 +219,14 @@ public class VisionBlockingSet {
 
     // Note: removeAll can be slow, but not in our case with few removed elements. In fact it is
     // almost always just removing one element.
-    openWalls.removeAll(endpoint.getEndsWalls());
-    openWalls.addAll(endpoint.getStartsWalls());
+    for (final var otherEndpoint : endpoint.getEndsWalls()) {
+      var removed =
+          openWalls.remove(new LineSegment(otherEndpoint.getPoint(), endpoint.getPoint()));
+      //assert removed : "The endpoint's ended walls should be open just prior to this point";
+    }
+    for (var otherEndpoint : endpoint.getStartsWalls()) {
+      openWalls.add(new LineSegment(endpoint.getPoint(), otherEndpoint.getPoint()));
+    }
 
     mostOpenWalls = Math.max(mostOpenWalls, openWalls.size());
 

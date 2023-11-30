@@ -15,10 +15,8 @@
 package net.rptools.maptool.client.ui.zone.vbl;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.LineSegment;
 
 /**
  * Represents a vertex used in the visibility sweep.
@@ -29,8 +27,8 @@ import org.locationtech.jts.geom.LineSegment;
  */
 public final class VisibilitySweepEndpoint {
   private final Coordinate point;
-  private final List<LineSegment> startsWalls = new ArrayList<>();
-  private final List<LineSegment> endsWalls = new ArrayList<>();
+  private final List<VisibilitySweepEndpoint> startsWalls = new ArrayList<>();
+  private final List<VisibilitySweepEndpoint> endsWalls = new ArrayList<>();
 
   public VisibilitySweepEndpoint(Coordinate point) {
     this.point = point;
@@ -40,20 +38,20 @@ public final class VisibilitySweepEndpoint {
     return point;
   }
 
-  public List<LineSegment> getStartsWalls() {
-    return Collections.unmodifiableList(startsWalls);
+  public List<VisibilitySweepEndpoint> getStartsWalls() {
+    return startsWalls;
   }
 
-  public List<LineSegment> getEndsWalls() {
-    return Collections.unmodifiableList(endsWalls);
+  public List<VisibilitySweepEndpoint> getEndsWalls() {
+    return endsWalls;
   }
 
-  public void startsWall(LineSegment wall) {
-    startsWalls.add(wall);
+  public void startsWall(VisibilitySweepEndpoint ending) {
+    startsWalls.add(ending);
   }
 
-  public void endsWall(LineSegment wall) {
-    endsWalls.add(wall);
+  public void endsWall(VisibilitySweepEndpoint starting) {
+    endsWalls.add(starting);
   }
 
   @Override
