@@ -23,16 +23,25 @@ import java.util.function.Consumer;
 import net.rptools.maptool.client.MapTool;
 
 public class CodeTimer {
-  private static final CodeTimer BASIC = new CodeTimer();
-  private static final ScopedValue<CodeTimer> SCOPED = ScopedValue.newInstance();
+  private static final ThreadLocal<CodeTimer> ROOT_TIMER = ThreadLocal.withInitial(CodeTimer::new);
+  private static final ThreadLocal<List<CodeTimer>> timerStack =
+      ThreadLocal.withInitial(ArrayList::new);
 
   public static void using(String name, Consumer<CodeTimer> callback) {
+    var parent = get();
     var timer = new CodeTimer(name);
-    timer.start(name);
+
+    var stack = timerStack.get();
+    stack.addLast(timer);
+
+    parent.start(name);
     try {
-      ScopedValue.runWhere(SCOPED, timer, () -> callback.accept(timer));
+      callback.accept(timer);
     } finally {
-      timer.stop(name);
+      parent.stop(name);
+      final var lastTimer = stack.removeLast();
+      assert lastTimer == timer : "Timer stack is corrupted";
+
       if (timer.isEnabled()) {
         String results = timer.toString();
         MapTool.getProfilingNoteFrame().addText(results);
@@ -42,7 +51,8 @@ public class CodeTimer {
   }
 
   public static CodeTimer get() {
-    return SCOPED.orElse(BASIC);
+    final var stack = timerStack.get();
+    return stack.isEmpty() ? ROOT_TIMER.get() : stack.getLast();
   }
 
   private final Map<String, Timer> timeMap = new HashMap<String, Timer>();
