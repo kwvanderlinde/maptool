@@ -156,6 +156,7 @@ public class ZoneRenderer extends JComponent
   private final ZoneCompositor compositor;
   private final GridRenderer gridRenderer;
   private final HaloRenderer haloRenderer;
+  private final LightsRenderer lightsRenderer;
   private final DarknessRenderer darknessRenderer;
 
   /**
@@ -175,6 +176,7 @@ public class ZoneRenderer extends JComponent
     this.compositor = new ZoneCompositor();
     this.gridRenderer = new GridRenderer();
     this.haloRenderer = new HaloRenderer();
+    this.lightsRenderer = new LightsRenderer(renderHelper, zone, zoneView);
     this.darknessRenderer = new DarknessRenderer(renderHelper, zoneView);
     repaintDebouncer = new DebounceExecutor(1000 / AppPreferences.getFrameRateCap(), this::repaint);
 
@@ -1062,13 +1064,13 @@ public class ZoneRenderer extends JComponent
       }
     }
     if (shouldRenderLayer(Zone.Layer.TOKEN, view)) {
+      this.lightsRenderer.renderLights(g2d, view);
+
       timer.start("lights");
       renderLights(g2d, view);
       timer.stop("lights");
 
-      timer.start("auras");
-      renderAuras(g2d, view);
-      timer.stop("auras");
+      this.lightsRenderer.renderAuras(g2d, view);
     }
 
     darknessRenderer.render(g2d, view);
@@ -1271,36 +1273,6 @@ public class ZoneRenderer extends JComponent
   private void renderLights(Graphics2D g, PlayerView view) {
     final var timer = CodeTimer.get();
 
-    // Collect and organize lights
-    timer.start("renderLights:getLights");
-    final var drawableLights = zoneView.getDrawableLights(view);
-    timer.stop("renderLights:getLights");
-
-    if (AppState.isShowLights()) {
-      // Lighting enabled.
-      timer.start("renderLights:renderLightOverlay");
-      final var overlayBlending =
-          switch (zone.getLightingStyle()) {
-            case OVERTOP -> AlphaComposite.SrcOver.derive(
-                AppPreferences.getLightOverlayOpacity() / 255.f);
-            case ENVIRONMENTAL -> LightingComposite.OverlaidLights;
-          };
-      final var overlayFillColor =
-          switch (zone.getLightingStyle()) {
-            case OVERTOP -> new Color(0, 0, 0, 0);
-            case ENVIRONMENTAL -> Color.black;
-          };
-
-      renderLightOverlay(
-          g,
-          LightingComposite.BlendedLights,
-          overlayBlending,
-          view.isGMView() ? null : ZoneRendererConstants.LightOverlayClipStyle.CLIP_TO_VISIBLE_AREA,
-          drawableLights,
-          overlayFillColor);
-      timer.stop("renderLights:renderLightOverlay");
-    }
-
     if (AppState.isShowLumensOverlay()) {
       // Lumens overlay enabled.
       timer.start("renderLights:renderLumensOverlay");
@@ -1311,31 +1283,6 @@ public class ZoneRenderer extends JComponent
           AppPreferences.getLumensOverlayOpacity() / 255.0f);
       timer.stop("renderLights:renderLumensOverlay");
     }
-  }
-
-  /**
-   * Render the auras.
-   *
-   * @param g the Graphics2D object.
-   * @param view the player view.
-   */
-  private void renderAuras(Graphics2D g, PlayerView view) {
-    final var timer = CodeTimer.get();
-
-    // Setup
-    timer.start("renderAuras:getAuras");
-    final var drawableAuras = zoneView.getDrawableAuras();
-    timer.stop("renderAuras:getAuras");
-
-    timer.start("renderAuras:renderAuraOverlay");
-    renderLightOverlay(
-        g,
-        AlphaComposite.SrcOver.derive(AppPreferences.getAuraOverlayOpacity() / 255.0f),
-        AlphaComposite.SrcOver,
-        view.isGMView() ? null : ZoneRendererConstants.LightOverlayClipStyle.CLIP_TO_VISIBLE_AREA,
-        drawableAuras,
-        new Color(0, 0, 0, 0));
-    timer.stop("renderAuras:renderAuraOverlay");
   }
 
   private void renderLumensOverlay(
@@ -1437,82 +1384,6 @@ public class ZoneRenderer extends JComponent
       timer.start("renderLumensOverlay:drawBuffer");
       g.drawImage(lumensOverlay, null, 0, 0);
       timer.stop("renderLumensOverlay:drawBuffer");
-    }
-  }
-
-  /**
-   * Combines a set of lights into an image that is then rendered into the zone.
-   *
-   * @param g The graphics object used to render the zone.
-   * @param lightBlending The composite used to blend lights together within the overlay
-   * @param overlayBlending The composite used when blending the overlay with the underlying image.
-   * @param clipStyle How to clip the overlay relative to the visible area. Set to null for no extra
-   *     clipping.
-   * @param lights The lights that will be rendered and blended.
-   */
-  private void renderLightOverlay(
-      Graphics2D g,
-      Composite lightBlending,
-      Composite overlayBlending,
-      @Nullable ZoneRendererConstants.LightOverlayClipStyle clipStyle,
-      Collection<DrawableLight> lights,
-      Paint backgroundFill) {
-    final var timer = CodeTimer.get();
-
-    if (lights.isEmpty()) {
-      // No point spending resources accomplishing nothing.
-      return;
-    }
-
-    g = (Graphics2D) g.create();
-
-    // Set up a buffer image for lights to be drawn onto before the map
-    timer.start("renderLightOverlay:allocateBuffer");
-    try (final var bufferHandle = tempBufferPool.acquire()) {
-      BufferedImage lightOverlay = bufferHandle.get();
-      timer.stop("renderLightOverlay:allocateBuffer");
-
-      Graphics2D newG = lightOverlay.createGraphics();
-      newG.setComposite(AlphaComposite.Src);
-      newG.setPaint(backgroundFill);
-      newG.fillRect(0, 0, lightOverlay.getWidth(), lightOverlay.getHeight());
-
-      if (clipStyle != null && visibleScreenArea != null) {
-        timer.start("renderLightOverlay:setClip");
-        Area clip = new Area(g.getClip());
-        switch (clipStyle) {
-          case CLIP_TO_VISIBLE_AREA -> clip.intersect(visibleScreenArea);
-          case CLIP_TO_NOT_VISIBLE_AREA -> clip.subtract(visibleScreenArea);
-        }
-        newG.setClip(clip);
-        timer.stop("renderLightOverlay:setClip");
-      }
-
-      timer.start("renderLightOverlay:setTransform");
-      AffineTransform af = new AffineTransform();
-      af.translate(getViewOffsetX(), getViewOffsetY());
-      af.scale(getScale(), getScale());
-      newG.setTransform(af);
-      timer.stop("renderLightOverlay:setTransform");
-
-      newG.setComposite(lightBlending);
-
-      // Draw lights onto the buffer image so the map doesn't affect how they blend
-      timer.start("renderLightOverlay:drawLights");
-      for (var light : lights) {
-        newG.setPaint(light.getPaint().getPaint());
-        timer.start("renderLightOverlay:fillLight");
-        newG.fill(light.getArea());
-        timer.stop("renderLightOverlay:fillLight");
-      }
-      timer.stop("renderLightOverlay:drawLights");
-      newG.dispose();
-
-      // Draw the buffer image with all the lights onto the map
-      timer.start("renderLightOverlay:drawBuffer");
-      g.setComposite(overlayBlending);
-      g.drawImage(lightOverlay, null, 0, 0);
-      timer.stop("renderLightOverlay:drawBuffer");
     }
   }
 
