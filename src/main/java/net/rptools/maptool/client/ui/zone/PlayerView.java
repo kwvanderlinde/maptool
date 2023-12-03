@@ -14,6 +14,8 @@
  */
 package net.rptools.maptool.client.ui.zone;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.player.Player;
@@ -54,6 +56,16 @@ public class PlayerView {
     this.role = role;
     this.tokens = tokens;
     hash = calculateHashcode();
+  }
+
+  public PlayerView derive(Collection<Token> subset) {
+    if (tokens == null) {
+      return new PlayerView(role, new ArrayList<>(subset));
+    }
+
+    var newTokens = new ArrayList<>(tokens);
+    newTokens.removeIf(t -> !subset.contains(t));
+    return new PlayerView(role, newTokens);
   }
 
   public Player.Role getRole() {
