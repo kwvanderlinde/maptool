@@ -33,7 +33,6 @@ import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import net.rptools.lib.CodeTimer;
@@ -158,6 +157,7 @@ public class ZoneRenderer extends JComponent
   private final HaloRenderer haloRenderer;
   private final LightsRenderer lightsRenderer;
   private final DarknessRenderer darknessRenderer;
+  private final LumensRenderer lumensRenderer;
 
   /**
    * Constructor for the ZoneRenderer from a zone.
@@ -178,6 +178,7 @@ public class ZoneRenderer extends JComponent
     this.haloRenderer = new HaloRenderer();
     this.lightsRenderer = new LightsRenderer(renderHelper, zone, zoneView);
     this.darknessRenderer = new DarknessRenderer(renderHelper, zoneView);
+    this.lumensRenderer = new LumensRenderer(renderHelper, zone, zoneView);
     repaintDebouncer = new DebounceExecutor(1000 / AppPreferences.getFrameRateCap(), this::repaint);
 
     setFocusable(true);
@@ -1065,11 +1066,7 @@ public class ZoneRenderer extends JComponent
     }
     if (shouldRenderLayer(Zone.Layer.TOKEN, view)) {
       this.lightsRenderer.renderLights(g2d, view);
-
-      timer.start("lights");
-      renderLights(g2d, view);
-      timer.stop("lights");
-
+      this.lumensRenderer.render(g2d, view);
       this.lightsRenderer.renderAuras(g2d, view);
     }
 
@@ -1263,129 +1260,6 @@ public class ZoneRenderer extends JComponent
    * overlay in turn.
    */
   private final BufferedImagePool tempBufferPool = new BufferedImagePool(2);
-
-  /**
-   * Render the lights.
-   *
-   * @param g the graphic 2D object
-   * @param view the player view
-   */
-  private void renderLights(Graphics2D g, PlayerView view) {
-    final var timer = CodeTimer.get();
-
-    if (AppState.isShowLumensOverlay()) {
-      // Lumens overlay enabled.
-      timer.start("renderLights:renderLumensOverlay");
-      renderLumensOverlay(
-          g,
-          view,
-          view.isGMView() ? null : ZoneRendererConstants.LightOverlayClipStyle.CLIP_TO_VISIBLE_AREA,
-          AppPreferences.getLumensOverlayOpacity() / 255.0f);
-      timer.stop("renderLights:renderLumensOverlay");
-    }
-  }
-
-  private void renderLumensOverlay(
-      Graphics2D g,
-      PlayerView view,
-      @Nullable ZoneRendererConstants.LightOverlayClipStyle clipStyle,
-      float overlayOpacity) {
-    final var timer = CodeTimer.get();
-
-    g = (Graphics2D) g.create();
-
-    final var disjointLumensLevels = zoneView.getDisjointObscuredLumensLevels(view);
-
-    timer.start("renderLumensOverlay:allocateBuffer");
-    try (final var bufferHandle = tempBufferPool.acquire()) {
-      BufferedImage lumensOverlay = bufferHandle.get();
-      timer.stop("renderLumensOverlay:allocateBuffer");
-
-      Graphics2D newG = lumensOverlay.createGraphics();
-      // At night, show any uncovered areas as dark. In daylight, show them as light (clear).
-      newG.setComposite(AlphaComposite.Src.derive(overlayOpacity));
-      newG.setPaint(
-          zone.getVisionType() == Zone.VisionType.NIGHT
-              ? new Color(0.f, 0.f, 0.f, 1.f)
-              : new Color(0.f, 0.f, 0.f, 0.f));
-      newG.fillRect(0, 0, lumensOverlay.getWidth(), lumensOverlay.getHeight());
-
-      newG.setComposite(AlphaComposite.SrcOver.derive(overlayOpacity));
-      SwingUtil.useAntiAliasing(newG);
-
-      if (clipStyle != null && visibleScreenArea != null) {
-        timer.start("renderLumensOverlay:setClip");
-        Area clip = new Area(g.getClip());
-        switch (clipStyle) {
-          case CLIP_TO_VISIBLE_AREA -> clip.intersect(visibleScreenArea);
-          case CLIP_TO_NOT_VISIBLE_AREA -> clip.subtract(visibleScreenArea);
-        }
-        newG.setClip(clip);
-        g.setClip(clip);
-        timer.stop("renderLumensOverlay:setClip");
-      }
-
-      timer.start("renderLumensOverlay:setTransform");
-      AffineTransform af = new AffineTransform();
-      af.translate(getViewOffsetX(), getViewOffsetY());
-      af.scale(getScale(), getScale());
-      newG.setTransform(af);
-      timer.stop("renderLumensOverlay:setTransform");
-
-      timer.start("renderLumensOverlay:drawLumens");
-      for (final var lumensLevel : disjointLumensLevels) {
-        final var lumensStrength = lumensLevel.lumensStrength();
-
-        // Light is weaker than darkness, so do it first.
-        float lightOpacity;
-        float lightShade;
-        if (lumensStrength == 0) {
-          // This area represents daylight, so draw it as clear despite the low value.
-          lightShade = 1.f;
-          lightOpacity = 0;
-        } else if (lumensStrength >= 100) {
-          // Bright light, render mostly clear.
-          lightShade = 1.f;
-          lightOpacity = 1.f / 10.f;
-        } else {
-          lightShade = Math.max(0.f, Math.min(lumensStrength / 100.f, 1.f));
-          lightShade *= lightShade;
-          lightOpacity = 1.f;
-        }
-
-        timer.start("renderLumensOverlay:drawLights:fillArea");
-        newG.setPaint(new Color(lightShade, lightShade, lightShade, lightOpacity));
-        newG.fill(lumensLevel.lightArea());
-
-        newG.setPaint(new Color(0.f, 0.f, 0.f, 1.f));
-        newG.fill(lumensLevel.darknessArea());
-        timer.stop("renderLumensOverlay:drawLights:fillArea");
-      }
-
-      // Now draw borders around each region if configured.
-      final var borderThickness = AppPreferences.getLumensOverlayBorderThickness();
-      if (borderThickness > 0) {
-        newG.setStroke(
-            new BasicStroke(
-                (float) borderThickness, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        newG.setComposite(AlphaComposite.SrcOver);
-        newG.setPaint(new Color(0.f, 0.f, 0.f, 1.f));
-        for (final var lumensLevel : disjointLumensLevels) {
-          timer.start("renderLumensOverlay:drawLights:drawArea");
-          newG.draw(lumensLevel.lightArea());
-          newG.draw(lumensLevel.darknessArea());
-          timer.stop("renderLumensOverlay:drawLights:drawArea");
-        }
-      }
-
-      timer.stop("renderLumensOverlay:drawLumens");
-      newG.dispose();
-
-      timer.start("renderLumensOverlay:drawBuffer");
-      g.drawImage(lumensOverlay, null, 0, 0);
-      timer.stop("renderLumensOverlay:drawBuffer");
-    }
-  }
 
   /**
    * This outlines the area visible to the token under the cursor, clipped to the current
