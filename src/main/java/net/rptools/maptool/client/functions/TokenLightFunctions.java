@@ -27,7 +27,6 @@ import java.util.Optional;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.*;
-import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
@@ -426,7 +425,7 @@ public class TokenLightFunctions extends AbstractFunction {
     final var ownerOnly =
         lightDef.has("ownerOnly") ? !lightDef.get("ownerOnly").getAsBoolean() : false;
 
-    final DrawableColorPaint colorPaint;
+    final Color color;
     if (lightDef.has("color")) {
       var colorString = lightDef.get("color").getAsString();
       if (!colorString.startsWith("#")) {
@@ -434,9 +433,9 @@ public class TokenLightFunctions extends AbstractFunction {
         colorString = "#" + colorString;
       }
 
-      colorPaint = new DrawableColorPaint(Color.decode(colorString));
+      color = Color.decode(colorString);
     } else {
-      colorPaint = null;
+      color = null;
     }
 
     final var lumens = lightDef.has("lumens") ? lightDef.get("lumens").getAsInt() : 100;
@@ -444,7 +443,7 @@ public class TokenLightFunctions extends AbstractFunction {
       throw new ParserException(I18N.getText("Lumens must be non-zero."));
     }
 
-    return new Light(shape, offset, range, arc, colorPaint, lumens, gmOnly, ownerOnly);
+    return new Light(shape, offset, range, arc, color, lumens, gmOnly, ownerOnly);
   }
 
   private static JsonObject lightSourceToJson(LightSource source) {
@@ -481,8 +480,9 @@ public class TokenLightFunctions extends AbstractFunction {
     }
 
     lightDef.addProperty("range", light.getRadius());
-    if (light.getPaint() instanceof DrawableColorPaint paint) {
-      lightDef.addProperty("color", toHex(paint.getColor()));
+    var color = light.getColor();
+    if (color != null) {
+      lightDef.addProperty("color", toHex(color.getRGB()));
     }
     lightDef.addProperty("lumens", light.getLumens());
 

@@ -36,7 +36,6 @@ import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Light;
 import net.rptools.maptool.model.LightSource;
 import net.rptools.maptool.model.ShapeType;
-import net.rptools.maptool.model.drawing.DrawableColorPaint;
 
 public class LightSyntax {
   private static final int DEFAULT_LUMENS = 100;
@@ -213,9 +212,8 @@ public class LightSyntax {
         }
 
         builder.append(' ').append(StringUtil.formatDecimal(light.getRadius()));
-        if (light.getPaint() instanceof DrawableColorPaint) {
-          Color color = (Color) light.getPaint().getPaint();
-          builder.append(toHex(color));
+        if (light.getColor() != null) {
+          builder.append(toHex(light.getColor()));
         }
         if (lightSource.getType() == LightSource.Type.NORMAL) {
           final var lumens = light.getLumens();
@@ -366,7 +364,7 @@ public class LightSyntax {
                 offset,
                 StringUtil.parseDecimal(distance),
                 arc,
-                color == null ? null : new DrawableColorPaint(color),
+                color,
                 perRangeLumens,
                 gmOnly,
                 ownerOnly);

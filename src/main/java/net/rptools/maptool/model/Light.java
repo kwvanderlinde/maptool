@@ -14,11 +14,13 @@
  */
 package net.rptools.maptool.model;
 
+import java.awt.Color;
 import java.awt.geom.Area;
 import java.io.Serial;
 import java.io.Serializable;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.drawing.DrawablePaint;
 import net.rptools.maptool.server.proto.LightDto;
 import net.rptools.maptool.server.proto.ShapeTypeDto;
@@ -28,17 +30,20 @@ public final class Light implements Serializable {
   private final double facingOffset;
   private final double radius;
   private final double arcAngle;
-  private final @Nullable DrawablePaint paint;
+  private final @Nullable Color color;
   private final int lumens;
   private final boolean isGM;
   private final boolean ownerOnly;
+
+  // Backwards compatibility only. Can't be transient because we still need to read it.
+  private @Deprecated @Nullable DrawablePaint paint;
 
   public Light(
       @Nonnull ShapeType shape,
       double facingOffset,
       double radius,
       double arcAngle,
-      @Nullable DrawablePaint paint,
+      @Nullable Color color,
       int lumens,
       boolean isGM,
       boolean owner) {
@@ -46,7 +51,7 @@ public final class Light implements Serializable {
     this.facingOffset = facingOffset;
     this.radius = radius;
     this.arcAngle = (arcAngle == 0) ? 90 : arcAngle;
-    this.paint = paint;
+    this.color = color;
     this.lumens = lumens;
     this.isGM = isGM;
     this.ownerOnly = owner;
@@ -57,19 +62,25 @@ public final class Light implements Serializable {
   private @Nonnull Object readResolve() {
     // Rather than modifying the current object, we'll create a replacement that is definitely
     // initialized properly.
+
+    @Nullable Color color = this.color;
+    if (color == null && paint instanceof DrawableColorPaint dcp) {
+      color = new Color(dcp.getColor(), false);
+    }
+
     return new Light(
         shape == null ? ShapeType.CIRCLE : shape,
         facingOffset,
         radius,
         arcAngle,
-        paint,
+        color,
         lumens == 0 ? 100 : lumens,
         isGM,
         ownerOnly);
   }
 
-  public @Nullable DrawablePaint getPaint() {
-    return paint;
+  public @Nullable Color getColor() {
+    return color;
   }
 
   public int getLumens() {
@@ -112,7 +123,7 @@ public final class Light implements Serializable {
         dto.getFacingOffset(),
         dto.getRadius(),
         dto.getArcAngle(),
-        dto.hasPaint() ? DrawablePaint.fromDto(dto.getPaint()) : null,
+        dto.hasColor() ? new Color(dto.getColor(), false) : null,
         dto.getLumens(),
         dto.getIsGm(),
         dto.getOwnerOnly());
@@ -120,8 +131,8 @@ public final class Light implements Serializable {
 
   public @Nonnull LightDto toDto() {
     var dto = LightDto.newBuilder();
-    if (paint != null) {
-      dto.setPaint(paint.toDto());
+    if (color != null) {
+      dto.setColor(color.getRGB());
     }
     dto.setFacingOffset(facingOffset);
     dto.setRadius(radius);

@@ -523,7 +523,7 @@ public class CampaignPropertiesDialog extends JDialog {
           System.out.print(", gm=" + light.isGM());
           System.out.print(", owner=" + light.isOwnerOnly());
           System.out.print(", radius=" + light.getRadius());
-          System.out.print(", color=" + light.getPaint() + "]\n");
+          System.out.print(", color=" + light.getColor() + "]\n");
         }
       }
     }

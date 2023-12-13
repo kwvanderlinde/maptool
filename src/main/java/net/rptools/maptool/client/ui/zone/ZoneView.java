@@ -34,6 +34,7 @@ import net.rptools.maptool.client.ui.zone.Illuminator.LitArea;
 import net.rptools.maptool.client.ui.zone.vbl.AreaTree;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
+import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.zones.TokensAdded;
 import net.rptools.maptool.model.zones.TokensChanged;
@@ -713,7 +714,8 @@ public class ZoneView {
                   for (Light light : lightSource.getLightList()) {
                     // If there is no paint, it's a "bright aura" that just shows whatever is
                     // beneath it and doesn't need to be rendered.
-                    if (light.getPaint() == null) {
+                    var color = light.getColor();
+                    if (color == null) {
                       continue;
                     }
                     if (light.isGM() && !view2.isGMView()) {
@@ -727,7 +729,7 @@ public class ZoneView {
                     Area lightArea = lightSource.getArea(token, zone, light);
                     lightArea.transform(AffineTransform.getTranslateInstance(p.x, p.y));
                     lightArea.intersect(visibleArea);
-                    lightList.add(new DrawableLight(light.getPaint(), lightArea));
+                    lightList.add(new DrawableLight(new DrawableColorPaint(color), lightArea));
                   }
                 }
               }
@@ -763,8 +765,8 @@ public class ZoneView {
                         }
 
                         // Lights without a colour are "clear" and should not be rendered.
-                        var paint = laud.lightInfo().light().getPaint();
-                        if (paint == null) {
+                        var color = laud.lightInfo().light().getColor();
+                        if (color == null) {
                           return null;
                         }
 
@@ -782,7 +784,7 @@ public class ZoneView {
                             isDarkness
                                 ? lumensLevel.get().darknessArea()
                                 : lumensLevel.get().lightArea());
-                        return new DrawableLight(paint, obscuredArea);
+                        return new DrawableLight(new DrawableColorPaint(color), obscuredArea);
                       })
                   .filter(Objects::nonNull)
                   .toList();

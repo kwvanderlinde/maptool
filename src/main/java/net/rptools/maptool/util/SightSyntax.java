@@ -31,7 +31,6 @@ import net.rptools.maptool.model.Light;
 import net.rptools.maptool.model.LightSource;
 import net.rptools.maptool.model.ShapeType;
 import net.rptools.maptool.model.SightType;
-import net.rptools.maptool.model.drawing.DrawableColorPaint;
 
 public class SightSyntax {
   private static final int DEFAULT_LUMENS = 100;
@@ -126,9 +125,7 @@ public class SightSyntax {
                         0,
                         pLightRange,
                         arc,
-                        personalLightColor == null
-                            ? null
-                            : new DrawableColorPaint(personalLightColor),
+                        personalLightColor,
                         perRangeLumens,
                         false,
                         false));
@@ -246,9 +243,8 @@ public class SightSyntax {
 
           builder.append("r").append(StringUtil.formatDecimal(range));
 
-          if (light.getPaint() != null && light.getPaint() instanceof DrawableColorPaint) {
-            Color color = (Color) light.getPaint().getPaint();
-            builder.append(toHex(color));
+          if (light.getColor() != null) {
+            builder.append(toHex(light.getColor()));
           }
           final var lumens = light.getLumens();
           if (lumens != DEFAULT_LUMENS) {

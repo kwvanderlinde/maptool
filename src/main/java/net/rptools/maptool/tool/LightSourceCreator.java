@@ -25,7 +25,6 @@ import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Light;
 import net.rptools.maptool.model.LightSource;
 import net.rptools.maptool.model.ShapeType;
-import net.rptools.maptool.model.drawing.DrawableColorPaint;
 
 public class LightSourceCreator {
   public static void main(String[] args) {
@@ -79,7 +78,7 @@ public class LightSourceCreator {
                 0,
                 radius * 2,
                 arcAngle,
-                new DrawableColorPaint(new Color(0, 0, 0, 100)),
+                new Color(0, 0, 0, 100),
                 100,
                 false,
                 false)));

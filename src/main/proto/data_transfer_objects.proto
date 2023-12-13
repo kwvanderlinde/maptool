@@ -87,7 +87,7 @@ enum ShapeTypeDto {
 }
 
 message LightDto {
-  DrawablePaintDto paint = 1;
+  optional int32 color = 1;
   double facing_offset = 2;
   double radius = 3;
   double arc_angle = 4;
