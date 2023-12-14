@@ -176,26 +176,31 @@ public class LightingComposite implements Composite {
         final int srcPixel = srcPixels[x];
         final int dstPixel = dstPixels[x];
 
-        final int resultR, resultG, resultB;
+        final int resultR, resultG, resultB, resultA;
 
         {
           final var dstC = (dstPixel >>> 16) & 0xFF;
           final var srcC = (srcPixel >>> 16) & 0xFF;
-          resultR = renormalize((255 - srcC) * dstC);
+          resultR = srcC + renormalize((255 - srcC) * dstC);
         }
         {
           final var dstC = (dstPixel >>> 8) & 0xFF;
           final var srcC = (srcPixel >>> 8) & 0xFF;
-          resultG = renormalize((255 - srcC) * dstC);
+          resultG = srcC + renormalize((255 - srcC) * dstC);
         }
         {
           final var dstC = dstPixel & 0xFF;
           final var srcC = srcPixel & 0xFF;
-          resultB = renormalize((255 - srcC) * dstC);
+          resultB = srcC + renormalize((255 - srcC) * dstC);
+        }
+        {
+          final var dstC = (dstPixel >>> 24) & 0xFF;
+          final var srcC = (srcPixel >>> 24) & 0xFF;
+          resultA = srcC + renormalize((255 - srcC) * dstC);
         }
 
         // This keeps the light alpha around instead of the base.
-        dstPixels[x] = srcPixel + ((resultR << 16) | (resultG << 8) | resultB);
+        dstPixels[x] = (resultA << 24) | (resultR << 16) | (resultG << 8) | resultB;
       }
     }
   }

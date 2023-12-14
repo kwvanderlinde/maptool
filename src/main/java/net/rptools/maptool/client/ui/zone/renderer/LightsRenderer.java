@@ -132,7 +132,10 @@ public class LightsRenderer {
     // Draw lights onto the buffer image so the map doesn't affect how they blend
     timer.start("renderLightOverlay:drawLights");
     for (var light : lights) {
-      worldG.setPaint(light.getPaint().getPaint());
+      var center = light.getCenter();
+      var radius = light.getSourceRange();
+
+      worldG.setPaint(light.getPaint(center, radius));
       timer.start("renderLightOverlay:fillLight");
       worldG.fill(light.getArea());
       timer.stop("renderLightOverlay:fillLight");

@@ -14,31 +14,63 @@
  */
 package net.rptools.maptool.client.ui.zone;
 
+import java.awt.Color;
+import java.awt.Paint;
+import java.awt.RadialGradientPaint;
 import java.awt.geom.Area;
+import java.awt.geom.Point2D;
 import javax.annotation.Nonnull;
-import net.rptools.maptool.model.drawing.DrawablePaint;
+import net.rptools.maptool.model.LightSource;
 
 public class DrawableLight {
-
-  private @Nonnull DrawablePaint paint;
+  private @Nonnull Color color;
+  private @Nonnull LightSource.BuiltInTexture texture;
   private @Nonnull Area area;
+  private @Nonnull Point2D center;
+  private double sourceRange;
 
-  public DrawableLight(@Nonnull DrawablePaint paint, @Nonnull Area area) {
+  public DrawableLight(
+      @Nonnull Color color,
+      @Nonnull LightSource.BuiltInTexture texture,
+      @Nonnull Area area,
+      @Nonnull Point2D center,
+      double sourceRange) {
     super();
-    this.paint = paint;
+    this.color = color;
+    this.texture = texture;
     this.area = area;
+    this.center = center;
+    this.sourceRange = sourceRange;
   }
 
-  public @Nonnull DrawablePaint getPaint() {
-    return paint;
+  public @Nonnull Paint getPaint(Point2D center, double radius) {
+    return switch (texture) {
+      case FLAT -> color;
+      case FADE -> new RadialGradientPaint(
+          (float) center.getX(),
+          (float) center.getY(),
+          (float) radius,
+          new float[] {0, 1},
+          new Color[] {color, new Color(0, 0, 0, 0)});
+    };
   }
 
   public @Nonnull Area getArea() {
     return area;
   }
 
+  public Point2D getCenter() {
+    return center;
+  }
+
+  public double getSourceRange() {
+    return sourceRange;
+  }
+
   @Override
   public String toString() {
-    return "DrawableLight[" + area.getBounds() + ", " + paint.getClass().getName() + "]";
+    return String.format(
+        "DrawableLight[%s, %s, %s, %s, %s]",
+        area.getBounds(), color, texture.name(), center, sourceRange);
   }
 }

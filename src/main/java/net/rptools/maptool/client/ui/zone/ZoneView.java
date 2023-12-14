@@ -34,7 +34,6 @@ import net.rptools.maptool.client.ui.zone.Illuminator.LitArea;
 import net.rptools.maptool.client.ui.zone.vbl.AreaTree;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
-import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.zones.TokensAdded;
 import net.rptools.maptool.model.zones.TokensChanged;
@@ -336,8 +335,9 @@ public class ZoneView {
       return Collections.emptyList();
     }
 
-    final var p = FogUtil.calculateVisionCenter(lightSourceToken, zone);
-    final var translateTransform = AffineTransform.getTranslateInstance(p.x, p.y);
+    final var lightCenter = FogUtil.calculateVisionCenter(lightSourceToken, zone);
+    final var translateTransform =
+        AffineTransform.getTranslateInstance(lightCenter.x, lightCenter.y);
     final var magnifyTransform = AffineTransform.getScaleInstance(multiplier, multiplier);
 
     final var lightSourceArea = lightSource.getArea(lightSourceToken, zone);
@@ -350,7 +350,7 @@ public class ZoneView {
 
     final var lightSourceVisibleArea =
         FogUtil.calculateVisibility(
-            p,
+            lightCenter,
             lightSourceArea,
             getTopologyTree(Zone.TopologyType.WALL_VBL),
             getTopologyTree(Zone.TopologyType.HILL_VBL),
@@ -389,7 +389,8 @@ public class ZoneView {
 
       litAreas.add(
           new ContributedLight(
-              new LitArea(light.getLumens(), lightArea), new LightInfo(lightSource, light)));
+              new LitArea(light.getLumens(), lightArea),
+              new LightInfo(lightSource, light, lightCenter)));
 
       cummulativeNotTransformedArea.add(notScaledLightArea);
     }
@@ -687,7 +688,7 @@ public class ZoneView {
                   continue;
                 }
                 boolean isOwner = token.isOwner(MapTool.getPlayer().getName());
-                Point p = FogUtil.calculateVisionCenter(token, zone);
+                Point lightCenter = FogUtil.calculateVisionCenter(token, zone);
 
                 for (AttachedLightSource als : token.getLightSources()) {
                   LightSource lightSource = als.resolve(token, MapTool.getCampaign());
@@ -700,10 +701,11 @@ public class ZoneView {
                   }
 
                   Area lightSourceArea = lightSource.getArea(token, zone);
-                  lightSourceArea.transform(AffineTransform.getTranslateInstance(p.x, p.y));
+                  lightSourceArea.transform(
+                      AffineTransform.getTranslateInstance(lightCenter.x, lightCenter.y));
                   Area visibleArea =
                       FogUtil.calculateVisibility(
-                          p,
+                          lightCenter,
                           lightSourceArea,
                           getTopologyTree(Zone.TopologyType.WALL_VBL),
                           getTopologyTree(Zone.TopologyType.HILL_VBL),
@@ -727,9 +729,15 @@ public class ZoneView {
 
                     // Calculate the area covered by this particular range.
                     Area lightArea = lightSource.getArea(token, zone, light);
-                    lightArea.transform(AffineTransform.getTranslateInstance(p.x, p.y));
+                    lightArea.transform(
+                        AffineTransform.getTranslateInstance(lightCenter.x, lightCenter.y));
                     lightArea.intersect(visibleArea);
-                    lightList.add(new DrawableLight(new DrawableColorPaint(color), lightArea));
+
+                    var grid = zone.getGrid();
+                    var range = lightSource.getMaxRange() * grid.getSize() / zone.getUnitsPerCell();
+                    lightList.add(
+                        new DrawableLight(
+                            color, lightSource.getTexture(), lightArea, lightCenter, range));
                   }
                 }
               }
@@ -784,7 +792,19 @@ public class ZoneView {
                             isDarkness
                                 ? lumensLevel.get().darknessArea()
                                 : lumensLevel.get().lightArea());
-                        return new DrawableLight(new DrawableColorPaint(color), obscuredArea);
+
+                        var grid = zone.getGrid();
+                        var range =
+                            laud.lightInfo().lightSource().getMaxRange()
+                                * grid.getSize()
+                                / zone.getUnitsPerCell();
+
+                        return new DrawableLight(
+                            color,
+                            laud.lightInfo().lightSource().getTexture(),
+                            obscuredArea,
+                            laud.lightInfo().center(),
+                            range);
                       })
                   .filter(Objects::nonNull)
                   .toList();

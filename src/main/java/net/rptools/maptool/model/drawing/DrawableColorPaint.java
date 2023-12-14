@@ -54,8 +54,8 @@ public class DrawableColorPaint extends DrawablePaint implements Serializable {
   }
 
   @Override
-  public Paint getPaint(int offsetX, int offsetY, double scale, ImageObserver... observer) {
-    return getPaint();
+  public Paint getPaint(int offsetX, int offsetY, double scale, ImageObserver... observers) {
+    return getPaint(observers);
   }
 
   @Override
