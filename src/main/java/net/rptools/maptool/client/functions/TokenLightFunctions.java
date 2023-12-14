@@ -321,6 +321,11 @@ public class TokenLightFunctions extends AbstractFunction {
             : LightSource.Type.NORMAL;
     final boolean scaleWithToken =
         lightSourceDef.has("scale") ? lightSourceDef.get("scale").getAsBoolean() : false;
+    final LightSource.BuiltInTexture texture =
+        lightSourceDef.has("texture")
+            ? LightSource.BuiltInTexture.valueOf(
+                lightSourceDef.get("texture").getAsString().toUpperCase())
+            : LightSource.BuiltInTexture.FLAT;
     final JsonArray lightDefs =
         lightSourceDef.has("lights") ? lightSourceDef.getAsJsonArray("lights") : new JsonArray();
 
@@ -335,6 +340,7 @@ public class TokenLightFunctions extends AbstractFunction {
             existingSource.isPresent() ? existingSource.get().getId() : new GUID(),
             type,
             scaleWithToken,
+            texture,
             lights);
     token.addUniqueLightSource(lightSource);
     MapTool.serverCommand()
@@ -451,6 +457,7 @@ public class TokenLightFunctions extends AbstractFunction {
     lightSourceDef.addProperty("name", source.getName());
     lightSourceDef.addProperty("type", source.getType().toString());
     lightSourceDef.addProperty("scale", source.isScaleWithToken());
+    lightSourceDef.addProperty("texture", source.getTexture().name());
 
     final var lightDefs = new JsonArray();
     for (final Light light : source.getLightList()) {

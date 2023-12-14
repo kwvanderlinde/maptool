@@ -379,6 +379,7 @@ public class getInfoFunction extends AbstractFunction {
         linfo.addProperty("max range", ls.getMaxRange());
         linfo.addProperty("type", ls.getType().toString());
         linfo.addProperty("scale", ls.isScaleWithToken());
+        linfo.addProperty("texture", ls.getTexture().name());
         // List<Light> lights = new ArrayList<Light>();
         // for (Light light : ls.getLightList()) {
         // lights.add(light);

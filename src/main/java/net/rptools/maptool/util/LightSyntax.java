@@ -225,6 +225,9 @@ public class LightSyntax {
           }
         }
       }
+      if (lightSource.getTexture() != LightSource.BuiltInTexture.FLAT) {
+        builder.append(" texture=").append(lightSource.getTexture().name().toLowerCase());
+      }
       builder.append('\n');
     }
   }
@@ -247,6 +250,7 @@ public class LightSyntax {
     GUID id = new GUID();
     LightSource.Type type = LightSource.Type.NORMAL;
     boolean scaleWithToken = false;
+    LightSource.BuiltInTexture texture = LightSource.BuiltInTexture.FLAT;
     List<Light> lights = new ArrayList<>();
     // endregion
     // region Individual light properties
@@ -323,6 +327,15 @@ public class LightSyntax {
             errlog.add(I18N.getText("msg.error.mtprops.light.arc", lineNumber, value));
           }
         }
+        if ("texture".equalsIgnoreCase(key)) {
+          try {
+            texture = LightSource.BuiltInTexture.valueOf(value.toUpperCase());
+          } catch (IllegalArgumentException pe) {
+            // TODO Fix this key
+            errlog.add(I18N.getText("msg.error.mtprops.light.arc", lineNumber, value));
+          }
+        }
+
         continue;
       }
 
@@ -384,7 +397,7 @@ public class LightSyntax {
       }
     }
 
-    return LightSource.createRegular(name, id, type, scaleWithToken, lights);
+    return LightSource.createRegular(name, id, type, scaleWithToken, texture, lights);
   }
 
   private String toHex(Color color) {

@@ -44,10 +44,16 @@ public final class LightSource implements Comparable<LightSource>, Serializable 
     AURA
   }
 
+  public enum BuiltInTexture {
+    FLAT,
+    FADE
+  }
+
   private final @Nullable String name;
   private final @Nullable GUID id;
   private final @Nonnull Type type;
   private final boolean scaleWithToken;
+  private final @Nonnull BuiltInTexture texture;
 
   /**
    * This light segments that make up the light source.
@@ -77,8 +83,10 @@ public final class LightSource implements Comparable<LightSource>, Serializable 
    * @param scaleWithToken if {@code true}, the size of the lights will scale with the token size.
    * @param lights The set of lights that constitute the personal light source.
    */
-  public static LightSource createPersonal(boolean scaleWithToken, Collection<Light> lights) {
-    return new LightSource(null, null, Type.NORMAL, scaleWithToken, ImmutableList.copyOf(lights));
+  public static LightSource createPersonal(
+      boolean scaleWithToken, @Nonnull BuiltInTexture texture, Collection<Light> lights) {
+    return new LightSource(
+        null, null, Type.NORMAL, scaleWithToken, texture, ImmutableList.copyOf(lights));
   }
 
   /**
@@ -97,8 +105,9 @@ public final class LightSource implements Comparable<LightSource>, Serializable 
       @Nonnull GUID id,
       @Nonnull Type type,
       boolean scaleWithToken,
+      @Nonnull BuiltInTexture texture,
       @Nonnull Collection<Light> lights) {
-    return new LightSource(name, id, type, scaleWithToken, ImmutableList.copyOf(lights));
+    return new LightSource(name, id, type, scaleWithToken, texture, ImmutableList.copyOf(lights));
   }
 
   private LightSource(
@@ -106,19 +115,21 @@ public final class LightSource implements Comparable<LightSource>, Serializable 
       @Nullable GUID id,
       @Nonnull Type type,
       boolean scaleWithToken,
+      @Nonnull BuiltInTexture texture,
       @Nonnull List<Light> lights) {
     this.name = name;
     this.id = id;
     this.type = type;
     this.scaleWithToken = scaleWithToken;
     this.lightList = lights;
+    this.texture = texture;
   }
 
   @Serial
   public Object writeReplace() {
     // Make sure XStream keeps the serialization nice. We don't need the XML to contain
     // implementation details of the ImmutableList in use.
-    return new LightSource(name, id, type, scaleWithToken, new ArrayList<>(lightList));
+    return new LightSource(name, id, type, scaleWithToken, texture, new ArrayList<>(lightList));
   }
 
   @SuppressWarnings("ConstantConditions")
@@ -126,6 +137,8 @@ public final class LightSource implements Comparable<LightSource>, Serializable 
   private @Nonnull Object readResolve() {
     final List<Light> originalLights =
         Objects.requireNonNullElse(lightList, Collections.emptyList());
+    var texture = Objects.requireNonNullElse(this.texture, BuiltInTexture.FLAT);
+
     final List<Light> lights;
     if (lumens == Integer.MIN_VALUE) {
       // This is an up-to-date LightSource with lumens already stored in the Lights.
@@ -155,6 +168,7 @@ public final class LightSource implements Comparable<LightSource>, Serializable 
         this.id,
         Objects.requireNonNullElse(this.type, Type.NORMAL),
         this.scaleWithToken,
+        texture,
         ImmutableList.copyOf(lights));
   }
 
@@ -200,6 +214,10 @@ public final class LightSource implements Comparable<LightSource>, Serializable 
 
   public boolean isScaleWithToken() {
     return scaleWithToken;
+  }
+
+  public @Nonnull BuiltInTexture getTexture() {
+    return texture;
   }
 
   /*
@@ -266,6 +284,7 @@ public final class LightSource implements Comparable<LightSource>, Serializable 
         dto.hasId() ? GUID.valueOf(dto.getId().getValue()) : null,
         Type.valueOf(dto.getType().name()),
         dto.getScaleWithToken(),
+        BuiltInTexture.valueOf(dto.getTexture().name()),
         dto.getLightsList().stream().map(Light::fromDto).collect(ImmutableList.toImmutableList()));
   }
 
@@ -280,6 +299,7 @@ public final class LightSource implements Comparable<LightSource>, Serializable 
     }
     dto.setType(LightSourceDto.LightTypeDto.valueOf(type.name()));
     dto.setScaleWithToken(scaleWithToken);
+    dto.setTexture(LightSourceDto.BuiltInTextureDto.valueOf(texture.name()));
     return dto.build();
   }
 }

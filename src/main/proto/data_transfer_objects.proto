@@ -70,11 +70,16 @@ message LightSourceDto {
     NORMAL = 0;
     AURA = 1;
   }
+  enum BuiltInTextureDto {
+    FLAT = 0;
+    FADE = 1;
+  }
   repeated LightDto lights = 1;
   google.protobuf.StringValue name = 2;
   google.protobuf.StringValue id = 3;
   LightTypeDto type = 4;
   bool scale_with_token = 5;
+  BuiltInTextureDto texture = 6;
 }
 
 enum ShapeTypeDto {

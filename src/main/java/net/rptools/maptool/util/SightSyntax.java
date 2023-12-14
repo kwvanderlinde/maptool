@@ -65,6 +65,7 @@ public class SightSyntax {
         String[] args = value.split("\\s+");
         ShapeType shape = ShapeType.CIRCLE;
         boolean scaleWithToken = false;
+        LightSource.BuiltInTexture texture = LightSource.BuiltInTexture.FLAT;
         int arc = 90;
         float range = 0;
         int offset = 0;
@@ -145,6 +146,10 @@ public class SightSyntax {
               toBeParsed = arg.substring(7);
               errmsg = "msg.error.mtprops.sight.offset";
               offset = StringUtil.parseInteger(toBeParsed);
+            } else if (arg.startsWith("texture=") && arg.length() > "texture=".length()) {
+              toBeParsed = arg.substring("texture=".length());
+              errmsg = "msg.error.mtprops.sight.offset"; // TODO Correct this key.
+              texture = LightSource.BuiltInTexture.valueOf(toBeParsed.toUpperCase());
             } else {
               toBeParsed = arg;
               errmsg =
@@ -161,7 +166,7 @@ public class SightSyntax {
         LightSource personalLight =
             personalLightLights == null
                 ? null
-                : LightSource.createPersonal(scaleWithToken, personalLightLights);
+                : LightSource.createPersonal(scaleWithToken, texture, personalLightLights);
         SightType sight =
             new SightType(label, magnifier, personalLight, shape, arc, scaleWithToken);
         sight.setDistance(range);
@@ -254,6 +259,9 @@ public class SightSyntax {
             builder.append(Integer.toString(lumens, 10));
           }
           builder.append(' ');
+        }
+        if (source.getTexture() != LightSource.BuiltInTexture.FLAT) {
+          builder.append(" texture=").append(source.getTexture().name().toLowerCase());
         }
       }
       builder.append('\n');
