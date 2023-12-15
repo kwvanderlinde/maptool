@@ -22,13 +22,11 @@ public class DrawableLight {
 
   private @Nonnull DrawablePaint paint;
   private @Nonnull Area area;
-  private int lumens;
 
-  public DrawableLight(@Nonnull DrawablePaint paint, @Nonnull Area area, int lumens) {
+  public DrawableLight(@Nonnull DrawablePaint paint, @Nonnull Area area) {
     super();
     this.paint = paint;
     this.area = area;
-    this.lumens = lumens;
   }
 
   public @Nonnull DrawablePaint getPaint() {
@@ -37,10 +35,6 @@ public class DrawableLight {
 
   public @Nonnull Area getArea() {
     return area;
-  }
-
-  public int getLumens() {
-    return lumens;
   }
 
   @Override
