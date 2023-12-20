@@ -20,10 +20,12 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Stroke;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Line2D;
+import java.awt.geom.Point2D;
 import java.awt.geom.QuadCurve2D;
 import java.awt.image.BufferedImage;
 import java.text.NumberFormat;
@@ -35,7 +37,6 @@ import net.rptools.lib.CodeTimer;
 import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.DeveloperOptions;
 import net.rptools.maptool.client.ScreenPoint;
-import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.ui.theme.Images;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.model.AbstractPoint;
@@ -67,9 +68,6 @@ public class PathRenderer {
    */
   public void renderPath(
       Graphics2D g, Path<? extends AbstractPoint> path, TokenFootprint footprint) {
-
-    final var timer = CodeTimer.get();
-
     if (path == null) {
       return;
     }
@@ -80,22 +78,30 @@ public class PathRenderer {
     Object oldRendering = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
     g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-    Grid grid = zone.getGrid();
-    double scale = renderer.getScale();
-
-    // log.info("Rendering path..." + System.currentTimeMillis());
-
-    Rectangle footprintBounds = footprint.getBounds(grid);
     if (path.getCellPath().get(0) instanceof CellPoint) {
-      timer.start("renderPath-1");
+      renderHelper.render(
+          g, worldG -> renderGriddedPath(worldG, (Path<CellPoint>) path, footprint));
+    } else {
+      renderHelper.render(
+          g, worldG -> renderGridlessPath(worldG, (Path<ZonePoint>) path, footprint));
+    }
+
+    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, oldRendering);
+  }
+
+  private void renderGriddedPath(Graphics2D g, Path<CellPoint> pathCP, TokenFootprint footprint) {
+    final var timer = CodeTimer.get();
+    timer.start("renderPath-1");
+
+    Grid grid = zone.getGrid();
+    Rectangle footprintBounds = footprint.getBounds(grid);
+
+    List<CellPoint> cellPath = pathCP.getCellPath();
+
+    Set<CellPoint> pathSet = new HashSet<CellPoint>();
+    List<ZonePoint> waypointList = new LinkedList<ZonePoint>();
+    {
       CellPoint previousPoint = null;
-      Point previousHalfPoint = null;
-
-      Path<CellPoint> pathCP = (Path<CellPoint>) path;
-      List<CellPoint> cellPath = pathCP.getCellPath();
-
-      Set<CellPoint> pathSet = new HashSet<CellPoint>();
-      List<ZonePoint> waypointList = new LinkedList<ZonePoint>();
       for (CellPoint p : cellPath) {
         pathSet.addAll(footprint.getOccupiedCells(p));
 
@@ -107,130 +113,142 @@ public class PathRenderer {
         }
         previousPoint = p;
       }
+    }
 
-      // Don't show the final path point as a waypoint, it's redundant, and ugly
-      if (waypointList.size() > 0) {
-        waypointList.remove(waypointList.size() - 1);
-      }
-      timer.stop("renderPath-1");
-      // log.info("pathSet size: " + pathSet.size());
+    // Don't show the final path point as a waypoint, it's redundant, and ugly
+    if (waypointList.size() > 0) {
+      waypointList.remove(waypointList.size() - 1);
+    }
+    timer.stop("renderPath-1");
+    // log.info("pathSet size: " + pathSet.size());
 
-      timer.start("renderPath-2");
-      Dimension cellOffset = zone.getGrid().getCellOffset();
+    timer.start("renderPath-2");
+    Dimension cellOffset = zone.getGrid().getCellOffset();
+    {
+      final var cellG = (Graphics2D) g.create();
       for (CellPoint p : pathSet) {
         ZonePoint zp = grid.convert(p);
         zp.x += grid.getCellWidth() / 2 + cellOffset.width;
         zp.y += grid.getCellHeight() / 2 + cellOffset.height;
-        highlightCell(g, zp, grid.getCellHighlight(), 1.0f);
+        highlightCellInWorldSpace(cellG, zp, grid.getCellHighlight(), 1.0f);
       }
-      if (AppState.getShowMovementMeasurements()) {
-        double cellAdj = grid.isHex() ? 2.5 : 2;
-        for (CellPoint p : cellPath) {
-          ZonePoint zp = grid.convert(p);
-          zp.x += grid.getCellWidth() / cellAdj + cellOffset.width;
-          zp.y += grid.getCellHeight() / cellAdj + cellOffset.height;
-          addDistanceText(
-              g, zp, 1.0f, p.getDistanceTraveled(zone), p.getDistanceTraveledWithoutTerrain());
-        }
+    }
+    if (AppState.getShowMovementMeasurements()) {
+      final var distanceG = (Graphics2D) g.create();
+      double cellAdj = grid.isHex() ? 2.5 : 2;
+      for (CellPoint p : cellPath) {
+        ZonePoint zp = grid.convert(p);
+        zp.x += grid.getCellWidth() / cellAdj + cellOffset.width;
+        zp.y += grid.getCellHeight() / cellAdj + cellOffset.height;
+        addDistanceText(
+            distanceG, zp, p.getDistanceTraveled(zone), p.getDistanceTraveledWithoutTerrain());
       }
-      int w = 0;
+    }
+    {
+      final var waypointG = (Graphics2D) g.create();
       for (ZonePoint p : waypointList) {
         ZonePoint zp = new ZonePoint(p.x + cellOffset.width, p.y + cellOffset.height);
-        highlightCell(g, zp, RessourceManager.getImage(Images.ZONE_RENDERER_CELL_WAYPOINT), .333f);
+        highlightCellInWorldSpace(
+            waypointG, zp, RessourceManager.getImage(Images.ZONE_RENDERER_CELL_WAYPOINT), .333f);
+      }
+    }
+
+    // Line path
+    if (grid.getCapabilities().isPathLineSupported()) {
+      final var lineG = (Graphics2D) g.create();
+      ZonePoint lineOffset;
+      if (grid.isHex()) {
+        lineOffset = new ZonePoint(0, 0);
+      } else {
+        lineOffset =
+            new ZonePoint(
+                footprintBounds.x + footprintBounds.width / 2 - grid.getOffsetX(),
+                footprintBounds.y + footprintBounds.height / 2 - grid.getOffsetY());
       }
 
-      // Line path
-      if (grid.getCapabilities().isPathLineSupported()) {
-        ZonePoint lineOffset;
-        if (grid.isHex()) {
-          lineOffset = new ZonePoint(0, 0);
-        } else {
-          lineOffset =
-              new ZonePoint(
-                  footprintBounds.x + footprintBounds.width / 2 - grid.getOffsetX(),
-                  footprintBounds.y + footprintBounds.height / 2 - grid.getOffsetY());
-        }
+      lineG.setColor(Color.blue);
 
-        int xOffset = (int) (lineOffset.x * scale);
-        int yOffset = (int) (lineOffset.y * scale);
+      Point2D previousHalfPoint2D = null;
+      // Really a ZonePoint, but that doesn't currently support floats.
+      CellPoint previousPoint = null;
+      for (CellPoint p : cellPath) {
+        if (previousPoint != null) {
+          ZonePoint originZp = grid.convert(previousPoint);
+          ZonePoint destinationZp = grid.convert(p);
 
-        g.setColor(Color.blue);
+          var halfPoint2D =
+              new Point2D.Double(
+                  (originZp.x + destinationZp.x) / 2., (originZp.y + destinationZp.y) / 2.);
 
-        previousPoint = null;
-        for (CellPoint p : cellPath) {
-          if (previousPoint != null) {
-            ZonePoint ozp = grid.convert(previousPoint);
-            int ox = ozp.x;
-            int oy = ozp.y;
+          if (previousHalfPoint2D != null) {
+            var x1 = previousHalfPoint2D.getX() + lineOffset.x;
+            var y1 = previousHalfPoint2D.getY() + lineOffset.y;
 
-            ZonePoint dzp = grid.convert(p);
-            int dx = dzp.x;
-            int dy = dzp.y;
+            var x2 = originZp.x + lineOffset.x;
+            var y2 = originZp.y + lineOffset.y;
 
-            ScreenPoint origin = ScreenPoint.fromZonePoint(renderer, ox, oy);
-            ScreenPoint destination = ScreenPoint.fromZonePoint(renderer, dx, dy);
+            var xh = halfPoint2D.x + lineOffset.x;
+            var yh = halfPoint2D.y + lineOffset.y;
 
-            int halfx = (int) ((origin.x + destination.x) / 2);
-            int halfy = (int) ((origin.y + destination.y) / 2);
-            Point halfPoint = new Point(halfx, halfy);
-
-            if (previousHalfPoint != null) {
-              int x1 = previousHalfPoint.x + xOffset;
-              int y1 = previousHalfPoint.y + yOffset;
-
-              int x2 = (int) origin.x + xOffset;
-              int y2 = (int) origin.y + yOffset;
-
-              int xh = halfPoint.x + xOffset;
-              int yh = halfPoint.y + yOffset;
-
-              QuadCurve2D curve = new QuadCurve2D.Float(x1, y1, x2, y2, xh, yh);
-              g.draw(curve);
-            }
-            previousHalfPoint = halfPoint;
+            QuadCurve2D curve = new QuadCurve2D.Double(x1, y1, x2, y2, xh, yh);
+            lineG.draw(curve);
           }
-          previousPoint = p;
+
+          previousHalfPoint2D = halfPoint2D;
         }
+        previousPoint = p;
       }
-      timer.stop("renderPath-2");
-    } else {
-      timer.start("renderPath-3");
-      // Zone point/gridless path
+    }
+    timer.stop("renderPath-2");
+  }
+
+  private void renderGridlessPath(Graphics2D g, Path<ZonePoint> pathZP, TokenFootprint footprint) {
+    final var timer = CodeTimer.get();
+    timer.start("renderPath-3");
+
+    Rectangle footprintBounds = footprint.getBounds(zone.getGrid());
+
+    List<ZonePoint> pathList = pathZP.getCellPath();
+
+    {
+      final var lineG = (Graphics2D) g.create();
 
       // Line
       Color highlight = new Color(255, 255, 255, 80);
-      Stroke highlightStroke = new BasicStroke(9);
-      Stroke oldStroke = g.getStroke();
-      Object oldAA = SwingUtil.useAntiAliasing(g);
-      ScreenPoint lastPoint = null;
+      Stroke highlightStroke = new BasicStroke(9 / (float) lineG.getTransform().getScaleX());
+      Stroke centerStroke = new BasicStroke(1 / (float) lineG.getTransform().getScaleX());
 
-      Path<ZonePoint> pathZP = (Path<ZonePoint>) path;
-      List<ZonePoint> pathList = pathZP.getCellPath();
+      // Really a ZonePoint, but that doesn't currently handle floats.
+      Point2D lastPoint = null;
       for (ZonePoint zp : pathList) {
         if (lastPoint == null) {
           lastPoint =
-              ScreenPoint.fromZonePointRnd(
-                  renderer,
+              new Point2D.Double(
                   zp.x + (footprintBounds.width / 2) * footprint.getScale(),
                   zp.y + (footprintBounds.height / 2) * footprint.getScale());
           continue;
         }
-        ScreenPoint nextPoint =
-            ScreenPoint.fromZonePoint(
-                renderer,
+        final var nextPoint =
+            new Point2D.Double(
                 zp.x + (footprintBounds.width / 2) * footprint.getScale(),
                 zp.y + (footprintBounds.height / 2) * footprint.getScale());
+        final var line = new Line2D.Double(lastPoint, nextPoint);
 
-        g.setColor(highlight);
-        g.setStroke(highlightStroke);
-        g.drawLine((int) lastPoint.x, (int) lastPoint.y, (int) nextPoint.x, (int) nextPoint.y);
+        lineG.setColor(highlight);
+        lineG.setStroke(highlightStroke);
+        lineG.draw(line);
 
-        g.setStroke(oldStroke);
-        g.setColor(Color.blue);
-        g.drawLine((int) lastPoint.x, (int) lastPoint.y, (int) nextPoint.x, (int) nextPoint.y);
+        lineG.setStroke(centerStroke);
+        lineG.setColor(Color.blue);
+        lineG.draw(line);
+
         lastPoint = nextPoint;
       }
-      SwingUtil.restoreAntiAliasing(g, oldAA);
+      lineG.dispose();
+    }
+
+    {
+      final var waypointG = (Graphics2D) g.create();
 
       // Waypoints
       boolean originPoint = true;
@@ -249,12 +267,12 @@ public class PathRenderer {
             new ZonePoint(
                 (int) (p.x + (footprintBounds.width / 2) * footprint.getScale()),
                 (int) (p.y + (footprintBounds.height / 2) * footprint.getScale()));
-        highlightCell(g, p, RessourceManager.getImage(Images.ZONE_RENDERER_CELL_WAYPOINT), .333f);
+        highlightCellInWorldSpace(
+            waypointG, p, RessourceManager.getImage(Images.ZONE_RENDERER_CELL_WAYPOINT), .333f);
       }
-      timer.stop("renderPath-3");
     }
 
-    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, oldRendering);
+    timer.stop("renderPath-3");
   }
 
   private void highlightCell(Graphics2D g, ZonePoint point, BufferedImage image, float size) {
@@ -276,29 +294,40 @@ public class PathRenderer {
         renderer);
   }
 
+  /**
+   * Draw an image at given zone point
+   *
+   * @param g
+   * @param point
+   * @param image
+   * @param size The size of the image, as a proportion of the grid size.
+   */
+  private void highlightCellInWorldSpace(
+      Graphics2D g, ZonePoint point, BufferedImage image, float size) {
+    Grid grid = zone.getGrid();
+
+    double iwidth = grid.getCellWidth() * size;
+    double iheight = grid.getCellHeight() * size;
+
+    AffineTransform af = new AffineTransform();
+    af.translate(point.x - iwidth / 2, point.y - iheight / 2);
+    af.scale(iwidth / image.getWidth(), iheight / image.getHeight());
+
+    g.drawImage(image, af, renderer);
+  }
+
   public void addDistanceText(
-      Graphics2D g, ZonePoint point, float size, double distance, double distanceWithoutTerrain) {
+      Graphics2D g, ZonePoint point, double distance, double distanceWithoutTerrain) {
     if (distance == 0) {
       return;
     }
 
     Grid grid = zone.getGrid();
-    double cwidth = grid.getCellWidth() * renderer.getScale();
-    double cheight = grid.getCellHeight() * renderer.getScale();
-
-    double iwidth = cwidth * size;
-    double iheight = cheight * size;
-
-    ScreenPoint sp = ScreenPoint.fromZonePoint(renderer, point);
-
-    int cellX = (int) (sp.x - iwidth / 2);
-    int cellY = (int) (sp.y - iheight / 2);
 
     // Draw distance for each cell
     double fontScale = (double) grid.getSize() / 50; // Font size of 12 at grid size 50 is default
-    int fontSize = (int) (renderer.getScale() * 12 * fontScale);
-    int textOffset =
-        (int) (renderer.getScale() * 7 * fontScale); // 7 pixels at 100% zoom & grid size of 50
+    int fontSize = (int) (12 * fontScale);
+    var textOffset = 7 * fontScale; // 7 pixels at 100% zoom & grid size of 50
 
     String distanceText = NumberFormat.getInstance().format(distance);
     if (DeveloperOptions.Toggle.ShowAiDebugging.isEnabled()) {
@@ -307,21 +336,15 @@ public class PathRenderer {
     }
 
     Font font = new Font(Font.DIALOG, Font.BOLD, fontSize);
-    Font originalFont = g.getFont();
-
     FontMetrics fm = g.getFontMetrics(font);
     int textWidth = fm.stringWidth(distanceText);
 
     g.setFont(font);
     g.setColor(Color.BLACK);
 
-    // log.info("Text: [" + distanceText + "], width: " + textWidth + ", font size: " + fontSize +
-    // ", offset: " + textOffset + ", fontScale: " + fontScale+ ", getScale(): " + getScale());
-
     g.drawString(
         distanceText,
-        (int) (cellX + cwidth - textWidth - textOffset),
-        (int) (cellY + cheight - textOffset));
-    g.setFont(originalFont);
+        (float) (point.x + grid.getCellWidth() / 2 - textWidth - textOffset),
+        (float) (point.y + grid.getCellHeight() / 2 - textOffset));
   }
 }
