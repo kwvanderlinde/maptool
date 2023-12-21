@@ -19,7 +19,6 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Area;
 import java.awt.image.ImageObserver;
 import java.util.function.Consumer;
 import net.rptools.lib.CodeTimer;
@@ -46,7 +45,7 @@ public class RenderHelper {
 
     Dimension size = renderer.getSize();
     Scale scale = renderer.getZoneScale();
-    g.setClip(new Area(new Rectangle(0, 0, size.width, size.height)));
+    g.clip(new Rectangle(0, 0, size.width, size.height));
     SwingUtil.useAntiAliasing(g);
 
     AffineTransform af = new AffineTransform();
