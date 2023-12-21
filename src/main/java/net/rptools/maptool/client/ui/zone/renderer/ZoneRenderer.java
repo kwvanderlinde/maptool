@@ -184,7 +184,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     this.lumensRenderer = new LumensRenderer(renderHelper, zone, zoneView);
     this.fogRenderer = new FogRenderer(renderHelper, zone, zoneView);
     this.visionOverlayRenderer = new VisionOverlayRenderer(renderHelper, zone, zoneView);
-    this.pathRenderer = new PathRenderer(renderHelper, zone, this);
+    this.pathRenderer = new PathRenderer(renderHelper, zone);
     this.debugRenderer = new DebugRenderer(renderHelper);
     repaintDebouncer = new DebounceExecutor(1000 / AppPreferences.getFrameRateCap(), this::repaint);
 

@@ -20,6 +20,7 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
+import java.awt.image.ImageObserver;
 import java.util.function.Consumer;
 import net.rptools.lib.CodeTimer;
 import net.rptools.maptool.client.swing.SwingUtil;
@@ -89,5 +90,9 @@ public class RenderHelper {
     } finally {
       g.dispose();
     }
+  }
+
+  public ImageObserver getImageObserver() {
+    return renderer;
   }
 }
