@@ -14,9 +14,6 @@
  */
 package net.rptools.maptool.client;
 
-import static net.rptools.maptool.model.player.PlayerDatabaseFactory.PlayerDatabaseType.LOCAL_PLAYER;
-import static net.rptools.maptool.model.player.PlayerDatabaseFactory.PlayerDatabaseType.PERSONAL_SERVER;
-
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import net.rptools.clientserver.simple.DisconnectHandler;
@@ -25,7 +22,7 @@ import net.rptools.maptool.model.CampaignFactory;
 import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.model.player.LocalPlayerDatabase;
 import net.rptools.maptool.model.player.PlayerDatabase;
-import net.rptools.maptool.model.player.PlayerDatabaseFactory;
+import net.rptools.maptool.server.PersonalServer;
 import net.rptools.maptool.server.ServerCommand;
 import net.rptools.maptool.server.ServerConfig;
 import net.rptools.maptool.server.ServerPolicy;
@@ -47,14 +44,12 @@ public class MapToolClient {
   private final DisconnectHandler disconnectHandler;
 
   /** Creates a client for a personal server. */
-  public MapToolClient() {
+  public MapToolClient(PersonalServer server) {
     this.campaign = CampaignFactory.createBasicCampaign();
 
     try {
-      playerDatabase = PlayerDatabaseFactory.getPlayerDatabase(PERSONAL_SERVER);
-
-      String username = AppPreferences.getDefaultUserName();
-      player = (LocalPlayer) playerDatabase.getPlayer(username);
+      player = server.getLocalPlayer();
+      playerDatabase = server.getPlayerDatabase();
 
       serverPolicy = new ServerPolicy();
 
@@ -78,9 +73,7 @@ public class MapToolClient {
     this.player = player;
     this.serverPolicy = new ServerPolicy();
 
-    playerDatabase = PlayerDatabaseFactory.getPlayerDatabase(LOCAL_PLAYER);
-    // TODO Inside onCompleted, or is this eager addition okay?
-    ((LocalPlayerDatabase) playerDatabase).setLocalPlayer(player);
+    playerDatabase = new LocalPlayerDatabase(player);
 
     this.disconnectHandler = new ServerDisconnectHandler();
 

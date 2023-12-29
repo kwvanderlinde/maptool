@@ -2238,7 +2238,6 @@ public class AppActions {
                   // campaign.setHasUsedFogToolbar(useIF || campaign.hasUsedFogToolbar());
                   campaign.setHasUsedFogToolbar(useIF);
 
-                  PlayerDatabaseFactory.setServerConfig(config);
                   PlayerDatabase playerDatabase;
                   if (serverProps.getUsePasswordFile()) {
                     PasswordFilePlayerDatabase db =
@@ -2256,7 +2255,8 @@ public class AppActions {
                     playerDatabase = db;
                   } else {
                     playerDatabase =
-                        PlayerDatabaseFactory.getPlayerDatabase(PlayerDatabaseType.DEFAULT);
+                        new DefaultPlayerDatabase(
+                            config.getPlayerPassword(), config.getGmPassword());
                   }
                   // Make a copy of the campaign since we don't coordinate local changes well ...
                   // yet

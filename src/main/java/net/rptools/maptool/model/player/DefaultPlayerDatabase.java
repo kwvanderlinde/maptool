@@ -35,7 +35,7 @@ public class DefaultPlayerDatabase implements PlayerDatabase {
   private final CipherUtil.Key gmPassword;
   private final LoggedInPlayers loggedInPlayers = new LoggedInPlayers();
 
-  DefaultPlayerDatabase(String playerPassword, String gmPassword)
+  public DefaultPlayerDatabase(String playerPassword, String gmPassword)
       throws NoSuchAlgorithmException,
           InvalidKeySpecException,
           NoSuchPaddingException,

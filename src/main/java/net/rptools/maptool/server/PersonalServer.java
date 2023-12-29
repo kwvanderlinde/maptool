@@ -14,16 +14,21 @@
  */
 package net.rptools.maptool.server;
 
+import net.rptools.maptool.model.player.LocalPlayer;
+import net.rptools.maptool.model.player.LocalPlayerDatabase;
 import net.rptools.maptool.model.player.PlayerDatabase;
-import net.rptools.maptool.model.player.PlayerDatabaseFactory;
 
 public class PersonalServer implements IMapToolServer {
+  private final LocalPlayer localPlayer;
   private final PlayerDatabase playerDatabase;
 
-  public PersonalServer() {
-    playerDatabase =
-        PlayerDatabaseFactory.getPlayerDatabase(
-            PlayerDatabaseFactory.PlayerDatabaseType.PERSONAL_SERVER);
+  public PersonalServer(LocalPlayer player) {
+    localPlayer = player;
+    playerDatabase = new LocalPlayerDatabase(player);
+  }
+
+  public LocalPlayer getLocalPlayer() {
+    return localPlayer;
   }
 
   @Override

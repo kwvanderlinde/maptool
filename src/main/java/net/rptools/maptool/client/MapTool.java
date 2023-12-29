@@ -164,7 +164,7 @@ public class MapTool {
   private static NoteFrame profilingNoteFrame;
   private static LogConsoleFrame logConsoleFrame;
   private static IMapToolServer server;
-  private static MapToolClient client = new MapToolClient();
+  private static MapToolClient client;
 
   private static BackupManager backupManager;
   private static AssetTransferManager assetTransferManager;
@@ -185,6 +185,21 @@ public class MapTool {
   private static int windowX = -1;
   private static int windowY = -1;
   private static String loadCampaignOnStartPath = "";
+
+  static {
+    try {
+      final var player =
+          new LocalPlayer(
+              AppPreferences.getDefaultUserName(),
+              Player.Role.GM,
+              ServerConfig.getPersonalServerGMPassword());
+      final var personalServer = new PersonalServer(player);
+      server = personalServer;
+      client = new MapToolClient(personalServer);
+    } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+      throw new RuntimeException("Unable to create default personal server", e);
+    }
+  }
 
   public static Dimension getThumbnailSize() {
     return THUMBNAIL_SIZE;
@@ -1155,8 +1170,14 @@ public class MapTool {
           InvalidKeySpecException,
           ExecutionException,
           InterruptedException {
-    server = new PersonalServer();
-    client = new MapToolClient();
+    final var player =
+        new LocalPlayer(
+            AppPreferences.getDefaultUserName(),
+            Player.Role.GM,
+            ServerConfig.getPersonalServerGMPassword());
+
+    server = new PersonalServer(player);
+    client = new MapToolClient((PersonalServer) server);
 
     MapTool.getFrame().getCommandPanel().clearAllIdentities();
 

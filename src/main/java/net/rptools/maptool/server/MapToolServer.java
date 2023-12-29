@@ -14,9 +14,9 @@
  */
 package net.rptools.maptool.server;
 
-import static net.rptools.maptool.model.player.PlayerDatabaseFactory.PlayerDatabaseType.PERSONAL_SERVER;
-
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +25,7 @@ import java.util.Random;
 import javax.swing.SwingUtilities;
 import net.rptools.clientserver.simple.connection.Connection;
 import net.rptools.clientserver.simple.server.ServerObserver;
+import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolRegistry;
 import net.rptools.maptool.client.ui.connectioninfodialog.ConnectionInfoDialog;
@@ -33,8 +34,10 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.TextMessage;
+import net.rptools.maptool.model.player.LocalPlayer;
+import net.rptools.maptool.model.player.LocalPlayerDatabase;
+import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.player.PlayerDatabase;
-import net.rptools.maptool.model.player.PlayerDatabaseFactory;
 import net.rptools.maptool.server.proto.Message;
 import net.rptools.maptool.server.proto.UpdateAssetTransferMsg;
 import net.rptools.maptool.transfer.AssetProducer;
@@ -326,9 +329,16 @@ public class MapToolServer implements IMapToolServer {
 
   ////
   // STANDALONE SERVER
-  public static void main(String[] args) throws IOException {
+  public static void main(String[] args)
+      throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
     // This starts the server thread.
-    PlayerDatabase playerDatabase = PlayerDatabaseFactory.getPlayerDatabase(PERSONAL_SERVER);
+
+    final var player =
+        new LocalPlayer(
+            AppPreferences.getDefaultUserName(),
+            Player.Role.GM,
+            ServerConfig.getPersonalServerGMPassword());
+    PlayerDatabase playerDatabase = new LocalPlayerDatabase(player);
     MapToolServer server =
         new MapToolServer(new ServerConfig(), new ServerPolicy(), playerDatabase);
   }

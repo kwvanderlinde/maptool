@@ -34,6 +34,10 @@ public class LocalPlayerDatabase implements PlayerDatabase {
   private LocalPlayer localPlayer;
   private final LoggedInPlayers loggedInPlayers = new LoggedInPlayers();
 
+  public LocalPlayerDatabase(LocalPlayer player) {
+    localPlayer = player;
+  }
+
   LocalPlayerDatabase() throws NoSuchAlgorithmException, InvalidKeySpecException {
     localPlayer = new LocalPlayer("None", Role.GM, ServerConfig.getPersonalServerGMPassword());
   }
