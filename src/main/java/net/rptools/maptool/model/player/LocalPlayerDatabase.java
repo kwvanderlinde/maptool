@@ -15,30 +15,20 @@
 package net.rptools.maptool.model.player;
 
 import java.lang.reflect.InvocationTargetException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import net.rptools.lib.MD5Key;
-import net.rptools.maptool.model.player.Player.Role;
-import net.rptools.maptool.server.ServerConfig;
 import net.rptools.maptool.util.cipher.CipherUtil;
-import net.rptools.maptool.util.cipher.CipherUtil.Key;
 import net.rptools.maptool.util.cipher.PublicPrivateKeyStore;
 
 /** This class provides the implementation for the "database" for the client local player. */
 public class LocalPlayerDatabase implements PlayerDatabase {
 
-  private LocalPlayer localPlayer;
+  private final LocalPlayer localPlayer;
   private final LoggedInPlayers loggedInPlayers = new LoggedInPlayers();
 
   public LocalPlayerDatabase(LocalPlayer player) {
-    localPlayer = player;
-  }
-
-  public synchronized void setLocalPlayer(LocalPlayer player) {
     localPlayer = player;
   }
 
@@ -61,52 +51,11 @@ public class LocalPlayerDatabase implements PlayerDatabase {
     }
   }
 
-  @Override
-  public Optional<Key> getPlayerPassword(String playerName) {
-    LocalPlayer player = (LocalPlayer) getPlayer(playerName);
-    if (player != null && player.getName().equals(playerName)) {
-      return Optional.of(player.getPassword());
-    }
-    return Optional.empty();
-  }
+  // TODO `Players` class often checks one of these boolean methods followed by a getter. Reality
+  //  dictates that it should actually check if we are server-side of not.
 
   @Override
-  public byte[] getPlayerPasswordSalt(String playerName) {
-    LocalPlayer player = (LocalPlayer) getPlayer(playerName);
-    if (player != null && player.getName().equals(playerName)) {
-      return player.getPassword().salt();
-    }
-    return new byte[0];
-  }
-
-  @Override
-  public Player getPlayerWithRole(String playerName, Role role)
-      throws NoSuchAlgorithmException, InvalidKeySpecException {
-    // TODO This method is nonsense as LocalPlayerDatabase isn't used server-side anyways. We really
-    //  need a server-side PlayerDatabase interface so we can ditch a bunch of these methods.
-    LocalPlayer player = (LocalPlayer) getPlayer(playerName);
-    if (player != null && player.getName().equals(playerName)) {
-      player.setRole(role);
-    } else {
-      player =
-          new LocalPlayer(
-              playerName,
-              role,
-              role == Role.GM
-                  ? ServerConfig.getPersonalServerGMPassword()
-                  : ServerConfig.getPersonalServerPlayerPassword());
-    }
-    setLocalPlayer(player);
-    return player;
-  }
-
-  @Override
-  public Optional<Key> getRolePassword(Role role) {
-    return Optional.empty();
-  }
-
-  @Override
-  public boolean supportsDisabling() {
+  public boolean supportsBlocking() {
     return false;
   }
 
@@ -118,16 +67,6 @@ public class LocalPlayerDatabase implements PlayerDatabase {
   @Override
   public boolean supportsRolePasswords() {
     return false;
-  }
-
-  @Override
-  public boolean isBlocked(Player player) {
-    return false;
-  }
-
-  @Override
-  public String getBlockedReason(Player player) {
-    return "";
   }
 
   @Override

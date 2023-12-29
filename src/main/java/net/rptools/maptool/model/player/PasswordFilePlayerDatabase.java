@@ -421,7 +421,7 @@ public final class PasswordFilePlayerDatabase
   }
 
   @Override
-  public boolean supportsDisabling() {
+  public boolean supportsBlocking() {
     return true;
   }
 
@@ -643,11 +643,6 @@ public final class PasswordFilePlayerDatabase
     }
     propertyChangeSupport.firePropertyChange(
         PlayerDBPropertyChange.PROPERTY_CHANGE_DATABASE_CHANGED, null, this);
-  }
-
-  @Override
-  public boolean isBlocked(Player player) {
-    return getBlockedReason(player).length() > 0;
   }
 
   @Override

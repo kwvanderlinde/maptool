@@ -84,7 +84,7 @@ public class DefaultPlayerDatabase implements ServerSidePlayerDatabase {
   }
 
   @Override
-  public boolean supportsDisabling() {
+  public boolean supportsBlocking() {
     return false;
   }
 
@@ -96,11 +96,6 @@ public class DefaultPlayerDatabase implements ServerSidePlayerDatabase {
   @Override
   public boolean supportsRolePasswords() {
     return true;
-  }
-
-  @Override
-  public boolean isBlocked(Player player) {
-    return false;
   }
 
   @Override

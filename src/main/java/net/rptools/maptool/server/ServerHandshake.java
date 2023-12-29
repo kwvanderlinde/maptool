@@ -431,7 +431,7 @@ public class ServerHandshake implements Handshake, MessageHandler {
       return;
     }
 
-    if (playerDatabase.isBlocked(player)) {
+    if (playerDatabase.getBlockedReason(player).length() > 0) {
       var blockedMsg =
           PlayerBlockedMsg.newBuilder().setReason(playerDatabase.getBlockedReason(player)).build();
       var msg = HandshakeMsg.newBuilder().setPlayerBlockedMsg(blockedMsg).build();

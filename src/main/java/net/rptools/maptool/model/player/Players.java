@@ -174,11 +174,16 @@ public class Players {
    */
   private PlayerDatabaseInfo getPlayerDatabaseInfo() {
     PlayerDatabase playerDatabase = MapTool.getPlayerDatabase();
-    return new PlayerDatabaseInfo(
-        playerDatabase.supportsDisabling(),
-        !playerDatabase.supportsRolePasswords(),
-        playerDatabase.supportsAsymmetricalKeys(),
-        playerDatabase.recordsOnlyConnectedPlayers());
+    if (playerDatabase instanceof ServerSidePlayerDatabase serverSidePlayerDatabase) {
+      return new PlayerDatabaseInfo(
+              playerDatabase.supportsBlocking(),
+              !playerDatabase.supportsRolePasswords(),
+              playerDatabase.supportsAsymmetricalKeys(),
+              playerDatabase.recordsOnlyConnectedPlayers());
+    }
+    else {
+      return new PlayerDatabaseInfo(false, false, false, true);
+    }
   }
 
   /**
@@ -205,11 +210,11 @@ public class Players {
       }
 
       Role role = player.getRole();
-      boolean supportsBlocking = playerDatabase.supportsDisabling();
+
       String blockedReason = "";
       boolean blocked = false;
-      if (supportsBlocking) {
-        blockedReason = playerDatabase.getBlockedReason(player);
+      if (playerDatabase instanceof ServerSidePlayerDatabase serverSidePlayerDatabase) {
+        blockedReason = serverSidePlayerDatabase.getBlockedReason(player);
         if (blockedReason.length() > 0) {
           blocked = true;
         }
@@ -256,15 +261,6 @@ public class Players {
     }
 
     return players.stream().filter(Objects::nonNull).collect(Collectors.toSet());
-  }
-
-  /**
-   * Returns if the current player database only records players that are connected.
-   *
-   * @return {@code true} if the player database only records players while they are connected.
-   */
-  public boolean recordsOnlyConnectedPlayers() {
-    return MapTool.getPlayerDatabase().recordsOnlyConnectedPlayers();
   }
 
   /**
