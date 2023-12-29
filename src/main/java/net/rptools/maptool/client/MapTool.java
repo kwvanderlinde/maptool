@@ -90,7 +90,6 @@ import net.rptools.maptool.model.ZoneFactory;
 import net.rptools.maptool.model.library.url.LibraryURLStreamHandler;
 import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.model.player.Player;
-import net.rptools.maptool.model.player.PlayerDatabase;
 import net.rptools.maptool.model.player.PlayerZoneListener;
 import net.rptools.maptool.model.player.Players;
 import net.rptools.maptool.model.player.ServerSidePlayerDatabase;
@@ -754,10 +753,6 @@ public class MapTool {
    */
   public static IMapToolServer getServer() {
     return server;
-  }
-
-  public static PlayerDatabase getPlayerDatabase() {
-    return client.getPlayerDatabase();
   }
 
   public static void addPlayer(Player player) {

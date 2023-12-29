@@ -109,7 +109,7 @@ public class Players {
       };
 
   static {
-    if (MapTool.getPlayerDatabase() instanceof PlayerDBPropertyChange pdb) {
+    if (MapTool.getClient().getPlayerDatabase() instanceof PlayerDBPropertyChange pdb) {
       pdb.addPropertyChangeListener(databaseChangeListener);
     }
   }
@@ -166,7 +166,7 @@ public class Players {
    */
   private PlayerInfo getPlayerInfo(String name) {
     try {
-      var playerDatabase = MapTool.getPlayerDatabase();
+      var playerDatabase = MapTool.getClient().getPlayerDatabase();
       if (!playerDatabase.playerExists(name)) {
         return null;
       }
@@ -219,7 +219,7 @@ public class Players {
    */
   private Set<PlayerInfo> getPlayersInfo() {
     Set<PlayerInfo> players = new HashSet<>();
-    var playerDatabase = MapTool.getPlayerDatabase();
+    var playerDatabase = MapTool.getClient().getPlayerDatabase();
     try {
       for (Player p : playerDatabase.getAllPlayers()) {
         players.add(getPlayerInfo(p.getName()));
@@ -241,7 +241,7 @@ public class Players {
    * @return {@code true} if the player database supports per player passwords.
    */
   public boolean supportsPerPlayerPasswords() {
-    return !MapTool.getPlayerDatabase().supportsRolePasswords();
+    return !MapTool.getClient().getPlayerDatabase().supportsRolePasswords();
   }
 
   /**
@@ -250,7 +250,7 @@ public class Players {
    * @return {@code true} if the player database supports asymmetric keys.
    */
   public boolean supportsAsymmetricKeys() {
-    return MapTool.getPlayerDatabase().supportsAsymmetricalKeys();
+    return MapTool.getClient().getPlayerDatabase().supportsAsymmetricalKeys();
   }
 
   /**
@@ -267,7 +267,7 @@ public class Players {
       return ChangePlayerStatus.NOT_SUPPORTED;
     }
 
-    var playerDatabase = MapTool.getPlayerDatabase();
+    var playerDatabase = MapTool.getClient().getPlayerDatabase();
     if (playerDatabase instanceof PersistedPlayerDatabase playerDb) {
       try {
         playerDb.addPlayerSharedPassword(name, role, password);
@@ -302,7 +302,7 @@ public class Players {
     }
     var pkeys = new HashSet<>(Arrays.asList(CipherUtil.splitPublicKeys(publicKeyString)));
 
-    var playerDatabase = MapTool.getPlayerDatabase();
+    var playerDatabase = MapTool.getClient().getPlayerDatabase();
     if (playerDatabase instanceof PersistedPlayerDatabase playerDb) {
       try {
         playerDb.addPlayerAsymmetricKey(name, role, pkeys);
@@ -337,7 +337,7 @@ public class Players {
     }
     var pkeys = new HashSet<>(Arrays.asList(CipherUtil.splitPublicKeys(publicKeyString)));
 
-    var playerDatabase = MapTool.getPlayerDatabase();
+    var playerDatabase = MapTool.getClient().getPlayerDatabase();
     if (playerDatabase instanceof PersistedPlayerDatabase playerDb) {
       try {
         playerDb.setAsymmetricKeys(name, pkeys);
@@ -365,7 +365,7 @@ public class Players {
    * @return {@link ChangePlayerStatus#OK} if successful, otherwise the reason for the failure.
    */
   public ChangePlayerStatus setPassword(String name, String password) {
-    var playerDatabase = MapTool.getPlayerDatabase();
+    var playerDatabase = MapTool.getClient().getPlayerDatabase();
     if (playerDatabase instanceof PersistedPlayerDatabase playerDb) {
       try {
         playerDb.setSharedPassword(name, password);
@@ -394,7 +394,7 @@ public class Players {
    * @return {@link ChangePlayerStatus#OK} if successful, otherwise the reason for the failure.
    */
   public ChangePlayerStatus setRole(String name, Role role) {
-    var playerDatabase = MapTool.getPlayerDatabase();
+    var playerDatabase = MapTool.getClient().getPlayerDatabase();
     if (playerDatabase instanceof PersistedPlayerDatabase playerDb) {
       playerDb.setRole(name, role);
       return ChangePlayerStatus.OK;
@@ -413,7 +413,7 @@ public class Players {
    * @return {@link ChangePlayerStatus#OK} if successful, otherwise the reason for the failure.
    */
   public ChangePlayerStatus blockPlayer(String name, String reason) {
-    var playerDatabase = MapTool.getPlayerDatabase();
+    var playerDatabase = MapTool.getClient().getPlayerDatabase();
     if (playerDatabase instanceof PersistedPlayerDatabase playerDb) {
       playerDb.blockPlayer(name, reason);
       return ChangePlayerStatus.OK;
@@ -430,7 +430,7 @@ public class Players {
    * @return {@link ChangePlayerStatus#OK} if successful, otherwise the reason for the failure.
    */
   public ChangePlayerStatus unblockPlayer(String name) {
-    var playerDatabase = MapTool.getPlayerDatabase();
+    var playerDatabase = MapTool.getClient().getPlayerDatabase();
     if (playerDatabase instanceof PersistedPlayerDatabase playerDb) {
       playerDb.unblockPlayer(name);
       return ChangePlayerStatus.OK;
@@ -447,7 +447,7 @@ public class Players {
    * @return {@link ChangePlayerStatus#OK} if successful, otherwise the reason for the failure.
    */
   public ChangePlayerStatus removePlayer(String name) {
-    var playerDatabase = MapTool.getPlayerDatabase();
+    var playerDatabase = MapTool.getClient().getPlayerDatabase();
     if (playerDatabase instanceof PersistedPlayerDatabase playerDb) {
       playerDb.deletePlayer(name);
       return ChangePlayerStatus.OK;
@@ -490,7 +490,7 @@ public class Players {
           InvalidKeySpecException,
           PasswordDatabaseException,
           InvalidKeyException {
-    if (MapTool.getPlayerDatabase() instanceof PersistedPlayerDatabase db) {
+    if (MapTool.getClient().getPlayerDatabase() instanceof PersistedPlayerDatabase db) {
       db.commitChanges();
     }
   }
@@ -510,7 +510,7 @@ public class Players {
           InvalidKeySpecException,
           PasswordDatabaseException,
           InvalidKeyException {
-    if (MapTool.getPlayerDatabase() instanceof PersistedPlayerDatabase db) {
+    if (MapTool.getClient().getPlayerDatabase() instanceof PersistedPlayerDatabase db) {
       db.rollbackChanges();
     }
   }
@@ -521,7 +521,7 @@ public class Players {
    * @param player the player that has signed in.
    */
   public void playerSignedIn(Player player) {
-    PlayerDatabase playerDatabase = MapTool.getPlayerDatabase();
+    PlayerDatabase playerDatabase = MapTool.getClient().getPlayerDatabase();
     var oldInfo = getPlayerInfo(player.getName());
     playerDatabase.playerSignedIn(player);
     var newInfo = getPlayerInfo(player.getName());
@@ -541,7 +541,7 @@ public class Players {
    * @param player the player that has signed out.
    */
   public void playerSignedOut(Player player) {
-    PlayerDatabase playerDatabase = MapTool.getPlayerDatabase();
+    PlayerDatabase playerDatabase = MapTool.getClient().getPlayerDatabase();
     var oldInfo = getPlayerInfo(player.getName());
     playerDatabase.playerSignedOut(player);
     var newInfo = getPlayerInfo(player.getName());

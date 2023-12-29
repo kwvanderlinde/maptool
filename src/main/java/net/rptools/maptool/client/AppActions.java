@@ -2488,7 +2488,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayerDatabase() instanceof PersistedPlayerDatabase;
+          return MapTool.getClient().getPlayerDatabase() instanceof PersistedPlayerDatabase;
         }
 
         @Override
