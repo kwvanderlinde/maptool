@@ -15,6 +15,7 @@
 package net.rptools.maptool.server;
 
 import java.io.IOException;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Collections;
@@ -22,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
+import javax.crypto.NoSuchPaddingException;
 import javax.swing.SwingUtilities;
 import net.rptools.clientserver.simple.connection.Connection;
 import net.rptools.clientserver.simple.server.ServerObserver;
@@ -33,9 +35,11 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.TextMessage;
+import net.rptools.maptool.model.player.DefaultPlayerDatabase;
 import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.model.player.LocalPlayerDatabase;
 import net.rptools.maptool.model.player.PlayerDatabase;
+import net.rptools.maptool.model.player.ServerSidePlayerDatabase;
 import net.rptools.maptool.server.proto.Message;
 import net.rptools.maptool.server.proto.UpdateAssetTransferMsg;
 import net.rptools.maptool.transfer.AssetProducer;
@@ -52,7 +56,7 @@ public class MapToolServer implements IMapToolServer {
 
   private final MapToolServerConnection conn;
   private final ServerConfig config;
-  private final PlayerDatabase playerDatabase;
+  private final ServerSidePlayerDatabase playerDatabase;
 
   private final Map<String, AssetTransferManager> assetManagerMap =
       Collections.synchronizedMap(new HashMap<String, AssetTransferManager>());
@@ -64,7 +68,7 @@ public class MapToolServer implements IMapToolServer {
   private ServerPolicy policy;
   private HeartbeatThread heartbeatThread;
 
-  public MapToolServer(ServerConfig config, ServerPolicy policy, PlayerDatabase playerDb)
+  public MapToolServer(ServerConfig config, ServerPolicy policy, ServerSidePlayerDatabase playerDb)
       throws IOException {
     this.config = config;
     this.policy = policy;
@@ -328,11 +332,17 @@ public class MapToolServer implements IMapToolServer {
   ////
   // STANDALONE SERVER
   public static void main(String[] args)
-      throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+      throws IOException,
+          NoSuchAlgorithmException,
+          InvalidKeySpecException,
+          NoSuchPaddingException,
+          InvalidKeyException {
     // This starts the server thread.
 
-    final var player = new LocalPlayer();
-    PlayerDatabase playerDatabase = new LocalPlayerDatabase(player);
+    ServerSidePlayerDatabase playerDatabase =
+        new DefaultPlayerDatabase(
+            ServerConfig.getPersonalServerPlayerPassword(),
+            ServerConfig.getPersonalServerGMPassword());
     MapToolServer server =
         new MapToolServer(new ServerConfig(), new ServerPolicy(), playerDatabase);
   }

@@ -36,7 +36,7 @@ import net.rptools.maptool.server.ServerPolicy;
  */
 public class MapToolClient {
   private final LocalPlayer player;
-  private final PlayerDatabase playerDatabase;
+  private final LocalPlayerDatabase playerDatabase;
   private final IMapToolConnection conn;
   private Campaign campaign;
   private ServerPolicy serverPolicy;

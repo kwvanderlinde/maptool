@@ -16,11 +16,10 @@ package net.rptools.maptool.server;
 
 import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.model.player.LocalPlayerDatabase;
-import net.rptools.maptool.model.player.PlayerDatabase;
 
 public class PersonalServer implements IMapToolServer {
   private final LocalPlayer localPlayer;
-  private final PlayerDatabase playerDatabase;
+  private final LocalPlayerDatabase playerDatabase;
 
   public PersonalServer(LocalPlayer player) {
     localPlayer = player;
@@ -45,7 +44,7 @@ public class PersonalServer implements IMapToolServer {
   public void stop() {}
 
   @Override
-  public PlayerDatabase getPlayerDatabase() {
+  public LocalPlayerDatabase getPlayerDatabase() {
     return playerDatabase;
   }
 }

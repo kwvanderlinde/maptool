@@ -66,7 +66,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public final class PasswordFilePlayerDatabase
-    implements PlayerDatabase, PersistedPlayerDatabase, PlayerDBPropertyChange {
+    implements ServerSidePlayerDatabase, PersistedPlayerDatabase, PlayerDBPropertyChange {
 
   private static final Logger log = LogManager.getLogger(PasswordFilePlayerDatabase.class);
   private static final String PUBLIC_KEY_DIR = "keys";

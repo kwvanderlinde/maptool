@@ -93,6 +93,7 @@ import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.player.PlayerDatabase;
 import net.rptools.maptool.model.player.PlayerZoneListener;
 import net.rptools.maptool.model.player.Players;
+import net.rptools.maptool.model.player.ServerSidePlayerDatabase;
 import net.rptools.maptool.model.zones.TokensAdded;
 import net.rptools.maptool.model.zones.TokensRemoved;
 import net.rptools.maptool.model.zones.ZoneAdded;
@@ -995,7 +996,7 @@ public class MapTool {
       ServerConfig config,
       ServerPolicy policy,
       Campaign campaign,
-      PlayerDatabase playerDatabase,
+      ServerSidePlayerDatabase playerDatabase,
       boolean copyCampaign)
       throws IOException {
     if (server != null) {

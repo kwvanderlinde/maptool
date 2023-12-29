@@ -2238,7 +2238,7 @@ public class AppActions {
                   // campaign.setHasUsedFogToolbar(useIF || campaign.hasUsedFogToolbar());
                   campaign.setHasUsedFogToolbar(useIF);
 
-                  PlayerDatabase playerDatabase;
+                  ServerSidePlayerDatabase playerDatabase;
                   if (serverProps.getUsePasswordFile()) {
                     PasswordFilePlayerDatabase db =
                         (PasswordFilePlayerDatabase)

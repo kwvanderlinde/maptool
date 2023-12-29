@@ -29,7 +29,7 @@ import net.rptools.maptool.util.cipher.CipherUtil;
  * This class provides the implementation for the default player database, where any one can connect
  * as long as they know the role password. This follows the standard behaviour for 1.9 and earlier.
  */
-public class DefaultPlayerDatabase implements PlayerDatabase {
+public class DefaultPlayerDatabase implements ServerSidePlayerDatabase {
 
   private final CipherUtil.Key playerPassword;
   private final CipherUtil.Key gmPassword;
