@@ -744,6 +744,14 @@ public class MapTool {
     return server;
   }
 
+  public static PlayerDatabase getPlayerDatabase() {
+    if (server != null) {
+      return server.getPlayerDatabase();
+    }
+
+    return client.getPlayerDatabase();
+  }
+
   public static void addPlayer(Player player) {
     if (!playerList.contains(player)) {
       playerList.add(player);

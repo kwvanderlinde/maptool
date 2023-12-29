@@ -23,6 +23,7 @@ import net.rptools.clientserver.simple.DisconnectHandler;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.CampaignFactory;
 import net.rptools.maptool.model.player.LocalPlayer;
+import net.rptools.maptool.model.player.LocalPlayerDatabase;
 import net.rptools.maptool.model.player.PlayerDatabase;
 import net.rptools.maptool.model.player.PlayerDatabaseFactory;
 import net.rptools.maptool.server.ServerCommand;
@@ -50,8 +51,7 @@ public class MapToolClient {
     this.campaign = CampaignFactory.createBasicCampaign();
 
     try {
-      PlayerDatabaseFactory.setCurrentPlayerDatabase(PERSONAL_SERVER);
-      playerDatabase = PlayerDatabaseFactory.getCurrentPlayerDatabase();
+      playerDatabase = PlayerDatabaseFactory.getPlayerDatabase(PERSONAL_SERVER);
 
       String username = AppPreferences.getDefaultUserName();
       player = (LocalPlayer) playerDatabase.getPlayer(username);
@@ -78,12 +78,13 @@ public class MapToolClient {
     this.player = player;
     this.serverPolicy = new ServerPolicy();
 
-    PlayerDatabaseFactory.setCurrentPlayerDatabase(LOCAL_PLAYER);
-    playerDatabase = PlayerDatabaseFactory.getCurrentPlayerDatabase();
+    playerDatabase = PlayerDatabaseFactory.getPlayerDatabase(LOCAL_PLAYER);
+    // TODO Inside onCompleted, or is this eager addition okay?
+    ((LocalPlayerDatabase) playerDatabase).setLocalPlayer(player);
 
     this.disconnectHandler = new ServerDisconnectHandler();
 
-    conn = new MapToolConnection(config, player);
+    conn = new MapToolConnection(this, config, player);
     conn.addDisconnectHandler(disconnectHandler);
     this.serverCommand = new ServerCommandClientImpl(conn);
     conn.onCompleted(

@@ -14,10 +14,14 @@
  */
 package net.rptools.maptool.server;
 
+import net.rptools.maptool.model.player.PlayerDatabase;
+
 public interface IMapToolServer {
   boolean isPersonalServer();
 
   boolean isServerRegistered();
+
+  PlayerDatabase getPlayerDatabase();
 
   void stop();
 }

@@ -92,6 +92,11 @@ public class MapToolServer implements IMapToolServer {
     return config.isServerRegistered();
   }
 
+  @Override
+  public PlayerDatabase getPlayerDatabase() {
+    return playerDatabase;
+  }
+
   public void configureClientConnection(Connection connection) {
     String id = connection.getId();
     assetManagerMap.put(id, new AssetTransferManager());
@@ -323,8 +328,7 @@ public class MapToolServer implements IMapToolServer {
   // STANDALONE SERVER
   public static void main(String[] args) throws IOException {
     // This starts the server thread.
-    PlayerDatabaseFactory.setCurrentPlayerDatabase(PERSONAL_SERVER);
-    PlayerDatabase playerDatabase = PlayerDatabaseFactory.getCurrentPlayerDatabase();
+    PlayerDatabase playerDatabase = PlayerDatabaseFactory.getPlayerDatabase(PERSONAL_SERVER);
     MapToolServer server =
         new MapToolServer(new ServerConfig(), new ServerPolicy(), playerDatabase);
   }
