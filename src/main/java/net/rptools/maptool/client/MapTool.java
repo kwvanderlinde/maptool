@@ -674,8 +674,8 @@ public class MapTool {
       Campaign cmpgn = CampaignFactory.createBasicCampaign();
       // This was previously being done in the server thread and didn't always get done
       // before the campaign was accessed by the postInitialize() method below.
-      setCampaign(cmpgn);
       startPersonalServer(cmpgn);
+      setCampaign(cmpgn);
     } catch (Exception e) {
       MapTool.showError("While starting personal server", e);
     }
@@ -1153,7 +1153,11 @@ public class MapTool {
           InterruptedException {
     server = new PersonalServer();
     client = new MapToolClient(handler, serverCommand);
-    client.setCampaign(campaign);
+
+    MapTool.getFrame().getCommandPanel().clearAllIdentities();
+
+    client.start();
+    setCampaign(campaign);
   }
 
   public static void createConnection(ServerConfig config, LocalPlayer player, Runnable onCompleted)
