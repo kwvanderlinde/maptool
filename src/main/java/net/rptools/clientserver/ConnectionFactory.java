@@ -33,8 +33,9 @@ public class ConnectionFactory {
   }
 
   public Connection createConnection(String id, ServerConfig config) throws IOException {
-    if (!config.getUseWebRTC() || config.isPersonalServer())
+    if (!config.getUseWebRTC()) {
       return new SocketConnection(id, config.getHostName(), config.getPort());
+    }
 
     return new WebRTCConnection(id, config);
   }
@@ -42,7 +43,7 @@ public class ConnectionFactory {
   public Server createServer(
       ServerConfig config, HandshakeProvider handshake, MessageHandler messageHandler)
       throws IOException {
-    if (!config.getUseWebRTC() || config.isPersonalServer()) {
+    if (!config.getUseWebRTC()) {
       return new SocketServer(config.getPort(), handshake, messageHandler);
     }
 

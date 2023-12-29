@@ -1005,15 +1005,11 @@ public class MapTool {
     if (announcer != null) {
       announcer.stop();
     }
-    // Don't announce personal servers
-    if (!config.isPersonalServer()) {
-      announcer =
-          new ServiceAnnouncer(id, server.getConfig().getPort(), AppConstants.SERVICE_GROUP);
-      announcer.start();
-    }
+    announcer = new ServiceAnnouncer(id, server.getConfig().getPort(), AppConstants.SERVICE_GROUP);
+    announcer.start();
 
     // Registered ?
-    if (config.isServerRegistered() && !config.isPersonalServer()) {
+    if (config.isServerRegistered()) {
       try {
         MapToolRegistry.RegisterResponse result =
             MapToolRegistry.getInstance()
@@ -1183,10 +1179,6 @@ public class MapTool {
   public static String getLanguage() {
     return Locale.getDefault(Locale.Category.DISPLAY).getLanguage();
   }
-
-  // TODO My goal is that "personal server" is no longer part of the server config lexicon, and
-  //  instead that we can either ask the server itself, or else rely on != null to indicate a real
-  //  server.
 
   /** returns whether the player is using a personal server. */
   public static boolean isPersonalServer() {

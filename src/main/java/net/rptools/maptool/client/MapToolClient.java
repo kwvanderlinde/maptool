@@ -81,15 +81,10 @@ public class MapToolClient {
     this.player = player;
     this.serverPolicy = new ServerPolicy();
 
-    if (config.isPersonalServer()) {
-      PlayerDatabaseFactory.setCurrentPlayerDatabase(PERSONAL_SERVER);
-      conn = new NilMapToolConnection();
-    } else {
-      PlayerDatabaseFactory.setCurrentPlayerDatabase(LOCAL_PLAYER);
-      conn = new MapToolConnection(config, player);
-    }
+    PlayerDatabaseFactory.setCurrentPlayerDatabase(LOCAL_PLAYER);
     playerDatabase = PlayerDatabaseFactory.getCurrentPlayerDatabase();
 
+    conn = new MapToolConnection(config, player);
     conn.onCompleted(
         () -> {
           conn.addMessageHandler(messageHandler);

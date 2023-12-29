@@ -84,8 +84,7 @@ public class MapToolServer implements IMapToolServer {
 
   @Override
   public boolean isPersonalServer() {
-    // TODO In future, should always return false.
-    return config.isPersonalServer();
+    return false;
   }
 
   @Override
