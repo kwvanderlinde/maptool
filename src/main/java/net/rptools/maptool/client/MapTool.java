@@ -159,13 +159,12 @@ public class MapTool {
   private static PlayerZoneListener playerZoneListener;
   private static ZoneLoadedListener zoneLoadedListener;
 
-  private static ClientMessageHandler handler = new ClientMessageHandler();
   private static JMenuBar menuBar;
   private static MapToolFrame clientFrame;
   private static NoteFrame profilingNoteFrame;
   private static LogConsoleFrame logConsoleFrame;
   private static IMapToolServer server;
-  private static MapToolClient client = new MapToolClient(handler);
+  private static MapToolClient client = new MapToolClient();
 
   private static BackupManager backupManager;
   private static AssetTransferManager assetTransferManager;
@@ -1149,7 +1148,7 @@ public class MapTool {
           ExecutionException,
           InterruptedException {
     server = new PersonalServer();
-    client = new MapToolClient(handler);
+    client = new MapToolClient();
 
     MapTool.getFrame().getCommandPanel().clearAllIdentities();
 
@@ -1159,7 +1158,7 @@ public class MapTool {
 
   public static void createConnection(ServerConfig config, LocalPlayer player, Runnable onCompleted)
       throws IOException, ExecutionException, InterruptedException {
-    client = new MapToolClient(player, config, handler);
+    client = new MapToolClient(player, config);
 
     MapTool.getFrame().getCommandPanel().clearAllIdentities();
 

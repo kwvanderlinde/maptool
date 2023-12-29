@@ -85,7 +85,11 @@ import org.apache.logging.log4j.Logger;
 public class ClientMessageHandler implements MessageHandler {
   private static final Logger log = LogManager.getLogger(ClientMessageHandler.class);
 
-  public ClientMessageHandler() {}
+  private final MapToolClient client;
+
+  public ClientMessageHandler(MapToolClient client) {
+    this.client = client;
+  }
 
   @Override
   public void handleMessage(String id, byte[] message) {

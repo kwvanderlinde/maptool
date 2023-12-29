@@ -41,12 +41,10 @@ public class MapToolClient {
   private final IMapToolConnection conn;
   private Campaign campaign;
   private ServerPolicy serverPolicy;
-  // TODO serverCommand should be bespoke per client connection. Currently it delegates through
-  //  `MapTool` class
   private final ServerCommand serverCommand;
 
   /** Creates a client for a personal server. */
-  public MapToolClient(ClientMessageHandler messageHandler) {
+  public MapToolClient() {
     this.campaign = CampaignFactory.createBasicCampaign();
 
     try {
@@ -62,7 +60,7 @@ public class MapToolClient {
       this.serverCommand = new ServerCommandClientImpl(conn);
       conn.onCompleted(
           () -> {
-            conn.addMessageHandler(messageHandler);
+            conn.addMessageHandler(new ClientMessageHandler(this));
           });
 
     } catch (Exception e) {
@@ -70,8 +68,7 @@ public class MapToolClient {
     }
   }
 
-  public MapToolClient(LocalPlayer player, ServerConfig config, ClientMessageHandler messageHandler)
-      throws IOException {
+  public MapToolClient(LocalPlayer player, ServerConfig config) throws IOException {
     this.campaign = CampaignFactory.createBasicCampaign();
 
     this.player = player;
@@ -84,7 +81,7 @@ public class MapToolClient {
     this.serverCommand = new ServerCommandClientImpl(conn);
     conn.onCompleted(
         () -> {
-          conn.addMessageHandler(messageHandler);
+          conn.addMessageHandler(new ClientMessageHandler(this));
         });
   }
 
