@@ -32,12 +32,10 @@ import net.rptools.maptool.server.ServerConfig;
 public class MapToolClient {
   private final LocalPlayer player;
   private MapToolConnection conn;
-  private final ClientMessageHandler handler;
 
   public MapToolClient(LocalPlayer player, ServerConfig config, ClientMessageHandler messageHandler)
       throws IOException {
     this.player = player;
-    this.handler = messageHandler;
 
     conn = new MapToolConnection(config, player);
     conn.onCompleted(

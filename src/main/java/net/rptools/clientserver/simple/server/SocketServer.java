@@ -108,6 +108,7 @@ public class SocketServer extends AbstractServer {
 
           String id = nextClientId(s);
           SocketConnection conn = new SocketConnection(id, s);
+          conn.open();
           server.handleConnection(conn);
         } catch (IOException | ExecutionException | InterruptedException e) {
           if (!suppressErrors) {

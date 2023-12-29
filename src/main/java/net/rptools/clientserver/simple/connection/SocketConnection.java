@@ -29,31 +29,19 @@ public class SocketConnection extends AbstractConnection implements Connection {
   private static final Logger log = LogManager.getLogger(SocketConnection.class);
 
   private final String id;
-  private SendThread send;
-  private ReceiveThread receive;
-  private Socket socket;
-  private String hostName;
-  private int port;
+  private final SendThread send;
+  private final ReceiveThread receive;
+  private final Socket socket;
 
   public SocketConnection(String id, String hostName, int port) throws IOException {
-    this.id = id;
-    this.hostName = hostName;
-    this.port = port;
+    this(id, new Socket(hostName, port));
   }
 
   public SocketConnection(String id, Socket socket) throws IOException {
     this.id = id;
-    this.hostName = socket.getInetAddress().getHostName();
-    this.port = socket.getPort();
-    initialize(socket);
-  }
-
-  private void initialize(Socket socket) throws IOException {
     this.socket = socket;
     this.send = new SendThread(new BufferedOutputStream(socket.getOutputStream()));
     this.receive = new ReceiveThread(this, socket.getInputStream());
-    this.send.start();
-    this.receive.start();
   }
 
   public String getId() {
@@ -62,7 +50,8 @@ public class SocketConnection extends AbstractConnection implements Connection {
 
   @Override
   public void open() throws IOException {
-    initialize(new Socket(hostName, port));
+    this.send.start();
+    this.receive.start();
   }
 
   public void sendMessage(Object channel, byte[] message) {
