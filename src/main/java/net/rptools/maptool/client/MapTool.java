@@ -93,7 +93,6 @@ import net.rptools.maptool.model.library.url.LibraryURLStreamHandler;
 import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.player.PlayerDatabase;
-import net.rptools.maptool.model.player.PlayerDatabaseFactory;
 import net.rptools.maptool.model.player.PlayerZoneListener;
 import net.rptools.maptool.model.player.Players;
 import net.rptools.maptool.model.zones.TokensAdded;
@@ -167,6 +166,7 @@ public class MapTool {
   private static MapToolFrame clientFrame;
   private static NoteFrame profilingNoteFrame;
   private static LogConsoleFrame logConsoleFrame;
+  private static final PlayerDatabaseManager playerDatabaseManager = new PlayerDatabaseManager();
   private static MapToolServer server;
   private static ServerCommand serverCommand;
   private static ServerPolicy serverPolicy;
@@ -752,6 +752,10 @@ public class MapTool {
     return serverCommand;
   }
 
+  public static PlayerDatabaseManager getPlayerDatabaseManager() {
+    return playerDatabaseManager;
+  }
+
   /**
    * @return the server, or null if player is a client.
    */
@@ -1167,8 +1171,7 @@ public class MapTool {
           InterruptedException {
     ServerConfig config = ServerConfig.createPersonalServerConfig();
 
-    PlayerDatabaseFactory.setCurrentPlayerDatabase(PERSONAL_SERVER);
-    PlayerDatabase playerDatabase = PlayerDatabaseFactory.getCurrentPlayerDatabase();
+    PlayerDatabase playerDatabase = playerDatabaseManager.getPlayerDatabaseOfType(PERSONAL_SERVER);
     MapTool.startServer(null, config, new ServerPolicy(), campaign, playerDatabase, false);
 
     String username = AppPreferences.getDefaultUserName();

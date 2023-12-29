@@ -34,7 +34,6 @@ import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.TextMessage;
 import net.rptools.maptool.model.player.PlayerDatabase;
-import net.rptools.maptool.model.player.PlayerDatabaseFactory;
 import net.rptools.maptool.server.proto.Message;
 import net.rptools.maptool.server.proto.UpdateAssetTransferMsg;
 import net.rptools.maptool.transfer.AssetProducer;
@@ -312,8 +311,8 @@ public class MapToolServer {
   // STANDALONE SERVER
   public static void main(String[] args) throws IOException {
     // This starts the server thread.
-    PlayerDatabaseFactory.setCurrentPlayerDatabase(PERSONAL_SERVER);
-    PlayerDatabase playerDatabase = PlayerDatabaseFactory.getCurrentPlayerDatabase();
+    PlayerDatabase playerDatabase =
+        MapTool.getPlayerDatabaseManager().getPlayerDatabaseOfType(PERSONAL_SERVER);
     MapToolServer server =
         new MapToolServer(new ServerConfig(), new ServerPolicy(), playerDatabase);
   }
