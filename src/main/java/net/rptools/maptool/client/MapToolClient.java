@@ -14,13 +14,19 @@
  */
 package net.rptools.maptool.client;
 
+import static net.rptools.maptool.model.player.PlayerDatabaseFactory.PlayerDatabaseType.LOCAL_PLAYER;
+import static net.rptools.maptool.model.player.PlayerDatabaseFactory.PlayerDatabaseType.PERSONAL_SERVER;
+
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.concurrent.ExecutionException;
+import net.rptools.maptool.model.Campaign;
+import net.rptools.maptool.model.CampaignFactory;
 import net.rptools.maptool.model.player.LocalPlayer;
-import net.rptools.maptool.model.player.Player;
+import net.rptools.maptool.model.player.PlayerDatabase;
+import net.rptools.maptool.model.player.PlayerDatabaseFactory;
+import net.rptools.maptool.server.ServerCommand;
 import net.rptools.maptool.server.ServerConfig;
+import net.rptools.maptool.server.ServerPolicy;
 
 /**
  * The client side of a client-server channel.
@@ -31,17 +37,58 @@ import net.rptools.maptool.server.ServerConfig;
  */
 public class MapToolClient {
   private final LocalPlayer player;
-  private IMapToolConnection conn;
+  private final PlayerDatabase playerDatabase;
+  private final IMapToolConnection conn;
+  private Campaign campaign;
+  private ServerPolicy serverPolicy;
+  // TODO serverCommand should be bespoke per client connection. Currently it delegates through
+  //  `MapTool` class
+  private final ServerCommand serverCommand;
 
-  public MapToolClient(LocalPlayer player, ServerConfig config, ClientMessageHandler messageHandler)
+  /** Creates a client for a personal server. */
+  public MapToolClient(ClientMessageHandler messageHandler, ServerCommand serverCommand) {
+    this.serverCommand = serverCommand;
+    this.campaign = CampaignFactory.createBasicCampaign();
+
+    try {
+      PlayerDatabaseFactory.setCurrentPlayerDatabase(PERSONAL_SERVER);
+      playerDatabase = PlayerDatabaseFactory.getCurrentPlayerDatabase();
+
+      String username = AppPreferences.getDefaultUserName();
+      player = (LocalPlayer) playerDatabase.getPlayer(username);
+
+      serverPolicy = new ServerPolicy();
+
+      conn = new NilMapToolConnection();
+      conn.onCompleted(
+          () -> {
+            conn.addMessageHandler(messageHandler);
+          });
+    } catch (Exception e) {
+      throw new RuntimeException("Unable to start personal server", e);
+    }
+  }
+
+  public MapToolClient(
+      LocalPlayer player,
+      ServerConfig config,
+      ClientMessageHandler messageHandler,
+      ServerCommand serverCommand)
       throws IOException {
+    this.serverCommand = serverCommand;
+    this.campaign = CampaignFactory.createBasicCampaign();
+
     this.player = player;
+    this.serverPolicy = new ServerPolicy();
 
     if (config.isPersonalServer()) {
+      PlayerDatabaseFactory.setCurrentPlayerDatabase(PERSONAL_SERVER);
       conn = new NilMapToolConnection();
     } else {
+      PlayerDatabaseFactory.setCurrentPlayerDatabase(LOCAL_PLAYER);
       conn = new MapToolConnection(config, player);
     }
+    playerDatabase = PlayerDatabaseFactory.getCurrentPlayerDatabase();
 
     conn.onCompleted(
         () -> {
@@ -60,26 +107,34 @@ public class MapToolClient {
     }
   }
 
-  public void connect(MapToolConnection conn) {
-    this.conn = conn;
-  }
-
   public LocalPlayer getPlayer() {
     return player;
+  }
+
+  public PlayerDatabase getPlayerDatabase() {
+    return playerDatabase;
   }
 
   public IMapToolConnection getConnection() {
     return conn;
   }
 
-  public static MapToolClient createDefault(ClientMessageHandler messageHandler) {
-    try {
-      return new MapToolClient(
-          new LocalPlayer("", Player.Role.GM, ServerConfig.getPersonalServerGMPassword()),
-          ServerConfig.createPersonalServerConfig(),
-          messageHandler);
-    } catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
-      throw new RuntimeException("Unable to create default client", e);
+  public ServerPolicy getServerPolicy() {
+    return serverPolicy;
+  }
+
+  public Campaign getCampaign() {
+    return this.campaign;
+  }
+
+  public void setCampaign(Campaign campaign) {
+    this.campaign = campaign;
+  }
+
+  public void setServerPolicy(ServerPolicy serverPolicy, boolean sendToServer) {
+    this.serverPolicy = serverPolicy;
+    if (sendToServer) {
+      this.serverCommand.setServerPolicy(serverPolicy);
     }
   }
 }

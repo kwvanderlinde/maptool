@@ -14,8 +14,6 @@
  */
 package net.rptools.maptool.client;
 
-import static net.rptools.maptool.model.player.PlayerDatabaseFactory.PlayerDatabaseType.PERSONAL_SERVER;
-
 import com.jidesoft.plaf.LookAndFeelFactory;
 import com.jidesoft.plaf.UIDefaultsLookup;
 import com.jidesoft.plaf.basic.ThemePainter;
@@ -93,7 +91,6 @@ import net.rptools.maptool.model.library.url.LibraryURLStreamHandler;
 import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.player.PlayerDatabase;
-import net.rptools.maptool.model.player.PlayerDatabaseFactory;
 import net.rptools.maptool.model.player.PlayerZoneListener;
 import net.rptools.maptool.model.player.Players;
 import net.rptools.maptool.model.zones.TokensAdded;
@@ -101,7 +98,9 @@ import net.rptools.maptool.model.zones.TokensRemoved;
 import net.rptools.maptool.model.zones.ZoneAdded;
 import net.rptools.maptool.model.zones.ZoneRemoved;
 import net.rptools.maptool.protocol.syrinscape.SyrinscapeURLStreamHandler;
+import net.rptools.maptool.server.IMapToolServer;
 import net.rptools.maptool.server.MapToolServer;
+import net.rptools.maptool.server.PersonalServer;
 import net.rptools.maptool.server.ServerCommand;
 import net.rptools.maptool.server.ServerConfig;
 import net.rptools.maptool.server.ServerPolicy;
@@ -161,14 +160,13 @@ public class MapTool {
   private static ZoneLoadedListener zoneLoadedListener;
 
   private static ClientMessageHandler handler = new ClientMessageHandler();
-  private static MapToolClient client = MapToolClient.createDefault(handler);
   private static JMenuBar menuBar;
   private static MapToolFrame clientFrame;
   private static NoteFrame profilingNoteFrame;
   private static LogConsoleFrame logConsoleFrame;
-  private static MapToolServer server;
-  private static ServerCommand serverCommand;
-  private static ServerPolicy serverPolicy;
+  private static IMapToolServer server;
+  private static ServerCommand serverCommand = new ServerCommandClientImpl();
+  private static MapToolClient client = new MapToolClient(handler, serverCommand);
 
   private static BackupManager backupManager;
   private static AssetTransferManager assetTransferManager;
@@ -536,16 +534,11 @@ public class MapTool {
   }
 
   public static void updateServerPolicy() {
-    updateServerPolicy(serverPolicy);
+    client.setServerPolicy(client.getServerPolicy(), true);
   }
 
   public static void updateServerPolicy(ServerPolicy policy) {
-    setServerPolicy(policy);
-
-    // Give everyone the new policy
-    if (serverCommand != null) {
-      serverCommand.setServerPolicy(policy);
-    }
+    client.setServerPolicy(policy, true);
   }
 
   public static boolean isInFocus() {
@@ -741,7 +734,7 @@ public class MapTool {
   }
 
   public static ServerPolicy getServerPolicy() {
-    return serverPolicy;
+    return client.getServerPolicy();
   }
 
   public static ServerCommand serverCommand() {
@@ -751,7 +744,7 @@ public class MapTool {
   /**
    * @return the server, or null if player is a client.
    */
-  public static MapToolServer getServer() {
+  public static IMapToolServer getServer() {
     return server;
   }
 
@@ -912,10 +905,7 @@ public class MapTool {
   }
 
   public static Campaign getCampaign() {
-    if (campaign == null) {
-      campaign = CampaignFactory.createBasicCampaign();
-    }
-    return campaign;
+    return client.getCampaign();
   }
 
   public static MapToolLineParser getParser() {
@@ -928,7 +918,7 @@ public class MapTool {
 
   public static void setCampaign(Campaign campaign, GUID defaultRendererId) {
     // Load up the new
-    MapTool.campaign = campaign;
+    client.setCampaign(campaign);
     ZoneRenderer currRenderer = null;
 
     clientFrame.clearZoneRendererList();
@@ -967,7 +957,7 @@ public class MapTool {
   }
 
   public static void setServerPolicy(ServerPolicy policy) {
-    serverPolicy = policy;
+    client.setServerPolicy(policy, false);
   }
 
   public static AssetTransferManager getAssetTransferManager() {
@@ -1003,9 +993,9 @@ public class MapTool {
 
     // TODO: the client and server campaign MUST be different objects.
     // Figure out a better init method
-    server = new MapToolServer(config, policy, playerDatabase);
+    final var server = new MapToolServer(config, policy, playerDatabase);
+    MapTool.server = server;
 
-    serverPolicy = server.getPolicy();
     if (copyCampaign) {
       server.setCampaign(new Campaign(campaign)); // copy of FoW depends on server policies
     } else {
@@ -1165,29 +1155,14 @@ public class MapTool {
           InvalidKeySpecException,
           ExecutionException,
           InterruptedException {
-    ServerConfig config = ServerConfig.createPersonalServerConfig();
-
-    PlayerDatabaseFactory.setCurrentPlayerDatabase(PERSONAL_SERVER);
-    PlayerDatabase playerDatabase = PlayerDatabaseFactory.getCurrentPlayerDatabase();
-    MapTool.startServer(null, config, new ServerPolicy(), campaign, playerDatabase, false);
-
-    String username = AppPreferences.getDefaultUserName();
-    LocalPlayer localPlayer = (LocalPlayer) playerDatabase.getPlayer(username);
-    // Connect to server
-    MapTool.createConnection(
-        config,
-        localPlayer,
-        () -> {
-          // connecting
-          MapTool.getFrame()
-              .getConnectionStatusPanel()
-              .setStatus(ConnectionStatusPanel.Status.server);
-        });
+    server = new PersonalServer();
+    client = new MapToolClient(handler, serverCommand);
+    client.setCampaign(campaign);
   }
 
   public static void createConnection(ServerConfig config, LocalPlayer player, Runnable onCompleted)
       throws IOException, ExecutionException, InterruptedException {
-    client = new MapToolClient(player, config, handler);
+    client = new MapToolClient(player, config, handler, serverCommand);
 
     MapTool.getFrame().getCommandPanel().clearAllIdentities();
 
@@ -1209,14 +1184,18 @@ public class MapTool {
     return Locale.getDefault(Locale.Category.DISPLAY).getLanguage();
   }
 
+  // TODO My goal is that "personal server" is no longer part of the server config lexicon, and
+  //  instead that we can either ask the server itself, or else rely on != null to indicate a real
+  //  server.
+
   /** returns whether the player is using a personal server. */
   public static boolean isPersonalServer() {
-    return server != null && server.getConfig().isPersonalServer();
+    return server != null && server.isPersonalServer();
   }
 
   /** returns whether the player is hosting a server - personal servers do not count. */
   public static boolean isHostingServer() {
-    return server != null && !server.getConfig().isPersonalServer();
+    return server != null && !server.isPersonalServer();
   }
 
   public static void disconnect() {
@@ -1234,7 +1213,7 @@ public class MapTool {
     }
 
     // Unregister ourselves
-    if (server != null && server.getConfig().isServerRegistered() && !isPersonalServer) {
+    if (server != null && server.isServerRegistered() && !isPersonalServer) {
       try {
         MapToolRegistry.getInstance().unregisterInstance();
       } catch (Throwable t) {

@@ -79,6 +79,7 @@ import net.rptools.maptool.model.drawing.DrawableTexturePaint;
 import net.rptools.maptool.model.player.*;
 import net.rptools.maptool.model.player.Player.Role;
 import net.rptools.maptool.model.player.PlayerDatabaseFactory.PlayerDatabaseType;
+import net.rptools.maptool.server.MapToolServer;
 import net.rptools.maptool.server.ServerConfig;
 import net.rptools.maptool.server.ServerPolicy;
 import net.rptools.maptool.util.*;
@@ -640,13 +641,10 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-
-          if (MapTool.getServer() == null) {
-            return;
+          if (MapTool.getServer() instanceof MapToolServer server) {
+            ConnectionInfoDialog dialog = new ConnectionInfoDialog(server);
+            dialog.setVisible(true);
           }
-
-          ConnectionInfoDialog dialog = new ConnectionInfoDialog(MapTool.getServer());
-          dialog.setVisible(true);
         }
       };
 

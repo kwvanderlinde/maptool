@@ -24,6 +24,7 @@ import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.AbstractTemplate.Quadrant;
+import net.rptools.maptool.server.MapToolServer;
 import net.rptools.maptool.server.proto.drawing.DrawableDto;
 import net.rptools.maptool.server.proto.drawing.RadiusCellTemplateDto;
 
@@ -254,7 +255,9 @@ public class RadiusCellTemplate extends AbstractTemplate {
     if (getZoneId() == null) return;
     Zone zone;
     if (MapTool.isHostingServer()) {
-      zone = MapTool.getServer().getCampaign().getZone(getZoneId());
+      // TODO This was a filthy hack to avoid sending server messages I'm sure.
+      // zone = MapTool.getServer().getCampaign().getZone(getZoneId());
+      zone = ((MapToolServer) MapTool.getServer()).getCampaign().getZone(getZoneId());
     } else {
       zone = MapTool.getCampaign().getZone(getZoneId());
     }

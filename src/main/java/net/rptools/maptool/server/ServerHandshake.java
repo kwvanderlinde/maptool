@@ -62,6 +62,9 @@ import net.rptools.maptool.util.cipher.CipherUtil.Key;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+// TODO ServerHandshake should be specific to a MapToolServer rather than looking up a potentially
+// arbitrary server from `MapTool`.
+
 /** Class used to handle the server side part of the connection handshake. */
 public class ServerHandshake implements Handshake, MessageHandler {
   /** Instance used for log messages. */
@@ -69,6 +72,8 @@ public class ServerHandshake implements Handshake, MessageHandler {
 
   /** The database used for retrieving players. */
   private final PlayerDatabase playerDatabase;
+
+  private final MapToolServer server;
 
   /** The connection to the client. */
   private final Connection connection;
@@ -118,7 +123,11 @@ public class ServerHandshake implements Handshake, MessageHandler {
    * @param useEasyConnect If true, the client will use the easy connect method.
    */
   public ServerHandshake(
-      Connection connection, PlayerDatabase playerDatabase, boolean useEasyConnect) {
+      MapToolServer server,
+      Connection connection,
+      PlayerDatabase playerDatabase,
+      boolean useEasyConnect) {
+    this.server = server;
     this.connection = connection;
     this.playerDatabase = playerDatabase;
     this.useEasyConnect = useEasyConnect;
@@ -355,7 +364,6 @@ public class ServerHandshake implements Handshake, MessageHandler {
   }
 
   private void sendConnectionSuccessful() throws ExecutionException, InterruptedException {
-    var server = MapTool.getServer();
     var connectionSuccessfulMsg =
         ConnectionSuccessfulMsg.newBuilder()
             .setRoleDto(getPlayer().isGM() ? RoleDto.GM : RoleDto.PLAYER)
@@ -390,7 +398,6 @@ public class ServerHandshake implements Handshake, MessageHandler {
           BadPaddingException,
           InvalidKeyException,
           InvalidAlgorithmParameterException {
-    var server = MapTool.getServer();
     if (server.isPlayerConnected(clientInitMsg.getPlayerName())) {
       setErrorMessage(I18N.getText("Handshake.msg.duplicateName"));
       sendErrorResponseAndNotify(HandshakeResponseCodeMsg.PLAYER_ALREADY_CONNECTED);

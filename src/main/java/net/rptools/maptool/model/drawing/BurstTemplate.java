@@ -25,6 +25,7 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
+import net.rptools.maptool.server.MapToolServer;
 import net.rptools.maptool.server.proto.drawing.BurstTemplateDto;
 import net.rptools.maptool.server.proto.drawing.DrawableDto;
 
@@ -63,7 +64,8 @@ public class BurstTemplate extends RadiusTemplate {
     if (getZoneId() == null) return;
     Zone zone;
     if (MapTool.isHostingServer()) {
-      zone = MapTool.getServer().getCampaign().getZone(getZoneId());
+      // zone = MapTool.getServer().getCampaign().getZone(getZoneId());
+      zone = ((MapToolServer) MapTool.getServer()).getCampaign().getZone(getZoneId());
     } else {
       zone = MapTool.getCampaign().getZone(getZoneId());
     }
