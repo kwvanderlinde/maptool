@@ -45,7 +45,7 @@ public class NilMapToolConnection implements IMapToolConnection {
   }
 
   @Override
-  public void close() throws IOException {
+  public void close() {
     isAlive = false;
   }
 
