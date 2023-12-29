@@ -16,6 +16,7 @@ package net.rptools.maptool.client;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
+import net.rptools.clientserver.simple.DisconnectHandler;
 import net.rptools.maptool.client.ui.ActivityMonitorPanel;
 import net.rptools.maptool.server.proto.Message;
 
@@ -37,5 +38,5 @@ public interface IMapToolConnection {
 
   void addActivityListener(ActivityMonitorPanel activityMonitor);
 
-  void addDisconnectHandler(ServerDisconnectHandler serverDisconnectHandler);
+  void addDisconnectHandler(DisconnectHandler serverDisconnectHandler);
 }

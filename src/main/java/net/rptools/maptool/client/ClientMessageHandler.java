@@ -1013,7 +1013,6 @@ public class ClientMessageHandler implements MessageHandler {
     if (MapTool.getPlayer().getName().equals(playerName))
       EventQueue.invokeLater(
           () -> {
-            ServerDisconnectHandler.disconnectExpected = true;
             AppActions.disconnectFromServer();
             MapTool.showInformation("You have been booted from the server.");
           });

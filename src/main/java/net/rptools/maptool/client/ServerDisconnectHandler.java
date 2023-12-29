@@ -27,7 +27,7 @@ import net.rptools.maptool.model.campaign.CampaignManager;
 /** This class handles when the server inexplicably disconnects */
 public class ServerDisconnectHandler implements DisconnectHandler {
   // TODO: This is a temporary hack until I can come up with a cleaner mechanism
-  public static boolean disconnectExpected;
+  public boolean disconnectExpected = false;
 
   public void handleDisconnect(Connection connection) {
     // Update internal state
@@ -60,6 +60,5 @@ public class ServerDisconnectHandler implements DisconnectHandler {
       // hide map so player doesn't get a brief GM view
       MapTool.getFrame().setCurrentZoneRenderer(null);
     }
-    disconnectExpected = false;
   }
 }

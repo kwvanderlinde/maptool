@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import net.rptools.clientserver.ConnectionFactory;
+import net.rptools.clientserver.simple.DisconnectHandler;
 import net.rptools.clientserver.simple.connection.Connection;
 import net.rptools.maptool.client.ui.ActivityMonitorPanel;
 import net.rptools.maptool.model.player.LocalPlayer;
@@ -96,7 +97,7 @@ public class MapToolConnection implements IMapToolConnection {
   }
 
   @Override
-  public void addDisconnectHandler(ServerDisconnectHandler serverDisconnectHandler) {
+  public void addDisconnectHandler(DisconnectHandler serverDisconnectHandler) {
     connection.addDisconnectHandler(serverDisconnectHandler);
   }
 

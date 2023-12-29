@@ -19,6 +19,7 @@ import static net.rptools.maptool.model.player.PlayerDatabaseFactory.PlayerDatab
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
+import net.rptools.clientserver.simple.DisconnectHandler;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.CampaignFactory;
 import net.rptools.maptool.model.player.LocalPlayer;
@@ -42,6 +43,7 @@ public class MapToolClient {
   private Campaign campaign;
   private ServerPolicy serverPolicy;
   private final ServerCommand serverCommand;
+  private final DisconnectHandler disconnectHandler;
 
   /** Creates a client for a personal server. */
   public MapToolClient() {
@@ -56,12 +58,14 @@ public class MapToolClient {
 
       serverPolicy = new ServerPolicy();
 
+      this.disconnectHandler = conn -> {};
+
       conn = new NilMapToolConnection();
-      this.serverCommand = new ServerCommandClientImpl(conn);
       conn.onCompleted(
           () -> {
             conn.addMessageHandler(new ClientMessageHandler(this));
           });
+      this.serverCommand = new ServerCommandClientImpl(conn);
 
     } catch (Exception e) {
       throw new RuntimeException("Unable to start personal server", e);
@@ -77,7 +81,10 @@ public class MapToolClient {
     PlayerDatabaseFactory.setCurrentPlayerDatabase(LOCAL_PLAYER);
     playerDatabase = PlayerDatabaseFactory.getCurrentPlayerDatabase();
 
+    this.disconnectHandler = new ServerDisconnectHandler();
+
     conn = new MapToolConnection(config, player);
+    conn.addDisconnectHandler(disconnectHandler);
     this.serverCommand = new ServerCommandClientImpl(conn);
     conn.onCompleted(
         () -> {
@@ -93,6 +100,12 @@ public class MapToolClient {
     // TODO WHy not just .close()? Surely if it's not alive that would be a no-op.
     if (conn.isAlive()) {
       conn.close();
+    }
+  }
+
+  public void expectDisconnection() {
+    if (disconnectHandler instanceof ServerDisconnectHandler serverDisconnectHandler) {
+      serverDisconnectHandler.disconnectExpected = true;
     }
   }
 

@@ -1164,7 +1164,6 @@ public class MapTool {
 
     IMapToolConnection clientConn = client.getConnection();
     clientConn.addActivityListener(clientFrame.getActivityMonitor());
-    clientConn.addDisconnectHandler(new ServerDisconnectHandler());
     clientConn.onCompleted(
         () -> {
           clientFrame.getLookupTablePanel().updateView();
