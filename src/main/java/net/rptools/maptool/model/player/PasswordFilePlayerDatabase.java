@@ -421,11 +421,6 @@ public final class PasswordFilePlayerDatabase
   }
 
   @Override
-  public boolean supportsBlocking() {
-    return true;
-  }
-
-  @Override
   public boolean supportsAsymmetricalKeys() {
     return true;
   }
@@ -748,11 +743,6 @@ public final class PasswordFilePlayerDatabase
   @Override
   public Set<Player> getOnlinePlayers() throws InterruptedException, InvocationTargetException {
     return new HashSet<>(loggedInPlayers.getPlayers());
-  }
-
-  @Override
-  public boolean recordsOnlyConnectedPlayers() {
-    return false;
   }
 
   /**

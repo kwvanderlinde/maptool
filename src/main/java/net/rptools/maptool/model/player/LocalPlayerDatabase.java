@@ -51,14 +51,6 @@ public class LocalPlayerDatabase implements PlayerDatabase {
     }
   }
 
-  // TODO `Players` class often checks one of these boolean methods followed by a getter. Reality
-  //  dictates that it should actually check if we are server-side of not.
-
-  @Override
-  public boolean supportsBlocking() {
-    return false;
-  }
-
   @Override
   public boolean supportsAsymmetricalKeys() {
     return false;
@@ -72,11 +64,6 @@ public class LocalPlayerDatabase implements PlayerDatabase {
   @Override
   public Set<Player> getOnlinePlayers() throws InterruptedException, InvocationTargetException {
     return new HashSet<>(loggedInPlayers.getPlayers());
-  }
-
-  @Override
-  public boolean recordsOnlyConnectedPlayers() {
-    return true;
   }
 
   @Override

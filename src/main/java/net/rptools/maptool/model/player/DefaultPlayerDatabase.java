@@ -84,11 +84,6 @@ public class DefaultPlayerDatabase implements ServerSidePlayerDatabase {
   }
 
   @Override
-  public boolean supportsBlocking() {
-    return false;
-  }
-
-  @Override
   public boolean supportsAsymmetricalKeys() {
     return false;
   }
@@ -106,11 +101,6 @@ public class DefaultPlayerDatabase implements ServerSidePlayerDatabase {
   @Override
   public Set<Player> getOnlinePlayers() throws InterruptedException, InvocationTargetException {
     return loggedInPlayers.getPlayers();
-  }
-
-  @Override
-  public boolean recordsOnlyConnectedPlayers() {
-    return true;
   }
 
   @Override

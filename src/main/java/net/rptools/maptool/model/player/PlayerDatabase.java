@@ -55,13 +55,6 @@ public interface PlayerDatabase {
   Player getPlayer(String playerName) throws NoSuchAlgorithmException, InvalidKeySpecException;
 
   /**
-   * Returns if this player database supports disabling players.
-   *
-   * @return {@code true} if this player database supports disabling players.
-   */
-  boolean supportsBlocking();
-
-  /**
    * Returns {@code true} if the database supports asymmetric keys for authentication.
    *
    * @return {@code true} if the database supports asymmetric keys for authentication.
@@ -91,13 +84,6 @@ public interface PlayerDatabase {
    * @return The players that are currently connected.
    */
   Set<Player> getOnlinePlayers() throws InterruptedException, InvocationTargetException;
-
-  /**
-   * Returns if this player database records information about only currently connected players.
-   *
-   * @return if this player database records information about only currently connected players.
-   */
-  boolean recordsOnlyConnectedPlayers();
 
   /**
    * Returns the authentication method for the player.
