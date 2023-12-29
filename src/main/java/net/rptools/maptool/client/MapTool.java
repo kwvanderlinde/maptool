@@ -1191,7 +1191,7 @@ public class MapTool {
 
     MapTool.getFrame().getCommandPanel().clearAllIdentities();
 
-    MapToolConnection clientConn = client.getConnection();
+    IMapToolConnection clientConn = client.getConnection();
     clientConn.addActivityListener(clientFrame.getActivityMonitor());
     clientConn.addDisconnectHandler(new ServerDisconnectHandler());
     clientConn.onCompleted(

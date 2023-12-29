@@ -31,13 +31,18 @@ import net.rptools.maptool.server.ServerConfig;
  */
 public class MapToolClient {
   private final LocalPlayer player;
-  private MapToolConnection conn;
+  private IMapToolConnection conn;
 
   public MapToolClient(LocalPlayer player, ServerConfig config, ClientMessageHandler messageHandler)
       throws IOException {
     this.player = player;
 
-    conn = new MapToolConnection(config, player);
+    if (config.isPersonalServer()) {
+      conn = new NilMapToolConnection();
+    } else {
+      conn = new MapToolConnection(config, player);
+    }
+
     conn.onCompleted(
         () -> {
           conn.addMessageHandler(messageHandler);
@@ -63,7 +68,7 @@ public class MapToolClient {
     return player;
   }
 
-  public MapToolConnection getConnection() {
+  public IMapToolConnection getConnection() {
     return conn;
   }
 
