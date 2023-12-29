@@ -159,34 +159,6 @@ public class Players {
   }
 
   /**
-   * Returns the information about the current player database capabilities.
-   *
-   * @return the information about the current player database capabilities.
-   */
-  public CompletableFuture<PlayerDatabaseInfo> getDatabaseCapabilities() {
-    return CompletableFuture.supplyAsync(this::getPlayerDatabaseInfo);
-  }
-
-  /**
-   * Returns the information about the current player databases capabilities.
-   *
-   * @return the information about the current player databases capabilities.
-   */
-  private PlayerDatabaseInfo getPlayerDatabaseInfo() {
-    PlayerDatabase playerDatabase = MapTool.getPlayerDatabase();
-    if (playerDatabase instanceof ServerSidePlayerDatabase serverSidePlayerDatabase) {
-      return new PlayerDatabaseInfo(
-              playerDatabase.supportsBlocking(),
-              !playerDatabase.supportsRolePasswords(),
-              playerDatabase.supportsAsymmetricalKeys(),
-              playerDatabase.recordsOnlyConnectedPlayers());
-    }
-    else {
-      return new PlayerDatabaseInfo(false, false, false, true);
-    }
-  }
-
-  /**
    * Returns information about the specified player.
    *
    * @param name the name of the player to return the information about.
