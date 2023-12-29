@@ -22,6 +22,7 @@ import net.rptools.maptool.model.CampaignFactory;
 import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.model.player.LocalPlayerDatabase;
 import net.rptools.maptool.model.player.PlayerDatabase;
+import net.rptools.maptool.server.MapToolServer;
 import net.rptools.maptool.server.PersonalServer;
 import net.rptools.maptool.server.ServerCommand;
 import net.rptools.maptool.server.ServerConfig;
@@ -36,7 +37,7 @@ import net.rptools.maptool.server.ServerPolicy;
  */
 public class MapToolClient {
   private final LocalPlayer player;
-  private final LocalPlayerDatabase playerDatabase;
+  private final PlayerDatabase playerDatabase;
   private final IMapToolConnection conn;
   private Campaign campaign;
   private ServerPolicy serverPolicy;
@@ -78,6 +79,25 @@ public class MapToolClient {
     this.disconnectHandler = new ServerDisconnectHandler();
 
     conn = new MapToolConnection(this, config, player);
+    conn.addDisconnectHandler(disconnectHandler);
+    this.serverCommand = new ServerCommandClientImpl(conn);
+    conn.onCompleted(
+        () -> {
+          conn.addMessageHandler(new ClientMessageHandler(this));
+        });
+  }
+
+  public MapToolClient(LocalPlayer player, MapToolServer server) throws IOException {
+    this.campaign = CampaignFactory.createBasicCampaign();
+
+    this.player = player;
+    this.serverPolicy = server.getPolicy();
+
+    playerDatabase = server.getPlayerDatabase();
+
+    this.disconnectHandler = new ServerDisconnectHandler();
+
+    conn = new MapToolConnection(this, server.getConfig(), player);
     conn.addDisconnectHandler(disconnectHandler);
     this.serverCommand = new ServerCommandClientImpl(conn);
     conn.onCompleted(

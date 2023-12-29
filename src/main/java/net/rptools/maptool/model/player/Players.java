@@ -192,7 +192,7 @@ public class Players {
         }
       }
 
-      boolean connected = MapTool.getPlayerDatabase().isPlayerConnected(name);
+      boolean connected = playerDatabase.isPlayerConnected(name);
       AuthMethod authMethod = playerDatabase.getAuthMethod(player);
       boolean persisted = false;
       if (playerDatabase instanceof PersistedPlayerDatabase persistedPlayerDatabase) {

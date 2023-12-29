@@ -757,10 +757,6 @@ public class MapTool {
   }
 
   public static PlayerDatabase getPlayerDatabase() {
-    if (server != null) {
-      return server.getPlayerDatabase();
-    }
-
     return client.getPlayerDatabase();
   }
 
@@ -1180,6 +1176,30 @@ public class MapTool {
   public static void createConnection(ServerConfig config, LocalPlayer player, Runnable onCompleted)
       throws IOException, ExecutionException, InterruptedException {
     client = new MapToolClient(player, config);
+
+    MapTool.getFrame().getCommandPanel().clearAllIdentities();
+
+    IMapToolConnection clientConn = client.getConnection();
+    clientConn.addActivityListener(clientFrame.getActivityMonitor());
+    clientConn.onCompleted(
+        () -> {
+          clientFrame.getLookupTablePanel().updateView();
+          clientFrame.getInitiativePanel().updateView();
+          onCompleted.run();
+        });
+
+    client.start();
+  }
+
+  public static void createLocalConnection(LocalPlayer player, Runnable onCompleted)
+      throws IOException, ExecutionException, InterruptedException {
+    if (!(server instanceof MapToolServer mapToolServer)) {
+      // TODO Exceptional case.
+      // TODO Should we call createLocalConnection automatically when starting a real serrver?
+      return;
+    }
+
+    client = new MapToolClient(player, mapToolServer);
 
     MapTool.getFrame().getCommandPanel().clearAllIdentities();
 

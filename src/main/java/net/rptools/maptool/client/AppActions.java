@@ -2290,14 +2290,12 @@ public class AppActions {
                       };
 
                   if (playerType == Player.Role.GM) {
-                    MapTool.createConnection(
-                        config,
+                    MapTool.createLocalConnection(
                         new LocalPlayer(
                             dialog.getUsernameTextField().getText(), playerType, gmPassword),
                         onConnected);
                   } else {
-                    MapTool.createConnection(
-                        config,
+                    MapTool.createLocalConnection(
                         new LocalPlayer(
                             dialog.getUsernameTextField().getText(), playerType, playerPassword),
                         onConnected);
