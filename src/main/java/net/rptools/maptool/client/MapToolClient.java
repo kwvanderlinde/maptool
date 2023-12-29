@@ -46,8 +46,7 @@ public class MapToolClient {
   private final ServerCommand serverCommand;
 
   /** Creates a client for a personal server. */
-  public MapToolClient(ClientMessageHandler messageHandler, ServerCommand serverCommand) {
-    this.serverCommand = serverCommand;
+  public MapToolClient(ClientMessageHandler messageHandler) {
     this.campaign = CampaignFactory.createBasicCampaign();
 
     try {
@@ -60,22 +59,19 @@ public class MapToolClient {
       serverPolicy = new ServerPolicy();
 
       conn = new NilMapToolConnection();
+      this.serverCommand = new ServerCommandClientImpl(conn);
       conn.onCompleted(
           () -> {
             conn.addMessageHandler(messageHandler);
           });
+
     } catch (Exception e) {
       throw new RuntimeException("Unable to start personal server", e);
     }
   }
 
-  public MapToolClient(
-      LocalPlayer player,
-      ServerConfig config,
-      ClientMessageHandler messageHandler,
-      ServerCommand serverCommand)
+  public MapToolClient(LocalPlayer player, ServerConfig config, ClientMessageHandler messageHandler)
       throws IOException {
-    this.serverCommand = serverCommand;
     this.campaign = CampaignFactory.createBasicCampaign();
 
     this.player = player;
@@ -85,6 +81,7 @@ public class MapToolClient {
     playerDatabase = PlayerDatabaseFactory.getCurrentPlayerDatabase();
 
     conn = new MapToolConnection(config, player);
+    this.serverCommand = new ServerCommandClientImpl(conn);
     conn.onCompleted(
         () -> {
           conn.addMessageHandler(messageHandler);
@@ -100,6 +97,10 @@ public class MapToolClient {
     if (conn.isAlive()) {
       conn.close();
     }
+  }
+
+  public ServerCommand getServerCommand() {
+    return serverCommand;
   }
 
   public LocalPlayer getPlayer() {

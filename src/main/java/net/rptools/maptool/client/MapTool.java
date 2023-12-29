@@ -165,8 +165,7 @@ public class MapTool {
   private static NoteFrame profilingNoteFrame;
   private static LogConsoleFrame logConsoleFrame;
   private static IMapToolServer server;
-  private static ServerCommand serverCommand = new ServerCommandClientImpl();
-  private static MapToolClient client = new MapToolClient(handler, serverCommand);
+  private static MapToolClient client = new MapToolClient(handler);
 
   private static BackupManager backupManager;
   private static AssetTransferManager assetTransferManager;
@@ -666,8 +665,6 @@ public class MapTool {
 
     setClientFrame(new MapToolFrame(menuBar));
 
-    serverCommand = new ServerCommandClientImpl();
-
     try {
       playerZoneListener = new PlayerZoneListener();
       zoneLoadedListener = new ZoneLoadedListener();
@@ -738,7 +735,7 @@ public class MapTool {
   }
 
   public static ServerCommand serverCommand() {
-    return serverCommand;
+    return client.getServerCommand();
   }
 
   /**
@@ -1152,7 +1149,7 @@ public class MapTool {
           ExecutionException,
           InterruptedException {
     server = new PersonalServer();
-    client = new MapToolClient(handler, serverCommand);
+    client = new MapToolClient(handler);
 
     MapTool.getFrame().getCommandPanel().clearAllIdentities();
 
@@ -1162,7 +1159,7 @@ public class MapTool {
 
   public static void createConnection(ServerConfig config, LocalPlayer player, Runnable onCompleted)
       throws IOException, ExecutionException, InterruptedException {
-    client = new MapToolClient(player, config, handler, serverCommand);
+    client = new MapToolClient(player, config, handler);
 
     MapTool.getFrame().getCommandPanel().clearAllIdentities();
 
@@ -1440,10 +1437,8 @@ public class MapTool {
           e.printStackTrace();
         }
 
-        ServerCommand command = serverCommand;
-        if (command != null) {
-          command.heartbeat(getPlayer().getName());
-        }
+        ServerCommand command = client.getServerCommand();
+        command.heartbeat(getPlayer().getName());
       }
     }
   }

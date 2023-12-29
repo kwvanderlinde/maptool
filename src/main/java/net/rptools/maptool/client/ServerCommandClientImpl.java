@@ -21,7 +21,6 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.functions.ExecFunction;
@@ -42,8 +41,6 @@ import net.rptools.maptool.server.ServerMessageHandler;
 import net.rptools.maptool.server.ServerPolicy;
 import net.rptools.maptool.server.proto.*;
 import net.rptools.maptool.server.proto.drawing.IntPointDto;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * This class is used by a client to send commands to the server. The methods of this class are
@@ -52,13 +49,12 @@ import org.apache.logging.log4j.Logger;
  */
 public class ServerCommandClientImpl implements ServerCommand {
 
+  private final IMapToolConnection connection;
   private final TimedEventQueue movementUpdateQueue = new TimedEventQueue(100);
-  private final LinkedBlockingQueue<MD5Key> assetRetrieveQueue = new LinkedBlockingQueue<MD5Key>();
-  private static final Logger log = LogManager.getLogger(ServerCommandClientImpl.class);
 
-  public ServerCommandClientImpl() {
+  public ServerCommandClientImpl(IMapToolConnection connection) {
+    this.connection = connection;
     movementUpdateQueue.start();
-    // new AssetRetrievalThread().start();
   }
 
   public void heartbeat(String data) {
@@ -518,9 +514,7 @@ public class ServerCommandClientImpl implements ServerCommand {
     makeServerCall(Message.newBuilder().setClearExposedAreaMsg(msg).build());
   }
 
-  private static void makeServerCall(Message msg) {
-    final var connection = MapTool.getClient().getConnection();
-    // TODO Original checked null, which for us is `.isAlive()`. Is that really necessary.
+  private void makeServerCall(Message msg) {
     connection.sendMessage(msg);
   }
 
@@ -803,7 +797,7 @@ public class ServerCommandClientImpl implements ServerCommand {
    * some time interval. If a new event arrives before the time interval elapses, it is replaced. In
    * this way, only the most current version of the event is released.
    */
-  private static class TimedEventQueue extends Thread {
+  private class TimedEventQueue extends Thread {
 
     Message msg;
     long delay;
