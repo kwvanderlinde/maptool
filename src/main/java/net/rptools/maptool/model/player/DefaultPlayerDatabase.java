@@ -99,11 +99,6 @@ public class DefaultPlayerDatabase implements ServerSidePlayerDatabase {
   }
 
   @Override
-  public Set<Player> getOnlinePlayers() throws InterruptedException, InvocationTargetException {
-    return loggedInPlayers.getPlayers();
-  }
-
-  @Override
   public AuthMethod getAuthMethod(Player player) {
     return AuthMethod.PASSWORD; // Will always be password based
   }
@@ -137,6 +132,11 @@ public class DefaultPlayerDatabase implements ServerSidePlayerDatabase {
   @Override
   public void playerSignedOut(Player player) {
     loggedInPlayers.playerSignedOut(player);
+  }
+
+  @Override
+  public Set<Player> getOnlinePlayers() throws InterruptedException, InvocationTargetException {
+    return loggedInPlayers.getPlayers();
   }
 
   @Override

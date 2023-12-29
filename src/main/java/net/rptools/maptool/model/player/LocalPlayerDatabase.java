@@ -51,6 +51,9 @@ public class LocalPlayerDatabase implements PlayerDatabase {
     }
   }
 
+  // region TODO These are also server-side specific, but are routed through more of the player
+  //         database code so removal is not immediate.
+
   @Override
   public boolean supportsAsymmetricalKeys() {
     return false;
@@ -61,10 +64,7 @@ public class LocalPlayerDatabase implements PlayerDatabase {
     return false;
   }
 
-  @Override
-  public Set<Player> getOnlinePlayers() throws InterruptedException, InvocationTargetException {
-    return new HashSet<>(loggedInPlayers.getPlayers());
-  }
+  // endregion
 
   @Override
   public AuthMethod getAuthMethod(Player player) {
@@ -104,6 +104,11 @@ public class LocalPlayerDatabase implements PlayerDatabase {
   @Override
   public void playerSignedOut(Player player) {
     loggedInPlayers.playerSignedOut(player);
+  }
+
+  @Override
+  public Set<Player> getOnlinePlayers() throws InterruptedException, InvocationTargetException {
+    return new HashSet<>(loggedInPlayers.getPlayers());
   }
 
   @Override

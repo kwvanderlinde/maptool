@@ -79,13 +79,6 @@ public interface PlayerDatabase {
   }
 
   /**
-   * Returns all the players currently connected.
-   *
-   * @return The players that are currently connected.
-   */
-  Set<Player> getOnlinePlayers() throws InterruptedException, InvocationTargetException;
-
-  /**
    * Returns the authentication method for the player.
    *
    * @param player the player to get the authentication method for.
@@ -146,6 +139,13 @@ public interface PlayerDatabase {
    * @param player the player that has signed out.
    */
   void playerSignedOut(Player player);
+
+  /**
+   * Returns all the players currently connected.
+   *
+   * @return The players that are currently connected.
+   */
+  Set<Player> getOnlinePlayers() throws InterruptedException, InvocationTargetException;
 
   /**
    * Returns if a player is connected or not.

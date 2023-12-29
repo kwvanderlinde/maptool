@@ -41,6 +41,9 @@ public interface ServerSidePlayerDatabase extends PlayerDatabase {
    */
   byte[] getPlayerPasswordSalt(String playerName);
 
+  // TODO getPlayerWithRole should only be called for password-based auth, so there should be no
+  //  need for PasswordFilePlayerDatabase to implement it.
+
   /**
    * Returns the player overriding the role in the database with the specified role.
    *

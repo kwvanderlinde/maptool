@@ -724,6 +724,11 @@ public final class PasswordFilePlayerDatabase
   }
 
   @Override
+  public Set<Player> getOnlinePlayers() throws InterruptedException, InvocationTargetException {
+    return new HashSet<>(loggedInPlayers.getPlayers());
+  }
+
+  @Override
   public boolean isPlayerConnected(String name) {
     return loggedInPlayers.isLoggedIn(name);
   }
@@ -738,11 +743,6 @@ public final class PasswordFilePlayerDatabase
         transientPlayerDetails.keySet().stream().map(this::getPlayer).collect(Collectors.toSet()));
 
     return players;
-  }
-
-  @Override
-  public Set<Player> getOnlinePlayers() throws InterruptedException, InvocationTargetException {
-    return new HashSet<>(loggedInPlayers.getPlayers());
   }
 
   /**
