@@ -2241,13 +2241,12 @@ public class AppActions {
                   campaign.setHasUsedFogToolbar(useIF);
 
                   PlayerDatabaseFactory.setServerConfig(config);
-                  PlayerDatabase playerDatabase;
                   if (serverProps.getUsePasswordFile()) {
-                    playerDatabase =
-                        MapTool.getPlayerDatabaseManager()
-                            .getPlayerDatabaseOfType(PlayerDatabaseType.PASSWORD_FILE);
-
-                    PasswordFilePlayerDatabase db = (PasswordFilePlayerDatabase) playerDatabase;
+                    PlayerDatabaseFactory.setCurrentPlayerDatabase(
+                        PlayerDatabaseType.PASSWORD_FILE);
+                    PasswordFilePlayerDatabase db =
+                        (PasswordFilePlayerDatabase)
+                            PlayerDatabaseFactory.getCurrentPlayerDatabase();
                     db.initialize();
                     if (serverProps.getRole() == Role.GM) {
                       db.addTemporaryPlayer(
@@ -2257,10 +2256,9 @@ public class AppActions {
                           dialog.getUsernameTextField().getText(), Role.PLAYER, playerPassword);
                     }
                   } else {
-                    playerDatabase =
-                        MapTool.getPlayerDatabaseManager()
-                            .getPlayerDatabaseOfType(PlayerDatabaseType.DEFAULT);
+                    PlayerDatabaseFactory.setCurrentPlayerDatabase(PlayerDatabaseType.DEFAULT);
                   }
+                  PlayerDatabase playerDatabase = PlayerDatabaseFactory.getCurrentPlayerDatabase();
                   // Make a copy of the campaign since we don't coordinate local changes well ...
                   // yet
 

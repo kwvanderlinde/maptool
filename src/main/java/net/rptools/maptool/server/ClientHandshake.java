@@ -47,6 +47,7 @@ import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.model.player.LocalPlayerDatabase;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.player.Player.Role;
+import net.rptools.maptool.model.player.PlayerDatabaseFactory;
 import net.rptools.maptool.model.player.PlayerDatabaseFactory.PlayerDatabaseType;
 import net.rptools.maptool.server.proto.*;
 import net.rptools.maptool.server.proto.HandshakeMsg.MessageTypeCase;
@@ -320,10 +321,8 @@ public class ClientHandshake implements Handshake, MessageHandler {
       MapTool.getFrame().getAssetPanel().disableAssets();
     }
     if (!MapTool.isHostingServer()) {
-      var playerDb =
-          (LocalPlayerDatabase)
-              MapTool.getPlayerDatabaseManager()
-                  .getPlayerDatabaseOfType(PlayerDatabaseType.LOCAL_PLAYER);
+      PlayerDatabaseFactory.setCurrentPlayerDatabase(PlayerDatabaseType.LOCAL_PLAYER);
+      var playerDb = (LocalPlayerDatabase) PlayerDatabaseFactory.getCurrentPlayerDatabase();
       playerDb.setLocalPlayer(player);
       if (!MapTool.isPersonalServer()) {
         new CampaignManager().clearCampaignData();

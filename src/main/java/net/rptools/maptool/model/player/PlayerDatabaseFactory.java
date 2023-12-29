@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.crypto.NoSuchPaddingException;
 import net.rptools.maptool.client.AppUtil;
@@ -62,6 +64,9 @@ public class PlayerDatabaseFactory {
   }
 
   private static PlayerDatabase currentPlayerDatabase;
+
+  private static final Map<PlayerDatabaseType, PlayerDatabase> playerDatabaseMap =
+      new ConcurrentHashMap<>();
 
   private static final ReentrantLock lock = new ReentrantLock();
 
@@ -111,6 +116,17 @@ public class PlayerDatabaseFactory {
     }
   }
 
+  public static void setCurrentPlayerDatabase(PlayerDatabaseType playerDatabaseType) {
+    try {
+      lock.lock();
+      var oldPlayerDatabase = getCurrentPlayerDatabase();
+      currentPlayerDatabase = getPlayerDatabase(playerDatabaseType);
+      databaseChangeTypeSupport.databaseChanged(oldPlayerDatabase, currentPlayerDatabase);
+    } finally {
+      lock.unlock();
+    }
+  }
+
   private static ServerConfig getServerConfig() {
     try {
       lock.lock();
@@ -120,11 +136,22 @@ public class PlayerDatabaseFactory {
     }
   }
 
+  public static PlayerDatabase getPlayerDatabase(PlayerDatabaseType databaseType) {
+    switch (databaseType) {
+      case LOCAL_PLAYER:
+      case PASSWORD_FILE:
+        return playerDatabaseMap.computeIfAbsent(
+            databaseType, PlayerDatabaseFactory::createPlayerDatabase);
+      default:
+        return createPlayerDatabase(databaseType);
+    }
+  }
+
   static DatabaseChangeTypeSupport getDatabaseChangeTypeSupport() {
     return databaseChangeTypeSupport;
   }
 
-  public static PlayerDatabase createPlayerDatabase(PlayerDatabaseType databaseType) {
+  private static PlayerDatabase createPlayerDatabase(PlayerDatabaseType databaseType) {
     try {
       switch (databaseType) {
         case LOCAL_PLAYER:
