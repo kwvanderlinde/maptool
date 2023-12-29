@@ -25,7 +25,6 @@ import java.util.Random;
 import javax.swing.SwingUtilities;
 import net.rptools.clientserver.simple.connection.Connection;
 import net.rptools.clientserver.simple.server.ServerObserver;
-import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolRegistry;
 import net.rptools.maptool.client.ui.connectioninfodialog.ConnectionInfoDialog;
@@ -36,7 +35,6 @@ import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.TextMessage;
 import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.model.player.LocalPlayerDatabase;
-import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.player.PlayerDatabase;
 import net.rptools.maptool.server.proto.Message;
 import net.rptools.maptool.server.proto.UpdateAssetTransferMsg;
@@ -333,11 +331,7 @@ public class MapToolServer implements IMapToolServer {
       throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
     // This starts the server thread.
 
-    final var player =
-        new LocalPlayer(
-            AppPreferences.getDefaultUserName(),
-            Player.Role.GM,
-            ServerConfig.getPersonalServerGMPassword());
+    final var player = new LocalPlayer();
     PlayerDatabase playerDatabase = new LocalPlayerDatabase(player);
     MapToolServer server =
         new MapToolServer(new ServerConfig(), new ServerPolicy(), playerDatabase);

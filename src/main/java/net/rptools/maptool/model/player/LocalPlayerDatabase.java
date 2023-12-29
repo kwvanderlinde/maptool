@@ -38,10 +38,6 @@ public class LocalPlayerDatabase implements PlayerDatabase {
     localPlayer = player;
   }
 
-  LocalPlayerDatabase() throws NoSuchAlgorithmException, InvalidKeySpecException {
-    localPlayer = new LocalPlayer("None", Role.GM, ServerConfig.getPersonalServerGMPassword());
-  }
-
   public synchronized void setLocalPlayer(LocalPlayer player) {
     localPlayer = player;
   }
@@ -86,6 +82,8 @@ public class LocalPlayerDatabase implements PlayerDatabase {
   @Override
   public Player getPlayerWithRole(String playerName, Role role)
       throws NoSuchAlgorithmException, InvalidKeySpecException {
+    // TODO This method is nonsense as LocalPlayerDatabase isn't used server-side anyways. We really
+    //  need a server-side PlayerDatabase interface so we can ditch a bunch of these methods.
     LocalPlayer player = (LocalPlayer) getPlayer(playerName);
     if (player != null && player.getName().equals(playerName)) {
       player.setRole(role);

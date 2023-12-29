@@ -188,11 +188,7 @@ public class MapTool {
 
   static {
     try {
-      final var player =
-          new LocalPlayer(
-              AppPreferences.getDefaultUserName(),
-              Player.Role.GM,
-              ServerConfig.getPersonalServerGMPassword());
+      final var player = new LocalPlayer();
       final var personalServer = new PersonalServer(player);
       server = personalServer;
       client = new MapToolClient(personalServer);
@@ -1170,12 +1166,7 @@ public class MapTool {
           InvalidKeySpecException,
           ExecutionException,
           InterruptedException {
-    final var player =
-        new LocalPlayer(
-            AppPreferences.getDefaultUserName(),
-            Player.Role.GM,
-            ServerConfig.getPersonalServerGMPassword());
-
+    final var player = new LocalPlayer();
     server = new PersonalServer(player);
     client = new MapToolClient((PersonalServer) server);
 
