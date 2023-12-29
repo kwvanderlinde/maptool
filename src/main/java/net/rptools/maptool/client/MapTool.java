@@ -157,12 +157,11 @@ public class MapTool {
   private static Campaign campaign;
 
   private static List<Player> playerList;
-  private static LocalPlayer player;
   private static PlayerZoneListener playerZoneListener;
   private static ZoneLoadedListener zoneLoadedListener;
 
-  private static MapToolConnection conn;
-  private static ClientMessageHandler handler;
+  private static ClientMessageHandler handler = new ClientMessageHandler();
+  private static MapToolClient client = MapToolClient.createDefault(handler);
   private static JMenuBar menuBar;
   private static MapToolFrame clientFrame;
   private static NoteFrame profilingNoteFrame;
@@ -672,14 +671,11 @@ public class MapTool {
 
     playerList = new ArrayList<>();
 
-    handler = new ClientMessageHandler();
-
     setClientFrame(new MapToolFrame(menuBar));
 
     serverCommand = new ServerCommandClientImpl();
 
     try {
-      player = new LocalPlayer("", Player.Role.GM, ServerConfig.getPersonalServerGMPassword());
       playerZoneListener = new PlayerZoneListener();
       zoneLoadedListener = new ZoneLoadedListener();
       Campaign cmpgn = CampaignFactory.createBasicCampaign();
@@ -1155,8 +1151,12 @@ public class MapTool {
     }
   }
 
+  public static MapToolClient getClient() {
+    return client;
+  }
+
   public static LocalPlayer getPlayer() {
-    return player;
+    return client.getPlayer();
   }
 
   public static void startPersonalServer(Campaign campaign)
@@ -1187,37 +1187,21 @@ public class MapTool {
 
   public static void createConnection(ServerConfig config, LocalPlayer player, Runnable onCompleted)
       throws IOException, ExecutionException, InterruptedException {
-    MapTool.player = player;
+    client = new MapToolClient(player, config, handler);
+
     MapTool.getFrame().getCommandPanel().clearAllIdentities();
 
-    MapToolConnection clientConn = new MapToolConnection(config, player);
-
+    MapToolConnection clientConn = client.getConnection();
     clientConn.addActivityListener(clientFrame.getActivityMonitor());
     clientConn.addDisconnectHandler(new ServerDisconnectHandler());
-
-    clientConn.setOnCompleted(
+    clientConn.onCompleted(
         () -> {
-          clientConn.addMessageHandler(handler);
-          // LATER: I really, really, really don't like this startup pattern
-          if (clientConn.isAlive()) {
-            conn = clientConn;
-          }
           clientFrame.getLookupTablePanel().updateView();
           clientFrame.getInitiativePanel().updateView();
           onCompleted.run();
         });
 
-    clientConn.start();
-  }
-
-  public static void closeConnection() throws IOException {
-    if (conn != null) {
-      conn.close();
-    }
-  }
-
-  public static MapToolConnection getConnection() {
-    return conn;
+    client.start();
   }
 
   /** returns the current locale code. */
@@ -1259,9 +1243,7 @@ public class MapTool {
     }
 
     try {
-      if (conn != null && conn.isAlive()) {
-        conn.close();
-      }
+      client.close();
     } catch (IOException ioe) {
       // This isn't critical, we're closing it anyway
       log.debug("While closing connection", ioe);

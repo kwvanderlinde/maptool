@@ -15,6 +15,8 @@
 package net.rptools.maptool.client;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import net.rptools.clientserver.ConnectionFactory;
 import net.rptools.clientserver.simple.connection.Connection;
@@ -38,19 +40,18 @@ public class MapToolConnection {
   private final LocalPlayer player;
   private Connection connection;
   private Handshake handshake;
-  private Runnable onCompleted;
+  private List<Runnable> onCompleted;
 
   public MapToolConnection(ServerConfig config, LocalPlayer player) throws IOException {
 
     this.connection = ConnectionFactory.getInstance().createConnection(player.getName(), config);
     this.player = player;
     this.handshake = new ClientHandshake(connection, player);
-    onCompleted = () -> {};
+    onCompleted = new ArrayList<>();
   }
 
-  public void setOnCompleted(Runnable onCompleted) {
-    if (onCompleted == null) this.onCompleted = () -> {};
-    else this.onCompleted = onCompleted;
+  public void onCompleted(Runnable onCompleted) {
+    this.onCompleted.add(onCompleted);
   }
 
   public void start() throws IOException, ExecutionException, InterruptedException {
@@ -59,7 +60,9 @@ public class MapToolConnection {
         (ignore) -> {
           connection.removeMessageHandler(handshake);
           if (handshake.isSuccessful()) {
-            onCompleted.run();
+            for (final var callback : onCompleted) {
+              callback.run();
+            }
           } else {
             // For client side only show the error message as its more likely to make sense
             // for players, the exception is logged just in case more info is required
@@ -69,7 +72,9 @@ public class MapToolConnection {
             }
             MapTool.showError(handshake.getErrorMessage());
             connection.close();
-            onCompleted.run();
+            for (final var callback : onCompleted) {
+              callback.run();
+            }
             AppActions.disconnectFromServer();
           }
         });

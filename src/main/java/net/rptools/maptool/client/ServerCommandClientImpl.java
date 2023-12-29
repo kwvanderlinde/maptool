@@ -519,9 +519,9 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   private static void makeServerCall(Message msg) {
-    if (MapTool.getConnection() != null) {
-      MapTool.getConnection().sendMessage(msg);
-    }
+    final var connection = MapTool.getClient().getConnection();
+    // TODO Original checked null, which for us is `.isAlive()`. Is that really necessary.
+    connection.sendMessage(msg);
   }
 
   public void setBoard(GUID zoneGUID, MD5Key mapAssetId, int x, int y) {
