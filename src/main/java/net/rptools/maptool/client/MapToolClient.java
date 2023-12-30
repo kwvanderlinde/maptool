@@ -21,7 +21,6 @@ import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.CampaignFactory;
 import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.model.player.LocalPlayerDatabase;
-import net.rptools.maptool.model.player.LoggedInPlayers;
 import net.rptools.maptool.model.player.PlayerDatabase;
 import net.rptools.maptool.server.MapToolServer;
 import net.rptools.maptool.server.PersonalServer;
@@ -39,7 +38,6 @@ import net.rptools.maptool.server.ServerPolicy;
 public class MapToolClient {
   private final LocalPlayer player;
   private final PlayerDatabase playerDatabase;
-  private final LoggedInPlayers loggedInPlayers = new LoggedInPlayers();
   private final IMapToolConnection conn;
   private Campaign campaign;
   private ServerPolicy serverPolicy;
@@ -135,10 +133,6 @@ public class MapToolClient {
 
   public PlayerDatabase getPlayerDatabase() {
     return playerDatabase;
-  }
-
-  public LoggedInPlayers getLoggedInPlayers() {
-    return loggedInPlayers;
   }
 
   public IMapToolConnection getConnection() {
