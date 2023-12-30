@@ -1180,8 +1180,7 @@ public class MapTool {
     setCampaign(campaign);
   }
 
-  private static void installClient(MapToolClient client, Runnable onCompleted)
-      throws IOException, ExecutionException, InterruptedException {
+  private static void installClient(MapToolClient client, Runnable onCompleted) {
     MapTool.client = client;
 
     MapTool.getFrame().getCommandPanel().clearAllIdentities();
