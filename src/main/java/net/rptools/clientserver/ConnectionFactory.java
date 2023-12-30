@@ -32,7 +32,7 @@ public class ConnectionFactory {
     return instance;
   }
 
-  public Connection createConnection(String id, ServerConfig config) throws IOException {
+  public Connection createConnection(String id, ServerConfig config) {
     if (!config.getUseWebRTC()) {
       return new SocketConnection(id, config.getHostName(), config.getPort());
     }

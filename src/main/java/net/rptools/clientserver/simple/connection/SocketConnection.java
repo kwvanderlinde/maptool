@@ -29,19 +29,23 @@ public class SocketConnection extends AbstractConnection implements Connection {
   private static final Logger log = LogManager.getLogger(SocketConnection.class);
 
   private final String id;
-  private final SendThread send;
-  private final ReceiveThread receive;
-  private final Socket socket;
 
-  public SocketConnection(String id, String hostName, int port) throws IOException {
-    this(id, new Socket(hostName, port));
+  private SendThread send;
+  private ReceiveThread receive;
+
+  private Socket socket;
+  private String hostName;
+  private int port;
+
+  public SocketConnection(String id, String hostName, int port) {
+    this.id = id;
+    this.hostName = hostName;
+    this.port = port;
   }
 
-  public SocketConnection(String id, Socket socket) throws IOException {
+  public SocketConnection(String id, Socket socket) {
     this.id = id;
     this.socket = socket;
-    this.send = new SendThread(new BufferedOutputStream(socket.getOutputStream()));
-    this.receive = new ReceiveThread(this, socket.getInputStream());
   }
 
   public String getId() {
@@ -50,6 +54,13 @@ public class SocketConnection extends AbstractConnection implements Connection {
 
   @Override
   public void open() throws IOException {
+    if (socket == null) {
+      socket = new Socket(hostName, port);
+    }
+
+    this.send = new SendThread(new BufferedOutputStream(socket.getOutputStream()));
+    this.receive = new ReceiveThread(this, socket.getInputStream());
+
     this.send.start();
     this.receive.start();
   }

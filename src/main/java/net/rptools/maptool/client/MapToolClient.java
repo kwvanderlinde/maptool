@@ -68,7 +68,7 @@ public class MapToolClient {
     }
   }
 
-  public MapToolClient(LocalPlayer player, ServerConfig config) throws IOException {
+  public MapToolClient(LocalPlayer player, ServerConfig config) {
     this.campaign = CampaignFactory.createBasicCampaign();
 
     this.player = player;
@@ -87,7 +87,7 @@ public class MapToolClient {
         });
   }
 
-  public MapToolClient(LocalPlayer player, MapToolServer server) throws IOException {
+  public MapToolClient(LocalPlayer player, MapToolServer server) {
     this.campaign = CampaignFactory.createBasicCampaign();
 
     this.player = player;
