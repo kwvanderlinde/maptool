@@ -19,7 +19,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Class used for tracking the logged in players. */
-class LoggedInPlayers {
+public class LoggedInPlayers {
 
   /** Concurrent set of logged in players. */
   private final Set<Player> players = ConcurrentHashMap.newKeySet();

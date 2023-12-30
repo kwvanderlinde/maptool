@@ -166,7 +166,8 @@ public class Players {
    */
   private PlayerInfo getPlayerInfo(String name) {
     try {
-      var playerDatabase = MapTool.getClient().getPlayerDatabase();
+      final var client = MapTool.getClient();
+      final var playerDatabase = client.getPlayerDatabase();
       if (!playerDatabase.playerExists(name)) {
         return null;
       }
@@ -192,7 +193,7 @@ public class Players {
         }
       }
 
-      boolean connected = playerDatabase.isPlayerConnected(name);
+      boolean connected = client.getLoggedInPlayers().isLoggedIn(name);
       AuthMethod authMethod = playerDatabase.getAuthMethod(player);
       boolean persisted = false;
       if (playerDatabase instanceof PersistedPlayerDatabase persistedPlayerDatabase) {
@@ -521,9 +522,8 @@ public class Players {
    * @param player the player that has signed in.
    */
   public void playerSignedIn(Player player) {
-    PlayerDatabase playerDatabase = MapTool.getClient().getPlayerDatabase();
     var oldInfo = getPlayerInfo(player.getName());
-    playerDatabase.playerSignedIn(player);
+    MapTool.getClient().getLoggedInPlayers().playerSignedIn(player);
     var newInfo = getPlayerInfo(player.getName());
     if (newInfo != null) {
       if (oldInfo != null) {
@@ -541,9 +541,8 @@ public class Players {
    * @param player the player that has signed out.
    */
   public void playerSignedOut(Player player) {
-    PlayerDatabase playerDatabase = MapTool.getClient().getPlayerDatabase();
+    MapTool.getClient().getLoggedInPlayers().playerSignedOut(player);
     var oldInfo = getPlayerInfo(player.getName());
-    playerDatabase.playerSignedOut(player);
     var newInfo = getPlayerInfo(player.getName());
     if (oldInfo != null) {
       if (newInfo != null) {

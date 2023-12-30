@@ -35,6 +35,12 @@ public interface PlayerDatabase {
     ASYMMETRIC_KEY
   };
 
+  // TODO Player database should literally be the player database. Players should not be invented
+  //  out of thin air, playerExists() should return false for unknown players, and it should not be
+  //  dependent on which players happen to be online at the moment.
+  //  Essentially there would be two sources of players: the player database for persisted players,
+  //  and the LoggedInPlayers for connected players.
+
   /**
    * Returns {@code true} if a player with the given name is known.
    *
@@ -127,31 +133,9 @@ public interface PlayerDatabase {
   boolean isPlayerRegistered(String name) throws InterruptedException, InvocationTargetException;
 
   /**
-   * Inform the database that the player has signed in.
-   *
-   * @param player the player that has signed in.
-   */
-  void playerSignedIn(Player player);
-
-  /**
-   * Inform the database that the player has signed out.
-   *
-   * @param player the player that has signed out.
-   */
-  void playerSignedOut(Player player);
-
-  /**
    * Returns all the players currently connected.
    *
    * @return The players that are currently connected.
    */
   Set<Player> getOnlinePlayers() throws InterruptedException, InvocationTargetException;
-
-  /**
-   * Returns if a player is connected or not.
-   *
-   * @param name the player to check.
-   * @return if a player is connected or not.
-   */
-  boolean isPlayerConnected(String name);
 }
