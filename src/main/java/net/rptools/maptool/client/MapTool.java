@@ -986,8 +986,9 @@ public class MapTool {
       ServerPolicy policy,
       Campaign campaign,
       ServerSidePlayerDatabase playerDatabase,
-      boolean copyCampaign)
-      throws IOException {
+      boolean copyCampaign,
+      LocalPlayer player)
+      throws IOException, ExecutionException, InterruptedException {
     if (server != null) {
       Thread.dumpStack();
       showError("msg.error.alreadyRunningServer");
@@ -1032,6 +1033,19 @@ public class MapTool {
       getFrame().getConnectionPanel().startHosting();
     }
     server.start();
+
+    // Create the local connection so we aren't left hanging.
+    installClient(
+        new MapToolClient(player, server),
+        () -> {
+          // connecting
+          MapTool.getFrame()
+              .getConnectionStatusPanel()
+              .setStatus(ConnectionStatusPanel.Status.server);
+          MapTool.addLocalMessage(
+              MessageUtil.getFormattedSystemMsg(I18N.getText("msg.info.startServer")));
+        });
+    client.start();
   }
 
   public static ThumbnailManager getThumbnailManager() {
@@ -1180,24 +1194,12 @@ public class MapTool {
           clientFrame.getInitiativePanel().updateView();
           onCompleted.run();
         });
-
-    client.start();
   }
 
   public static void createConnection(ServerConfig config, LocalPlayer player, Runnable onCompleted)
       throws IOException, ExecutionException, InterruptedException {
     installClient(new MapToolClient(player, config), onCompleted);
-  }
-
-  public static void createLocalConnection(LocalPlayer player, Runnable onCompleted)
-      throws IOException, ExecutionException, InterruptedException {
-    if (!(server instanceof MapToolServer mapToolServer)) {
-      // TODO Exceptional case.
-      // TODO Should we call createLocalConnection automatically when starting a real serrver?
-      return;
-    }
-
-    installClient(new MapToolClient(player, mapToolServer), onCompleted);
+    client.start();
   }
 
   /** returns the current locale code. */
