@@ -924,6 +924,8 @@ public class MapTool {
   }
 
   public static void setCampaign(Campaign campaign, GUID defaultRendererId) {
+    campaign = Objects.requireNonNullElseGet(campaign, Campaign::new);
+
     // Load up the new
     client.setCampaign(campaign);
     ZoneRenderer currRenderer = null;
@@ -931,10 +933,6 @@ public class MapTool {
     clientFrame.clearZoneRendererList();
     clientFrame.getInitiativePanel().setZone(null);
     clientFrame.clearTokenTree();
-    if (campaign == null) {
-      clientFrame.setCurrentZoneRenderer(null);
-      return;
-    }
 
     // Install new campaign
     for (Zone zone : campaign.getZones()) {
