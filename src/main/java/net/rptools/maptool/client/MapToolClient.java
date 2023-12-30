@@ -16,6 +16,7 @@ package net.rptools.maptool.client;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
+import javax.annotation.Nullable;
 import net.rptools.clientserver.simple.DisconnectHandler;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.CampaignFactory;
@@ -44,66 +45,43 @@ public class MapToolClient {
   private final ServerCommand serverCommand;
   private final DisconnectHandler disconnectHandler;
 
+  private MapToolClient(
+      LocalPlayer player,
+      PlayerDatabase playerDatabase,
+      ServerPolicy serverPolicy,
+      @Nullable ServerConfig serverConfig) {
+    this.campaign = CampaignFactory.createBasicCampaign();
+    this.player = player;
+    this.playerDatabase = playerDatabase;
+    this.serverPolicy = serverPolicy;
+
+    this.conn =
+        serverConfig == null
+            ? new NilMapToolConnection()
+            : new MapToolConnection(this, serverConfig, player);
+
+    this.serverCommand = new ServerCommandClientImpl(this.conn);
+
+    // TODO Should we use a dummy disconnect handler for personal servers?
+    this.disconnectHandler = new ServerDisconnectHandler();
+    this.conn.addDisconnectHandler(disconnectHandler);
+    this.conn.onCompleted(
+        () -> {
+          this.conn.addMessageHandler(new ClientMessageHandler(this));
+        });
+  }
+
   /** Creates a client for a personal server. */
   public MapToolClient(PersonalServer server) {
-    this.campaign = CampaignFactory.createBasicCampaign();
-
-    try {
-      player = server.getLocalPlayer();
-      playerDatabase = server.getPlayerDatabase();
-
-      serverPolicy = new ServerPolicy();
-
-      this.disconnectHandler = conn -> {};
-
-      conn = new NilMapToolConnection();
-      conn.onCompleted(
-          () -> {
-            conn.addMessageHandler(new ClientMessageHandler(this));
-          });
-      this.serverCommand = new ServerCommandClientImpl(conn);
-
-    } catch (Exception e) {
-      throw new RuntimeException("Unable to start personal server", e);
-    }
+    this(server.getLocalPlayer(), server.getPlayerDatabase(), new ServerPolicy(), null);
   }
 
   public MapToolClient(LocalPlayer player, ServerConfig config) {
-    this.campaign = CampaignFactory.createBasicCampaign();
-
-    this.player = player;
-    this.serverPolicy = new ServerPolicy();
-
-    playerDatabase = new LocalPlayerDatabase(player);
-
-    this.disconnectHandler = new ServerDisconnectHandler();
-
-    conn = new MapToolConnection(this, config, player);
-    conn.addDisconnectHandler(disconnectHandler);
-    this.serverCommand = new ServerCommandClientImpl(conn);
-    conn.onCompleted(
-        () -> {
-          conn.addMessageHandler(new ClientMessageHandler(this));
-        });
+    this(player, new LocalPlayerDatabase(player), new ServerPolicy(), config);
   }
 
   public MapToolClient(LocalPlayer player, MapToolServer server) {
-    this.campaign = CampaignFactory.createBasicCampaign();
-
-    this.player = player;
-    this.serverPolicy = server.getPolicy();
-
-    playerDatabase = server.getPlayerDatabase();
-
-    this.disconnectHandler = new ServerDisconnectHandler();
-
-    conn = new MapToolConnection(this, server.getConfig(), player);
-    conn.addDisconnectHandler(disconnectHandler);
-    this.serverCommand = new ServerCommandClientImpl(conn);
-    conn.onCompleted(
-        () -> {
-          conn.addMessageHandler(new ClientMessageHandler(this));
-        });
+    this(player, server.getPlayerDatabase(), server.getPolicy(), server.getConfig());
   }
 
   public void start() throws IOException, ExecutionException, InterruptedException {
