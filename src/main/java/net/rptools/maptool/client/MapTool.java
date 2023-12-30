@@ -1166,9 +1166,9 @@ public class MapTool {
     setCampaign(campaign);
   }
 
-  public static void createConnection(ServerConfig config, LocalPlayer player, Runnable onCompleted)
+  private static void installClient(MapToolClient client, Runnable onCompleted)
       throws IOException, ExecutionException, InterruptedException {
-    client = new MapToolClient(player, config);
+    MapTool.client = client;
 
     MapTool.getFrame().getCommandPanel().clearAllIdentities();
 
@@ -1184,6 +1184,11 @@ public class MapTool {
     client.start();
   }
 
+  public static void createConnection(ServerConfig config, LocalPlayer player, Runnable onCompleted)
+      throws IOException, ExecutionException, InterruptedException {
+    installClient(new MapToolClient(player, config), onCompleted);
+  }
+
   public static void createLocalConnection(LocalPlayer player, Runnable onCompleted)
       throws IOException, ExecutionException, InterruptedException {
     if (!(server instanceof MapToolServer mapToolServer)) {
@@ -1192,20 +1197,7 @@ public class MapTool {
       return;
     }
 
-    client = new MapToolClient(player, mapToolServer);
-
-    MapTool.getFrame().getCommandPanel().clearAllIdentities();
-
-    IMapToolConnection clientConn = client.getConnection();
-    clientConn.addActivityListener(clientFrame.getActivityMonitor());
-    clientConn.onCompleted(
-        () -> {
-          clientFrame.getLookupTablePanel().updateView();
-          clientFrame.getInitiativePanel().updateView();
-          onCompleted.run();
-        });
-
-    client.start();
+    installClient(new MapToolClient(player, mapToolServer), onCompleted);
   }
 
   /** returns the current locale code. */
