@@ -2289,17 +2289,12 @@ public class AppActions {
                                 I18N.getText("msg.info.startServer")));
                       };
 
-                  if (playerType == Player.Role.GM) {
-                    MapTool.createLocalConnection(
-                        new LocalPlayer(
-                            dialog.getUsernameTextField().getText(), playerType, gmPassword),
-                        onConnected);
-                  } else {
-                    MapTool.createLocalConnection(
-                        new LocalPlayer(
-                            dialog.getUsernameTextField().getText(), playerType, playerPassword),
-                        onConnected);
-                  }
+                  MapTool.createLocalConnection(
+                      new LocalPlayer(
+                          dialog.getUsernameTextField().getText(),
+                          playerType,
+                          (playerType == Role.GM) ? gmPassword : playerPassword),
+                      onConnected);
                 } catch (UnknownHostException uh) {
                   MapTool.showError("msg.error.invalidLocalhost", uh);
                   failed = true;
