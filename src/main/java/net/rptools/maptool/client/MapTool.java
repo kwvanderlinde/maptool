@@ -1032,7 +1032,6 @@ public class MapTool {
     if (MapTool.isHostingServer()) {
       getFrame().getConnectionPanel().startHosting();
     }
-    server.start();
 
     // Create the local connection so we aren't left hanging.
     installClient(
@@ -1045,6 +1044,8 @@ public class MapTool {
           MapTool.addLocalMessage(
               MessageUtil.getFormattedSystemMsg(I18N.getText("msg.info.startServer")));
         });
+
+    server.start();
     client.start();
   }
 
