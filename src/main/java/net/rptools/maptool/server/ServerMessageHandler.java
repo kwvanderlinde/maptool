@@ -186,10 +186,6 @@ public class ServerMessageHandler implements MessageHandler {
           handle(msg.getSetCampaignNameMsg());
           sendToClients(id, msg);
         }
-        case SET_FOW_MSG -> {
-          handle(msg.getSetFowMsg());
-          sendToAllClients(msg);
-        }
         case SET_VISION_TYPE_MSG -> {
           handle(msg.getSetVisionTypeMsg());
           sendToAllClients(msg);
@@ -415,17 +411,6 @@ public class ServerMessageHandler implements MessageHandler {
         () -> {
           Zone zone = server.getCampaign().getZone(GUID.valueOf(msg.getZoneGuid()));
           zone.setVisionType(VisionType.valueOf(msg.getVision().name()));
-        });
-  }
-
-  private void handle(SetFowMsg msg) {
-    EventQueue.invokeLater(
-        () -> {
-          Zone zone = server.getCampaign().getZone(GUID.valueOf(msg.getZoneGuid()));
-          var area = Mapper.map(msg.getArea());
-          var selectedTokens =
-              msg.getSelectedTokensList().stream().map(GUID::valueOf).collect(Collectors.toSet());
-          zone.setFogArea(area, selectedTokens);
         });
   }
 

@@ -131,7 +131,6 @@ public class ClientMessageHandler implements MessageHandler {
         case SET_BOARD_MSG -> handle(msg.getSetBoardMsg());
         case SET_CAMPAIGN_MSG -> handle(msg.getSetCampaignMsg());
         case SET_CAMPAIGN_NAME_MSG -> handle(msg.getSetCampaignNameMsg());
-        case SET_FOW_MSG -> handle(msg.getSetFowMsg());
         case SET_LIVE_TYPING_LABEL_MSG -> handle(msg.getSetLiveTypingLabelMsg());
         case SET_TOKEN_LOCATION_MSG -> handle(msg.getSetTokenLocationMsg());
         case SET_VISION_TYPE_MSG -> handle(msg.getSetVisionTypeMsg());
@@ -606,20 +605,6 @@ public class ClientMessageHandler implements MessageHandler {
             // remove typer from list
             MapTool.getFrame().getChatNotificationTimers().removeChatTyper(msg.getPlayerName());
           }
-        });
-  }
-
-  private void handle(SetFowMsg msg) {
-    EventQueue.invokeLater(
-        () -> {
-          var zoneGUID = GUID.valueOf(msg.getZoneGuid());
-          var area = Mapper.map(msg.getArea());
-          var selectedTokens =
-              msg.getSelectedTokensList().stream().map(GUID::valueOf).collect(Collectors.toSet());
-
-          var zone = client.getCampaign().getZone(zoneGUID);
-          zone.setFogArea(area, selectedTokens);
-          MapTool.getFrame().refresh();
         });
   }
 

@@ -416,16 +416,6 @@ public class ServerCommandClientImpl implements ServerCommand {
     makeServerCall(Message.newBuilder().setExposeFowMsg(msg).build());
   }
 
-  public void setFoW(GUID zoneGUID, Area area, Set<GUID> selectedToks) {
-    var msg =
-        SetFowMsg.newBuilder()
-            .setZoneGuid(zoneGUID.toString())
-            .setArea(Mapper.map(area))
-            .addAllSelectedTokens(
-                selectedToks.stream().map(t -> t.toString()).collect(Collectors.toList()));
-    makeServerCall(Message.newBuilder().setSetFowMsg(msg).build());
-  }
-
   public void hideFoW(GUID zoneGUID, Area area, Set<GUID> selectedToks) {
     var msg = HideFowMsg.newBuilder().setZoneGuid(zoneGUID.toString()).setArea(Mapper.map(area));
     msg.addAllTokenGuid(selectedToks.stream().map(g -> g.toString()).collect(Collectors.toList()));

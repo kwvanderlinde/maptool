@@ -208,12 +208,6 @@ message SetCampaignNameMsg {
   string name = 1;
 }
 
-message SetFowMsg {
-  string zone_guid = 1;
-  AreaDto area = 2;
-  repeated string selected_tokens = 3;
-}
-
 message SetLiveTypingLabelMsg {
   string player_name = 1;
   bool typing = 2;

@@ -39,8 +39,6 @@ public interface ServerCommand {
 
   void hideFoW(GUID zoneGUID, Area area, Set<GUID> selectedToks);
 
-  void setFoW(GUID zoneGUID, Area area, Set<GUID> selectedToks);
-
   default void addTopology(GUID zoneGUID, Area area, Zone.TopologyTypeSet topologyTypes) {
     for (var topologyType : topologyTypes) {
       addTopology(zoneGUID, area, topologyType);

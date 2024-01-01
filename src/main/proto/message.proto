@@ -54,7 +54,6 @@ message Message {
     SetBoardMsg set_board_msg = 38;
     SetCampaignMsg set_campaign_msg = 39;
     SetCampaignNameMsg set_campaign_name_msg = 40;
-    SetFowMsg set_fow_msg = 41;
     SetLiveTypingLabelMsg set_live_typing_label_msg = 42;
     SetTokenLocationMsg set_token_location_msg = 43;
     SetServerPolicyMsg set_server_policy_msg = 44;
