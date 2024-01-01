@@ -282,7 +282,6 @@ public class ServerMessageHandler implements MessageHandler {
               msg.getMacrosList().stream()
                   .map(MacroButtonProperties::fromDto)
                   .collect(Collectors.toList());
-          MapTool.getCampaign().setGmMacroButtonPropertiesArray(campaignMacros);
           server.getCampaign().setGmMacroButtonPropertiesArray(campaignMacros);
         });
   }
@@ -294,7 +293,6 @@ public class ServerMessageHandler implements MessageHandler {
               msg.getMacrosList().stream()
                   .map(MacroButtonProperties::fromDto)
                   .collect(Collectors.toList());
-          MapTool.getCampaign().setMacroButtonPropertiesArray(campaignMacros);
           server.getCampaign().setMacroButtonPropertiesArray(campaignMacros);
         });
   }
@@ -327,10 +325,6 @@ public class ServerMessageHandler implements MessageHandler {
             if (list.getZone() == null) return;
             Zone zone = server.getCampaign().getZone(list.getZone().getId());
             zone.setInitiativeList(list);
-          } else if (msg.hasOwnerPermission()) {
-            MapTool.getFrame()
-                .getInitiativePanel()
-                .setOwnerPermissions(msg.getOwnerPermission().getValue());
           }
         });
   }
@@ -349,7 +343,6 @@ public class ServerMessageHandler implements MessageHandler {
         () -> {
           server.updateServerPolicy(
               ServerPolicy.fromDto(msg.getPolicy())); // updates the server policy, fixes #1648
-          MapTool.getFrame().getToolbox().updateTools();
         });
   }
 
