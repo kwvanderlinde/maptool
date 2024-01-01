@@ -35,6 +35,7 @@ import net.rptools.clientserver.simple.MessageHandler;
 import net.rptools.clientserver.simple.connection.Connection;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.AssetManager;
@@ -43,7 +44,6 @@ import net.rptools.maptool.model.gamedata.DataStoreManager;
 import net.rptools.maptool.model.gamedata.GameDataImporter;
 import net.rptools.maptool.model.library.LibraryManager;
 import net.rptools.maptool.model.library.addon.AddOnLibraryImporter;
-import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.player.Player.Role;
 import net.rptools.maptool.server.proto.*;
@@ -66,7 +66,7 @@ public class ClientHandshake implements Handshake, MessageHandler {
   /** The index in the array for the Player handshake challenge, only used for role based auth */
   private static final int PLAYER_CHALLENGE = 1;
 
-  private final LocalPlayer player;
+  private final MapToolClient client;
 
   /** The connection for the handshake. */
   private final Connection connection;
@@ -93,8 +93,8 @@ public class ClientHandshake implements Handshake, MessageHandler {
   /** The current state of the handshake process. */
   private State currentState = State.AwaitingUseAuthType;
 
-  public ClientHandshake(LocalPlayer player, Connection connection) {
-    this.player = player;
+  public ClientHandshake(MapToolClient client, Connection connection) {
+    this.client = client;
     this.connection = connection;
   }
 
@@ -119,7 +119,7 @@ public class ClientHandshake implements Handshake, MessageHandler {
     var md5key = CipherUtil.publicKeyMD5(new PublicPrivateKeyStore().getKeys().get().publicKey());
     var clientInitMsg =
         ClientInitMsg.newBuilder()
-            .setPlayerName(player.getName())
+            .setPlayerName(client.getPlayer().getName())
             .setVersion(MapTool.getVersion())
             .setPublicKeyMd5(md5key.toString());
     var handshakeMsg = HandshakeMsg.newBuilder().setClientInitMsg(clientInitMsg).build();
@@ -266,7 +266,9 @@ public class ClientHandshake implements Handshake, MessageHandler {
       CipherUtil.Key publicKey = new PublicPrivateKeyStore().getKeys().get();
       var handshakeChallenge =
           HandshakeChallenge.fromAsymmetricChallengeBytes(
-              player.getName(), useAuthTypeMsg.getChallenge(0).toByteArray(), publicKey);
+              client.getPlayer().getName(),
+              useAuthTypeMsg.getChallenge(0).toByteArray(),
+              publicKey);
       var expectedResponse = handshakeChallenge.getExpectedResponse();
       clientAuthMsg = clientAuthMsg.setChallengeResponse(ByteString.copyFrom(expectedResponse));
     } else {
@@ -274,15 +276,18 @@ public class ClientHandshake implements Handshake, MessageHandler {
       byte[] responseIv = new byte[CipherUtil.CIPHER_BLOCK_SIZE];
       rnd.nextBytes(responseIv);
 
-      player.setPasswordSalt(useAuthTypeMsg.getSalt().toByteArray());
+      client.getPlayer().setPasswordSalt(useAuthTypeMsg.getSalt().toByteArray());
       var iv = useAuthTypeMsg.getIv().toByteArray();
       for (int i = 0; i < useAuthTypeMsg.getChallengeCount(); i++) {
         try {
-          Key key = player.getPassword();
+          Key key = client.getPlayer().getPassword();
           // Key key = playerDatabase.getPlayerPassword(player.getName()).get();
           var handshakeChallenge =
               HandshakeChallenge.fromSymmetricChallengeBytes(
-                  player.getName(), useAuthTypeMsg.getChallenge(i).toByteArray(), key, iv);
+                  client.getPlayer().getName(),
+                  useAuthTypeMsg.getChallenge(i).toByteArray(),
+                  key,
+                  iv);
           var expectedResponse = handshakeChallenge.getExpectedResponse(responseIv);
           clientAuthMsg =
               clientAuthMsg
@@ -306,7 +311,9 @@ public class ClientHandshake implements Handshake, MessageHandler {
   private void handle(ConnectionSuccessfulMsg connectionSuccessfulMsg) throws IOException {
     var policy = ServerPolicy.fromDto(connectionSuccessfulMsg.getServerPolicyDto());
     MapTool.setServerPolicy(policy);
-    player.setRole(connectionSuccessfulMsg.getRoleDto() == RoleDto.GM ? Role.GM : Role.PLAYER);
+    client
+        .getPlayer()
+        .setRole(connectionSuccessfulMsg.getRoleDto() == RoleDto.GM ? Role.GM : Role.PLAYER);
     MapTool.getFrame()
         .getToolbarPanel()
         .getMapselect()
@@ -399,7 +406,7 @@ public class ClientHandshake implements Handshake, MessageHandler {
 
   @Override
   public Player getPlayer() {
-    return player;
+    return client.getPlayer();
   }
 
   private void closeEasyConnectDialog() {

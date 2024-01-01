@@ -58,7 +58,7 @@ public class MapToolClient {
     this.conn =
         serverConfig == null
             ? new NilMapToolConnection()
-            : new MapToolConnection(serverConfig, player);
+            : new MapToolConnection(serverConfig, this);
 
     this.serverCommand = new ServerCommandClientImpl(this.conn);
 
@@ -129,10 +129,7 @@ public class MapToolClient {
     this.campaign = campaign;
   }
 
-  public void setServerPolicy(ServerPolicy serverPolicy, boolean sendToServer) {
+  public void setServerPolicy(ServerPolicy serverPolicy) {
     this.serverPolicy = serverPolicy;
-    if (sendToServer) {
-      this.serverCommand.setServerPolicy(serverPolicy);
-    }
   }
 }
