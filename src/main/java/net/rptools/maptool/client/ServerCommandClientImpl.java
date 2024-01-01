@@ -408,11 +408,6 @@ public class ServerCommandClientImpl implements ServerCommand {
     makeServerCall(Message.newBuilder().setRemoveTopologyMsg(msg).build());
   }
 
-  public void exposePCArea(GUID zoneGUID) {
-    var msg = ExposePcAreaMsg.newBuilder().setZoneGuid(zoneGUID.toString());
-    makeServerCall(Message.newBuilder().setExposePcAreaMsg(msg).build());
-  }
-
   public void exposeFoW(GUID zoneGUID, Area area, Set<GUID> selectedToks) {
     // Expose locally right away.
     MapTool.getCampaign().getZone(zoneGUID).exposeArea(area, selectedToks);

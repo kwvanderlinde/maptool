@@ -27,8 +27,6 @@ import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.ClientMessageHandler;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ServerCommandClientImpl;
-import net.rptools.maptool.client.ui.zone.FogUtil;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.common.MapToolConstants;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
@@ -130,10 +128,6 @@ public class ServerMessageHandler implements MessageHandler {
         case EXPOSE_FOW_MSG -> {
           handle(msg.getExposeFowMsg());
           sendToClients(id, msg);
-        }
-        case EXPOSE_PC_AREA_MSG -> {
-          handle(msg.getExposePcAreaMsg());
-          sendToAllClients(msg);
         }
         case GET_ASSET_MSG -> handle(id, msg.getGetAssetMsg());
         case GET_ZONE_MSG -> handle(id, msg.getGetZoneMsg());
@@ -575,15 +569,6 @@ public class ServerMessageHandler implements MessageHandler {
 
   private void handle(String id, GetAssetMsg msg) {
     getAsset(id, new MD5Key(msg.getAssetId()));
-  }
-
-  private void handle(ExposePcAreaMsg msg) {
-    EventQueue.invokeLater(
-        () -> {
-          var zoneGUID = GUID.valueOf(msg.getZoneGuid());
-          ZoneRenderer renderer = MapTool.getFrame().getZoneRenderer(zoneGUID);
-          FogUtil.exposePCArea(renderer);
-        });
   }
 
   private void handle(ExposeFowMsg msg) {

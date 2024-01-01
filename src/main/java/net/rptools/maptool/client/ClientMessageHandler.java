@@ -31,7 +31,6 @@ import net.rptools.maptool.client.functions.ExecFunction;
 import net.rptools.maptool.client.functions.MacroLinkFunction;
 import net.rptools.maptool.client.ui.MapToolFrame;
 import net.rptools.maptool.client.ui.tokenpanel.InitiativePanel;
-import net.rptools.maptool.client.ui.zone.FogUtil;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRendererFactory;
 import net.rptools.maptool.events.MapToolEventBus;
@@ -113,7 +112,6 @@ public class ClientMessageHandler implements MessageHandler {
         case EXEC_FUNCTION_MSG -> handle(msg.getExecFunctionMsg());
         case EXEC_LINK_MSG -> handle(msg.getExecLinkMsg());
         case EXPOSE_FOW_MSG -> handle(msg.getExposeFowMsg());
-        case EXPOSE_PC_AREA_MSG -> handle(msg.getExposePcAreaMsg());
         case HIDE_FOW_MSG -> handle(msg.getHideFowMsg());
         case HIDE_POINTER_MSG -> handle(msg.getHidePointerMsg());
         case MESSAGE_MSG -> handle(msg.getMessageMsg());
@@ -839,15 +837,6 @@ public class ClientMessageHandler implements MessageHandler {
           var zone = client.getCampaign().getZone(zoneGUID);
           zone.hideArea(area, selectedTokens);
           MapTool.getFrame().refresh();
-        });
-  }
-
-  private void handle(ExposePcAreaMsg msg) {
-    EventQueue.invokeLater(
-        () -> {
-          var zoneGuid = GUID.valueOf(msg.getZoneGuid());
-          var renderer = MapTool.getFrame().getZoneRenderer(zoneGuid);
-          FogUtil.exposePCArea(renderer);
         });
   }
 

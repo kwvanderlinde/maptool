@@ -29,7 +29,6 @@ message Message {
     ExecFunctionMsg exec_function_msg = 12;
     ExecLinkMsg exec_link_msg = 13;
     ExposeFowMsg expose_fow_msg = 14;
-    ExposePcAreaMsg expose_pc_area_msg = 15;
     GetAssetMsg get_asset_msg = 16;
     GetZoneMsg get_zone_msg = 17;
     HeartbeatMsg heartbeat_msg = 18;

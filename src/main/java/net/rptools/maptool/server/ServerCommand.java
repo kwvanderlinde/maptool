@@ -165,8 +165,6 @@ public interface ServerCommand {
 
   void enforceNotification(Boolean enforce);
 
-  void exposePCArea(GUID zoneGUID);
-
   void updateExposedAreaMeta(GUID zoneGUID, GUID tokenExposedAreaGUID, ExposedAreaMetaData meta);
 
   void clearExposedArea(GUID zoneGUID, boolean globalOnly);

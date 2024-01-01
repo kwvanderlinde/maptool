@@ -98,10 +98,6 @@ message ExposeFowMsg {
   repeated string token_guid = 3;
 }
 
-message ExposePcAreaMsg {
-  string zone_guid = 1;
-}
-
 message GetAssetMsg {
   string asset_id = 1;
 }
