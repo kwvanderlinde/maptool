@@ -25,7 +25,6 @@ message ServerPolicyDto {
   bool use_tool_tips_for_default_roll_format = 9;
   bool use_individual_FOW = 10;
   bool is_auto_reveal_on_movement = 11;
-  bool include_owned_NPCs = 12;
   WalkerMetricDto movement_metric = 13;
   bool using_astar_pathfinding = 14;
   bool vbl_blocks_move = 15;

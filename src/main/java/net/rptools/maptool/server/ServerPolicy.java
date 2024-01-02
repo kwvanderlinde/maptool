@@ -39,7 +39,6 @@ public class ServerPolicy {
   private boolean useToolTipsForDefaultRollFormat;
   private boolean useIndividualFOW;
   private boolean isAutoRevealOnMovement;
-  private boolean includeOwnedNPCs = true; // Include Owned NPC Tokens in FoW views
   private WalkerMetric movementMetric;
   private boolean hidemapselectui;
   private boolean disablePlayerAssetPanel;
@@ -66,7 +65,6 @@ public class ServerPolicy {
     this.useToolTipsForDefaultRollFormat = other.useToolTipsForDefaultRollFormat;
     this.useIndividualFOW = other.useIndividualFOW;
     this.isAutoRevealOnMovement = other.isAutoRevealOnMovement;
-    this.includeOwnedNPCs = other.includeOwnedNPCs;
     this.movementMetric = other.movementMetric;
     this.hidemapselectui = other.hidemapselectui;
     this.disablePlayerAssetPanel = other.disablePlayerAssetPanel;
@@ -215,20 +213,6 @@ public class ServerPolicy {
     useIndividualFOW = flag;
   }
 
-  /**
-   * @return the includeOwnedNPCs
-   */
-  public boolean isIncludeOwnedNPCs() {
-    return includeOwnedNPCs;
-  }
-
-  /**
-   * @param includeOwnedNPCs the includeOwnedNPCs to set
-   */
-  public void setIncludeOwnedNPCs(boolean includeOwnedNPCs) {
-    this.includeOwnedNPCs = includeOwnedNPCs;
-  }
-
   public boolean isUsingAstarPathfinding() {
     return useAstarPathfinding;
   }
@@ -336,7 +320,6 @@ public class ServerPolicy {
     policy.useToolTipsForDefaultRollFormat = dto.getUseToolTipsForDefaultRollFormat();
     policy.useIndividualFOW = dto.getUseIndividualFOW();
     policy.isAutoRevealOnMovement = dto.getIsAutoRevealOnMovement();
-    policy.includeOwnedNPCs = dto.getIncludeOwnedNPCs();
     policy.movementMetric = WalkerMetric.valueOf(dto.getMovementMetric().name());
     policy.useAstarPathfinding = dto.getUsingAstarPathfinding();
     policy.vblBlocksMove = dto.getVblBlocksMove();
@@ -358,7 +341,6 @@ public class ServerPolicy {
     dto.setUseToolTipsForDefaultRollFormat(useToolTipsForDefaultRollFormat);
     dto.setUseIndividualFOW(useIndividualFOW);
     dto.setIsAutoRevealOnMovement(isAutoRevealOnMovement);
-    dto.setIncludeOwnedNPCs(includeOwnedNPCs);
     dto.setMovementMetric(WalkerMetricDto.valueOf(movementMetric.name()));
     dto.setUsingAstarPathfinding(useAstarPathfinding);
     dto.setVblBlocksMove(vblBlocksMove);
