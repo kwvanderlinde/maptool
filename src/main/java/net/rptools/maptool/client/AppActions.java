@@ -2431,8 +2431,11 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-          if (MapTool.isHostingServer() && !MapTool.confirm("msg.confirm.hostingDisconnect"))
+          if (MapTool.isHostingServer()
+              && MapTool.getPlayers().size() > 1 // One for host, rest are remote.
+              && !MapTool.confirm("msg.confirm.hostingDisconnect")) {
             return;
+          }
           disconnectFromServer();
         }
       };
