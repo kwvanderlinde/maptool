@@ -35,7 +35,7 @@ public class PlayerZoneListener {
     // To keep everything tidy we're also updating the player entry
     // in the player list since they are seperate entities
     var playerListPlayer =
-        MapTool.getPlayerList().stream()
+        MapTool.getPlayers().stream()
             .filter(x -> x.getName().equals(player.getName()))
             .findAny()
             .orElse(null);
@@ -61,7 +61,7 @@ public class PlayerZoneListener {
     // To keep everything tidy we're also updating the player entry
     // in the player list since they are seperate entities
     var playerListPlayer =
-        MapTool.getPlayerList().stream()
+        MapTool.getPlayers().stream()
             .filter(x -> x.getName().equals(player.getName()))
             .findAny()
             .orElse(null);

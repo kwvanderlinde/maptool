@@ -232,7 +232,7 @@ public class MapToolRegistry {
     body.addProperty("id", serverRegistrationId);
     body.addProperty("clientId", MapTool.getClientId());
     body.addProperty("address", getAddress());
-    body.addProperty("number_players", MapTool.getPlayerList().size());
+    body.addProperty("number_players", MapTool.getPlayers().size());
     body.addProperty("number_maps", MapTool.getCampaign().getZones().size());
 
     OkHttpClient client = new OkHttpClient();

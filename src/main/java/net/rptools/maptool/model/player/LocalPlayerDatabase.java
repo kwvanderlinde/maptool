@@ -14,7 +14,6 @@
  */
 package net.rptools.maptool.model.player;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import net.rptools.lib.MD5Key;
@@ -88,8 +87,7 @@ public class LocalPlayerDatabase implements PlayerDatabase {
   }
 
   @Override
-  public boolean isPlayerRegistered(String name)
-      throws InterruptedException, InvocationTargetException {
+  public boolean isPlayerRegistered(String name) {
     return localPlayer != null
         && localPlayer.getName() != null
         && localPlayer.getName().equals(name);

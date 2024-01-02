@@ -44,10 +44,8 @@ public class WhisperMacro extends AbstractMacro {
         (macro.startsWith("\"")) ? macro.indexOf(" ", playerName.length() + 2) : macro.indexOf(" ");
 
     String message = processText(macro.substring(indexSpace + 1));
-    List<Player> playerList = MapTool.getPlayerList();
     List<String> players = new ArrayList<String>();
-    for (int count = 0; count < playerList.size(); count++) {
-      Player p = playerList.get(count);
+    for (Player p : MapTool.getPlayers()) {
       String thePlayer = p.getName();
       players.add(thePlayer);
     }

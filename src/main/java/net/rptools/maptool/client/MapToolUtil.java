@@ -16,6 +16,7 @@ package net.rptools.maptool.client;
 
 import java.awt.Color;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -143,7 +144,7 @@ public class MapToolUtil {
       return baseName;
     } else if (baseName == null) {
       int nextId = nextTokenId.getAndIncrement();
-      char ch = (char) ('a' + MapTool.getPlayerList().indexOf(MapTool.getPlayer()));
+      char ch = (char) ('a' + new ArrayList<>(MapTool.getPlayers()).indexOf(MapTool.getPlayer()));
       return ch + Integer.toString(nextId);
     } else {
       baseName = baseName.trim();

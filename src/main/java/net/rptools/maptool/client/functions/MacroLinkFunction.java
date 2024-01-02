@@ -588,10 +588,8 @@ public class MacroLinkFunction extends AbstractFunction {
   }
 
   private static void doWhisper(String message, Token token, String playerName) {
-    List<Player> playerList = MapTool.getPlayerList();
     List<String> players = new ArrayList<>();
-    for (int count = 0; count < playerList.size(); count++) {
-      Player p = playerList.get(count);
+    for (Player p : MapTool.getPlayers()) {
       String thePlayer = p.getName();
       players.add(thePlayer);
     }

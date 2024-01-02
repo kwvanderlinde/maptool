@@ -46,7 +46,7 @@ public class PlayersLoadingStatusBar extends JLabel {
   }
 
   private void refreshCount() {
-    var players = MapTool.getPlayerList();
+    var players = MapTool.getPlayers();
     var total = players.size();
     var loaded = players.stream().filter(x -> x.getLoaded()).count();
 

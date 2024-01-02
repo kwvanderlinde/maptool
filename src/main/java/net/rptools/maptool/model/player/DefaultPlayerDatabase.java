@@ -14,7 +14,6 @@
  */
 package net.rptools.maptool.model.player;
 
-import java.lang.reflect.InvocationTargetException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -119,8 +118,7 @@ public class DefaultPlayerDatabase implements ServerSidePlayerDatabase {
   }
 
   @Override
-  public boolean isPlayerRegistered(String name)
-      throws InterruptedException, InvocationTargetException {
+  public boolean isPlayerRegistered(String name) {
     return false;
   }
 

@@ -16,23 +16,32 @@ package net.rptools.maptool.client;
 
 import com.google.common.eventbus.EventBus;
 import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
 import net.rptools.clientserver.simple.DisconnectHandler;
 import net.rptools.maptool.client.events.CampaignChanged;
+import net.rptools.maptool.client.events.PlayerConnected;
+import net.rptools.maptool.client.events.PlayerDisconnected;
 import net.rptools.maptool.events.MapToolEventBus;
+import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.CampaignFactory;
 import net.rptools.maptool.model.GUID;
+import net.rptools.maptool.model.player.EmptyPlayerDatabase;
 import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.model.player.LocalPlayerDatabase;
+import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.player.PlayerDatabase;
+import net.rptools.maptool.model.player.Players;
 import net.rptools.maptool.server.MapToolServer;
 import net.rptools.maptool.server.PersonalServer;
 import net.rptools.maptool.server.ServerCommand;
 import net.rptools.maptool.server.ServerConfig;
 import net.rptools.maptool.server.ServerPolicy;
+import net.rptools.maptool.util.MessageUtil;
 
 /**
  * The client side of a client-server channel.
@@ -44,7 +53,7 @@ import net.rptools.maptool.server.ServerPolicy;
 public class MapToolClient {
   private final EventBus eventBus;
   private final LocalPlayer player;
-  private final PlayerDatabase playerDatabase;
+  private PlayerDatabase playerDatabase;
   private final IMapToolConnection conn;
   private Campaign campaign;
   private ServerPolicy serverPolicy;
@@ -96,6 +105,8 @@ public class MapToolClient {
   }
 
   public void close() throws IOException {
+    this.playerDatabase = new EmptyPlayerDatabase();
+
     // TODO WHy not just .close()? Surely if it's not alive that would be a no-op.
     if (conn.isAlive()) {
       conn.close();
@@ -143,5 +154,39 @@ public class MapToolClient {
 
   public void setServerPolicy(ServerPolicy serverPolicy) {
     this.serverPolicy = serverPolicy;
+  }
+
+  public void addPlayer(Player player) {
+    if (playerDatabase.isPlayerConnected(player.getName())) {
+      // Already know about them.
+      return;
+    }
+
+    new MapToolEventBus().getMainEventBus().post(new PlayerConnected(player));
+    new Players().playerSignedIn(player);
+
+    if (!player.getName().equalsIgnoreCase(this.player.getName())) {
+      String msg = MessageFormat.format(I18N.getText("msg.info.playerConnected"), player.getName());
+      MapTool.addLocalMessage(MessageUtil.getFormattedSystemMsg(msg));
+    }
+  }
+
+  public void removePlayer(Player player) {
+    new MapToolEventBus().getMainEventBus().post(new PlayerDisconnected(player));
+    new Players().playerSignedOut(player);
+
+    if (MapTool.getPlayer() != null && !player.equals(MapTool.getPlayer())) {
+      String msg =
+          MessageFormat.format(I18N.getText("msg.info.playerDisconnected"), player.getName());
+      MapTool.addLocalMessage(MessageUtil.getFormattedSystemMsg(msg));
+    }
+  }
+
+  public boolean isPlayerConnected(String name) {
+    return playerDatabase.isPlayerConnected(name);
+  }
+
+  public Collection<Player> getPlayers() {
+    return playerDatabase.getOnlinePlayers();
   }
 }

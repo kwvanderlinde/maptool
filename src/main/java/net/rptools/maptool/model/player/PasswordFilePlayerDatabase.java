@@ -708,8 +708,7 @@ public final class PasswordFilePlayerDatabase
   }
 
   @Override
-  public boolean isPlayerRegistered(String name)
-      throws InterruptedException, InvocationTargetException {
+  public boolean isPlayerRegistered(String name) {
     return playerExists(name);
   }
 

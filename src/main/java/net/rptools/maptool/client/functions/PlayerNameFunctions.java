@@ -16,9 +16,8 @@ package net.rptools.maptool.client.functions;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonPrimitive;
-import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Stream;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.player.Player;
@@ -45,22 +44,14 @@ public class PlayerNameFunctions extends AbstractFunction {
     if (functionName.equalsIgnoreCase("getPlayerName")) {
       return MapTool.getPlayer().getName();
     } else if ("getAllPlayerNames".equalsIgnoreCase(functionName)) {
-      List<Player> players = MapTool.getPlayerList();
-      String[] playerArray = new String[players.size()];
-      Iterator<Player> iter = players.iterator();
-
-      int i = 0;
-      while (iter.hasNext()) {
-        playerArray[i] = iter.next().getName();
-        i++;
-      }
+      Stream<String> playerNameStream = MapTool.getPlayers().stream().map(Player::getName);
       String delim = parameters.size() > 0 ? parameters.get(0).toString() : ",";
       if ("json".equals(delim)) {
         JsonArray jarr = new JsonArray();
-        Arrays.stream(playerArray).forEach(p -> jarr.add(new JsonPrimitive(p)));
+        playerNameStream.map(JsonPrimitive::new).forEach(jarr::add);
         return jarr;
       } else {
-        return StringFunctions.getInstance().join(playerArray, delim);
+        return StringFunctions.getInstance().join(playerNameStream.toList(), delim);
       }
     }
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));

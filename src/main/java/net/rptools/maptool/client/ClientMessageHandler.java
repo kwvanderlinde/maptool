@@ -768,7 +768,7 @@ public class ClientMessageHandler implements MessageHandler {
   private void handle(PlayerDisconnectedMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          MapTool.removePlayer(Player.fromDto(msg.getPlayer()));
+          client.removePlayer(Player.fromDto(msg.getPlayer()));
           MapTool.getFrame().refresh();
         });
   }
@@ -776,7 +776,7 @@ public class ClientMessageHandler implements MessageHandler {
   private void handle(PlayerConnectedMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          MapTool.addPlayer(Player.fromDto(msg.getPlayer()));
+          client.addPlayer(Player.fromDto(msg.getPlayer()));
           MapTool.getFrame().refresh();
         });
   }
@@ -998,7 +998,7 @@ public class ClientMessageHandler implements MessageHandler {
     var loaded = updatePlayerStatusMsg.getLoaded();
 
     Player player =
-        MapTool.getPlayerList().stream()
+        MapTool.getPlayers().stream()
             .filter(x -> x.getName().equals(playerName))
             .findFirst()
             .orElse(null);

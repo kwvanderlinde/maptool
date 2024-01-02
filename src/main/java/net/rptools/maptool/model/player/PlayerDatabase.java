@@ -124,7 +124,7 @@ public interface PlayerDatabase {
    * @param name the name of the player to check for.
    * @return {@code true} if the player is registered, {@code false} otherwise.
    */
-  boolean isPlayerRegistered(String name) throws InterruptedException, InvocationTargetException;
+  boolean isPlayerRegistered(String name);
 
   /**
    * Inform the database that the player has signed in.

@@ -15,12 +15,10 @@
 package net.rptools.maptool.client.functions;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.language.I18N;
-import net.rptools.maptool.model.player.Player;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
@@ -50,25 +48,9 @@ public class IsTrustedFunction extends AbstractFunction {
         return MapTool.getPlayer().isGM() ? BigDecimal.ONE : BigDecimal.ZERO;
       else {
 
-        return getGMs().contains(parameters.get(0)) ? BigDecimal.ONE : BigDecimal.ZERO;
+        return MapTool.getGMs().contains(parameters.get(0)) ? BigDecimal.ONE : BigDecimal.ZERO;
       }
     }
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));
-  }
-
-  /**
-   * retrieves a list of GMs
-   *
-   * @return copied from MacroLinkFunctions since its private there
-   */
-  private List<String> getGMs() {
-    List<String> gms = new ArrayList<String>();
-
-    for (Player plr : MapTool.getPlayerList()) {
-      if (plr.isGM()) {
-        gms.add(plr.getName());
-      }
-    }
-    return gms;
   }
 }
