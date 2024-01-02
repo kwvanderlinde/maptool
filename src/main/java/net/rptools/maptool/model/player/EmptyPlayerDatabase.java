@@ -14,8 +14,6 @@
  */
 package net.rptools.maptool.model.player;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -29,8 +27,7 @@ public class EmptyPlayerDatabase implements PlayerDatabase {
   }
 
   @Override
-  public Player getPlayer(String playerName)
-      throws NoSuchAlgorithmException, InvalidKeySpecException {
+  public Player getPlayer(String playerName) {
     return null;
   }
 

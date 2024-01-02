@@ -15,8 +15,6 @@
 package net.rptools.maptool.model.player;
 
 import java.lang.reflect.InvocationTargetException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -52,7 +50,7 @@ public interface PlayerDatabase {
    * @param playerName the name of the player to retrieve.
    * @return the player information.
    */
-  Player getPlayer(String playerName) throws NoSuchAlgorithmException, InvalidKeySpecException;
+  Player getPlayer(String playerName);
 
   /**
    * Returns {@code true} if the database supports asymmetric keys for authentication.

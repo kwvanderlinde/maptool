@@ -411,14 +411,7 @@ public class ServerHandshake implements Handshake, MessageHandler {
 
     playerPublicKeyMD5 = new MD5Key(clientInitMsg.getPublicKeyMd5());
 
-    try {
-      setPlayer(playerDatabase.getPlayer(clientInitMsg.getPlayerName()));
-    } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-      setErrorMessage(I18N.getText("Handshake.msg.encodeInitFail", clientInitMsg.getPlayerName()));
-      // Error fetching player is sent to client as invalid password intentionally.
-      sendErrorResponseAndNotify(HandshakeResponseCodeMsg.INVALID_PASSWORD);
-      return;
-    }
+    setPlayer(playerDatabase.getPlayer(clientInitMsg.getPlayerName()));
 
     if (player == null) {
       if (useEasyConnect) {
