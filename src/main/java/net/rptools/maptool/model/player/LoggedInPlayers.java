@@ -16,13 +16,15 @@ package net.rptools.maptool.model.player;
 
 import java.util.Collections;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 /** Class used for tracking the logged in players. */
 class LoggedInPlayers {
 
   /** Concurrent set of logged in players. */
-  private final Set<Player> players = ConcurrentHashMap.newKeySet();
+  private final Set<Player> players =
+      new ConcurrentSkipListSet<>(
+          (arg0, arg1) -> arg0.getName().compareToIgnoreCase(arg1.getName()));
 
   /**
    * Records a player as logged in.
