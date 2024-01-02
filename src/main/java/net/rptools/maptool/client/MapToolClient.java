@@ -90,9 +90,7 @@ public class MapToolClient {
     this.serverCommand = new ServerCommandClientImpl(connection);
 
     this.onConnectionCompleted.add(
-        () -> {
-          this.connection.addMessageHandler(new ClientMessageHandler(this));
-        });
+        () -> this.connection.addMessageHandler(new ClientMessageHandler(this)));
   }
 
   /** Creates a client for a personal server. */
