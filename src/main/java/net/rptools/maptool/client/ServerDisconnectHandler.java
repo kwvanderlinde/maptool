@@ -32,9 +32,9 @@ import org.apache.logging.log4j.Logger;
 public class ServerDisconnectHandler implements DisconnectHandler {
   private static final Logger log = LogManager.getLogger(ServerDisconnectHandler.class);
 
-  private final MapToolClient client;
+  private final MapToolConnection client;
 
-  public ServerDisconnectHandler(MapToolClient client) {
+  public ServerDisconnectHandler(MapToolConnection client) {
     this.client = client;
   }
 

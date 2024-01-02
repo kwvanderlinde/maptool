@@ -44,11 +44,12 @@ public class IsTrustedFunction extends AbstractFunction {
     } else if (functionName.equalsIgnoreCase("isExternalMacroAccessAllowed")) {
       return AppPreferences.getAllowExternalMacroAccess() ? BigDecimal.ONE : BigDecimal.ZERO;
     } else if ("isGM".equalsIgnoreCase(functionName)) {
-      final var client = MapTool.getClient();
+      final var clientConnection = MapTool.getConnection();
       if (parameters.isEmpty()) {
-        return client.getPlayer().isGM() ? BigDecimal.ONE : BigDecimal.ZERO;
+        return clientConnection.getPlayer().isGM() ? BigDecimal.ONE : BigDecimal.ZERO;
       } else {
-        final var player = client.getPlayerDatabase().getPlayer(parameters.get(0).toString());
+        final var player =
+            clientConnection.getPlayerDatabase().getPlayer(parameters.get(0).toString());
         return player != null && player.isGM();
       }
     }

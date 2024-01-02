@@ -46,15 +46,15 @@ public class PlayersLoadingStatusBar extends JLabel {
   }
 
   private void refreshCount() {
-    final var client = MapTool.getClient();
-    var players = client.getPlayers();
+    final var clientConnection = MapTool.getConnection();
+    var players = clientConnection.getPlayers();
     var total = players.size();
     var loaded = players.stream().filter(x -> x.getLoaded()).count();
 
     var sb =
         new StringBuilder(I18N.getText("ConnectionStatusPanel.playersLoadedZone", loaded, total));
 
-    var self = client.getPlayer();
+    var self = clientConnection.getPlayer();
 
     for (Player player : players) {
       // The Player in the list is a seperate entity to the one from MapTool.getPlayer()
@@ -63,7 +63,9 @@ public class PlayersLoadingStatusBar extends JLabel {
         player = self;
       }
       var zone =
-          player.getZoneId() == null ? null : client.getCampaign().getZone(player.getZoneId());
+          player.getZoneId() == null
+              ? null
+              : clientConnection.getCampaign().getZone(player.getZoneId());
 
       var text =
           I18N.getText(

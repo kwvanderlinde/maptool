@@ -157,7 +157,7 @@ public class MapTool {
   private static NoteFrame profilingNoteFrame;
   private static LogConsoleFrame logConsoleFrame;
   private static IMapToolServer server;
-  private static MapToolClient client;
+  private static MapToolConnection conn;
 
   private static BackupManager backupManager;
   private static AssetTransferManager assetTransferManager;
@@ -184,7 +184,7 @@ public class MapTool {
       final var player = new LocalPlayer();
       final var personalServer = new PersonalServer(player);
       server = personalServer;
-      client = new MapToolClient(personalServer);
+      conn = new MapToolConnection(personalServer);
     } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
       throw new RuntimeException("Unable to create default personal server", e);
     }
@@ -536,12 +536,12 @@ public class MapTool {
   }
 
   public static void updateServerPolicy() {
-    updateServerPolicy(client.getServerPolicy());
+    updateServerPolicy(conn.getServerPolicy());
   }
 
   public static void updateServerPolicy(ServerPolicy policy) {
-    client.setServerPolicy(policy);
-    client.getServerCommand().setServerPolicy(policy);
+    conn.setServerPolicy(policy);
+    conn.getServerCommand().setServerPolicy(policy);
   }
 
   public static boolean isInFocus() {
@@ -734,11 +734,11 @@ public class MapTool {
   }
 
   public static ServerPolicy getServerPolicy() {
-    return client.getServerPolicy();
+    return conn.getServerPolicy();
   }
 
   public static ServerCommand serverCommand() {
-    return client.getServerCommand();
+    return conn.getServerCommand();
   }
 
   /**
@@ -872,7 +872,7 @@ public class MapTool {
   }
 
   public static Campaign getCampaign() {
-    return client.getCampaign();
+    return conn.getCampaign();
   }
 
   public static MapToolLineParser getParser() {
@@ -880,7 +880,7 @@ public class MapTool {
   }
 
   public static void setServerPolicy(ServerPolicy policy) {
-    client.setServerPolicy(policy);
+    conn.setServerPolicy(policy);
   }
 
   public static AssetTransferManager getAssetTransferManager() {
@@ -953,7 +953,7 @@ public class MapTool {
 
     // Create the local connection so we aren't left hanging.
     installClient(
-        new MapToolClient(player, server),
+        new MapToolConnection(player, server),
         () -> {
           // connecting
           MapTool.getFrame()
@@ -964,7 +964,7 @@ public class MapTool {
         });
 
     server.start();
-    client.start();
+    conn.start();
   }
 
   public static ThumbnailManager getThumbnailManager() {
@@ -977,7 +977,7 @@ public class MapTool {
 
   public static void closeClient() {
     try {
-      client.close();
+      conn.close();
     } catch (IOException ioe) {
       // This isn't critical, we're closing it anyway
       log.debug("While closing connection", ioe);
@@ -1063,12 +1063,12 @@ public class MapTool {
     }
   }
 
-  public static MapToolClient getClient() {
-    return client;
+  public static MapToolConnection getConnection() {
+    return conn;
   }
 
   public static LocalPlayer getPlayer() {
-    return client.getPlayer();
+    return conn.getPlayer();
   }
 
   public static void startPersonalServer(Campaign campaign)
@@ -1079,16 +1079,16 @@ public class MapTool {
           InterruptedException {
     final var player = new LocalPlayer();
     server = new PersonalServer(player);
-    client = new MapToolClient((PersonalServer) server);
+    conn = new MapToolConnection((PersonalServer) server);
 
     MapTool.getFrame().getCommandPanel().clearAllIdentities();
 
-    client.start();
-    client.setCampaign(campaign);
+    conn.start();
+    conn.setCampaign(campaign);
   }
 
-  private static void installClient(MapToolClient client, Runnable onCompleted) {
-    MapTool.client = client;
+  private static void installClient(MapToolConnection client, Runnable onCompleted) {
+    MapTool.conn = client;
 
     MapTool.getFrame().getCommandPanel().clearAllIdentities();
 
@@ -1103,8 +1103,8 @@ public class MapTool {
 
   public static void createConnection(ServerConfig config, LocalPlayer player, Runnable onCompleted)
       throws IOException, ExecutionException, InterruptedException {
-    installClient(new MapToolClient(player, config), onCompleted);
-    client.start();
+    installClient(new MapToolConnection(player, config), onCompleted);
+    conn.start();
   }
 
   /** returns the current locale code. */
@@ -1326,7 +1326,7 @@ public class MapTool {
           e.printStackTrace();
         }
 
-        ServerCommand command = client.getServerCommand();
+        ServerCommand command = conn.getServerCommand();
         command.heartbeat(getPlayer().getName());
       }
     }
@@ -1692,7 +1692,7 @@ public class MapTool {
   private static final class EventListener {
     @Subscribe
     void onCampaignChanged(CampaignChanged event) {
-      if (client != event.client()) {
+      if (conn != event.client()) {
         return;
       }
 

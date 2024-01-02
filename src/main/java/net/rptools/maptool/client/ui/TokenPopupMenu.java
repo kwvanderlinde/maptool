@@ -578,20 +578,20 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
     @Override
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
-      final var client = MapTool.getClient();
+      final var clientConnection = MapTool.getConnection();
 
       for (GUID guid : tokenSet) {
         Token token = zone.getToken(guid);
 
         if (selected) {
-          for (Player player : client.getPlayers()) {
+          for (Player player : clientConnection.getPlayers()) {
             token.addOwner(player.getName());
           }
           token.removeOwner(name);
         } else {
           token.addOwner(name);
         }
-        client.getServerCommand().putToken(zone.getId(), token);
+        clientConnection.getServerCommand().putToken(zone.getId(), token);
       }
       MapTool.getFrame().updateTokenTree();
     }

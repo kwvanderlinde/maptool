@@ -44,17 +44,18 @@ public class WhisperMacro extends AbstractMacro {
         (macro.startsWith("\"")) ? macro.indexOf(" ", playerName.length() + 2) : macro.indexOf(" ");
 
     String message = processText(macro.substring(indexSpace + 1));
-    final var client = MapTool.getClient();
+    final var clientConnection = MapTool.getConnection();
     List<String> players = new ArrayList<String>();
-    for (Player p : client.getPlayers()) {
+    for (Player p : clientConnection.getPlayers()) {
       String thePlayer = p.getName();
       players.add(thePlayer);
     }
+    // Woah woah woah, this matches and case-insensitive prefix!
     String playerNameMatch = StringUtil.findMatch(playerName, players);
     playerName = (!playerNameMatch.equals("")) ? playerNameMatch : playerName;
 
     // Validate
-    if (!client.isPlayerConnected(playerName)) {
+    if (!clientConnection.isPlayerConnected(playerName)) {
       MapTool.addMessage(
           TextMessage.me(
               context.getTransformationHistory(),
