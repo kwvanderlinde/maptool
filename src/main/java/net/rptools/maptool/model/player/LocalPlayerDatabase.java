@@ -15,7 +15,6 @@
 package net.rptools.maptool.model.player;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import net.rptools.lib.MD5Key;
@@ -107,8 +106,8 @@ public class LocalPlayerDatabase implements PlayerDatabase {
   }
 
   @Override
-  public Set<Player> getOnlinePlayers() throws InterruptedException, InvocationTargetException {
-    return new HashSet<>(loggedInPlayers.getPlayers());
+  public Set<Player> getOnlinePlayers() {
+    return loggedInPlayers.getPlayers();
   }
 
   @Override

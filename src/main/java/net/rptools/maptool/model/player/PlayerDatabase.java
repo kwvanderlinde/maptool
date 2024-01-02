@@ -145,7 +145,7 @@ public interface PlayerDatabase {
    *
    * @return The players that are currently connected.
    */
-  Set<Player> getOnlinePlayers() throws InterruptedException, InvocationTargetException;
+  Set<Player> getOnlinePlayers();
 
   /**
    * Returns if a player is connected or not.

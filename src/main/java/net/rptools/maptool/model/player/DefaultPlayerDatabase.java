@@ -135,7 +135,7 @@ public class DefaultPlayerDatabase implements ServerSidePlayerDatabase {
   }
 
   @Override
-  public Set<Player> getOnlinePlayers() throws InterruptedException, InvocationTargetException {
+  public Set<Player> getOnlinePlayers() {
     return loggedInPlayers.getPlayers();
   }
 

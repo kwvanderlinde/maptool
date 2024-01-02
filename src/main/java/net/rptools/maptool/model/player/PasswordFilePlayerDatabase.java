@@ -724,8 +724,8 @@ public final class PasswordFilePlayerDatabase
   }
 
   @Override
-  public Set<Player> getOnlinePlayers() throws InterruptedException, InvocationTargetException {
-    return new HashSet<>(loggedInPlayers.getPlayers());
+  public Set<Player> getOnlinePlayers() {
+    return loggedInPlayers.getPlayers();
   }
 
   @Override
