@@ -588,9 +588,9 @@ public class MacroLinkFunction extends AbstractFunction {
   }
 
   private static void doWhisper(String message, Token token, String playerName) {
-    final var clientConnection = MapTool.getConnection();
+    final var client = MapTool.getClient();
     List<String> players = new ArrayList<>();
-    for (Player p : clientConnection.getPlayers()) {
+    for (Player p : client.getPlayers()) {
       String thePlayer = p.getName();
       players.add(thePlayer);
     }
@@ -598,7 +598,7 @@ public class MacroLinkFunction extends AbstractFunction {
     playerName = (!playerNameMatch.equals("")) ? playerNameMatch : playerName;
 
     // Validate
-    if (!clientConnection.isPlayerConnected(playerName)) {
+    if (!client.isPlayerConnected(playerName)) {
       MapTool.addLocalMessage(I18N.getText("msg.error.playerNotConnected", playerName));
       return;
     }
@@ -620,7 +620,7 @@ public class MacroLinkFunction extends AbstractFunction {
   }
 
   private static Collection<String> getGMs() {
-    return MapTool.getConnection().getPlayers().stream()
+    return MapTool.getClient().getPlayers().stream()
         .filter(Player::isGM)
         .map(Player::getName)
         .toList();

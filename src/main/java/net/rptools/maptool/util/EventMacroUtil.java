@@ -45,7 +45,7 @@ public class EventMacroUtil {
     for (ZoneRenderer zr : zrenderers) {
       List<Token> tokenList =
           zr.getZone().getTokensFiltered(t -> t.getName().toLowerCase().startsWith("lib:"));
-      var nonGms = MapTool.getConnection().getNonGmNames();
+      var nonGms = MapTool.getClient().getNonGmNames();
       for (Token token : tokenList) {
         // If the token is not owned by everyone and all owners are GMs then we are in
         // its a trusted Lib:token so we can run the macro

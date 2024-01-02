@@ -844,8 +844,8 @@ public class EditTokenDialog extends AbeillePanel<Token> {
       }
     }
 
-    final var clientConnection = MapTool.getConnection();
-    final var localPlayer = clientConnection.getPlayer();
+    final var client = MapTool.getClient();
+    final var localPlayer = client.getPlayer();
 
     // Ownership
     // If the token is owned by all and we are a player don't alter the ownership
@@ -863,7 +863,7 @@ public class EditTokenDialog extends AbeillePanel<Token> {
       // If we are not a GM and the only non GM owner make sure we can't
       // take our selves off of the owners list
       if (!localPlayer.isGM()) {
-        boolean hasPlayer = token.isOwnedByAny(clientConnection.getNonGmNames());
+        boolean hasPlayer = token.isOwnedByAny(client.getNonGmNames());
         if (!hasPlayer) {
           token.addOwner(localPlayer.getName());
         }
@@ -2266,7 +2266,7 @@ public class EditTokenDialog extends AbeillePanel<Token> {
       Set<String> ownerSet = getModel().getOwners();
       List<String> list = new ArrayList<String>(ownerSet);
 
-      for (Player player : MapTool.getConnection().getPlayers()) {
+      for (Player player : MapTool.getClient().getPlayers()) {
         String playerId = player.getName();
         if (!list.contains(playerId)) {
           list.add(playerId);

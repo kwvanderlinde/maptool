@@ -15,9 +15,9 @@
 package net.rptools.maptool.client.events;
 
 import javax.annotation.Nullable;
-import net.rptools.maptool.client.MapToolConnection;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.GUID;
 
 public record CampaignChanged(
-    MapToolConnection client, Campaign newCampaign, @Nullable GUID defaultZoneId) {}
+    MapToolClient client, Campaign newCampaign, @Nullable GUID defaultZoneId) {}

@@ -282,7 +282,7 @@ public class ServerPolicy {
 
     JsonArray gms = new JsonArray();
 
-    for (Player player : MapTool.getConnection().getPlayers()) {
+    for (Player player : MapTool.getClient().getPlayers()) {
       if (player.isGM()) {
         gms.add(player.getName());
       }

@@ -1278,7 +1278,7 @@ public class AppActions {
             MapTool.showError("msg.error.cantBootSelf");
             return;
           }
-          if (MapTool.getConnection().isPlayerConnected(selectedPlayer.getName())) {
+          if (MapTool.getClient().isPlayerConnected(selectedPlayer.getName())) {
             String msg = I18N.getText("msg.confirm.bootPlayer", selectedPlayer.getName());
             if (MapTool.confirm(msg)) {
               MapTool.serverCommand().bootPlayer(selectedPlayer.getName());
@@ -1979,7 +1979,7 @@ public class AppActions {
 
           Campaign campaign = CampaignFactory.createBasicCampaign();
           AppState.setCampaignFile(null);
-          MapTool.getConnection().setCampaign(campaign);
+          MapTool.getClient().setCampaign(campaign);
           MapTool.serverCommand().setCampaign(campaign);
 
           ImageManager.flush();
@@ -2346,7 +2346,7 @@ public class AppActions {
           // Install a temporary gimped campaign until we get the one from the
           // server
           final Campaign oldCampaign = MapTool.getCampaign();
-          MapTool.getConnection().setCampaign(new Campaign());
+          MapTool.getClient().setCampaign(new Campaign());
 
           // connecting
           MapTool.getFrame()
@@ -2432,7 +2432,7 @@ public class AppActions {
         @Override
         protected void executeAction() {
           if (MapTool.isHostingServer()
-              && MapTool.getConnection().getPlayers().size() > 1 // One for host, rest are remote.
+              && MapTool.getClient().getPlayers().size() > 1 // One for host, rest are remote.
               && !MapTool.confirm("msg.confirm.hostingDisconnect")) {
             return;
           }
@@ -2473,7 +2473,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getConnection().getPlayerDatabase() instanceof PersistedPlayerDatabase;
+          return MapTool.getClient().getPlayerDatabase() instanceof PersistedPlayerDatabase;
         }
 
         @Override
@@ -2607,7 +2607,7 @@ public class AppActions {
 
         MapTool.serverCommand().setCampaign(campaign.campaign);
 
-        MapTool.getConnection().setCampaign(campaign.campaign, campaign.currentZoneId);
+        MapTool.getClient().setCampaign(campaign.campaign, campaign.currentZoneId);
         ZoneRenderer current = MapTool.getFrame().getCurrentZoneRenderer();
         if (current != null) {
           if (campaign.currentView != null) {

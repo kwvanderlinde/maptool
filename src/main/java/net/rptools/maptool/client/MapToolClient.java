@@ -58,8 +58,8 @@ import org.apache.logging.log4j.Logger;
  * connected to. It compiles a few things that used to be static state of {@link
  * net.rptools.maptool.client.MapTool} and elsewhere.
  */
-public class MapToolConnection {
-  private static final Logger log = LogManager.getLogger(MapToolConnection.class);
+public class MapToolClient {
+  private static final Logger log = LogManager.getLogger(MapToolClient.class);
 
   private final List<Runnable> onConnectionCompleted = new ArrayList<>();
   private final EventBus eventBus;
@@ -72,7 +72,7 @@ public class MapToolConnection {
   private final DisconnectHandler disconnectHandler;
   private boolean closed = false;
 
-  private MapToolConnection(
+  private MapToolClient(
       LocalPlayer player,
       PlayerDatabase playerDatabase,
       ServerPolicy serverPolicy,
@@ -100,15 +100,15 @@ public class MapToolConnection {
   }
 
   /** Creates a client for a personal server. */
-  public MapToolConnection(PersonalServer server) {
+  public MapToolClient(PersonalServer server) {
     this(server.getLocalPlayer(), server.getPlayerDatabase(), new ServerPolicy(), null);
   }
 
-  public MapToolConnection(LocalPlayer player, ServerConfig config) {
+  public MapToolClient(LocalPlayer player, ServerConfig config) {
     this(player, new LocalPlayerDatabase(player), new ServerPolicy(), config);
   }
 
-  public MapToolConnection(LocalPlayer player, MapToolServer server) {
+  public MapToolClient(LocalPlayer player, MapToolServer server) {
     this(player, server.getPlayerDatabase(), server.getPolicy(), server.getConfig());
   }
 

@@ -328,7 +328,7 @@ public class AppUtil {
    * @return true if owned by all, or one of the owners is online and not a gm.
    */
   public static boolean ownedByOnePlayer(Token token) {
-    return token.isOwnedByAny(MapTool.getConnection().getNonGmNames());
+    return token.isOwnedByAny(MapTool.getClient().getNonGmNames());
   }
 
   /**

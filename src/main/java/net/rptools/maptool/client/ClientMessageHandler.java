@@ -84,9 +84,9 @@ import org.apache.logging.log4j.Logger;
 public class ClientMessageHandler implements MessageHandler {
   private static final Logger log = LogManager.getLogger(ClientMessageHandler.class);
 
-  private final MapToolConnection client;
+  private final MapToolClient client;
 
-  public ClientMessageHandler(MapToolConnection client) {
+  public ClientMessageHandler(MapToolClient client) {
     this.client = client;
   }
 
