@@ -186,7 +186,8 @@ public class MapToolClient {
   }
 
   public ServerPolicy getServerPolicy() {
-    return serverPolicy;
+    // Callers should use setServerPolicy() if they want to write back changes.
+    return new ServerPolicy(serverPolicy);
   }
 
   public void setServerPolicy(ServerPolicy serverPolicy) {

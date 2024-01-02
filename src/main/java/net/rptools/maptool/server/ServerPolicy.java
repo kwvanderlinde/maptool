@@ -54,6 +54,26 @@ public class ServerPolicy {
     movementMetric = AppPreferences.getMovementMetric();
   }
 
+  public ServerPolicy(ServerPolicy other) {
+    this.strictTokenMovement = other.strictTokenMovement;
+    this.isMovementLocked = other.isMovementLocked;
+    this.isTokenEditorLocked = other.isTokenEditorLocked;
+    this.playersCanRevealVision = other.playersCanRevealVision;
+    this.gmRevealsVisionForUnownedTokens = other.gmRevealsVisionForUnownedTokens;
+    this.useIndividualViews = other.useIndividualViews;
+    this.restrictedImpersonation = other.restrictedImpersonation;
+    this.playersReceiveCampaignMacros = other.playersReceiveCampaignMacros;
+    this.useToolTipsForDefaultRollFormat = other.useToolTipsForDefaultRollFormat;
+    this.useIndividualFOW = other.useIndividualFOW;
+    this.isAutoRevealOnMovement = other.isAutoRevealOnMovement;
+    this.includeOwnedNPCs = other.includeOwnedNPCs;
+    this.movementMetric = other.movementMetric;
+    this.hidemapselectui = other.hidemapselectui;
+    this.disablePlayerAssetPanel = other.disablePlayerAssetPanel;
+    this.useAstarPathfinding = other.useAstarPathfinding;
+    this.vblBlocksMove = other.vblBlocksMove;
+  }
+
   /**
    * Whether token management can be done by everyone or only the GM and assigned tokens
    *
