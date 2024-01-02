@@ -44,11 +44,12 @@ public class IsTrustedFunction extends AbstractFunction {
     } else if (functionName.equalsIgnoreCase("isExternalMacroAccessAllowed")) {
       return AppPreferences.getAllowExternalMacroAccess() ? BigDecimal.ONE : BigDecimal.ZERO;
     } else if ("isGM".equalsIgnoreCase(functionName)) {
-      if (parameters.isEmpty())
-        return MapTool.getPlayer().isGM() ? BigDecimal.ONE : BigDecimal.ZERO;
-      else {
-
-        return MapTool.getGMs().contains(parameters.get(0)) ? BigDecimal.ONE : BigDecimal.ZERO;
+      final var client = MapTool.getClient();
+      if (parameters.isEmpty()) {
+        return client.getPlayer().isGM() ? BigDecimal.ONE : BigDecimal.ZERO;
+      } else {
+        final var player = client.getPlayerDatabase().getPlayer(parameters.get(0).toString());
+        return player != null && player.isGM();
       }
     }
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));

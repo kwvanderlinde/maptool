@@ -1023,29 +1023,6 @@ public class MapTool {
     return client.getPlayers();
   }
 
-  /** Returns the list of non-gm names. */
-  public static List<String> getNonGMs() {
-    return client.getPlayers().stream()
-        .filter(player -> !player.isGM())
-        .map(Player::getName)
-        .toList();
-  }
-
-  /** Returns the list of gm names. */
-  public static List<String> getGMs() {
-    return client.getPlayers().stream().filter(Player::isGM).map(Player::getName).toList();
-  }
-
-  /**
-   * checks if a specific player is connected to the game.
-   *
-   * @param player The name of the player to check.
-   * @return {@code true} if the player is connected otherwise {@code false}.
-   */
-  public static boolean isPlayerConnected(String player) {
-    return client.isPlayerConnected(player);
-  }
-
   public static void removeZone(Zone zone) {
     MapTool.serverCommand().removeZone(zone.getId());
     MapTool.getFrame().removeZoneRenderer(MapTool.getFrame().getZoneRenderer(zone.getId()));

@@ -514,7 +514,7 @@ public class MacroLinkFunction extends AbstractFunction {
         if (playerList.size() == 0) { // if that was only thing in the list then dont use whispers
           outputTo = OutputTo.SELF_AND_GM;
         } else {
-          playerList.addAll(MapTool.getGMs());
+          playerList.addAll(getGMs());
           playerList.add(getSelf());
         }
       } else if (playerList.contains("gm") && playerList.contains("self")) {
@@ -523,7 +523,7 @@ public class MacroLinkFunction extends AbstractFunction {
         if (playerList.size() == 0) { // if that was only thing in the list then dont use whispers
           outputTo = OutputTo.SELF_AND_GM;
         } else {
-          playerList.addAll(MapTool.getGMs());
+          playerList.addAll(getGMs());
           playerList.add(getSelf());
         }
       } else if (playerList.contains("gm")) {
@@ -531,7 +531,7 @@ public class MacroLinkFunction extends AbstractFunction {
         if (playerList.size() == 0) { // if that was only thing in the list then dont use whispers
           outputTo = OutputTo.GM;
         } else {
-          playerList.addAll(MapTool.getGMs());
+          playerList.addAll(getGMs());
           playerList.add(getSelf());
         }
       } else if (playerList.contains("self")) {
@@ -588,8 +588,9 @@ public class MacroLinkFunction extends AbstractFunction {
   }
 
   private static void doWhisper(String message, Token token, String playerName) {
+    final var client = MapTool.getClient();
     List<String> players = new ArrayList<>();
-    for (Player p : MapTool.getPlayers()) {
+    for (Player p : client.getPlayers()) {
       String thePlayer = p.getName();
       players.add(thePlayer);
     }
@@ -597,7 +598,7 @@ public class MacroLinkFunction extends AbstractFunction {
     playerName = (!playerNameMatch.equals("")) ? playerNameMatch : playerName;
 
     // Validate
-    if (!MapTool.isPlayerConnected(playerName)) {
+    if (!client.isPlayerConnected(playerName)) {
       MapTool.addLocalMessage(I18N.getText("msg.error.playerNotConnected", playerName));
       return;
     }
@@ -616,6 +617,13 @@ public class MacroLinkFunction extends AbstractFunction {
 
   private static String getSelf() {
     return MapTool.getPlayer().getName();
+  }
+
+  private static Collection<String> getGMs() {
+    return MapTool.getClient().getPlayers().stream()
+        .filter(Player::isGM)
+        .map(Player::getName)
+        .toList();
   }
 
   /**

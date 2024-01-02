@@ -843,10 +843,14 @@ public class EditTokenDialog extends AbeillePanel<Token> {
                     * 100));
       }
     }
+
+    final var client = MapTool.getClient();
+    final var localPlayer = client.getPlayer();
+
     // Ownership
     // If the token is owned by all and we are a player don't alter the ownership
     // list.
-    if (MapTool.getPlayer().isGM() || !token.isOwnedByAll()) {
+    if (localPlayer.isGM() || !token.isOwnedByAll()) {
       token.clearAllOwners();
 
       for (int i = 0; i < getOwnerList().getModel().getSize(); i++) {
@@ -858,10 +862,10 @@ public class EditTokenDialog extends AbeillePanel<Token> {
       }
       // If we are not a GM and the only non GM owner make sure we can't
       // take our selves off of the owners list
-      if (!MapTool.getPlayer().isGM()) {
-        boolean hasPlayer = token.isOwnedByAny(MapTool.getNonGMs());
+      if (!localPlayer.isGM()) {
+        boolean hasPlayer = token.isOwnedByAny(client.getNonGmNames());
         if (!hasPlayer) {
-          token.addOwner(MapTool.getPlayer().getName());
+          token.addOwner(localPlayer.getName());
         }
       }
     }

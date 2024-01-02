@@ -23,6 +23,7 @@ import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.startserverdialog.StartServerDialogPreferences;
 import net.rptools.maptool.client.walker.WalkerMetric;
+import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.server.proto.ServerPolicyDto;
 import net.rptools.maptool.server.proto.WalkerMetricDto;
 
@@ -281,8 +282,10 @@ public class ServerPolicy {
 
     JsonArray gms = new JsonArray();
 
-    for (String gm : MapTool.getGMs()) {
-      gms.add(gm);
+    for (Player player : MapTool.getClient().getPlayers()) {
+      if (player.isGM()) {
+        gms.add(player.getName());
+      }
     }
     sinfo.add("gm", gms);
     sinfo.addProperty(

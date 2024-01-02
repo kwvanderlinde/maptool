@@ -182,11 +182,21 @@ public class MapToolClient {
     }
   }
 
+  /**
+   * Checks if a specific player is connected.
+   *
+   * @param name The case-insensitive name of the player to check.
+   * @return {@code true} if the player is connected otherwise {@code false}.
+   */
   public boolean isPlayerConnected(String name) {
     return playerDatabase.isPlayerConnected(name);
   }
 
   public Collection<Player> getPlayers() {
     return playerDatabase.getOnlinePlayers();
+  }
+
+  public Collection<String> getNonGmNames() {
+    return getPlayers().stream().filter(player -> !player.isGM()).map(Player::getName).toList();
   }
 }

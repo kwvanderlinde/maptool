@@ -35,15 +35,16 @@ public class WhisperReplyMacro extends AbstractMacro {
               context.getTransformationHistory(), I18N.getString("whisperreply.noTarget")));
       return;
     }
+    final var client = MapTool.getClient();
     // Validate
-    if (!MapTool.isPlayerConnected(playerName)) {
+    if (!client.isPlayerConnected(playerName)) {
       MapTool.addMessage(
           TextMessage.me(
               context.getTransformationHistory(),
               I18N.getText("msg.error.playerNotConnected", playerName)));
       return;
     }
-    if (MapTool.getPlayer().getName().equalsIgnoreCase(playerName)) {
+    if (client.getPlayer().getName().equalsIgnoreCase(playerName)) {
       MapTool.addMessage(
           TextMessage.me(context.getTransformationHistory(), I18N.getText("whisper.toSelf")));
       return;

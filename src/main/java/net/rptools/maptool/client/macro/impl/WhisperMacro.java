@@ -44,8 +44,9 @@ public class WhisperMacro extends AbstractMacro {
         (macro.startsWith("\"")) ? macro.indexOf(" ", playerName.length() + 2) : macro.indexOf(" ");
 
     String message = processText(macro.substring(indexSpace + 1));
+    final var client = MapTool.getClient();
     List<String> players = new ArrayList<String>();
-    for (Player p : MapTool.getPlayers()) {
+    for (Player p : client.getPlayers()) {
       String thePlayer = p.getName();
       players.add(thePlayer);
     }
@@ -53,7 +54,7 @@ public class WhisperMacro extends AbstractMacro {
     playerName = (!playerNameMatch.equals("")) ? playerNameMatch : playerName;
 
     // Validate
-    if (!MapTool.isPlayerConnected(playerName)) {
+    if (!client.isPlayerConnected(playerName)) {
       MapTool.addMessage(
           TextMessage.me(
               context.getTransformationHistory(),
