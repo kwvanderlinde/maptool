@@ -39,21 +39,20 @@ public class ServerDisconnectHandler implements DisconnectHandler {
   }
 
   public void handleDisconnect(Connection connection) {
-    final var wasExpected = client.isClosed();
-
-    try {
-      client.close();
-    } catch (IOException ioe) {
-      // This isn't critical, we're closing it anyway
-      log.error("While closing connection", ioe);
-    }
-
     MapTool.getFrame()
         .getConnectionStatusPanel()
         .setStatus(ConnectionStatusPanel.Status.disconnected);
 
     // TODO: attempt to reconnect if this was unexpected
-    if (!wasExpected) {
+    if (!client.isClosed()) {
+      // Unexpected disconnection.
+      try {
+        client.close();
+      } catch (IOException ioe) {
+        // This isn't critical, we're closing it anyway
+        log.error("While closing connection", ioe);
+      }
+
       var errorText = I18N.getText("msg.error.server.disconnected");
       var connectionError = connection.getError();
       var errorMessage = errorText + (connectionError != null ? (": " + connectionError) : "");
