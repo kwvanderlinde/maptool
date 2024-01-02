@@ -14,7 +14,7 @@
  */
 package net.rptools.maptool.model.player;
 
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -50,7 +50,7 @@ class LoggedInPlayers {
    * @return the players that are logged in.
    */
   public Set<Player> getPlayers() {
-    return Collections.unmodifiableSet(players);
+    return new HashSet<>(players);
   }
 
   /**
