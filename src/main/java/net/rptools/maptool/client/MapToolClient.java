@@ -25,7 +25,6 @@ import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
 import net.rptools.clientserver.ActivityListener;
 import net.rptools.clientserver.ConnectionFactory;
-import net.rptools.clientserver.simple.DisconnectHandler;
 import net.rptools.clientserver.simple.connection.Connection;
 import net.rptools.maptool.client.events.CampaignChanged;
 import net.rptools.maptool.client.events.PlayerConnected;
@@ -69,7 +68,6 @@ public class MapToolClient {
   private Campaign campaign;
   private ServerPolicy serverPolicy;
   private final ServerCommand serverCommand;
-  private final DisconnectHandler disconnectHandler;
   private boolean closed = false;
 
   private MapToolClient(
@@ -87,12 +85,10 @@ public class MapToolClient {
         serverConfig == null
             ? new PersonalServerConnection(player.getName())
             : ConnectionFactory.getInstance().createConnection(player.getName(), serverConfig);
+    this.connection.addDisconnectHandler(new ServerDisconnectHandler(this));
 
     this.serverCommand = new ServerCommandClientImpl(connection);
 
-    // TODO Should we use a dummy disconnect handler for personal servers?
-    this.disconnectHandler = new ServerDisconnectHandler(this);
-    this.connection.addDisconnectHandler(disconnectHandler);
     this.onConnectionCompleted.add(
         () -> {
           this.connection.addMessageHandler(new ClientMessageHandler(this));
