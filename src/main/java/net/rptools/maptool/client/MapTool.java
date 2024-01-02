@@ -535,15 +535,6 @@ public class MapTool {
     }
   }
 
-  public static void updateServerPolicy() {
-    updateServerPolicy(client.getServerPolicy());
-  }
-
-  public static void updateServerPolicy(ServerPolicy policy) {
-    client.setServerPolicy(policy);
-    client.getServerCommand().setServerPolicy(policy);
-  }
-
   public static boolean isInFocus() {
     // TODO: This should probably also check owned windows
     return getFrame().isFocused();

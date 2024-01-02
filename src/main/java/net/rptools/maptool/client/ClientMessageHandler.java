@@ -285,7 +285,6 @@ public class ClientMessageHandler implements MessageHandler {
         () -> {
           ServerPolicy policy = ServerPolicy.fromDto(msg.getPolicy());
           client.setServerPolicy(policy);
-          MapTool.getFrame().getToolbox().updateTools();
         });
   }
 

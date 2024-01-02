@@ -30,14 +30,19 @@ public class AI_UseVblTool extends DefaultTool {
   @Override
   public void actionPerformed(ActionEvent e) {
     AppPreferences.setVblBlocksMove(isSelected());
-    MapTool.getServerPolicy().setVblBlocksMove(isSelected());
-    MapTool.updateServerPolicy();
+
+    final var client = MapTool.getClient();
+    final var policy = client.getServerPolicy();
+    policy.setVblBlocksMove(isSelected());
+    client.setServerPolicy(policy);
+    client.getServerCommand().setServerPolicy(policy);
   }
 
   @Override
   public void updateButtonState() {
-    if (MapTool.getServerPolicy() != null) {
-      setSelected(MapTool.getServerPolicy().getVblBlocksMove());
+    final var policy = MapTool.getClient().getServerPolicy();
+    if (policy != null) {
+      setSelected(policy.getVblBlocksMove());
     }
   }
 

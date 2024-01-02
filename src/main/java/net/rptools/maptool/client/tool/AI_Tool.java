@@ -30,16 +30,18 @@ public class AI_Tool extends DefaultTool {
   @Override
   public void actionPerformed(ActionEvent e) {
     AppPreferences.setUseAstarPathfinding(isSelected());
-    MapTool.getServerPolicy().setUsingAstarPathfinding(isSelected());
-    MapTool.updateServerPolicy();
 
-    // Trigger AI_UseVblTool's isAvailable
-    MapTool.getFrame().getToolbox().updateTools();
+    final var client = MapTool.getClient();
+    final var policy = client.getServerPolicy();
+    policy.setUsingAstarPathfinding(isSelected());
+    client.setServerPolicy(policy);
+    client.getServerCommand().setServerPolicy(policy);
   }
 
   public void updateButtonState() {
-    if (MapTool.getServerPolicy() != null) {
-      setSelected(MapTool.getServerPolicy().isUsingAstarPathfinding());
+    final var policy = MapTool.getClient().getServerPolicy();
+    if (policy != null) {
+      setSelected(policy.isUsingAstarPathfinding());
     }
   }
 
@@ -55,7 +57,7 @@ public class AI_Tool extends DefaultTool {
 
   @Override
   public boolean isAvailable() {
-    return MapTool.getPlayer().isGM();
+    return MapTool.getClient().getPlayer().isGM();
   }
 
   @Override

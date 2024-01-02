@@ -29,6 +29,7 @@ import net.rptools.clientserver.simple.connection.Connection;
 import net.rptools.maptool.client.events.CampaignChanged;
 import net.rptools.maptool.client.events.PlayerConnected;
 import net.rptools.maptool.client.events.PlayerDisconnected;
+import net.rptools.maptool.client.events.ServerPolicyChanged;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Campaign;
@@ -171,10 +172,6 @@ public class MapToolClient {
     return playerDatabase;
   }
 
-  public ServerPolicy getServerPolicy() {
-    return serverPolicy;
-  }
-
   public Campaign getCampaign() {
     return this.campaign;
   }
@@ -188,8 +185,14 @@ public class MapToolClient {
     eventBus.post(new CampaignChanged(this, this.campaign, defaultZoneId));
   }
 
+  public ServerPolicy getServerPolicy() {
+    return serverPolicy;
+  }
+
   public void setServerPolicy(ServerPolicy serverPolicy) {
     this.serverPolicy = serverPolicy;
+
+    eventBus.post(new ServerPolicyChanged(serverPolicy));
   }
 
   public void addPlayer(Player player) {

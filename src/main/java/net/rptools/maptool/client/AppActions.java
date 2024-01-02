@@ -2106,11 +2106,11 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-
-          ServerPolicy policy = MapTool.getServerPolicy();
+          MapToolClient client = MapTool.getClient();
+          ServerPolicy policy = client.getServerPolicy();
           policy.setIsMovementLocked(!policy.isMovementLocked());
-
-          MapTool.updateServerPolicy(policy);
+          client.setServerPolicy(policy);
+          client.getServerCommand().setServerPolicy(policy);
         }
       };
 
@@ -2128,11 +2128,11 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-
-          ServerPolicy policy = MapTool.getServerPolicy();
+          MapToolClient client = MapTool.getClient();
+          ServerPolicy policy = client.getServerPolicy();
           policy.setIsTokenEditorLocked(!policy.isTokenEditorLocked());
-
-          MapTool.updateServerPolicy(policy);
+          client.setServerPolicy(policy);
+          client.getServerCommand().setServerPolicy(policy);
         }
       };
 

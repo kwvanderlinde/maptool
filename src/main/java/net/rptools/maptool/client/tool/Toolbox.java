@@ -14,6 +14,7 @@
  */
 package net.rptools.maptool.client.tool;
 
+import com.google.common.eventbus.Subscribe;
 import java.awt.EventQueue;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -21,8 +22,10 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.swing.ButtonGroup;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.events.ServerPolicyChanged;
 import net.rptools.maptool.client.ui.zone.ZoneOverlay;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
+import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 
 /** */
@@ -32,6 +35,15 @@ public class Toolbox {
   private final Map<Class<? extends Tool>, Tool> toolMap =
       new HashMap<Class<? extends Tool>, Tool>();
   private final ButtonGroup buttonGroup = new ButtonGroup();
+
+  public Toolbox() {
+    new MapToolEventBus().getMainEventBus().register(this);
+  }
+
+  @Subscribe
+  private void onServerPolicyChanged(ServerPolicyChanged event) {
+    updateTools();
+  }
 
   public void updateTools() {
     for (Tool tool : toolMap.values()) {
