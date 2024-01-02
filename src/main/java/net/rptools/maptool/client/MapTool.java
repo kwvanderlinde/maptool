@@ -952,9 +952,15 @@ public class MapTool {
     }
 
     // Create the local connection so we aren't left hanging.
-    installClient(
-        new MapToolClient(player, server),
+    client = new MapToolClient(player, server);
+
+    MapTool.getFrame().getCommandPanel().clearAllIdentities();
+    client.addActivityListener(clientFrame.getActivityMonitor());
+    client.onConnectionCompleted(
         () -> {
+          clientFrame.getLookupTablePanel().updateView();
+          clientFrame.getInitiativePanel().updateView();
+
           // connecting
           MapTool.getFrame()
               .getConnectionStatusPanel()
@@ -1087,11 +1093,11 @@ public class MapTool {
     client.setCampaign(campaign);
   }
 
-  private static void installClient(MapToolClient client, Runnable onCompleted) {
-    MapTool.client = client;
+  public static void createConnection(ServerConfig config, LocalPlayer player, Runnable onCompleted)
+      throws IOException, ExecutionException, InterruptedException {
+    client = new MapToolClient(player, config);
 
     MapTool.getFrame().getCommandPanel().clearAllIdentities();
-
     client.addActivityListener(clientFrame.getActivityMonitor());
     client.onConnectionCompleted(
         () -> {
@@ -1099,11 +1105,7 @@ public class MapTool {
           clientFrame.getInitiativePanel().updateView();
           onCompleted.run();
         });
-  }
 
-  public static void createConnection(ServerConfig config, LocalPlayer player, Runnable onCompleted)
-      throws IOException, ExecutionException, InterruptedException {
-    installClient(new MapToolClient(player, config), onCompleted);
     client.start();
   }
 
