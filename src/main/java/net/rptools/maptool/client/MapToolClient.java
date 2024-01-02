@@ -17,11 +17,16 @@ package net.rptools.maptool.client;
 import com.google.common.eventbus.EventBus;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
+import net.rptools.clientserver.ActivityListener;
+import net.rptools.clientserver.ConnectionFactory;
 import net.rptools.clientserver.simple.DisconnectHandler;
+import net.rptools.clientserver.simple.connection.Connection;
 import net.rptools.maptool.client.events.CampaignChanged;
 import net.rptools.maptool.client.events.PlayerConnected;
 import net.rptools.maptool.client.events.PlayerDisconnected;
@@ -36,12 +41,15 @@ import net.rptools.maptool.model.player.LocalPlayerDatabase;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.player.PlayerDatabase;
 import net.rptools.maptool.model.player.Players;
+import net.rptools.maptool.server.ClientHandshake;
 import net.rptools.maptool.server.MapToolServer;
 import net.rptools.maptool.server.PersonalServer;
 import net.rptools.maptool.server.ServerCommand;
 import net.rptools.maptool.server.ServerConfig;
 import net.rptools.maptool.server.ServerPolicy;
 import net.rptools.maptool.util.MessageUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * The client side of a client-server channel.
@@ -51,10 +59,13 @@ import net.rptools.maptool.util.MessageUtil;
  * net.rptools.maptool.client.MapTool} and elsewhere.
  */
 public class MapToolClient {
+  private static final Logger log = LogManager.getLogger(MapToolClient.class);
+
+  private final List<Runnable> onConnectionCompleted = new ArrayList<>();
   private final EventBus eventBus;
   private final LocalPlayer player;
   private PlayerDatabase playerDatabase;
-  private final IMapToolConnection conn;
+  private final Connection connection;
   private Campaign campaign;
   private ServerPolicy serverPolicy;
   private final ServerCommand serverCommand;
@@ -72,19 +83,19 @@ public class MapToolClient {
     this.playerDatabase = playerDatabase;
     this.serverPolicy = serverPolicy;
 
-    this.conn =
+    this.connection =
         serverConfig == null
-            ? new NilMapToolConnection()
-            : new MapToolConnection(serverConfig, player);
+            ? new PersonalServerConnection(player.getName())
+            : ConnectionFactory.getInstance().createConnection(player.getName(), serverConfig);
 
-    this.serverCommand = new ServerCommandClientImpl(this.conn);
+    this.serverCommand = new ServerCommandClientImpl(connection);
 
     // TODO Should we use a dummy disconnect handler for personal servers?
     this.disconnectHandler = new ServerDisconnectHandler(this);
-    this.conn.addDisconnectHandler(disconnectHandler);
-    this.conn.onCompleted(
+    this.connection.addDisconnectHandler(disconnectHandler);
+    this.onConnectionCompleted.add(
         () -> {
-          this.conn.addMessageHandler(new ClientMessageHandler(this));
+          this.connection.addMessageHandler(new ClientMessageHandler(this));
         });
   }
 
@@ -101,17 +112,52 @@ public class MapToolClient {
     this(player, server.getPlayerDatabase(), server.getPolicy(), server.getConfig());
   }
 
+  public void onConnectionCompleted(Runnable callback) {
+    this.onConnectionCompleted.add(callback);
+  }
+
+  public void addActivityListener(ActivityListener listener) {
+    connection.addActivityListener(listener);
+  }
+
   public void start() throws IOException, ExecutionException, InterruptedException {
-    conn.start();
+    final var handshake = new ClientHandshake(this.connection, player);
+
+    connection.addMessageHandler(handshake);
+    handshake.addObserver(
+        (ignore) -> {
+          connection.removeMessageHandler(handshake);
+          if (handshake.isSuccessful()) {
+            for (final var callback : onConnectionCompleted) {
+              callback.run();
+            }
+          } else {
+            // For client side only show the error message as its more likely to make sense
+            // for players, the exception is logged just in case more info is required
+            var exception = handshake.getException();
+            if (exception != null) {
+              log.warn(exception);
+            }
+            MapTool.showError(handshake.getErrorMessage());
+            connection.close();
+            for (final var callback : onConnectionCompleted) {
+              callback.run();
+            }
+            AppActions.disconnectFromServer();
+          }
+        });
+    // this triggers the handshake from the server side
+    connection.open();
+    handshake.startHandshake();
   }
 
   public void close() throws IOException {
     closed = true;
-    this.playerDatabase = new EmptyPlayerDatabase();
+    playerDatabase = new EmptyPlayerDatabase();
 
     // TODO WHy not just .close()? Surely if it's not alive that would be a no-op.
-    if (conn.isAlive()) {
-      conn.close();
+    if (connection.isAlive()) {
+      connection.close();
     }
   }
 
@@ -129,10 +175,6 @@ public class MapToolClient {
 
   public PlayerDatabase getPlayerDatabase() {
     return playerDatabase;
-  }
-
-  public IMapToolConnection getConnection() {
-    return conn;
   }
 
   public ServerPolicy getServerPolicy() {

@@ -1092,9 +1092,8 @@ public class MapTool {
 
     MapTool.getFrame().getCommandPanel().clearAllIdentities();
 
-    IMapToolConnection clientConn = client.getConnection();
-    clientConn.addActivityListener(clientFrame.getActivityMonitor());
-    clientConn.onCompleted(
+    client.addActivityListener(clientFrame.getActivityMonitor());
+    client.onConnectionCompleted(
         () -> {
           clientFrame.getLookupTablePanel().updateView();
           clientFrame.getInitiativePanel().updateView();

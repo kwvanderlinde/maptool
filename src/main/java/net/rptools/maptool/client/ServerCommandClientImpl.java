@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import net.rptools.clientserver.simple.connection.Connection;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.functions.ExecFunction;
 import net.rptools.maptool.client.functions.MacroLinkFunction;
@@ -49,10 +50,10 @@ import net.rptools.maptool.server.proto.drawing.IntPointDto;
  */
 public class ServerCommandClientImpl implements ServerCommand {
 
-  private final IMapToolConnection connection;
+  private final Connection connection;
   private final TimedEventQueue movementUpdateQueue = new TimedEventQueue(100);
 
-  public ServerCommandClientImpl(IMapToolConnection connection) {
+  public ServerCommandClientImpl(Connection connection) {
     this.connection = connection;
     movementUpdateQueue.start();
   }
@@ -500,7 +501,7 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   private void makeServerCall(Message msg) {
-    connection.sendMessage(msg);
+    connection.sendMessage(msg.toByteArray());
   }
 
   public void setBoard(GUID zoneGUID, MD5Key mapAssetId, int x, int y) {
