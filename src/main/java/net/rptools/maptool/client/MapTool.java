@@ -14,6 +14,7 @@
  */
 package net.rptools.maptool.client;
 
+import com.google.common.eventbus.Subscribe;
 import com.jidesoft.plaf.LookAndFeelFactory;
 import com.jidesoft.plaf.UIDefaultsLookup;
 import com.jidesoft.plaf.basic.ThemePainter;
@@ -54,6 +55,7 @@ import net.rptools.lib.TaskBarFlasher;
 import net.rptools.lib.image.ThumbnailManager;
 import net.rptools.lib.net.RPTURLStreamHandlerFactory;
 import net.rptools.lib.sound.SoundManager;
+import net.rptools.maptool.client.events.CampaignChanged;
 import net.rptools.maptool.client.events.ChatMessageAdded;
 import net.rptools.maptool.client.events.PlayerConnected;
 import net.rptools.maptool.client.events.PlayerDisconnected;
@@ -83,7 +85,6 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.AssetManager;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.CampaignFactory;
-import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.TextMessage;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZoneFactory;
@@ -651,6 +652,8 @@ public class MapTool {
   }
 
   private static void initialize() {
+    new MapToolEventBus().getMainEventBus().register(new EventListener());
+
     // First time
     AppSetup.install();
 
@@ -917,48 +920,6 @@ public class MapTool {
     return parser;
   }
 
-  public static void setCampaign(Campaign campaign) {
-    setCampaign(campaign, null);
-  }
-
-  public static void setCampaign(Campaign campaign, GUID defaultRendererId) {
-    campaign = Objects.requireNonNullElseGet(campaign, Campaign::new);
-
-    // Load up the new
-    client.setCampaign(campaign);
-    ZoneRenderer currRenderer = null;
-
-    clientFrame.clearZoneRendererList();
-    clientFrame.getInitiativePanel().setZone(null);
-    clientFrame.clearTokenTree();
-
-    // Install new campaign
-    for (Zone zone : campaign.getZones()) {
-      ZoneRenderer renderer = ZoneRendererFactory.newRenderer(zone);
-      clientFrame.addZoneRenderer(renderer);
-      if ((currRenderer == null || zone.getId().equals(defaultRendererId))
-          && (getPlayer().isGM() || zone.isVisible())) {
-        currRenderer = renderer;
-      }
-      new MapToolEventBus().getMainEventBus().post(new ZoneAdded(zone));
-      // Now we have fire off adding the tokens in the zone
-      new MapToolEventBus().getMainEventBus().post(new TokensAdded(zone, zone.getAllTokens()));
-    }
-    clientFrame.setCurrentZoneRenderer(currRenderer);
-    clientFrame.getInitiativePanel().setOwnerPermissions(campaign.isInitiativeOwnerPermissions());
-    clientFrame.getInitiativePanel().setMovementLock(campaign.isInitiativeMovementLock());
-    clientFrame.getInitiativePanel().setInitUseReverseSort(campaign.isInitiativeUseReverseSort());
-    clientFrame
-        .getInitiativePanel()
-        .setInitPanelButtonsDisabled(campaign.isInitiativePanelButtonsDisabled());
-    clientFrame.getInitiativePanel().updateView();
-
-    AssetManager.updateRepositoryList();
-    MapTool.getFrame().getCampaignPanel().reset();
-    MapTool.getFrame().getGmPanel().reset();
-    UserDefinedMacroFunctions.getInstance().handleCampaignLoadMacroEvent();
-  }
-
   public static void setServerPolicy(ServerPolicy policy) {
     client.setServerPolicy(policy);
   }
@@ -1176,7 +1137,7 @@ public class MapTool {
     MapTool.getFrame().getCommandPanel().clearAllIdentities();
 
     client.start();
-    setCampaign(campaign);
+    client.setCampaign(campaign);
   }
 
   private static void installClient(MapToolClient client, Runnable onCompleted) {
@@ -1822,5 +1783,48 @@ public class MapTool {
               });
         });
     // new Thread(new HeapSpy()).start();
+  }
+
+  private static final class EventListener {
+    @Subscribe
+    void onCampaignChanged(CampaignChanged event) {
+      if (client != event.client()) {
+        return;
+      }
+
+      final var campaign = event.newCampaign();
+
+      ZoneRenderer currRenderer = null;
+
+      clientFrame.clearZoneRendererList();
+      clientFrame.getInitiativePanel().setZone(null);
+      clientFrame.clearTokenTree();
+
+      // Install new campaign
+      for (Zone zone : campaign.getZones()) {
+        ZoneRenderer renderer = ZoneRendererFactory.newRenderer(zone);
+        clientFrame.addZoneRenderer(renderer);
+        if ((currRenderer == null || zone.getId().equals(event.defaultZoneId()))
+            && (getPlayer().isGM() || zone.isVisible())) {
+          currRenderer = renderer;
+        }
+        new MapToolEventBus().getMainEventBus().post(new ZoneAdded(zone));
+        // Now we have fire off adding the tokens in the zone
+        new MapToolEventBus().getMainEventBus().post(new TokensAdded(zone, zone.getAllTokens()));
+      }
+      clientFrame.setCurrentZoneRenderer(currRenderer);
+      clientFrame.getInitiativePanel().setOwnerPermissions(campaign.isInitiativeOwnerPermissions());
+      clientFrame.getInitiativePanel().setMovementLock(campaign.isInitiativeMovementLock());
+      clientFrame.getInitiativePanel().setInitUseReverseSort(campaign.isInitiativeUseReverseSort());
+      clientFrame
+          .getInitiativePanel()
+          .setInitPanelButtonsDisabled(campaign.isInitiativePanelButtonsDisabled());
+      clientFrame.getInitiativePanel().updateView();
+
+      AssetManager.updateRepositoryList();
+      MapTool.getFrame().getCampaignPanel().reset();
+      MapTool.getFrame().getGmPanel().reset();
+      UserDefinedMacroFunctions.getInstance().handleCampaignLoadMacroEvent();
+    }
   }
 }

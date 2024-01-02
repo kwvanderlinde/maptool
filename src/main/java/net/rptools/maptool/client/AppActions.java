@@ -1979,7 +1979,7 @@ public class AppActions {
 
           Campaign campaign = CampaignFactory.createBasicCampaign();
           AppState.setCampaignFile(null);
-          MapTool.setCampaign(campaign);
+          MapTool.getClient().setCampaign(campaign);
           MapTool.serverCommand().setCampaign(campaign);
 
           ImageManager.flush();
@@ -2346,7 +2346,7 @@ public class AppActions {
           // Install a temporary gimped campaign until we get the one from the
           // server
           final Campaign oldCampaign = MapTool.getCampaign();
-          MapTool.setCampaign(new Campaign());
+          MapTool.getClient().setCampaign(new Campaign());
 
           // connecting
           MapTool.getFrame()
@@ -2605,7 +2605,7 @@ public class AppActions {
 
         MapTool.serverCommand().setCampaign(campaign.campaign);
 
-        MapTool.setCampaign(campaign.campaign, campaign.currentZoneId);
+        MapTool.getClient().setCampaign(campaign.campaign, campaign.currentZoneId);
         ZoneRenderer current = MapTool.getFrame().getCurrentZoneRenderer();
         if (current != null) {
           if (campaign.currentView != null) {

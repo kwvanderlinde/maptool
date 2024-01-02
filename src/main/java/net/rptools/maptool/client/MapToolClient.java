@@ -14,12 +14,17 @@
  */
 package net.rptools.maptool.client;
 
+import com.google.common.eventbus.EventBus;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
 import net.rptools.clientserver.simple.DisconnectHandler;
+import net.rptools.maptool.client.events.CampaignChanged;
+import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.CampaignFactory;
+import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.model.player.LocalPlayerDatabase;
 import net.rptools.maptool.model.player.PlayerDatabase;
@@ -37,6 +42,7 @@ import net.rptools.maptool.server.ServerPolicy;
  * net.rptools.maptool.client.MapTool} and elsewhere.
  */
 public class MapToolClient {
+  private final EventBus eventBus;
   private final LocalPlayer player;
   private final PlayerDatabase playerDatabase;
   private final IMapToolConnection conn;
@@ -50,6 +56,7 @@ public class MapToolClient {
       PlayerDatabase playerDatabase,
       ServerPolicy serverPolicy,
       @Nullable ServerConfig serverConfig) {
+    this.eventBus = new MapToolEventBus().getMainEventBus();
     this.campaign = CampaignFactory.createBasicCampaign();
     this.player = player;
     this.playerDatabase = playerDatabase;
@@ -126,7 +133,12 @@ public class MapToolClient {
   }
 
   public void setCampaign(Campaign campaign) {
-    this.campaign = campaign;
+    setCampaign(campaign, null);
+  }
+
+  public void setCampaign(Campaign campaign, GUID defaultZoneId) {
+    this.campaign = Objects.requireNonNullElseGet(campaign, Campaign::new);
+    eventBus.post(new CampaignChanged(this, this.campaign, defaultZoneId));
   }
 
   public void setServerPolicy(ServerPolicy serverPolicy) {

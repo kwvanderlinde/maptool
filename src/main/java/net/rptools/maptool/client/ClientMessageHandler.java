@@ -620,7 +620,7 @@ public class ClientMessageHandler implements MessageHandler {
     EventQueue.invokeLater(
         () -> {
           Campaign campaign = Campaign.fromDto(msg.getCampaign());
-          MapTool.setCampaign(campaign);
+          client.setCampaign(campaign);
 
           // Hide the "Connecting" overlay
           MapTool.getFrame().hideGlassPane();
