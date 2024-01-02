@@ -14,7 +14,6 @@
  */
 package net.rptools.maptool.model.player;
 
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.security.InvalidAlgorithmParameterException;
@@ -54,27 +53,23 @@ public class Players {
    * event, so you will also need to listen to {@link #PROPERTY_CHANGE_DATABASE_CHANGED} for changes
    * to players in the database.
    */
-  public static final String PROPERTY_CHANGE_PLAYER_ADDED =
-      PlayerDBPropertyChange.PROPERTY_CHANGE_PLAYER_ADDED;
+  public static final String PROPERTY_CHANGE_PLAYER_ADDED = "player added";
 
   /**
    * Property change event name for when a player is removed. Some databases may not support this
    * event, so you will also need to listen to {@link #PROPERTY_CHANGE_DATABASE_CHANGED} for changes
    * to players in the database.
    */
-  public static final String PROPERTY_CHANGE_PLAYER_REMOVED =
-      PlayerDBPropertyChange.PROPERTY_CHANGE_PLAYER_REMOVED;
+  public static final String PROPERTY_CHANGE_PLAYER_REMOVED = "player removed";
 
   /** Property change event name for when a player is changed. */
-  public static final String PROPERTY_CHANGE_PLAYER_CHANGED =
-      PlayerDBPropertyChange.PROPERTY_CHANGE_PLAYER_CHANGED;
+  public static final String PROPERTY_CHANGE_PLAYER_CHANGED = "player changed";
 
   /**
    * Property change event name for when the database is changed or there are mas updates. Some
    * databases may only support this event and not player added/removed/changed
    */
-  public static final String PROPERTY_CHANGE_DATABASE_CHANGED =
-      PlayerDBPropertyChange.PROPERTY_CHANGE_DATABASE_CHANGED;
+  public static final String PROPERTY_CHANGE_DATABASE_CHANGED = "database changed";
 
   /** Instance for logging messages. */
   private static final Logger log = LogManager.getLogger(Players.class);
@@ -82,37 +77,6 @@ public class Players {
   /** instance variable for property change support. */
   private static final PropertyChangeSupport propertyChangeSupport =
       new PropertyChangeSupport(Players.class);
-
-  private static final PropertyChangeListener databaseChangeListener =
-      new PropertyChangeListener() {
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) {
-          propertyChangeSupport.firePropertyChange(evt);
-        }
-      };
-
-  private static final PropertyChangeListener databaseTypeChangeListener =
-      new PropertyChangeListener() {
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) {
-          PlayerDatabase oldDb = (PlayerDatabase) evt.getOldValue();
-          PlayerDatabase newDb = (PlayerDatabase) evt.getNewValue();
-
-          if (oldDb instanceof PlayerDBPropertyChange playerdb) {
-            playerdb.removePropertyChangeListener(databaseChangeListener);
-          }
-
-          if (newDb instanceof PlayerDBPropertyChange playerdb) {
-            playerdb.addPropertyChangeListener(databaseChangeListener);
-          }
-        }
-      };
-
-  static {
-    if (MapTool.getClient().getPlayerDatabase() instanceof PlayerDBPropertyChange pdb) {
-      pdb.addPropertyChangeListener(databaseChangeListener);
-    }
-  }
 
   /**
    * Return the information about a specific known player.
@@ -527,8 +491,7 @@ public class Players {
     var newInfo = getPlayerInfo(player.getName());
     if (newInfo != null) {
       if (oldInfo != null) {
-        propertyChangeSupport.firePropertyChange(
-            PlayerDBPropertyChange.PROPERTY_CHANGE_PLAYER_CHANGED, oldInfo, newInfo);
+        propertyChangeSupport.firePropertyChange(PROPERTY_CHANGE_PLAYER_CHANGED, oldInfo, newInfo);
       } else {
         propertyChangeSupport.firePropertyChange(PROPERTY_CHANGE_PLAYER_ADDED, null, newInfo);
       }
@@ -547,8 +510,7 @@ public class Players {
     var newInfo = getPlayerInfo(player.getName());
     if (oldInfo != null) {
       if (newInfo != null) {
-        propertyChangeSupport.firePropertyChange(
-            PlayerDBPropertyChange.PROPERTY_CHANGE_PLAYER_CHANGED, oldInfo, newInfo);
+        propertyChangeSupport.firePropertyChange(PROPERTY_CHANGE_PLAYER_CHANGED, oldInfo, newInfo);
       } else {
         propertyChangeSupport.firePropertyChange(PROPERTY_CHANGE_PLAYER_REMOVED, oldInfo, null);
       }

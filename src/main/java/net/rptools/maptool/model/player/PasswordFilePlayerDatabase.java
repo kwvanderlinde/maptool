@@ -24,8 +24,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -66,7 +64,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public final class PasswordFilePlayerDatabase
-    implements ServerSidePlayerDatabase, PersistedPlayerDatabase, PlayerDBPropertyChange {
+    implements ServerSidePlayerDatabase, PersistedPlayerDatabase {
 
   private static final Logger log = LogManager.getLogger(PasswordFilePlayerDatabase.class);
   private static final String PUBLIC_KEY_DIR = "keys";
@@ -86,13 +84,6 @@ public final class PasswordFilePlayerDatabase
   private final Map<PublicKeyDetails, PlayerDetails> dirtyPublicKeys = new ConcurrentHashMap<>();
 
   private final ReentrantLock passwordFileLock = new ReentrantLock();
-
-  private final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
-
-  public PasswordFilePlayerDatabase(File passwordFile)
-      throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
-    this(passwordFile, null);
-  }
 
   PasswordFilePlayerDatabase(File passwordFile, File additionalUsers)
       throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
@@ -150,8 +141,6 @@ public final class PasswordFilePlayerDatabase
     transientPlayerDetails.clear();
     readPasswordFile();
     savedDetails.putAll(playerDetails);
-    propertyChangeSupport.firePropertyChange(
-        PlayerDBPropertyChange.PROPERTY_CHANGE_DATABASE_CHANGED, null, this);
   }
 
   private Map<String, PlayerDetails> readPasswordFile(File file)
@@ -498,8 +487,6 @@ public final class PasswordFilePlayerDatabase
           .publicKeyDetails()
           .forEach(pk -> removedPubKeyFiles.add(pk.filename()));
       playerDetails.remove(name);
-      propertyChangeSupport.firePropertyChange(
-          PlayerDBPropertyChange.PROPERTY_CHANGE_PLAYER_REMOVED, name, null);
     }
   }
 
@@ -636,8 +623,6 @@ public final class PasswordFilePlayerDatabase
       playerDetails.clear();
       playerDetails.putAll(savedDetails);
     }
-    propertyChangeSupport.firePropertyChange(
-        PlayerDBPropertyChange.PROPERTY_CHANGE_DATABASE_CHANGED, null, this);
   }
 
   @Override
@@ -822,7 +807,6 @@ public final class PasswordFilePlayerDatabase
       boolean persisted) {
     blockedReason = Objects.requireNonNullElse(blockedReason, "");
 
-    var oldPd = getPlayerDetails(name);
     var pd = new PlayerDetails(name, role, password, publicKeyDetails, blockedReason);
     if (persisted) {
       publicKeyDetails.forEach(p -> dirtyPublicKeys.put(p, pd));
@@ -831,13 +815,6 @@ public final class PasswordFilePlayerDatabase
       transientPlayerDetails.put(name, pd);
     }
 
-    if (oldPd != null) {
-      propertyChangeSupport.firePropertyChange(
-          PlayerDBPropertyChange.PROPERTY_CHANGE_PLAYER_CHANGED, null, name);
-    } else {
-      propertyChangeSupport.firePropertyChange(
-          PlayerDBPropertyChange.PROPERTY_CHANGE_PLAYER_ADDED, null, name);
-    }
     return pd;
   }
 
@@ -951,16 +928,6 @@ public final class PasswordFilePlayerDatabase
           PasswordDatabaseException,
           InvalidKeyException {
     putUncommittedPlayerHashPassword(name, role, password, Set.of(), "", false);
-  }
-
-  @Override
-  public void addPropertyChangeListener(PropertyChangeListener listener) {
-    propertyChangeSupport.addPropertyChangeListener(listener);
-  }
-
-  @Override
-  public void removePropertyChangeListener(PropertyChangeListener listener) {
-    propertyChangeSupport.addPropertyChangeListener(listener);
   }
 
   /** Record containing player details */
