@@ -976,12 +976,44 @@ public class MapTool {
     return thumbnailManager;
   }
 
+  public static void closeClient() {
+    try {
+      client.close();
+    } catch (IOException ioe) {
+      // This isn't critical, we're closing it anyway
+      log.debug("While closing connection", ioe);
+    }
+  }
+
   public static void stopServer() {
     if (server == null) {
       return;
     }
 
-    disconnect();
+    // Close UPnP port mapping if used
+    StartServerDialogPreferences serverProps = new StartServerDialogPreferences();
+    if (serverProps.getUseUPnP()) {
+      int port = serverProps.getPort();
+      UPnPUtil.closePort(port);
+    }
+    boolean isPersonalServer = isPersonalServer();
+
+    if (announcer != null) {
+      announcer.stop();
+      announcer = null;
+    }
+
+    // Unregister ourselves
+    if (server != null && server.isServerRegistered() && !isPersonalServer) {
+      try {
+        MapToolRegistry.getInstance().unregisterInstance();
+      } catch (Throwable t) {
+        MapTool.showError("While unregistering server instance", t);
+      }
+    }
+
+    new MapToolEventBus().getMainEventBus().post(new ServerStopped());
+
     server.stop();
     server = null;
     getFrame().getConnectionPanel().stopHosting();
@@ -1117,47 +1149,6 @@ public class MapTool {
   /** returns whether the player is hosting a server - personal servers do not count. */
   public static boolean isHostingServer() {
     return server != null && !server.isPersonalServer();
-  }
-
-  public static void disconnect() {
-    // Close UPnP port mapping if used
-    StartServerDialogPreferences serverProps = new StartServerDialogPreferences();
-    if (serverProps.getUseUPnP()) {
-      int port = serverProps.getPort();
-      UPnPUtil.closePort(port);
-    }
-    boolean isPersonalServer = isPersonalServer();
-
-    if (announcer != null) {
-      announcer.stop();
-      announcer = null;
-    }
-
-    // Unregister ourselves
-    if (server != null && server.isServerRegistered() && !isPersonalServer) {
-      try {
-        MapToolRegistry.getInstance().unregisterInstance();
-      } catch (Throwable t) {
-        MapTool.showError("While unregistering server instance", t);
-      }
-    }
-
-    try {
-      client.close();
-    } catch (IOException ioe) {
-      // This isn't critical, we're closing it anyway
-      log.debug("While closing connection", ioe);
-    }
-
-    new MapToolEventBus().getMainEventBus().post(new ServerStopped());
-
-    MapTool.getFrame()
-        .getConnectionStatusPanel()
-        .setStatus(ConnectionStatusPanel.Status.disconnected);
-
-    if (!isPersonalServer) {
-      addLocalMessage(MessageUtil.getFormattedSystemMsg(I18N.getText("msg.info.disconnected")));
-    }
   }
 
   public static MapToolFrame getFrame() {

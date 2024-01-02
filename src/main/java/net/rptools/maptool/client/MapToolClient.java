@@ -59,6 +59,7 @@ public class MapToolClient {
   private ServerPolicy serverPolicy;
   private final ServerCommand serverCommand;
   private final DisconnectHandler disconnectHandler;
+  private boolean closed = false;
 
   private MapToolClient(
       LocalPlayer player,
@@ -79,7 +80,7 @@ public class MapToolClient {
     this.serverCommand = new ServerCommandClientImpl(this.conn);
 
     // TODO Should we use a dummy disconnect handler for personal servers?
-    this.disconnectHandler = new ServerDisconnectHandler();
+    this.disconnectHandler = new ServerDisconnectHandler(this);
     this.conn.addDisconnectHandler(disconnectHandler);
     this.conn.onCompleted(
         () -> {
@@ -105,6 +106,7 @@ public class MapToolClient {
   }
 
   public void close() throws IOException {
+    closed = true;
     this.playerDatabase = new EmptyPlayerDatabase();
 
     // TODO WHy not just .close()? Surely if it's not alive that would be a no-op.
@@ -113,10 +115,8 @@ public class MapToolClient {
     }
   }
 
-  public void expectDisconnection() {
-    if (disconnectHandler instanceof ServerDisconnectHandler serverDisconnectHandler) {
-      serverDisconnectHandler.disconnectExpected = true;
-    }
+  public boolean isClosed() {
+    return closed;
   }
 
   public ServerCommand getServerCommand() {

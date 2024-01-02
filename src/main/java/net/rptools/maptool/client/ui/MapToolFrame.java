@@ -1949,8 +1949,8 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
   }
 
   public void close() {
-    MapTool.getClient().expectDisconnection();
-    MapTool.disconnect();
+    MapTool.closeClient();
+    MapTool.stopServer();
 
     getDockingManager()
         .saveLayoutDataToFile(AppUtil.getAppHome("config").getAbsolutePath() + "/layout.dat");

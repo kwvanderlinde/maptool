@@ -2225,7 +2225,7 @@ public class AppActions {
 
                 boolean failed = false;
                 try {
-                  MapTool.getClient().expectDisconnection();
+                  MapTool.closeClient();
                   MapTool.stopServer();
 
                   // Use UPnP to open port in router
@@ -2339,8 +2339,8 @@ public class AppActions {
             return;
           }
 
-          MapTool.getClient().expectDisconnection();
           LOAD_MAP.setSeenWarning(false);
+          MapTool.closeClient();
           MapTool.stopServer();
 
           // Install a temporary gimped campaign until we get the one from the
@@ -2445,10 +2445,9 @@ public class AppActions {
       campaign = CampaignFactory.createBasicCampaign();
       new CampaignManager().clearCampaignData();
     }
-    MapTool.getClient().expectDisconnection();
     LOAD_MAP.setSeenWarning(false);
+    MapTool.closeClient();
     MapTool.stopServer();
-    MapTool.disconnect();
     MapTool.getFrame().getToolbarPanel().getMapselect().setVisible(true);
     MapTool.getFrame().getToolbarPanel().setTokenSelectionGroupEnabled(true);
 

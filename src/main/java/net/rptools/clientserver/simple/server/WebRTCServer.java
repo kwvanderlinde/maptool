@@ -92,6 +92,8 @@ public class WebRTCServer extends AbstractServer {
         // reconnect.
         if (reconnectCounter > 0) retryConnect();
         else MapTool.stopServer();
+        // TODO This has no business telling the app as a whole what to do. Should be part of the
+        //  server listener. NOT THE DisconnectHandler as that is for client-side.
       }
 
       @Override

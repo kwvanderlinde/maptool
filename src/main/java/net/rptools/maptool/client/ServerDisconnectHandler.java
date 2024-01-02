@@ -20,21 +20,40 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.concurrent.ExecutionException;
 import net.rptools.clientserver.simple.DisconnectHandler;
 import net.rptools.clientserver.simple.connection.Connection;
+import net.rptools.maptool.client.ui.ConnectionStatusPanel;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.CampaignFactory;
 import net.rptools.maptool.model.campaign.CampaignManager;
+import net.rptools.maptool.util.MessageUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /** This class handles when the server inexplicably disconnects */
 public class ServerDisconnectHandler implements DisconnectHandler {
-  // TODO: This is a temporary hack until I can come up with a cleaner mechanism
-  public boolean disconnectExpected = false;
+  private static final Logger log = LogManager.getLogger(ServerDisconnectHandler.class);
+
+  private final MapToolClient client;
+
+  public ServerDisconnectHandler(MapToolClient client) {
+    this.client = client;
+  }
 
   public void handleDisconnect(Connection connection) {
-    // Update internal state
-    MapTool.disconnect();
+    final var wasExpected = client.isClosed();
+
+    try {
+      client.close();
+    } catch (IOException ioe) {
+      // This isn't critical, we're closing it anyway
+      log.error("While closing connection", ioe);
+    }
+
+    MapTool.getFrame()
+        .getConnectionStatusPanel()
+        .setStatus(ConnectionStatusPanel.Status.disconnected);
 
     // TODO: attempt to reconnect if this was unexpected
-    if (!disconnectExpected) {
+    if (!wasExpected) {
       var errorText = I18N.getText("msg.error.server.disconnected");
       var connectionError = connection.getError();
       var errorMessage = errorText + (connectionError != null ? (": " + connectionError) : "");
@@ -55,10 +74,13 @@ public class ServerDisconnectHandler implements DisconnectHandler {
           | InterruptedException e) {
         MapTool.showError(I18N.getText("msg.error.server.cantrestart"), e);
       }
-    } else if (!MapTool.isPersonalServer() && !MapTool.isHostingServer()) {
-      // expected disconnect from someone else's server
-      // hide map so player doesn't get a brief GM view
-      MapTool.getFrame().setCurrentZoneRenderer(null);
+    } else if (!MapTool.isPersonalServer()) {
+      MapTool.addLocalMessage(
+          MessageUtil.getFormattedSystemMsg(I18N.getText("msg.info.disconnected")));
+      if (!MapTool.isHostingServer()) {
+        // Disconnected from someone else's server. Hide map so player doesn't get a brief GM view
+        MapTool.getFrame().setCurrentZoneRenderer(null);
+      }
     }
   }
 }
