@@ -65,7 +65,7 @@ public class MapToolClient {
     this.conn =
         serverConfig == null
             ? new NilMapToolConnection()
-            : new MapToolConnection(serverConfig, this);
+            : new MapToolConnection(serverConfig, player);
 
     this.serverCommand = new ServerCommandClientImpl(this.conn);
 

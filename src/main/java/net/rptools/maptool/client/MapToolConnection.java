@@ -24,7 +24,6 @@ import net.rptools.clientserver.simple.connection.Connection;
 import net.rptools.maptool.client.ui.ActivityMonitorPanel;
 import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.server.ClientHandshake;
-import net.rptools.maptool.server.Handshake;
 import net.rptools.maptool.server.ServerConfig;
 import net.rptools.maptool.server.proto.Message;
 import org.apache.logging.log4j.LogManager;
@@ -39,15 +38,13 @@ public class MapToolConnection implements IMapToolConnection {
   private static final Logger log = LogManager.getLogger(MapToolConnection.class);
 
   private final LocalPlayer player;
-  private Connection connection;
-  private Handshake handshake;
-  private List<Runnable> onCompleted;
+  private final Connection connection;
+  private final List<Runnable> onCompleted;
 
-  public MapToolConnection(ServerConfig config, MapToolClient client) {
-    this.player = client.getPlayer();
+  public MapToolConnection(ServerConfig config, LocalPlayer player) {
+    this.player = player;
     this.connection = ConnectionFactory.getInstance().createConnection(player.getName(), config);
-    this.handshake = new ClientHandshake(client, this.connection);
-    onCompleted = new ArrayList<>();
+    this.onCompleted = new ArrayList<>();
   }
 
   @Override
@@ -57,6 +54,8 @@ public class MapToolConnection implements IMapToolConnection {
 
   @Override
   public void start() throws IOException, ExecutionException, InterruptedException {
+    final var handshake = new ClientHandshake(this.connection, player);
+
     connection.addMessageHandler(handshake);
     handshake.addObserver(
         (ignore) -> {
