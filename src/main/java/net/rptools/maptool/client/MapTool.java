@@ -87,7 +87,6 @@ import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZoneFactory;
 import net.rptools.maptool.model.library.url.LibraryURLStreamHandler;
 import net.rptools.maptool.model.player.LocalPlayer;
-import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.player.PlayerZoneListener;
 import net.rptools.maptool.model.player.ServerSidePlayerDatabase;
 import net.rptools.maptool.model.zones.TokensAdded;
@@ -1017,10 +1016,6 @@ public class MapTool {
     server.stop();
     server = null;
     getFrame().getConnectionPanel().stopHosting();
-  }
-
-  public static Collection<Player> getPlayers() {
-    return client.getPlayers();
   }
 
   public static void removeZone(Zone zone) {

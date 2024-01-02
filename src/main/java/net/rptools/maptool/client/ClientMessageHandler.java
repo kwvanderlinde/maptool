@@ -590,7 +590,7 @@ public class ClientMessageHandler implements MessageHandler {
             token.setX(zp2.x);
             token.setY(zp2.y);
 
-            MapTool.serverCommand().putToken(zoneGUID, token);
+            client.getServerCommand().putToken(zoneGUID, token);
           }
         });
   }
@@ -998,7 +998,7 @@ public class ClientMessageHandler implements MessageHandler {
     var loaded = updatePlayerStatusMsg.getLoaded();
 
     Player player =
-        MapTool.getPlayers().stream()
+        client.getPlayers().stream()
             .filter(x -> x.getName().equals(playerName))
             .findFirst()
             .orElse(null);

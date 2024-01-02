@@ -143,8 +143,9 @@ public class MapToolUtil {
     } else if (!force) {
       return baseName;
     } else if (baseName == null) {
+      final var client = MapTool.getClient();
       int nextId = nextTokenId.getAndIncrement();
-      char ch = (char) ('a' + new ArrayList<>(MapTool.getPlayers()).indexOf(MapTool.getPlayer()));
+      char ch = (char) ('a' + new ArrayList<>(client.getPlayers()).indexOf(client.getPlayer()));
       return ch + Integer.toString(nextId);
     } else {
       baseName = baseName.trim();

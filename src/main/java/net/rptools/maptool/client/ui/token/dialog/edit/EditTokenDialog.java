@@ -2266,7 +2266,7 @@ public class EditTokenDialog extends AbeillePanel<Token> {
       Set<String> ownerSet = getModel().getOwners();
       List<String> list = new ArrayList<String>(ownerSet);
 
-      for (Player player : MapTool.getPlayers()) {
+      for (Player player : MapTool.getClient().getPlayers()) {
         String playerId = player.getName();
         if (!list.contains(playerId)) {
           list.add(playerId);

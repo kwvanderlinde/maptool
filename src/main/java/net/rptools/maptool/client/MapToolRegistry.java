@@ -228,12 +228,16 @@ public class MapToolRegistry {
   }
 
   public void heartBeat() {
+    // TODO This is actually server code despite being in the client namespace. It should get
+    //  players and campaign from the server, not the client.
+    final var mtClient = MapTool.getClient();
+
     JsonObject body = new JsonObject();
     body.addProperty("id", serverRegistrationId);
     body.addProperty("clientId", MapTool.getClientId());
     body.addProperty("address", getAddress());
-    body.addProperty("number_players", MapTool.getPlayers().size());
-    body.addProperty("number_maps", MapTool.getCampaign().getZones().size());
+    body.addProperty("number_players", mtClient.getPlayers().size());
+    body.addProperty("number_maps", mtClient.getCampaign().getZones().size());
 
     OkHttpClient client = new OkHttpClient();
     RequestBody requestBody = RequestBody.create(body.toString(), JSON);

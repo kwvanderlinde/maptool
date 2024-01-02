@@ -41,10 +41,11 @@ public class PlayerNameFunctions extends AbstractFunction {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
+    final var client = MapTool.getClient();
     if (functionName.equalsIgnoreCase("getPlayerName")) {
-      return MapTool.getPlayer().getName();
+      return client.getPlayer().getName();
     } else if ("getAllPlayerNames".equalsIgnoreCase(functionName)) {
-      Stream<String> playerNameStream = MapTool.getPlayers().stream().map(Player::getName);
+      Stream<String> playerNameStream = client.getPlayers().stream().map(Player::getName);
       String delim = parameters.size() > 0 ? parameters.get(0).toString() : ",";
       if ("json".equals(delim)) {
         JsonArray jarr = new JsonArray();

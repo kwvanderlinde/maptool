@@ -28,14 +28,15 @@ public class PlayerZoneListener {
 
   @Subscribe
   public void OnZoneLoading(ZoneLoading event) {
-    var player = MapTool.getPlayer();
+    final var client = MapTool.getClient();
+    var player = client.getPlayer();
     player.setLoaded(false);
     player.setZoneId(event.zone().getId());
 
     // To keep everything tidy we're also updating the player entry
     // in the player list since they are seperate entities
     var playerListPlayer =
-        MapTool.getPlayers().stream()
+        client.getPlayers().stream()
             .filter(x -> x.getName().equals(player.getName()))
             .findAny()
             .orElse(null);
@@ -49,19 +50,20 @@ public class PlayerZoneListener {
     final var eventBus = new MapToolEventBus().getMainEventBus();
     eventBus.post(new PlayerStatusChanged(player));
 
-    MapTool.serverCommand().updatePlayerStatus(player);
+    client.getServerCommand().updatePlayerStatus(player);
   }
 
   @Subscribe
   public void OnZoneLoaded(ZoneLoaded event) {
-    var player = MapTool.getPlayer();
+    final var client = MapTool.getClient();
+    var player = client.getPlayer();
     player.setLoaded(true);
     player.setZoneId(event.zone().getId());
 
     // To keep everything tidy we're also updating the player entry
     // in the player list since they are seperate entities
     var playerListPlayer =
-        MapTool.getPlayers().stream()
+        client.getPlayers().stream()
             .filter(x -> x.getName().equals(player.getName()))
             .findAny()
             .orElse(null);
@@ -75,6 +77,6 @@ public class PlayerZoneListener {
     final var eventBus = new MapToolEventBus().getMainEventBus();
     eventBus.post(new PlayerStatusChanged(player));
 
-    MapTool.serverCommand().updatePlayerStatus(player);
+    client.getServerCommand().updatePlayerStatus(player);
   }
 }
