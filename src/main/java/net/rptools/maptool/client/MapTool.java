@@ -153,8 +153,6 @@ public class MapTool {
   private static String vendor = "RPTools!"; // Default, will get from JAR Manifest during normal
   // runtime
 
-  private static Campaign campaign;
-
   private static List<Player> playerList;
   private static PlayerZoneListener playerZoneListener;
   private static ZoneLoadedListener zoneLoadedListener;
