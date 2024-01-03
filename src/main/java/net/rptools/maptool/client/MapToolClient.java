@@ -95,8 +95,9 @@ public class MapToolClient {
   }
 
   /** Creates a client for a personal server. */
-  public MapToolClient(PersonalServer server) {
-    this(server.getLocalPlayer(), server.getPlayerDatabase(), new ServerPolicy(), null);
+  public MapToolClient(LocalPlayer player, PersonalServer server) {
+    // TODO PersonalServer should have a real ServerPolicy, just like MapToolServer.
+    this(player, server.getPlayerDatabase(), new ServerPolicy(), null);
   }
 
   public MapToolClient(LocalPlayer player, ServerConfig config) {

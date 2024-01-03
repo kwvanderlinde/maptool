@@ -184,7 +184,7 @@ public class MapTool {
       final var player = new LocalPlayer();
       final var personalServer = new PersonalServer(player);
       server = personalServer;
-      client = new MapToolClient(personalServer);
+      client = new MapToolClient(player, personalServer);
     } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
       throw new RuntimeException("Unable to create default personal server", e);
     }
@@ -1076,7 +1076,7 @@ public class MapTool {
           InterruptedException {
     final var player = new LocalPlayer();
     server = new PersonalServer(player);
-    client = new MapToolClient((PersonalServer) server);
+    client = new MapToolClient(player, (PersonalServer) server);
 
     MapTool.getFrame().getCommandPanel().clearAllIdentities();
 
