@@ -65,14 +65,18 @@ public class MapToolServer implements IMapToolServer {
   private ServerPolicy policy;
   private HeartbeatThread heartbeatThread;
 
-  public MapToolServer(ServerConfig config, ServerPolicy policy, ServerSidePlayerDatabase playerDb)
+  public MapToolServer(
+      Campaign campaign,
+      ServerConfig config,
+      ServerPolicy policy,
+      ServerSidePlayerDatabase playerDb)
       throws IOException {
     this.config = config;
     this.policy = policy;
     playerDatabase = playerDb;
     conn = new MapToolServerConnection(this, playerDatabase, new ServerMessageHandler(this));
 
-    campaign = new Campaign();
+    this.campaign = campaign;
 
     assetProducerThread = new AssetProducerThread();
     assetProducerThread.start();
@@ -161,10 +165,6 @@ public class MapToolServer implements IMapToolServer {
   }
 
   public void setCampaign(Campaign campaign) {
-    // Don't allow null campaigns, but allow the campaign to be cleared out
-    if (campaign == null) {
-      campaign = new Campaign();
-    }
     this.campaign = campaign;
   }
 
@@ -172,6 +172,7 @@ public class MapToolServer implements IMapToolServer {
     return campaign;
   }
 
+  @Override
   public ServerPolicy getPolicy() {
     return policy;
   }
@@ -180,6 +181,7 @@ public class MapToolServer implements IMapToolServer {
     this.policy = policy;
   }
 
+  @Override
   public ServerConfig getConfig() {
     return config;
   }
@@ -341,6 +343,6 @@ public class MapToolServer implements IMapToolServer {
             ServerConfig.getPersonalServerPlayerPassword(),
             ServerConfig.getPersonalServerGMPassword());
     MapToolServer server =
-        new MapToolServer(new ServerConfig(), new ServerPolicy(), playerDatabase);
+        new MapToolServer(new Campaign(), new ServerConfig(), new ServerPolicy(), playerDatabase);
   }
 }

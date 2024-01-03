@@ -14,6 +14,8 @@
  */
 package net.rptools.maptool.server;
 
+import java.io.IOException;
+import javax.annotation.Nullable;
 import net.rptools.maptool.model.player.PlayerDatabase;
 
 public interface IMapToolServer {
@@ -22,6 +24,13 @@ public interface IMapToolServer {
   boolean isServerRegistered();
 
   PlayerDatabase getPlayerDatabase();
+
+  ServerPolicy getPolicy();
+
+  @Nullable
+  ServerConfig getConfig();
+
+  void start() throws IOException;
 
   void stop();
 }

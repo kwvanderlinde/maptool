@@ -182,9 +182,8 @@ public class MapTool {
   static {
     try {
       final var player = new LocalPlayer();
-      final var personalServer = new PersonalServer(player);
-      server = personalServer;
-      client = new MapToolClient(player, personalServer);
+      server = new PersonalServer(player);
+      client = new MapToolClient(player, server);
     } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
       throw new RuntimeException("Unable to create default personal server", e);
     }
@@ -908,19 +907,18 @@ public class MapTool {
 
     // TODO: the client and server campaign MUST be different objects.
     // Figure out a better init method
-    final var server = new MapToolServer(config, policy, playerDatabase);
-    MapTool.server = server;
 
     if (copyCampaign) {
-      server.setCampaign(new Campaign(campaign)); // copy of FoW depends on server policies
-    } else {
-      server.setCampaign(campaign);
+      // copy of FoW depends on server policies
+      campaign = new Campaign(campaign);
     }
+
+    server = new MapToolServer(campaign, config, policy, playerDatabase);
 
     if (announcer != null) {
       announcer.stop();
     }
-    announcer = new ServiceAnnouncer(id, server.getConfig().getPort(), AppConstants.SERVICE_GROUP);
+    announcer = new ServiceAnnouncer(id, config.getPort(), AppConstants.SERVICE_GROUP);
     announcer.start();
 
     // Registered ?
@@ -1076,7 +1074,7 @@ public class MapTool {
           InterruptedException {
     final var player = new LocalPlayer();
     server = new PersonalServer(player);
-    client = new MapToolClient(player, (PersonalServer) server);
+    client = new MapToolClient(player, server);
 
     MapTool.getFrame().getCommandPanel().clearAllIdentities();
 

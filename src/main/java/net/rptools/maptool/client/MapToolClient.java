@@ -42,8 +42,7 @@ import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.player.PlayerDatabase;
 import net.rptools.maptool.model.player.Players;
 import net.rptools.maptool.server.ClientHandshake;
-import net.rptools.maptool.server.MapToolServer;
-import net.rptools.maptool.server.PersonalServer;
+import net.rptools.maptool.server.IMapToolServer;
 import net.rptools.maptool.server.ServerCommand;
 import net.rptools.maptool.server.ServerConfig;
 import net.rptools.maptool.server.ServerPolicy;
@@ -94,18 +93,14 @@ public class MapToolClient {
         () -> this.connection.addMessageHandler(new ClientMessageHandler(this)));
   }
 
-  /** Creates a client for a personal server. */
-  public MapToolClient(LocalPlayer player, PersonalServer server) {
-    // TODO PersonalServer should have a real ServerPolicy, just like MapToolServer.
-    this(player, server.getPlayerDatabase(), new ServerPolicy(), null);
+  /** Creates a client for locally hosted (possibly personal) server. */
+  public MapToolClient(LocalPlayer player, IMapToolServer server) {
+    this(player, server.getPlayerDatabase(), server.getPolicy(), server.getConfig());
   }
 
+  /** Creates a client for a remote server */
   public MapToolClient(LocalPlayer player, ServerConfig config) {
     this(player, new LocalPlayerDatabase(player), new ServerPolicy(), config);
-  }
-
-  public MapToolClient(LocalPlayer player, MapToolServer server) {
-    this(player, server.getPlayerDatabase(), server.getPolicy(), server.getConfig());
   }
 
   public void onConnectionCompleted(Runnable callback) {
