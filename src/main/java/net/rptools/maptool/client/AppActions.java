@@ -2895,7 +2895,6 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-          boolean isConnected = !MapTool.isHostingServer() && !MapTool.isPersonalServer();
           JFileChooser chooser = new MapPreviewFileChooser();
           chooser.setDialogTitle(I18N.getText("msg.title.loadMap"));
           chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -2921,7 +2920,6 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-          boolean isConnected = !MapTool.isHostingServer() && !MapTool.isPersonalServer();
           JFileChooser chooser = new MapPreviewFileChooser();
           chooser.setDialogTitle(I18N.getText("action.import.dungeondraft.dialog.title"));
           chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
