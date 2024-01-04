@@ -146,7 +146,6 @@ public class MapToolClient {
     closed = true;
     playerDatabase = new EmptyPlayerDatabase();
 
-    // TODO WHy not just .close()? Surely if it's not alive that would be a no-op.
     if (connection.isAlive()) {
       connection.close();
     }
