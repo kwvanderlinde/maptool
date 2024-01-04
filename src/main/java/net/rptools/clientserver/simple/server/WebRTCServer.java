@@ -90,10 +90,16 @@ public class WebRTCServer extends AbstractServer {
 
         // if the connection get closed remotely the rptools.net server disconnected. Try to
         // reconnect.
-        if (reconnectCounter > 0) retryConnect();
-        else MapTool.stopServer();
-        // TODO This has no business telling the app as a whole what to do. Should be part of the
-        //  server listener. NOT THE DisconnectHandler as that is for client-side.
+        if (reconnectCounter > 0) {
+          retryConnect();
+        }
+        else {
+          // TODO This case is actually more subtle than a server fault. We only set
+          //  reconnectCounter to <0 in `.close()`, which is only ultimately called in
+          //  MapTool.stopServer(). So indeed, calling again here is actually a recursive call with
+          //  no base case.
+          fireServerFaulted("Reconnections disabled");
+        }
       }
 
       @Override

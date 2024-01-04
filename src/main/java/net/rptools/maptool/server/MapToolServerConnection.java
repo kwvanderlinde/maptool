@@ -22,6 +22,7 @@ import net.rptools.clientserver.simple.connection.Connection;
 import net.rptools.clientserver.simple.server.HandshakeProvider;
 import net.rptools.clientserver.simple.server.Server;
 import net.rptools.clientserver.simple.server.ServerObserver;
+import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.player.ServerSidePlayerDatabase;
 import net.rptools.maptool.server.proto.Message;
@@ -129,6 +130,12 @@ public class MapToolServerConnection
             new String[] {conn.getId()},
             Message.newBuilder().setPlayerDisconnectedMsg(msg).build());
     playerMap.remove(conn.getId().toUpperCase());
+  }
+
+  @Override
+  public void serverFaulted(String reason) {
+    // TODO Would be nice if most of this logic was embedded in the server implementation itself.
+    MapTool.stopServer();
   }
 
   public void sendMessage(String id, Message message) {

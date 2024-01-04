@@ -22,4 +22,7 @@ public interface ServerObserver {
   public void connectionAdded(Connection conn);
 
   public void connectionRemoved(Connection conn);
+
+  /** Indicates that the server has unexpectedly  */
+  public void serverFaulted(String reason);
 }

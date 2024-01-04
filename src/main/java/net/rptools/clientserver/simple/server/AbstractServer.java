@@ -122,6 +122,13 @@ public abstract class AbstractServer implements DisconnectHandler, Server, Hands
     }
   }
 
+  protected void fireServerFaulted(String reason) {
+    log.debug("Firing: serverFauled: " + reason);
+    for (ServerObserver observer : observerList) {
+      observer.serverFaulted(reason);
+    }
+  }
+
   ////
   // DISCONNECT HANDLER
   public void handleDisconnect(Connection conn) {
