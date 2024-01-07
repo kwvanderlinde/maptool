@@ -1381,12 +1381,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           continue;
         }
 
-        // ... or if it doesn't have an image to display. (Hm, should still show *something*?)
-        Asset asset = AssetManager.getAsset(token.getImageAssetId());
-        if (asset == null) {
-          continue;
-        }
-
         // Show path only on the key token on token layer that are visible to the owner or gm while
         // fow and vision is on
         if (token == keyToken && token.getLayer().supportsWalker()) {
