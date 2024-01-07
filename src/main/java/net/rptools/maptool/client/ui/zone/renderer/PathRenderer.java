@@ -226,14 +226,14 @@ public class PathRenderer {
         if (lastPoint == null) {
           lastPoint =
               new Point2D.Double(
-                  zp.x + (footprintBounds.width / 2) * footprint.getScale(),
-                  zp.y + (footprintBounds.height / 2) * footprint.getScale());
+                  zp.x + (footprintBounds.width / 2.) * footprint.getScale(),
+                  zp.y + (footprintBounds.height / 2.) * footprint.getScale());
           continue;
         }
         final var nextPoint =
             new Point2D.Double(
-                zp.x + (footprintBounds.width / 2) * footprint.getScale(),
-                zp.y + (footprintBounds.height / 2) * footprint.getScale());
+                zp.x + (footprintBounds.width / 2.) * footprint.getScale(),
+                zp.y + (footprintBounds.height / 2.) * footprint.getScale());
         final var line = new Line2D.Double(lastPoint, nextPoint);
 
         lineG.setColor(highlight);
