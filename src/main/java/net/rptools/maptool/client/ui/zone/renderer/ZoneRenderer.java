@@ -1406,10 +1406,9 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         // Show path only on the key token on token layer that are visible to the owner or gm while
         // fow and vision is on
         if (token == keyToken && token.getLayer().supportsWalker()) {
-          pathRenderer.renderPath(
-              g,
-              walker != null ? walker.getPath() : set.getGridlessPath(),
-              token.getFootprint(zone.getGrid()));
+          final Path<? extends AbstractPoint> path =
+              walker != null ? walker.getPath() : set.getGridlessPath();
+          pathRenderer.renderPath(g, path, token.getFootprint(zone.getGrid()));
         }
 
         // Show current Blocked Movement directions for A*

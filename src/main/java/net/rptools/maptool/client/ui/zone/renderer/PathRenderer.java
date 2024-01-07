@@ -61,8 +61,8 @@ public class PathRenderer {
    * @param path The path of the token.
    * @param footprint The footprint of the token.
    */
-  public void renderPath(
-      Graphics2D g, Path<? extends AbstractPoint> path, TokenFootprint footprint) {
+  public <T extends AbstractPoint> void renderPath(
+      Graphics2D g, Path<T> path, TokenFootprint footprint) {
     var timer = CodeTimer.get();
     timer.start("renderPath");
     try {
