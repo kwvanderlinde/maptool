@@ -113,7 +113,7 @@ public class PathRenderer {
     }
 
     // Don't show the final path point as a waypoint, it's redundant, and ugly
-    if (waypointList.size() > 0) {
+    if (!waypointList.isEmpty()) {
       waypointList.remove(waypointList.size() - 1);
     }
     timer.stop("renderPath-1");
