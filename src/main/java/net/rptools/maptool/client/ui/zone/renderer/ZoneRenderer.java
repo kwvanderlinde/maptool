@@ -1387,22 +1387,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           continue;
         }
 
-        // OPTIMIZE: combine this with the code in renderTokens()
-        Rectangle footprintBounds = token.getBounds(zone);
-        ScreenPoint newScreenPoint =
-            ScreenPoint.fromZonePoint(
-                this, footprintBounds.x + set.getOffsetX(), footprintBounds.y + set.getOffsetY());
-
-        // get token image, using image table if present
-        BufferedImage image = getTokenImage(token);
-
-        int scaledWidth = (int) (footprintBounds.width * scale);
-        int scaledHeight = (int) (footprintBounds.height * scale);
-
-        // Tokens are centered on the image center point
-        int x = (int) (newScreenPoint.x);
-        int y = (int) (newScreenPoint.y);
-
         // Show path only on the key token on token layer that are visible to the owner or gm while
         // fow and vision is on
         if (token == keyToken && token.getLayer().supportsWalker()) {
@@ -1427,6 +1411,10 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             }
           }
         }
+
+        // get token image, using image table if present
+        BufferedImage image = getTokenImage(token);
+
         // handle flipping
         BufferedImage workImage = image;
         if (token.isFlippedX() || token.isFlippedY()) {
@@ -1442,6 +1430,10 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           wig.drawImage(image, workX, workY, workW, workH, null);
           wig.dispose();
         }
+
+        // OPTIMIZE: combine this with the code in renderTokens()
+        Rectangle footprintBounds = token.getBounds(zone);
+
         // on the iso plane
         if (token.isFlippedIso()) {
           if (flipIsoImageMap.get(token) == null) {
@@ -1483,8 +1475,19 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
                       ? (footprintBounds.height - imgSize.height) / 2 * getScale()
                       : 0);
         }
+
+        ScreenPoint newScreenPoint =
+            ScreenPoint.fromZonePoint(
+                this, footprintBounds.x + set.getOffsetX(), footprintBounds.y + set.getOffsetY());
+        // Tokens are centered on the image center point
+        int x = (int) (newScreenPoint.x);
+        int y = (int) (newScreenPoint.y);
+
         int tx = x + offsetx;
         int ty = y + offsety + (int) iso_ho;
+
+        int scaledWidth = (int) (footprintBounds.width * scale);
+        int scaledHeight = (int) (footprintBounds.height * scale);
 
         AffineTransform at = new AffineTransform();
         at.translate(tx, ty);
