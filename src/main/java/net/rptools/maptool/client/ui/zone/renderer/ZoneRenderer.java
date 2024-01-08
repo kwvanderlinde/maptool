@@ -1372,6 +1372,23 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         pathRenderer.renderPath(g, path, keyToken.getFootprint(zone.getGrid()));
       }
 
+      // Show current Blocked Movement directions for A*
+      if (walker != null && DeveloperOptions.Toggle.ShowAiDebugging.isEnabled()) {
+        Map<CellPoint, Set<CellPoint>> blockedMovesByTarget = walker.getBlockedMoves();
+        // Color currentColor = g.getColor();
+        for (var entry : blockedMovesByTarget.entrySet()) {
+          var position = entry.getKey();
+          var blockedMoves = entry.getValue();
+
+          for (CellPoint point : blockedMoves) {
+            ZonePoint zp = point.midZonePoint(getZone().getGrid(), position);
+            double r = (zp.x - 1) * 45;
+            showBlockedMoves(
+                g, zp, r, RessourceManager.getImage(Images.ZONE_RENDERER_BLOCK_MOVE), 1.0f);
+          }
+        }
+      }
+
       for (GUID tokenGUID : set.getTokens()) {
         Token token = zone.getToken(tokenGUID);
 
@@ -1389,23 +1406,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         final boolean isOwner = view.isGMView() || AppUtil.playerOwns(token);
         if (token.isVisibleOnlyToOwner() && !isOwner) {
           continue;
-        }
-
-        // Show current Blocked Movement directions for A*
-        if (walker != null && DeveloperOptions.Toggle.ShowAiDebugging.isEnabled()) {
-          Map<CellPoint, Set<CellPoint>> blockedMovesByTarget = walker.getBlockedMoves();
-          // Color currentColor = g.getColor();
-          for (var entry : blockedMovesByTarget.entrySet()) {
-            var position = entry.getKey();
-            var blockedMoves = entry.getValue();
-
-            for (CellPoint point : blockedMoves) {
-              ZonePoint zp = point.midZonePoint(getZone().getGrid(), position);
-              double r = (zp.x - 1) * 45;
-              showBlockedMoves(
-                  g, zp, r, RessourceManager.getImage(Images.ZONE_RENDERER_BLOCK_MOVE), 1.0f);
-            }
-          }
         }
 
         final Rectangle footprintBounds = new Rectangle();
