@@ -28,7 +28,6 @@ import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
 import java.awt.geom.*;
 import java.awt.image.BufferedImage;
-import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -59,7 +58,6 @@ import net.rptools.maptool.client.ui.token.AbstractTokenOverlay;
 import net.rptools.maptool.client.ui.token.BarTokenOverlay;
 import net.rptools.maptool.client.ui.token.dialog.create.NewTokenDialog;
 import net.rptools.maptool.client.ui.zone.*;
-import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.*;
@@ -1051,7 +1049,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         timer.stop("tokens");
       }
       timer.start("unowned movement");
-      showBlockedMoves(g2d, view, getUnOwnedMovementSet(view));
+      renderMovement(g2d, view, false);
       timer.stop("unowned movement");
 
       // Moved below, after the renderFog() call...
@@ -1108,7 +1106,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       }
 
       timer.start("owned movement");
-      showBlockedMoves(g2d, view, getOwnedMovementSet(view));
+      renderMovement(g2d, view, true);
       timer.stop("owned movement");
 
       // Text associated with tokens being moved is added to a list to be drawn after, i.e. on top
@@ -1302,7 +1300,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     g.drawImage(backbuffer, 0, 0, this);
   }
 
-  private Set<SelectionSet> getOwnedMovementSet(PlayerView view) {
+  protected Set<SelectionSet> getOwnedMovementSet(PlayerView view) {
     Set<SelectionSet> movementSet = new HashSet<SelectionSet>();
     for (SelectionSet selection : selectionSetMap.values()) {
       if (selection.getPlayerId().equals(MapTool.getPlayer().getName())) {
@@ -1312,7 +1310,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     return movementSet;
   }
 
-  private Set<SelectionSet> getUnOwnedMovementSet(PlayerView view) {
+  protected Set<SelectionSet> getUnOwnedMovementSet(PlayerView view) {
     Set<SelectionSet> movementSet = new HashSet<SelectionSet>();
     for (SelectionSet selection : selectionSetMap.values()) {
       if (!selection.getPlayerId().equals(MapTool.getPlayer().getName())) {
@@ -1322,13 +1320,13 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     return movementSet;
   }
 
-  protected void showBlockedMoves(Graphics2D g, PlayerView view, Set<SelectionSet> movementSet) {
-    if (selectionSetMap.isEmpty()) {
-      return;
-    }
+  protected void renderMovement(Graphics2D g, PlayerView view, boolean owned) {
     g = (Graphics2D) g.create();
 
     // Regardless of vision settings, no need to render beyond the fog.
+    // TODO I really want to cache this in ZoneView or the (yet to be created) Fog View Model. The
+    //  clear area is the area outside of hard FOW or - if vision is enabled - outside of hard and
+    //  soft fog.
     Area clearArea = null;
     if (!view.isGMView()) {
       if (zone.hasFog() && zoneView.isUsingVision()) {
@@ -1350,154 +1348,22 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       }
     }
 
-    double scale = zoneScale.getScale();
-    for (SelectionSet set : movementSet) {
-      Token keyToken = zone.getToken(set.getKeyToken());
-      if (keyToken == null) {
-        // It was removed ?
-        selectionSetMap.remove(set.getKeyToken());
-        continue;
-      }
-      // Hide the hidden layer
-      if (!keyToken.getLayer().isVisibleToPlayers() && !view.isGMView()) {
-        continue;
-      }
-      ZoneWalker walker = set.getWalker();
-
-      // Show path only on the key token on token layer that are visible to the owner or gm while
-      // fow and vision is on
-      if (keyToken.getLayer().supportsWalker()) {
-        final Path<? extends AbstractPoint> path =
-            walker != null ? walker.getPath() : set.getGridlessPath();
-        pathRenderer.renderPath(g, path, keyToken.getFootprint(zone.getGrid()));
-      }
-
-      // Show current Blocked Movement directions for A*
-      if (walker != null && DeveloperOptions.Toggle.ShowAiDebugging.isEnabled()) {
-        Map<CellPoint, Set<CellPoint>> blockedMovesByTarget = walker.getBlockedMoves();
-        // Color currentColor = g.getColor();
-        for (var entry : blockedMovesByTarget.entrySet()) {
-          var position = entry.getKey();
-          var blockedMoves = entry.getValue();
-
-          for (CellPoint point : blockedMoves) {
-            ZonePoint zp = point.midZonePoint(getZone().getGrid(), position);
-            double r = (zp.x - 1) * 45;
-            showBlockedMoves(
-                g, zp, r, RessourceManager.getImage(Images.ZONE_RENDERER_BLOCK_MOVE), 1.0f);
-          }
-        }
-      }
-
-      for (GUID tokenGUID : set.getTokens()) {
-        Token token = zone.getToken(tokenGUID);
-
-        // Perhaps deleted?
-        if (token == null) {
-          continue;
-        }
-
-        // Don't bother if it's not visible
-        if (!token.isVisible() && !view.isGMView()) {
-          continue;
-        }
-
-        // ... or if it's visible only to the owner and that's not us!
-        final boolean isOwner = view.isGMView() || AppUtil.playerOwns(token);
-        if (token.isVisibleOnlyToOwner() && !isOwner) {
-          continue;
-        }
-
-        final Rectangle returnedFootprintBounds = new Rectangle();
-        tokenRenderer.renderTokens(
-            g, view, token, set.getOffsetX(), set.getOffsetY(), returnedFootprintBounds);
-
-        if (returnedFootprintBounds.width == 0 || returnedFootprintBounds.height == 0) {
-          continue;
-        }
-
-        // TODO This dependence on scaled with etc would probably not be needed if we operated in
-        //  world space.
-
-        ScreenPoint newScreenPoint =
-            ScreenPoint.fromZonePoint(this, returnedFootprintBounds.x, returnedFootprintBounds.y);
-        // Tokens are centered on the image center point
-        int x = (int) (newScreenPoint.x);
-        int y = (int) (newScreenPoint.y);
-        int scaledWidth = (int) (returnedFootprintBounds.width * scale);
-        int scaledHeight = (int) (returnedFootprintBounds.height * scale);
-
-        // Other details.
-        // If the token is visible on the screen it will be in the location cache
-        if (token == keyToken
-            && (isOwner || shouldShowMovementLabels(token, set, clearArea))
-            && tokenLocationCache.containsKey(token)) {
-          var labelY = y + 10 + scaledHeight;
-          var labelX = x + scaledWidth / 2;
-
-          if (token.getLayer().supportsWalker() && AppState.getShowMovementMeasurements()) {
-            double distanceTraveled = calculateTraveledDistance(set);
-            if (distanceTraveled >= 0) {
-              String distance = NumberFormat.getInstance().format(distanceTraveled);
-              delayRendering(new LabelRenderer(this, distance, labelX, labelY));
-              labelY += 20;
-            }
-          }
-          if (set.getPlayerId() != null && set.getPlayerId().length() >= 1) {
-            delayRendering(new LabelRenderer(this, set.getPlayerId(), labelX, labelY));
-          }
-        }
-      }
-    }
-  }
-
-  private boolean shouldShowMovementLabels(Token token, SelectionSet set, Area clearArea) {
-    Rectangle tokenRectangle;
-    if (set.getWalker() != null) {
-      final var path = set.getWalker().getPath();
-      if (path.getCellPath().isEmpty()) {
-        return false;
-      }
-      final var lastPoint = path.getCellPath().getLast();
-      final var grid = zone.getGrid();
-      tokenRectangle = token.getFootprint(grid).getBounds(grid, lastPoint);
-    } else {
-      final var path = set.getGridlessPath();
-      if (path.getCellPath().isEmpty()) {
-        return false;
-      }
-      final var lastPoint = path.getCellPath().getLast();
-      Rectangle tokBounds = token.getBounds(zone);
-      tokenRectangle = new Rectangle();
-      tokenRectangle.setBounds(
-          lastPoint.x, lastPoint.y, (int) tokBounds.getWidth(), (int) tokBounds.getHeight());
+    final var allPaths = compositor.getOwnedPaths(view, owned);
+    for (final var entry : allPaths.entrySet()) {
+      pathRenderer.renderPath(g, entry.getValue(), entry.getKey().getFootprint(zone.getGrid()));
     }
 
-    return clearArea == null || clearArea.intersects(tokenRectangle);
-  }
+    final var allTokens = compositor.getMovingTokens(view, owned);
+    for (final var movement : allTokens) {
+      final var token = movement.token();
+      final var image = movement.image();
+      final var footprint = movement.footprint();
 
-  private double calculateTraveledDistance(SelectionSet set) {
-    ZoneWalker walker = set.getWalker();
-    if (walker != null) {
-      // This wouldn't be true unless token.isSnapToGrid() && grid.isPathingSupported()
-      return walker.getDistance();
-    }
-
-    double distanceTraveled = 0;
-    ZonePoint lastPoint = null;
-    for (ZonePoint zp : set.getGridlessPath().getCellPath()) {
-      if (lastPoint == null) {
-        lastPoint = zp;
-        continue;
+      tokenRenderer.renderTokens(g, view, token, image, footprint);
+      for (final var label : movement.labels()) {
+        delayRendering(new LabelRenderer(this, label.text(), label.x(), label.y()));
       }
-      int a = lastPoint.x - zp.x;
-      int b = lastPoint.y - zp.y;
-      distanceTraveled += Math.hypot(a, b);
-      lastPoint = zp;
     }
-    distanceTraveled /= zone.getGrid().getSize(); // Number of "cells"
-    distanceTraveled *= zone.getUnitsPerCell(); // "actual" distance traveled
-    return distanceTraveled;
   }
 
   /**
