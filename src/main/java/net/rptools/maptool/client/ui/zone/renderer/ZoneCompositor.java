@@ -195,6 +195,9 @@ public class ZoneCompositor {
                   (int) th);
         }
 
+        footprintBounds.x += set.offsetX;
+        footprintBounds.y += set.offsetY;
+
         // TODO This dependence on scaled with etc would probably not be needed if we operated in
         //  world space.
 
