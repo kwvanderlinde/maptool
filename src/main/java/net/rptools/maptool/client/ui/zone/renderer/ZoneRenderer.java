@@ -1408,11 +1408,11 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           continue;
         }
 
-        final Rectangle footprintBounds = new Rectangle();
+        final Rectangle returnedFootprintBounds = new Rectangle();
         tokenRenderer.renderTokens(
-            g, view, token, set.getOffsetX(), set.getOffsetY(), footprintBounds);
+            g, view, token, set.getOffsetX(), set.getOffsetY(), returnedFootprintBounds);
 
-        if (footprintBounds.width == 0 || footprintBounds.height == 0) {
+        if (returnedFootprintBounds.width == 0 || returnedFootprintBounds.height == 0) {
           continue;
         }
 
@@ -1420,13 +1420,12 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         //  world space.
 
         ScreenPoint newScreenPoint =
-            ScreenPoint.fromZonePoint(
-                this, footprintBounds.x + set.getOffsetX(), footprintBounds.y + set.getOffsetY());
+            ScreenPoint.fromZonePoint(this, returnedFootprintBounds.x, returnedFootprintBounds.y);
         // Tokens are centered on the image center point
         int x = (int) (newScreenPoint.x);
         int y = (int) (newScreenPoint.y);
-        int scaledWidth = (int) (footprintBounds.width * scale);
-        int scaledHeight = (int) (footprintBounds.height * scale);
+        int scaledWidth = (int) (returnedFootprintBounds.width * scale);
+        int scaledHeight = (int) (returnedFootprintBounds.height * scale);
 
         // Other details.
         // If the token is visible on the screen it will be in the location cache

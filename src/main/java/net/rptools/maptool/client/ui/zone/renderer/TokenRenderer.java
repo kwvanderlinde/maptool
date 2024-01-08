@@ -97,8 +97,11 @@ public class TokenRenderer {
       iso_ho = iso_ho * scale;
     }
     SwingUtil.constrainTo(imgSize, footprintBounds.width, footprintBounds.height);
+
     // TODO Temp hack so the caller can act on whatever we decided the bounds to be.
     tokenFootprintBounds.setBounds(footprintBounds);
+    tokenFootprintBounds.x += offsetX;
+    tokenFootprintBounds.y += offsetY;
 
     int offsetx = 0;
     int offsety = 0;
