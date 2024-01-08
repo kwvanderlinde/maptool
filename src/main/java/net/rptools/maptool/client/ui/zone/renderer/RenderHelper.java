@@ -40,6 +40,10 @@ public class RenderHelper {
     this.tempBufferPool = tempBufferPool;
   }
 
+  public double getScale() {
+    return renderer.getScale();
+  }
+
   private void doRender(Graphics2D g, Consumer<Graphics2D> render) {
     var timer = CodeTimer.get();
 

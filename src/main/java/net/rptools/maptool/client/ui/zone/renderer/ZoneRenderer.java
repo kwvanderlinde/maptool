@@ -156,6 +156,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   private final FogRenderer fogRenderer;
   private final VisionOverlayRenderer visionOverlayRenderer;
   private final PathRenderer pathRenderer;
+  private final TokenRenderer tokenRenderer;
   private final DebugRenderer debugRenderer;
 
   /**
@@ -185,6 +186,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     this.fogRenderer = new FogRenderer(renderHelper, zone, zoneView);
     this.visionOverlayRenderer = new VisionOverlayRenderer(renderHelper, zone, zoneView);
     this.pathRenderer = new PathRenderer(renderHelper, zone);
+    this.tokenRenderer = new TokenRenderer(renderHelper, zone);
     this.debugRenderer = new DebugRenderer(renderHelper);
     repaintDebouncer = new DebounceExecutor(1000 / AppPreferences.getFrameRateCap(), this::repaint);
 
@@ -1406,69 +1408,15 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           }
         }
 
-        // get token image, using image table if present
-        BufferedImage image = getTokenImage(token);
+        final Rectangle footprintBounds = new Rectangle();
+        tokenRenderer.renderTokens(g, view, token, footprintBounds);
 
-        // handle flipping
-        BufferedImage workImage = image;
-        if (token.isFlippedX() || token.isFlippedY()) {
-          workImage =
-              new BufferedImage(image.getWidth(), image.getHeight(), image.getTransparency());
-
-          int workW = image.getWidth() * (token.isFlippedX() ? -1 : 1);
-          int workH = image.getHeight() * (token.isFlippedY() ? -1 : 1);
-          int workX = token.isFlippedX() ? image.getWidth() : 0;
-          int workY = token.isFlippedY() ? image.getHeight() : 0;
-
-          Graphics2D wig = workImage.createGraphics();
-          wig.drawImage(image, workX, workY, workW, workH, null);
-          wig.dispose();
+        if (footprintBounds.width == 0 || footprintBounds.height == 0) {
+          continue;
         }
 
-        // OPTIMIZE: combine this with the code in renderTokens()
-        Rectangle footprintBounds = token.getBounds(zone);
-
-        // on the iso plane
-        if (token.isFlippedIso()) {
-          if (flipIsoImageMap.get(token) == null) {
-            workImage = IsometricGrid.isoImage(workImage);
-          } else {
-            workImage = flipIsoImageMap.get(token);
-          }
-          token.setHeight(workImage.getHeight());
-          token.setWidth(workImage.getWidth());
-          footprintBounds = token.getBounds(zone);
-        }
-        // Draw token
-        double iso_ho = 0;
-        Dimension imgSize = new Dimension(workImage.getWidth(), workImage.getHeight());
-        if (token.getShape() == TokenShape.FIGURE) {
-          double th = token.getHeight() * (double) footprintBounds.width / token.getWidth();
-          iso_ho = footprintBounds.height - th;
-          footprintBounds =
-              new Rectangle(
-                  footprintBounds.x,
-                  footprintBounds.y - (int) iso_ho,
-                  footprintBounds.width,
-                  (int) th);
-          iso_ho = iso_ho * getScale();
-        }
-        SwingUtil.constrainTo(imgSize, footprintBounds.width, footprintBounds.height);
-
-        int offsetx = 0;
-        int offsety = 0;
-        if (token.isSnapToScale()) {
-          offsetx =
-              (int)
-                  (imgSize.width < footprintBounds.width
-                      ? (footprintBounds.width - imgSize.width) / 2 * getScale()
-                      : 0);
-          offsety =
-              (int)
-                  (imgSize.height < footprintBounds.height
-                      ? (footprintBounds.height - imgSize.height) / 2 * getScale()
-                      : 0);
-        }
+        // TODO This dependence on scaled with etc would probably not be needed if we operated in
+        //  world space.
 
         ScreenPoint newScreenPoint =
             ScreenPoint.fromZonePoint(
@@ -1476,42 +1424,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         // Tokens are centered on the image center point
         int x = (int) (newScreenPoint.x);
         int y = (int) (newScreenPoint.y);
-
-        int tx = x + offsetx;
-        int ty = y + offsety + (int) iso_ho;
-
         int scaledWidth = (int) (footprintBounds.width * scale);
         int scaledHeight = (int) (footprintBounds.height * scale);
-
-        AffineTransform at = new AffineTransform();
-        at.translate(tx, ty);
-
-        if (token.hasFacing() && token.getShape() == Token.TokenShape.TOP_DOWN) {
-          at.rotate(
-              Math.toRadians(-token.getFacing() - 90),
-              scaledWidth / 2 - token.getAnchor().x * scale - offsetx,
-              scaledHeight / 2
-                  - token.getAnchor().y * scale
-                  - offsety); // facing defaults to down, or -90 degrees
-        }
-        if (token.isSnapToScale()) {
-          at.scale(
-              (double) imgSize.width / workImage.getWidth(),
-              (double) imgSize.height / workImage.getHeight());
-          at.scale(getScale(), getScale());
-        } else {
-          if (token.getShape() == TokenShape.FIGURE) {
-            at.scale(
-                (double) scaledWidth / workImage.getWidth(),
-                (double) scaledWidth / workImage.getWidth());
-          } else {
-            at.scale(
-                (double) scaledWidth / workImage.getWidth(),
-                (double) scaledHeight / workImage.getHeight());
-          }
-        }
-
-        g.drawImage(workImage, at, this);
 
         // Other details.
         // If the token is visible on the screen it will be in the location cache
