@@ -39,8 +39,16 @@ public class TokenRenderer {
     this.zone = zone;
   }
 
+  // TODO Methinks offsetX, offsetY is the position of the SelectionSet relative to the actual
+  //  token. Which means I should be able to ask the caller to translate the bounds first. Though
+  //  our figure logic would suffer.
   public void renderTokens(
-      Graphics2D g, PlayerView view, Token token, Rectangle tokenFootprintBounds) {
+      Graphics2D g,
+      PlayerView view,
+      Token token,
+      int offsetX,
+      int offsetY,
+      Rectangle tokenFootprintBounds) {
     double scale = renderHelper.getScale();
 
     // get token image, using image table if present
@@ -66,11 +74,13 @@ public class TokenRenderer {
 
     // on the iso plane
     if (token.isFlippedIso()) {
-      if (flipIsoImageMap.get(token) == null) {
-        workImage = IsometricGrid.isoImage(workImage);
-      } else {
-        workImage = flipIsoImageMap.get(token);
-      }
+      // TODO Image caching, or come up with an alternative.
+      //  I am also confused, where does the flipping happen?
+      //      if (flipIsoImageMap.get(token) == null) {
+      workImage = IsometricGrid.isoImage(workImage);
+      //      } else {
+      //        workImage = flipIsoImageMap.get(token);
+      //      }
       token.setHeight(workImage.getHeight());
       token.setWidth(workImage.getWidth());
       footprintBounds = token.getBounds(zone);
@@ -105,9 +115,16 @@ public class TokenRenderer {
                   : 0);
     }
 
+    // TODO This dependence on scaled with etc would probably not be needed if we operated in
+    //  world space.
+
     ScreenPoint newScreenPoint =
         ScreenPoint.fromZonePoint(
-            this, footprintBounds.x + set.getOffsetX(), footprintBounds.y + set.getOffsetY());
+            renderHelper.getScale(),
+            renderHelper.getViewOffsetX(),
+            renderHelper.getViewOffsetY(),
+            footprintBounds.x + offsetX,
+            footprintBounds.y + offsetY);
     // Tokens are centered on the image center point
     int x = (int) (newScreenPoint.x);
     int y = (int) (newScreenPoint.y);

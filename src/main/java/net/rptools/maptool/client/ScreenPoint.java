@@ -82,6 +82,21 @@ public class ScreenPoint extends Point2D.Double {
     return fromZonePoint(renderer, zp.x, zp.y);
   }
 
+  public static ScreenPoint fromZonePoint(
+      double scale, double offsetX, double offsetY, double x, double y) {
+    double sX = x;
+    double sY = y;
+
+    sX = sX * scale;
+    sY = sY * scale;
+
+    // Translate
+    sX += offsetX;
+    sY += offsetY;
+
+    return new ScreenPoint(sX, sY);
+  }
+
   public static ScreenPoint fromZonePoint(ZoneRenderer renderer, double x, double y) {
     double scale = renderer.getScale();
 

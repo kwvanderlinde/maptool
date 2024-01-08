@@ -1409,7 +1409,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         }
 
         final Rectangle footprintBounds = new Rectangle();
-        tokenRenderer.renderTokens(g, view, token, footprintBounds);
+        tokenRenderer.renderTokens(
+            g, view, token, set.getOffsetX(), set.getOffsetY(), footprintBounds);
 
         if (footprintBounds.width == 0 || footprintBounds.height == 0) {
           continue;

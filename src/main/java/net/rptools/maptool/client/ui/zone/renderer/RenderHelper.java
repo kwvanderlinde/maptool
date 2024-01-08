@@ -40,6 +40,14 @@ public class RenderHelper {
     this.tempBufferPool = tempBufferPool;
   }
 
+  public double getViewOffsetX() {
+    return renderer.getViewOffsetX();
+  }
+
+  public double getViewOffsetY() {
+    return renderer.getViewOffsetY();
+  }
+
   public double getScale() {
     return renderer.getScale();
   }
