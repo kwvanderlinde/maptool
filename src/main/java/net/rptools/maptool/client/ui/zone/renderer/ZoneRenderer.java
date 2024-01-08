@@ -1364,6 +1364,14 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       }
       ZoneWalker walker = set.getWalker();
 
+      // Show path only on the key token on token layer that are visible to the owner or gm while
+      // fow and vision is on
+      if (keyToken.getLayer().supportsWalker()) {
+        final Path<? extends AbstractPoint> path =
+            walker != null ? walker.getPath() : set.getGridlessPath();
+        pathRenderer.renderPath(g, path, keyToken.getFootprint(zone.getGrid()));
+      }
+
       for (GUID tokenGUID : set.getTokens()) {
         Token token = zone.getToken(tokenGUID);
 
@@ -1381,14 +1389,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         final boolean isOwner = view.isGMView() || AppUtil.playerOwns(token);
         if (token.isVisibleOnlyToOwner() && !isOwner) {
           continue;
-        }
-
-        // Show path only on the key token on token layer that are visible to the owner or gm while
-        // fow and vision is on
-        if (token == keyToken && token.getLayer().supportsWalker()) {
-          final Path<? extends AbstractPoint> path =
-              walker != null ? walker.getPath() : set.getGridlessPath();
-          pathRenderer.renderPath(g, path, token.getFootprint(zone.getGrid()));
         }
 
         // Show current Blocked Movement directions for A*
