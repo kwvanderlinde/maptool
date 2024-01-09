@@ -213,7 +213,8 @@ public class ZoneCompositor {
         // Other details.
         // If the token is visible on the screen it will be in the location cache
         if (token == keyToken && (isOwner || shouldShowMovementLabels(token, set, clearArea))
-        // TODO don't depend on a location cache for this nonsense.
+        // TODO don't depend on a location cache for this nonsense. We need some manner of checking
+        //  if the label would be on-screen, or at worst, if the token is on-screen.
         // && tokenLocationCache.containsKey(token)
         ) {
           var labelY = y + 10 + scaledHeight;
