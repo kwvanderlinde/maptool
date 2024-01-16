@@ -34,7 +34,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * @author trevor
  */
-public class MapToolServerConnection implements ServerObserver, HandshakeObserver<ServerHandshake> {
+public class MapToolServerConnection implements HandshakeObserver<ServerHandshake> {
   private static final Logger log = LogManager.getLogger(MapToolServerConnection.class);
   private final Map<String, Player> playerMap = new ConcurrentHashMap<>();
   private final MapToolServer server;
@@ -51,7 +51,7 @@ public class MapToolServerConnection implements ServerObserver, HandshakeObserve
     this.server = server;
     this.playerDatabase = playerDatabase;
     this.useEasyConnect = server.getConfig().getUseEasyConnect();
-    addObserver(this);
+    addObserver(new MapToolServerObserver());
   }
 
   public Player getPlayer(String id) {
@@ -70,44 +70,6 @@ public class MapToolServerConnection implements ServerObserver, HandshakeObserve
       }
     }
     return null;
-  }
-
-  ////
-  // SERVER OBSERVER
-
-  /** Handle late connections */
-  public void connectionAdded(Connection conn) {
-    server.configureClientConnection(conn);
-
-    Player connectedPlayer = playerMap.get(conn.getId().toUpperCase());
-    for (Player player : playerMap.values()) {
-      var msg = PlayerConnectedMsg.newBuilder().setPlayer(player.toDto());
-      server
-          .getConnection()
-          .sendMessage(conn.getId(), Message.newBuilder().setPlayerConnectedMsg(msg).build());
-    }
-    var msg =
-        PlayerConnectedMsg.newBuilder().setPlayer(connectedPlayer.getTransferablePlayer().toDto());
-    server
-        .getConnection()
-        .broadcastMessage(Message.newBuilder().setPlayerConnectedMsg(msg).build());
-
-    var msg2 = SetCampaignMsg.newBuilder().setCampaign(server.getCampaign().toDto());
-    server
-        .getConnection()
-        .sendMessage(conn.getId(), Message.newBuilder().setSetCampaignMsg(msg2).build());
-  }
-
-  public void connectionRemoved(Connection conn) {
-    server.releaseClientConnection(conn.getId());
-    var player = playerMap.get(conn.getId().toUpperCase()).getTransferablePlayer();
-    var msg = PlayerDisconnectedMsg.newBuilder().setPlayer(player.toDto());
-    server
-        .getConnection()
-        .broadcastMessage(
-            new String[] {conn.getId()},
-            Message.newBuilder().setPlayerDisconnectedMsg(msg).build());
-    playerMap.remove(conn.getId().toUpperCase());
   }
 
   public void sendMessage(String id, Message message) {
@@ -191,6 +153,44 @@ public class MapToolServerConnection implements ServerObserver, HandshakeObserve
     @Override
     public void releaseHandshake(ServerHandshake handshake) {
       handshake.getConnection().removeMessageHandler(handshake);
+    }
+  }
+
+  private final class MapToolServerObserver implements ServerObserver {
+    /** Handle late connections */
+    public void connectionAdded(Connection conn) {
+      server.configureClientConnection(conn);
+
+      Player connectedPlayer = playerMap.get(conn.getId().toUpperCase());
+      for (Player player : playerMap.values()) {
+        var msg = PlayerConnectedMsg.newBuilder().setPlayer(player.toDto());
+        server
+            .getConnection()
+            .sendMessage(conn.getId(), Message.newBuilder().setPlayerConnectedMsg(msg).build());
+      }
+      var msg =
+          PlayerConnectedMsg.newBuilder()
+              .setPlayer(connectedPlayer.getTransferablePlayer().toDto());
+      server
+          .getConnection()
+          .broadcastMessage(Message.newBuilder().setPlayerConnectedMsg(msg).build());
+
+      var msg2 = SetCampaignMsg.newBuilder().setCampaign(server.getCampaign().toDto());
+      server
+          .getConnection()
+          .sendMessage(conn.getId(), Message.newBuilder().setSetCampaignMsg(msg2).build());
+    }
+
+    public void connectionRemoved(Connection conn) {
+      server.releaseClientConnection(conn.getId());
+      var player = playerMap.get(conn.getId().toUpperCase()).getTransferablePlayer();
+      var msg = PlayerDisconnectedMsg.newBuilder().setPlayer(player.toDto());
+      server
+          .getConnection()
+          .broadcastMessage(
+              new String[] {conn.getId()},
+              Message.newBuilder().setPlayerDisconnectedMsg(msg).build());
+      playerMap.remove(conn.getId().toUpperCase());
     }
   }
 }
