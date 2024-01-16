@@ -35,7 +35,7 @@ import org.apache.logging.log4j.Logger;
  * @author trevor
  */
 public class MapToolServerConnection
-    implements ServerObserver, HandshakeProvider, HandshakeObserver {
+    implements ServerObserver, HandshakeProvider, HandshakeObserver<ServerHandshake> {
   private static final Logger log = LogManager.getLogger(MapToolServerConnection.class);
   private final Map<String, Player> playerMap = new ConcurrentHashMap<>();
   private final Map<Connection, ServerHandshake> handshakeMap = new ConcurrentHashMap<>();
@@ -60,7 +60,7 @@ public class MapToolServerConnection
    *
    * @see net.rptools.clientserver.simple.server.ServerConnection# handleConnectionHandshake(java.net.Socket)
    */
-  public Handshake getConnectionHandshake(Connection conn) {
+  public ServerHandshake getConnectionHandshake(Connection conn) {
     var handshake = new ServerHandshake(server, conn, playerDatabase, useEasyConnect);
     handshakeMap.put(conn, handshake);
     handshake.addObserver(this);
@@ -186,7 +186,7 @@ public class MapToolServerConnection
   }
 
   @Override
-  public void onCompleted(Handshake handshake) {
+  public void onCompleted(ServerHandshake handshake) {
     handshake.removeObserver(this);
     if (handshake.isSuccessful()) {
       Player player = handshake.getPlayer();

@@ -14,17 +14,17 @@
  */
 package net.rptools.clientserver.simple.server;
 
-import java.io.IOException;
 import java.util.*;
 import net.rptools.clientserver.simple.DisconnectHandler;
 import net.rptools.clientserver.simple.MessageHandler;
 import net.rptools.clientserver.simple.connection.Connection;
-import net.rptools.maptool.server.Handshake;
 import net.rptools.maptool.server.HandshakeObserver;
+import net.rptools.maptool.server.ServerHandshake;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public abstract class AbstractServer implements DisconnectHandler, Server, HandshakeObserver {
+public abstract class AbstractServer
+    implements DisconnectHandler, Server, HandshakeObserver<ServerHandshake> {
 
   private static final Logger log = LogManager.getLogger(AbstractServer.class);
   //    private final ReaperThread reaperThread;
@@ -129,14 +129,14 @@ public abstract class AbstractServer implements DisconnectHandler, Server, Hands
     fireClientDisconnect(conn);
   }
 
-  protected void handleConnection(Connection conn) throws IOException {
+  protected void handleConnection(Connection conn) {
     var handshake = handshakeProvider.getConnectionHandshake(conn);
     handshake.addObserver(this);
     // Make sure the client is allowed
     handshake.startHandshake();
   }
 
-  public void onCompleted(Handshake handshake) {
+  public void onCompleted(ServerHandshake handshake) {
     handshake.removeObserver(this);
     var conn = handshake.getConnection();
     handshakeProvider.releaseHandshake(conn);

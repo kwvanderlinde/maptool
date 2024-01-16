@@ -15,10 +15,10 @@
 package net.rptools.clientserver.simple.server;
 
 import net.rptools.clientserver.simple.connection.Connection;
-import net.rptools.maptool.server.Handshake;
+import net.rptools.maptool.server.ServerHandshake;
 
 public interface HandshakeProvider {
-  Handshake getConnectionHandshake(Connection conn);
+  ServerHandshake getConnectionHandshake(Connection conn);
 
   void releaseHandshake(Connection conn);
 }

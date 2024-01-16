@@ -14,7 +14,7 @@
  */
 package net.rptools.maptool.server;
 
-public interface HandshakeObserver {
+public interface HandshakeObserver<HandshakeT> {
 
-  void onCompleted(Handshake handshake);
+  void onCompleted(HandshakeT handshake);
 }

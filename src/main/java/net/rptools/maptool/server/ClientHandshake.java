@@ -44,7 +44,6 @@ import net.rptools.maptool.model.gamedata.GameDataImporter;
 import net.rptools.maptool.model.library.LibraryManager;
 import net.rptools.maptool.model.library.addon.AddOnLibraryImporter;
 import net.rptools.maptool.model.player.LocalPlayer;
-import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.player.Player.Role;
 import net.rptools.maptool.server.proto.*;
 import net.rptools.maptool.server.proto.HandshakeMsg.MessageTypeCase;
@@ -55,7 +54,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /** Class that implements the client side of the handshake. */
-public class ClientHandshake implements Handshake, MessageHandler {
+public class ClientHandshake implements MessageHandler {
 
   /** Instance used for log messages. */
   private static final Logger log = LogManager.getLogger(ClientHandshake.class);
@@ -73,7 +72,8 @@ public class ClientHandshake implements Handshake, MessageHandler {
   private final LocalPlayer player;
 
   /** Observers that want to be notified when the status changes. */
-  private final List<HandshakeObserver> observerList = new CopyOnWriteArrayList<>();
+  private final List<HandshakeObserver<ClientHandshake>> observerList =
+      new CopyOnWriteArrayList<>();
 
   /** Message for any error that has occurred, {@code null} if no error has occurred. */
   private String errorMessage;
@@ -115,7 +115,11 @@ public class ClientHandshake implements Handshake, MessageHandler {
     this.easyConnectWindowListener = easyConnectWindowListener;
   }
 
-  @Override
+  /**
+   * Starts the handshake process.
+   *
+   * @throws IOException when there is an exception initiating the handshake.
+   */
   public void startHandshake() throws IOException {
     CipherUtil.Key key;
     try {
@@ -366,13 +370,21 @@ public class ClientHandshake implements Handshake, MessageHandler {
     notifyObservers();
   }
 
-  @Override
-  public void addObserver(HandshakeObserver observer) {
+  /**
+   * Adds an observer to the handshake process.
+   *
+   * @param observer the observer of the handshake process.
+   */
+  public void addObserver(HandshakeObserver<ClientHandshake> observer) {
     observerList.add(observer);
   }
 
-  @Override
-  public void removeObserver(HandshakeObserver observer) {
+  /**
+   * Removes an observer from the handshake process.
+   *
+   * @param observer the observer of the handshake process.
+   */
+  public void removeObserver(HandshakeObserver<ClientHandshake> observer) {
     observerList.remove(observer);
   }
 
@@ -384,29 +396,32 @@ public class ClientHandshake implements Handshake, MessageHandler {
     }
   }
 
-  @Override
+  /**
+   * Returns if the handshake has been successful or not.
+   *
+   * @return {@code true} if the handshake has been successful, {code false} if it has failed or is
+   *     still in progress.
+   */
   public boolean isSuccessful() {
     return currentState == State.Success;
   }
 
-  @Override
+  /**
+   * Returns the message for the error -- if any -- that occurred during the handshake.
+   *
+   * @return the message for the error that occurred during handshake.
+   */
   public String getErrorMessage() {
     return errorMessage;
   }
 
-  @Override
-  public Connection getConnection() {
-    return connection;
-  }
-
-  @Override
+  /**
+   * Returns the exception -- if any -- that occurred during processing of the handshake.
+   *
+   * @return the exception that occurred during the processing of the handshake.
+   */
   public Exception getException() {
     return exception;
-  }
-
-  @Override
-  public Player getPlayer() {
-    return player;
   }
 
   private void closeEasyConnectDialog() {

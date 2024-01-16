@@ -66,7 +66,7 @@ import org.apache.logging.log4j.Logger;
 // arbitrary server from `MapTool`.
 
 /** Class used to handle the server side part of the connection handshake. */
-public class ServerHandshake implements Handshake, MessageHandler {
+public class ServerHandshake implements MessageHandler {
   /** Instance used for log messages. */
   private static final Logger log = LogManager.getLogger(ServerHandshake.class);
 
@@ -79,7 +79,8 @@ public class ServerHandshake implements Handshake, MessageHandler {
   private final Connection connection;
 
   /** Observers that want to be notified when the status changes. */
-  private final List<HandshakeObserver> observerList = new CopyOnWriteArrayList<>();
+  private final List<HandshakeObserver<ServerHandshake>> observerList =
+      new CopyOnWriteArrayList<>();
 
   /** The index in the array for the GM handshake challenge, only used for role based auth */
   private static final int GM_CHALLENGE = 0;
@@ -133,27 +134,48 @@ public class ServerHandshake implements Handshake, MessageHandler {
     this.useEasyConnect = useEasyConnect;
   }
 
-  @Override
+  /**
+   * Returns if the handshake has been successful or not.
+   *
+   * @return {@code true} if the handshake has been successful, {code false} if it has failed or is
+   *     still in progress.
+   */
   public boolean isSuccessful() {
     return currentState == State.Success;
   }
 
-  @Override
+  /**
+   * Returns the message for the error -- if any -- that occurred during the handshake.
+   *
+   * @return the message for the error that occurred during handshake.
+   */
   public synchronized String getErrorMessage() {
     return errorMessage;
   }
 
-  @Override
+  /**
+   * Returns the connection for this {@code ServerHandshake}.
+   *
+   * @return the connection for this {@code ServerHandshake}.
+   */
   public synchronized Connection getConnection() {
     return connection;
   }
 
-  @Override
+  /**
+   * Returns the exception -- if any -- that occurred during processing of the handshake.
+   *
+   * @return the exception that occurred during the processing of the handshake.
+   */
   public synchronized Exception getException() {
     return exception;
   }
 
-  @Override
+  /**
+   * Returns the player associated with the handshake.
+   *
+   * @return the player associated with the handshake.
+   */
   public synchronized Player getPlayer() {
     return player;
   }
@@ -591,7 +613,7 @@ public class ServerHandshake implements Handshake, MessageHandler {
    *
    * @param observer the observer of the handshake process.
    */
-  public synchronized void addObserver(HandshakeObserver observer) {
+  public synchronized void addObserver(HandshakeObserver<ServerHandshake> observer) {
     observerList.add(observer);
   }
 
@@ -600,7 +622,7 @@ public class ServerHandshake implements Handshake, MessageHandler {
    *
    * @param observer the observer of the handshake process.
    */
-  public synchronized void removeObserver(HandshakeObserver observer) {
+  public synchronized void removeObserver(HandshakeObserver<ServerHandshake> observer) {
     observerList.remove(observer);
   }
 
@@ -613,7 +635,7 @@ public class ServerHandshake implements Handshake, MessageHandler {
     for (var observer : observerList) observer.onCompleted(this);
   }
 
-  @Override
+  /** Starts the handshake process. */
   public void startHandshake() {
     setCurrentState(State.AwaitingClientInit);
   }
