@@ -95,7 +95,6 @@ public class CipherUtil {
       return encodedPublicKeyText(publicKey());
     }
   }
-  ;
 
   public static CipherUtil.Key fromPublicPrivatePair(File publicKeyFile, File privateKeyFile)
       throws IOException,

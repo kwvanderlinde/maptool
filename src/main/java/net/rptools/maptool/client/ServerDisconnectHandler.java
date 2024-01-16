@@ -15,8 +15,6 @@
 package net.rptools.maptool.client;
 
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.concurrent.ExecutionException;
 import net.rptools.clientserver.simple.DisconnectHandler;
 import net.rptools.clientserver.simple.connection.Connection;
@@ -66,11 +64,7 @@ public class ServerDisconnectHandler implements DisconnectHandler {
       MapTool.getFrame().getToolbarPanel().setTokenSelectionGroupEnabled(true);
       try {
         MapTool.startPersonalServer(CampaignFactory.createBasicCampaign());
-      } catch (IOException
-          | NoSuchAlgorithmException
-          | InvalidKeySpecException
-          | ExecutionException
-          | InterruptedException e) {
+      } catch (IOException | ExecutionException | InterruptedException e) {
         MapTool.showError(I18N.getText("msg.error.server.cantrestart"), e);
       }
     } else if (!MapTool.isPersonalServer()) {

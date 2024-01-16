@@ -40,8 +40,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URL;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import javax.imageio.ImageIO;
@@ -180,13 +178,9 @@ public class MapTool {
   private static String loadCampaignOnStartPath = "";
 
   static {
-    try {
-      final var player = new LocalPlayer();
-      server = new PersonalServer(player);
-      client = new MapToolClient(player, server);
-    } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-      throw new RuntimeException("Unable to create default personal server", e);
-    }
+    final var player = new LocalPlayer();
+    server = new PersonalServer(player);
+    client = new MapToolClient(player, server);
   }
 
   public static Dimension getThumbnailSize() {
@@ -1067,11 +1061,7 @@ public class MapTool {
   }
 
   public static void startPersonalServer(Campaign campaign)
-      throws IOException,
-          NoSuchAlgorithmException,
-          InvalidKeySpecException,
-          ExecutionException,
-          InterruptedException {
+      throws IOException, ExecutionException, InterruptedException {
     final var player = new LocalPlayer();
     server = new PersonalServer(player);
     client = new MapToolClient(player, server);

@@ -2306,11 +2306,7 @@ public class AppActions {
                 if (failed) {
                   try {
                     MapTool.startPersonalServer(campaign);
-                  } catch (IOException
-                      | NoSuchAlgorithmException
-                      | InvalidKeySpecException
-                      | ExecutionException
-                      | InterruptedException e) {
+                  } catch (IOException | ExecutionException | InterruptedException e) {
                     MapTool.showError("msg.error.failedStartPersonalServer", e);
                   }
                 }
@@ -2406,11 +2402,7 @@ public class AppActions {
                   MapTool.getFrame().hideGlassPane();
                   try {
                     MapTool.startPersonalServer(oldCampaign);
-                  } catch (IOException
-                      | NoSuchAlgorithmException
-                      | InvalidKeySpecException
-                      | ExecutionException
-                      | InterruptedException e) {
+                  } catch (IOException | ExecutionException | InterruptedException e) {
                     MapTool.showError("msg.error.failedStartPersonalServer", e);
                   }
                 }
@@ -2456,11 +2448,7 @@ public class AppActions {
 
     try {
       MapTool.startPersonalServer(campaign);
-    } catch (IOException
-        | NoSuchAlgorithmException
-        | InvalidKeySpecException
-        | ExecutionException
-        | InterruptedException e) {
+    } catch (IOException | ExecutionException | InterruptedException e) {
       MapTool.showError("msg.error.failedStartPersonalServer", e);
     }
   }
