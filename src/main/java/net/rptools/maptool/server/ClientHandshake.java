@@ -72,8 +72,7 @@ public class ClientHandshake implements MessageHandler {
   private final LocalPlayer player;
 
   /** Observers that want to be notified when the status changes. */
-  private final List<HandshakeObserver<ClientHandshake>> observerList =
-      new CopyOnWriteArrayList<>();
+  private final List<Runnable> onCompleteList = new CopyOnWriteArrayList<>();
 
   /** Message for any error that has occurred, {@code null} if no error has occurred. */
   private String errorMessage;
@@ -375,24 +374,15 @@ public class ClientHandshake implements MessageHandler {
    *
    * @param observer the observer of the handshake process.
    */
-  public void addObserver(HandshakeObserver<ClientHandshake> observer) {
-    observerList.add(observer);
-  }
-
-  /**
-   * Removes an observer from the handshake process.
-   *
-   * @param observer the observer of the handshake process.
-   */
-  public void removeObserver(HandshakeObserver<ClientHandshake> observer) {
-    observerList.remove(observer);
+  public void onComplete(Runnable observer) {
+    onCompleteList.add(observer);
   }
 
   /** Notifies observers that the handshake has completed or errored out.. */
   private void notifyObservers() {
     SwingUtilities.invokeLater(this::closeEasyConnectDialog);
-    for (var observer : observerList) {
-      observer.onCompleted(this);
+    for (var observer : onCompleteList) {
+      observer.run();
     }
   }
 

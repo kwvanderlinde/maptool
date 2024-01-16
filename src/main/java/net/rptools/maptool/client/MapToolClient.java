@@ -114,8 +114,8 @@ public class MapToolClient {
     final var handshake = new ClientHandshake(this.connection, player);
 
     connection.addMessageHandler(handshake);
-    handshake.addObserver(
-        (ignore) -> {
+    handshake.onComplete(
+        () -> {
           connection.removeMessageHandler(handshake);
           if (handshake.isSuccessful()) {
             for (final var callback : onConnectionCompleted) {
