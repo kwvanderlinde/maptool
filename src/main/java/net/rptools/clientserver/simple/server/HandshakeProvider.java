@@ -20,5 +20,5 @@ import net.rptools.maptool.server.ServerHandshake;
 public interface HandshakeProvider {
   ServerHandshake getConnectionHandshake(Connection conn);
 
-  void releaseHandshake(ServerHandshake conn);
+  void releaseHandshake(ServerHandshake handshake);
 }

@@ -34,8 +34,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * @author trevor
  */
-public class MapToolServerConnection
-    implements ServerObserver, HandshakeProvider, HandshakeObserver<ServerHandshake> {
+public class MapToolServerConnection implements ServerObserver, HandshakeObserver<ServerHandshake> {
   private static final Logger log = LogManager.getLogger(MapToolServerConnection.class);
   private final Map<String, Player> playerMap = new ConcurrentHashMap<>();
   private final MapToolServer server;
@@ -47,28 +46,12 @@ public class MapToolServerConnection
       MapToolServer server, ServerSidePlayerDatabase playerDatabase, ServerMessageHandler handler)
       throws IOException {
     this.connection =
-        ConnectionFactory.getInstance().createServer(server.getConfig(), this, handler);
+        ConnectionFactory.getInstance()
+            .createServer(server.getConfig(), new MapToolHandshakeProvider(), handler);
     this.server = server;
     this.playerDatabase = playerDatabase;
     this.useEasyConnect = server.getConfig().getUseEasyConnect();
     addObserver(this);
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see net.rptools.clientserver.simple.server.ServerConnection# handleConnectionHandshake(java.net.Socket)
-   */
-  public ServerHandshake getConnectionHandshake(Connection conn) {
-    var handshake = new ServerHandshake(server, conn, playerDatabase, useEasyConnect);
-    handshake.addObserver(this);
-    conn.addMessageHandler(handshake);
-    return handshake;
-  }
-
-  @Override
-  public void releaseHandshake(ServerHandshake handshake) {
-    handshake.getConnection().removeMessageHandler(handshake);
   }
 
   public Player getPlayer(String id) {
@@ -193,6 +176,21 @@ public class MapToolServerConnection
     } else {
       var exception = handshake.getException();
       if (exception != null) log.error("Handshake failure: " + exception, exception);
+    }
+  }
+
+  private final class MapToolHandshakeProvider implements HandshakeProvider {
+    @Override
+    public ServerHandshake getConnectionHandshake(Connection conn) {
+      var handshake = new ServerHandshake(server, conn, playerDatabase, useEasyConnect);
+      handshake.addObserver(MapToolServerConnection.this);
+      conn.addMessageHandler(handshake);
+      return handshake;
+    }
+
+    @Override
+    public void releaseHandshake(ServerHandshake handshake) {
+      handshake.getConnection().removeMessageHandler(handshake);
     }
   }
 }
