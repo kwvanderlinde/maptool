@@ -139,7 +139,7 @@ public abstract class AbstractServer
   public void onCompleted(ServerHandshake handshake) {
     handshake.removeObserver(this);
     var conn = handshake.getConnection();
-    handshakeProvider.releaseHandshake(conn);
+    handshakeProvider.releaseHandshake(handshake);
     if (handshake.isSuccessful()) {
       conn.addMessageHandler(messageHandler);
       conn.addDisconnectHandler(this);

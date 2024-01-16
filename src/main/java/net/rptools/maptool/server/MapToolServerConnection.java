@@ -38,7 +38,6 @@ public class MapToolServerConnection
     implements ServerObserver, HandshakeProvider, HandshakeObserver<ServerHandshake> {
   private static final Logger log = LogManager.getLogger(MapToolServerConnection.class);
   private final Map<String, Player> playerMap = new ConcurrentHashMap<>();
-  private final Map<Connection, ServerHandshake> handshakeMap = new ConcurrentHashMap<>();
   private final MapToolServer server;
   private final Server connection;
   private final ServerSidePlayerDatabase playerDatabase;
@@ -62,17 +61,14 @@ public class MapToolServerConnection
    */
   public ServerHandshake getConnectionHandshake(Connection conn) {
     var handshake = new ServerHandshake(server, conn, playerDatabase, useEasyConnect);
-    handshakeMap.put(conn, handshake);
     handshake.addObserver(this);
     conn.addMessageHandler(handshake);
     return handshake;
   }
 
   @Override
-  public void releaseHandshake(Connection conn) {
-    var handshake = handshakeMap.get(conn);
-    handshakeMap.remove(conn);
-    conn.removeMessageHandler(handshake);
+  public void releaseHandshake(ServerHandshake handshake) {
+    handshake.getConnection().removeMessageHandler(handshake);
   }
 
   public Player getPlayer(String id) {
