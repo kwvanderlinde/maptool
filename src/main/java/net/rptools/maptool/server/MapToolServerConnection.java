@@ -42,6 +42,33 @@ public class MapToolServerConnection {
   private final ServerSidePlayerDatabase playerDatabase;
   private final boolean useEasyConnect;
 
+  // TODO It seems to me that the only reason for MapToolServerConnection to be a HandshakeProvider
+  //  is so that it can register a completion handler on the Handshake. But surely that can be done
+  //  just as well by adding handshake observation to ServerObserver, allowing registration?
+  // TODO It is similarly wierd that MapToolServerConnection maintains references to both the
+  //  MapToolServer and the Server. I would expect some directionality here. Worse than that,
+  //  MapToolServerConnection maintains some server state and logic, (player map, player database)
+  //  and connection logic (handhsakeMap), so what is being gained by separating MapToolServer and
+  //  MapToolServerConnection?
+  // TODO Okay, with the observers split out, it is starting to look to me like most of this
+  //  rigamorole is about updating the player map... and that's it. What confuses me now is that I
+  //  would have expected the player map to be the responsibility of the player database, given that
+  //  it maintains the set of connected players.
+  // TODO My next thinkado is that AbstractServer should actually have no knowledge of handshakes.
+  //  AbstractServer should be a general implementations of a server, and should only care about
+  //  connection-level handshakes (WEbRTC, TCP, etc). The MapTool-specific code should - once a
+  //  connection is established - then execute a handshake _over_ the connection. I.e., the flow
+  //  would be more akin to this:
+  //  1. AbstractServer implementation is started and listens for connections.
+  //  2. Request to connect comes in (via socket or WebRTC). Network-level handshake is performed to
+  //     establish the connection.
+  //  3. AbstractServer sends `connectionAdded` events to listeners (including MapToolServer).
+  //  4. MapToolServer registers a `ServerHandshake` as a `MessageHandler` on the connection.
+  //  5. Once the hashshake completes, MapToolServer removes the `ServerHandshake` `MessageHandler`
+  //     and replaces it with a `ServerMessageHandler`.
+  //  Only after (5) would MapTool consider the player connected, even though an underlying
+  //  connection was established in (2).
+
   public MapToolServerConnection(
       MapToolServer server, ServerSidePlayerDatabase playerDatabase, ServerMessageHandler handler)
       throws IOException {
