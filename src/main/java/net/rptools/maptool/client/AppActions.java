@@ -31,7 +31,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
@@ -2293,9 +2292,7 @@ public class AppActions {
                     | InvalidAlgorithmParameterException
                     | InvalidKeySpecException
                     | NoSuchPaddingException
-                    | InvalidKeyException
-                    | ExecutionException
-                    | InterruptedException e) {
+                    | InvalidKeyException e) {
                   MapTool.showError("msg.error.initializeCrypto", e);
                   failed = true;
                 } catch (PasswordDatabaseException pwde) {
@@ -2306,7 +2303,7 @@ public class AppActions {
                 if (failed) {
                   try {
                     MapTool.startPersonalServer(campaign);
-                  } catch (IOException | ExecutionException | InterruptedException e) {
+                  } catch (IOException e) {
                     MapTool.showError("msg.error.failedStartPersonalServer", e);
                   }
                 }
@@ -2391,10 +2388,7 @@ public class AppActions {
                 } catch (IOException e1) {
                   MapTool.showError("msg.error.failedLoadCampaign", e1);
                   failed = true;
-                } catch (NoSuchAlgorithmException
-                    | InvalidKeySpecException
-                    | ExecutionException
-                    | InterruptedException e1) {
+                } catch (NoSuchAlgorithmException | InvalidKeySpecException e1) {
                   MapTool.showError("msg.error.initializeCrypto", e1);
                   failed = true;
                 }
@@ -2402,7 +2396,7 @@ public class AppActions {
                   MapTool.getFrame().hideGlassPane();
                   try {
                     MapTool.startPersonalServer(oldCampaign);
-                  } catch (IOException | ExecutionException | InterruptedException e) {
+                  } catch (IOException e) {
                     MapTool.showError("msg.error.failedStartPersonalServer", e);
                   }
                 }
@@ -2448,7 +2442,7 @@ public class AppActions {
 
     try {
       MapTool.startPersonalServer(campaign);
-    } catch (IOException | ExecutionException | InterruptedException e) {
+    } catch (IOException e) {
       MapTool.showError("msg.error.failedStartPersonalServer", e);
     }
   }

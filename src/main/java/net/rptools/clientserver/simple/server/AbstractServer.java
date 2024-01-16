@@ -14,8 +14,8 @@
  */
 package net.rptools.clientserver.simple.server;
 
+import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import net.rptools.clientserver.simple.DisconnectHandler;
 import net.rptools.clientserver.simple.MessageHandler;
 import net.rptools.clientserver.simple.connection.Connection;
@@ -129,7 +129,7 @@ public abstract class AbstractServer implements DisconnectHandler, Server, Hands
     fireClientDisconnect(conn);
   }
 
-  protected void handleConnection(Connection conn) throws ExecutionException, InterruptedException {
+  protected void handleConnection(Connection conn) throws IOException {
     var handshake = handshakeProvider.getConnectionHandshake(conn);
     handshake.addObserver(this);
     // Make sure the client is allowed

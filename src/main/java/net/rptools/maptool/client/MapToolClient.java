@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
 import net.rptools.clientserver.ActivityListener;
 import net.rptools.clientserver.ConnectionFactory;
@@ -111,7 +110,7 @@ public class MapToolClient {
     connection.addActivityListener(listener);
   }
 
-  public void start() throws IOException, ExecutionException, InterruptedException {
+  public void start() throws IOException {
     final var handshake = new ClientHandshake(this.connection, player);
 
     connection.addMessageHandler(handshake);

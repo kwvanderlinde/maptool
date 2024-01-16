@@ -41,7 +41,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
@@ -890,7 +889,7 @@ public class MapTool {
       ServerSidePlayerDatabase playerDatabase,
       boolean copyCampaign,
       LocalPlayer player)
-      throws IOException, ExecutionException, InterruptedException {
+      throws IOException {
     if (server != null) {
       Thread.dumpStack();
       showError("msg.error.alreadyRunningServer");
@@ -1060,8 +1059,7 @@ public class MapTool {
     return client.getPlayer();
   }
 
-  public static void startPersonalServer(Campaign campaign)
-      throws IOException, ExecutionException, InterruptedException {
+  public static void startPersonalServer(Campaign campaign) throws IOException {
     final var player = new LocalPlayer();
     server = new PersonalServer(player);
     client = new MapToolClient(player, server);
@@ -1073,7 +1071,7 @@ public class MapTool {
   }
 
   public static void createConnection(ServerConfig config, LocalPlayer player, Runnable onCompleted)
-      throws IOException, ExecutionException, InterruptedException {
+      throws IOException {
     client = new MapToolClient(player, config);
 
     MapTool.getFrame().getCommandPanel().clearAllIdentities();

@@ -14,7 +14,7 @@
  */
 package net.rptools.maptool.server;
 
-import java.util.concurrent.ExecutionException;
+import java.io.IOException;
 import net.rptools.clientserver.simple.MessageHandler;
 import net.rptools.clientserver.simple.connection.Connection;
 import net.rptools.maptool.model.player.Player;
@@ -74,8 +74,7 @@ public interface Handshake extends MessageHandler {
   /**
    * Starts the handshake process.
    *
-   * @throws ExecutionException when there is an exception in the background task.
-   * @throws InterruptedException when the background task is interrupted.
+   * @throws IOException when there is an exception initiating the handshake.
    */
-  void startHandshake() throws ExecutionException, InterruptedException;
+  void startHandshake() throws IOException;
 }

@@ -116,8 +116,15 @@ public class ClientHandshake implements Handshake, MessageHandler {
   }
 
   @Override
-  public void startHandshake() throws ExecutionException, InterruptedException {
-    var md5key = CipherUtil.publicKeyMD5(new PublicPrivateKeyStore().getKeys().get().publicKey());
+  public void startHandshake() throws IOException {
+    CipherUtil.Key key;
+    try {
+      key = new PublicPrivateKeyStore().getKeys().get();
+    } catch (ExecutionException | InterruptedException e) {
+      throw new IOException(e);
+    }
+
+    var md5key = CipherUtil.publicKeyMD5(key.publicKey());
     var clientInitMsg =
         ClientInitMsg.newBuilder()
             .setPlayerName(player.getName())
@@ -208,8 +215,7 @@ public class ClientHandshake implements Handshake, MessageHandler {
     }
   }
 
-  private void handle(PublicKeyAddedMsg publicKeyAddedMsg)
-      throws ExecutionException, InterruptedException {
+  private void handle(PublicKeyAddedMsg publicKeyAddedMsg) throws IOException {
     SwingUtilities.invokeLater(this::closeEasyConnectDialog);
     startHandshake();
   }

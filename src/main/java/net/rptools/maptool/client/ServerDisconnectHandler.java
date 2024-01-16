@@ -15,7 +15,6 @@
 package net.rptools.maptool.client;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 import net.rptools.clientserver.simple.DisconnectHandler;
 import net.rptools.clientserver.simple.connection.Connection;
 import net.rptools.maptool.client.ui.ConnectionStatusPanel;
@@ -64,7 +63,7 @@ public class ServerDisconnectHandler implements DisconnectHandler {
       MapTool.getFrame().getToolbarPanel().setTokenSelectionGroupEnabled(true);
       try {
         MapTool.startPersonalServer(CampaignFactory.createBasicCampaign());
-      } catch (IOException | ExecutionException | InterruptedException e) {
+      } catch (IOException e) {
         MapTool.showError(I18N.getText("msg.error.server.cantrestart"), e);
       }
     } else if (!MapTool.isPersonalServer()) {
