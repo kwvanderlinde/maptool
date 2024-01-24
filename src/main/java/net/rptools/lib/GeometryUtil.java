@@ -15,6 +15,7 @@
 package net.rptools.lib;
 
 import java.awt.geom.Area;
+import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -106,6 +107,10 @@ public class GeometryUtil {
     }
 
     return areas.getFirst();
+  }
+
+  public static PathIterator getFlattenedPathIterator(Area area) {
+    return area.getPathIterator(null, 1 / precisionModel.getScale());
   }
 
   public static PrecisionModel getPrecisionModel() {

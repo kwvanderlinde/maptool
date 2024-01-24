@@ -25,9 +25,8 @@ import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiConsumer;
+import net.rptools.lib.GeometryUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
@@ -358,11 +357,7 @@ public class Topology_Functions extends AbstractFunction {
       return getAreaPoints(topologyArea);
     } else {
       // Build separate objects for each area.
-      JsonArray allShapes = new JsonArray();
-      var areaShape = getAreaShapeObject(topologyArea);
-      if (areaShape != null) {
-        allShapes.add(areaShape);
-      }
+      JsonArray allShapes = getAreaShapeObjects(topologyArea);
       return allShapes.toString();
     }
   }
@@ -407,10 +402,7 @@ public class Topology_Functions extends AbstractFunction {
     JsonArray allShapes = new JsonArray();
     Area topologyArea = token.getTopology(topologyType);
     if (topologyArea != null) {
-      var areaShape = getAreaShapeObject(topologyArea);
-      if (areaShape != null) {
-        allShapes.add(areaShape);
-      }
+      allShapes = getAreaShapeObjects(topologyArea);
     }
     return allShapes;
   }
@@ -1157,81 +1149,60 @@ public class Topology_Functions extends AbstractFunction {
     return area;
   }
 
-  private JsonObject getAreaShapeObject(Area area) {
-    // Each shape will be its own json object which each object contains an  array of x,y coords
-    JsonObject polygon = new JsonObject();
+  private JsonArray getAreaShapeObjects(Area area) {
+    final JsonArray result = new JsonArray();
 
+    // Each shape will be its own json object which each object contains an array of x,y coords
+    JsonObject polygon = new JsonObject();
     polygon.addProperty("generated", 1);
     polygon.addProperty("shape", "polygon");
     polygon.addProperty("fill", 1);
     polygon.addProperty("close", 1);
     polygon.addProperty("thickness", 0);
-
     JsonArray points = new JsonArray();
-    consumeAreaPoints(
-        area,
-        (x, y) -> {
-          var point = new JsonObject();
-          point.addProperty("x", x);
-          point.addProperty("y", y);
-          points.add(point);
-        });
-    if (points.isEmpty()) {
-      return null;
-    }
     polygon.add("points", points);
 
-    return polygon;
+    final PathIterator pi = GeometryUtil.getFlattenedPathIterator(area);
+    final double[] coords = new double[6];
+    while (!pi.isDone()) {
+      // The path iterator is flattened, so no cubic or quad segments.
+      switch (pi.currentSegment(coords)) {
+        case PathIterator.SEG_MOVETO, PathIterator.SEG_LINETO -> {
+          var point = new JsonObject();
+          point.addProperty("x", coords[0]);
+          point.addProperty("y", coords[1]);
+          points.add(point);
+        }
+        case PathIterator.SEG_CLOSE -> {
+          result.add(polygon.deepCopy());
+          // Start a fresh points list for the new polygon
+          points = new JsonArray();
+          polygon.add("points", points);
+        }
+      }
+      pi.next();
+    }
+
+    return result;
   }
 
   private JsonArray getAreaPoints(Area area) {
     JsonArray allPoints = new JsonArray();
-    consumeAreaPoints(
-        area,
-        (x, y) -> {
-          allPoints.add(x);
-          allPoints.add(y);
-        });
-    return allPoints;
-  }
 
-  private void consumeAreaPoints(Area area, BiConsumer<Double, Double> pointConsumer) {
-    ArrayList<double[]> areaPoints = new ArrayList<>();
-    double[] coords = new double[6];
-
-    for (PathIterator pi = area.getPathIterator(null); !pi.isDone(); pi.next()) {
-      // The type will be SEG_LINETO, SEG_MOVETO, or SEG_CLOSE
-      // Because the Area is composed of straight lines
-      int type = pi.currentSegment(coords);
-
-      // We record a double array of {segment type, x coord, y coord}
-      double[] pathIteratorCoords = {type, coords[0], coords[1]};
-      areaPoints.add(pathIteratorCoords);
-    }
-    // Now that we have the Area defined as commands, lets record the points
-
-    double[] defaultPos = null;
-    double[] moveTo = null;
-
-    for (double[] currentElement : areaPoints) {
-      // Make the lines
-      if (currentElement[0] == PathIterator.SEG_MOVETO) {
-        if (defaultPos == null) {
-          defaultPos = currentElement;
-        } else {
-          pointConsumer.accept(defaultPos[1], defaultPos[2]);
+    final PathIterator pi = GeometryUtil.getFlattenedPathIterator(area);
+    final double[] coords = new double[6];
+    while (!pi.isDone()) {
+      // The path iterator is flattened, so no cubic or quad segments.
+      switch (pi.currentSegment(coords)) {
+        case PathIterator.SEG_MOVETO, PathIterator.SEG_LINETO -> {
+          allPoints.add(coords[0]);
+          allPoints.add(coords[1]);
         }
-        moveTo = currentElement;
-
-        pointConsumer.accept(currentElement[1], currentElement[2]);
-      } else if (currentElement[0] == PathIterator.SEG_LINETO) {
-        pointConsumer.accept(currentElement[1], currentElement[2]);
-      } else if (currentElement[0] == PathIterator.SEG_CLOSE) {
-        pointConsumer.accept(moveTo[1], moveTo[2]);
-      } else {
-        // System.out.println("in getAreaPoints(): found a curve, ignoring");
       }
+      pi.next();
     }
+
+    return allPoints;
   }
 
   /**
