@@ -32,8 +32,8 @@ apply plugin: 'com.google.protobuf'
 
 // Definitions
 defaultTasks 'clean', 'build'
-sourceCompatibility = 16
-targetCompatibility = 16
+sourceCompatibility = 21
+targetCompatibility = 21
 def grpcVersion = '1.39.0'
 def protobufVersion = '3.17.3'
 def protocVersion = protobufVersion
