@@ -29,7 +29,7 @@ import org.apache.logging.log4j.Logger;
 
 public class HTMLPanelImageCache extends Dictionary<URL, Image> {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(HTMLPanelImageCache.class);
 
   private final Map<String, Image> imageMap = new HashMap<String, Image>();
 

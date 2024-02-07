@@ -64,7 +64,7 @@ public abstract class Grid implements Cloneable {
   public static final int MIN_GRID_SIZE = 9;
 
   public static final int MAX_GRID_SIZE = 350;
-  protected static final Logger log = LogManager.getLogger();
+  protected static final Logger log = LogManager.getLogger(Grid.class);
   protected static final int CIRCLE_SEGMENTS = 60;
 
   private static final Dimension NO_DIM = new Dimension();

@@ -54,7 +54,7 @@ import org.locationtech.jts.util.GeometricShapeFactory;
  */
 public class TokenVBL {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(TokenVBL.class);
   private static int sliceSize = 100;
 
   /**

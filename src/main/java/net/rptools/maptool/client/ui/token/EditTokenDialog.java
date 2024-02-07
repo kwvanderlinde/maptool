@@ -121,7 +121,7 @@ public class EditTokenDialog extends AbeillePanel<Token> {
   /** The size used to constrain the icon. */
   public static final int SIZE = 64;
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(EditTokenDialog.class);
   private static final long serialVersionUID = 1295729281890170792L;
   private static final ImageIcon REFRESH_ICON_ON =
       new ImageIcon(

@@ -56,7 +56,7 @@ import org.apache.logging.log4j.Logger;
 
 public class TokenVblPanel extends JPanel {
 
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(TokenVblPanel.class);
 
   private final EditTokenDialog editTokenDialog;
   private Token token;

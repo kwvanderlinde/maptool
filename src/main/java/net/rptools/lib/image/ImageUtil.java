@@ -44,7 +44,7 @@ import org.apache.logging.log4j.Logger;
 
 /** @author trevor */
 public class ImageUtil {
-  private static final Logger log = LogManager.getLogger();
+  private static final Logger log = LogManager.getLogger(ImageUtil.class);
 
   public static final String HINT_TRANSPARENCY = "hintTransparency";
 
