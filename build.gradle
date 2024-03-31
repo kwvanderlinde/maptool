@@ -23,6 +23,7 @@ plugins {
     id 'org.beryx.runtime' version '1.13.0'
     id "com.google.protobuf" version "0.9.4"
     id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'jacoco'
 }
 
 // Definitions
@@ -616,6 +617,14 @@ javadoc {
 
 test {
     useJUnitPlatform()
+}
+
+test {
+    finalizedBy jacocoTestReport // report is always generated after tests run
+}
+
+jacocoTestReport {
+    dependsOn test // tests are required to run before generating the report
 }
 
 task createWrapper(type: Wrapper) {
