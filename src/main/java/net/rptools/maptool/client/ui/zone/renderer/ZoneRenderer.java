@@ -33,6 +33,7 @@ import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import net.rptools.lib.CodeTimer;
@@ -1005,7 +1006,7 @@ public class ZoneRenderer extends JComponent
       List<Token> background = zone.getTokensOnLayer(Layer.BACKGROUND, false);
       if (!background.isEmpty()) {
         timer.start("tokensBackground");
-        renderTokens(g2d, background, view, false);
+        renderTokens(g2d, Layer.BACKGROUND, background, view, false);
         timer.stop("tokensBackground");
       }
     }
@@ -1028,7 +1029,7 @@ public class ZoneRenderer extends JComponent
       List<Token> stamps = zone.getTokensOnLayer(Layer.OBJECT, false);
       if (!stamps.isEmpty()) {
         timer.start("tokensStamp");
-        renderTokens(g2d, stamps, view, false);
+        renderTokens(g2d, Layer.OBJECT, stamps, view, false);
         timer.stop("tokensStamp");
       }
     }
@@ -1079,14 +1080,14 @@ public class ZoneRenderer extends JComponent
         List<Token> stamps = zone.getTokensOnLayer(Layer.GM, false);
         if (!stamps.isEmpty()) {
           timer.start("tokensGM");
-          renderTokens(g2d, stamps, view, false);
+          renderTokens(g2d, Layer.GM, stamps, view, false);
           timer.stop("tokensGM");
         }
       }
       List<Token> tokens = zone.getTokensOnLayer(Layer.TOKEN, false);
       if (!tokens.isEmpty()) {
         timer.start("tokens");
-        renderTokens(g2d, tokens, view, false);
+        renderTokens(g2d, Layer.TOKEN, tokens, view, false);
         timer.stop("tokens");
       }
       timer.start("unowned movement");
@@ -1131,7 +1132,7 @@ public class ZoneRenderer extends JComponent
       List<Token> vblTokens = zone.getTokensAlwaysVisible();
       if (!vblTokens.isEmpty()) {
         timer.start("tokens - always visible");
-        renderTokens(g2d, vblTokens, view, true);
+        renderTokens(g2d, null, vblTokens, view, true);
         timer.stop("tokens - always visible");
       }
 
@@ -1142,7 +1143,7 @@ public class ZoneRenderer extends JComponent
       sortedTokens.sort(zone.getFigureZOrderComparator());
       if (!tokens.isEmpty()) {
         timer.start("tokens - figures");
-        renderTokens(g2d, sortedTokens, view, true);
+        renderTokens(g2d, null, sortedTokens, view, true);
         timer.stop("tokens - figures");
       }
 
@@ -2089,8 +2090,24 @@ public class ZoneRenderer extends JComponent
   }
 
   protected void renderTokens(
-      Graphics2D g, List<Token> tokenList, PlayerView view, boolean figuresOnly) {
+      Graphics2D g,
+      @Nullable Layer zoneLayer,
+      List<Token> tokenList,
+      PlayerView view,
+      boolean figuresOnly) {
     final var timer = CodeTimer.get();
+
+    if (tokenList.isEmpty()) {
+      // This early return was not in the original, but all callers guard this anyways so it is not
+      // a change in behaviour. Saves some checks later on.
+      return;
+    }
+
+    if (zoneLayer == null) {
+      // Infer layer from the first token. Used for over-VBL and Figure tokens, though really those
+      // should still be split by layer or have custom rendering, or what have you.
+      zoneLayer = tokenList.getFirst().getLayer();
+    }
 
     Graphics2D clippedG = g;
     var imageLabelFactory = new FlatImageLabelFactory();
@@ -2101,8 +2118,7 @@ public class ZoneRenderer extends JComponent
     if (!isGMView
         // TODO Should we actually check zoneView.isUsingVision() for parity with later checks?
         && visibleScreenArea != null
-        && !tokenList.isEmpty()
-        && tokenList.get(0).getLayer().supportsVision()) {
+        && zoneLayer.supportsVision()) {
       clippedG = (Graphics2D) g.create();
 
       Area visibleArea = new Area(g.getClipBounds());
@@ -2120,8 +2136,7 @@ public class ZoneRenderer extends JComponent
     Set<GUID> tempVisTokens = new HashSet<GUID>();
 
     // calculations
-    boolean calculateStacks =
-        !tokenList.isEmpty() && tokenList.get(0).getLayer().isTokenLayer() && tokenStackMap == null;
+    boolean calculateStacks = zoneLayer.isTokenLayer() && tokenStackMap == null;
     if (calculateStacks) {
       tokenStackMap = new HashMap<Token, Set<Token>>();
     }
@@ -2826,8 +2841,9 @@ public class ZoneRenderer extends JComponent
 
     timer.start("tokenlist-13");
     // Stacks
-    // TODO: find a cleaner way to indicate token layer
-    if (!tokenList.isEmpty() && tokenList.get(0).getLayer().isTokenLayer()) {
+    // TODO: find a cleaner way to indicate token layer.
+    // TODO Can we not just check the calculateStacks flag here?
+    if (zoneLayer.isTokenLayer()) {
       boolean hideTSI = AppPreferences.getHideTokenStackIndicator();
       if (tokenStackMap != null
           && !hideTSI) { // FIXME Needed to prevent NPE but how can it be null?
