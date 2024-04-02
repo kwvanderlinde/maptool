@@ -61,90 +61,99 @@ public class ResourceFunction extends AbstractFunction {
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
     if (functionName.equalsIgnoreCase("getResourceURI")) {
-      // TODO Library names are not unique. I don't accept that this is a good interface.
-      //  Perhaps a better alternative (for this and getGlobbedResourceURIs) is to have a separate
-      //  function for getting resource library IDs, and then use the ID when building resource
-      //  URIs.
       FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
-
-      final String resourceLibraryName = parameters.get(0).toString();
-      final String path = StringUtils.stripStart(parameters.get(1).toString(), "/");
-
-      // TOOD Incorporate an ephemeral nonce.
-
-      return String.format(
-          "resource://%s/%s", URLEncoder.encode(resourceLibraryName, StandardCharsets.UTF_8), path);
+      return getResourceURI(parameters.get(0).toString(), parameters.get(1).toString());
     } else if (functionName.equalsIgnoreCase("getGlobbedResourceURIs")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
-
-      final String resourceLibraryName = parameters.get(0).toString();
-      final String glob = StringUtils.stripStart(parameters.get(1).toString(), "/");
-      final var result = new ArrayList<String>();
-
-      final var globPath = Paths.get(glob);
-      int i;
-      final var n = globPath.getNameCount();
-      final var pattern = Pattern.compile(".*?[*?\\[\\]{}].*");
-      // Only to n-1 because we don't want the top path to take the last component in case it is
-      // actually a direct reference to a single file instead of a glob. Saves some case work later.
-      for (i = 0; i < n - 1; ++i) {
-        final var name = globPath.getName(i);
-        if (pattern.matcher(name.toString()).matches()) {
-          break;
-        }
-      }
-      final var globTopPath = (i == 0) ? null : globPath.subpath(0, i);
-      // TODO I don't actually need to modify the glob... might not be worth it.
-      final var newGlob = globTopPath == null ? glob : globPath.subpath(i, n).toString();
-
-      for (final var library :
-          MapTool.getResourceLibraryManager().getLibrariesByName(resourceLibraryName)) {
-        final var rootDir =
-            ((globTopPath == null) ? library.path() : library.path().resolve(globTopPath))
-                .normalize();
-        if (!rootDir.startsWith(library.path())) {
-          // Trying to escape. That's no good.
-          log.error("Glob {} escapes the library root {}", glob, library.path());
-          continue;
-        }
-
-        final var matchedPaths = new ArrayList<Path>();
-        try {
-          final var pathMatcher = rootDir.getFileSystem().getPathMatcher("glob:" + newGlob);
-          Files.walkFileTree(
-              rootDir,
-              new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                    throws IOException {
-                  // Glob doesn't include the top directories anymore, so relativize relative to the
-                  // new glob root.
-                  if (pathMatcher.matches(rootDir.relativize(file))) {
-                    // Results should be relative to the library root, not the new glob root.
-                    matchedPaths.add(library.path().relativize(file));
-                  }
-                  return FileVisitResult.CONTINUE;
-                }
-              });
-        } catch (Exception e) {
-          log.error(e);
-          throw new ParserException(e);
-        }
-
-        for (final var path : matchedPaths) {
-          final var uri =
-              String.format(
-                  "resource://%s/%s-%d/%s",
-                  URLEncoder.encode(MapTool.getClientId(), StandardCharsets.UTF_8),
-                  URLEncoder.encode(library.name(), StandardCharsets.UTF_8),
-                  library.id(),
-                  path);
-          result.add(uri);
-        }
-      }
-
+      final var result =
+          getGlobbedResourceURIs(parameters.get(0).toString(), parameters.get(1).toString());
       return FunctionUtil.delimitedResult("json", result);
     }
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));
+  }
+
+  private String getResourceURI(String resourceLibraryName, String path) throws ParserException {
+    // TODO Library names are not unique. I don't accept that this is a good interface.
+    //  Perhaps a better alternative (for this and getGlobbedResourceURIs) is to have a separate
+    //  function for getting resource library IDs, and then use the ID when building resource
+    //  URIs.
+
+    path = StringUtils.stripStart(path, "/");
+
+    // TOOD Incorporate an ephemeral nonce.
+
+    return String.format(
+        "resource://%s/%s", URLEncoder.encode(resourceLibraryName, StandardCharsets.UTF_8), path);
+  }
+
+  private List<String> getGlobbedResourceURIs(String resourceLibraryName, String glob)
+      throws ParserException {
+    glob = StringUtils.stripStart(glob, "/");
+
+    final var result = new ArrayList<String>();
+
+    final var globPath = Paths.get(glob);
+    int i;
+    final var n = globPath.getNameCount();
+    final var pattern = Pattern.compile(".*?[*?\\[\\]{}].*");
+    // Only to n-1 because we don't want the top path to take the last component in case it is
+    // actually a direct reference to a single file instead of a glob. Saves some case work later.
+    for (i = 0; i < n - 1; ++i) {
+      final var name = globPath.getName(i);
+      if (pattern.matcher(name.toString()).matches()) {
+        break;
+      }
+    }
+    final var globTopPath = (i == 0) ? null : globPath.subpath(0, i);
+    // TODO I don't actually need to modify the glob... might not be worth it.
+    final var newGlob = globTopPath == null ? glob : globPath.subpath(i, n).toString();
+
+    for (final var library :
+        MapTool.getResourceLibraryManager().getLibrariesByName(resourceLibraryName)) {
+      final var rootDir =
+          ((globTopPath == null) ? library.path() : library.path().resolve(globTopPath))
+              .normalize();
+      if (!rootDir.startsWith(library.path())) {
+        // Trying to escape. That's no good.
+        log.error("Glob {} escapes the library root {}", glob, library.path());
+        continue;
+      }
+
+      final var matchedPaths = new ArrayList<Path>();
+      try {
+        final var pathMatcher = rootDir.getFileSystem().getPathMatcher("glob:" + newGlob);
+        Files.walkFileTree(
+            rootDir,
+            new SimpleFileVisitor<Path>() {
+              @Override
+              public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                  throws IOException {
+                // Glob doesn't include the top directories anymore, so relativize relative to the
+                // new glob root.
+                if (pathMatcher.matches(rootDir.relativize(file))) {
+                  // Results should be relative to the library root, not the new glob root.
+                  matchedPaths.add(library.path().relativize(file));
+                }
+                return FileVisitResult.CONTINUE;
+              }
+            });
+      } catch (Exception e) {
+        log.error(e);
+        throw new ParserException(e);
+      }
+
+      for (final var path : matchedPaths) {
+        final var uri =
+            String.format(
+                "resource://%s/%s-%d/%s",
+                URLEncoder.encode(MapTool.getClientId(), StandardCharsets.UTF_8),
+                URLEncoder.encode(library.name(), StandardCharsets.UTF_8),
+                library.id(),
+                path);
+        result.add(uri);
+      }
+    }
+
+    return result;
   }
 }
