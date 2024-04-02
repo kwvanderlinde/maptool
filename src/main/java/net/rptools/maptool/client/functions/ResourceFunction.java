@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -125,6 +126,8 @@ public class ResourceFunction extends AbstractFunction {
     // spaces.
     final var globPath = Paths.get("/").resolve(Paths.get(glob)).normalize();
 
+    PathMatcher[] globMatchers = null;
+
     // Since the path is rooted, any leading `..` will have been normalized away, in addition to any
     // other `..`. So we can confidently match component-by-component on a normalized glob path.
 
@@ -135,6 +138,15 @@ public class ResourceFunction extends AbstractFunction {
     for (final var library :
         MapTool.getResourceLibraryManager().getLibrariesByName(resourceLibraryName)) {
       final var rootDir = library.path().normalize();
+
+      if (globMatchers == null) {
+        globMatchers = new PathMatcher[globPath.getNameCount()];
+        for (int i = 0; i < globMatchers.length; ++i) {
+          globMatchers[i] = rootDir.getFileSystem().getPathMatcher("glob:" + globPath.getName(i));
+        }
+      }
+      final var globMatchersFinal = globMatchers;
+
       final var matchedPaths = new ArrayList<Path>();
 
       timer.start("Glob search");
@@ -148,14 +160,11 @@ public class ResourceFunction extends AbstractFunction {
                 if (depth < 1) {
                   return true;
                 }
+                if (depth > globMatchersFinal.length) {
+                  return false;
+                }
 
-                final var globComponent = globPath.getName(depth - 1);
-                final var pathComponent = fileOrDir.getFileName();
-
-                return rootDir
-                    .getFileSystem()
-                    .getPathMatcher("glob:" + globComponent)
-                    .matches(pathComponent);
+                return globMatchersFinal[depth - 1].matches(fileOrDir.getFileName());
               }
 
               @Override
