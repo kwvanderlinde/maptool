@@ -107,9 +107,104 @@ public class ResourceFunction extends AbstractFunction {
 
   private List<String> getGlobbedResourceURIs(String resourceLibraryName, String glob)
       throws ParserException {
+    glob = StringUtils.stripStart(glob, "/");
+
+    switch (1) {
+      default:
+      case 0:
+        return getGlobbedResourceURIsWalkkFileTreeFullPathMatch(resourceLibraryName, glob);
+      case 1:
+        return getGlobbedResourceURIsWalkkFileTreeComponentMatch(resourceLibraryName, glob);
+    }
+  }
+
+  private List<String> getGlobbedResourceURIsWalkkFileTreeComponentMatch(
+      String resourceLibraryName, String glob) throws ParserException {
+    // TODO Move back under the root check
+    // TODO Truthfully, glob is not a system-dependent Path, but is instead always separated by
+    // spaces.
+    final var globPath = Paths.get("/").resolve(Paths.get(glob)).normalize();
+
+    // Since the path is rooted, any leading `..` will have been normalized away, in addition to any
+    // other `..`. So we can confidently match component-by-component on a normalized glob path.
+
     final var timer = CodeTimer.get();
 
-    glob = StringUtils.stripStart(glob, "/");
+    final var result = new ArrayList<String>();
+
+    for (final var library :
+        MapTool.getResourceLibraryManager().getLibrariesByName(resourceLibraryName)) {
+      final var rootDir = library.path().normalize();
+      final var matchedPaths = new ArrayList<Path>();
+
+      timer.start("Glob search");
+      try {
+        Files.walkFileTree(
+            rootDir,
+            new SimpleFileVisitor<Path>() {
+              private boolean accept(Path fileOrDir) {
+                final var relative = rootDir.relativize(fileOrDir);
+                final var depth = relative.getNameCount();
+                if (depth < 1) {
+                  return true;
+                }
+
+                final var globComponent = globPath.getName(depth - 1);
+                final var pathComponent = fileOrDir.getFileName();
+
+                return rootDir
+                    .getFileSystem()
+                    .getPathMatcher("glob:" + globComponent)
+                    .matches(pathComponent);
+              }
+
+              @Override
+              public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                  throws IOException {
+                return accept(dir) ? FileVisitResult.CONTINUE : FileVisitResult.SKIP_SUBTREE;
+              }
+
+              @Override
+              public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                  throws IOException {
+                if (accept(file)) {
+                  // Results should be relative to the library root, not the new glob root.
+                  matchedPaths.add(library.path().relativize(file));
+                }
+
+                return FileVisitResult.CONTINUE;
+              }
+            });
+      } catch (Exception e) {
+        log.error(e);
+        throw new ParserException(e);
+      } finally {
+        timer.stop("Glob search");
+      }
+
+      timer.start("Build resource URIs");
+      try {
+        for (final var path : matchedPaths) {
+          final var uri =
+              String.format(
+                  "resource://%s/%s-%d/%s",
+                  URLEncoder.encode(MapTool.getClientId(), StandardCharsets.UTF_8),
+                  URLEncoder.encode(library.name(), StandardCharsets.UTF_8),
+                  library.id(),
+                  path);
+          result.add(uri);
+        }
+      } finally {
+        timer.stop("Build resource URIs");
+      }
+    }
+
+    return result;
+  }
+
+  private List<String> getGlobbedResourceURIsWalkkFileTreeFullPathMatch(
+      String resourceLibraryName, String glob) throws ParserException {
+    final var timer = CodeTimer.get();
 
     final var result = new ArrayList<String>();
 
@@ -143,6 +238,7 @@ public class ResourceFunction extends AbstractFunction {
     try {
       for (final var library :
           MapTool.getResourceLibraryManager().getLibrariesByName(resourceLibraryName)) {
+
         final var rootDir =
             ((globTopPath == null) ? library.path() : library.path().resolve(globTopPath))
                 .normalize();
