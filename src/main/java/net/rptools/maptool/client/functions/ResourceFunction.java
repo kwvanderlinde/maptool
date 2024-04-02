@@ -25,7 +25,9 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+import net.rptools.lib.CodeTimer;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.util.FunctionUtil;
@@ -60,16 +62,33 @@ public class ResourceFunction extends AbstractFunction {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
-    if (functionName.equalsIgnoreCase("getResourceURI")) {
-      FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
-      return getResourceURI(parameters.get(0).toString(), parameters.get(1).toString());
-    } else if (functionName.equalsIgnoreCase("getGlobbedResourceURIs")) {
-      FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
-      final var result =
-          getGlobbedResourceURIs(parameters.get(0).toString(), parameters.get(1).toString());
-      return FunctionUtil.delimitedResult("json", result);
-    }
-    throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));
+    AtomicReference<Object> fullResult = new AtomicReference<>();
+    CodeTimer.using(
+        "resource functions",
+        (timer) -> {
+          timer.start(functionName);
+          try {
+            if (functionName.equalsIgnoreCase("getResourceURI")) {
+              FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
+              fullResult.set(
+                  getResourceURI(parameters.get(0).toString(), parameters.get(1).toString()));
+              return;
+            } else if (functionName.equalsIgnoreCase("getGlobbedResourceURIs")) {
+              FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
+              final var result =
+                  getGlobbedResourceURIs(
+                      parameters.get(0).toString(), parameters.get(1).toString());
+              fullResult.set(FunctionUtil.delimitedResult("json", result));
+              return;
+            }
+            throw new ParserException(
+                I18N.getText("macro.function.general.unknownFunction", functionName));
+          } finally {
+            timer.stop(functionName);
+          }
+        });
+
+    return fullResult.get();
   }
 
   private String getResourceURI(String resourceLibraryName, String path) throws ParserException {
