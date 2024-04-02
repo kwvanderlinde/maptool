@@ -995,6 +995,8 @@ public class ZoneRenderer extends JComponent
       renderBoard(g2d, view);
       timer.stop("board");
     }
+
+    visibleTokenSet.clear();
     if (shouldRenderLayer(Zone.Layer.BACKGROUND, view)) {
       List<DrawnElement> drawables = zone.getDrawnElements(Layer.BACKGROUND);
       // if (!drawables.isEmpty()) {
@@ -2088,14 +2090,58 @@ public class ZoneRenderer extends JComponent
     return gp.createTransformedShape(AffineTransform.getScaleInstance(getScale(), getScale()));
   }
 
+  /**
+   * Filters those out those tokens that are not in the visible area.
+   *
+   * <p>This does not check whether the token is on-screen or large enough to be rendered, only that
+   * it is in the visible area and is therefore allowed to be rendered.
+   *
+   * @param tokens
+   * @return
+   */
+  private List<Token> filterNotVisibleTokens(List<Token> tokens, PlayerView view) {
+    // TODO Should we also check exposed area?
+    final var visibleArea = zoneView.getVisibleArea(view);
+    return tokens.stream()
+        .filter(
+            token -> {
+              if (!token.isVisible()) {
+                return false;
+              }
+              if (!token.getLayer().isVisibleToPlayers()) {
+                return false;
+              }
+              if (token.isVisibleOnlyToOwner() && !AppUtil.playerOwns(token)) {
+                return false;
+              }
+
+              // TODO This is for backward compatibility with renderTokens(), but I do not believe
+              //  it to be correct. Instead, I would expect to use a mix of visible area and exposed
+              //  area, depending on map vision settings as is the case for FOW rendering.
+              if (visibleArea.isEmpty()) {
+                return true;
+              }
+
+              final var bounds = token.getBounds(zone);
+              return visibleArea.intersects(bounds);
+            })
+        .toList();
+  }
+
   protected void renderTokens(
       Graphics2D g, Layer zoneLayer, List<Token> tokenList, PlayerView view, boolean figuresOnly) {
     final var timer = CodeTimer.get();
 
+    boolean isGMView = view.isGMView(); // speed things up
+
+    timer.start("renderTokens-filterNotVisibleTokens");
+    tokenList = isGMView ? tokenList : filterNotVisibleTokens(tokenList, view);
+    timer.stop("renderTokens-filterNotVisibleTokens");
+
+    visibleTokenSet.addAll(tokenList.stream().map(Token::getId).toList());
+
     Graphics2D clippedG = g;
     var imageLabelFactory = new FlatImageLabelFactory();
-
-    boolean isGMView = view.isGMView(); // speed things up
 
     timer.start("createClip");
     if (!isGMView
@@ -2116,7 +2162,6 @@ public class ZoneRenderer extends JComponent
 
     Rectangle clipBounds = g.getClipBounds();
     double scale = zoneScale.getScale();
-    Set<GUID> tempVisTokens = new HashSet<GUID>();
 
     // calculations
     boolean calculateStacks = zoneLayer.isTokenLayer() && tokenStackMap == null;
@@ -2142,15 +2187,6 @@ public class ZoneRenderer extends JComponent
       timer.start("tokenlist-1");
       try {
         if (token.getLayer().isStampLayer() && isTokenMoving(token)) {
-          continue;
-        }
-        // Don't bother if it's not visible
-        // NOTE: Not going to use zone.isTokenVisible as it is very slow. In fact, it's faster
-        // to just draw the tokens and let them be clipped
-        if ((!token.isVisible() || !token.getLayer().isVisibleToPlayers()) && !isGMView) {
-          continue;
-        }
-        if (token.isVisibleOnlyToOwner() && !AppUtil.playerOwns(token)) {
           continue;
         }
       } finally {
@@ -2287,9 +2323,6 @@ public class ZoneRenderer extends JComponent
         locationList.add(location);
       }
       timer.stop("renderTokens:Locations");
-
-      // Add the token to our visible set.
-      tempVisTokens.add(token.getId());
 
       // Only draw if we're visible
       // NOTE: this takes place AFTER resizing the image, that's so that the user
@@ -2856,12 +2889,6 @@ public class ZoneRenderer extends JComponent
       clippedG.dispose();
     }
     timer.stop("tokenlist-13");
-
-    if (figuresOnly) {
-      tempVisTokens.addAll(visibleTokenSet);
-    }
-
-    visibleTokenSet = Collections.unmodifiableSet(tempVisTokens);
   }
 
   /**
