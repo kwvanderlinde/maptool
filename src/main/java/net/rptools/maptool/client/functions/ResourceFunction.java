@@ -107,70 +107,87 @@ public class ResourceFunction extends AbstractFunction {
 
   private List<String> getGlobbedResourceURIs(String resourceLibraryName, String glob)
       throws ParserException {
+    final var timer = CodeTimer.get();
+
     glob = StringUtils.stripStart(glob, "/");
 
     final var result = new ArrayList<String>();
 
-    final var globPath = Paths.get(glob);
-    int i;
-    final var n = globPath.getNameCount();
-    final var pattern = Pattern.compile(".*?[*?\\[\\]{}].*");
-    // Only to n-1 because we don't want the top path to take the last component in case it is
-    // actually a direct reference to a single file instead of a glob. Saves some case work later.
-    for (i = 0; i < n - 1; ++i) {
-      final var name = globPath.getName(i);
-      if (pattern.matcher(name.toString()).matches()) {
-        break;
+    // TODO Wasteful nonsense. Only doing literal matches for the first part doesn't help
+    //   literal matches for the rest.
+
+    timer.start("Literal search");
+    final Path globTopPath;
+    final String newGlob;
+    try {
+      final var globPath = Paths.get(glob);
+      int i;
+      final var n = globPath.getNameCount();
+      final var pattern = Pattern.compile(".*?[*?\\[\\]{}].*");
+      // Only to n-1 because we don't want the top path to take the last component in case it is
+      // actually a direct reference to a single file instead of a glob. Saves some case work later.
+      for (i = 0; i < n - 1; ++i) {
+        final var name = globPath.getName(i);
+        if (pattern.matcher(name.toString()).matches()) {
+          break;
+        }
       }
+      globTopPath = (i == 0) ? null : globPath.subpath(0, i);
+      // TODO I don't actually need to modify the glob... might not be worth it.
+      newGlob = globTopPath == null ? glob : globPath.subpath(i, n).toString();
+    } finally {
+      timer.stop("Literal search");
     }
-    final var globTopPath = (i == 0) ? null : globPath.subpath(0, i);
-    // TODO I don't actually need to modify the glob... might not be worth it.
-    final var newGlob = globTopPath == null ? glob : globPath.subpath(i, n).toString();
 
-    for (final var library :
-        MapTool.getResourceLibraryManager().getLibrariesByName(resourceLibraryName)) {
-      final var rootDir =
-          ((globTopPath == null) ? library.path() : library.path().resolve(globTopPath))
-              .normalize();
-      if (!rootDir.startsWith(library.path())) {
-        // Trying to escape. That's no good.
-        log.error("Glob {} escapes the library root {}", glob, library.path());
-        continue;
-      }
+    timer.start("Glob search");
+    try {
+      for (final var library :
+          MapTool.getResourceLibraryManager().getLibrariesByName(resourceLibraryName)) {
+        final var rootDir =
+            ((globTopPath == null) ? library.path() : library.path().resolve(globTopPath))
+                .normalize();
+        if (!rootDir.startsWith(library.path())) {
+          // Trying to escape. That's no good.
+          log.error("Glob {} escapes the library root {}", glob, library.path());
+          continue;
+        }
 
-      final var matchedPaths = new ArrayList<Path>();
-      try {
-        final var pathMatcher = rootDir.getFileSystem().getPathMatcher("glob:" + newGlob);
-        Files.walkFileTree(
-            rootDir,
-            new SimpleFileVisitor<Path>() {
-              @Override
-              public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                  throws IOException {
-                // Glob doesn't include the top directories anymore, so relativize relative to the
-                // new glob root.
-                if (pathMatcher.matches(rootDir.relativize(file))) {
-                  // Results should be relative to the library root, not the new glob root.
-                  matchedPaths.add(library.path().relativize(file));
+        final var matchedPaths = new ArrayList<Path>();
+        try {
+          final var pathMatcher = rootDir.getFileSystem().getPathMatcher("glob:" + newGlob);
+          Files.walkFileTree(
+              rootDir,
+              new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
+                  // Glob doesn't include the top directories anymore, so relativize relative to the
+                  // new glob root.
+                  if (pathMatcher.matches(rootDir.relativize(file))) {
+                    // Results should be relative to the library root, not the new glob root.
+                    matchedPaths.add(library.path().relativize(file));
+                  }
+                  return FileVisitResult.CONTINUE;
                 }
-                return FileVisitResult.CONTINUE;
-              }
-            });
-      } catch (Exception e) {
-        log.error(e);
-        throw new ParserException(e);
-      }
+              });
+        } catch (Exception e) {
+          log.error(e);
+          throw new ParserException(e);
+        }
 
-      for (final var path : matchedPaths) {
-        final var uri =
-            String.format(
-                "resource://%s/%s-%d/%s",
-                URLEncoder.encode(MapTool.getClientId(), StandardCharsets.UTF_8),
-                URLEncoder.encode(library.name(), StandardCharsets.UTF_8),
-                library.id(),
-                path);
-        result.add(uri);
+        for (final var path : matchedPaths) {
+          final var uri =
+              String.format(
+                  "resource://%s/%s-%d/%s",
+                  URLEncoder.encode(MapTool.getClientId(), StandardCharsets.UTF_8),
+                  URLEncoder.encode(library.name(), StandardCharsets.UTF_8),
+                  library.id(),
+                  path);
+          result.add(uri);
+        }
       }
+    } finally {
+      timer.stop("Glob search");
     }
 
     return result;
