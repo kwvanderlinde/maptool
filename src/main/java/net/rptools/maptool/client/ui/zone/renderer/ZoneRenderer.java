@@ -33,7 +33,6 @@ import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import net.rptools.lib.CodeTimer;
@@ -1132,7 +1131,7 @@ public class ZoneRenderer extends JComponent
       List<Token> vblTokens = zone.getTokensAlwaysVisible();
       if (!vblTokens.isEmpty()) {
         timer.start("tokens - always visible");
-        renderTokens(g2d, null, vblTokens, view, true);
+        renderTokens(g2d, vblTokens.getFirst().getLayer(), vblTokens, view, true);
         timer.stop("tokens - always visible");
       }
 
@@ -1141,9 +1140,9 @@ public class ZoneRenderer extends JComponent
       List<Token> tokens = zone.getFigureTokens();
       List<Token> sortedTokens = new ArrayList<Token>(tokens);
       sortedTokens.sort(zone.getFigureZOrderComparator());
-      if (!tokens.isEmpty()) {
+      if (!sortedTokens.isEmpty()) {
         timer.start("tokens - figures");
-        renderTokens(g2d, null, sortedTokens, view, true);
+        renderTokens(g2d, sortedTokens.getFirst().getLayer(), sortedTokens, view, true);
         timer.stop("tokens - figures");
       }
 
@@ -2090,24 +2089,8 @@ public class ZoneRenderer extends JComponent
   }
 
   protected void renderTokens(
-      Graphics2D g,
-      @Nullable Layer zoneLayer,
-      List<Token> tokenList,
-      PlayerView view,
-      boolean figuresOnly) {
+      Graphics2D g, Layer zoneLayer, List<Token> tokenList, PlayerView view, boolean figuresOnly) {
     final var timer = CodeTimer.get();
-
-    if (tokenList.isEmpty()) {
-      // This early return was not in the original, but all callers guard this anyways so it is not
-      // a change in behaviour. Saves some checks later on.
-      return;
-    }
-
-    if (zoneLayer == null) {
-      // Infer layer from the first token. Used for over-VBL and Figure tokens, though really those
-      // should still be split by layer or have custom rendering, or what have you.
-      zoneLayer = tokenList.getFirst().getLayer();
-    }
 
     Graphics2D clippedG = g;
     var imageLabelFactory = new FlatImageLabelFactory();
