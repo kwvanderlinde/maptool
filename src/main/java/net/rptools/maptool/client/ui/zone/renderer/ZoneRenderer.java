@@ -1005,7 +1005,7 @@ public class ZoneRenderer extends JComponent
       List<Token> background = zone.getTokensOnLayer(Layer.BACKGROUND, false);
       if (!background.isEmpty()) {
         timer.start("tokensBackground");
-        renderTokens(g2d, background, view);
+        renderTokens(g2d, background, view, false);
         timer.stop("tokensBackground");
       }
     }
@@ -1028,7 +1028,7 @@ public class ZoneRenderer extends JComponent
       List<Token> stamps = zone.getTokensOnLayer(Layer.OBJECT, false);
       if (!stamps.isEmpty()) {
         timer.start("tokensStamp");
-        renderTokens(g2d, stamps, view);
+        renderTokens(g2d, stamps, view, false);
         timer.stop("tokensStamp");
       }
     }
@@ -1079,14 +1079,14 @@ public class ZoneRenderer extends JComponent
         List<Token> stamps = zone.getTokensOnLayer(Layer.GM, false);
         if (!stamps.isEmpty()) {
           timer.start("tokensGM");
-          renderTokens(g2d, stamps, view);
+          renderTokens(g2d, stamps, view, false);
           timer.stop("tokensGM");
         }
       }
       List<Token> tokens = zone.getTokensOnLayer(Layer.TOKEN, false);
       if (!tokens.isEmpty()) {
         timer.start("tokens");
-        renderTokens(g2d, tokens, view);
+        renderTokens(g2d, tokens, view, false);
         timer.stop("tokens");
       }
       timer.start("unowned movement");
@@ -2086,10 +2086,6 @@ public class ZoneRenderer extends JComponent
             facingArrow.createTransformedShape(
                 AffineTransform.getRotateInstance(-Math.toRadians(angle)));
     return gp.createTransformedShape(AffineTransform.getScaleInstance(getScale(), getScale()));
-  }
-
-  protected void renderTokens(Graphics2D g, List<Token> tokenList, PlayerView view) {
-    renderTokens(g, tokenList, view, false);
   }
 
   protected void renderTokens(
