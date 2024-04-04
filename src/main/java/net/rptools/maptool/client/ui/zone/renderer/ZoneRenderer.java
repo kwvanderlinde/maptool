@@ -2494,6 +2494,7 @@ public class ZoneRenderer extends JComponent
       } else if (!isGMView && zoneView.isUsingVision() && token.isAlwaysVisible()) {
         // Jamz: Always Visible tokens will get rendered again here to place on top of FoW
         Area cb = zone.getGrid().getTokenCellArea(tokenBounds);
+        // TODO This sort of check should be redundant now.
         if (GraphicsUtil.intersects(visibleScreenArea, cb)) {
           // if we can see a portion of the stamp/token, draw the whole thing, defaults to 2/9ths
           if (zone.getGrid()
