@@ -2096,6 +2096,12 @@ public class ZoneRenderer extends JComponent
    * <p>This does not check whether the token is on-screen or large enough to be rendered, only that
    * it is in the visible area and is therefore allowed to be rendered.
    *
+   * <p»TODO After I figure out the more important stuff, I can further filter these results to be
+   * in the viewport and to check scaled size. Although I still think zoom level at least should not
+   * be determinitive. For now I am going to focus on getting rendering concerns figured out, and
+   * will handle the other bits separately. In principle, this "visible" behaviour should be
+   * possible without requiring the renderer to have logic for it.
+   *
    * @param tokens
    * @return
    */
