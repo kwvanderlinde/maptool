@@ -2156,6 +2156,7 @@ public class ZoneRenderer extends JComponent
         && zoneLayer.supportsVision()) {
       clippedG = (Graphics2D) g.create();
 
+      // TODO Do a world-space clip when in a dedicated renderer.
       Area visibleArea = new Area(g.getClipBounds());
       visibleArea.intersect(visibleScreenArea);
       clippedG.setClip(new GeneralPath(visibleArea));
