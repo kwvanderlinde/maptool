@@ -34,7 +34,15 @@ public class Server {
   // Only once a connection is set up do we add it to the server. Most importantly though, the
   // server is not the one responsible for deciding what kind of connections to use.
   public void addConnection(@Nonnull Connection connection) {
-    this.clients.put(connection.getId(), connection);
+    log.debug("Adding connection {}", connection.getId());
+
+    final var existingConnection = this.clients.putIfAbsent(connection.getId(), connection);
+    if (existingConnection != null) {
+      log.error("Attempted to add a connection with an existing ID: {}", connection.getId());
+      return;
+    }
+
+    // TODO Add message handling here.
   }
 
   public void removeConnection(@Nonnull String connectionId, @Nullable String reason) {
@@ -44,10 +52,12 @@ public class Server {
       log.debug("Removing connection {} for this reason: {}", connectionId, reason);
     }
 
-    // TODO Also remove message handling when that becomes available.
     final var connection = clients.remove(connectionId);
     if (connection == null) {
-      log.error("Attempt to remove unknown connection {}", connectionId);
+      log.error("Attempted to remove unknown connection {}", connectionId);
+      return;
     }
+
+    // TODO Dismantle message handling here.
   }
 }
