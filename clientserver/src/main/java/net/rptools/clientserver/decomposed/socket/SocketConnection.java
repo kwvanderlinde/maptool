@@ -12,22 +12,23 @@
  * <http://www.gnu.org/licenses/> and specifically the Affero license
  * text at <http://www.gnu.org/licenses/agpl.html>.
  */
-package net.rptools.clientserver.decomposed;
+package net.rptools.clientserver.decomposed.socket;
 
+import java.net.Socket;
 import javax.annotation.Nonnull;
+import net.rptools.clientserver.decomposed.AbstractConnection;
+import net.rptools.clientserver.decomposed.Connection;
 
-public interface ConnectionHandler {
-  interface Listener {
-    void onConnected(@Nonnull Connection connection);
+// NB: Unlike our predecessar, we require the underlying socket to be created _before_ the
+// Connection object itself exists.
+public class SocketConnection extends AbstractConnection implements Connection {
+  private final Socket socket;
 
-    // TODO These two might be better served by the ConnectionObserver.
-
-    void onConnectionClosed(@Nonnull String connectionId);
-
-    void onConnectionLost(@Nonnull String connectionId, @Nonnull String reason);
+  public SocketConnection(String id, Socket socket) {
+    super(id);
+    this.socket = socket;
   }
 
-  // TODO How should we represent start() to allow asynchronous failures?
-
-  void addListener(@Nonnull Listener listener);
+  @Override
+  public void sendMessage(@Nonnull Object channel, @Nonnull byte[] message) {}
 }

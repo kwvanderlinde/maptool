@@ -14,20 +14,29 @@
  */
 package net.rptools.clientserver.decomposed;
 
-import javax.annotation.Nonnull;
+import net.rptools.clientserver.ActivityListener;
 
-public interface ConnectionHandler {
-  interface Listener {
-    void onConnected(@Nonnull Connection connection);
+public interface ConnectionObserver {
+  enum Direction {
+    Inbound,
+    Outbound
+  };
 
-    // TODO These two might be better served by the ConnectionObserver.
+  enum State {
+    Start,
+    Progress,
+    Complete
+  };
 
-    void onConnectionClosed(@Nonnull String connectionId);
+  void onMessageReceived(Connection connection, byte[] message);
 
-    void onConnectionLost(@Nonnull String connectionId, @Nonnull String reason);
-  }
+  void onDisconnected(Connection connection, String reason);
 
-  // TODO How should we represent start() to allow asynchronous failures?
-
-  void addListener(@Nonnull Listener listener);
+  // For client-side tracking. TODO Why? Cna't the MessageHandler simply log this?
+  void onActivity(
+      Connection connection,
+      ActivityListener.Direction direction,
+      ActivityListener.State state,
+      int totalTransferSize,
+      int currentTransferSize);
 }

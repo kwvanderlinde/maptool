@@ -12,6 +12,10 @@
  * <http://www.gnu.org/licenses/> and specifically the Affero license
  * text at <http://www.gnu.org/licenses/agpl.html>.
  */
-package net.rptools.clientserver.decomposed;
+package net.rptools.clientserver.decomposed.socket;
 
-public class SocketConnectionHandler extends AbstractConnectionHandler {}
+import net.rptools.clientserver.decomposed.AbstractConnectionHandler;
+import net.rptools.clientserver.decomposed.ConnectionHandler;
+
+public class SocketConnectionHandler extends AbstractConnectionHandler
+    implements ConnectionHandler {}

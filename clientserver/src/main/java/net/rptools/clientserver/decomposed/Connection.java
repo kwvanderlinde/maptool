@@ -15,15 +15,14 @@
 package net.rptools.clientserver.decomposed;
 
 import javax.annotation.Nonnull;
-import net.rptools.clientserver.simple.MessageHandler;
 
 public interface Connection {
   @Nonnull
   String getId();
 
+  void addObserver(ConnectionObserver observer);
+
+  void removeObserver(ConnectionObserver observer);
+
   void sendMessage(@Nonnull Object channel, @Nonnull byte[] message);
-
-  void addMessageHandler(@Nonnull MessageHandler handler);
-
-  void removeMessageHandler(@Nonnull MessageHandler handler);
 }

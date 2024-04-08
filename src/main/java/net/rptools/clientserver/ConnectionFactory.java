@@ -16,7 +16,7 @@ package net.rptools.clientserver;
 
 import java.io.IOException;
 import net.rptools.clientserver.decomposed.ConnectionHandler;
-import net.rptools.clientserver.decomposed.SocketConnectionHandler;
+import net.rptools.clientserver.decomposed.socket.SocketConnectionHandler;
 import net.rptools.clientserver.simple.MessageHandler;
 import net.rptools.clientserver.simple.connection.Connection;
 import net.rptools.clientserver.simple.connection.SocketConnection;

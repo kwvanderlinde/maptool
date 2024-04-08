@@ -123,6 +123,13 @@ public abstract class AbstractConnection implements Connection {
     }
   }
 
+  // TODO id seems to always be `this.getId()`, so no need to pass it around as a parameter.
+  //  Additionally, most MessageHandler implementations do not actually care about it except to log.
+  //  However, do note that ServerMessageHandler currently needs it to limit broadcasting messages
+  //    back to the received client. I don't know why that isn't 100% true since any client-
+  //    initiated action should presumably already be completed on that client. If we could indeed
+  //    make this consistent, or at least have some concept of why to do one or the other, we could
+  //    potentially instead do all this in the server / message router.
   protected final void dispatchCompressedMessage(String id, byte[] compressedMessage) {
     var message = inflate(compressedMessage);
     dispatchMessage(id, message);

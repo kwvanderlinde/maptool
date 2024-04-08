@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import net.rptools.clientserver.ActivityListener;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,9 +27,37 @@ public class Server {
   private static final Logger log = LogManager.getLogger(Server.class);
 
   private final Map<String, Connection> clients;
+  private final ConnectionObserver connectionObserver;
 
   public Server() {
     this.clients = new ConcurrentHashMap<>();
+    this.connectionObserver =
+        new ConnectionObserver() {
+          @Override
+          public void onMessageReceived(Connection connection, byte[] message) {
+            // TODO Forward to message handler.
+            // TODO In the future, when server is more stateless, surely we can simply route to
+            //  all other connections?
+            // TODO During handshake, messages should not be rebroadcast. Only after handshake
+            //  should the connection be considered ready-to-go.
+          }
+
+          @Override
+          public void onDisconnected(Connection connection, String reason) {
+            removeConnection(connection.getId(), reason);
+          }
+
+          @Override
+          public void onActivity(
+              Connection connection,
+              ActivityListener.Direction direction,
+              ActivityListener.State state,
+              int totalTransferSize,
+              int currentTransferSize) {
+            // TODO I don't think the server cares about this. Ignore it. Clients should be sure
+            //  to register an observer on their connections to capture activity.
+          }
+        };
   }
 
   // Only once a connection is set up do we add it to the server. Most importantly though, the
@@ -42,7 +71,9 @@ public class Server {
       return;
     }
 
-    // TODO Add message handling here.
+    connection.addObserver(connectionObserver);
+
+    // TODO Any connection follow-up here?
   }
 
   public void removeConnection(@Nonnull String connectionId, @Nullable String reason) {
@@ -58,6 +89,6 @@ public class Server {
       return;
     }
 
-    // TODO Dismantle message handling here.
+    connection.removeObserver(connectionObserver);
   }
 }
