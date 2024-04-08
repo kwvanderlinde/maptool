@@ -46,4 +46,22 @@ public abstract class AbstractConnection implements Connection {
   public void removeObserver(ConnectionObserver observer) {
     observers.removeIf(element -> element == observer);
   }
+
+  protected void onMessageReceived(byte[] message) {
+    observers.forEach(observer -> observer.onMessageReceived(this, message));
+  }
+
+  protected void onDisconnected(String reason) {
+    observers.forEach(observer -> observer.onDisconnected(this, reason));
+  }
+
+  protected void onActivity(
+      ConnectionObserver.Direction direction,
+      ConnectionObserver.State state,
+      int totalTransferSize,
+      int currentTransferSize) {
+    observers.forEach(
+        observer ->
+            observer.onActivity(this, direction, state, totalTransferSize, currentTransferSize));
+  }
 }
