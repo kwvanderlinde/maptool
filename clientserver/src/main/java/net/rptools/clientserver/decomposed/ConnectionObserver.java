@@ -14,8 +14,6 @@
  */
 package net.rptools.clientserver.decomposed;
 
-import net.rptools.clientserver.ActivityListener;
-
 public interface ConnectionObserver {
   enum Direction {
     Inbound,
@@ -35,8 +33,8 @@ public interface ConnectionObserver {
   // For client-side tracking. TODO Why? Cna't the MessageHandler simply log this?
   void onActivity(
       Connection connection,
-      ActivityListener.Direction direction,
-      ActivityListener.State state,
+      Direction direction,
+      State state,
       int totalTransferSize,
       int currentTransferSize);
 }

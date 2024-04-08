@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import net.rptools.clientserver.ActivityListener;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -50,8 +49,8 @@ public class Server {
           @Override
           public void onActivity(
               Connection connection,
-              ActivityListener.Direction direction,
-              ActivityListener.State state,
+              Direction direction,
+              State state,
               int totalTransferSize,
               int currentTransferSize) {
             // TODO I don't think the server cares about this. Ignore it. Clients should be sure
