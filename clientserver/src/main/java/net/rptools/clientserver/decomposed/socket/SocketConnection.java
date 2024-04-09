@@ -56,6 +56,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
   @Override
   public void close() throws IOException {
     this.socket.close();
+    onDisconnected("closed");
   }
 
   private void doDisconnect(@Nullable Exception exception) {
