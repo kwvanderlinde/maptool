@@ -112,6 +112,12 @@ public class Server {
           connection.addObserver(connectionObserver);
           connection.removeObserver(handshakeConnectionObserver);
         });
+
+    try {
+      handshake.startHandshake();
+    } catch (Exception e) {
+      log.error("Unable to start connection handshake", e);
+    }
   }
 
   public void removeConnection(@Nonnull String connectionId, @Nullable String reason) {
