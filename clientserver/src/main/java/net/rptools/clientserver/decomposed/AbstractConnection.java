@@ -15,6 +15,7 @@
 package net.rptools.clientserver.decomposed;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -113,5 +114,44 @@ public abstract class AbstractConnection implements Connection {
 
     onActivity(
         ConnectionObserver.Direction.Outbound, ConnectionObserver.State.Complete, length, length);
+  }
+
+  protected byte[] readMessage(InputStream in) throws IOException {
+    final var CHUNK_SIZE = 4 * 1024;
+
+    int b32 = in.read();
+    int b24 = in.read();
+    int b16 = in.read();
+    int b8 = in.read();
+
+    if (b32 < 0) {
+      throw new IOException("Stream closed");
+    }
+    int length = (b32 << 24) + (b24 << 16) + (b16 << 8) + b8;
+
+    onActivity(ConnectionObserver.Direction.Inbound, ConnectionObserver.State.Start, length, 0);
+
+    byte[] ret = new byte[length];
+
+    // Read the message in chunks. More efficient than reading in byte-by-byte and checking whether
+    // we hit the chunk limit for reporting.
+    int i = 0;
+    while (i < length) {
+      final var countToRead = Math.min(CHUNK_SIZE, length - i);
+      final var countRead = in.read(ret, i, countToRead);
+      if (countRead < 0) {
+        throw new IOException("Unexpected end of stream reached");
+      }
+
+      i += countRead;
+
+      onActivity(
+          ConnectionObserver.Direction.Inbound, ConnectionObserver.State.Progress, length, i);
+    }
+
+    onActivity(
+        ConnectionObserver.Direction.Inbound, ConnectionObserver.State.Complete, length, length);
+
+    return ret;
   }
 }

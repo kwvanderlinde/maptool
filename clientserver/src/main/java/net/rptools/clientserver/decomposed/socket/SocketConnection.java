@@ -16,7 +16,6 @@ package net.rptools.clientserver.decomposed.socket;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -44,7 +43,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
       // TODO The create of the input and output streams here is incidental. It should in principle
       //  be internal to the thread itself, not requiring exception propagation here.
       this.send = new SendThread(this, socket);
-      this.receive = new ReceiveThread(this, socket.getInputStream());
+      this.receive = new ReceiveThread(this, socket);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -131,11 +130,32 @@ public class SocketConnection extends AbstractConnection implements Connection {
   }
 
   private static final class ReceiveThread extends Thread {
-    private final InputStream in;
+    private final SocketConnection connection;
+    private final Socket socket;
 
-    public ReceiveThread(SocketConnection connection, InputStream in) {
-      setName("SocketConnection.ReceiveThread");
-      this.in = in;
+    public ReceiveThread(SocketConnection connection, Socket socket) {
+      super("SocketConnection.ReceiveThread");
+      this.connection = connection;
+      this.socket = socket;
+    }
+
+    @Override
+    public void run() {
+      try {
+        final var in = socket.getInputStream();
+
+        while (!socket.isClosed()) {
+          try {
+            byte[] message = connection.readMessage(in);
+          } catch (Throwable t) {
+            log.error(t);
+          }
+        }
+      } catch (IOException e) {
+        // Likely a socket closure, but could also be something unexpected.
+        log.error(e);
+        fireDisconnect();
+      }
     }
   }
 }
