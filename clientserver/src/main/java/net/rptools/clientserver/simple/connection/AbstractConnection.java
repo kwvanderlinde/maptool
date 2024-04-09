@@ -34,8 +34,13 @@ import org.apache.logging.log4j.Logger;
 public abstract class AbstractConnection implements Connection {
   private static final Logger log = LogManager.getLogger(AbstractConnection.class);
 
+  // TODO I believe this implementation of output queueing is busted. When adding a message, we
+  //  always append that channel's queue to the outQueueList, regardless of whether it already
+  //  exists there. This effectively sequences the messages as if they were all part of one linear
+  //  queue rather than round-robin scheduled for distinct queues.
   private final Map<Object, List<byte[]>> outQueueMap = new HashMap<>();
   private final List<List<byte[]>> outQueueList = new LinkedList<>();
+
   private final List<DisconnectHandler> disconnectHandlers = new CopyOnWriteArrayList<>();
   private final List<ActivityListener> listeners = new CopyOnWriteArrayList<>();
   private final List<MessageHandler> messageHandlers = new CopyOnWriteArrayList<>();

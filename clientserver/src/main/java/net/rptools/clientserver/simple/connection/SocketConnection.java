@@ -104,6 +104,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
   // /////////////////////////////////////////////////////////////////////////
   private class SendThread extends Thread {
     private final OutputStream out;
+    // TODO Lol, stopRequested is not synchronized.
     private boolean stopRequested = false;
 
     public SendThread(OutputStream out) {
