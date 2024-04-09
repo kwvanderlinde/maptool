@@ -58,6 +58,23 @@ public class SocketConnection extends AbstractConnection implements Connection {
     this.socket.close();
   }
 
+  private void doDisconnect(@Nullable Exception exception) {
+    if (exception != null) {
+      log.error(exception);
+      onDisconnected(exception.getMessage());
+    } else {
+      onDisconnected(null);
+    }
+
+    if (!socket.isClosed()) {
+      try {
+        socket.close();
+      } catch (IOException ioe) {
+        log.error("Unable to close socket", ioe);
+      }
+    }
+  }
+
   private static final class SendThread extends Thread {
     private static final int SPOOL_AMOUNT = 1000;
 
@@ -129,8 +146,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
         }
       } catch (IOException e) {
         // Likely a socket closure, though could also be some unexpected thing.
-        log.error(e);
-        fireDisconnect();
+        connection.doDisconnect(e);
       }
     }
   }
@@ -159,8 +175,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
         }
       } catch (IOException e) {
         // Likely a socket closure, but could also be something unexpected.
-        log.error(e);
-        fireDisconnect();
+        connection.doDisconnect(e);
       }
     }
   }
