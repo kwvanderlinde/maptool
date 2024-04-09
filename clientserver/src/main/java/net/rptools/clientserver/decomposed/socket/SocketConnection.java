@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import net.rptools.clientserver.decomposed.AbstractConnection;
 import net.rptools.clientserver.decomposed.Connection;
@@ -41,9 +42,22 @@ public class SocketConnection extends AbstractConnection implements Connection {
 
     this.send = new SendThread(this, socket);
     this.receive = new ReceiveThread(this, socket);
+
+    this.send.start();
+    this.receive.start();
   }
 
   @Override
+  public void sendMessage(@Nullable Object channel, @Nonnull byte[] message) {
+    this.send.addMessage(channel, message);
+  }
+
+  // TODO I don't know that I want IOException here. Only if it really signals something important.
+  @Override
+  public void close() throws IOException {
+    this.socket.close();
+  }
+
   private static final class SendThread extends Thread {
     private static final int SPOOL_AMOUNT = 1000;
 

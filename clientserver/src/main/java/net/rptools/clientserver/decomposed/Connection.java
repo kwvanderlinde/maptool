@@ -14,11 +14,15 @@
  */
 package net.rptools.clientserver.decomposed;
 
+import java.io.IOException;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public interface Connection {
   @Nonnull
   String getId();
+
+  void close() throws IOException;
 
   void addObserver(ConnectionObserver observer);
 
