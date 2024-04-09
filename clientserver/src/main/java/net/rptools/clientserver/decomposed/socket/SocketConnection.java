@@ -24,10 +24,14 @@ import javax.annotation.Nonnull;
 import net.rptools.clientserver.decomposed.AbstractConnection;
 import net.rptools.clientserver.decomposed.Connection;
 import net.rptools.clientserver.decomposed.MessageSpool;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 // NB: Unlike our predecessar, we require the underlying socket to be created _before_ the
 // Connection object itself exists.
 public class SocketConnection extends AbstractConnection implements Connection {
+  private static final Logger log = LogManager.getLogger(SocketConnection.class);
+
   private final Socket socket;
   private final SendThread send;
   private final ReceiveThread receive;
@@ -50,21 +54,51 @@ public class SocketConnection extends AbstractConnection implements Connection {
   public void sendMessage(@Nonnull Object channel, @Nonnull byte[] message) {}
 
   private static final class SendThread extends Thread {
+    private static final int SPOOL_AMOUNT = 1000;
+
+    private record PendingMessage(Object channel, byte[] message) {}
+
     private final SocketConnection connection;
     private final Socket socket;
-    private final MessageSpool sppol;
+    private final MessageSpool spool;
+    private final ConcurrentLinkedQueue<PendingMessage> pendingMessages;
 
     public SendThread(SocketConnection connection, Socket socket) {
       super("SocketConnection.SendThread");
       this.connection = connection;
       this.socket = socket;
       this.pendingMessages = new ConcurrentLinkedQueue<>();
-      this.sppol = new MessageSpool();
+      this.spool = new MessageSpool();
     }
 
-    private void sendAllMessages(OutputStream out) {
+    public void addMessage(Object channel, byte[] message) {
+      pendingMessages.add(new PendingMessage(channel, message));
+
+      synchronized (this) {
+        this.notify();
+      }
+    }
+
+    private void spoolPendingMessages(int maxPendingMessagesToProcess) {
+      assert Thread.currentThread() == this : "Spooling must be done on the send thread";
+
+      int count = 0;
+
+      do {
+        final var pendingMessage = pendingMessages.poll();
+        if (pendingMessage == null) {
+          break;
+        }
+        spool.addMessage(pendingMessage.channel(), pendingMessage.message());
+      } while (++count < maxPendingMessagesToProcess);
+      log.info("Spooled {} messages", count);
+    }
+
+    private void sendAllSpooledMessages(OutputStream out) throws IOException {
+      assert Thread.currentThread() == this : "Message sending must be done on the send thread";
+
       byte[] message;
-      while ((message = sppol.nextMessage()) != null) {
+      while ((message = spool.nextMessage()) != null) {
         connection.writeMessage(out, message);
       }
       // TODO Original caught an IndexOutOfBoundsException somewhere here, and I don't see why.
@@ -77,9 +111,10 @@ public class SocketConnection extends AbstractConnection implements Connection {
         final var out = new BufferedOutputStream(socket.getOutputStream());
         while (!socket.isClosed()) {
           try {
-            sendAllMessages(out);
+            spoolPendingMessages(SPOOL_AMOUNT);
+            sendAllSpooledMessages(out);
             synchronized (this) {
-              if (!stopRequested) {
+              if (!socket.isClosed()) {
                 this.wait();
               }
             }

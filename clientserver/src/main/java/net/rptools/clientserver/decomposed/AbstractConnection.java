@@ -14,6 +14,8 @@
  */
 package net.rptools.clientserver.decomposed;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nonnull;
@@ -63,5 +65,53 @@ public abstract class AbstractConnection implements Connection {
     observers.forEach(
         observer ->
             observer.onActivity(this, direction, state, totalTransferSize, currentTransferSize));
+  }
+
+  /**
+   * Writes a message to the output stream using a simple protocol.
+   *
+   * <p>The protocol is that the message length is written in network byte order (big endian), then
+   * the bytes of the message are written verbatim.
+   *
+   * <p>Note: if the message is to be compressed or otherwise transformed, that should already have
+   * been done.
+   *
+   * @param out The output stream to send the message through.
+   * @param message The serialized message to send.
+   * @throws IOException
+   */
+  protected void writeMessage(OutputStream out, byte[] message) throws IOException {
+    final var CHUNK_SIZE = 4 * 1024;
+    final var length = message.length;
+
+    onActivity(ConnectionObserver.Direction.Outbound, ConnectionObserver.State.Start, length, 0);
+
+    // NB: If you're confused about this, remember the parameter should actually be a byte and will
+    // will be masked to the lowest byte.
+    out.write(length >> 24);
+    out.write(length >> 16);
+    out.write(length >> 8);
+    out.write(length);
+
+    // Write the message out in chunks. More efficient than writing out byte-by-byte and checks
+    // whether we hit the chunk limit for reporting.
+    int i = 0;
+    while (i <= length - CHUNK_SIZE) {
+      out.write(message, i, CHUNK_SIZE);
+      i += CHUNK_SIZE;
+
+      onActivity(
+          ConnectionObserver.Direction.Outbound, ConnectionObserver.State.Progress, length, i);
+    }
+    if (i < length) {
+      out.write(message, i, length - i);
+
+      onActivity(
+          ConnectionObserver.Direction.Outbound, ConnectionObserver.State.Progress, length, length);
+    }
+    out.flush();
+
+    onActivity(
+        ConnectionObserver.Direction.Outbound, ConnectionObserver.State.Complete, length, length);
   }
 }

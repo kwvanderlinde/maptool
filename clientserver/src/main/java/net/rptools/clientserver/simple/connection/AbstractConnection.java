@@ -145,6 +145,8 @@ public abstract class AbstractConnection implements Connection {
 
     notifyListeners(ActivityListener.Direction.Outbound, ActivityListener.State.Start, length, 0);
 
+    // NB: If you're confused about this, remember the parameter should actually be a byte and will
+    // will be masked to the lowest byte.
     out.write(length >> 24);
     out.write(length >> 16);
     out.write(length >> 8);
