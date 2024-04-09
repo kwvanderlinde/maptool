@@ -79,6 +79,12 @@ public class ConnectionFactory {
       ServerConfig config, HandshakeProvider handshake, MessageHandler messageHandler) {
     final var server = new net.rptools.clientserver.decomposed.Server();
 
+    // TODO Based on server config, optionally instantiate a SocketConnectionHandler or
+    //  WebRTCConnectionHandler.
+    // TODO ConnectionHandler needs a way to signal when it's ready or if it encoutnered a startup
+    //  error. I imagine this will be necessary for good user-facing message, or if the application
+    //  wants to wait until it is started. Although if it just ends up being for messages, then is
+    //  it really any different from any unexpected failure?
     final var connectionHandler = new SocketConnectionHandler();
     final var listener =
         new ConnectionHandler.Listener() {
