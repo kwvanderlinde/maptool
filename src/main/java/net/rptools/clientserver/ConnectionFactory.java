@@ -79,7 +79,7 @@ public class ConnectionFactory {
       ServerConfig config, HandshakeProvider handshake, MessageHandler messageHandler) {
     final var server = new net.rptools.clientserver.decomposed.Server();
 
-    final var conneectionHandler = new SocketConnectionHandler();
+    final var connectionHandler = new SocketConnectionHandler();
     final var listener =
         new ConnectionHandler.Listener() {
           @Override
@@ -98,7 +98,7 @@ public class ConnectionFactory {
             server.removeConnection(connectionId, reason);
           }
         };
-    conneectionHandler.addListener(listener);
+    connectionHandler.addListener(listener);
 
     return server;
   }
