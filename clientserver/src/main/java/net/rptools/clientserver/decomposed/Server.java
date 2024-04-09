@@ -16,8 +16,11 @@ package net.rptools.clientserver.decomposed;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import net.rptools.clientserver.simple.Handshake;
+import net.rptools.clientserver.simple.MessageHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -25,28 +28,30 @@ import org.apache.logging.log4j.Logger;
 public class Server {
   private static final Logger log = LogManager.getLogger(Server.class);
 
+  private final MessageHandler messageHandler;
+  // NB: Using a Function does not permit releasing the handshake. But that's fine since we can
+  // expect the provider to in some way also listen to the handshake to know when to release it. We
+  // don't have to take on that responsibility for them.
+  private final Function<Connection, Handshake> handshakeProvider;
+  // TODO Also track whether the connection is in the handshake state or not.
+  //  Is that something I can push into the connection itself?
   private final Map<String, Connection> clientConnections;
+  // Reduced observer for when a connection is still in its handshake.
+  private final ConnectionObserver handshakeConnectionObserver;
   private final ConnectionObserver connectionObserver;
 
-  public Server() {
+  public Server(MessageHandler messageHandler, Function<Connection, Handshake> handshakeProvider) {
+    this.messageHandler = messageHandler;
+    this.handshakeProvider = handshakeProvider;
+
     this.clientConnections = new ConcurrentHashMap<>();
-    this.connectionObserver =
+
+    this.handshakeConnectionObserver =
         new ConnectionObserver() {
           @Override
           public void onMessageReceived(Connection connection, byte[] message) {
-            // TODO In the original implementation, we didn't really have this handler but instead
-            //  relied on registering the MessageHandler with each connection once the handshake
-            //  is completed. In this implementation, I want the state transitions to be more
-            //  obvious. But I think in the end it will be similar. For connections in the
-            //  handshake state, we will have a `ConnectionObserver handshakeObserver` that takes
-            //  action appropriate for the handshake. When a server-side handshake completes,
-            //  we will `removeObserver(handshakeObserver)` and `addObserver(connectionObserver)`.
-
-            // TODO Forward to message handler.
-            // TODO In the future, when server is more stateless, surely we can simply route to
-            //  all other connections?
-            // TODO During handshake, messages should not be rebroadcast. Only after handshake
-            //  should the connection be considered ready-to-go.
+            // Nothing to to do. We expect the handshake itself to handle any messages
+            // for the time being.
           }
 
           @Override
@@ -61,8 +66,30 @@ public class Server {
               State state,
               int totalTransferSize,
               int currentTransferSize) {
-            // TODO I don't think the server cares about this. Ignore it. Clients should be sure
-            //  to register an observer on their connections to capture activity.
+            // No one cares about this server-side right now.
+          }
+        };
+
+    this.connectionObserver =
+        new ConnectionObserver() {
+          @Override
+          public void onMessageReceived(Connection connection, byte[] message) {
+            messageHandler.handleMessage(connection.getId(), message);
+          }
+
+          @Override
+          public void onDisconnected(Connection connection, String reason) {
+            removeConnection(connection.getId(), reason);
+          }
+
+          @Override
+          public void onActivity(
+              Connection connection,
+              Direction direction,
+              State state,
+              int totalTransferSize,
+              int currentTransferSize) {
+            // No one cares about this server-side right now.
           }
         };
   }
@@ -79,9 +106,12 @@ public class Server {
       return;
     }
 
-    connection.addObserver(connectionObserver);
-
-    // TODO Any connection follow-up here?
+    final var handshake = handshakeProvider.apply(connection);
+    handshake.addObserver(
+        ignored -> {
+          connection.addObserver(connectionObserver);
+          connection.removeObserver(handshakeConnectionObserver);
+        });
   }
 
   public void removeConnection(@Nonnull String connectionId, @Nullable String reason) {
@@ -97,6 +127,7 @@ public class Server {
       return;
     }
 
+    connection.removeObserver(handshakeConnectionObserver);
     connection.removeObserver(connectionObserver);
   }
 }
