@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import net.rptools.clientserver.decomposed.AbstractConnection;
 import net.rptools.clientserver.decomposed.Connection;
 import net.rptools.clientserver.decomposed.MessageSpool;
@@ -44,8 +44,6 @@ public class SocketConnection extends AbstractConnection implements Connection {
   }
 
   @Override
-  public void sendMessage(@Nonnull Object channel, @Nonnull byte[] message) {}
-
   private static final class SendThread extends Thread {
     private static final int SPOOL_AMOUNT = 1000;
 
@@ -64,7 +62,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
       this.spool = new MessageSpool();
     }
 
-    public void addMessage(Object channel, byte[] message) {
+    public void addMessage(@Nullable Object channel, byte[] message) {
       pendingMessages.add(new PendingMessage(channel, message));
 
       synchronized (this) {

@@ -31,5 +31,5 @@ public interface Connection {
   //  Current thought is that channels should be communicated through the handshake. Channels would
   //  have names, integer IDs, and configurable compression parameters (e.g., algorithm, level,
   //  etc).
-  void sendMessage(@Nonnull Object channel, @Nonnull byte[] message);
+  void sendMessage(@Nullable Object channel, @Nonnull byte[] message);
 }
