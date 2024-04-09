@@ -39,14 +39,8 @@ public class SocketConnection extends AbstractConnection implements Connection {
     super(id);
     this.socket = socket;
 
-    try {
-      // TODO The create of the input and output streams here is incidental. It should in principle
-      //  be internal to the thread itself, not requiring exception propagation here.
-      this.send = new SendThread(this, socket);
-      this.receive = new ReceiveThread(this, socket);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    this.send = new SendThread(this, socket);
+    this.receive = new ReceiveThread(this, socket);
   }
 
   @Override
