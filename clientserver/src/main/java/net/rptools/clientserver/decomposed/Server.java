@@ -34,6 +34,14 @@ public class Server {
         new ConnectionObserver() {
           @Override
           public void onMessageReceived(Connection connection, byte[] message) {
+            // TODO In the original implementation, we didn't really have this handler but instead
+            //  relied on registering the MessageHandler with each connection once the handshake
+            //  is completed. In this implementation, I want the state transitions to be more
+            //  obvious. But I think in the end it will be similar. For connections in the
+            //  handshake state, we will have a `ConnectionObserver handshakeObserver` that takes
+            //  action appropriate for the handshake. When a server-side handshake completes,
+            //  we will `removeObserver(handshakeObserver)` and `addObserver(connectionObserver)`.
+
             // TODO Forward to message handler.
             // TODO In the future, when server is more stateless, surely we can simply route to
             //  all other connections?
