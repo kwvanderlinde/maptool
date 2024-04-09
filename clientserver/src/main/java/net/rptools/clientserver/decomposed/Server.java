@@ -25,11 +25,11 @@ import org.apache.logging.log4j.Logger;
 public class Server {
   private static final Logger log = LogManager.getLogger(Server.class);
 
-  private final Map<String, Connection> clients;
+  private final Map<String, Connection> clientConnections;
   private final ConnectionObserver connectionObserver;
 
   public Server() {
-    this.clients = new ConcurrentHashMap<>();
+    this.clientConnections = new ConcurrentHashMap<>();
     this.connectionObserver =
         new ConnectionObserver() {
           @Override
@@ -64,7 +64,8 @@ public class Server {
   public void addConnection(@Nonnull Connection connection) {
     log.debug("Adding connection {}", connection.getId());
 
-    final var existingConnection = this.clients.putIfAbsent(connection.getId(), connection);
+    final var existingConnection =
+        this.clientConnections.putIfAbsent(connection.getId(), connection);
     if (existingConnection != null) {
       log.error("Attempted to add a connection with an existing ID: {}", connection.getId());
       return;
@@ -82,7 +83,7 @@ public class Server {
       log.debug("Removing connection {} for this reason: {}", connectionId, reason);
     }
 
-    final var connection = clients.remove(connectionId);
+    final var connection = clientConnections.remove(connectionId);
     if (connection == null) {
       log.error("Attempted to remove unknown connection {}", connectionId);
       return;
