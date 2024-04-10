@@ -282,11 +282,10 @@ public class MapToolServer {
             if (chunk != null) {
               lookForMore = true;
               var msg = UpdateAssetTransferMsg.newBuilder().setChunk(chunk);
-              getConnection()
-                  .sendMessage(
-                      entry.getKey(),
-                      MapToolConstants.Channel.IMAGE,
-                      Message.newBuilder().setUpdateAssetTransferMsg(msg).build());
+              conn.sendMessage(
+                  entry.getKey(),
+                  MapToolConstants.Channel.IMAGE,
+                  Message.newBuilder().setUpdateAssetTransferMsg(msg).build());
             }
           }
           if (lookForMore) {

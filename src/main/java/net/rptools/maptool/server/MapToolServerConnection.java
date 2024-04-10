@@ -33,8 +33,6 @@ import net.rptools.maptool.server.proto.SetCampaignMsg;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-// TODO All calls to `this.server.getConnection()` are equivalent  to `this`. So... yeah.
-
 /**
  * @author trevor
  */
@@ -107,31 +105,22 @@ public class MapToolServerConnection
     Player connectedPlayer = playerMap.get(conn.getId().toUpperCase());
     for (Player player : playerMap.values()) {
       var msg = PlayerConnectedMsg.newBuilder().setPlayer(player.toDto());
-      server
-          .getConnection()
-          .sendMessage(conn.getId(), Message.newBuilder().setPlayerConnectedMsg(msg).build());
+      sendMessage(conn.getId(), Message.newBuilder().setPlayerConnectedMsg(msg).build());
     }
     var msg =
         PlayerConnectedMsg.newBuilder().setPlayer(connectedPlayer.getTransferablePlayer().toDto());
-    server
-        .getConnection()
-        .broadcastMessage(Message.newBuilder().setPlayerConnectedMsg(msg).build());
+    broadcastMessage(Message.newBuilder().setPlayerConnectedMsg(msg).build());
 
     var msg2 = SetCampaignMsg.newBuilder().setCampaign(server.getCampaign().toDto());
-    server
-        .getConnection()
-        .sendMessage(conn.getId(), Message.newBuilder().setSetCampaignMsg(msg2).build());
+    sendMessage(conn.getId(), Message.newBuilder().setSetCampaignMsg(msg2).build());
   }
 
   public void connectionRemoved(Connection conn) {
     server.releaseClientConnection(conn.getId());
     var player = playerMap.get(conn.getId().toUpperCase()).getTransferablePlayer();
     var msg = PlayerDisconnectedMsg.newBuilder().setPlayer(player.toDto());
-    server
-        .getConnection()
-        .broadcastMessage(
-            new String[] {conn.getId()},
-            Message.newBuilder().setPlayerDisconnectedMsg(msg).build());
+    broadcastMessage(
+        new String[] {conn.getId()}, Message.newBuilder().setPlayerDisconnectedMsg(msg).build());
     playerMap.remove(conn.getId().toUpperCase());
   }
 
