@@ -33,6 +33,8 @@ import net.rptools.maptool.server.proto.SetCampaignMsg;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+// TODO All calls to `this.server.getConnection()` are equivalent  to `this`. So... yeah.
+
 /**
  * @author trevor
  */
