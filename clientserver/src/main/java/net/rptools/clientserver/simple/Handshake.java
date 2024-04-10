@@ -68,5 +68,10 @@ public interface Handshake {
    * @throws ExecutionException when there is an exception in the background task.
    * @throws InterruptedException when the background task is interrupted.
    */
+  // TODO Server-side we don't expect these kinds of failures. Can we eliminate them somehow for
+  //  that case?
+  //  Or... can we just dictate that they don't bubble up here, but instead need to be communicated
+  //  as a handshake failure? Yeah, I prefer that. It should be as simple as catching the errors in
+  //  ClientHandshake and immediately notifyObservers() in that case.
   void startHandshake() throws ExecutionException, InterruptedException;
 }
