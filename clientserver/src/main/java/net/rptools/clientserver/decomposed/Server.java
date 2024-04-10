@@ -106,6 +106,10 @@ public class Server {
       return;
     }
 
+    // TODO What if instead we require the caller to be responsible for handshaking? The handshake
+    //  behaviour has to be provided downstream anyways through the handshakeProvider. Doing so
+    //  would allow even more trivial local connections since the handshake doesn't actually provide
+    //  access to non-local data in this case.
     final var handshake = handshakeProvider.apply(connection);
     handshake.addObserver(
         ignored -> {
