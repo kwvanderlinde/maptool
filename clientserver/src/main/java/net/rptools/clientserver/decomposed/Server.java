@@ -106,10 +106,39 @@ public class Server {
       return;
     }
 
-    // TODO What if instead we require the caller to be responsible for handshaking? The handshake
-    //  behaviour has to be provided downstream anyways through the handshakeProvider. Doing so
-    //  would allow even more trivial local connections since the handshake doesn't actually provide
-    //  access to non-local data in this case.
+    /*
+     * TODO What if instead we require the caller to be responsible for handshaking? The handshake
+     *  behaviour has to be provided downstream anyways through the handshakeProvider. Doing so
+     *  would allow even more trivial local connections since the handshake doesn't actually provide
+     *  access to non-local data in this case.
+     *      I actually really like this idea. The handshake behaviour would not be specified in the
+     *  `ConnectionFactory`, rather in `MapToolServer` or something like that. It would create a
+     *  `ConnectionHandler` according to configuration, and a generic decomposed `Server`. It would
+     *  then listen to the `ConnectionHandler` for new connections, start handshake on them, and
+     *  when the handshake is done it would add the connection to the `Server`. I really like this
+     *  flow.
+     *      The only downside is that `Server` is no longer able to recognize multiple conflicting
+     *  connections in the handshake state. There are several possible resolutions to this:
+     *  1. Reserve pending connection IDs in `Server`. _More state to keep track of, don't want
+     *     stale entries._
+     *  2. `MapToolServer` needs to keep track of client IDs anyways, so it could be responsible for
+     *     disallowing duplicate IDs even in the handshake stage.
+     *  3. Don't worry about it. Only once the handshake is completed should we check uniqueness.
+     *     Potentially wasteful networking, but this is a rare case except in DOS-type situations.
+     *  .
+     *  I think my preferred approached would therefore be (3). We would just need to be careful
+     *  that the handshake doesn't affect any state outside of itself, and that there are no races
+     *  when committing a completed handshake. Note that multiple handshakes could simultaneously
+     *  reach the final step to be successful (all other data was transferred and checked), but only
+     *  one handshake should be given the `ConnectionSuccessfulMsg` message back to the client.
+     *  the server side. The other pending connections should result in a reject, either through a
+     *  new message or simply by closing the connection.
+     *     The best part of this idea is that handshakes are completed removed from the decomposed
+     *  approach. It would make this generic library permit handshake-less protocols, or protocols
+     *  with some other approach to setting up connections (whatever that might be). It also means
+     *  we aren't constrained to abstracting over client-side and server-side handshakes since they
+     *  will no longer be attached directly to connections.
+     */
     final var handshake = handshakeProvider.apply(connection);
     handshake.addObserver(
         ignored -> {
