@@ -42,6 +42,13 @@ import net.rptools.maptool.transfer.AssetTransferManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/*
+ * TODO It seems to me that MapToolServerConnection is basically useless and should be merged with
+ *  MapToolServer here. Additionally, MapToolServerConection's roles as ServerObserver,
+ *  HandshakeProvider, and HandshakeObserver should be split into separate classes. The remaining
+ *  set of functionality seems to be mirrored here anyways.
+ */
+
 /**
  * @author drice
  */
