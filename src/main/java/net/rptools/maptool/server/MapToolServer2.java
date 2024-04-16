@@ -14,14 +14,18 @@
  */
 package net.rptools.maptool.server;
 
+import javax.annotation.Nonnull;
 import net.rptools.clientserver.decomposed.ConnectionHandler;
 import net.rptools.clientserver.decomposed.Server;
 import net.rptools.clientserver.decomposed.socket.SocketConnectionHandler;
+import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.player.PlayerDatabase;
 
 public class MapToolServer2 {
   private final Server server;
   private final ConnectionHandler connectionHandler;
+  private @Nonnull Campaign campaign;
+  private @Nonnull ServerPolicy policy;
 
   // TODO I feel like we should be the ones deciding the player database... no?
   public MapToolServer2(ServerConfig config, ServerPolicy policy, PlayerDatabase playerDb) {
@@ -35,6 +39,9 @@ public class MapToolServer2 {
     //  be feasible to create at the call site and injected instead of a hard dependency here).
     this.connectionHandler = new SocketConnectionHandler();
 
+    this.campaign = new Campaign();
+    this.policy = policy;
+
     // TODO Hook up observers thusly:
     //  1. When a client connects, begin the handshake.
     //  2. When the handshake completes, install the connection to `this.server`. When done,
@@ -47,5 +54,21 @@ public class MapToolServer2 {
     //  Oh... I can't actually do that. It's true that the server itself doesn't really need a
     //  campaign, however when a new client connections the server does need to be able to send
     //  the campaign over.
+  }
+
+  public @Nonnull Campaign getCampaign() {
+    return this.campaign;
+  }
+
+  public void setCampaign(@Nonnull Campaign campaign) {
+    this.campaign = campaign;
+  }
+
+  public @Nonnull ServerPolicy getPolicy() {
+    return policy;
+  }
+
+  public void updateServerPolicy(@Nonnull ServerPolicy policy) {
+    this.policy = policy;
   }
 }
