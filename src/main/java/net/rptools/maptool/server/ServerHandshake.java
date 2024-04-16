@@ -200,6 +200,7 @@ public class ServerHandshake implements Handshake, MessageHandler {
   private void sendErrorResponseAndNotify(HandshakeResponseCodeMsg errorCode) {
     var msg = HandshakeMsg.newBuilder().setHandshakeResponseCodeMsg(errorCode).build();
     sendMessage(msg);
+    // TODO: Likely bug - this should be State.Error I would think.
     setCurrentState(State.PlayerBlocked);
     // Do not notify users as it will disconnect and client won't get message instead wait
     // for client to disconnect after getting this message, if they don't then it will fail
@@ -532,6 +533,7 @@ public class ServerHandshake implements Handshake, MessageHandler {
     handshakeChallenges[PLAYER_CHALLENGE] =
         HandshakeChallenge.createSymmetricChallenge(
             player.getName(),
+            // TODO Likely bug: this should be PLAYER_CHALLENGE.
             password[GM_CHALLENGE],
             playerDatabase.getRolePassword(Role.PLAYER).get(),
             iv);
