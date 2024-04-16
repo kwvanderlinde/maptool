@@ -15,20 +15,30 @@
 package net.rptools.maptool.server;
 
 import javax.annotation.Nonnull;
+import net.rptools.clientserver.decomposed.Connection;
 import net.rptools.clientserver.decomposed.ConnectionHandler;
 import net.rptools.clientserver.decomposed.Server;
 import net.rptools.clientserver.decomposed.socket.SocketConnectionHandler;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.player.PlayerDatabase;
+import org.jetbrains.annotations.NotNull;
 
 public class MapToolServer2 {
+  private @Nonnull Campaign campaign;
+  private @Nonnull ServerConfig config;
+  private @Nonnull ServerPolicy policy;
+  private @Nonnull PlayerDatabase playerDatabase;
+
   private final Server server;
   private final ConnectionHandler connectionHandler;
-  private @Nonnull Campaign campaign;
-  private @Nonnull ServerPolicy policy;
 
   // TODO I feel like we should be the ones deciding the player database... no?
   public MapToolServer2(ServerConfig config, ServerPolicy policy, PlayerDatabase playerDb) {
+    this.campaign = new Campaign();
+    this.config = config;
+    this.policy = policy;
+    this.playerDatabase = playerDb;
+
     // TODO Obviously this casting will not work. We will have to change ServerMessageHandler
     //  to accept a MapToolServer2. There's not much about it, mostly the message handler just
     //  needs to look up the server's campaign, and sometimes send messages and
@@ -38,9 +48,25 @@ public class MapToolServer2 {
     // TODO Create via ConnectionFactory so that ServerConfig is accounted for. This might even
     //  be feasible to create at the call site and injected instead of a hard dependency here).
     this.connectionHandler = new SocketConnectionHandler();
+    this.connectionHandler.addListener(
+        new ConnectionHandler.Listener() {
+          @Override
+          public void onConnected(@NotNull Connection connection) {
+            // Start the handshake.
+            final var handshake =
+                new ServerHandshake2(connection, playerDatabase, config.getUseEasyConnect());
+          }
 
-    this.campaign = new Campaign();
-    this.policy = policy;
+          @Override
+          public void onConnectionClosed(@NotNull String connectionId) {
+            // Cancel any pending handshake and remove from the server.
+          }
+
+          @Override
+          public void onConnectionLost(@NotNull String connectionId, @NotNull String reason) {
+            // Cancel any pending handshake and remove from the server. Possibly close it again?
+          }
+        });
 
     // TODO Hook up observers thusly:
     //  1. When a client connects, begin the handshake.
