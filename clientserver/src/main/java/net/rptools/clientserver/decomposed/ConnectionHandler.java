@@ -30,4 +30,6 @@ public interface ConnectionHandler {
   // TODO How should we represent start() to allow asynchronous failures?
 
   void addListener(@Nonnull Listener listener);
+
+  void removeListener(@Nonnull Listener listener);
 }
