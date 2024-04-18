@@ -26,15 +26,17 @@ public interface ConnectionObserver {
     Complete
   };
 
-  void onMessageReceived(Connection connection, byte[] message);
+  default void onStarted(Connection connection) {}
 
-  void onDisconnected(Connection connection, String reason);
+  default void onMessageReceived(Connection connection, byte[] message) {}
+
+  default void onDisconnected(Connection connection, String reason) {}
 
   // For client-side tracking. TODO Why? Cna't the MessageHandler simply log this?
-  void onActivity(
+  default void onActivity(
       Connection connection,
       Direction direction,
       State state,
       int totalTransferSize,
-      int currentTransferSize);
+      int currentTransferSize) {}
 }
