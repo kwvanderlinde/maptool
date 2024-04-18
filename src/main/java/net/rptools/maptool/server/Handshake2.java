@@ -78,6 +78,8 @@ public interface Handshake2 {
   void startHandshake() throws ExecutionException, InterruptedException;
 
   interface Observer {
+    // TODO Separate callbacks for error and success cases.
+
     void onCompleted(Handshake2 handshake);
   }
 }
