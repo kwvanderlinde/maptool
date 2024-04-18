@@ -15,10 +15,8 @@
 package net.rptools.clientserver;
 
 import java.io.IOException;
-import java.util.function.Function;
 import net.rptools.clientserver.decomposed.ConnectionHandler;
 import net.rptools.clientserver.decomposed.socket.SocketConnectionHandler;
-import net.rptools.clientserver.simple.Handshake;
 import net.rptools.clientserver.simple.MessageHandler;
 import net.rptools.clientserver.simple.connection.Connection;
 import net.rptools.clientserver.simple.connection.SocketConnection;
@@ -78,11 +76,8 @@ public class ConnectionFactory {
   }
 
   public net.rptools.clientserver.decomposed.Server createDecomposedServer(
-      ServerConfig config,
-      Function<net.rptools.clientserver.decomposed.Connection, Handshake> handshakeProvider,
-      MessageHandler messageHandler) {
-    final var server =
-        new net.rptools.clientserver.decomposed.Server(messageHandler, handshakeProvider);
+      ServerConfig config, MessageHandler messageHandler) {
+    final var server = new net.rptools.clientserver.decomposed.Server(messageHandler);
 
     // TODO Based on server config, optionally instantiate a SocketConnectionHandler or
     //  WebRTCConnectionHandler.
