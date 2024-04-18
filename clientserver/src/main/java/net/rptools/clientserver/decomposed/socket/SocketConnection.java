@@ -57,8 +57,13 @@ public class SocketConnection extends AbstractConnection implements Connection {
 
   // TODO I don't know that I want IOException here. Only if it really signals something important.
   @Override
-  public void close() throws IOException {
-    this.socket.close();
+  public void close() {
+    try {
+      this.socket.close();
+    } catch (IOException e) {
+      // TODO Don't even close the socket here. Enqueue a special closing message to do that
+      //  handled out of band.
+    }
     onDisconnected("closed");
   }
 

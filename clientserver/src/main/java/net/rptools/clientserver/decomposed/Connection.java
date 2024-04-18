@@ -14,7 +14,6 @@
  */
 package net.rptools.clientserver.decomposed;
 
-import java.io.IOException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -24,7 +23,7 @@ public interface Connection {
 
   void start();
 
-  void close() throws IOException;
+  void close();
 
   void addObserver(ConnectionObserver observer);
 

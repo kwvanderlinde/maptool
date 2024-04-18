@@ -14,7 +14,6 @@
  */
 package net.rptools.clientserver.decomposed.trivial;
 
-import java.io.IOException;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -53,7 +52,7 @@ public class TrivialConnection extends AbstractConnection implements Connection 
   }
 
   @Override
-  public void close() throws IOException {
+  public void close() {
     onDisconnected("closed");
   }
 
