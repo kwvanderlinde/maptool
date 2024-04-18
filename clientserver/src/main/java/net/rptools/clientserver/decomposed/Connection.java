@@ -15,7 +15,6 @@
 package net.rptools.clientserver.decomposed;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 public interface Connection {
   @Nonnull
@@ -29,12 +28,5 @@ public interface Connection {
 
   void removeObserver(ConnectionObserver observer);
 
-  // TODO I would prefer some constraint on channels, though in this generic library no option comes
-  //  to mind. It seems prudent, though, that channels could be strings, or even integers. Perhaps
-  //  they could even be registered somehow so as to provide an indicator to the receiver which
-  //  channel is being used.
-  //  Current thought is that channels should be communicated through the handshake. Channels would
-  //  have names, integer IDs, and configurable compression parameters (e.g., algorithm, level,
-  //  etc).
-  void sendMessage(@Nullable Object channel, @Nonnull byte[] message);
+  void sendMessage(@Nonnull ChannelId channelId, @Nonnull byte[] message);
 }

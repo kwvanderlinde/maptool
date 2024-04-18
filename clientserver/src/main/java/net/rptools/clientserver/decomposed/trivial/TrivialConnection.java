@@ -16,8 +16,8 @@ package net.rptools.clientserver.decomposed.trivial;
 
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import net.rptools.clientserver.decomposed.AbstractConnection;
+import net.rptools.clientserver.decomposed.ChannelId;
 import net.rptools.clientserver.decomposed.Connection;
 
 public class TrivialConnection extends AbstractConnection implements Connection {
@@ -57,7 +57,7 @@ public class TrivialConnection extends AbstractConnection implements Connection 
   }
 
   @Override
-  public void sendMessage(@Nullable Object channel, @Nonnull byte[] message) {
+  public void sendMessage(@Nonnull ChannelId channelId, @Nonnull byte[] message) {
     this.messageSender.accept(message);
   }
 }

@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import net.rptools.clientserver.decomposed.AbstractConnection;
+import net.rptools.clientserver.decomposed.ChannelId;
 import net.rptools.clientserver.decomposed.Connection;
 import net.rptools.clientserver.decomposed.MessageSpool;
 import org.apache.logging.log4j.LogManager;
@@ -45,8 +46,8 @@ public class SocketConnection extends AbstractConnection implements Connection {
   }
 
   @Override
-  public void sendMessage(@Nullable Object channel, @Nonnull byte[] message) {
-    this.send.addMessage(channel, message);
+  public void sendMessage(@Nonnull ChannelId channelId, @Nonnull byte[] message) {
+    this.send.addMessage(channelId, message);
   }
 
   @Override
@@ -87,7 +88,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
   private static final class SendThread extends Thread {
     private static final int SPOOL_AMOUNT = 1000;
 
-    private record PendingMessage(Object channel, byte[] message) {}
+    private record PendingMessage(ChannelId channelId, byte[] message) {}
 
     private final SocketConnection connection;
     private final Socket socket;
@@ -102,8 +103,8 @@ public class SocketConnection extends AbstractConnection implements Connection {
       this.spool = new MessageSpool();
     }
 
-    public void addMessage(@Nullable Object channel, byte[] message) {
-      pendingMessages.add(new PendingMessage(channel, message));
+    public void addMessage(ChannelId channelId, byte[] message) {
+      pendingMessages.add(new PendingMessage(channelId, message));
 
       synchronized (this) {
         this.notify();
@@ -120,7 +121,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
         if (pendingMessage == null) {
           break;
         }
-        spool.addMessage(pendingMessage.channel(), pendingMessage.message());
+        spool.addMessage(pendingMessage.channelId(), pendingMessage.message());
       } while (++count < maxPendingMessagesToProcess);
       log.info("Spooled {} messages", count);
     }

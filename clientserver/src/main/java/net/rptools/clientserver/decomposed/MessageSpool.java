@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -49,7 +50,7 @@ public class MessageSpool {
    * <p>A channel is just an independent list of messages. Message within the channel maintain their
    * sequence relative to one another, but not relative to messages in other channels.
    */
-  private final Map<Object, List<byte[]>> channelsById = new HashMap<>();
+  private final Map<ChannelId, List<byte[]>> channelsById = new HashMap<>();
 
   /**
    * Maintains an ordering among active channels.
@@ -62,13 +63,11 @@ public class MessageSpool {
   // TODO Even better, just keep a list of Object channel IDs?
   private final List<List<byte[]>> queueOfChannels = new LinkedList<>();
 
-  private List<byte[]> getChannel(@Nullable Object channel) {
-    return channelsById.computeIfAbsent(channel, ch -> new ArrayList<>());
+  private List<byte[]> getChannel(ChannelId channelId) {
+    return channelsById.computeIfAbsent(channelId, ch -> new ArrayList<>());
   }
 
-  // TODO I would prefer that there be no null channels, requiring the callers to provide one
-  //  that case.
-  public void addMessage(@Nullable Object channelId, byte[] message) {
+  public void addMessage(@Nonnull ChannelId channelId, @Nonnull byte[] message) {
     // message is compressed already.
     List<byte[]> channel = getChannel(channelId);
 

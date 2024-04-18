@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.annotation.Nonnull;
+import net.rptools.clientserver.decomposed.ChannelId;
 import net.rptools.clientserver.decomposed.Connection;
 import net.rptools.clientserver.decomposed.ConnectionHandler;
 import net.rptools.clientserver.decomposed.Server;
@@ -46,6 +47,8 @@ public class MapToolServer2 {
   private @Nonnull ServerPolicy policy;
   private @Nonnull PlayerDatabase playerDatabase;
 
+  private final ChannelId messageChannelId = new ChannelId();
+  private final ChannelId imageChannelId = new ChannelId();
   private final Server server;
   // TODO Enforce invariants that playersByConnectionId only has keys present in the server. But how
   //  can we enforce that?
@@ -136,7 +139,7 @@ public class MapToolServer2 {
               .toByteArray());
       for (Player player : playersByConnectionId.values()) {
         connection.sendMessage(
-            null,
+            messageChannelId,
             Message.newBuilder()
                 .setPlayerConnectedMsg(
                     // TODO Why do we not send the transferable player as above? Actually it
@@ -148,7 +151,7 @@ public class MapToolServer2 {
 
       // Send the campaign to the new client.
       connection.sendMessage(
-          null,
+          messageChannelId,
           Message.newBuilder()
               .setSetCampaignMsg(SetCampaignMsg.newBuilder().setCampaign(campaign.toDto()))
               .build()
@@ -174,7 +177,8 @@ public class MapToolServer2 {
 
             // Start the handshake.
             final var handshake =
-                new ServerHandshake2(connection, playerDatabase, config.getUseEasyConnect());
+                new ServerHandshake2(
+                    connection, messageChannelId, playerDatabase, config.getUseEasyConnect());
             handshake.addObserver(handshakeObserver);
             handshake.startHandshake();
 

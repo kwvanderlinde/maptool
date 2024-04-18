@@ -67,12 +67,12 @@ public class Server {
   /**
    * Sends a message to all clients.
    *
-   * @param channel
+   * @param channelId
    * @param message
    */
-  public void broadcast(Object channel, byte[] message) {
+  public void broadcast(ChannelId channelId, byte[] message) {
     for (final var conn : this.clientConnections.values()) {
-      conn.sendMessage(channel, message);
+      conn.sendMessage(channelId, message);
     }
   }
 
