@@ -33,7 +33,6 @@ import javax.crypto.NoSuchPaddingException;
 import javax.swing.*;
 import net.rptools.clientserver.decomposed.Connection;
 import net.rptools.clientserver.decomposed.ConnectionObserver;
-import net.rptools.clientserver.simple.MessageHandler;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.language.I18N;
@@ -72,7 +71,7 @@ import org.apache.logging.log4j.Logger;
  * a protocol error (e.g., unexpected messages), the state is set to PlayerBlocked. If the player is
  * blocked in the database, the state is set to Error.
  */
-public class ServerHandshake2 implements Handshake2, MessageHandler {
+public class ServerHandshake2 implements Handshake2 {
   /** Instance used for log messages. */
   private static final Logger log = LogManager.getLogger(ServerHandshake2.class);
 
@@ -105,7 +104,7 @@ public class ServerHandshake2 implements Handshake2, MessageHandler {
         new ConnectionObserver() {
           @Override
           public void onMessageReceived(Connection connection, byte[] message) {
-            handleMessage(connection.getId(), message);
+            handleMessage(message);
           }
         };
 
@@ -188,15 +187,12 @@ public class ServerHandshake2 implements Handshake2, MessageHandler {
     connection.sendMessage(null, message.toByteArray());
   }
 
-  @Override
-  public void handleMessage(String id, byte[] message) {
-    // TODO Should we validate that id matches connection.getId()?
-    //  Can we get rid of this parameter (our nature as a MessageHandler is probably not important).
+  private void handleMessage(byte[] message) {
     try {
       var handshakeMsg = HandshakeMsg.parseFrom(message);
       var msgType = handshakeMsg.getMessageTypeCase();
 
-      log.info("from {} got: {}", id, msgType);
+      log.info("from {} got: {}", connection.getId(), msgType);
 
       if (msgType == HandshakeMsg.MessageTypeCase.HANDSHAKE_RESPONSE_CODE_MSG) {
         HandshakeResponseCodeMsg code = handshakeMsg.getHandshakeResponseCodeMsg();
