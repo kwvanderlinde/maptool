@@ -42,14 +42,17 @@ public class SocketConnection extends AbstractConnection implements Connection {
 
     this.send = new SendThread(this, socket);
     this.receive = new ReceiveThread(this, socket);
-
-    this.send.start();
-    this.receive.start();
   }
 
   @Override
   public void sendMessage(@Nullable Object channel, @Nonnull byte[] message) {
     this.send.addMessage(channel, message);
+  }
+
+  @Override
+  public void start() {
+    this.send.start();
+    this.receive.start();
   }
 
   // TODO I don't know that I want IOException here. Only if it really signals something important.

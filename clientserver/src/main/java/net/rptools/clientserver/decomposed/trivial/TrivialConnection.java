@@ -41,6 +41,13 @@ public class TrivialConnection extends AbstractConnection implements Connection 
     this.messageSender = message -> {};
   }
 
+  @Override
+  public void start() {
+    // TODO Should we do anything special? Should we drop or buffer messages from before start() is
+    //  called?
+    onStarted();
+  }
+
   private void setMessageSender(Consumer<byte[]> messageSender) {
     this.messageSender = messageSender;
   }

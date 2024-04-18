@@ -49,6 +49,11 @@ public class Server {
     this.handshakeConnectionObserver =
         new ConnectionObserver() {
           @Override
+          public void onStarted(Connection connection) {
+            // Nothing special to do I guess.
+          }
+
+          @Override
           public void onMessageReceived(Connection connection, byte[] message) {
             // Nothing to to do. We expect the handshake itself to handle any messages
             // for the time being.
@@ -72,6 +77,11 @@ public class Server {
 
     this.connectionObserver =
         new ConnectionObserver() {
+          @Override
+          public void onStarted(Connection connection) {
+            // Nothing special to do I guess.
+          }
+
           @Override
           public void onMessageReceived(Connection connection, byte[] message) {
             messageHandler.handleMessage(connection.getId(), message);

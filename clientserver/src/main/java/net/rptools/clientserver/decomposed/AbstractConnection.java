@@ -50,6 +50,10 @@ public abstract class AbstractConnection implements Connection {
     observers.removeIf(element -> element == observer);
   }
 
+  protected void onStarted() {
+    observers.forEach(observer -> observer.onStarted(this));
+  }
+
   protected void onMessageReceived(byte[] message) {
     observers.forEach(observer -> observer.onMessageReceived(this, message));
   }

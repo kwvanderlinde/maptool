@@ -22,6 +22,8 @@ public interface Connection {
   @Nonnull
   String getId();
 
+  void start();
+
   void close() throws IOException;
 
   void addObserver(ConnectionObserver observer);
