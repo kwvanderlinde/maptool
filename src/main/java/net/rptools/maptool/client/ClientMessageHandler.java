@@ -790,6 +790,10 @@ public class ClientMessageHandler implements MessageHandler {
         });
   }
 
+  // TODO Add a new ExistingPlayersMsg or something, with a list of all players who joined before
+  //  the current player. Be judicious about what gets sent to chat with the new message. E.g., for
+  //  many players, "Player A, Player B, Player C, and 23 others are already here!"
+
   private void handle(PlayerConnectedMsg msg) {
     EventQueue.invokeLater(
         () -> {
