@@ -32,6 +32,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.swing.*;
 import net.rptools.clientserver.decomposed.Connection;
+import net.rptools.clientserver.decomposed.ConnectionObserver;
 import net.rptools.clientserver.simple.MessageHandler;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.MapTool;
@@ -81,6 +82,8 @@ public class ServerHandshake2 implements Handshake2, MessageHandler {
   /** The connection to the client. */
   private final Connection connection;
 
+  private final ConnectionObserver connectionObserver;
+
   private final boolean useEasyConnect;
 
   /** Observers that want to be notified when the status changes. */
@@ -98,6 +101,14 @@ public class ServerHandshake2 implements Handshake2, MessageHandler {
   public ServerHandshake2(
       Connection connection, PlayerDatabase playerDatabase, boolean useEasyConnect) {
     this.connection = connection;
+    this.connectionObserver =
+        new ConnectionObserver() {
+          @Override
+          public void onMessageReceived(Connection connection, byte[] message) {
+            handleMessage(connection.getId(), message);
+          }
+        };
+
     this.playerDatabase = playerDatabase;
     this.useEasyConnect = useEasyConnect;
   }
@@ -107,6 +118,7 @@ public class ServerHandshake2 implements Handshake2, MessageHandler {
   @Override
   public void startHandshake() {
     try {
+      connection.addObserver(connectionObserver);
       transitionToState(new AwaitingClientInitState());
     } catch (Exception e) {
       // Very important: we do not leak exceptions here, instead simply considering them a failed
@@ -144,6 +156,8 @@ public class ServerHandshake2 implements Handshake2, MessageHandler {
     return state.getException();
   }
 
+  // region TODO Should we just require one observer to be injected during construction?
+
   /**
    * Adds an observer to the handshake process.
    *
@@ -164,6 +178,8 @@ public class ServerHandshake2 implements Handshake2, MessageHandler {
 
   // endregion
 
+  // endregion
+
   // region Message send/receive
 
   private void sendMessage(HandshakeMsg message) {
@@ -174,6 +190,8 @@ public class ServerHandshake2 implements Handshake2, MessageHandler {
 
   @Override
   public void handleMessage(String id, byte[] message) {
+    // TODO Should we validate that id matches connection.getId()?
+    //  Can we get rid of this parameter (our nature as a MessageHandler is probably not important).
     try {
       var handshakeMsg = HandshakeMsg.parseFrom(message);
       var msgType = handshakeMsg.getMessageTypeCase();
@@ -269,6 +287,9 @@ public class ServerHandshake2 implements Handshake2, MessageHandler {
 
   /** Notifies observers that the handshake has completed or errored out.. */
   private synchronized void notifyObservers() {
+    // TODO Make sure this happens for every terminal state.
+    connection.removeObserver(connectionObserver);
+
     for (var observer : observerList) {
       observer.onCompleted(this);
     }
@@ -300,6 +321,10 @@ public class ServerHandshake2 implements Handshake2, MessageHandler {
     default void afterTransitionFrom() {}
   }
 
+  // TODO Problem with StartState: The _client_ sends the first message, so we actually have to be
+  //  listening right away. Any we can't reverse the relationship because then the client has the
+  //  same problem. In order for StateState to make sense, we cannot start the connection reader
+  //  until the handshake is started.
   private static final class StartState implements IState {
     // Like terminal states, no messages are allowed here.
 
