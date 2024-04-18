@@ -14,6 +14,9 @@
  */
 package net.rptools.maptool.server;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.annotation.Nonnull;
 import net.rptools.clientserver.decomposed.Connection;
 import net.rptools.clientserver.decomposed.ConnectionHandler;
@@ -24,6 +27,10 @@ import net.rptools.maptool.model.player.PlayerDatabase;
 import org.jetbrains.annotations.NotNull;
 
 public class MapToolServer2 {
+  private final ExecutorService executor =
+      Executors.newSingleThreadExecutor(
+          new ThreadFactoryBuilder().setNameFormat("server-thread-%d").build());
+
   private @Nonnull Campaign campaign;
   private @Nonnull ServerConfig config;
   private @Nonnull ServerPolicy policy;
@@ -31,6 +38,7 @@ public class MapToolServer2 {
 
   private final Server server;
   private final ConnectionHandler connectionHandler;
+  private final Handshake2.Observer handshakeObserver;
 
   // TODO I feel like we should be the ones deciding the player database... no?
   public MapToolServer2(ServerConfig config, ServerPolicy policy, PlayerDatabase playerDb) {
@@ -39,22 +47,46 @@ public class MapToolServer2 {
     this.policy = policy;
     this.playerDatabase = playerDb;
 
+    this.handshakeObserver =
+        new Handshake2.Observer() {
+          @Override
+          public void onCompleted(Handshake2 handshake) {
+            handshake.removeObserver(this);
+
+            final var connection = handshake.getConnection();
+
+            if (handshake.isSuccessful()) {
+              server.addConnection(connection);
+            } else {
+              // TODO Make sure the connection is cosed and errors logged.
+            }
+          }
+        };
+
     // TODO Obviously this casting will not work. We will have to change ServerMessageHandler
     //  to accept a MapToolServer2. There's not much about it, mostly the message handler just
     //  needs to look up the server's campaign, and sometimes send messages and
     //  connections.
     // TODO In my new approach, handshakes are decided entirely here.
-    this.server = new Server(new ServerMessageHandler((MapToolServer) (Object) this), null);
+    this.server = new Server(new ServerMessageHandler(null /* Should be `this` */), null);
     // TODO Create via ConnectionFactory so that ServerConfig is accounted for. This might even
     //  be feasible to create at the call site and injected instead of a hard dependency here).
     this.connectionHandler = new SocketConnectionHandler();
+
     this.connectionHandler.addListener(
         new ConnectionHandler.Listener() {
           @Override
           public void onConnected(@NotNull Connection connection) {
-            // Start the handshake.
-            final var handshake =
-                new ServerHandshake2(connection, playerDatabase, config.getUseEasyConnect());
+            executor.execute(
+                () -> {
+                  // Start the handshake.
+                  final var handshake =
+                      new ServerHandshake2(connection, playerDatabase, config.getUseEasyConnect());
+                  handshake.addObserver(handshakeObserver);
+                  handshake.startHandshake();
+
+                  connection.start();
+                });
           }
 
           @Override
