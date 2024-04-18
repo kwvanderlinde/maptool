@@ -15,6 +15,7 @@
 package net.rptools.maptool.server;
 
 import java.util.concurrent.ExecutionException;
+import javax.annotation.Nullable;
 import net.rptools.clientserver.decomposed.Connection;
 
 public interface Handshake2 {
@@ -46,6 +47,7 @@ public interface Handshake2 {
    *
    * @return the exception that occurred during the processing of the handshake.
    */
+  @Nullable
   Exception getException();
 
   /**
