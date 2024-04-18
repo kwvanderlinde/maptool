@@ -110,9 +110,12 @@ public class MapToolServer2 {
         return;
       }
 
-      // (1) & (3)
-      // TODO Watch for an error here. Would indicate someone else snuck in with the same ID.
-      server.addConnection(connection);
+      final var connectionAdded = server.addConnection(connection);
+      if (!connectionAdded) {
+        log.error("Another connection with ID {} already exists", connection.getId());
+        connection.close();
+        return;
+      }
 
       // TODO AbstractServer.onCompleted() took the opportunity to reapClients() here. Let's
       //  add that to the decomposed server as well, through the message pump though.

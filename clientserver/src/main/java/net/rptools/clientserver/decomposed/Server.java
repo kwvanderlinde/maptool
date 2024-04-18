@@ -16,6 +16,7 @@ package net.rptools.clientserver.decomposed;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import net.rptools.clientserver.simple.MessageHandler;
@@ -77,18 +78,26 @@ public class Server {
 
   // Only once a connection is set up do we add it to the server. Most importantly though, the
   // server is not the one responsible for deciding what kind of connections to use.
-  public void addConnection(@Nonnull Connection connection) {
+
+  /**
+   * Add an initialized connection to the server
+   *
+   * @param connection the connection to add
+   * @return {@code true} if the connection was added; {@code false} if a connection with that ID
+   *     already exists.
+   */
+  @CheckReturnValue
+  public boolean addConnection(@Nonnull Connection connection) {
     log.debug("Adding connection {}", connection.getId());
 
     final var existingConnection =
         this.clientConnections.putIfAbsent(connection.getId(), connection);
     if (existingConnection != null) {
-      // TODO Throw an execption. This should not be silent!
-      log.error("Attempted to add a connection with an existing ID: {}", connection.getId());
-      return;
+      return false;
     }
 
     connection.addObserver(connectionObserver);
+    return true;
   }
 
   public void removeConnection(@Nonnull String connectionId, @Nullable String reason) {
