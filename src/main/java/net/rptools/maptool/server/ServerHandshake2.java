@@ -73,7 +73,7 @@ import org.apache.logging.log4j.Logger;
  * a protocol error (e.g., unexpected messages), the state is set to PlayerBlocked. If the player is
  * blocked in the database, the state is set to Error.
  */
-public class ServerHandshake2 implements Handshake2 {
+public class ServerHandshake2 {
 
   /** Instance used for log messages. */
   private static final Logger log = LogManager.getLogger(ServerHandshake2.class);
@@ -131,7 +131,7 @@ public class ServerHandshake2 implements Handshake2 {
 
   // region Public API
 
-  @Override
+  /** Run the handshake process. */
   public CompletionStage<Player> run() {
     try {
       connection.addObserver(connectionObserver);
@@ -143,35 +143,6 @@ public class ServerHandshake2 implements Handshake2 {
     }
 
     return future;
-  }
-
-  @Override
-  public Connection getConnection() {
-    return connection;
-  }
-
-  /**
-   * Returns the player associated with the handshake.
-   *
-   * @return the player associated with the handshake.
-   */
-  public Player getPlayer() {
-    return state.getPlayer();
-  }
-
-  @Override
-  public boolean isSuccessful() {
-    return state.getPlayer() != null;
-  }
-
-  @Override
-  public String getErrorMessage() {
-    return state.getErrorMessage();
-  }
-
-  @Override
-  public Exception getException() {
-    return state.getException();
   }
 
   // endregion
