@@ -122,16 +122,6 @@ public class MapToolServer2 {
                 connection.start();
               });
     }
-
-    @Override
-    public void onConnectionClosed(@NotNull String connectionId) {
-      // Cancel any pending handshake and remove from the server.
-    }
-
-    @Override
-    public void onConnectionLost(@NotNull String connectionId, @NotNull String reason) {
-      // Cancel any pending handshake and remove from the server. Possibly close it again?
-    }
   }
 
   private void onHandshakeError(Connection connection, Throwable exception) {

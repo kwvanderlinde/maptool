@@ -19,12 +19,6 @@ import javax.annotation.Nonnull;
 public interface ConnectionHandler {
   interface Listener {
     void onConnected(@Nonnull Connection connection);
-
-    // TODO These two might be better served by the ConnectionObserver.
-
-    void onConnectionClosed(@Nonnull String connectionId);
-
-    void onConnectionLost(@Nonnull String connectionId, @Nonnull String reason);
   }
 
   // TODO How should we represent start() to allow asynchronous failures?

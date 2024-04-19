@@ -15,8 +15,6 @@
 package net.rptools.clientserver;
 
 import java.io.IOException;
-import net.rptools.clientserver.decomposed.ConnectionHandler;
-import net.rptools.clientserver.decomposed.socket.SocketConnectionHandler;
 import net.rptools.clientserver.simple.MessageHandler;
 import net.rptools.clientserver.simple.connection.Connection;
 import net.rptools.clientserver.simple.connection.SocketConnection;
@@ -27,7 +25,6 @@ import net.rptools.clientserver.simple.server.SocketServer;
 import net.rptools.clientserver.simple.server.WebRTCServer;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.server.ServerConfig;
-import org.jetbrains.annotations.NotNull;
 
 public class ConnectionFactory {
   private static ConnectionFactory instance = new ConnectionFactory();
@@ -73,39 +70,5 @@ public class ConnectionFactory {
             MapTool.stopServer();
           }
         });
-  }
-
-  public net.rptools.clientserver.decomposed.Server createDecomposedServer(
-      ServerConfig config, MessageHandler messageHandler) {
-    final var server = new net.rptools.clientserver.decomposed.Server(messageHandler);
-
-    // TODO Based on server config, optionally instantiate a SocketConnectionHandler or
-    //  WebRTCConnectionHandler.
-    // TODO ConnectionHandler needs a way to signal when it's ready or if it encoutnered a startup
-    //  error. I imagine this will be necessary for good user-facing message, or if the application
-    //  wants to wait until it is started. Although if it just ends up being for messages, then is
-    //  it really any different from any unexpected failure?
-    final var connectionHandler = new SocketConnectionHandler();
-    final var listener =
-        new ConnectionHandler.Listener() {
-          @Override
-          public void onConnected(
-              @NotNull net.rptools.clientserver.decomposed.Connection connection) {
-            server.addConnection(connection);
-          }
-
-          @Override
-          public void onConnectionClosed(@NotNull String connectionId) {
-            server.removeConnection(connectionId, null);
-          }
-
-          @Override
-          public void onConnectionLost(@NotNull String connectionId, @NotNull String reason) {
-            server.removeConnection(connectionId, reason);
-          }
-        };
-    connectionHandler.addListener(listener);
-
-    return server;
   }
 }

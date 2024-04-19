@@ -37,12 +37,4 @@ public abstract class AbstractConnectionHandler implements ConnectionHandler {
   protected void onConnected(@Nonnull Connection connection) {
     listeners.forEach(listener -> listener.onConnected(connection));
   }
-
-  protected void onConnectionClosed(@Nonnull String connectionId) {
-    listeners.forEach(listener -> listener.onConnectionClosed(connectionId));
-  }
-
-  protected void onConnectionLost(@Nonnull String connectionId, @Nonnull String reason) {
-    listeners.forEach(listener -> listener.onConnectionLost(connectionId, reason));
-  }
 }
