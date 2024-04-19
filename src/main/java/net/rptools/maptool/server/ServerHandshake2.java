@@ -196,16 +196,14 @@ public class ServerHandshake2 implements Handshake2 {
                   "Handshake.msg.incorrectPublicKey");
               default -> I18N.getText("Handshake.msg.invalidHandshake");
             };
-
-        transitionToState(new ErrorState(errorMessage));
-        notifyObservers();
+        transitionToState(new ProtocolErrorState(new ProtocolException(code, errorMessage)));
         return;
       }
 
       final var newState = this.state.handle(handshakeMsg);
       transitionToState(newState);
-    } catch (ProtocolError e) {
-      setProtocolError(e.errorCode, e.getMessage());
+    } catch (ProtocolException e) {
+      setProtocolError(e);
     } catch (Exception e) {
       setUnexpectedException(e);
     }
@@ -246,45 +244,20 @@ public class ServerHandshake2 implements Handshake2 {
     state.afterTransitionFrom();
   }
 
-  private void setProtocolError(HandshakeResponseCodeMsg errorCode, String message) {
-    sendMessage(HandshakeMsg.newBuilder().setHandshakeResponseCodeMsg(errorCode).build());
-    transitionToState(new ErrorState(message));
-
-    // TODO This note comes to us from the original:
-    //  > Do not notify users as it will disconnect and client won't get message instead wait
-    //  > for client to disconnect after getting this message, if they don't then it will fail
-    //  > with invalid handshake.
-    //  I can't think of what this is about. Either it's some whacko EasyConnect case, or some of
-    //  our observers do stuff they shouldn't. I need to make sure such a case does not actually
-    //  exist.
-    //      Oh, I think I understand the message now - I was thinking of "client" as "UI" because of
-    //  the use of the term "users", but it just means don't invoke the observers because doing so
-    //  will close the connection and prevent the above response code message from making it. And I
-    //  have to say I vehemently disagree with this as a solution. Disconnection should be queued
-    //  up like any other message, so that we can indeed send a final message before closing. This
-    //  is something we need to improve connection-side in order to recover sanity. Or even better,
-    //  once I have a server event pump, I should be able to guarantee sequencing of all these types
-    //  of things.
+  private void setProtocolError(ProtocolException exception) {
+    sendMessage(
+        HandshakeMsg.newBuilder().setHandshakeResponseCodeMsg(exception.getErrorCode()).build());
+    transitionToState(new ProtocolErrorState(exception));
   }
 
-  private void setUnexpectedException(Exception e) {
-    log.warn(e);
-    transitionToState(new ErrorState(e.getMessage(), e));
-    notifyObservers();
-  }
-
-  /** Notifies observers that the handshake has completed or errored out.. */
-  private void notifyObservers() {
-    // TODO Make sure notification is only possible once. E.g., clear out the observer or something
-    //  afterward, or attach notification behaviour to state.
-    // TODO This is only the success case. Treat the error case as well (noting it must be expressed
-    //  via exception).
-    future.complete(state.getPlayer());
+  private void setUnexpectedException(Exception exception) {
+    log.error("Unhandled exception during handshake", exception);
+    transitionToState(new ErrorState(exception));
   }
 
   /** The states that the server side of the server side of the handshake process can be in. */
   private interface IState {
-    IState handle(HandshakeMsg message) throws ProtocolError;
+    IState handle(HandshakeMsg message) throws ProtocolException;
 
     default @Nullable Player getPlayer() {
       // Even if we know the player, it isn't firmly set until we're in a success state.
@@ -316,28 +289,28 @@ public class ServerHandshake2 implements Handshake2 {
     // Like terminal states, no messages are allowed here.
 
     @Override
-    public IState handle(HandshakeMsg message) throws ProtocolError {
-      throw ProtocolError.invalidHandshake();
+    public IState handle(HandshakeMsg message) throws ProtocolException {
+      throw ProtocolException.invalidHandshake();
     }
   }
 
   private class AwaitingClientInitState implements IState {
     @Override
-    public final IState handle(HandshakeMsg handshakeMsg) throws ProtocolError {
+    public final IState handle(HandshakeMsg handshakeMsg) throws ProtocolException {
       if (handshakeMsg.getMessageTypeCase() != HandshakeMsg.MessageTypeCase.CLIENT_INIT_MSG) {
-        throw ProtocolError.invalidHandshake();
+        throw ProtocolException.invalidHandshake();
       }
       final var clientInitMsg = handshakeMsg.getClientInitMsg();
 
       var server = MapTool.getServer();
       if (server.isPlayerConnected(clientInitMsg.getPlayerName())) {
-        throw new ProtocolError(
+        throw new ProtocolException(
             HandshakeResponseCodeMsg.PLAYER_ALREADY_CONNECTED,
             I18N.getText("Handshake.msg.duplicateName"));
       }
 
       if (!MapTool.isDevelopment() && !MapTool.getVersion().equals(clientInitMsg.getVersion())) {
-        throw new ProtocolError(
+        throw new ProtocolException(
             HandshakeResponseCodeMsg.WRONG_VERSION, I18N.getText("Handshake.msg.wrongVersion"));
       }
 
@@ -345,14 +318,14 @@ public class ServerHandshake2 implements Handshake2 {
       try {
         player = playerDatabase.getPlayer(clientInitMsg.getPlayerName());
       } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-        throw new ProtocolError(
+        throw new ProtocolException(
             HandshakeResponseCodeMsg.INVALID_PASSWORD,
             I18N.getText("Handshake.msg.encodeInitFail", clientInitMsg.getPlayerName()));
       }
 
       if (player == null) {
         if (!useEasyConnect) {
-          throw new ProtocolError(
+          throw new ProtocolException(
               HandshakeResponseCodeMsg.INVALID_PASSWORD,
               I18N.getText("Handshake.msg.unknownPlayer", clientInitMsg.getPlayerName()));
         }
@@ -474,13 +447,13 @@ public class ServerHandshake2 implements Handshake2 {
      * @return the new state for the state machine.
      */
     private IState sendAsymmetricKeyAuthType(Player player, MD5Key playerPublicKeyMD5)
-        throws ProtocolError {
+        throws ProtocolException {
       if (!playerDatabase.hasPublicKey(player, playerPublicKeyMD5).join()) {
         if (useEasyConnect) {
           return requestPublicKey(player.getName());
         }
 
-        throw ProtocolError.incorrectPublicKey();
+        throw ProtocolException.incorrectPublicKey();
       }
 
       CipherUtil.Key publicKey;
@@ -527,9 +500,9 @@ public class ServerHandshake2 implements Handshake2 {
     }
 
     @Override
-    public final IState handle(HandshakeMsg handshakeMsg) throws ProtocolError {
+    public final IState handle(HandshakeMsg handshakeMsg) throws ProtocolException {
       if (handshakeMsg.getMessageTypeCase() != HandshakeMsg.MessageTypeCase.CLIENT_AUTH_MESSAGE) {
-        throw ProtocolError.invalidHandshake();
+        throw ProtocolException.invalidHandshake();
       }
       final var clientAuthMessage = handshakeMsg.getClientAuthMessage();
 
@@ -542,7 +515,7 @@ public class ServerHandshake2 implements Handshake2 {
         } else if (Arrays.compare(response, playerChallenge.getExpectedResponse(iv)) == 0) {
           connectedPlayer = playerDatabase.getPlayerWithRole(player.getName(), Player.Role.PLAYER);
         } else {
-          throw ProtocolError.incorrectPassword();
+          throw ProtocolException.incorrectPassword();
         }
         return new SuccessState(connectedPlayer);
       } catch (InvalidAlgorithmParameterException
@@ -552,7 +525,7 @@ public class ServerHandshake2 implements Handshake2 {
           | BadPaddingException
           | InvalidKeySpecException
           | InvalidKeyException e) {
-        throw ProtocolError.incorrectPassword();
+        throw ProtocolException.incorrectPassword();
       }
     }
   }
@@ -567,9 +540,9 @@ public class ServerHandshake2 implements Handshake2 {
     }
 
     @Override
-    public IState handle(HandshakeMsg handshakeMsg) throws ProtocolError {
+    public IState handle(HandshakeMsg handshakeMsg) throws ProtocolException {
       if (handshakeMsg.getMessageTypeCase() != HandshakeMsg.MessageTypeCase.CLIENT_AUTH_MESSAGE) {
-        throw ProtocolError.invalidHandshake();
+        throw ProtocolException.invalidHandshake();
       }
       final var clientAuthMessage = handshakeMsg.getClientAuthMessage();
 
@@ -577,7 +550,7 @@ public class ServerHandshake2 implements Handshake2 {
       var iv = clientAuthMessage.getIv().toByteArray();
       try {
         if (Arrays.compare(response, gmChallenge.getExpectedResponse(iv)) != 0) {
-          throw ProtocolError.incorrectPassword();
+          throw ProtocolException.incorrectPassword();
         }
       } catch (NoSuchPaddingException
           | IllegalBlockSizeException
@@ -585,7 +558,7 @@ public class ServerHandshake2 implements Handshake2 {
           | BadPaddingException
           | InvalidKeyException
           | InvalidAlgorithmParameterException e) {
-        throw ProtocolError.incorrectPassword();
+        throw ProtocolException.incorrectPassword();
       }
 
       return new SuccessState(player);
@@ -602,15 +575,15 @@ public class ServerHandshake2 implements Handshake2 {
     }
 
     @Override
-    public IState handle(HandshakeMsg handshakeMsg) throws ProtocolError {
+    public IState handle(HandshakeMsg handshakeMsg) throws ProtocolException {
       if (handshakeMsg.getMessageTypeCase() != HandshakeMsg.MessageTypeCase.CLIENT_AUTH_MESSAGE) {
-        throw ProtocolError.invalidHandshake();
+        throw ProtocolException.invalidHandshake();
       }
       final var clientAuthMessage = handshakeMsg.getClientAuthMessage();
 
       byte[] response = clientAuthMessage.getChallengeResponse().toByteArray();
       if (Arrays.compare(response, challenge.getExpectedResponse()) != 0) {
-        throw ProtocolError.incorrectPublicKey();
+        throw ProtocolException.incorrectPublicKey();
       }
 
       return new SuccessState(player);
@@ -638,9 +611,9 @@ public class ServerHandshake2 implements Handshake2 {
     }
 
     @Override
-    public IState handle(HandshakeMsg handshakeMsg) throws ProtocolError {
+    public IState handle(HandshakeMsg handshakeMsg) throws ProtocolException {
       if (handshakeMsg.getMessageTypeCase() != HandshakeMsg.MessageTypeCase.PUBLIC_KEY_UPLOAD_MSG) {
-        throw ProtocolError.invalidHandshake();
+        throw ProtocolException.invalidHandshake();
       }
       final var publicKeyUploadMsg = handshakeMsg.getPublicKeyUploadMsg();
 
@@ -665,7 +638,10 @@ public class ServerHandshake2 implements Handshake2 {
 
     private void denyNewPublicKey(PlayerAwaitingApproval p) {
       approvalResponseReceived = true;
-      setProtocolError(HandshakeResponseCodeMsg.SERVER_DENIED, "Handshake.msg.deniedEasyConnect");
+      setProtocolError(
+          new ProtocolException(
+              HandshakeResponseCodeMsg.SERVER_DENIED,
+              I18N.getText("Handshake.msg.deniedEasyConnect")));
     }
 
     private void acceptNewPublicKey(PlayerAwaitingApproval p) {
@@ -698,10 +674,12 @@ public class ServerHandshake2 implements Handshake2 {
           | InvalidKeySpecException
           | InvalidKeyException
           | PasswordDatabaseException e) {
+        // TODO Separate a truely invalid key from other unexpected errors.
         log.error("Error adding public key", e);
         setProtocolError(
-            HandshakeResponseCodeMsg.INVALID_PUBLIC_KEY,
-            I18N.getText("Handshake.msg.incorrectPublicKey"));
+            new ProtocolException(
+                HandshakeResponseCodeMsg.INVALID_PUBLIC_KEY,
+                I18N.getText("Handshake.msg.incorrectPublicKey")));
       } catch (Exception e) {
         setUnexpectedException(e);
       }
@@ -710,12 +688,12 @@ public class ServerHandshake2 implements Handshake2 {
 
   private class AbstractTerminalState implements IState {
     @Override
-    public final IState handle(HandshakeMsg message) throws ProtocolError {
-      throw ProtocolError.invalidHandshake();
+    public final IState handle(HandshakeMsg message) throws ProtocolException {
+      throw ProtocolException.invalidHandshake();
     }
 
     @Override
-    public void afterTransitionTo() {
+    public void beforeTransitionTo() {
       connection.removeObserver(connectionObserver);
     }
   }
@@ -759,8 +737,7 @@ public class ServerHandshake2 implements Handshake2 {
 
     @Override
     public void afterTransitionTo() {
-      super.afterTransitionTo();
-      notifyObservers();
+      future.complete(player);
     }
   }
 
@@ -773,67 +750,102 @@ public class ServerHandshake2 implements Handshake2 {
 
     @Override
     public void afterTransitionTo() {
-      super.afterTransitionTo();
-
-      var blockedMsg =
-          PlayerBlockedMsg.newBuilder().setReason(playerDatabase.getBlockedReason(player)).build();
+      var reason = playerDatabase.getBlockedReason(player);
+      var blockedMsg = PlayerBlockedMsg.newBuilder().setReason(reason);
       var msg = HandshakeMsg.newBuilder().setPlayerBlockedMsg(blockedMsg).build();
       sendMessage(msg);
+
+      future.completeExceptionally(new PlayerBlockedException(reason));
     }
   }
 
-  private static class ErrorState extends AbstractTerminalState {
-    /** Message for any error that has occurred, {@code null} if no error has occurred. */
-    private final @Nonnull String message;
+  private class ProtocolErrorState extends AbstractTerminalState {
+    private final ProtocolException exception;
 
-    /**
-     * Any exception that occurred that causes an error, {@code null} if no exception which causes
-     * an error has occurred.
-     */
-    private final @Nullable Exception exception;
-
-    public ErrorState(@Nonnull String message) {
-      this(message, null);
-    }
-
-    public ErrorState(@Nonnull String message, @Nullable Exception exception) {
-      this.message = message;
+    public ProtocolErrorState(ProtocolException exception) {
       this.exception = exception;
     }
 
     @Override
-    public @Nonnull String getErrorMessage() {
-      return this.message;
-    }
+    public void afterTransitionTo() {
+      future.completeExceptionally(exception);
 
-    @Override
-    public @Nullable Exception getException() {
-      return exception;
+      /*
+       * TODO This note comes to us from the original:
+       *  > Do not notify users as it will disconnect and client won't get message instead wait
+       *  > for client to disconnect after getting this message, if they don't then it will fail
+       *  > with invalid handshake.
+       *  I can't think of what this is about. Either it's some whacko EasyConnect case, or some of
+       *  our observers do stuff they shouldn't. I need to make sure such a case does not actually
+       *  exist.
+       *      Oh, I think I understand the message now - I was thinking of "client" as "UI" because of
+       *  the use of the term "users", but it just means don't invoke the observers because doing so
+       *  will close the connection and prevent the above response code message from making it. And I
+       *  have to say I vehemently disagree with this as a solution. Disconnection should be queued
+       *  up like any other message, so that we can indeed send a final message before closing. This
+       *  is something we need to improve connection-side in order to recover sanity. Or even better,
+       *  once I have a server event pump, I should be able to guarantee sequencing of all these types
+       *  of things.
+       */
+      /*
+       * TODO Based on the above discussion, actually implement a message pump for connections.
+       *  Otherwise my current approach of completing this future right now just doesn't fly.
+       */
     }
   }
 
-  private static final class ProtocolError extends Exception {
-    public final HandshakeResponseCodeMsg errorCode;
+  private class ErrorState extends AbstractTerminalState {
+    /** Any exception that occurred that causes an error */
+    private final Exception exception;
 
-    public ProtocolError(HandshakeResponseCodeMsg response, String message) {
+    public ErrorState(Exception exception) {
+      this.exception = exception;
+    }
+
+    @Override
+    public void afterTransitionTo() {
+      future.completeExceptionally(exception);
+    }
+  }
+
+  /** Thrown to indicate that the player has been blocked by the server. */
+  public static final class PlayerBlockedException extends Exception {
+    public PlayerBlockedException(String reason) {
+      super(String.format("Player is blocked for reason: %s", reason));
+    }
+  }
+
+  /**
+   * Thrown to indicate that the handshake failed for detectable reasons.
+   *
+   * <p>E.g., the password was wrong, the wrong type of message came in, etc.
+   */
+  public static final class ProtocolException extends Exception {
+    private final HandshakeResponseCodeMsg errorCode;
+
+    public ProtocolException(HandshakeResponseCodeMsg response, String message) {
       super(message);
       this.errorCode = response;
     }
 
-    public static ProtocolError invalidHandshake() {
-      return new ProtocolError(
+    public HandshakeResponseCodeMsg getErrorCode() {
+      return errorCode;
+    }
+
+    private static ProtocolException invalidHandshake() {
+      return new ProtocolException(
           HandshakeResponseCodeMsg.INVALID_HANDSHAKE,
           I18N.getText("Handshake.msg.invalidHandshake"));
     }
 
-    public static ProtocolError incorrectPassword() {
-      return new ProtocolError(
+    private static ProtocolException incorrectPassword() {
+      return new ProtocolException(
           HandshakeResponseCodeMsg.INVALID_PASSWORD,
           I18N.getText("Handshake.msg.incorrectPassword"));
     }
 
-    public static ProtocolError incorrectPublicKey() {
-      return new ProtocolError(
+    private static ProtocolException incorrectPublicKey() {
+      return new ProtocolException(
           HandshakeResponseCodeMsg.INVALID_PUBLIC_KEY,
           I18N.getText("Handshake.msg.incorrectPublicKey"));
     }
