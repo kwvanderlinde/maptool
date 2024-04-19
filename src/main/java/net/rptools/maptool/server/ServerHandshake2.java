@@ -275,9 +275,6 @@ public class ServerHandshake2 implements Handshake2 {
 
   /** Notifies observers that the handshake has completed or errored out.. */
   private void notifyObservers() {
-    // TODO Make sure this happens for every terminal state.
-    connection.removeObserver(connectionObserver);
-
     // TODO Make sure notification is only possible once. E.g., clear out the observer or something
     //  afterward, or attach notification behaviour to state.
     // TODO This is only the success case. Treat the error case as well (noting it must be expressed
@@ -711,8 +708,20 @@ public class ServerHandshake2 implements Handshake2 {
     }
   }
 
+  private class AbstractTerminalState implements IState {
+    @Override
+    public final IState handle(HandshakeMsg message) throws ProtocolError {
+      throw ProtocolError.invalidHandshake();
+    }
+
+    @Override
+    public void afterTransitionTo() {
+      connection.removeObserver(connectionObserver);
+    }
+  }
+
   // The following must reject messages generally, so not suitable for AState.
-  private class SuccessState implements IState {
+  private class SuccessState extends AbstractTerminalState {
     /** The player that this connection is for. */
     private final Player player;
 
@@ -726,12 +735,8 @@ public class ServerHandshake2 implements Handshake2 {
     }
 
     @Override
-    public final IState handle(HandshakeMsg message) throws ProtocolError {
-      throw ProtocolError.invalidHandshake();
-    }
-
-    @Override
     public void beforeTransitionTo() {
+      // TODO Can't this logc just live wherever the transition is actioned?
       var server = MapTool.getServer();
       final DataStoreDto dataStoreDto;
       final AddOnLibraryListDto addOnLibraryListDto;
@@ -754,11 +759,12 @@ public class ServerHandshake2 implements Handshake2 {
 
     @Override
     public void afterTransitionTo() {
+      super.afterTransitionTo();
       notifyObservers();
     }
   }
 
-  private class PlayerBlockedState implements IState {
+  private class PlayerBlockedState extends AbstractTerminalState {
     private final Player player;
 
     public PlayerBlockedState(Player player) {
@@ -766,12 +772,9 @@ public class ServerHandshake2 implements Handshake2 {
     }
 
     @Override
-    public final IState handle(HandshakeMsg message) throws ProtocolError {
-      throw ProtocolError.invalidHandshake();
-    }
-
-    @Override
     public void afterTransitionTo() {
+      super.afterTransitionTo();
+
       var blockedMsg =
           PlayerBlockedMsg.newBuilder().setReason(playerDatabase.getBlockedReason(player)).build();
       var msg = HandshakeMsg.newBuilder().setPlayerBlockedMsg(blockedMsg).build();
@@ -779,7 +782,7 @@ public class ServerHandshake2 implements Handshake2 {
     }
   }
 
-  private static class ErrorState implements IState {
+  private static class ErrorState extends AbstractTerminalState {
     /** Message for any error that has occurred, {@code null} if no error has occurred. */
     private final @Nonnull String message;
 
@@ -806,11 +809,6 @@ public class ServerHandshake2 implements Handshake2 {
     @Override
     public @Nullable Exception getException() {
       return exception;
-    }
-
-    @Override
-    public final IState handle(HandshakeMsg message) throws ProtocolError {
-      throw ProtocolError.invalidHandshake();
     }
   }
 
