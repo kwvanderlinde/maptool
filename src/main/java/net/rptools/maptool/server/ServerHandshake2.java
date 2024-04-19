@@ -94,7 +94,7 @@ public class ServerHandshake2 {
 
   private final boolean useEasyConnect;
 
-  private IState state = new StartState();
+  private IState state;
 
   /**
    * Creates a new handshake.
@@ -124,27 +124,17 @@ public class ServerHandshake2 {
             executor.execute(() -> setUnexpectedException(new ConnectionClosedException(reason)));
           }
         };
-
     this.playerDatabase = playerDatabase;
     this.useEasyConnect = useEasyConnect;
+    this.state = new AwaitingClientInitState();
+
+    connection.addObserver(this.connectionObserver);
   }
 
   // region Public API
 
   /** Run the handshake process. */
   public CompletionStage<Player> run() {
-    // Very important: we do not leak exceptions here. Instead, we treat start up errors like any
-    // other failure that could occur during the handshake, exposing them as a failed future.
-    executor.execute(
-        () -> {
-          try {
-            connection.addObserver(connectionObserver);
-            transitionToState(new AwaitingClientInitState());
-          } catch (Exception e) {
-            setUnexpectedException(e);
-          }
-        });
-
     return future;
   }
 
@@ -192,25 +182,6 @@ public class ServerHandshake2 {
 
   // region State machine
 
-  /*
-   * TODO Because of the UI interaction for AwaitingPublicKeyState, this actually needs to be
-   *  thread-safe. Actually I take that back - the entirety of state management needs to be thread-
-   *  safe. I see a couple of approach to actually accomplishing that:
-   *  1. Take a lock during message handling and state transitions. I.e., we cannot transition
-   *     states while handling a message (except in the same thread), no two threads can transition
-   *     at the same time, and not two messages can be handled at the same time. GOOD LUCK getting
-   *     this correct though.
-   *  2. A transactional approach. This is best done by holding mutable state in state objects,
-   *     though idempotent state can leak into the application at large. When attempting to
-   *     transition states, we have to check that the current state is what it was when we started,
-   *     and only then can we transition.
-   *  3. Using an event queue. This is actually applicable beyond just handshake, and so I really
-   *     like the idea. First, remember the premise that each connection potentially reads messages
-   *     in its own thread. Rather than directly invoking observers, connections should instead push
-   *     individual messages to a concurrent queue. The server (or related components) can then
-   *     action messages on its own dedicated thread by pulling from the queue, shared between all
-   *     connections. This could also be used in callbacks, e.g., for AwaitingPublicKeyState.
-   */
   private void transitionToState(IState newState) {
     if (newState == state) {
       return;
@@ -258,19 +229,6 @@ public class ServerHandshake2 {
     default void beforeTransitionFrom() {}
 
     default void afterTransitionFrom() {}
-  }
-
-  // TODO Problem with StartState: The _client_ sends the first message, so we actually have to be
-  //  listening right away. Any we can't reverse the relationship because then the client has the
-  //  same problem. In order for StateState to make sense, we cannot start the connection reader
-  //  until the handshake is started.
-  private static final class StartState implements IState {
-    // Like terminal states, no messages are allowed here.
-
-    @Override
-    public IState handle(HandshakeMsg message) throws ProtocolException {
-      throw ProtocolException.invalidHandshake();
-    }
   }
 
   private class AwaitingClientInitState implements IState {

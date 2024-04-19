@@ -88,39 +88,27 @@ public class MapToolServer2 {
   private final class ConnectionHandlerListener implements ConnectionHandler.Listener {
     @Override
     public void onConnected(@NotNull Connection connection) {
-      server
-          .getExecutor()
-          .execute(
-              () -> {
-                /*
-                 * TODO I feel like I ought to maintain a set of current handshakes, to prevent
-                 *  two from running for the same client. But that comes with two downsides:
-                 *  1. Both could be legit, so why prefer the one that got in a few ms earlier?
-                 *  2. it's extra state to juggle, so we need a really good reason for it.
-                 */
-
-                // Start the handshake.
-                final var handshake =
-                    new ServerHandshake2(
-                        server.getExecutor(),
-                        connection,
-                        messageChannelId,
-                        playerDatabase,
-                        config.getUseEasyConnect());
-                handshake
-                    .run()
-                    .whenComplete(
-                        (player, exception) -> {
-                          if (exception != null) {
-                            onHandshakeError(connection, exception);
-                          }
-                          if (player != null) {
-                            onHandshakeSuccess(connection, player);
-                          }
-                        });
-
-                connection.start();
+      // Start the handshake.
+      final var handshake =
+          new ServerHandshake2(
+              server.getExecutor(),
+              connection,
+              messageChannelId,
+              playerDatabase,
+              config.getUseEasyConnect());
+      handshake
+          .run()
+          .whenComplete(
+              (player, exception) -> {
+                if (exception != null) {
+                  onHandshakeError(connection, exception);
+                }
+                if (player != null) {
+                  onHandshakeSuccess(connection, player);
+                }
               });
+
+      connection.start();
     }
   }
 
