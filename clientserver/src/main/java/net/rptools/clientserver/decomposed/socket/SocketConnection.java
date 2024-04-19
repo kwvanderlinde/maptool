@@ -42,38 +42,35 @@ public class SocketConnection extends AbstractConnection implements Connection {
 
   private static final Logger log = LogManager.getLogger(SocketConnection.class);
 
-  private static final ChannelId SOCKET_OPERATION_CHANNEL = new ChannelId();
-
   private final Socket socket;
-  private final SendThread send;
-  private final ReceiveThread receive;
+  private final Sender sender;
+  private final Receiver receiver;
 
   public SocketConnection(String id, Socket socket) {
     super(id);
     this.socket = socket;
 
-    this.send = new SendThread(this, socket);
-    this.receive = new ReceiveThread(this, socket);
+    this.sender = new Sender(this, socket);
+    this.receiver = new Receiver(this, socket);
   }
 
   @Override
   public void sendMessage(@Nonnull ChannelId channelId, @Nonnull byte[] message) {
-    this.send.addMessage(channelId, message);
+    this.sender.addMessage(channelId, message);
   }
 
   @Override
   public void start() {
-    this.send.start();
-    this.receive.start();
+    this.sender.start();
+    this.receiver.start();
   }
 
   @Override
   public void close() {
     // Immediately stop listening for new messages.
-    this.receive.requestStop();
-
+    this.receiver.requestStop();
     // Ask the sender to stop sending messages, but only after existing messages have been handled.
-    this.send.addMessage(SOCKET_OPERATION_CHANNEL, new byte[0]);
+    this.sender.requestStop();
 
     onDisconnected("closed");
   }
@@ -96,7 +93,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
   }
 
   @ThreadSafe
-  private static final class SendThread {
+  private static final class Sender {
     private record PendingMessage(ChannelId channelId, byte[] message) {}
 
     private final Thread thread;
@@ -105,18 +102,24 @@ public class SocketConnection extends AbstractConnection implements Connection {
     private final MessageSpool spool;
     private final BlockingQueue<PendingMessage> pendingMessages;
     private final AtomicBoolean isClosed;
+    private final ChannelId controlChannel;
 
-    public SendThread(SocketConnection connection, Socket socket) {
+    public Sender(SocketConnection connection, Socket socket) {
       this.thread = new Thread(this::run, "SocketConnection.SendThread");
       this.connection = connection;
       this.socket = socket;
       this.pendingMessages = new LinkedBlockingQueue<>();
       this.spool = new MessageSpool();
       this.isClosed = new AtomicBoolean(false);
+      this.controlChannel = new ChannelId();
     }
 
     public void start() {
       thread.start();
+    }
+
+    public void requestStop() {
+      this.addMessage(controlChannel, new byte[0]);
     }
 
     public void addMessage(ChannelId channelId, byte[] message) {
@@ -139,7 +142,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
 
       int count = 0;
       for (final var pendingMessage : messages) {
-        if (SOCKET_OPERATION_CHANNEL.equals(pendingMessage.channelId())
+        if (controlChannel.equals(pendingMessage.channelId())
             && pendingMessage.message.length == 0) {
           // This is a special close request. We still want to action preceding messages, but do not
           // spool any more messages.
@@ -214,13 +217,13 @@ public class SocketConnection extends AbstractConnection implements Connection {
   }
 
   @ThreadSafe
-  private static final class ReceiveThread {
+  private static final class Receiver {
     private final Thread thread;
     private final SocketConnection connection;
     private final Socket socket;
     private final AtomicBoolean requestStop;
 
-    public ReceiveThread(SocketConnection connection, Socket socket) {
+    public Receiver(SocketConnection connection, Socket socket) {
       this.thread = new Thread(this::run, "SocketConnection.ReceiveThread");
       this.connection = connection;
       this.socket = socket;
