@@ -118,6 +118,11 @@ public class ServerHandshake2 implements Handshake2 {
           public void onMessageReceived(Connection connection, byte[] message) {
             executor.execute(() -> handleMessage(message));
           }
+
+          @Override
+          public void onDisconnected(Connection connection, String reason) {
+            transitionToState(new ErrorState(new ConnectionClosedException(reason)));
+          }
         };
 
     this.playerDatabase = playerDatabase;
@@ -812,6 +817,12 @@ public class ServerHandshake2 implements Handshake2 {
   public static final class PlayerBlockedException extends Exception {
     public PlayerBlockedException(String reason) {
       super(String.format("Player is blocked for reason: %s", reason));
+    }
+  }
+
+  public static final class ConnectionClosedException extends Exception {
+    public ConnectionClosedException(String reason) {
+      super(String.format("Connection closed: %s", reason));
     }
   }
 
