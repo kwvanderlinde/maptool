@@ -14,9 +14,10 @@
  */
 package net.rptools.maptool.server;
 
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletionStage;
 import javax.annotation.Nullable;
 import net.rptools.clientserver.decomposed.Connection;
+import net.rptools.maptool.model.player.Player;
 
 public interface Handshake2 {
 
@@ -50,22 +51,6 @@ public interface Handshake2 {
   @Nullable
   Exception getException();
 
-  /**
-   * Starts the handshake process.
-   *
-   * @throws ExecutionException when there is an exception in the background task.
-   * @throws InterruptedException when the background task is interrupted.
-   */
-  // TODO Server-side we don't expect these kinds of failures. Can we eliminate them somehow for
-  //  that case?
-  //  Or... can we just dictate that they don't bubble up here, but instead need to be communicated
-  //  as a handshake failure? Yeah, I prefer that. It should be as simple as catching the errors in
-  //  ClientHandshake and immediately notifyObservers() in that case.
-  void startHandshake() throws ExecutionException, InterruptedException;
-
-  interface Observer {
-    // TODO Separate callbacks for error and success cases.
-
-    void onCompleted(Handshake2 handshake);
-  }
+  /** Run the handshake process. */
+  CompletionStage<Player> run();
 }

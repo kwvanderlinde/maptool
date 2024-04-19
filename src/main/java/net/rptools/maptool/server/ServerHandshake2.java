@@ -22,6 +22,8 @@ import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import javax.annotation.Nonnull;
@@ -72,10 +74,13 @@ import org.apache.logging.log4j.Logger;
  * blocked in the database, the state is set to Error.
  */
 public class ServerHandshake2 implements Handshake2 {
+
   /** Instance used for log messages. */
   private static final Logger log = LogManager.getLogger(ServerHandshake2.class);
 
   private final Executor executor;
+
+  private final CompletableFuture<Player> future = new CompletableFuture<>();
 
   /** The database used for retrieving players. */
   private final PlayerDatabase playerDatabase;
@@ -84,8 +89,6 @@ public class ServerHandshake2 implements Handshake2 {
   private final Connection connection;
 
   private final ChannelId messageChannelId;
-
-  private final Observer handshakeObserver;
 
   private final ConnectionObserver connectionObserver;
 
@@ -105,8 +108,7 @@ public class ServerHandshake2 implements Handshake2 {
       Connection connection,
       ChannelId messageChannelId,
       PlayerDatabase playerDatabase,
-      boolean useEasyConnect,
-      Observer handshakeObserver) {
+      boolean useEasyConnect) {
     this.executor = executor;
     this.connection = connection;
     this.messageChannelId = messageChannelId;
@@ -120,13 +122,12 @@ public class ServerHandshake2 implements Handshake2 {
 
     this.playerDatabase = playerDatabase;
     this.useEasyConnect = useEasyConnect;
-    this.handshakeObserver = handshakeObserver;
   }
 
   // region Public API
 
   @Override
-  public void startHandshake() {
+  public CompletionStage<Player> run() {
     try {
       connection.addObserver(connectionObserver);
       transitionToState(new AwaitingClientInitState());
@@ -135,6 +136,8 @@ public class ServerHandshake2 implements Handshake2 {
       // handshake like any error encountered during message handling.
       setUnexpectedException(e);
     }
+
+    return future;
   }
 
   @Override
@@ -277,7 +280,9 @@ public class ServerHandshake2 implements Handshake2 {
 
     // TODO Make sure notification is only possible once. E.g., clear out the observer or something
     //  afterward, or attach notification behaviour to state.
-    handshakeObserver.onCompleted(this);
+    // TODO This is only the success case. Treat the error case as well (noting it must be expressed
+    //  via exception).
+    future.complete(state.getPlayer());
   }
 
   /** The states that the server side of the server side of the handshake process can be in. */

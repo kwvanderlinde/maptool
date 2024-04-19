@@ -47,7 +47,6 @@ public class MapToolServer2 {
   //  can we enforce that?
   private final Map<String, Player> playersByConnectionId = new HashMap<>();
   private final ConnectionHandler connectionHandler;
-  private final Handshake2.Observer handshakeObserver;
 
   // TODO I feel like we should be the ones deciding the player database... no?
 
@@ -56,7 +55,6 @@ public class MapToolServer2 {
     this.config = config;
     this.policy = policy;
     this.playerDatabase = playerDb;
-    this.handshakeObserver = new HandshakeObserver();
 
     // TODO Obviously this casting will not work. We will have to change ServerMessageHandler
     //  to accept a MapToolServer2. There's not much about it, mostly the message handler just
@@ -87,74 +85,6 @@ public class MapToolServer2 {
     this.policy = policy;
   }
 
-  private final class HandshakeObserver implements Handshake2.Observer {
-    @Override
-    public void onCompleted(Handshake2 handshake) {
-      final var connection = handshake.getConnection();
-
-      // TODO AbstractServer then released the handshake here. Unimportant since we do not
-      //  maintain a set of active handshakes, but if we did we should clear it out here.
-
-      if (!handshake.isSuccessful()) {
-        log.error(
-            "Handshake for connection {} failed with message: {}",
-            connection.getId(),
-            handshake.getErrorMessage(),
-            handshake.getException());
-        connection.close();
-        return;
-      }
-
-      final var connectionAdded = server.addConnection(connection);
-      if (!connectionAdded) {
-        log.error("Another connection with ID {} already exists", connection.getId());
-        connection.close();
-        return;
-      }
-
-      // TODO AbstractServer.onCompleted() took the opportunity to reapClients() here. Let's
-      //  add that to the decomposed server as well, through the message pump though.
-
-      // TODO MapToolServer.configureClientConnection() would have added it to assetManagerMap
-
-      final Player connectedPlayer = ((ServerHandshake2) handshake).getPlayer();
-
-      // Send the connected player to each client.
-      // Original in MapToolServer connection does this in the reverse order, but I like this.
-      server.broadcast(
-          null,
-          Message.newBuilder()
-              .setPlayerConnectedMsg(
-                  PlayerConnectedMsg.newBuilder()
-                      .setPlayer(connectedPlayer.getTransferablePlayer().toDto()))
-              .build()
-              .toByteArray());
-      for (Player player : playersByConnectionId.values()) {
-        connection.sendMessage(
-            messageChannelId,
-            Message.newBuilder()
-                .setPlayerConnectedMsg(
-                    // TODO Why do we not send the transferable player as above? Actually it
-                    //  does not matter since the DTO only contains transferrable properties.
-                    PlayerConnectedMsg.newBuilder().setPlayer(player.toDto()))
-                .build()
-                .toByteArray());
-      }
-
-      // Send the campaign to the new client.
-      connection.sendMessage(
-          messageChannelId,
-          Message.newBuilder()
-              .setSetCampaignMsg(SetCampaignMsg.newBuilder().setCampaign(campaign.toDto()))
-              .build()
-              .toByteArray());
-
-      // Important that we do this here, otherwise the loop above will send a connection
-      // messages to the new client for itself.
-      playersByConnectionId.put(connection.getId(), connectedPlayer);
-    }
-  }
-
   private final class ConnectionHandlerListener implements ConnectionHandler.Listener {
     @Override
     public void onConnected(@NotNull Connection connection) {
@@ -176,9 +106,18 @@ public class MapToolServer2 {
                         connection,
                         messageChannelId,
                         playerDatabase,
-                        config.getUseEasyConnect(),
-                        handshakeObserver);
-                handshake.startHandshake();
+                        config.getUseEasyConnect());
+                handshake
+                    .run()
+                    .whenComplete(
+                        (player, exception) -> {
+                          if (exception != null) {
+                            onHandshakeError(connection, exception);
+                          }
+                          if (player != null) {
+                            onHandshakeSuccess(connection, player);
+                          }
+                        });
 
                 connection.start();
               });
@@ -193,5 +132,58 @@ public class MapToolServer2 {
     public void onConnectionLost(@NotNull String connectionId, @NotNull String reason) {
       // Cancel any pending handshake and remove from the server. Possibly close it again?
     }
+  }
+
+  private void onHandshakeError(Connection connection, Throwable exception) {
+    log.error("Handshake for connection {} failed with message: {}", connection.getId(), exception);
+    connection.close();
+  }
+
+  private void onHandshakeSuccess(Connection connection, Player connectedPlayer) {
+    final var connectionAdded = server.addConnection(connection);
+    if (!connectionAdded) {
+      log.error("Another connection with ID {} already exists", connection.getId());
+      connection.close();
+      return;
+    }
+
+    // TODO AbstractServer.onCompleted() took the opportunity to reapClients() here. Let's
+    //  add that to the decomposed server as well, through the message pump though.
+
+    // TODO MapToolServer.configureClientConnection() would have added it to assetManagerMap
+
+    // Send the connected player to each client.
+    // Original in MapToolServer connection does this in the reverse order, but I like this.
+    server.broadcast(
+        null,
+        Message.newBuilder()
+            .setPlayerConnectedMsg(
+                PlayerConnectedMsg.newBuilder()
+                    .setPlayer(connectedPlayer.getTransferablePlayer().toDto()))
+            .build()
+            .toByteArray());
+    for (Player player : playersByConnectionId.values()) {
+      connection.sendMessage(
+          messageChannelId,
+          Message.newBuilder()
+              .setPlayerConnectedMsg(
+                  // TODO Why do we not send the transferable player as above? Actually it
+                  //  does not matter since the DTO only contains transferrable properties.
+                  PlayerConnectedMsg.newBuilder().setPlayer(player.toDto()))
+              .build()
+              .toByteArray());
+    }
+
+    // Send the campaign to the new client.
+    connection.sendMessage(
+        messageChannelId,
+        Message.newBuilder()
+            .setSetCampaignMsg(SetCampaignMsg.newBuilder().setCampaign(campaign.toDto()))
+            .build()
+            .toByteArray());
+
+    // Important that we do this here, otherwise the loop above will send a connection
+    // messages to the new client for itself.
+    playersByConnectionId.put(connection.getId(), connectedPlayer);
   }
 }
