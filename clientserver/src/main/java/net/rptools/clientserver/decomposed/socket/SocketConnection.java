@@ -179,6 +179,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
         while (!socket.isClosed()) {
           try {
             byte[] message = connection.readMessage(in);
+            connection.onMessageReceived(message);
           } catch (Throwable t) {
             log.error(t);
           }
