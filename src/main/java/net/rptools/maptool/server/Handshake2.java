@@ -51,20 +51,6 @@ public interface Handshake2 {
   Exception getException();
 
   /**
-   * Adds an observer to the handshake process.
-   *
-   * @param observer the observer of the handshake process.
-   */
-  void addObserver(Observer observer);
-
-  /**
-   * Removes an observer from the handshake process.
-   *
-   * @param observer the observer of the handshake process.
-   */
-  void removeObserver(Observer observer);
-
-  /**
    * Starts the handshake process.
    *
    * @throws ExecutionException when there is an exception in the background task.
