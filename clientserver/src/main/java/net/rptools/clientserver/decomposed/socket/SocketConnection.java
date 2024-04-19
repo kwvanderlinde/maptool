@@ -99,6 +99,21 @@ public class SocketConnection extends AbstractConnection implements Connection {
     private final Thread thread;
     private final SocketConnection connection;
     private final Socket socket;
+    /*
+     * TODO
+     *      This is the wrong layer to apply spooling. In principle, the server should be aware of
+     *  the order that messages are actioned, to decide on a canonical ordering that - in the
+     *  future - we could require clients to replicate. Imagine TCP resend, or even more accurately,
+     *  GGPO rollback / client-side prediction.
+     *      Even leaving aside future improvements like the above, message spooling is a bane to
+     *  connection composition. At its most basic level, a connection is just a way to stream bytes
+     *  in and out. This remains true with spooling -- since messages are interleaved in the output
+     *  -- but the interjection of spooling means we cannot simply "nest" connections in order to
+     *  compose them, because every layer is technically responsible for spooling / interleaving.
+     *  Additionally, spooling is a time-sensitive operations, so different layers may not even
+     *  agree about the ultimate order of messages, which could be a problem if certain sequences
+     *  need to be maintained.
+     */
     private final MessageSpool spool;
     private final BlockingQueue<PendingMessage> pendingMessages;
     private final AtomicBoolean isClosed;
