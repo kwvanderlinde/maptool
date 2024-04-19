@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import net.rptools.clientserver.decomposed.AbstractConnection;
@@ -32,6 +33,8 @@ import org.apache.logging.log4j.Logger;
 // Connection object itself exists.
 public class SocketConnection extends AbstractConnection implements Connection {
   private static final Logger log = LogManager.getLogger(SocketConnection.class);
+
+  private static final ChannelId SOCKET_OPERATION_CHANNEL = new ChannelId();
 
   private final Socket socket;
   private final SendThread send;
@@ -56,15 +59,10 @@ public class SocketConnection extends AbstractConnection implements Connection {
     this.receive.start();
   }
 
-  // TODO I don't know that I want IOException here. Only if it really signals something important.
   @Override
   public void close() {
-    try {
-      this.socket.close();
-    } catch (IOException e) {
-      // TODO Don't even close the socket here. Enqueue a special closing message to do that
-      //  handled out of band.
-    }
+    // Send a special sentinel message the closes the connection.
+    this.send.addMessage(SOCKET_OPERATION_CHANNEL, new byte[0]);
     onDisconnected("closed");
   }
 
@@ -94,6 +92,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
     private final Socket socket;
     private final MessageSpool spool;
     private final ConcurrentLinkedQueue<PendingMessage> pendingMessages;
+    private final AtomicBoolean isClosed;
 
     public SendThread(SocketConnection connection, Socket socket) {
       super("SocketConnection.SendThread");
@@ -101,9 +100,22 @@ public class SocketConnection extends AbstractConnection implements Connection {
       this.socket = socket;
       this.pendingMessages = new ConcurrentLinkedQueue<>();
       this.spool = new MessageSpool();
+      this.isClosed = new AtomicBoolean(false);
+    }
+
+    private void close() {
+      isClosed.set(true);
+      pendingMessages.clear();
     }
 
     public void addMessage(ChannelId channelId, byte[] message) {
+      if (isClosed.get()) {
+        // It's not the end of the world if we don't 100% discard all these messages, we just don't
+        // want them to build up unnecessarily.
+        log.warn("Discarding message sent after connection closure");
+        return;
+      }
+
       pendingMessages.add(new PendingMessage(channelId, message));
 
       synchronized (this) {
@@ -116,13 +128,30 @@ public class SocketConnection extends AbstractConnection implements Connection {
 
       int count = 0;
 
-      do {
+      while (!isClosed.get() && count++ < maxPendingMessagesToProcess) {
         final var pendingMessage = pendingMessages.poll();
         if (pendingMessage == null) {
+          // No message available.
           break;
         }
+
+        if (SOCKET_OPERATION_CHANNEL.equals(pendingMessage.channelId())) {
+          // This message is meant to manipulate the connection, not to be sent to clients.
+          if (pendingMessage.message.length == 0) {
+            // Indicates a closure request.
+            try {
+              socket.close();
+            } catch (IOException e) {
+              log.error("Error when attempting to close the socket", e);
+            }
+            isClosed.set(true);
+          }
+
+          continue;
+        }
+
         spool.addMessage(pendingMessage.channelId(), pendingMessage.message());
-      } while (++count < maxPendingMessagesToProcess);
+      }
       log.info("Spooled {} messages", count);
     }
 
