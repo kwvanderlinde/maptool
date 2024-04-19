@@ -14,11 +14,8 @@
  */
 package net.rptools.maptool.server;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import javax.annotation.Nonnull;
 import net.rptools.clientserver.decomposed.ChannelId;
 import net.rptools.clientserver.decomposed.Connection;
@@ -37,10 +34,6 @@ import org.jetbrains.annotations.NotNull;
 
 public class MapToolServer2 {
   private static final Logger log = LogManager.getLogger(MapToolServer2.class);
-
-  private final ExecutorService executor =
-      Executors.newSingleThreadExecutor(
-          new ThreadFactoryBuilder().setNameFormat("server-thread-%d").build());
 
   private @Nonnull Campaign campaign;
   private @Nonnull ServerConfig config;
@@ -166,24 +159,30 @@ public class MapToolServer2 {
   private final class ConnectionHandlerListener implements ConnectionHandler.Listener {
     @Override
     public void onConnected(@NotNull Connection connection) {
-      executor.execute(
-          () -> {
-            /*
-             * TODO I feel like I ought to maintain a set of current handshakes, to prevent
-             *  two from running for the same client. But that comes with two downsides:
-             *  1. Both could be legit, so why prefer the one that got in a few ms earlier?
-             *  2. it's extra state to juggle, so we need a really good reason for it.
-             */
+      server
+          .getExecutor()
+          .execute(
+              () -> {
+                /*
+                 * TODO I feel like I ought to maintain a set of current handshakes, to prevent
+                 *  two from running for the same client. But that comes with two downsides:
+                 *  1. Both could be legit, so why prefer the one that got in a few ms earlier?
+                 *  2. it's extra state to juggle, so we need a really good reason for it.
+                 */
 
-            // Start the handshake.
-            final var handshake =
-                new ServerHandshake2(
-                    connection, messageChannelId, playerDatabase, config.getUseEasyConnect());
-            handshake.addObserver(handshakeObserver);
-            handshake.startHandshake();
+                // Start the handshake.
+                final var handshake =
+                    new ServerHandshake2(
+                        server.getExecutor(),
+                        connection,
+                        messageChannelId,
+                        playerDatabase,
+                        config.getUseEasyConnect());
+                handshake.addObserver(handshakeObserver);
+                handshake.startHandshake();
 
-            connection.start();
-          });
+                connection.start();
+              });
     }
 
     @Override

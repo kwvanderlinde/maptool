@@ -18,6 +18,9 @@ dependencies {
     // Better JSON functions...
     implementation group: 'com.google.code.gson', name: 'gson', version: '2.10.1'		// https://mvnrepository.com/artifact/com.google.code.gson/gson
 
+    // eventbus and other utilities
+    implementation 'com.google.guava:guava:33.0.0-jre'
+
     // webrtc
     implementation group: 'org.java-websocket', name: 'Java-WebSocket', version: '1.5.6'
     // Needs to be API since WebRTCConnection implements PeerConnectionObserver and RTCDataChannelObserver.

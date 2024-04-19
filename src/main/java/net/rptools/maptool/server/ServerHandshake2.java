@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.crypto.BadPaddingException;
@@ -76,6 +77,8 @@ public class ServerHandshake2 implements Handshake2 {
   /** Instance used for log messages. */
   private static final Logger log = LogManager.getLogger(ServerHandshake2.class);
 
+  private final Executor executor;
+
   /** The database used for retrieving players. */
   private final PlayerDatabase playerDatabase;
 
@@ -101,17 +104,19 @@ public class ServerHandshake2 implements Handshake2 {
    * @param useEasyConnect If true, the client will use the easy connect method.
    */
   public ServerHandshake2(
+      Executor executor,
       Connection connection,
       ChannelId messageChannelId,
       PlayerDatabase playerDatabase,
       boolean useEasyConnect) {
+    this.executor = executor;
     this.connection = connection;
     this.messageChannelId = messageChannelId;
     this.connectionObserver =
         new ConnectionObserver() {
           @Override
           public void onMessageReceived(Connection connection, byte[] message) {
-            handleMessage(message);
+            executor.execute(() -> handleMessage(message));
           }
         };
 
@@ -671,8 +676,8 @@ public class ServerHandshake2 implements Handshake2 {
               easyConnectPin,
               Player.Role.PLAYER,
               publicKeyUploadMsg.getPublicKey(),
-              this::acceptNewPublicKey,
-              this::denyNewPublicKey);
+              p -> executor.execute(() -> acceptNewPublicKey(p)),
+              p -> executor.execute(() -> denyNewPublicKey(p)));
       SwingUtilities.invokeLater(
           () -> MapTool.getFrame().getConnectionPanel().addAwaitingApproval(pendingPlayer));
 

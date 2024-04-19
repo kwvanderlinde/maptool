@@ -14,8 +14,11 @@
  */
 package net.rptools.clientserver.decomposed;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -26,6 +29,10 @@ import org.apache.logging.log4j.Logger;
 // TODO Can I call this MessageRouter, or will it end up being more than that/
 public class Server {
   private static final Logger log = LogManager.getLogger(Server.class);
+
+  private final ExecutorService executor =
+      Executors.newSingleThreadExecutor(
+          new ThreadFactoryBuilder().setNameFormat("server-thread-%d").build());
 
   private final MessageHandler messageHandler;
   private final Map<String, Connection> clientConnections;
@@ -44,7 +51,7 @@ public class Server {
 
           @Override
           public void onMessageReceived(Connection connection, byte[] message) {
-            messageHandler.handleMessage(connection.getId(), message);
+            executor.execute(() -> messageHandler.handleMessage(connection.getId(), message));
           }
 
           @Override
@@ -62,6 +69,10 @@ public class Server {
             // No one cares about this server-side right now.
           }
         };
+  }
+
+  public ExecutorService getExecutor() {
+    return executor;
   }
 
   /**
