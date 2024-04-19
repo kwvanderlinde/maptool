@@ -16,6 +16,7 @@ package net.rptools.clientserver.decomposed.socket;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -32,6 +33,9 @@ import org.apache.logging.log4j.Logger;
 // NB: Unlike our predecessar, we require the underlying socket to be created _before_ the
 // Connection object itself exists.
 public class SocketConnection extends AbstractConnection implements Connection {
+  // TODO It would be nice to add compression or other transforms on the read and write
+  //  threads without AbstractConnection hardcoding the exact method.
+
   private static final Logger log = LogManager.getLogger(SocketConnection.class);
 
   private static final ChannelId SOCKET_OPERATION_CHANNEL = new ChannelId();
@@ -61,8 +65,12 @@ public class SocketConnection extends AbstractConnection implements Connection {
 
   @Override
   public void close() {
-    // Send a special sentinel message the closes the connection.
+    // Immediately stop listening for new messages.
+    this.receive.requestStop();
+
+    // Ask the sender to stop sending messages, but only after existing messages have been handled.
     this.send.addMessage(SOCKET_OPERATION_CHANNEL, new byte[0]);
+
     onDisconnected("closed");
   }
 
@@ -167,9 +175,43 @@ public class SocketConnection extends AbstractConnection implements Connection {
 
     @Override
     public void run() {
+      final OutputStream out;
       try {
         // TODO Is there actually value in a buffered output stream? E.g., is it interruptible?
-        final var out = new BufferedOutputStream(socket.getOutputStream());
+        out = new BufferedOutputStream(socket.getOutputStream());
+      } catch (IOException e) {
+        log.error("Unable to get socket output stream", e);
+        connection.doDisconnect(e);
+        return;
+      }
+
+      // TODO This thread controls socket closure. So encountering a closed socket in the loop is
+      //  in fact an unexpected scenario.
+
+      int count = 0;
+      do {
+        spoolPendingMessages(SPOOL_AMOUNT);
+
+        if (socket.isClosed()) {}
+
+        try {
+          sendAllSpooledMessages(out);
+        } catch (IOException e) {
+          log.error("Error while trying to send messages", e);
+          connection.doDisconnect(e);
+          return;
+        }
+
+        try {
+          synchronized (this) {
+            this.wait();
+          }
+        } catch (InterruptedException e) {
+          // Totally normal, do nothing.
+        }
+      } while (true);
+
+      try {
         while (!socket.isClosed()) {
           try {
             spoolPendingMessages(SPOOL_AMOUNT);
@@ -193,29 +235,41 @@ public class SocketConnection extends AbstractConnection implements Connection {
   private static final class ReceiveThread extends Thread {
     private final SocketConnection connection;
     private final Socket socket;
+    private final AtomicBoolean requestStop;
 
     public ReceiveThread(SocketConnection connection, Socket socket) {
       super("SocketConnection.ReceiveThread");
       this.connection = connection;
       this.socket = socket;
+      this.requestStop = new AtomicBoolean(false);
+    }
+
+    public void requestStop() {
+      requestStop.set(true);
     }
 
     @Override
     public void run() {
+      final InputStream in;
       try {
-        final var in = socket.getInputStream();
-
-        while (!socket.isClosed()) {
-          try {
-            byte[] message = connection.readMessage(in);
-            connection.onMessageReceived(message);
-          } catch (Throwable t) {
-            log.error(t);
-          }
-        }
+        in = socket.getInputStream();
       } catch (IOException e) {
-        // Likely a socket closure, but could also be something unexpected.
+        log.error("Unable to get socket input stream", e);
         connection.doDisconnect(e);
+        return;
+      }
+
+      while (!requestStop.get() && !socket.isClosed()) {
+        try {
+          byte[] message = connection.readMessage(in);
+          connection.onMessageReceived(message);
+        } catch (IOException e) {
+          // Likely a socket closure, but could also be something unexpected.
+          connection.doDisconnect(e);
+          return;
+        } catch (Throwable t) {
+          log.error(t);
+        }
       }
     }
   }
