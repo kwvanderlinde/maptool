@@ -21,9 +21,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import javax.annotation.Nonnull;
@@ -87,12 +85,11 @@ public class ServerHandshake2 implements Handshake2 {
 
   private final ChannelId messageChannelId;
 
+  private final Observer handshakeObserver;
+
   private final ConnectionObserver connectionObserver;
 
   private final boolean useEasyConnect;
-
-  /** Observers that want to be notified when the status changes. */
-  private final List<Observer> observerList = new CopyOnWriteArrayList<>();
 
   private IState state = new StartState();
 
@@ -108,7 +105,8 @@ public class ServerHandshake2 implements Handshake2 {
       Connection connection,
       ChannelId messageChannelId,
       PlayerDatabase playerDatabase,
-      boolean useEasyConnect) {
+      boolean useEasyConnect,
+      Observer handshakeObserver) {
     this.executor = executor;
     this.connection = connection;
     this.messageChannelId = messageChannelId;
@@ -122,6 +120,7 @@ public class ServerHandshake2 implements Handshake2 {
 
     this.playerDatabase = playerDatabase;
     this.useEasyConnect = useEasyConnect;
+    this.handshakeObserver = handshakeObserver;
   }
 
   // region Public API
@@ -139,7 +138,7 @@ public class ServerHandshake2 implements Handshake2 {
   }
 
   @Override
-  public synchronized Connection getConnection() {
+  public Connection getConnection() {
     return connection;
   }
 
@@ -166,28 +165,6 @@ public class ServerHandshake2 implements Handshake2 {
   public Exception getException() {
     return state.getException();
   }
-
-  // region TODO Should we just require one observer to be injected during construction?
-
-  /**
-   * Adds an observer to the handshake process.
-   *
-   * @param observer the observer of the handshake process.
-   */
-  public synchronized void addObserver(Observer observer) {
-    observerList.add(observer);
-  }
-
-  /**
-   * Removes an observer from the handshake process.
-   *
-   * @param observer the observer of the handshake process.
-   */
-  public synchronized void removeObserver(Observer observer) {
-    observerList.remove(observer);
-  }
-
-  // endregion
 
   // endregion
 
@@ -294,13 +271,13 @@ public class ServerHandshake2 implements Handshake2 {
   }
 
   /** Notifies observers that the handshake has completed or errored out.. */
-  private synchronized void notifyObservers() {
+  private void notifyObservers() {
     // TODO Make sure this happens for every terminal state.
     connection.removeObserver(connectionObserver);
 
-    for (var observer : observerList) {
-      observer.onCompleted(this);
-    }
+    // TODO Make sure notification is only possible once. E.g., clear out the observer or something
+    //  afterward, or attach notification behaviour to state.
+    handshakeObserver.onCompleted(this);
   }
 
   /** The states that the server side of the server side of the handshake process can be in. */

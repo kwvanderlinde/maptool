@@ -90,7 +90,6 @@ public class MapToolServer2 {
   private final class HandshakeObserver implements Handshake2.Observer {
     @Override
     public void onCompleted(Handshake2 handshake) {
-      handshake.removeObserver(this);
       final var connection = handshake.getConnection();
 
       // TODO AbstractServer then released the handshake here. Unimportant since we do not
@@ -177,8 +176,8 @@ public class MapToolServer2 {
                         connection,
                         messageChannelId,
                         playerDatabase,
-                        config.getUseEasyConnect());
-                handshake.addObserver(handshakeObserver);
+                        config.getUseEasyConnect(),
+                        handshakeObserver);
                 handshake.startHandshake();
 
                 connection.start();
