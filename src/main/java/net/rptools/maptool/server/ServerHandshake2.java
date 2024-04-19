@@ -92,7 +92,7 @@ public class ServerHandshake2 {
 
   private final boolean useEasyConnect;
 
-  private IState state;
+  private State state;
 
   /**
    * Creates a new handshake.
@@ -180,7 +180,7 @@ public class ServerHandshake2 {
 
   // region State machine
 
-  private void transitionToState(IState newState) {
+  private void transitionToState(State newState) {
     if (newState == state) {
       return;
     }
@@ -204,8 +204,8 @@ public class ServerHandshake2 {
   }
 
   /** The states that the server side of the server side of the handshake process can be in. */
-  private interface IState {
-    IState handle(HandshakeMsg message) throws ProtocolException;
+  private interface State {
+    State handle(HandshakeMsg message) throws ProtocolException;
 
     default void beforeTransitionTo() {}
 
@@ -216,9 +216,9 @@ public class ServerHandshake2 {
     default void afterTransitionFrom() {}
   }
 
-  private class AwaitingClientInitState implements IState {
+  private class AwaitingClientInitState implements State {
     @Override
-    public final IState handle(HandshakeMsg handshakeMsg) throws ProtocolException {
+    public final State handle(HandshakeMsg handshakeMsg) throws ProtocolException {
       if (handshakeMsg.getMessageTypeCase() != HandshakeMsg.MessageTypeCase.CLIENT_INIT_MSG) {
         throw ProtocolException.invalidHandshake();
       }
@@ -270,7 +270,7 @@ public class ServerHandshake2 {
       return sendSharedPasswordAuthType(player);
     }
 
-    private IState requestPublicKey(String playerName) {
+    private State requestPublicKey(String playerName) {
       var requestPublicKeyBuilder = RequestPublicKeyMsg.newBuilder();
       var easyConnectPin = String.format("%04d", new SecureRandom().nextInt(9999));
       var easyConnectName = playerName;
@@ -282,7 +282,7 @@ public class ServerHandshake2 {
     }
 
     /** Send the authentication type message when using per player shared passwords. */
-    private IState sendSharedPasswordAuthType(Player player) {
+    private State sendSharedPasswordAuthType(Player player) {
       byte[] playerPasswordSalt = playerDatabase.getPlayerPasswordSalt(player.getName());
 
       SecureRandom rnd = new SecureRandom();
@@ -317,7 +317,7 @@ public class ServerHandshake2 {
     }
 
     /** Send the authentication type message when using role based shared passwords. */
-    private IState sendRoleSharedPasswordAuthType(Player player) {
+    private State sendRoleSharedPasswordAuthType(Player player) {
       byte[] playerPasswordSalt = playerDatabase.getPlayerPasswordSalt(player.getName());
 
       SecureRandom rnd = new SecureRandom();
@@ -368,7 +368,7 @@ public class ServerHandshake2 {
      *
      * @return the new state for the state machine.
      */
-    private IState sendAsymmetricKeyAuthType(Player player, MD5Key playerPublicKeyMD5)
+    private State sendAsymmetricKeyAuthType(Player player, MD5Key playerPublicKeyMD5)
         throws ProtocolException {
       if (!playerDatabase.hasPublicKey(player, playerPublicKeyMD5).join()) {
         if (useEasyConnect) {
@@ -409,7 +409,7 @@ public class ServerHandshake2 {
     }
   }
 
-  private class AwaitingClientRolePasswordAuthState implements IState {
+  private class AwaitingClientRolePasswordAuthState implements State {
     private final Player player;
     private final HandshakeChallenge gmChallenge;
     private final HandshakeChallenge playerChallenge;
@@ -422,7 +422,7 @@ public class ServerHandshake2 {
     }
 
     @Override
-    public final IState handle(HandshakeMsg handshakeMsg) throws ProtocolException {
+    public final State handle(HandshakeMsg handshakeMsg) throws ProtocolException {
       if (handshakeMsg.getMessageTypeCase() != HandshakeMsg.MessageTypeCase.CLIENT_AUTH_MESSAGE) {
         throw ProtocolException.invalidHandshake();
       }
@@ -452,7 +452,7 @@ public class ServerHandshake2 {
     }
   }
 
-  private class AwaitingClientSharedPasswordAuthState implements IState {
+  private class AwaitingClientSharedPasswordAuthState implements State {
     private final Player player;
     private final HandshakeChallenge gmChallenge;
 
@@ -462,7 +462,7 @@ public class ServerHandshake2 {
     }
 
     @Override
-    public IState handle(HandshakeMsg handshakeMsg) throws ProtocolException {
+    public State handle(HandshakeMsg handshakeMsg) throws ProtocolException {
       if (handshakeMsg.getMessageTypeCase() != HandshakeMsg.MessageTypeCase.CLIENT_AUTH_MESSAGE) {
         throw ProtocolException.invalidHandshake();
       }
@@ -487,7 +487,7 @@ public class ServerHandshake2 {
     }
   }
 
-  private class AwaitingClientPublicKeyAuthState implements IState {
+  private class AwaitingClientPublicKeyAuthState implements State {
     private final Player player;
     private final HandshakeChallenge challenge;
 
@@ -497,7 +497,7 @@ public class ServerHandshake2 {
     }
 
     @Override
-    public IState handle(HandshakeMsg handshakeMsg) throws ProtocolException {
+    public State handle(HandshakeMsg handshakeMsg) throws ProtocolException {
       if (handshakeMsg.getMessageTypeCase() != HandshakeMsg.MessageTypeCase.CLIENT_AUTH_MESSAGE) {
         throw ProtocolException.invalidHandshake();
       }
@@ -512,7 +512,7 @@ public class ServerHandshake2 {
     }
   }
 
-  private class AwaitingPublicKeyState implements IState {
+  private class AwaitingPublicKeyState implements State {
     /** The pin for the new public key easy connect request. */
     private final String easyConnectPin;
 
@@ -533,7 +533,7 @@ public class ServerHandshake2 {
     }
 
     @Override
-    public IState handle(HandshakeMsg handshakeMsg) throws ProtocolException {
+    public State handle(HandshakeMsg handshakeMsg) throws ProtocolException {
       if (handshakeMsg.getMessageTypeCase() != HandshakeMsg.MessageTypeCase.PUBLIC_KEY_UPLOAD_MSG) {
         throw ProtocolException.invalidHandshake();
       }
@@ -608,9 +608,9 @@ public class ServerHandshake2 {
     }
   }
 
-  private class AbstractTerminalState implements IState {
+  private class AbstractTerminalState implements State {
     @Override
-    public final IState handle(HandshakeMsg message) throws ProtocolException {
+    public final State handle(HandshakeMsg message) throws ProtocolException {
       throw ProtocolException.invalidHandshake();
     }
 
