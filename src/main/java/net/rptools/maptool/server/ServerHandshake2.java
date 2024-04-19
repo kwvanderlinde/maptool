@@ -26,8 +26,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
@@ -208,19 +206,6 @@ public class ServerHandshake2 {
   /** The states that the server side of the server side of the handshake process can be in. */
   private interface IState {
     IState handle(HandshakeMsg message) throws ProtocolException;
-
-    default @Nullable Player getPlayer() {
-      // Even if we know the player, it isn't firmly set until we're in a success state.
-      return null;
-    }
-
-    default String getErrorMessage() {
-      return "";
-    }
-
-    default @Nullable Exception getException() {
-      return null;
-    }
 
     default void beforeTransitionTo() {}
 
@@ -645,11 +630,6 @@ public class ServerHandshake2 {
     }
 
     @Override
-    public @Nonnull Player getPlayer() {
-      return player;
-    }
-
-    @Override
     public void beforeTransitionTo() {
       // TODO Can't this logc just live wherever the transition is actioned?
       var server = MapTool.getServer();
@@ -663,7 +643,7 @@ public class ServerHandshake2 {
       }
       var connectionSuccessfulMsg =
           ConnectionSuccessfulMsg.newBuilder()
-              .setRoleDto(getPlayer().isGM() ? RoleDto.GM : RoleDto.PLAYER)
+              .setRoleDto(player.isGM() ? RoleDto.GM : RoleDto.PLAYER)
               .setServerPolicyDto(server.getPolicy().toDto())
               .setGameDataDto(dataStoreDto)
               .setAddOnLibraryListDto(addOnLibraryListDto);
