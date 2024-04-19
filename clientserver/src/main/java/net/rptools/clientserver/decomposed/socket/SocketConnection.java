@@ -26,6 +26,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.ThreadSafe;
 import net.rptools.clientserver.decomposed.AbstractConnection;
 import net.rptools.clientserver.decomposed.ChannelId;
 import net.rptools.clientserver.decomposed.Connection;
@@ -94,9 +95,11 @@ public class SocketConnection extends AbstractConnection implements Connection {
     }
   }
 
-  private static final class SendThread extends Thread {
+  @ThreadSafe
+  private static final class SendThread {
     private record PendingMessage(ChannelId channelId, byte[] message) {}
 
+    private final Thread thread;
     private final SocketConnection connection;
     private final Socket socket;
     private final MessageSpool spool;
@@ -104,12 +107,16 @@ public class SocketConnection extends AbstractConnection implements Connection {
     private final AtomicBoolean isClosed;
 
     public SendThread(SocketConnection connection, Socket socket) {
-      super("SocketConnection.SendThread");
+      this.thread = new Thread(this::run, "SocketConnection.SendThread");
       this.connection = connection;
       this.socket = socket;
       this.pendingMessages = new LinkedBlockingQueue<>();
       this.spool = new MessageSpool();
       this.isClosed = new AtomicBoolean(false);
+    }
+
+    public void start() {
+      thread.start();
     }
 
     public void addMessage(ChannelId channelId, byte[] message) {
@@ -128,7 +135,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
     }
 
     private void spoolMessages(Collection<PendingMessage> messages) {
-      assert Thread.currentThread() == this : "Spooling must be done on the send thread";
+      assert Thread.currentThread() == thread : "Spooling must be done on the send thread";
 
       int count = 0;
       for (final var pendingMessage : messages) {
@@ -148,7 +155,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
     }
 
     private void sendAllSpooledMessages(OutputStream out) throws IOException {
-      assert Thread.currentThread() == this : "Message sending must be done on the send thread";
+      assert Thread.currentThread() == thread : "Message sending must be done on the send thread";
 
       byte[] message;
       while ((message = spool.nextMessage()) != null) {
@@ -157,8 +164,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
       // TODO Original caught an IndexOutOfBoundsException somewhere here, and I don't see why.
     }
 
-    @Override
-    public void run() {
+    private void run() {
       final OutputStream out;
       try {
         // TODO Is there actually value in a buffered output stream? E.g., is it interruptible?
@@ -207,24 +213,29 @@ public class SocketConnection extends AbstractConnection implements Connection {
     }
   }
 
-  private static final class ReceiveThread extends Thread {
+  @ThreadSafe
+  private static final class ReceiveThread {
+    private final Thread thread;
     private final SocketConnection connection;
     private final Socket socket;
     private final AtomicBoolean requestStop;
 
     public ReceiveThread(SocketConnection connection, Socket socket) {
-      super("SocketConnection.ReceiveThread");
+      this.thread = new Thread(this::run, "SocketConnection.ReceiveThread");
       this.connection = connection;
       this.socket = socket;
       this.requestStop = new AtomicBoolean(false);
+    }
+
+    public void start() {
+      thread.start();
     }
 
     public void requestStop() {
       requestStop.set(true);
     }
 
-    @Override
-    public void run() {
+    private void run() {
       final InputStream in;
       try {
         in = socket.getInputStream();
