@@ -121,7 +121,7 @@ public class ServerHandshake2 {
 
           @Override
           public void onDisconnected(Connection connection, String reason) {
-            transitionToState(new ErrorState(new ConnectionClosedException(reason)));
+            executor.execute(() -> setUnexpectedException(new ConnectionClosedException(reason)));
           }
         };
 
@@ -133,14 +133,17 @@ public class ServerHandshake2 {
 
   /** Run the handshake process. */
   public CompletionStage<Player> run() {
-    try {
-      connection.addObserver(connectionObserver);
-      transitionToState(new AwaitingClientInitState());
-    } catch (Exception e) {
-      // Very important: we do not leak exceptions here, instead simply considering them a failed
-      // handshake like any error encountered during message handling.
-      setUnexpectedException(e);
-    }
+    // Very important: we do not leak exceptions here. Instead, we treat start up errors like any
+    // other failure that could occur during the handshake, exposing them as a failed future.
+    executor.execute(
+        () -> {
+          try {
+            connection.addObserver(connectionObserver);
+            transitionToState(new AwaitingClientInitState());
+          } catch (Exception e) {
+            setUnexpectedException(e);
+          }
+        });
 
     return future;
   }
