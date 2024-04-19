@@ -19,7 +19,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -75,13 +78,6 @@ public class SocketConnection extends AbstractConnection implements Connection {
   }
 
   private void doDisconnect(@Nullable Exception exception) {
-    if (exception != null) {
-      log.error(exception);
-      onDisconnected(exception.getMessage());
-    } else {
-      onDisconnected(null);
-    }
-
     if (!socket.isClosed()) {
       try {
         socket.close();
@@ -89,31 +85,31 @@ public class SocketConnection extends AbstractConnection implements Connection {
         log.error("Unable to close socket", ioe);
       }
     }
+
+    if (exception != null) {
+      log.error(exception);
+      onDisconnected(exception.getMessage());
+    } else {
+      onDisconnected(null);
+    }
   }
 
   private static final class SendThread extends Thread {
-    private static final int SPOOL_AMOUNT = 1000;
-
     private record PendingMessage(ChannelId channelId, byte[] message) {}
 
     private final SocketConnection connection;
     private final Socket socket;
     private final MessageSpool spool;
-    private final ConcurrentLinkedQueue<PendingMessage> pendingMessages;
+    private final BlockingQueue<PendingMessage> pendingMessages;
     private final AtomicBoolean isClosed;
 
     public SendThread(SocketConnection connection, Socket socket) {
       super("SocketConnection.SendThread");
       this.connection = connection;
       this.socket = socket;
-      this.pendingMessages = new ConcurrentLinkedQueue<>();
+      this.pendingMessages = new LinkedBlockingQueue<>();
       this.spool = new MessageSpool();
       this.isClosed = new AtomicBoolean(false);
-    }
-
-    private void close() {
-      isClosed.set(true);
-      pendingMessages.clear();
     }
 
     public void addMessage(ChannelId channelId, byte[] message) {
@@ -131,35 +127,23 @@ public class SocketConnection extends AbstractConnection implements Connection {
       }
     }
 
-    private void spoolPendingMessages(int maxPendingMessagesToProcess) {
+    private void spoolMessages(Collection<PendingMessage> messages) {
       assert Thread.currentThread() == this : "Spooling must be done on the send thread";
 
       int count = 0;
-
-      while (!isClosed.get() && count++ < maxPendingMessagesToProcess) {
-        final var pendingMessage = pendingMessages.poll();
-        if (pendingMessage == null) {
-          // No message available.
+      for (final var pendingMessage : messages) {
+        if (SOCKET_OPERATION_CHANNEL.equals(pendingMessage.channelId())
+            && pendingMessage.message.length == 0) {
+          // This is a special close request. We still want to action preceding messages, but do not
+          // spool any more messages.
+          isClosed.set(true);
           break;
         }
 
-        if (SOCKET_OPERATION_CHANNEL.equals(pendingMessage.channelId())) {
-          // This message is meant to manipulate the connection, not to be sent to clients.
-          if (pendingMessage.message.length == 0) {
-            // Indicates a closure request.
-            try {
-              socket.close();
-            } catch (IOException e) {
-              log.error("Error when attempting to close the socket", e);
-            }
-            isClosed.set(true);
-          }
-
-          continue;
-        }
-
         spool.addMessage(pendingMessage.channelId(), pendingMessage.message());
+        ++count;
       }
+
       log.info("Spooled {} messages", count);
     }
 
@@ -188,11 +172,24 @@ public class SocketConnection extends AbstractConnection implements Connection {
       // TODO This thread controls socket closure. So encountering a closed socket in the loop is
       //  in fact an unexpected scenario.
 
-      int count = 0;
-      do {
-        spoolPendingMessages(SPOOL_AMOUNT);
+      final var bufferCapacity = 1024;
+      final var messageBuffer = new ArrayList<PendingMessage>(bufferCapacity);
+      while (!isClosed.get()) {
+        try {
+          synchronized (this) {
+            this.wait();
+          }
+        } catch (InterruptedException e) {
+          // Totally normal, do nothing.
+        }
 
-        if (socket.isClosed()) {}
+        pendingMessages.drainTo(messageBuffer, bufferCapacity);
+        spoolMessages(messageBuffer);
+        // All buffered messages are now in the spool, so clear the buffer for the next loop.
+        messageBuffer.clear();
+
+        // It's possible the isClosed flag just got set, but we still need to process any messages
+        // that may have come in before that.
 
         try {
           sendAllSpooledMessages(out);
@@ -201,34 +198,12 @@ public class SocketConnection extends AbstractConnection implements Connection {
           connection.doDisconnect(e);
           return;
         }
-
-        try {
-          synchronized (this) {
-            this.wait();
-          }
-        } catch (InterruptedException e) {
-          // Totally normal, do nothing.
-        }
-      } while (true);
-
-      try {
-        while (!socket.isClosed()) {
-          try {
-            spoolPendingMessages(SPOOL_AMOUNT);
-            sendAllSpooledMessages(out);
-            synchronized (this) {
-              if (!socket.isClosed()) {
-                this.wait();
-              }
-            }
-          } catch (InterruptedException e) {
-            // do nothing
-          }
-        }
-      } catch (IOException e) {
-        // Likely a socket closure, though could also be some unexpected thing.
-        connection.doDisconnect(e);
       }
+
+      // Clean exit. Clean up the socket and notify observers.
+      connection.doDisconnect(null);
+      // No point keeping stale messages around.
+      pendingMessages.clear();
     }
   }
 
