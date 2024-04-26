@@ -15,7 +15,9 @@
 package net.rptools.clientserver.decomposed;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -87,6 +89,24 @@ public class Server {
     }
   }
 
+  public void broadcast(String[] excludeIds, ChannelId channelId, byte[] message) {
+    // NB: excludeIds is in practice no longer than one, so no point building a set.
+    // TODO Recipient inclusion/exclusion would be much more efficient if we could use a bitmask.
+    for (final var conn : this.clientConnections.values()) {
+      if (Arrays.stream(excludeIds).anyMatch(id -> conn.getId().equals(id))) {
+        continue;
+      }
+      conn.sendMessage(channelId, message);
+    }
+  }
+
+  public void sendMessage(String connectionId, ChannelId channelId, byte[] message) {
+    final var connection = this.clientConnections.get(connectionId);
+    if (connection != null) {
+      connection.sendMessage(channelId, message);
+    }
+  }
+
   // Only once a connection is set up do we add it to the server. Most importantly though, the
   // server is not the one responsible for deciding what kind of connections to use.
 
@@ -111,7 +131,8 @@ public class Server {
     return true;
   }
 
-  public void removeConnection(@Nonnull String connectionId, @Nullable String reason) {
+  public Optional<Connection> removeConnection(
+      @Nonnull String connectionId, @Nullable String reason) {
     if (reason == null) {
       log.debug("Removing connection {}", connectionId);
     } else {
@@ -121,9 +142,10 @@ public class Server {
     final var connection = clientConnections.remove(connectionId);
     if (connection == null) {
       log.error("Attempted to remove unknown connection {}", connectionId);
-      return;
+      return Optional.empty();
     }
 
     connection.removeObserver(connectionObserver);
+    return Optional.of(connection);
   }
 }

@@ -26,4 +26,6 @@ public interface ConnectionHandler {
   void addListener(@Nonnull Listener listener);
 
   void removeListener(@Nonnull Listener listener);
+
+  // TODO start / stop() ?
 }
