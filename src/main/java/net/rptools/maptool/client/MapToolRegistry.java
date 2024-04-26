@@ -34,7 +34,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import net.rptools.maptool.server.MapToolServer;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.HttpUrl;
@@ -59,7 +58,7 @@ public class MapToolRegistry {
 
   private String serverRegistrationId;
 
-  private static final Logger log = LogManager.getLogger(MapToolServer.class);
+  private static final Logger log = LogManager.getLogger(MapToolRegistry.class);
 
   private static MapToolRegistry instance = new MapToolRegistry();
 

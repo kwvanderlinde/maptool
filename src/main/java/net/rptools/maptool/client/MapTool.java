@@ -101,7 +101,9 @@ import net.rptools.maptool.model.zones.TokensRemoved;
 import net.rptools.maptool.model.zones.ZoneAdded;
 import net.rptools.maptool.model.zones.ZoneRemoved;
 import net.rptools.maptool.protocol.syrinscape.SyrinscapeURLStreamHandler;
+import net.rptools.maptool.server.IMapToolServer;
 import net.rptools.maptool.server.MapToolServer;
+import net.rptools.maptool.server.MapToolServer2;
 import net.rptools.maptool.server.ServerCommand;
 import net.rptools.maptool.server.ServerConfig;
 import net.rptools.maptool.server.ServerPolicy;
@@ -167,7 +169,7 @@ public class MapTool {
   private static MapToolFrame clientFrame;
   private static NoteFrame profilingNoteFrame;
   private static LogConsoleFrame logConsoleFrame;
-  private static MapToolServer server;
+  private static IMapToolServer server;
   private static ServerCommand serverCommand;
   private static ServerPolicy serverPolicy;
 
@@ -755,7 +757,7 @@ public class MapTool {
   /**
    * @return the server, or null if player is a client.
    */
-  public static MapToolServer getServer() {
+  public static IMapToolServer getServer() {
     return server;
   }
 
@@ -1007,7 +1009,11 @@ public class MapTool {
 
     // TODO: the client and server campaign MUST be different objects.
     // Figure out a better init method
-    server = new MapToolServer(config, policy, playerDatabase);
+    final var USE_DECOMPOSED = false;
+    server =
+        USE_DECOMPOSED
+            ? new MapToolServer2(config, policy, playerDatabase)
+            : new MapToolServer(config, policy, playerDatabase);
 
     serverPolicy = server.getPolicy();
     if (copyCampaign) {

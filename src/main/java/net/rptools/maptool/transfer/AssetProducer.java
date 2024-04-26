@@ -59,6 +59,8 @@ public class AssetProducer {
    * @return an {@link AssetChunkDto} with the next chunk of data
    */
   public AssetChunkDto nextChunk(int size) throws IOException {
+    // TODO This method needs a rework. Reopening the file and seeking to the right point is plainly
+    //  wasteful. Instead we should be continually progressing through a file.
     if (currentPosition + size > length) {
       size = (int) (length - currentPosition);
     }
@@ -80,6 +82,7 @@ public class AssetProducer {
    * @return true if all data been transferred
    */
   public boolean isComplete() {
+    // TODO I believe a more robust check would set a flag once EOF is detected.
     return currentPosition >= length;
   }
 }

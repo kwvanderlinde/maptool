@@ -29,7 +29,6 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ServerCommandClientImpl;
 import net.rptools.maptool.client.ui.zone.FogUtil;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
-import net.rptools.maptool.common.MapToolConstants;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.InitiativeList.TokenInitiative;
@@ -56,10 +55,10 @@ import org.apache.logging.log4j.Logger;
  * @author drice *
  */
 public class ServerMessageHandler implements MessageHandler {
-  private final MapToolServer server;
+  private final IMapToolServer server;
   private static final Logger log = LogManager.getLogger(ServerMessageHandler.class);
 
-  public ServerMessageHandler(MapToolServer server) {
+  public ServerMessageHandler(IMapToolServer server) {
     this.server = server;
   }
 
@@ -692,7 +691,7 @@ public class ServerMessageHandler implements MessageHandler {
 
   private void handle(BootPlayerMsg bootPlayerMsg) {
     // And just to be sure, remove them from the server
-    server.releaseClientConnection(server.getConnectionId(bootPlayerMsg.getPlayerName()));
+    server.bootPlayer(server.getConnectionId(bootPlayerMsg.getPlayerName()));
   }
 
   private void handle(String id, UpdatePlayerStatusMsg updatePlayerStatusMsg) {
@@ -706,11 +705,11 @@ public class ServerMessageHandler implements MessageHandler {
   }
 
   private void sendToClients(String excludedId, Message message) {
-    server.getConnection().broadcastMessage(new String[] {excludedId}, message);
+    server.broadcastMessage(new String[] {excludedId}, message);
   }
 
   private void sendToAllClients(Message message) {
-    server.getConnection().broadcastMessage(message);
+    server.broadcastMessage(new String[0], message);
   }
 
   private void bringTokensToFront(GUID zoneGUID, Set<GUID> tokenSet) {
@@ -751,29 +750,21 @@ public class ServerMessageHandler implements MessageHandler {
               assetID,
               AssetManager.getAssetInfo(assetID).getProperty(AssetManager.NAME),
               AssetManager.getAssetCacheFile(assetID));
-      var msg = StartAssetTransferMsg.newBuilder().setHeader(producer.getHeader().toDto());
-      server
-          .getConnection()
-          .sendMessage(
-              id,
-              MapToolConstants.Channel.IMAGE,
-              Message.newBuilder().setStartAssetTransferMsg(msg).build());
       server.addAssetProducer(id, producer);
-
     } catch (IllegalArgumentException iae) {
       // Sending an empty asset will cause a failure of the image to load on the client side,
       // showing a broken
       // image instead of blowing up
       Asset asset = Asset.createBrokenImageAsset(assetID);
       var msg = PutAssetMsg.newBuilder().setAsset(asset.toDto());
-      server.getConnection().sendMessage(id, Message.newBuilder().setPutAssetMsg(msg).build());
+      server.sendMessage(id, Message.newBuilder().setPutAssetMsg(msg).build());
     }
   }
 
   private void getZone(String id, GUID zoneGUID) {
     var zone = server.getCampaign().getZone(zoneGUID);
     var msg = PutZoneMsg.newBuilder().setZone(zone.toDto());
-    server.getConnection().sendMessage(id, Message.newBuilder().setPutZoneMsg(msg).build());
+    server.sendMessage(id, Message.newBuilder().setPutZoneMsg(msg).build());
   }
 
   private void putToken(String clientId, GUID zoneGUID, Token token) {
@@ -795,9 +786,7 @@ public class ServerMessageHandler implements MessageHandler {
               .setTokenGuid(token.getId().toString())
               .setProperty(TokenUpdateDto.valueOf(Token.Update.setZOrder.name()))
               .addValues(0, TokenPropertyValueDto.newBuilder().setIntValue(zOrder));
-      server
-          .getConnection()
-          .sendMessage(clientId, Message.newBuilder().setUpdateTokenPropertyMsg(msg).build());
+      server.sendMessage(clientId, Message.newBuilder().setUpdateTokenPropertyMsg(msg).build());
     }
   }
 

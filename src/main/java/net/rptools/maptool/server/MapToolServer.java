@@ -36,6 +36,7 @@ import net.rptools.maptool.model.TextMessage;
 import net.rptools.maptool.model.player.PlayerDatabase;
 import net.rptools.maptool.model.player.PlayerDatabaseFactory;
 import net.rptools.maptool.server.proto.Message;
+import net.rptools.maptool.server.proto.StartAssetTransferMsg;
 import net.rptools.maptool.server.proto.UpdateAssetTransferMsg;
 import net.rptools.maptool.transfer.AssetProducer;
 import net.rptools.maptool.transfer.AssetTransferManager;
@@ -52,7 +53,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * @author drice
  */
-public class MapToolServer {
+public class MapToolServer implements IMapToolServer {
   private static final Logger log = LogManager.getLogger(MapToolServer.class);
   private static final int ASSET_CHUNK_SIZE = 5 * 1024;
 
@@ -99,6 +100,7 @@ public class MapToolServer {
     return connectionMap.get(id);
   }
 
+  @Override
   public String getConnectionId(String playerId) {
     return conn.getConnectionId(playerId);
   }
@@ -106,9 +108,11 @@ public class MapToolServer {
   /**
    * Forceably disconnects a client and cleans up references to it
    *
-   * @param id the connection ID
+   * @param playerId The name of the player whose connections should be closed.
    */
-  public void releaseClientConnection(String id) {
+  @Override
+  public void bootPlayer(String playerId) {
+    final var id = getConnectionId(playerId);
     Connection connection = getClientConnection(id);
     if (connection != null) {
       connection.close();
@@ -117,7 +121,14 @@ public class MapToolServer {
     connectionMap.remove(id);
   }
 
+  @Override
   public void addAssetProducer(String connectionId, AssetProducer producer) {
+    var msg = StartAssetTransferMsg.newBuilder().setHeader(producer.getHeader().toDto());
+    conn.sendMessage(
+        connectionId,
+        MapToolConstants.Channel.IMAGE,
+        Message.newBuilder().setStartAssetTransferMsg(msg).build());
+
     AssetTransferManager manager = assetManagerMap.get(connectionId);
     manager.addProducer(producer);
   }
@@ -136,20 +147,19 @@ public class MapToolServer {
     return config.getHostPlayerId() != null && config.getHostPlayerId().equals(playerId);
   }
 
-  public MapToolServerConnection getConnection() {
-    return conn;
-  }
-
+  @Override
   public boolean isPlayerConnected(String id) {
     return conn.getPlayer(id) != null;
   }
 
+  @Override
   public void updatePlayerStatus(String playerName, GUID zoneId, boolean loaded) {
     var player = conn.getPlayer(playerName);
     player.setLoaded(loaded);
     player.setZoneId(zoneId);
   }
 
+  @Override
   public void setCampaign(Campaign campaign) {
     // Don't allow null campaigns, but allow the campaign to be cleared out
     if (campaign == null) {
@@ -158,22 +168,27 @@ public class MapToolServer {
     this.campaign = campaign;
   }
 
+  @Override
   public Campaign getCampaign() {
     return campaign;
   }
 
+  @Override
   public ServerPolicy getPolicy() {
     return policy;
   }
 
+  @Override
   public void updateServerPolicy(ServerPolicy policy) {
     this.policy = policy;
   }
 
+  @Override
   public ServerConfig getConfig() {
     return config;
   }
 
+  @Override
   public void stop() {
     conn.close();
     if (heartbeatThread != null) {
@@ -186,8 +201,19 @@ public class MapToolServer {
 
   private static final Random random = new Random();
 
+  @Override
   public void start() throws IOException {
     conn.open();
+  }
+
+  @Override
+  public void broadcastMessage(String[] exclude, Message message) {
+    conn.broadcastMessage(exclude, message);
+  }
+
+  @Override
+  public void sendMessage(String id, Message message) {
+    conn.sendMessage(id, message);
   }
 
   private class HeartbeatThread extends Thread {

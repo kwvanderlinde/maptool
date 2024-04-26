@@ -116,7 +116,7 @@ public class MapToolServerConnection
   }
 
   public void connectionRemoved(Connection conn) {
-    server.releaseClientConnection(conn.getId());
+    server.bootPlayer(conn.getId());
     var player = playerMap.get(conn.getId().toUpperCase()).getTransferablePlayer();
     var msg = PlayerDisconnectedMsg.newBuilder().setPlayer(player.toDto());
     broadcastMessage(
