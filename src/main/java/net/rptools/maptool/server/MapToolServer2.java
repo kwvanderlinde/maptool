@@ -75,7 +75,7 @@ public class MapToolServer2 implements IMapToolServer {
     this.server = new Server(new ServerMessageHandler(null /* Should be `this` */));
     // TODO Create via ConnectionFactory so that ServerConfig is accounted for. This might even
     //  be feasible to create at the call site and injected instead of a hard dependency here).
-    this.connectionHandler = new SocketConnectionHandler();
+    this.connectionHandler = new SocketConnectionHandler(config.getPort());
 
     this.connectionHandler.addListener(new ConnectionHandlerListener());
 
@@ -85,13 +85,13 @@ public class MapToolServer2 implements IMapToolServer {
   // TODO Eliminate IOException.
   @Override
   public void start() throws IOException {
-    // TODO Start the connection handler.
+    this.connectionHandler.start();
   }
 
   @Override
   public void stop() {
+    this.connectionHandler.stop();
     // TODO Heartbeart thread.
-    // TODO Server / connection handler shutdown.
     this.assetProducerThread.shutdown();
   }
 

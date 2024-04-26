@@ -19,7 +19,13 @@ import javax.annotation.Nonnull;
 public interface ConnectionHandler {
   interface Listener {
     void onConnected(@Nonnull Connection connection);
+
+    // TODO Callbacks for server-side error conditions.
   }
+
+  void start();
+
+  void stop();
 
   // TODO How should we represent start() to allow asynchronous failures?
 

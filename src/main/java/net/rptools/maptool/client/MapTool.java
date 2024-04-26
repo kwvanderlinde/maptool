@@ -1009,7 +1009,7 @@ public class MapTool {
 
     // TODO: the client and server campaign MUST be different objects.
     // Figure out a better init method
-    final var USE_DECOMPOSED = false;
+    final var USE_DECOMPOSED = true;
     server =
         USE_DECOMPOSED
             ? new MapToolServer2(config, policy, playerDatabase)
