@@ -72,10 +72,14 @@ public class MapToolServer2 implements IMapToolServer {
     //  needs to look up the server's campaign, and sometimes send messages and
     //  connections.
     // TODO In my new approach, handshakes are decided entirely here.
-    this.server = new Server(new ServerMessageHandler(null /* Should be `this` */));
+    this.server = new Server(new ServerMessageHandler(this));
     // TODO Create via ConnectionFactory so that ServerConfig is accounted for. This might even
     //  be feasible to create at the call site and injected instead of a hard dependency here).
     this.connectionHandler = new SocketConnectionHandler(config.getPort());
+
+    // TODO Right now old-school connections to decomposed server won't work because we don't LZMA
+    //  compress. Will need to add that in here or hack it out there in order to test. This is just
+    //  one more benefit that decomposition will bring.
 
     this.connectionHandler.addListener(new ConnectionHandlerListener());
 
