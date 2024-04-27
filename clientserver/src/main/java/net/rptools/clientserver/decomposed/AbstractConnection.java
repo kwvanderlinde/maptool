@@ -17,8 +17,8 @@ package net.rptools.clientserver.decomposed;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import javax.annotation.Nonnull;
 
 public abstract class AbstractConnection implements Connection {
@@ -27,7 +27,7 @@ public abstract class AbstractConnection implements Connection {
   // NB: Adding and removing observers is a rare operation, meaning two things:
   // 1. This list will not be very large in practice.
   // 2. Even if it is large enough for iteration to be noticeable, it still won't matter.
-  private final List<ConnectionObserver> observers = new ArrayList<>();
+  private final List<ConnectionObserver> observers = new CopyOnWriteArrayList<>();
   private final String id;
 
   protected AbstractConnection(String id) {
