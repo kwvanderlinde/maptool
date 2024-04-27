@@ -32,6 +32,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public abstract class AbstractConnection implements Connection {
+  public static final boolean USE_COMPRESSION = false;
+
   private static final Logger log = LogManager.getLogger(AbstractConnection.class);
 
   // TODO I believe this implementation of output queueing is busted. When adding a message, we
@@ -60,27 +62,35 @@ public abstract class AbstractConnection implements Connection {
   }
 
   private byte[] compress(byte[] message) {
-    try {
-      ByteArrayOutputStream baos = new ByteArrayOutputStream(message.length);
-      OutputStream ios = new ZstdCompressorOutputStream(baos);
-      ios.write(message);
-      ios.close();
-      var compressedMessage = baos.toByteArray();
-      return compressedMessage;
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    if (USE_COMPRESSION) {
+      try {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(message.length);
+        OutputStream ios = new ZstdCompressorOutputStream(baos);
+        ios.write(message);
+        ios.close();
+        var compressedMessage = baos.toByteArray();
+        return compressedMessage;
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    } else {
+      return message;
     }
   }
 
   private byte[] inflate(byte[] compressedMessage) {
-    InputStream bytesIn = new ByteArrayInputStream(compressedMessage);
-    try {
-      InputStream ios = new ZstdCompressorInputStream(bytesIn);
-      var decompressed = ios.readAllBytes();
-      ios.close();
-      return decompressed;
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    if (USE_COMPRESSION) {
+      InputStream bytesIn = new ByteArrayInputStream(compressedMessage);
+      try {
+        InputStream ios = new ZstdCompressorInputStream(bytesIn);
+        var decompressed = ios.readAllBytes();
+        ios.close();
+        return decompressed;
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    } else {
+      return compressedMessage;
     }
   }
 
