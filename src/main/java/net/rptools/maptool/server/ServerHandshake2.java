@@ -631,6 +631,8 @@ public class ServerHandshake2 {
 
     @Override
     public void beforeTransitionTo() {
+      super.beforeTransitionTo();
+
       // TODO Can't this logc just live wherever the transition is actioned?
       var server = MapTool.getServer();
       final DataStoreDto dataStoreDto;
