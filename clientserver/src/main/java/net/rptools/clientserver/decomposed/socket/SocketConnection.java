@@ -129,10 +129,6 @@ public class SocketConnection extends AbstractConnection implements Connection {
       }
 
       pendingMessages.add(message);
-
-      synchronized (this) {
-        this.notify();
-      }
     }
 
     private void sendMessages(OutputStream out, Collection<byte[]> messages) throws IOException {
@@ -172,16 +168,14 @@ public class SocketConnection extends AbstractConnection implements Connection {
       final var messageBuffer = new ArrayList<byte[]>(bufferCapacity);
       while (!isClosed.get()) {
         try {
-          synchronized (this) {
-            this.wait();
-          }
+          final var message = pendingMessages.take();
+          messageBuffer.add(message);
         } catch (InterruptedException e) {
-          // Totally normal, do nothing.
+          // Totally normal, just loop again.
+          continue;
         }
-
-        // TODO If I do .take(), then .drainTo(), I could rely on the queue to do my thread blocking
-        //  & signaling for me.
-        pendingMessages.drainTo(messageBuffer, bufferCapacity);
+        // Also grab any other pending messages since it's more efficient than repeated `.take()`.
+        pendingMessages.drainTo(messageBuffer, bufferCapacity - 1);
 
         // It's possible the isClosed flag just got set, but we still need to process any messages
         // that may have come in before that.
