@@ -30,7 +30,6 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.swing.*;
-import net.rptools.clientserver.decomposed.ChannelId;
 import net.rptools.clientserver.decomposed.Connection;
 import net.rptools.clientserver.decomposed.ConnectionObserver;
 import net.rptools.lib.MD5Key;
@@ -86,8 +85,6 @@ public class ServerHandshake2 {
   /** The connection to the client. */
   private final Connection connection;
 
-  private final ChannelId messageChannelId;
-
   private final ConnectionObserver connectionObserver;
 
   private final boolean useEasyConnect;
@@ -104,12 +101,10 @@ public class ServerHandshake2 {
   public ServerHandshake2(
       Executor executor,
       Connection connection,
-      ChannelId messageChannelId,
       PlayerDatabase playerDatabase,
       boolean useEasyConnect) {
     this.executor = executor;
     this.connection = connection;
-    this.messageChannelId = messageChannelId;
     this.connectionObserver =
         new ConnectionObserver() {
           @Override
@@ -143,7 +138,7 @@ public class ServerHandshake2 {
   private void sendMessage(HandshakeMsg message) {
     var msgType = message.getMessageTypeCase();
     log.info("Server sent to {}: {}", connection.getId(), msgType);
-    connection.sendMessage(messageChannelId, message.toByteArray());
+    connection.sendMessage(message.toByteArray());
   }
 
   private void handleMessage(byte[] message) {

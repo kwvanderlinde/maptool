@@ -28,9 +28,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
 import net.rptools.clientserver.decomposed.AbstractConnection;
-import net.rptools.clientserver.decomposed.ChannelId;
 import net.rptools.clientserver.decomposed.Connection;
-import net.rptools.clientserver.decomposed.MessageSpool;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -55,8 +53,14 @@ public class SocketConnection extends AbstractConnection implements Connection {
   }
 
   @Override
-  public void sendMessage(@Nonnull ChannelId channelId, @Nonnull byte[] message) {
-    this.sender.addMessage(channelId, message);
+  public void sendMessage(@Nonnull byte[] message) {
+    if (message.length == 0) {
+      // No point sending empty messages. Also, internally we use an empty message as a sentinel to
+      // signal a close request, so we don't want anyone else to mess with that.
+      return;
+    }
+
+    this.sender.addMessage(message);
   }
 
   @Override
@@ -94,39 +98,18 @@ public class SocketConnection extends AbstractConnection implements Connection {
 
   @ThreadSafe
   private static final class Sender {
-    private record PendingMessage(ChannelId channelId, byte[] message) {}
-
     private final Thread thread;
     private final SocketConnection connection;
     private final Socket socket;
-    /*
-     * TODO
-     *      This is the wrong layer to apply spooling. In principle, the server should be aware of
-     *  the order that messages are actioned, to decide on a canonical ordering that - in the
-     *  future - we could require clients to replicate. Imagine TCP resend, or even more accurately,
-     *  GGPO rollback / client-side prediction.
-     *      Even leaving aside future improvements like the above, message spooling is a bane to
-     *  connection composition. At its most basic level, a connection is just a way to stream bytes
-     *  in and out. This remains true with spooling -- since messages are interleaved in the output
-     *  -- but the interjection of spooling means we cannot simply "nest" connections in order to
-     *  compose them, because every layer is technically responsible for spooling / interleaving.
-     *  Additionally, spooling is a time-sensitive operations, so different layers may not even
-     *  agree about the ultimate order of messages, which could be a problem if certain sequences
-     *  need to be maintained.
-     */
-    private final MessageSpool spool;
-    private final BlockingQueue<PendingMessage> pendingMessages;
+    private final BlockingQueue<byte[]> pendingMessages;
     private final AtomicBoolean isClosed;
-    private final ChannelId controlChannel;
 
     public Sender(SocketConnection connection, Socket socket) {
       this.thread = new Thread(this::run, "SocketConnection.SendThread");
       this.connection = connection;
       this.socket = socket;
       this.pendingMessages = new LinkedBlockingQueue<>();
-      this.spool = new MessageSpool();
       this.isClosed = new AtomicBoolean(false);
-      this.controlChannel = new ChannelId();
     }
 
     public void start() {
@@ -134,10 +117,10 @@ public class SocketConnection extends AbstractConnection implements Connection {
     }
 
     public void requestStop() {
-      this.addMessage(controlChannel, new byte[0]);
+      this.addMessage(new byte[0]);
     }
 
-    public void addMessage(ChannelId channelId, byte[] message) {
+    public void addMessage(byte[] message) {
       if (isClosed.get()) {
         // It's not the end of the world if we don't 100% discard all these messages, we just don't
         // want them to build up unnecessarily.
@@ -145,41 +128,30 @@ public class SocketConnection extends AbstractConnection implements Connection {
         return;
       }
 
-      pendingMessages.add(new PendingMessage(channelId, message));
+      pendingMessages.add(message);
 
       synchronized (this) {
         this.notify();
       }
     }
 
-    private void spoolMessages(Collection<PendingMessage> messages) {
-      assert Thread.currentThread() == thread : "Spooling must be done on the send thread";
-
+    private void sendMessages(OutputStream out, Collection<byte[]> messages) throws IOException {
       int count = 0;
-      for (final var pendingMessage : messages) {
-        if (controlChannel.equals(pendingMessage.channelId())
-            && pendingMessage.message.length == 0) {
+
+      // Write out the batch of messages.
+      for (final var message : messages) {
+        if (message.length == 0) {
           // This is a special close request. We still want to action preceding messages, but do not
           // spool any more messages.
           isClosed.set(true);
           break;
         }
 
-        spool.addMessage(pendingMessage.channelId(), pendingMessage.message());
+        connection.writeMessage(out, message);
         ++count;
       }
 
-      log.info("Spooled {} messages", count);
-    }
-
-    private void sendAllSpooledMessages(OutputStream out) throws IOException {
-      assert Thread.currentThread() == thread : "Message sending must be done on the send thread";
-
-      byte[] message;
-      while ((message = spool.nextMessage()) != null) {
-        connection.writeMessage(out, message);
-      }
-      // TODO Original caught an IndexOutOfBoundsException somewhere here, and I don't see why.
+      log.info("Sent {} messages", count);
     }
 
     private void run() {
@@ -197,7 +169,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
       //  in fact an unexpected scenario.
 
       final var bufferCapacity = 1024;
-      final var messageBuffer = new ArrayList<PendingMessage>(bufferCapacity);
+      final var messageBuffer = new ArrayList<byte[]>(bufferCapacity);
       while (!isClosed.get()) {
         try {
           synchronized (this) {
@@ -207,21 +179,24 @@ public class SocketConnection extends AbstractConnection implements Connection {
           // Totally normal, do nothing.
         }
 
+        // TODO If I do .take(), then .drainTo(), I could rely on the queue to do my thread blocking
+        //  & signaling for me.
         pendingMessages.drainTo(messageBuffer, bufferCapacity);
-        spoolMessages(messageBuffer);
-        // All buffered messages are now in the spool, so clear the buffer for the next loop.
-        messageBuffer.clear();
 
         // It's possible the isClosed flag just got set, but we still need to process any messages
         // that may have come in before that.
 
         try {
-          sendAllSpooledMessages(out);
+          // Write out the batch of messages.
+          sendMessages(out, messageBuffer);
         } catch (IOException e) {
           log.error("Error while trying to send messages", e);
           connection.doDisconnect(e);
           return;
         }
+
+        // All buffered messages have been sent, so clear the buffer for the next loop.
+        messageBuffer.clear();
       }
 
       // Clean exit. Clean up the socket and notify observers.

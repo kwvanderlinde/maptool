@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nonnull;
-import net.rptools.clientserver.decomposed.ChannelId;
 import net.rptools.clientserver.decomposed.Connection;
 import net.rptools.clientserver.decomposed.ConnectionHandler;
 import net.rptools.clientserver.decomposed.Server;
@@ -48,8 +47,6 @@ public class MapToolServer2 implements IMapToolServer {
   private @Nonnull ServerPolicy policy;
   private @Nonnull PlayerDatabase playerDatabase;
 
-  private final ChannelId messageChannelId = new ChannelId();
-  private final ChannelId imageChannelId = new ChannelId();
   private final Server server;
   // TODO Enforce invariants that playersByConnectionId only has keys present in the server. But how
   //  can we enforce that?
@@ -166,9 +163,7 @@ public class MapToolServer2 implements IMapToolServer {
   public void addAssetProducer(String connectionId, AssetProducer producer) {
     var msg = StartAssetTransferMsg.newBuilder().setHeader(producer.getHeader().toDto());
     server.sendMessage(
-        connectionId,
-        imageChannelId,
-        Message.newBuilder().setStartAssetTransferMsg(msg).build().toByteArray());
+        connectionId, Message.newBuilder().setStartAssetTransferMsg(msg).build().toByteArray());
 
     // TODO An AssetProducer yields chunks of a single asset via AssetChunkDto. In my vision for the
     //  future, this would not be necessary, since we could instead stream the entire asset to the
@@ -185,12 +180,12 @@ public class MapToolServer2 implements IMapToolServer {
 
   @Override
   public void broadcastMessage(String[] exclude, Message message) {
-    server.broadcast(exclude, messageChannelId, message.toByteArray());
+    server.broadcast(exclude, message.toByteArray());
   }
 
   @Override
   public void sendMessage(String id, Message message) {
-    server.sendMessage(id, messageChannelId, message.toByteArray());
+    server.sendMessage(id, message.toByteArray());
   }
 
   private final class ConnectionHandlerListener implements ConnectionHandler.Listener {
@@ -204,11 +199,7 @@ public class MapToolServer2 implements IMapToolServer {
       // Start the handshake.
       final var handshake =
           new ServerHandshake2(
-              server.getExecutor(),
-              connection,
-              messageChannelId,
-              playerDatabase,
-              config.getUseEasyConnect());
+              server.getExecutor(), connection, playerDatabase, config.getUseEasyConnect());
       handshake
           .run()
           .whenComplete(
@@ -246,7 +237,6 @@ public class MapToolServer2 implements IMapToolServer {
     // Send the connected player to each client.
     // Original in MapToolServer connection does this in the reverse order, but I like this.
     server.broadcast(
-        null,
         Message.newBuilder()
             .setPlayerConnectedMsg(
                 PlayerConnectedMsg.newBuilder()
@@ -255,7 +245,6 @@ public class MapToolServer2 implements IMapToolServer {
             .toByteArray());
     for (Player player : playersByConnectionId.values()) {
       connection.sendMessage(
-          messageChannelId,
           Message.newBuilder()
               .setPlayerConnectedMsg(
                   // TODO Why do we not send the transferable player as above? Actually it
@@ -267,7 +256,6 @@ public class MapToolServer2 implements IMapToolServer {
 
     // Send the campaign to the new client.
     connection.sendMessage(
-        messageChannelId,
         Message.newBuilder()
             .setSetCampaignMsg(SetCampaignMsg.newBuilder().setCampaign(campaign.toDto()))
             .build()
@@ -332,7 +320,6 @@ public class MapToolServer2 implements IMapToolServer {
               var msg = UpdateAssetTransferMsg.newBuilder().setChunk(chunk);
               server.sendMessage(
                   entry.getKey(),
-                  imageChannelId,
                   Message.newBuilder().setUpdateAssetTransferMsg(msg).build().toByteArray());
             }
           }

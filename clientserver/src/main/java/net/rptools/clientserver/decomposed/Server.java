@@ -80,30 +80,29 @@ public class Server {
   /**
    * Sends a message to all clients.
    *
-   * @param channelId
    * @param message
    */
-  public void broadcast(ChannelId channelId, byte[] message) {
+  public void broadcast(byte[] message) {
     for (final var conn : this.clientConnections.values()) {
-      conn.sendMessage(channelId, message);
+      conn.sendMessage(message);
     }
   }
 
-  public void broadcast(String[] excludeIds, ChannelId channelId, byte[] message) {
+  public void broadcast(String[] excludeIds, byte[] message) {
     // NB: excludeIds is in practice no longer than one, so no point building a set.
     // TODO Recipient inclusion/exclusion would be much more efficient if we could use a bitmask.
     for (final var conn : this.clientConnections.values()) {
       if (Arrays.stream(excludeIds).anyMatch(id -> conn.getId().equals(id))) {
         continue;
       }
-      conn.sendMessage(channelId, message);
+      conn.sendMessage(message);
     }
   }
 
-  public void sendMessage(String connectionId, ChannelId channelId, byte[] message) {
+  public void sendMessage(String connectionId, byte[] message) {
     final var connection = this.clientConnections.get(connectionId);
     if (connection != null) {
-      connection.sendMessage(channelId, message);
+      connection.sendMessage(message);
     }
   }
 

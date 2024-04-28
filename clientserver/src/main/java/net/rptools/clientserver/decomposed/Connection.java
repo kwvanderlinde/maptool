@@ -28,5 +28,5 @@ public interface Connection {
 
   void removeObserver(ConnectionObserver observer);
 
-  void sendMessage(@Nonnull ChannelId channelId, @Nonnull byte[] message);
+  void sendMessage(@Nonnull byte[] message);
 }
