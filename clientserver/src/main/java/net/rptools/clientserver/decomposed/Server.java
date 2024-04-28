@@ -77,6 +77,13 @@ public class Server {
     return executor;
   }
 
+  // TODO Add LZMA compression when sending messages. Only compress the message once, then dispatch
+  //  the compressed message to necessary connections.
+  //  Contrast with the legacy implementation where each connection compresses the message
+  //  redundantly.
+  //  Note that since we don't handle handshake messages, those will not be compressed. But that is
+  //  okay since those messages are not very large anyways.
+
   /**
    * Sends a message to all clients.
    *
