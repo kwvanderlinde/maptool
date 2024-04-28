@@ -14,15 +14,15 @@
  */
 package net.rptools.clientserver.decomposed;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import javax.annotation.Nonnull;
 
 public abstract class AbstractConnectionHandler implements ConnectionHandler {
   // NB: Adding and removing listeners is a rare operation, meaning two things:
   // 1. This list will not be very large in practice.
   // 2. Even if it is large enough for iteration to be noticeable, it still won't matter.
-  private final List<Listener> listeners = new ArrayList<>();
+  private final List<Listener> listeners = new CopyOnWriteArrayList<>();
 
   @Override
   public void addListener(@Nonnull Listener listener) {
