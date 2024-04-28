@@ -195,6 +195,11 @@ public class MapToolServer2 implements IMapToolServer {
 
   private final class ConnectionHandlerListener implements ConnectionHandler.Listener {
     @Override
+    public void onError(@NotNull Exception exception) {
+      // TODO Shutdown the server or something?
+    }
+
+    @Override
     public void onConnected(@NotNull Connection connection) {
       // Start the handshake.
       final var handshake =

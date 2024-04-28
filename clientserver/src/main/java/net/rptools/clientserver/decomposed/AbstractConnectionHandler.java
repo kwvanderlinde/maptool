@@ -37,4 +37,8 @@ public abstract class AbstractConnectionHandler implements ConnectionHandler {
   protected void onConnected(@Nonnull Connection connection) {
     listeners.forEach(listener -> listener.onConnected(connection));
   }
+
+  protected void onError(@Nonnull Exception exception) {
+    listeners.forEach(listener -> listener.onError(exception));
+  }
 }

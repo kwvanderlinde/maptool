@@ -81,7 +81,6 @@ public class SocketConnectionHandler extends AbstractConnectionHandler
             if (!suppressErrors) {
               log.error(e.getMessage(), e);
             }
-            // How to propagate to the server proper for cleanup?
             continue;
           }
 
@@ -93,6 +92,7 @@ public class SocketConnectionHandler extends AbstractConnectionHandler
         }
       } catch (IOException e) {
         // How to propagate to the server proper for cleanup?
+        onError(e);
       }
     }
   }

@@ -20,7 +20,7 @@ public interface ConnectionHandler {
   interface Listener {
     void onConnected(@Nonnull Connection connection);
 
-    // TODO Callbacks for server-side error conditions.
+    void onError(@Nonnull Exception exception);
   }
 
   void start();
