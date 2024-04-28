@@ -92,7 +92,7 @@ public class MapToolServer2 implements IMapToolServer {
   @Override
   public void stop() {
     this.connectionHandler.stop();
-    // TODO Heartbeart thread.
+    // TODO Heartbeart thread, not that I like the implementation.
     this.assetProducerThread.shutdown();
   }
 
