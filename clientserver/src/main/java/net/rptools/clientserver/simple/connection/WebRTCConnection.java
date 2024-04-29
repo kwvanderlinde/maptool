@@ -20,6 +20,7 @@ import dev.onvoid.webrtc.media.MediaStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.rptools.clientserver.simple.server.WebRTCServer;
 import net.rptools.clientserver.simple.webrtc.*;
 import org.apache.logging.log4j.LogManager;
@@ -205,15 +206,9 @@ public class WebRTCConnection extends AbstractConnection implements Connection {
   }
 
   @Override
-  public void sendMessage(Object channel, byte[] message) {
+  public void sendMessage(byte[] message) {
     log.debug(prefix() + "added message");
-    addMessage(channel, message);
-    if (peerConnection != null
-        && peerConnection.getConnectionState() == RTCPeerConnectionState.CONNECTED) {
-      synchronized (sendThread) {
-        sendThread.notify();
-      }
-    }
+    addMessage(message);
   }
 
   @Override
@@ -352,7 +347,7 @@ public class WebRTCConnection extends AbstractConnection implements Connection {
       signalingClient.close();
     }
 
-    if (sendThread.stopRequested) {
+    if (sendThread.stopRequested.get()) {
       return;
     }
 
@@ -369,71 +364,84 @@ public class WebRTCConnection extends AbstractConnection implements Connection {
   }
 
   private class SendThread extends Thread {
-    private boolean stopRequested = false;
+    private final AtomicBoolean stopRequested = new AtomicBoolean(false);
+    private boolean peerConnected = false;
 
     public SendThread() {
       super("WebRTCConnection.SendThread_" + WebRTCConnection.this.getId());
     }
 
     public void requestStop() {
-      this.stopRequested = true;
-      synchronized (this) {
+      this.stopRequested.set(true);
+      this.interrupt();
+    }
+
+    public synchronized void setPeerConnected(boolean value) {
+      peerConnected = value;
+      if (value) {
         this.notify();
       }
+    }
+
+    private synchronized boolean waitUntilConnected() {
+      if (peerConnected) {
+        return true;
+      }
+      try {
+        this.wait(WAIT_TIME_MS);
+      } catch (InterruptedException e) {
+        // Interruption is fine, just return whatever our state is.
+      }
+      return peerConnected;
     }
 
     @Override
     public void run() {
       log.debug(prefix() + " sendThread started");
-      try {
-        while (!stopRequested && WebRTCConnection.this.isAlive()) {
-          while (WebRTCConnection.this.hasMoreMessages()
-              && peerConnection.getConnectionState() == RTCPeerConnectionState.CONNECTED) {
-            byte[] message = WebRTCConnection.this.nextMessage();
-            if (message == null) {
-              continue;
-            }
 
-            ByteBuffer buffer = ByteBuffer.allocate(message.length + Integer.BYTES);
-            buffer.putInt(message.length).put(message).rewind();
-
-            int chunkSize = 16 * 1024;
-
-            while (buffer.remaining() > 0) {
-              var amountToSend = buffer.remaining() <= chunkSize ? buffer.remaining() : chunkSize;
-              ByteBuffer part = buffer;
-
-              if (amountToSend != buffer.capacity()) {
-                // we need to allocation a new ByteBuffer because send calls ByteBuffer.array()
-                // which would return
-                // the whole byte[] and not only the slice. But the lib doesn't use
-                // ByteBuffer.arrayOffset().
-                var slice = buffer.slice(buffer.position(), amountToSend);
-                part = ByteBuffer.allocate(amountToSend);
-                part.put(slice);
-              }
-
-              buffer.position(buffer.position() + amountToSend);
-              localDataChannel.send(new RTCDataChannelBuffer(part, true));
-              log.debug(prefix() + " sent " + part.capacity() + " bytes");
-            }
-          }
-          synchronized (this) {
-            if (!stopRequested) {
-              try {
-                log.debug(prefix() + "sendThread -> sleep");
-                this.wait();
-                log.debug(prefix() + "sendThread -> woke up");
-              } catch (InterruptedException e) {
-                log.debug(prefix() + "sendThread -> interrupted");
-              }
-            }
-          }
+      while (!stopRequested.get() && WebRTCConnection.this.isAlive()) {
+        if (!waitUntilConnected()) {
+          continue;
         }
-      } catch (Exception e) {
-        log.error(prefix() + e);
-        fireDisconnect();
+
+        // Blocks for a time until a message is received.
+        byte[] message = WebRTCConnection.this.nextMessage();
+        if (message == null) {
+          // No message available. Thread may also have been interrupted as part of stopping.
+          continue;
+        }
+
+        ByteBuffer buffer = ByteBuffer.allocate(message.length + Integer.BYTES);
+        buffer.putInt(message.length).put(message).rewind();
+
+        int chunkSize = 16 * 1024;
+
+        while (buffer.remaining() > 0) {
+          var amountToSend = Math.min(buffer.remaining(), chunkSize);
+          ByteBuffer part = buffer;
+
+          if (amountToSend != buffer.capacity()) {
+            // we need to allocation a new ByteBuffer because send calls ByteBuffer.array()
+            // which would return
+            // the whole byte[] and not only the slice. But the lib doesn't use
+            // ByteBuffer.arrayOffset().
+            var slice = buffer.slice(buffer.position(), amountToSend);
+            part = ByteBuffer.allocate(amountToSend);
+            part.put(slice);
+          }
+
+          buffer.position(buffer.position() + amountToSend);
+          try {
+            localDataChannel.send(new RTCDataChannelBuffer(part, true));
+          } catch (Exception e) {
+            log.error(prefix() + e);
+            fireDisconnect();
+            return;
+          }
+          log.debug(prefix() + " sent " + part.capacity() + " bytes");
+        }
       }
+
       log.debug(prefix() + " sendThread ended");
     }
   }
@@ -469,16 +477,16 @@ public class WebRTCConnection extends AbstractConnection implements Connection {
       log.info(prefix() + "PeerConnection.onConnectionChange " + state);
       switch (state) {
         case FAILED -> {
+          sendThread.setPeerConnected(false);
           lastError = "PeerConnection failed";
           peerConnection = null;
           fireDisconnectAsync();
         }
         case CONNECTED -> {
-          if (hasMoreMessages()) {
-            synchronized (sendThread) {
-              sendThread.notify();
-            }
-          }
+          sendThread.setPeerConnected(true);
+        }
+        default -> {
+          sendThread.setPeerConnected(false);
         }
       }
     }

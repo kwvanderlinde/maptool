@@ -68,9 +68,9 @@ public abstract class AbstractServer implements DisconnectHandler, Server {
     }
   }
 
-  public void sendMessage(String id, Object channel, byte[] message) {
+  public void sendMessage(String id, byte[] message) {
     Connection client = clients.get(id);
-    client.sendMessage(channel, message);
+    client.sendMessage(message);
   }
 
   public void close() {

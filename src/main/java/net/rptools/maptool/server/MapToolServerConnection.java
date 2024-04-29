@@ -141,15 +141,12 @@ public class MapToolServerConnection implements ServerObserver, HandshakeProvide
 
   public void sendMessage(String id, Object channel, Message message) {
     log.debug(
-        server.getConfig().getServerName()
-            + " sent to "
-            + id
-            + ":"
-            + message.getMessageTypeCase()
-            + " ("
-            + channel.toString()
-            + ")");
-    connection.sendMessage(id, channel, message.toByteArray());
+        "{} sent to {}: {} ({})",
+        server.getName(),
+        id,
+        message.getMessageTypeCase(),
+        channel.toString());
+    connection.sendMessage(id, message.toByteArray());
   }
 
   public void broadcastMessage(Message message) {

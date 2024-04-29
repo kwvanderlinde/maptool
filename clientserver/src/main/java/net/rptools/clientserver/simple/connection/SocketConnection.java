@@ -16,6 +16,7 @@ package net.rptools.clientserver.simple.connection;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -64,18 +65,12 @@ public class SocketConnection extends AbstractConnection implements Connection {
     initialize(new Socket(hostName, port));
   }
 
-  public void sendMessage(Object channel, byte[] message) {
-    addMessage(channel, message);
-
-    if (send != null) {
-      synchronized (send) {
-        send.notify();
-      }
-    }
+  public void sendMessage(byte[] message) {
+    addMessage(message);
   }
 
   protected boolean isStopRequested() {
-    return send.stopRequested;
+    return send.stopRequested.get();
   }
 
   public synchronized void close() {
@@ -106,7 +101,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
   // /////////////////////////////////////////////////////////////////////////
   private class SendThread extends Thread {
     private final Socket socket;
-    private boolean stopRequested = false;
+    private final AtomicBoolean stopRequested = new AtomicBoolean(false);
 
     public SendThread(Socket socket) {
       setName("SocketConnection.SendThread");
@@ -114,10 +109,8 @@ public class SocketConnection extends AbstractConnection implements Connection {
     }
 
     public void requestStop() {
-      this.stopRequested = true;
-      synchronized (this) {
-        this.notify();
-      }
+      this.stopRequested.set(true);
+      this.interrupt();
     }
 
     @Override
@@ -131,32 +124,21 @@ public class SocketConnection extends AbstractConnection implements Connection {
         return;
       }
 
-      try {
-        while (!stopRequested && SocketConnection.this.isAlive()) {
-          try {
-            while (SocketConnection.this.hasMoreMessages()) {
-              try {
-                byte[] message = SocketConnection.this.nextMessage();
-                if (message == null) {
-                  continue;
-                }
-                SocketConnection.this.writeMessage(out, message);
-              } catch (IndexOutOfBoundsException e) {
-                // just ignore and wait
-              }
-            }
-            synchronized (this) {
-              if (!stopRequested) {
-                this.wait();
-              }
-            }
-          } catch (InterruptedException e) {
-            // do nothing
-          }
+      while (!stopRequested.get() && SocketConnection.this.isAlive()) {
+        // Blocks for a time until a message is received.
+        byte[] message = SocketConnection.this.nextMessage();
+        if (message == null) {
+          // No message available. Thread may also have been interrupted as part of stopping.
+          continue;
         }
-      } catch (IOException e) {
-        log.error(e);
-        fireDisconnect();
+
+        try {
+          SocketConnection.this.writeMessage(out, message);
+        } catch (IOException e) {
+          log.error(e);
+          fireDisconnect();
+          return;
+        }
       }
     }
   }
@@ -166,7 +148,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
   // /////////////////////////////////////////////////////////////////////////
   private class ReceiveThread extends Thread {
     private final Socket socket;
-    private boolean stopRequested = false;
+    private final AtomicBoolean stopRequested = new AtomicBoolean(false);
 
     public ReceiveThread(Socket socket) {
       setName("SocketConnection.ReceiveThread");
@@ -174,7 +156,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
     }
 
     public void requestStop() {
-      stopRequested = true;
+      stopRequested.set(true);
     }
 
     @Override
@@ -188,7 +170,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
         return;
       }
 
-      while (!stopRequested && SocketConnection.this.isAlive()) {
+      while (!stopRequested.get() && SocketConnection.this.isAlive()) {
         try {
           byte[] message = SocketConnection.this.readMessage(in);
           SocketConnection.this.dispatchCompressedMessage(SocketConnection.this.id, message);

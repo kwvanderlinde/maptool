@@ -16,13 +16,11 @@ package net.rptools.clientserver.simple.connection;
 
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import net.rptools.clientserver.ActivityListener;
 import net.rptools.clientserver.simple.DisconnectHandler;
 import net.rptools.clientserver.simple.MessageHandler;
@@ -32,27 +30,30 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public abstract class AbstractConnection implements Connection {
+  /**
+   * The maximum amount of time we want to wait for blocking operations in loops.
+   *
+   * <p>Without such a bound, a thread will wait potentially forever for a result. This isn't bad
+   * per se, but it means we need to be very careful to wake or interrupt blocked threads on certain
+   * state changes (e.g., if the connection is lost). If we miss such a case, the thread could be
+   * parked for much longer than we expect.
+   *
+   * <p>By using this upper bound on wait time, we can get an opportunity to recheck loop conditions
+   * even if the result is not ready yet. So, for example, we know that at least every 10ms, we
+   * checked whether the connection is still alive and handled a lost connection as needed.
+   *
+   * <p>The exact value is not important. It is small enough that it should not cause user-visible
+   * delays, but plenty long enough to be a win over explicit busy waiting.
+   */
+  protected static final int WAIT_TIME_MS = 10;
+
   private static final Logger log = LogManager.getLogger(AbstractConnection.class);
 
-  private final Map<Object, List<byte[]>> outQueueMap = new HashMap<>();
-  private final List<List<byte[]>> outQueueList = new LinkedList<>();
+  private final BlockingQueue<byte[]> outQueue = new LinkedBlockingQueue<>();
+
   private final List<DisconnectHandler> disconnectHandlers = new CopyOnWriteArrayList<>();
   private final List<ActivityListener> listeners = new CopyOnWriteArrayList<>();
   private final List<MessageHandler> messageHandlers = new CopyOnWriteArrayList<>();
-
-  private List<byte[]> getOutQueue(Object channel) {
-    // Ordinarily I would synchronize this method, but I imagine the channels will be initialized
-    // once
-    // at the beginning of execution.  Thus get(channel) will only return once right at the
-    // beginning
-    // no sense incurring the cost of synchronizing the method on the class for that.
-    List<byte[]> queue = outQueueMap.get(channel);
-    if (queue == null) {
-      queue = Collections.synchronizedList(new ArrayList<byte[]>());
-      outQueueMap.put(channel, queue);
-    }
-    return queue;
-  }
 
   private byte[] compress(byte[] message) {
     try {
@@ -79,30 +80,16 @@ public abstract class AbstractConnection implements Connection {
     }
   }
 
-  protected synchronized void addMessage(Object channel, byte[] message) {
-    List<byte[]> queue = getOutQueue(channel);
-    queue.add(compress(message));
-    // Queue up for sending
-    outQueueList.add(queue);
+  protected void addMessage(byte[] message) {
+    outQueue.add(compress(message));
   }
 
-  protected synchronized boolean hasMoreMessages() {
-    return !outQueueList.isEmpty();
-  }
-
-  protected synchronized byte[] nextMessage() {
-    if (!hasMoreMessages()) {
+  protected byte[] nextMessage() {
+    try {
+      return outQueue.poll(WAIT_TIME_MS, TimeUnit.MILLISECONDS);
+    } catch (InterruptedException e) {
       return null;
     }
-    List<byte[]> queue = outQueueList.remove(0);
-
-    if (queue.isEmpty()) return null;
-
-    byte[] message = queue.remove(0);
-    if (!queue.isEmpty()) {
-      outQueueList.add(queue);
-    }
-    return message;
   }
 
   public final void addMessageHandler(MessageHandler handler) {
@@ -113,8 +100,8 @@ public abstract class AbstractConnection implements Connection {
     messageHandlers.remove(handler);
   }
 
-  private void dispatchMessage(String id, byte[] message) {
-    if (messageHandlers.size() == 0) {
+  protected void dispatchMessage(String id, byte[] message) {
+    if (messageHandlers.isEmpty()) {
       log.warn("message received but not messageHandlers registered.");
     }
 

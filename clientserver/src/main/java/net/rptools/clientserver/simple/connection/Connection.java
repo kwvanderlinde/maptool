@@ -24,11 +24,7 @@ public interface Connection extends AutoCloseable {
 
   void close();
 
-  default void sendMessage(byte[] message) {
-    sendMessage(null, message);
-  }
-
-  void sendMessage(Object channel, byte[] message);
+  void sendMessage(byte[] message);
 
   boolean isAlive();
 
