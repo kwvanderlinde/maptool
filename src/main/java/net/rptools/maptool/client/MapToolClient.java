@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import javax.annotation.Nullable;
 import net.rptools.clientserver.simple.connection.Connection;
+import net.rptools.lib.Callback;
 import net.rptools.maptool.client.events.PlayerConnected;
 import net.rptools.maptool.client.events.PlayerDisconnected;
 import net.rptools.maptool.events.MapToolEventBus;
@@ -39,6 +40,8 @@ import net.rptools.maptool.server.PersonalServer;
 import net.rptools.maptool.server.ServerCommand;
 import net.rptools.maptool.server.ServerConfig;
 import net.rptools.maptool.server.ServerPolicy;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * The client side of a client-server channel.
@@ -48,6 +51,15 @@ import net.rptools.maptool.server.ServerPolicy;
  * net.rptools.maptool.client.MapTool} and elsewhere.
  */
 public class MapToolClient {
+  private static final Logger log = LogManager.getLogger(MapToolClient.class);
+
+  public enum State {
+    New,
+    Started,
+    Connected,
+    Closed
+  }
+
   private final LocalPlayer player;
   private final PlayerDatabase playerDatabase;
 
@@ -58,8 +70,8 @@ public class MapToolClient {
   private Campaign campaign;
   private ServerPolicy serverPolicy;
   private final ServerCommand serverCommand;
-
   private boolean disconnectExpected = false;
+  private State currentState = State.New;
 
   private MapToolClient(
       boolean isForLocalServer,
@@ -83,7 +95,12 @@ public class MapToolClient {
     this.conn.addDisconnectHandler(conn -> onDisconnect(isForLocalServer, conn));
     this.conn.onCompleted(
         () -> {
-          this.conn.addMessageHandler(new ClientMessageHandler(this));
+          transitionToState(
+              State.Started,
+              State.Connected,
+              () -> {
+                this.conn.addMessageHandler(new ClientMessageHandler(this));
+              });
         });
   }
 
@@ -121,16 +138,65 @@ public class MapToolClient {
     this(true, player, server.getPlayerDatabase(), server.getPolicy(), server.getConfig());
   }
 
+  /**
+   * Transition from any state except {@code newState} to {@code newState}.
+   *
+   * @param newState The new state to set.
+   */
+  private <E extends Exception> void transitionToState(State newState, Callback<E> onTransition)
+      throws E {
+    if (currentState == newState) {
+      log.warn(
+          "Failed to transition to state {} because that is already the current state", newState);
+    } else {
+      currentState = newState;
+      onTransition.call();
+    }
+  }
+
+  /**
+   * Transition from {@code expectedState} to {@code newState}.
+   *
+   * @param expectedState The state to transition from
+   * @param newState The new state to set.
+   */
+  private <E extends Throwable> void transitionToState(
+      State expectedState, State newState, Callback<E> onTransition) throws E {
+    if (currentState != expectedState) {
+      log.warn(
+          "Failed to transition from state {} to state {} because the current state is actually {}",
+          expectedState,
+          newState,
+          currentState);
+    } else {
+      currentState = newState;
+      onTransition.call();
+    }
+  }
+
+  public State getState() {
+    return currentState;
+  }
+
   public void start() throws IOException {
-    conn.start();
+    transitionToState(
+        State.New,
+        State.Started,
+        () -> {
+          conn.start();
+        });
   }
 
   public void close() throws IOException {
-    if (conn.isAlive()) {
-      conn.close();
-    }
+    transitionToState(
+        State.Closed,
+        () -> {
+          if (conn.isAlive()) {
+            conn.close();
+          }
 
-    playerList.clear();
+          playerList.clear();
+        });
   }
 
   public void expectDisconnection() {
