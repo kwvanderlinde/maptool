@@ -17,6 +17,7 @@ package net.rptools.maptool.client;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 import net.rptools.clientserver.simple.DisconnectHandler;
 import net.rptools.clientserver.simple.Handshake;
 import net.rptools.clientserver.simple.connection.Connection;
@@ -38,7 +39,7 @@ public class MapToolConnection {
   private final LocalPlayer player;
   private final Connection connection;
   private final Handshake<Void> handshake;
-  private final List<Runnable> onCompleted;
+  private final List<Consumer<Boolean>> onCompleted;
 
   public MapToolConnection(MapToolClient client, LocalPlayer player, Connection connection) {
     this.connection = connection;
@@ -47,7 +48,7 @@ public class MapToolConnection {
     this.onCompleted = new CopyOnWriteArrayList<>();
   }
 
-  public void onCompleted(Runnable onCompleted) {
+  public void onCompleted(Consumer<Boolean> onCompleted) {
     this.onCompleted.add(onCompleted);
   }
 
@@ -61,16 +62,15 @@ public class MapToolConnection {
             MapTool.showError(exception.getMessage());
             connection.close();
             for (final var callback : onCompleted) {
-              callback.run();
+              callback.accept(false);
             }
             AppActions.disconnectFromServer();
           } else {
             for (final var callback : onCompleted) {
-              callback.run();
+              callback.accept(true);
             }
           }
         });
-
     // this triggers the handshake from the server side
     connection.open();
     handshake.startHandshake();
@@ -92,7 +92,7 @@ public class MapToolConnection {
     return connection.isAlive();
   }
 
-  public void close() throws IOException {
+  public void close() {
     connection.close();
   }
 

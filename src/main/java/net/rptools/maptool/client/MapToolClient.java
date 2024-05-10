@@ -71,12 +71,13 @@ public class MapToolClient {
   private State currentState = State.New;
 
   private MapToolClient(
+      Campaign campaign,
       boolean isForLocalServer,
       LocalPlayer player,
       PlayerDatabase playerDatabase,
       ServerPolicy serverPolicy,
       Connection connection) {
-    this.campaign = new Campaign();
+    this.campaign = campaign;
     this.player = player;
     this.playerDatabase = playerDatabase;
     this.playerList = new ArrayList<>();
@@ -88,13 +89,17 @@ public class MapToolClient {
 
     this.conn.addDisconnectHandler(conn -> onDisconnect(isForLocalServer, conn));
     this.conn.onCompleted(
-        () -> {
-          transitionToState(
-              State.Started,
-              State.Connected,
-              () -> {
-                this.conn.addMessageHandler(new ClientMessageHandler(this));
-              });
+        (success) -> {
+          if (!success) {
+            this.close();
+          } else {
+            transitionToState(
+                State.Started,
+                State.Connected,
+                () -> {
+                  this.conn.addMessageHandler(new ClientMessageHandler(this));
+                });
+          }
         });
   }
 
@@ -104,11 +109,12 @@ public class MapToolClient {
    * @param connection The connection to the local server
    */
   public MapToolClient(
+      Campaign campaign,
       LocalPlayer player,
       ServerPolicy policy,
       ServerSidePlayerDatabase playerDatabase,
       Connection connection) {
-    this(true, player, playerDatabase, policy, connection);
+    this(campaign, true, player, playerDatabase, policy, connection);
   }
 
   /**
@@ -116,8 +122,9 @@ public class MapToolClient {
    *
    * @param player The player connecting to the server.
    */
-  public MapToolClient(LocalPlayer player, Connection connection) {
+  public MapToolClient(Campaign campaign, LocalPlayer player, Connection connection) {
     this(
+        campaign,
         false,
         player,
         PlayerDatabaseFactory.getLocalPlayerDatabase(player),
@@ -174,7 +181,7 @@ public class MapToolClient {
         });
   }
 
-  public void close() throws IOException {
+  public void close() {
     transitionToState(
         State.Closed,
         () -> {
