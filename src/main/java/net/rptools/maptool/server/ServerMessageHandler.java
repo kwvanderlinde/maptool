@@ -533,7 +533,7 @@ public class ServerMessageHandler implements MessageHandler {
   }
 
   private void handle(RemoveAssetMsg msg) {
-    AssetManager.removeAsset(new MD5Key(msg.getAssetId()));
+    AssetManager.flushAssetFromMemory(new MD5Key(msg.getAssetId()));
   }
 
   private void handle(PutZoneMsg msg) {
@@ -745,11 +745,12 @@ public class ServerMessageHandler implements MessageHandler {
       return;
     }
     try {
-      AssetProducer producer =
-          new AssetProducer(
-              assetID,
-              AssetManager.getAssetInfo(assetID).getProperty(AssetManager.NAME),
-              AssetManager.getAssetCacheFile(assetID));
+      var asset = AssetManager.getLazyAsset(assetID).orElse(null);
+      if (asset == null) {
+        return;
+      }
+
+      AssetProducer producer = new AssetProducer(asset);
       var msg = StartAssetTransferMsg.newBuilder().setHeader(producer.getHeader().toDto());
       server
           .getConnection()

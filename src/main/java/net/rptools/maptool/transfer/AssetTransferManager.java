@@ -23,8 +23,12 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.server.proto.AssetChunkDto;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class AssetTransferManager {
+  private static final Logger log = LogManager.getLogger(AssetTransferManager.class);
+
   private final Map<MD5Key, AssetConsumer> consumerMap = new HashMap<>();
   private final List<ConsumerListener> consumerListenerList = new CopyOnWriteArrayList<>();
   private final List<AssetProducer> producerList = new LinkedList<>();
@@ -58,7 +62,15 @@ public class AssetTransferManager {
     }
     AssetProducer producer = producerList.remove(0);
     AssetChunkDto chunk = producer.nextChunk(size);
-    if (!producer.isComplete()) {
+
+    if (producer.isComplete()) {
+      try {
+        producer.close();
+      } catch (IOException e) {
+        // Doesn't affect the result, so don't bubble.
+        log.error("Failed to close the asset producer", e);
+      }
+    } else {
       producerList.add(producer);
     }
     return chunk;

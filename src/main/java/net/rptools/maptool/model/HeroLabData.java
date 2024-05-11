@@ -211,7 +211,7 @@ public class HeroLabData {
   public void setStatBlocks(Map<String, Map<String, String>> statBlocks) {
     // Jamz: Since statblocks do not change or accessed often, moved object data to an Asset
     // as heroLabData could be pretty large with XML data causing lag on token transfers
-    if (heroLabStatblockAssetID != null) AssetManager.removeAsset(heroLabStatblockAssetID);
+    if (heroLabStatblockAssetID != null) AssetManager.flushAssetFromMemory(heroLabStatblockAssetID);
 
     // Convert Map to byte array
     ByteArrayOutputStream byteOut = new ByteArrayOutputStream();

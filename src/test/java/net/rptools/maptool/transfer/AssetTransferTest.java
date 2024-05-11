@@ -15,12 +15,14 @@
 package net.rptools.maptool.transfer;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import net.rptools.lib.MD5Key;
+import net.rptools.maptool.model.Asset;
+import net.rptools.maptool.model.assets.LazyAsset;
 import net.rptools.maptool.server.proto.AssetChunkDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,10 +38,18 @@ class AssetTransferTest {
       data[i] = (byte) i;
     }
 
-    File tmpFile = createTempFile(data);
+    var entry = mock(LazyAsset.class);
+    when(entry.getId()).thenReturn(new MD5Key("Testing"));
+    when(entry.getName()).thenReturn("onetwo");
+    when(entry.getType()).thenReturn(Asset.Type.TEXT);
+    when(entry.getSizeInBytes()).thenReturn((long) data.length);
+    when(entry.getInputStream()).then(invocation -> new ByteArrayInputStream(data));
+    // AssetProducer should not require loading the asset in the fashion of load(), but should read
+    // from the stream.
+    when(entry.load()).thenThrow(new RuntimeException("Unexpected load"));
 
     // PRODUCER
-    AssetProducer producer = new AssetProducer(new MD5Key("Testing"), "onetwo", tmpFile);
+    AssetProducer producer = new AssetProducer(entry);
     AssetHeader header = producer.getHeader();
 
     assertNotNull(header);
@@ -74,21 +84,6 @@ class AssetTransferTest {
     assertEquals(data.length, count);
 
     // CLEANUP
-    tmpFile.delete();
     consumer.getFilename().delete();
-  }
-
-  @Test
-  @DisplayName("Test Creating a temporary file.")
-  File createTempFile(byte[] data) throws IOException {
-
-    File file = new File("tmp.dat");
-    FileOutputStream out = new FileOutputStream(file);
-
-    out.write(data);
-
-    out.close();
-
-    return file;
   }
 }

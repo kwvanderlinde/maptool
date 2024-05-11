@@ -2959,7 +2959,7 @@ public class AppActions {
         AssetManager.putAsset(asset);
 
         // But don't use up any extra memory
-        AssetManager.removeAsset(asset.getMD5Key());
+        AssetManager.flushAssetFromMemory(asset.getMD5Key());
       } catch (IOException ioe) {
         ioe.printStackTrace();
       }

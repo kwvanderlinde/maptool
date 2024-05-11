@@ -15,11 +15,15 @@
 package net.rptools.maptool.transfer;
 
 import com.google.protobuf.ByteString;
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.Closeable;
+import java.io.EOFException;
 import java.io.IOException;
-import net.rptools.lib.MD5Key;
+import java.io.InputStream;
+import net.rptools.maptool.model.assets.LazyAsset;
 import net.rptools.maptool.server.proto.AssetChunkDto;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Creates data chunks for transferring binary data. Assumes large datasets (otherwise it would be a
@@ -27,28 +31,33 @@ import net.rptools.maptool.server.proto.AssetChunkDto;
  *
  * @author trevor
  */
-public class AssetProducer {
-  private MD5Key id;
-  private String name;
-  private File assetFile;
-  private long length;
-  private long currentPosition = 0;
+public class AssetProducer implements Closeable {
+  private static final Logger log = LogManager.getLogger(AssetProducer.class);
 
-  public AssetProducer(MD5Key id, String name, File assetFile) {
-    if (!assetFile.exists() || assetFile.isDirectory()) {
-      throw new IllegalArgumentException(assetFile + " is an invalid asset path");
+  private final LazyAsset asset;
+
+  private long remaining;
+  private InputStream in = null;
+  private long startTimeMs;
+
+  public AssetProducer(LazyAsset asset) {
+    this.asset = asset;
+    this.remaining = asset.header().getSize();
+  }
+
+  @Override
+  public void close() throws IOException {
+    if (in != null) {
+      in.close();
     }
-    this.id = id;
-    this.name = name;
-    this.assetFile = assetFile;
-    length = assetFile.length();
   }
 
   /**
    * @return the header needed to create the corresponding AssetConsumer
    */
   public AssetHeader getHeader() {
-    return new AssetHeader(id, name, assetFile.length());
+    return new AssetHeader(
+        asset.header().getId(), asset.header().getName(), asset.header().getSize());
   }
 
   /**
@@ -59,17 +68,34 @@ public class AssetProducer {
    * @return an {@link AssetChunkDto} with the next chunk of data
    */
   public AssetChunkDto nextChunk(int size) throws IOException {
-    if (currentPosition + size > length) {
-      size = (int) (length - currentPosition);
+    log.info("We've been asked for a chunk of size {}", size);
+
+    if (in == null) {
+      startTimeMs = System.nanoTime();
+      in = new ByteArrayInputStream(asset.loader().load().getData());
+    }
+
+    if (remaining < size) {
+      size = (int) remaining;
     }
     byte[] data = new byte[size];
-    try (FileInputStream in = new FileInputStream(assetFile)) {
-      in.skip(currentPosition);
-      in.read(data, 0, size);
+
+    var read = in.readNBytes(data, 0, size);
+    if (read < size) {
+      throw new EOFException("Unexpected end of file.");
     }
-    currentPosition += size;
+    remaining -= read;
+
+    if (remaining <= 0) {
+      final var endTimeMs = System.nanoTime();
+      log.warn(
+          "AssetProducer[{}] time: {} ms",
+          asset.header().getId(),
+          (endTimeMs - startTimeMs) / 1_000_000.);
+    }
+
     return AssetChunkDto.newBuilder()
-        .setId(id.toString())
+        .setId(asset.header().getId().toString())
         .setData(ByteString.copyFrom(data))
         .build();
   }
@@ -80,6 +106,6 @@ public class AssetProducer {
    * @return true if all data been transferred
    */
   public boolean isComplete() {
-    return currentPosition >= length;
+    return remaining <= 0;
   }
 }
