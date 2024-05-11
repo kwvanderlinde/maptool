@@ -592,6 +592,8 @@ public class PackedFile implements AutoCloseable {
   }
 
   public Asset getAsset(String path) throws IOException {
+    // TODO Can we not just XStream the asset here?
+
     var reader = getFileAsReader(path);
     var prop = reader.lines().collect(Collectors.joining("\n"));
     if (prop.trim().startsWith("<net.rptools.maptool.model.Asset>")) {
