@@ -23,6 +23,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.swing.*;
+import net.rptools.lib.CodeTimer;
 import net.rptools.lib.FileUtil;
 import net.rptools.maptool.client.*;
 import net.rptools.maptool.client.AppActions.OpenUrlAction;
@@ -306,11 +307,19 @@ public class AppMenuBar extends JMenuBar {
     // This shouldn't happen unless the prepackaged maptool-resources.zip becomes corrupted
     // somehow?!
     if (listFiles != null) {
-      for (File file : listFiles) {
-        menu.add(
-            new JMenuItem(
-                new AppActions.QuickMapAction(FileUtil.getNameWithoutExtension(file), file)));
-      }
+      CodeTimer.using(
+          "AppMenuBar",
+          timer -> {
+            timer.setEnabled(true);
+
+            timer.start("create QuickMapAction");
+            for (File file : listFiles) {
+              menu.add(
+                  new JMenuItem(
+                      new AppActions.QuickMapAction(FileUtil.getNameWithoutExtension(file), file)));
+            }
+            timer.stop("create QuickMapAction");
+          });
     }
     // basicQuickMap.putValue(Action.ACCELERATOR_KEY,
     // KeyStroke.getKeyStroke("ctrl shift N"));
