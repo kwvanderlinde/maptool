@@ -33,7 +33,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.imageio.ImageIO;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
@@ -470,14 +469,7 @@ public class HeroLabData {
   }
 
   public void addImage(String imageName, BufferedImage image) {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    try {
-      ImageIO.write(image, "png", baos);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-
-    Asset imageAsset = Asset.createImageAsset(imageName, baos.toByteArray());
+    Asset imageAsset = Asset.createImageAsset(imageName, image);
     AssetManager.putAsset(imageAsset);
     this.heroImageAssets.put(Integer.toString(heroImageAssets.size()), imageAsset.getMD5Key());
   }

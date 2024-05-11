@@ -38,7 +38,7 @@ public class ZoneFactory {
     if (grassImage.exists()) {
       try {
         Asset asset =
-            Asset.createImageAsset(DEFAULT_MAP_NAME, FileUtils.readFileToByteArray(grassImage));
+            Asset.Type.IMAGE.create(DEFAULT_MAP_NAME, FileUtils.readFileToByteArray(grassImage));
         defaultImageId = asset.getMD5Key();
 
         // Make sure the image is loaded to avoid a flash screen when it becomes visible

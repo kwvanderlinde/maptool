@@ -233,7 +233,7 @@ public final class Asset {
    * @param image The image that the {@code Asset} represents.
    * @return an {@code Asset} that represents the image.
    */
-  public static Asset createImageAsset(String name, byte[] image) {
+  private static Asset createImageAsset(String name, byte[] image) {
     return new Asset(
         null,
         name,
@@ -250,7 +250,7 @@ public final class Asset {
    * @param audio The audio.
    * @return the {@code Asset} that represents the audio.
    */
-  public static Asset createAudioAsset(String name, byte[] audio) {
+  private static Asset createAudioAsset(String name, byte[] audio) {
     return new Asset(null, name, audio, Type.AUDIO, Type.AUDIO.getDefaultExtension(), false);
   }
 
@@ -272,7 +272,7 @@ public final class Asset {
    * @param pdf The pdf that the {@code Asset} represents.
    * @return an {@code Asset} that represents the pdf.
    */
-  public static Asset createPDFAsset(String name, byte[] pdf) {
+  private static Asset createPDFAsset(String name, byte[] pdf) {
     return new Asset(null, name, pdf, Type.PDF, Type.PDF.getDefaultExtension(), false);
   }
 
@@ -283,7 +283,7 @@ public final class Asset {
    * @param markdown The markdown that the {@code Asset} represents.
    * @return an {@code Asset} that represents the markdown.
    */
-  public static Asset createMarkdownAsset(String name, byte[] markdown) {
+  private static Asset createMarkdownAsset(String name, byte[] markdown) {
     return new Asset(
         null, name, markdown, Type.MARKDOWN, Type.MARKDOWN.getDefaultExtension(), false);
   }
@@ -295,7 +295,7 @@ public final class Asset {
    * @param javascript The JavaScript that the {@code Asset} represents.
    * @return an {@code Asset} that represents the JavaScript.
    */
-  public static Asset createJavaScriptAsset(String name, byte[] javascript) {
+  private static Asset createJavaScriptAsset(String name, byte[] javascript) {
     return new Asset(
         null, name, javascript, Type.JAVASCRIPT, Type.JAVASCRIPT.getDefaultExtension(), false);
   }
@@ -307,7 +307,7 @@ public final class Asset {
    * @param css The css that the {@code Asset} represents.
    * @return an {@code Asset} that represents the css.
    */
-  public static Asset createCSSAsset(String name, byte[] css) {
+  private static Asset createCSSAsset(String name, byte[] css) {
     return new Asset(null, name, css, Type.CSS, Type.CSS.getDefaultExtension(), false);
   }
 
@@ -318,7 +318,7 @@ public final class Asset {
    * @param text The text that the {@code Asset} represents.
    * @return an {@code Asset} that represents the text.
    */
-  public static Asset createTextAsset(String name, byte[] text) {
+  private static Asset createTextAsset(String name, byte[] text) {
     return new Asset(null, name, text, Type.TEXT, Type.TEXT.getDefaultExtension(), false);
   }
 
@@ -329,7 +329,7 @@ public final class Asset {
    * @param json The json that the {@code Asset} represents.
    * @return an {@code Asset} that represents the json.
    */
-  public static Asset createJsonAsset(String name, byte[] json) {
+  private static Asset createJsonAsset(String name, byte[] json) {
     return new Asset(null, name, json, Type.JSON, Type.JSON.getDefaultExtension(), false);
   }
 
@@ -340,7 +340,7 @@ public final class Asset {
    * @param xml The xml that the {@code Asset} represents.
    * @return an {@code Asset} that represents the xml.
    */
-  public static Asset createXMLAsset(String name, byte[] xml) {
+  private static Asset createXMLAsset(String name, byte[] xml) {
     return new Asset(null, name, xml, Type.XML, Type.XML.getDefaultExtension(), false);
   }
 
@@ -352,7 +352,7 @@ public final class Asset {
    * @param data The data that the {@code Asset} represents.
    * @return an {@code Asset} that represents the data.
    */
-  public static Asset createInvalidAssetType(String name, byte[] data) {
+  private static Asset createInvalidAssetType(String name, byte[] data) {
     return createBrokenImageAsset(name, new MD5Key(data));
   }
 
@@ -383,7 +383,7 @@ public final class Asset {
    * @param data The data that the {@code Asset} represents.
    * @return an {@code Asset} that represents the data.
    */
-  public static Asset createDataAssetType(String name, byte[] data) {
+  private static Asset createDataAssetType(String name, byte[] data) {
     return new Asset(null, name, data, Type.DATA, Type.DATA.getDefaultExtension(), false);
   }
 
@@ -422,7 +422,7 @@ public final class Asset {
    * @param data The data for the {@code Asset}.
    * @return the HTML {@code Asset}.
    */
-  public static Asset createHTMLAsset(String name, byte[] data) {
+  private static Asset createHTMLAsset(String name, byte[] data) {
     return new Asset(null, name, data, Type.HTML, Type.HTML.getDefaultExtension(), false);
   }
 
@@ -433,7 +433,7 @@ public final class Asset {
    * @param data the data for the {@code Asset}.
    * @return the MapTool Drop In Library {@code Asset}.
    */
-  static Asset createMTLibAsset(String namespace, byte[] data) {
+  private static Asset createMTLibAsset(String namespace, byte[] data) {
     // TODO This takes a lot of effort. There are a couple large built-in libs (>1.3 MB) that we
     //  read just to calculate the MD5. Our built-in assets should also be identifiable with MD5,
     //  or somehow have that ID be precomputed.

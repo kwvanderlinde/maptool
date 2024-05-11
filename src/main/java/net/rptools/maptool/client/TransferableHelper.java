@@ -258,7 +258,7 @@ public class TransferableHelper extends TransferHandler {
         log.info("Selected: {}", X_JAVA_IMAGE);
         BufferedImage image =
             (BufferedImage) new ImageTransferableHandler().getTransferObject(transferable);
-        o = Asset.createImageAsset("unnamed", ImageUtil.imageToBytes(image));
+        o = Type.IMAGE.create("unnamed", ImageUtil.imageToBytes(image));
       }
 
       // DIRECT/BROWSER
@@ -350,8 +350,7 @@ public class TransferableHelper extends TransferHandler {
     }
     if (image != null) {
       String name = findName(url);
-      asset =
-          Asset.createImageAsset(name != null ? name : "unnamed", ImageUtil.imageToBytes(image));
+      asset = Type.IMAGE.create(name != null ? name : "unnamed", ImageUtil.imageToBytes(image));
     } else {
       throw new IllegalArgumentException("cannot convert drop object to image: " + url.toString());
     }

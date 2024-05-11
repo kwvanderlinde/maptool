@@ -2301,7 +2301,8 @@ public class Token implements Cloneable {
     // Create the asset
     Asset asset = null;
     try {
-      asset = Asset.createImageAsset(name, ImageUtil.imageToBytes((BufferedImage) image));
+      // TODO Is this different than using createBufferedImageAsset(name, image)?
+      asset = Asset.Type.IMAGE.create(name, ImageUtil.imageToBytes((BufferedImage) image));
       if (!AssetManager.hasAsset(asset)) {
         AssetManager.putAsset(asset);
       }

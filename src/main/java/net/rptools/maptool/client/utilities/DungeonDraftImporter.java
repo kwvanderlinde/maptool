@@ -157,7 +157,7 @@ public class DungeonDraftImporter {
 
     byte[] imageBytes = Base64.decode(imageString);
     String mapName = FilenameUtils.removeExtension(dungeonDraftFile.getName());
-    Asset asset = Asset.createImageAsset(mapName, imageBytes);
+    Asset asset = Asset.Type.IMAGE.create(mapName, imageBytes);
     AssetManager.putAsset(asset);
 
     Zone zone = ZoneFactory.createZone();
