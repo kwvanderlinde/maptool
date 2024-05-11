@@ -458,7 +458,7 @@ public class AssetManager {
   }
 
   public static Optional<LazyAsset> getLazyAsset(MD5Key id) {
-    return inMemoryCache.get(id).or(() -> persistentAssetCache.get(id));
+    return layeredCache.get(id);
   }
 
   /**
