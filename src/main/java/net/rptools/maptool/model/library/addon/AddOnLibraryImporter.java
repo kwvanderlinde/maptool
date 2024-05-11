@@ -143,8 +143,6 @@ public class AddOnLibraryImporter {
    * @throws IOException if an error occurs while reading the asset.
    */
   public AddOnLibrary importFromFile(File file) throws IOException {
-    var diiBuilder = AddOnLibraryDto.newBuilder();
-
     try (var zip = new ZipFile(file)) {
       ZipEntry entry = zip.getEntry(LIBRARY_INFO_FILE);
       if (entry == null) {
@@ -198,9 +196,19 @@ public class AddOnLibraryImporter {
       addMetaData(builder.getNamespace(), zip, pathAssetMap);
 
       var addOnLib = builder.build();
+
+      // region Count it:
+      // 1. Full pass to load entire file into memory.
       byte[] data = Files.readAllBytes(file.toPath());
+      // 2. Full pass to calculate the MD5 as part of the Asset.createMTLibAsset() factory.
       var asset = Type.MTLIB.getFactory().apply(addOnLib.getNamespace(), data);
+      // 3. Full pass because in order to check whether the asset is already in the persistent
+      //    cache, we load it from the cache
       addAsset(asset);
+
+      // Calculating the digest twice seems to be a recurring issue, since my logs are all
+      // duplicated.
+      // endregion
 
       return AddOnLibrary.fromDto(
           asset.getMD5Key(),
@@ -294,7 +302,13 @@ public class AddOnLibraryImporter {
    */
   private void addAsset(Asset asset) {
     if (!AssetManager.hasAsset(asset)
-        || AssetManager.getAsset(asset.getMD5Key()).getData().length == 0) {
+    // What is with this == 0 check? If it's to detect partial writes, then it be broken a-real bad.
+    // PersistentCache should write to a temporary file, then move into place when ready. Any check
+    // for existence in the cache should be a cheap check.
+    // Just commenting out this line gives >2x speedup to BuiltInLibraryMananger.loadBuiltIns().
+    // Note: this is the only case where we second-guess the result of hasAsset().
+    // || AssetManager.getAsset(asset.getMD5Key()).getData().length == 0
+    ) {
       AssetManager.putAsset(asset);
     }
   }
