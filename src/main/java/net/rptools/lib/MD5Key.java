@@ -19,6 +19,8 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Represents the MD5 key for a certain set of data. Can be used in maps as keys.
@@ -37,9 +39,10 @@ import java.security.NoSuchAlgorithmException;
  */
 @SuppressWarnings("serial")
 public final class MD5Key implements Serializable {
+  private static final Logger log = LogManager.getLogger(MD5Key.class);
 
   /** The {@link MessageDigest} used for calculation of the md5 sum. */
-  private transient ThreadLocal<MessageDigest> md5Digest =
+  private static final ThreadLocal<MessageDigest> md5Digest =
       ThreadLocal.withInitial(
           () -> {
             try {
@@ -117,10 +120,17 @@ public final class MD5Key implements Serializable {
    * @param data The data to calculate the md5 sum of.
    * @return the md5 sum of the data.
    */
-  private byte[] digestData(byte[] data) {
+  private static byte[] digestData(byte[] data) {
     MessageDigest digest = md5Digest.get();
     digest.reset();
     digest.update(data);
+
+    log.info("Digested {} bytes from array", data.length);
+
+    if (data.length > 1_300_000) {
+      log.info("That's a lot!");
+    }
+
     return digest.digest();
   }
 
@@ -130,14 +140,23 @@ public final class MD5Key implements Serializable {
    * @param is The {@code InputStream} providing the data to calculate the md5 sum of.
    * @return the md5 sum of the data from the {@link InputStream}.
    */
-  private byte[] digestData(InputStream is) throws IOException {
+  private static byte[] digestData(InputStream is) throws IOException {
     MessageDigest digest = md5Digest.get();
     digest.reset();
 
-    int b;
-    while (((b = is.read()) >= 0)) {
-      digest.update((byte) b);
+    var buffer = new byte[8 * 1024];
+    int count = 0;
+    while (true) {
+      var bytesRead = is.read(buffer, 0, buffer.length);
+      if (bytesRead < 0) {
+        break;
+      }
+
+      digest.update(buffer, 0, bytesRead);
+      count += bytesRead;
     }
+    log.info("Digested {} bytes from stream", count);
+
     return digest.digest();
   }
 
@@ -147,7 +166,7 @@ public final class MD5Key implements Serializable {
    * @param data the byte array to encode.
    * @return a {@code String} containing the encoded hexadecimal value of the passed in data.
    */
-  private String encodeToHex(byte[] data) {
+  private static String encodeToHex(byte[] data) {
     StringBuilder strbuild = new StringBuilder();
     for (byte datum : data) {
       String hex = Integer.toHexString(datum);
