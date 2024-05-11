@@ -650,9 +650,9 @@ public class PackedFile implements AutoCloseable {
 
         if (embeddedImage == null) {
           byte[] image = getFileAsInputStream(path + "." + extension).readAllBytes();
-          return Asset.createImageAsset(name, image);
+          return Asset.Type.IMAGE.create(name, image);
         } else {
-          var asset = Asset.createImageAsset(name, embeddedImage);
+          var asset = Asset.Type.IMAGE.create(name, embeddedImage);
           AssetManager.putAsset(asset);
           return asset;
         }

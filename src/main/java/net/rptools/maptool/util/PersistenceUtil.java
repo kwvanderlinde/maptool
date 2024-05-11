@@ -867,7 +867,7 @@ public class PersistenceUtil {
       String libraryData = DROP_IN_LIBRARY_ASSET_DIR + library.getMd5Hash();
       byte[] bytes = packedFile.getFileAsInputStream(libraryData).readAllBytes();
       String libraryNamespace = library.getDetails().getNamespace();
-      Asset asset = Type.MTLIB.getFactory().apply(libraryNamespace, bytes);
+      Asset asset = Type.MTLIB.create(libraryNamespace, bytes);
       if (!AssetManager.hasAsset(asset)) {
         AssetManager.putAsset(asset);
       }

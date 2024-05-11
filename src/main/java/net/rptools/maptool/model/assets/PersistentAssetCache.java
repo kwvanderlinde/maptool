@@ -127,8 +127,7 @@ public class PersistentAssetCache implements AssetCache {
     return Optional.of(
         new LazyAsset(
             new AssetHeader(id, name, size),
-            new VerifyingLoader(
-                this, id, () -> type.getFactory().apply(name, Files.readAllBytes(assetPath)))));
+            new VerifyingLoader(this, id, () -> type.create(name, Files.readAllBytes(assetPath)))));
   }
 
   @Override

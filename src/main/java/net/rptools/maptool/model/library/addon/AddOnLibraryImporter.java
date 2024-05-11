@@ -38,6 +38,8 @@ import net.rptools.maptool.model.library.proto.AddonSlashCommandsDto;
 import net.rptools.maptool.model.library.proto.MTScriptPropertiesDto;
 import org.apache.tika.mime.MediaType;
 import org.javatuples.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Class for importing Drop In Libraries. */
 public class AddOnLibraryImporter {
@@ -65,6 +67,8 @@ public class AddOnLibraryImporter {
 
   /** The directory where metadata from the root dir of the zip directory is copied to. */
   public static final String METADATA_DIR = "metadata/";
+
+  private static final Logger log = LoggerFactory.getLogger(AddOnLibraryImporter.class);
 
   /**
    * Returns the {@link FileFilter} for add on library files.
@@ -143,6 +147,7 @@ public class AddOnLibraryImporter {
    * @throws IOException if an error occurs while reading the asset.
    */
   public AddOnLibrary importFromFile(File file) throws IOException {
+    log.info("Loading {}", file.getPath());
     try (var zip = new ZipFile(file)) {
       ZipEntry entry = zip.getEntry(LIBRARY_INFO_FILE);
       if (entry == null) {
@@ -201,13 +206,8 @@ public class AddOnLibraryImporter {
       // 1. Full pass to load entire file into memory.
       byte[] data = Files.readAllBytes(file.toPath());
       // 2. Full pass to calculate the MD5 as part of the Asset.createMTLibAsset() factory.
-      var asset = Type.MTLIB.getFactory().apply(addOnLib.getNamespace(), data);
-      // 3. Full pass because in order to check whether the asset is already in the persistent
-      //    cache, we load it from the cache
+      var asset = Type.MTLIB.create(addOnLib.getNamespace(), data);
       addAsset(asset);
-
-      // Calculating the digest twice seems to be a recurring issue, since my logs are all
-      // duplicated.
       // endregion
 
       return AddOnLibrary.fromDto(
@@ -257,8 +257,7 @@ public class AddOnLibraryImporter {
       try (InputStream inputStream = zip.getInputStream(entry)) {
         byte[] bytes = inputStream.readAllBytes();
         MediaType mediaType = Asset.getMediaType(entry.getName(), bytes);
-        Asset asset =
-            Type.fromMediaType(mediaType).getFactory().apply(namespace + "/" + path, bytes);
+        Asset asset = Type.fromMediaType(mediaType).create(namespace + "/" + path, bytes);
         addAsset(asset);
         pathAssetMap.put(path, Pair.with(asset.getMD5Key(), asset.getType()));
       }
@@ -286,8 +285,7 @@ public class AddOnLibraryImporter {
       try (InputStream inputStream = zip.getInputStream(entry)) {
         byte[] bytes = inputStream.readAllBytes();
         MediaType mediaType = Asset.getMediaType(entry.getName(), bytes);
-        Asset asset =
-            Type.fromMediaType(mediaType).getFactory().apply(namespace + "/" + path, bytes);
+        Asset asset = Type.fromMediaType(mediaType).create(namespace + "/" + path, bytes);
         addAsset(asset);
         pathAssetMap.put(path, Pair.with(asset.getMD5Key(), asset.getType()));
       }
@@ -301,14 +299,9 @@ public class AddOnLibraryImporter {
    * @param asset the {@link Asset} to add.
    */
   private void addAsset(Asset asset) {
-    if (!AssetManager.hasAsset(asset)
-    // What is with this == 0 check? If it's to detect partial writes, then it be broken a-real bad.
-    // PersistentCache should write to a temporary file, then move into place when ready. Any check
-    // for existence in the cache should be a cheap check.
-    // Just commenting out this line gives >2x speedup to BuiltInLibraryMananger.loadBuiltIns().
-    // Note: this is the only case where we second-guess the result of hasAsset().
-    // || AssetManager.getAsset(asset.getMD5Key()).getData().length == 0
-    ) {
+    var lazyAsset = AssetManager.getLazyAsset(asset.getMD5Key()).orElse(null);
+
+    if (lazyAsset == null || lazyAsset.header().getSize() == 0) {
       AssetManager.putAsset(asset);
     }
   }

@@ -119,12 +119,14 @@ public final class Asset {
     }
 
     /**
-     * Returns the method that can be used to create an {@code Asset} of this type.
+     * Load and create an {@code Asset} of this type.
      *
-     * @return the method that can be used to create an {@code Asset} of this type.
+     * @param name The name of the asset.
+     * @param data The data comprising the asset.
+     * @return The loaded asset.
      */
-    public TypeFactory getFactory() {
-      return factory;
+    public Asset create(String name, byte[] data) throws IOException {
+      return factory.apply(name, data);
     }
 
     /**
@@ -395,8 +397,7 @@ public final class Asset {
    */
   public static Asset createAssetDetectType(String name, byte[] data) throws IOException {
     MediaType mediaType = getMediaType(name, data);
-    var factory = Type.fromMediaType(mediaType).getFactory();
-    return factory.apply(name, data);
+    return Type.fromMediaType(mediaType).create(name, data);
   }
 
   /**
@@ -411,8 +412,7 @@ public final class Asset {
   public static Asset createAssetDetectType(String name, byte[] data, File file)
       throws IOException {
     MediaType mediaType = getMediaType(name, data);
-    var factory = Type.fromMediaType(mediaType, file.getPath()).getFactory();
-    return factory.apply(name, data);
+    return Type.fromMediaType(mediaType, file.getPath()).create(name, data);
   }
 
   /**
@@ -451,7 +451,7 @@ public final class Asset {
    */
   public static Asset createAsset(String name, byte[] data, Type type) throws IOException {
     Type assetType = type != null ? type : Type.DATA;
-    return assetType.getFactory().apply(name, data);
+    return assetType.create(name, data);
   }
 
   /**
