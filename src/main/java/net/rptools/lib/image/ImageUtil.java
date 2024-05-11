@@ -26,10 +26,10 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.ImageObserver;
 import java.awt.image.PixelGrabber;
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,7 +39,6 @@ import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import net.rptools.maptool.client.AppPreferences;
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -73,7 +72,7 @@ public class ImageUtil {
    * @return an {@link Image} from the content of the file
    */
   public static Image getImage(File file) throws IOException {
-    return bytesToImage(FileUtils.readFileToByteArray(file), file.getCanonicalPath());
+    return streamToImage(new FileInputStream(file), file.getCanonicalPath());
   }
 
   /**
@@ -84,18 +83,11 @@ public class ImageUtil {
    * @return an {@link Image} from the content of the file
    */
   public static Image getImage(String image) throws IOException {
-    ByteArrayOutputStream dataStream = new ByteArrayOutputStream(8192);
-
-    int bite;
     InputStream inStream = ImageUtil.class.getClassLoader().getResourceAsStream(image);
     if (inStream == null) {
       throw new IOException("Image not found: " + image);
     }
-    inStream = new BufferedInputStream(inStream);
-    while ((bite = inStream.read()) >= 0) {
-      dataStream.write(bite);
-    }
-    return bytesToImage(dataStream.toByteArray(), image);
+    return streamToImage(inStream, image);
   }
 
   public static BufferedImage getCompatibleImage(String image) throws IOException {
@@ -294,10 +286,23 @@ public class ImageUtil {
     if (imageBytes == null) {
       throw new IOException("Could not load image - no data provided");
     }
+
+    return streamToImage(new ByteArrayInputStream(imageBytes), imageName);
+  }
+
+  /**
+   * Converts a byte array into an {@link Image} instance.
+   *
+   * @param imageStream The byte stream to convert
+   * @param imageName name of image
+   * @return the image
+   * @throws IOException if image could not be loaded
+   */
+  public static Image streamToImage(InputStream imageStream, String imageName) throws IOException {
     boolean interrupted = false;
     Throwable exception = null;
     Image image;
-    image = ImageIO.read(new ByteArrayInputStream(imageBytes));
+    image = ImageIO.read(imageStream);
     MediaTracker tracker = new MediaTracker(observer);
     tracker.addImage(image, 0);
     do {
