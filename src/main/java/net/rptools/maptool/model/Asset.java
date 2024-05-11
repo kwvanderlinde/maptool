@@ -52,8 +52,8 @@ import org.apache.tika.mime.MediaType;
 
 /** Asset used in the campaign. */
 public final class Asset {
-  public interface TypeFactory {
-    Asset apply(String name, byte[] data) throws IOException;
+  private interface TypeFactory {
+    Asset create(String name, byte[] data) throws IOException;
   }
 
   /** The type of {@code Asset}. */
@@ -126,7 +126,18 @@ public final class Asset {
      * @return The loaded asset.
      */
     public Asset create(String name, byte[] data) throws IOException {
-      return factory.apply(name, data);
+      return factory.create(name, data);
+    }
+
+    /**
+     * Load and create an {@code Asset} of this type.
+     *
+     * @param name The name of the asset.
+     * @param data The data comprising the asset.
+     * @return The loaded asset.
+     */
+    public Asset create(String name, InputStream data) throws IOException {
+      return factory.create(name, data.readAllBytes());
     }
 
     /**
@@ -233,14 +244,8 @@ public final class Asset {
    * @param image The image that the {@code Asset} represents.
    * @return an {@code Asset} that represents the image.
    */
-  private static Asset createImageAsset(String name, byte[] image) {
-    return new Asset(
-        null,
-        name,
-        image != null ? image : new byte[] {},
-        Type.IMAGE,
-        Type.IMAGE.getDefaultExtension(),
-        false);
+  public static Asset createImageAsset(String name, byte[] image) {
+    return new Asset(name, image, Type.IMAGE);
   }
 
   /**
@@ -251,7 +256,7 @@ public final class Asset {
    * @return the {@code Asset} that represents the audio.
    */
   private static Asset createAudioAsset(String name, byte[] audio) {
-    return new Asset(null, name, audio, Type.AUDIO, Type.AUDIO.getDefaultExtension(), false);
+    return new Asset(name, audio, Type.AUDIO);
   }
 
   /**
@@ -262,7 +267,7 @@ public final class Asset {
    * @return an {@code Asset} that represents the image.
    */
   public static Asset createImageAsset(String name, BufferedImage image) {
-    return new Asset(name, image, false);
+    return new Asset(name, image);
   }
 
   /**
@@ -273,7 +278,7 @@ public final class Asset {
    * @return an {@code Asset} that represents the pdf.
    */
   private static Asset createPDFAsset(String name, byte[] pdf) {
-    return new Asset(null, name, pdf, Type.PDF, Type.PDF.getDefaultExtension(), false);
+    return new Asset(name, pdf, Type.PDF);
   }
 
   /**
@@ -284,8 +289,7 @@ public final class Asset {
    * @return an {@code Asset} that represents the markdown.
    */
   private static Asset createMarkdownAsset(String name, byte[] markdown) {
-    return new Asset(
-        null, name, markdown, Type.MARKDOWN, Type.MARKDOWN.getDefaultExtension(), false);
+    return new Asset(name, markdown, Type.MARKDOWN);
   }
 
   /**
@@ -296,8 +300,7 @@ public final class Asset {
    * @return an {@code Asset} that represents the JavaScript.
    */
   private static Asset createJavaScriptAsset(String name, byte[] javascript) {
-    return new Asset(
-        null, name, javascript, Type.JAVASCRIPT, Type.JAVASCRIPT.getDefaultExtension(), false);
+    return new Asset(name, javascript, Type.JAVASCRIPT);
   }
 
   /**
@@ -308,7 +311,7 @@ public final class Asset {
    * @return an {@code Asset} that represents the css.
    */
   private static Asset createCSSAsset(String name, byte[] css) {
-    return new Asset(null, name, css, Type.CSS, Type.CSS.getDefaultExtension(), false);
+    return new Asset(name, css, Type.CSS);
   }
 
   /**
@@ -319,7 +322,7 @@ public final class Asset {
    * @return an {@code Asset} that represents the text.
    */
   private static Asset createTextAsset(String name, byte[] text) {
-    return new Asset(null, name, text, Type.TEXT, Type.TEXT.getDefaultExtension(), false);
+    return new Asset(name, text, Type.TEXT);
   }
 
   /**
@@ -330,7 +333,7 @@ public final class Asset {
    * @return an {@code Asset} that represents the json.
    */
   private static Asset createJsonAsset(String name, byte[] json) {
-    return new Asset(null, name, json, Type.JSON, Type.JSON.getDefaultExtension(), false);
+    return new Asset(name, json, Type.JSON);
   }
 
   /**
@@ -341,7 +344,7 @@ public final class Asset {
    * @return an {@code Asset} that represents the xml.
    */
   private static Asset createXMLAsset(String name, byte[] xml) {
-    return new Asset(null, name, xml, Type.XML, Type.XML.getDefaultExtension(), false);
+    return new Asset(name, xml, Type.XML);
   }
 
   /**
@@ -384,7 +387,7 @@ public final class Asset {
    * @return an {@code Asset} that represents the data.
    */
   private static Asset createDataAssetType(String name, byte[] data) {
-    return new Asset(null, name, data, Type.DATA, Type.DATA.getDefaultExtension(), false);
+    return new Asset(name, data, Type.DATA);
   }
 
   /**
@@ -423,7 +426,7 @@ public final class Asset {
    * @return the HTML {@code Asset}.
    */
   private static Asset createHTMLAsset(String name, byte[] data) {
-    return new Asset(null, name, data, Type.HTML, Type.HTML.getDefaultExtension(), false);
+    return new Asset(name, data, Type.HTML);
   }
 
   /**
@@ -438,7 +441,7 @@ public final class Asset {
     //  read just to calculate the MD5. Our built-in assets should also be identifiable with MD5,
     //  or somehow have that ID be precomputed.
 
-    return new Asset(null, namespace, data, Type.MTLIB, Type.MTLIB.getDefaultExtension(), false);
+    return new Asset(namespace, data, Type.MTLIB);
   }
 
   /**
@@ -452,6 +455,60 @@ public final class Asset {
   public static Asset createAsset(String name, byte[] data, Type type) throws IOException {
     Type assetType = type != null ? type : Type.DATA;
     return assetType.create(name, data);
+  }
+
+  /**
+   * Creates a new {@code Asset}.
+   *
+   * @param name The name of the {@code Asset}.
+   * @param data The data source for the {@code Asset}.
+   * @param type The type of the {@code Asset}.
+   */
+  private Asset(String name, byte[] data, Type type) {
+
+    this.name = name;
+    this.type = type;
+    this.broken = false;
+
+    this.data = data;
+    this.md5Key = new MD5Key(data);
+
+    var extension = type.getDefaultExtension();
+    if (type == Type.DATA) {
+      this.extension = DATA_EXTENSION;
+    } else if (extension == null || extension.isEmpty()) {
+      this.extension = determineImageExtension();
+    } else {
+      this.extension = extension;
+    }
+
+    if (type.isStringType()) {
+      CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder();
+      decoder
+          .onMalformedInput(CodingErrorAction.REPORT)
+          .onUnmappableCharacter(CodingErrorAction.REPORT);
+      String decodedString;
+      try {
+        decodedString = decoder.decode(ByteBuffer.wrap(data)).toString();
+      } catch (Exception eOne) {
+        try {
+          decoder = StandardCharsets.UTF_16.newDecoder();
+          decodedString = decoder.decode(ByteBuffer.wrap(data)).toString();
+        } catch (Exception eTwo) {
+          decodedString = null;
+        }
+      }
+
+      dataAsString = decodedString;
+    } else {
+      dataAsString = null;
+    }
+
+    if (type == Type.JSON && dataAsString != null) {
+      json = JsonParser.parseString(dataAsString);
+    } else {
+      json = null;
+    }
   }
 
   /**
@@ -515,9 +572,8 @@ public final class Asset {
    *
    * @param name The name of the {@code Asset}.
    * @param image The data for the {@code Asset}.
-   * @param broken is the {@code Asset} broken.
    */
-  private Asset(String name, BufferedImage image, boolean broken) {
+  private Asset(String name, BufferedImage image) {
     this.name = name;
     byte[] imageData = null;
     try {
@@ -536,6 +592,7 @@ public final class Asset {
 
     this.md5Key = new MD5Key(this.data);
 
+    // TODO Why is this not just IMAGE? We wrote the image, it must be recognizable.
     if (extension.equals(DATA_EXTENSION)) {
       type = Type.DATA;
     } else {
@@ -549,7 +606,7 @@ public final class Asset {
     }
 
     json = null;
-    this.broken = broken;
+    this.broken = false;
   }
 
   /**

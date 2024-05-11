@@ -42,7 +42,6 @@ import javax.annotation.Nullable;
 import javax.swing.ImageIcon;
 import net.rptools.CaseInsensitiveHashMap;
 import net.rptools.lib.MD5Key;
-import net.rptools.lib.image.ImageUtil;
 import net.rptools.lib.transferable.TokenTransferData;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
@@ -2291,23 +2290,19 @@ public class Token implements Cloneable {
     }
 
     // Make sure there is a buffered image for it
-    Image image = icon.getImage();
-    if (!(image instanceof BufferedImage)) {
-      image =
+    BufferedImage bufferedImage;
+    if (icon.getImage() instanceof BufferedImage bi) {
+      bufferedImage = bi;
+    } else {
+      bufferedImage =
           new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), Transparency.TRANSLUCENT);
-      Graphics2D g = ((BufferedImage) image).createGraphics();
+      Graphics2D g = bufferedImage.createGraphics();
       icon.paintIcon(null, g, 0, 0);
     }
     // Create the asset
-    Asset asset = null;
-    try {
-      // TODO Is this different than using createBufferedImageAsset(name, image)?
-      asset = Asset.Type.IMAGE.create(name, ImageUtil.imageToBytes((BufferedImage) image));
-      if (!AssetManager.hasAsset(asset)) {
-        AssetManager.putAsset(asset);
-      }
-    } catch (IOException e) {
-      e.printStackTrace();
+    Asset asset = Asset.createImageAsset(name, bufferedImage);
+    if (!AssetManager.hasAsset(asset)) {
+      AssetManager.putAsset(asset);
     }
     return asset;
   }

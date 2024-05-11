@@ -203,10 +203,8 @@ public class AddOnLibraryImporter {
       var addOnLib = builder.build();
 
       // region Count it:
-      // 1. Full pass to load entire file into memory.
-      byte[] data = Files.readAllBytes(file.toPath());
-      // 2. Full pass to calculate the MD5 as part of the Asset.createMTLibAsset() factory.
-      var asset = Type.MTLIB.create(addOnLib.getNamespace(), data);
+      // 1. One pass to read file and calculate hash.
+      var asset = Type.MTLIB.create(addOnLib.getNamespace(), Files.newInputStream(file.toPath()));
       addAsset(asset);
       // endregion
 
@@ -256,6 +254,8 @@ public class AddOnLibraryImporter {
       String path = METADATA_DIR + entry.getName();
       try (InputStream inputStream = zip.getInputStream(entry)) {
         byte[] bytes = inputStream.readAllBytes();
+        // TODO This is so much like Asset.createAssetDetectType() except the name for the media
+        //  type query and the name for the asset are different.
         MediaType mediaType = Asset.getMediaType(entry.getName(), bytes);
         Asset asset = Type.fromMediaType(mediaType).create(namespace + "/" + path, bytes);
         addAsset(asset);
@@ -284,6 +284,8 @@ public class AddOnLibraryImporter {
       String path = entry.getName().substring(CONTENT_DIRECTORY.length());
       try (InputStream inputStream = zip.getInputStream(entry)) {
         byte[] bytes = inputStream.readAllBytes();
+        // TODO This is so much like Asset.createAssetDetectType() except the name for the media
+        //  type query and the name for the asset are different.
         MediaType mediaType = Asset.getMediaType(entry.getName(), bytes);
         Asset asset = Type.fromMediaType(mediaType).create(namespace + "/" + path, bytes);
         addAsset(asset);

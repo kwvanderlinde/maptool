@@ -247,6 +247,7 @@ public class ImageUtil {
    * @throws IOException if the image cannot be written to the output stream.
    */
   public static byte[] imageToBytes(BufferedImage image) throws IOException {
+    // TODO Wouldn't PNG be preferrable as lossless?
 
     // First try jpg, if it cant be converted to jpg try png
     byte[] imageBytes = imageToBytes(image, "jpg");

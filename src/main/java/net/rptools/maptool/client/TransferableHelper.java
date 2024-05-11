@@ -34,7 +34,6 @@ import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 import net.rptools.lib.MD5Key;
-import net.rptools.lib.image.ImageUtil;
 import net.rptools.lib.transferable.FileTransferableHandler;
 import net.rptools.lib.transferable.GroupTokenTransferData;
 import net.rptools.lib.transferable.ImageTransferableHandler;
@@ -258,7 +257,8 @@ public class TransferableHelper extends TransferHandler {
         log.info("Selected: {}", X_JAVA_IMAGE);
         BufferedImage image =
             (BufferedImage) new ImageTransferableHandler().getTransferObject(transferable);
-        o = Type.IMAGE.create("unnamed", ImageUtil.imageToBytes(image));
+        // TODO Do we need to copy the image data?
+        o = Asset.createImageAsset("unnamed", image);
       }
 
       // DIRECT/BROWSER
@@ -350,7 +350,8 @@ public class TransferableHelper extends TransferHandler {
     }
     if (image != null) {
       String name = findName(url);
-      asset = Type.IMAGE.create(name != null ? name : "unnamed", ImageUtil.imageToBytes(image));
+      // TODO Do we need to copy the image data ever?
+      asset = Asset.createImageAsset(name != null ? name : "unnamed", image);
     } else {
       throw new IllegalArgumentException("cannot convert drop object to image: " + url.toString());
     }

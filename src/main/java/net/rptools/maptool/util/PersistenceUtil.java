@@ -736,6 +736,7 @@ public class PersistenceUtil {
    */
   private static void loadAssets(Collection<MD5Key> assetIds, PackedFile pakFile)
       throws IOException {
+    log.info("loadAssets: {}", assetIds.size());
     CodeTimer.using(
         "PersistenceUtils.loadAssets",
         (timer) -> {
@@ -865,9 +866,9 @@ public class PersistenceUtil {
 
     for (var library : listDto.getLibrariesList()) {
       String libraryData = DROP_IN_LIBRARY_ASSET_DIR + library.getMd5Hash();
-      byte[] bytes = packedFile.getFileAsInputStream(libraryData).readAllBytes();
       String libraryNamespace = library.getDetails().getNamespace();
-      Asset asset = Type.MTLIB.create(libraryNamespace, bytes);
+      Asset asset =
+          Type.MTLIB.create(libraryNamespace, packedFile.getFileAsInputStream(libraryData));
       if (!AssetManager.hasAsset(asset)) {
         AssetManager.putAsset(asset);
       }

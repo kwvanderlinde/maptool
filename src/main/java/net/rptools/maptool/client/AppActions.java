@@ -2940,7 +2940,7 @@ public class AppActions {
 
     public QuickMapAction(String name, File imagePath) {
       try {
-        Asset asset = Asset.Type.IMAGE.create(name, FileUtils.readFileToByteArray(imagePath));
+        Asset asset = Asset.Type.IMAGE.create(name, new FileInputStream(imagePath));
         assetId = asset.getMD5Key();
 
         // Make smaller
