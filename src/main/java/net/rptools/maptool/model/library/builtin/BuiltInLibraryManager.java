@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import net.rptools.lib.CodeTimer;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.model.library.Library;
 import net.rptools.maptool.model.library.addon.AddOnLibrary;
@@ -128,40 +129,60 @@ public class BuiltInLibraryManager {
 
   /** Initializes the built in libraries. */
   public void loadBuiltIns() {
-    var classLoader = Thread.currentThread().getContextClassLoader();
+    // This method takes more than 3 seconds to execute. Contributing factors are two
+    // loads from disk and two redundant MD5 calculations.
 
-    URI uri;
-    try {
-      uri = classLoader.getResource(ClassPathAddOnLibrary.BUILTIN_LIB_CLASSPATH_DIR).toURI();
-    } catch (URISyntaxException e) {
-      MapTool.showError("msg.error.library.builtin.path", e);
-      return;
-    }
+    CodeTimer.using(
+        "BuiltInLibraryMananger.loadBuiltIns",
+        timer -> {
+          timer.setEnabled(true);
 
-    try (var fs = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
-      var resourcePath = fs.getPath(ClassPathAddOnLibrary.BUILTIN_LIB_CLASSPATH_DIR);
-      var libs =
-          Files.walk(resourcePath, 1)
-              .filter(p -> p.toString().endsWith(AddOnLibraryImporter.DROP_IN_LIBRARY_EXTENSION))
-              .toList();
+          var classLoader = Thread.currentThread().getContextClassLoader();
 
-      libs.stream().forEach(System.out::println);
-      var importer = new AddOnLibraryImporter();
-      libs.stream()
-          .forEach(
-              l -> {
-                try {
-                  var lib = importer.importFromClassPath(l.toString());
-                  var clib = new ClassPathAddOnLibrary(l.toString(), lib);
-                  registerLibrary(clib);
-                  clib.initialize();
+          timer.start("resolveURI");
+          URI uri;
+          try {
+            uri = classLoader.getResource(ClassPathAddOnLibrary.BUILTIN_LIB_CLASSPATH_DIR).toURI();
+          } catch (URISyntaxException e) {
+            MapTool.showError("msg.error.library.builtin.path", e);
+            return;
+          } finally {
+            timer.stop("resolveURI");
+          }
 
-                } catch (Exception e) {
-                  MapTool.showError("msg.error.library.builtin.load", e);
-                }
-              });
-    } catch (IOException e) {
-      MapTool.showError("msg.error.library.builtin.load", e);
-    }
+          try (var fs = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
+            timer.start("list files");
+            var resourcePath = fs.getPath(ClassPathAddOnLibrary.BUILTIN_LIB_CLASSPATH_DIR);
+            var libs =
+                Files.walk(resourcePath, 1)
+                    .filter(
+                        p -> p.toString().endsWith(AddOnLibraryImporter.DROP_IN_LIBRARY_EXTENSION))
+                    .toList();
+            timer.stop("list files");
+
+            timer.start("echo files");
+            libs.stream().forEach(System.out::println);
+            timer.stop("echo files");
+
+            timer.start("import addons");
+            var importer = new AddOnLibraryImporter();
+            libs.stream()
+                .forEach(
+                    l -> {
+                      try {
+                        var lib = importer.importFromClassPath(l.toString());
+                        var clib = new ClassPathAddOnLibrary(l.toString(), lib);
+                        registerLibrary(clib);
+                        clib.initialize();
+
+                      } catch (Exception e) {
+                        MapTool.showError("msg.error.library.builtin.load", e);
+                      }
+                    });
+            timer.stop("import addons");
+          } catch (IOException e) {
+            MapTool.showError("msg.error.library.builtin.load", e);
+          }
+        });
   }
 }
