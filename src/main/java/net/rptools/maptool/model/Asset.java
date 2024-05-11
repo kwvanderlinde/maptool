@@ -434,6 +434,10 @@ public final class Asset {
    * @return the MapTool Drop In Library {@code Asset}.
    */
   static Asset createMTLibAsset(String namespace, byte[] data) {
+    // TODO This takes a lot of effort. There are a couple large built-in libs (>1.3 MB) that we
+    //  read just to calculate the MD5. Our built-in assets should also be identifiable with MD5,
+    //  or somehow have that ID be precomputed.
+
     return new Asset(null, namespace, data, Type.MTLIB, Type.MTLIB.getDefaultExtension(), false);
   }
 
