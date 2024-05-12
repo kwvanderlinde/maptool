@@ -66,6 +66,11 @@ public final class MD5Key implements Serializable {
     this.id = id;
   }
 
+  // region TODO These digesting constructors should not be called in as many places as they are.
+  //         They should be used as sparingly as possible since they are generally very expensive.
+  // Seeing lots of digests between 60 and 80 bytes. What could possibly be so small? Oh... these
+  // are hashes of the _names_ of images that are given thumbnails.
+
   /**
    * Creates an {@code MD5Key} representing the supplied data.
    *
@@ -89,6 +94,8 @@ public final class MD5Key implements Serializable {
   public MD5Key(InputStream data) throws IOException {
     id = encodeToHex(digestData(data));
   }
+
+  // endregion
 
   /**
    * Returns the {@code String} representation of this {@code MD5Key}. This method is guaranteed to
@@ -127,6 +134,9 @@ public final class MD5Key implements Serializable {
 
     log.info("Digested {} bytes from array", data.length);
 
+    if (data.length < 100) {
+      log.info("That's a little...");
+    }
     if (data.length > 1_300_000) {
       log.info("That's a lot!");
     }
