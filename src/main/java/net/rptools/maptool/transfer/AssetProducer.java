@@ -59,7 +59,6 @@ public class AssetProducer implements Closeable {
    * Get the next chunk of data
    *
    * @param size how many bytes to grab, may end up being less if there isn't enough data
-   * @throws IOException if an I/O error occurs or current position in the file is wrong
    * @return an {@link AssetChunkDto} with the next chunk of data
    */
   public AssetChunkDto nextChunk(int size) {

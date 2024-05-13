@@ -53,10 +53,9 @@ public class AssetTransferManager {
    * Get the next chunk from the available producers
    *
    * @param size size of the data to retrieve
-   * @throws IOException if an I/O error occurs or current position in the file is wrong
    * @return an {@link AssetChunkDto} with the next size bytes of data
    */
-  public synchronized AssetChunkDto nextChunk(int size) throws IOException {
+  public synchronized AssetChunkDto nextChunk(int size) {
     if (producerList.size() == 0) {
       return null;
     }
