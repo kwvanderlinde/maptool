@@ -303,6 +303,8 @@ public class AddOnLibraryImporter {
   private void addAsset(Asset asset) {
     var lazyAsset = AssetManager.getLazyAsset(asset.getMD5Key()).orElse(null);
 
+    // TODO The == 0 is certainly unnecessary. If it is still required, we should fix AssetManager
+    //  to never produce these invalid assets.
     if (lazyAsset == null || lazyAsset.header().getSize() == 0) {
       AssetManager.putAsset(asset);
     }

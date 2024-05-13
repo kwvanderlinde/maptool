@@ -49,6 +49,11 @@ import org.apache.logging.log4j.Logger;
  *
  * @author RPTools Team
  */
+/*
+ * TODO Support lazy asset loading. Rather, enforce it where applicable. The caches are already
+ *  capable, but it should be the default behaviour that we can pass asset references around without
+ *  having to load the data.
+ */
 public class AssetManager {
 
   /** {@link MD5Key} to use for assets trying to specify a location outside of asset cache. */
