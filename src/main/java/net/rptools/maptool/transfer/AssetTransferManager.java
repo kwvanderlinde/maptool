@@ -62,14 +62,7 @@ public class AssetTransferManager {
     AssetProducer producer = producerList.remove(0);
     AssetChunkDto chunk = producer.nextChunk(size);
 
-    if (producer.isComplete()) {
-      try {
-        producer.close();
-      } catch (IOException e) {
-        // Doesn't affect the result, so don't bubble.
-        log.error("Failed to close the asset producer", e);
-      }
-    } else {
+    if (!producer.isComplete()) {
       producerList.add(producer);
     }
     return chunk;

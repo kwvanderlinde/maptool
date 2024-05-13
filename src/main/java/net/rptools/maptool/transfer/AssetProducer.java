@@ -15,8 +15,6 @@
 package net.rptools.maptool.transfer;
 
 import com.google.protobuf.ByteString;
-import java.io.Closeable;
-import java.io.IOException;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.server.proto.AssetChunkDto;
@@ -29,7 +27,7 @@ import org.apache.logging.log4j.Logger;
  *
  * @author trevor
  */
-public class AssetProducer implements Closeable {
+public class AssetProducer {
   private static final Logger log = LogManager.getLogger(AssetProducer.class);
 
   private final MD5Key key;
@@ -44,9 +42,6 @@ public class AssetProducer implements Closeable {
     this.data = asset.getData();
     this.position = 0;
   }
-
-  @Override
-  public void close() throws IOException {}
 
   /**
    * @return the header needed to create the corresponding AssetConsumer
