@@ -745,7 +745,7 @@ public class ServerMessageHandler implements MessageHandler {
       return;
     }
     try {
-      var asset = AssetManager.getLazyAsset(assetID).orElse(null);
+      var asset = AssetManager.getAsset(assetID);
       if (asset == null) {
         return;
       }

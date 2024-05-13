@@ -15,12 +15,10 @@
 package net.rptools.maptool.transfer;
 
 import com.google.protobuf.ByteString;
-import java.io.ByteArrayInputStream;
 import java.io.Closeable;
-import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
-import net.rptools.maptool.model.assets.LazyAsset;
+import net.rptools.lib.MD5Key;
+import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.server.proto.AssetChunkDto;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,30 +32,27 @@ import org.apache.logging.log4j.Logger;
 public class AssetProducer implements Closeable {
   private static final Logger log = LogManager.getLogger(AssetProducer.class);
 
-  private final LazyAsset asset;
+  private final MD5Key key;
+  private final String name;
+  private final byte[] data;
 
-  private long remaining;
-  private InputStream in = null;
-  private long startTimeMs;
+  private int position;
 
-  public AssetProducer(LazyAsset asset) {
-    this.asset = asset;
-    this.remaining = asset.header().getSize();
+  public AssetProducer(Asset asset) {
+    this.key = asset.getMD5Key();
+    this.name = asset.getName();
+    this.data = asset.getData();
+    this.position = 0;
   }
 
   @Override
-  public void close() throws IOException {
-    if (in != null) {
-      in.close();
-    }
-  }
+  public void close() throws IOException {}
 
   /**
    * @return the header needed to create the corresponding AssetConsumer
    */
   public AssetHeader getHeader() {
-    return new AssetHeader(
-        asset.header().getId(), asset.header().getName(), asset.header().getSize());
+    return new AssetHeader(key, name, data.length);
   }
 
   /**
@@ -67,37 +62,14 @@ public class AssetProducer implements Closeable {
    * @throws IOException if an I/O error occurs or current position in the file is wrong
    * @return an {@link AssetChunkDto} with the next chunk of data
    */
-  public AssetChunkDto nextChunk(int size) throws IOException {
+  public AssetChunkDto nextChunk(int size) {
     log.info("We've been asked for a chunk of size {}", size);
 
-    if (in == null) {
-      startTimeMs = System.nanoTime();
-      in = new ByteArrayInputStream(asset.loader().load().getData());
-    }
+    size = Math.min(size, data.length - position);
+    var data = ByteString.copyFrom(this.data, position, size);
+    position += size;
 
-    if (remaining < size) {
-      size = (int) remaining;
-    }
-    byte[] data = new byte[size];
-
-    var read = in.readNBytes(data, 0, size);
-    if (read < size) {
-      throw new EOFException("Unexpected end of file.");
-    }
-    remaining -= read;
-
-    if (remaining <= 0) {
-      final var endTimeMs = System.nanoTime();
-      log.warn(
-          "AssetProducer[{}] time: {} ms",
-          asset.header().getId(),
-          (endTimeMs - startTimeMs) / 1_000_000.);
-    }
-
-    return AssetChunkDto.newBuilder()
-        .setId(asset.header().getId().toString())
-        .setData(ByteString.copyFrom(data))
-        .build();
+    return AssetChunkDto.newBuilder().setId(key.toString()).setData(data).build();
   }
 
   /**
@@ -106,6 +78,6 @@ public class AssetProducer implements Closeable {
    * @return true if all data been transferred
    */
   public boolean isComplete() {
-    return remaining <= 0;
+    return position >= data.length;
   }
 }

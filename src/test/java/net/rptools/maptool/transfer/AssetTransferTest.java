@@ -17,12 +17,10 @@ package net.rptools.maptool.transfer;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.model.Asset;
-import net.rptools.maptool.model.assets.LazyAsset;
 import net.rptools.maptool.server.proto.AssetChunkDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,18 +36,15 @@ class AssetTransferTest {
       data[i] = (byte) i;
     }
 
-    var entry = mock(LazyAsset.class);
-    when(entry.getId()).thenReturn(new MD5Key("Testing"));
-    when(entry.getName()).thenReturn("onetwo");
-    when(entry.getType()).thenReturn(Asset.Type.TEXT);
-    when(entry.getSizeInBytes()).thenReturn((long) data.length);
-    when(entry.getInputStream()).then(invocation -> new ByteArrayInputStream(data));
-    // AssetProducer should not require loading the asset in the fashion of load(), but should read
-    // from the stream.
-    when(entry.load()).thenThrow(new RuntimeException("Unexpected load"));
+    var asset = mock(Asset.class);
+    when(asset.getMD5Key()).thenReturn(new MD5Key("Testing"));
+    when(asset.getName()).thenReturn("onetwo");
+    when(asset.getType()).thenReturn(Asset.Type.TEXT);
+    when(asset.getExtension()).thenReturn(Asset.Type.TEXT.getDefaultExtension());
+    when(asset.getData()).thenReturn(data);
 
     // PRODUCER
-    AssetProducer producer = new AssetProducer(entry);
+    AssetProducer producer = new AssetProducer(asset);
     AssetHeader header = producer.getHeader();
 
     assertNotNull(header);
