@@ -50,6 +50,15 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
+/*
+ * TODO Validate that all factories (Asset::create*(), Type::create()) are not called when the MD5
+ *  is already know. In other words, ensure that we can create an assets when the data is already
+ *  present for a given key. Otherwise we are just wasting effort.
+ *      Counterpoint is that we should reject loaded assets when their MD5 doesn't match. So...
+ *  basically the asset caches are allowed when loading data from an untrusted source. Otherwise,
+ *  we should be able to build an asset based on the MD5.
+ */
+
 /** Asset used in the campaign. */
 public final class Asset {
   private interface TypeFactory {
