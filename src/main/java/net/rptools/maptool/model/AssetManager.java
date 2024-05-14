@@ -304,6 +304,8 @@ public class AssetManager {
       return null;
     }
 
+    // TODO LayeredCache should have a load(MD5Key) operation that returns an asset and can write
+    //  back to faster caches.
     return layeredCache
         .get(assetId)
         .flatMap(

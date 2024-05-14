@@ -78,6 +78,7 @@ import net.rptools.maptool.model.transform.campaign.ExportInfoTransform;
 import net.rptools.maptool.model.transform.campaign.LabelFontAndBGTransform;
 import net.rptools.maptool.model.transform.campaign.PCVisionTransform;
 import net.rptools.maptool.model.transform.campaign.TokenPropertyMapTransform;
+import net.rptools.maptool.transfer.AssetHeader;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
@@ -764,6 +765,7 @@ public class PersistenceUtil {
 
     String campaignVersion = (String) pakFile.getProperty(PROP_CAMPAIGN_VERSION);
     String progVersion = (String) pakFile.getProperty(PROP_VERSION);
+    List<AssetHeader> addToServer2 = new ArrayList<>(assetIds.size());
     List<Asset> addToServer = new ArrayList<Asset>(assetIds.size());
 
     // FJE: Ugly fix for a bug I introduced in b64. :(
@@ -796,7 +798,10 @@ public class PersistenceUtil {
                 }
               } else {
                 try {
-                  asset = pakFile.getAsset(pathname);
+                  var lazy = pakFile.getAsset(key, pathname);
+                  if (lazy != null) {
+                    asset = lazy.loader().load();
+                  }
                 } catch (Exception e) {
                   // Do nothing. The asset will be 'null' and it'll be handled below.
                   log.info("Exception while handling asset '" + pathname + "'", e);

@@ -51,11 +51,14 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import net.rptools.lib.CodeTimer;
 import net.rptools.lib.FileUtil;
+import net.rptools.lib.MD5Key;
 import net.rptools.lib.ModelVersionManager;
 import net.rptools.maptool.model.Asset;
-import net.rptools.maptool.model.AssetManager;
 import net.rptools.maptool.model.GUID;
+import net.rptools.maptool.model.assets.LazyAsset;
+import net.rptools.maptool.transfer.AssetHeader;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
@@ -591,9 +594,8 @@ public class PackedFile implements AutoCloseable {
     }
   }
 
-  public Asset getAsset(String path) throws IOException {
+  public LazyAsset getAsset(MD5Key key, String path) throws IOException {
     // TODO Can we not just XStream the asset here?
-
     var reader = getFileAsReader(path);
     var prop = reader.lines().collect(Collectors.joining("\n"));
     if (prop.trim().startsWith("<net.rptools.maptool.model.Asset>")) {
@@ -649,12 +651,25 @@ public class PackedFile implements AutoCloseable {
         }
 
         if (embeddedImage == null) {
-          var input = getFileAsInputStream(path + "." + extension);
-          return Asset.Type.IMAGE.create(name, input);
+          // TODO Also check if we've exploded and read from there.
+
+          var imagePath = path + "." + extension;
+          var pair = getFileAsInputStreamWithLength(imagePath);
+
+          // TODO should we not take the type from the XML????
+          final var fName = name;
+          return new LazyAsset(
+              new AssetHeader(key, name, pair.getLeft(), Asset.Type.IMAGE),
+              () -> {
+                try {
+                  return Asset.Type.IMAGE.create(fName, pair.getRight());
+                } catch (IOException e) {
+                  log.error(e);
+                  return null;
+                }
+              });
         } else {
-          var asset = Asset.Type.IMAGE.create(name, embeddedImage);
-          AssetManager.putAsset(asset);
-          return asset;
+          return LazyAsset.of(Asset.Type.IMAGE.create(name, embeddedImage));
         }
 
       } catch (ParserConfigurationException | SAXException | IOException e) {
@@ -701,6 +716,38 @@ public class PackedFile implements AutoCloseable {
     }
   }
 
+  private Pair<Long, InputStream> getFileAsInputStreamWithLength(String path) throws IOException {
+    File explodedFile = getExplodedFile(path);
+    if ((!file.exists() && !tmpFile.exists() && !explodedFile.exists())
+        || removedFileSet.contains(path)) {
+      throw new FileNotFoundException(path);
+    }
+    if (explodedFile.exists()) {
+      return Pair.of(
+          explodedFile.length(),
+          // TODO This allows URL loading. That seems problematic.
+          FileUtil.getFileAsInputStream(explodedFile));
+    }
+
+    ZipFile zipFile = getZipFile();
+    ZipEntry entry = zipFile.getEntry(path);
+    if (entry == null) {
+      throw new FileNotFoundException(path);
+    }
+
+    InputStream in = zipFile.getInputStream(entry);
+    if (in == null) {
+      throw new FileNotFoundException(path);
+    }
+
+    // TODO This redundantly reads the stream to guess the type, just for a log message. Put this
+    //  somewhere where it makes sense.
+    // String type = FileUtil.getContentType(in);
+    // log.debug("FileUtil.getContentType() returned {}", type);
+
+    return Pair.of(entry.getSize(), in);
+  }
+
   /**
    * Returns an InputStream that corresponds to the zip file path specified. This method should be
    * called only for binary file contents such as images (assets and thumbnails). For
@@ -711,19 +758,9 @@ public class PackedFile implements AutoCloseable {
    * @throws IOException If an I/O error occurs
    */
   public InputStream getFileAsInputStream(String path) throws IOException {
-    File explodedFile = getExplodedFile(path);
-    if ((!file.exists() && !tmpFile.exists() && !explodedFile.exists())
-        || removedFileSet.contains(path)) throw new FileNotFoundException(path);
-    if (explodedFile.exists()) return FileUtil.getFileAsInputStream(explodedFile);
-
-    ZipEntry entry = new ZipEntry(path);
-    ZipFile zipFile = getZipFile();
-
-    InputStream in = zipFile.getInputStream(entry);
-    if (in == null) throw new FileNotFoundException(path);
-    String type = FileUtil.getContentType(in);
-    log.debug("FileUtil.getContentType() returned {}", type);
-    return in;
+    var pair = getFileAsInputStreamWithLength(path);
+    log.info("Loading entry of size {}", pair.getLeft());
+    return pair.getRight();
   }
 
   public void close() {
@@ -743,7 +780,7 @@ public class PackedFile implements AutoCloseable {
     dirty = !file.exists();
   }
 
-  protected File getExplodedFile(String path) {
+  public File getExplodedFile(String path) {
     return new File(tmpFile, path);
   }
 
