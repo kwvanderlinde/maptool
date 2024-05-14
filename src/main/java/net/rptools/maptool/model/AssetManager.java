@@ -77,13 +77,7 @@ public class AssetManager {
    * finished downloading.
    */
   private static Map<MD5Key, List<AssetAvailableListener>> assetListenerListMap =
-      new ConcurrentHashMap<MD5Key, List<AssetAvailableListener>>();
-
-  /** Property string associated with asset name */
-  public static final String NAME = "name";
-
-  /** Property string associated with asset type. */
-  public static final String TYPE = "type";
+      new ConcurrentHashMap<>();
 
   /** Used to load assets from storage */
   private static AssetLoader assetLoader = new AssetLoader();
