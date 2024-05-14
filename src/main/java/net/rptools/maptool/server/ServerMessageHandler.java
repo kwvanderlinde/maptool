@@ -744,30 +744,27 @@ public class ServerMessageHandler implements MessageHandler {
     if (assetID == null) {
       return;
     }
-    try {
-      var asset = AssetManager.getAsset(assetID);
-      if (asset == null) {
-        asset = Asset.createBrokenImageAsset(assetID);
-      }
-
-      AssetProducer producer = new AssetProducer(asset);
-      var msg = StartAssetTransferMsg.newBuilder().setHeader(producer.getHeader().toDto());
-      server
-          .getConnection()
-          .sendMessage(
-              id,
-              MapToolConstants.Channel.IMAGE,
-              Message.newBuilder().setStartAssetTransferMsg(msg).build());
-      server.addAssetProducer(id, producer);
-
-    } catch (IllegalArgumentException iae) {
-      // Sending an empty asset will cause a failure of the image to load on the client side,
-      // showing a broken
-      // image instead of blowing up
-      Asset asset = Asset.createBrokenImageAsset(assetID);
+    var asset = AssetManager.getAsset(assetID);
+    if (asset == null) {
+      /*
+       * Sending an empty asset will cause a failure of the image to load on the client side,
+       * showing a broken image instead of blowing up
+       */
+      asset = Asset.createBrokenImageAsset(assetID);
       var msg = PutAssetMsg.newBuilder().setAsset(asset.toDto());
       server.getConnection().sendMessage(id, Message.newBuilder().setPutAssetMsg(msg).build());
+      return;
     }
+
+    AssetProducer producer = new AssetProducer(asset);
+    var msg = StartAssetTransferMsg.newBuilder().setHeader(producer.getHeader().toDto());
+    server
+        .getConnection()
+        .sendMessage(
+            id,
+            MapToolConstants.Channel.IMAGE,
+            Message.newBuilder().setStartAssetTransferMsg(msg).build());
+    server.addAssetProducer(id, producer);
   }
 
   private void getZone(String id, GUID zoneGUID) {
