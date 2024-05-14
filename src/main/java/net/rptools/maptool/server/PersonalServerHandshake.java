@@ -73,7 +73,7 @@ public class PersonalServerHandshake implements Handshake<Player>, MessageHandle
   }
 
   private synchronized void setCurrentState(State state) {
-    log.info("Transitioning from {} to {}", currentState, state);
+    log.debug("Transitioning from {} to {}", currentState, state);
     currentState = state;
   }
 
