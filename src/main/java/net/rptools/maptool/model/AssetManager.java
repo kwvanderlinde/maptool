@@ -294,16 +294,16 @@ public class AssetManager {
    * @return Asset object for the MD5 sum
    */
   public static Asset getAsset(MD5Key id) {
-
     if (id == null) {
       return null;
     }
 
-    MD5Key assetId = null;
+    MD5Key assetId;
     try {
       assetId = sanitizeAssetId(id);
     } catch (IOException e) {
       log.error(I18N.getText("msg.error.errorResolvingCacheDir", id, e));
+      return null;
     }
 
     return layeredCache
