@@ -56,10 +56,10 @@ import org.apache.logging.log4j.Logger;
  * @author drice *
  */
 public class ServerMessageHandler implements MessageHandler {
-  private final MapToolServer server;
+  private final IMapToolServer server;
   private static final Logger log = LogManager.getLogger(ServerMessageHandler.class);
 
-  public ServerMessageHandler(MapToolServer server) {
+  public ServerMessageHandler(IMapToolServer server) {
     this.server = server;
   }
 
@@ -690,7 +690,8 @@ public class ServerMessageHandler implements MessageHandler {
 
   private void handle(BootPlayerMsg bootPlayerMsg) {
     // And just to be sure, remove them from the server
-    server.releaseClientConnection(server.getConnectionId(bootPlayerMsg.getPlayerName()));
+    var connection = server.getClientConnection(bootPlayerMsg.getPlayerName());
+    server.releaseClientConnection(connection);
   }
 
   private void handle(String id, UpdatePlayerStatusMsg updatePlayerStatusMsg) {

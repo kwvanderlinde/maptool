@@ -14,21 +14,68 @@
  */
 package net.rptools.maptool.server;
 
+import java.io.IOException;
+import net.rptools.clientserver.simple.Handshake;
+import net.rptools.clientserver.simple.connection.Connection;
+import net.rptools.clientserver.simple.connection.DirectConnection;
+import net.rptools.maptool.model.Campaign;
+import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.player.LocalPlayer;
-import net.rptools.maptool.model.player.LocalPlayerDatabase;
-import net.rptools.maptool.model.player.PlayerDatabaseFactory;
+import net.rptools.maptool.model.player.Player;
+import net.rptools.maptool.transfer.AssetProducer;
 
 public class PersonalServer implements IMapToolServer {
-  private final LocalPlayer localPlayer;
-  private final LocalPlayerDatabase playerDatabase;
+  private final LocalPlayer player;
+  private ServerPolicy serverPolicy;
+  private Campaign campaign;
 
-  public PersonalServer(LocalPlayer player) {
-    localPlayer = player;
-    playerDatabase = PlayerDatabaseFactory.getLocalPlayerDatabase(player);
+  private final DirectConnection serverSide;
+  private final DirectConnection clientSide;
+  private final MapToolServerConnection conn;
+
+  public PersonalServer(LocalPlayer player, ServerPolicy serverPolicy, Campaign campaign) {
+    this.player = player;
+    this.serverPolicy = serverPolicy;
+    this.campaign = campaign;
+
+    var connections = DirectConnection.create("Personal Server");
+    this.serverSide = connections.getRight();
+    this.clientSide = connections.getLeft();
+
+    conn = new MapToolServerConnection(this, new ServerMessageHandler(this));
   }
 
-  public LocalPlayer getLocalPlayer() {
-    return localPlayer;
+  public DirectConnection getClientSideConnection() {
+    return clientSide;
+  }
+
+  public DirectConnection getServerSideConnection() {
+    return serverSide;
+  }
+
+  @Override
+  public Handshake<Player> createHandshake(Connection conn) {
+    return new PersonalServerHandshake(this, conn, player);
+  }
+
+  @Override
+  public void addAssetProducer(String connectionId, AssetProducer producer) {
+    // Should never be needed.
+  }
+
+  @Override
+  public MapToolServerConnection getConnection() {
+    return conn;
+  }
+
+  @Override
+  public Campaign getCampaign() {
+    return campaign;
+  }
+
+  @Override
+  public void setCampaign(Campaign campaign) {
+    this.campaign = campaign;
   }
 
   @Override
@@ -52,10 +99,45 @@ public class PersonalServer implements IMapToolServer {
   }
 
   @Override
-  public void stop() {}
+  public ServerPolicy getPolicy() {
+    return serverPolicy;
+  }
 
   @Override
-  public LocalPlayerDatabase getPlayerDatabase() {
-    return playerDatabase;
+  public void updateServerPolicy(ServerPolicy policy) {
+    this.serverPolicy = new ServerPolicy(policy);
   }
+
+  @Override
+  public boolean isPlayerConnected(String id) {
+    return false;
+  }
+
+  @Override
+  public void updatePlayerStatus(String playerName, GUID zoneId, boolean loaded) {
+    // We only have our local player, whose status is constant. So do nothing.
+  }
+
+  @Override
+  public void start() throws IOException {
+    conn.open();
+  }
+
+  @Override
+  public void stop() {
+    conn.close();
+  }
+
+  // We don't accept connections, so configure/release do nothing.
+
+  @Override
+  public Connection getClientConnection(String playerName) {
+    return null;
+  }
+
+  @Override
+  public void configureClientConnection(Connection connection) {}
+
+  @Override
+  public void releaseClientConnection(Connection connection) {}
 }

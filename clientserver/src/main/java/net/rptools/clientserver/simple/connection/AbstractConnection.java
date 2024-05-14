@@ -113,7 +113,7 @@ public abstract class AbstractConnection implements Connection {
     messageHandlers.remove(handler);
   }
 
-  private void dispatchMessage(String id, byte[] message) {
+  protected void dispatchMessage(String id, byte[] message) {
     if (messageHandlers.size() == 0) {
       log.warn("message received but not messageHandlers registered.");
     }

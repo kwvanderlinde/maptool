@@ -21,8 +21,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import javax.swing.SwingUtilities;
+import net.rptools.clientserver.simple.Handshake;
 import net.rptools.clientserver.simple.connection.Connection;
-import net.rptools.clientserver.simple.server.ServerObserver;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolRegistry;
 import net.rptools.maptool.client.ui.connectioninfodialog.ConnectionInfoDialog;
@@ -31,6 +31,7 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.TextMessage;
+import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.player.ServerSidePlayerDatabase;
 import net.rptools.maptool.server.proto.Message;
 import net.rptools.maptool.server.proto.UpdateAssetTransferMsg;
@@ -65,7 +66,7 @@ public class MapToolServer implements IMapToolServer {
     this.config = config;
     this.policy = policy;
     playerDatabase = playerDb;
-    conn = new MapToolServerConnection(this, playerDatabase, new ServerMessageHandler(this));
+    conn = new MapToolServerConnection(this, new ServerMessageHandler(this));
 
     campaign = new Campaign();
 
@@ -77,6 +78,11 @@ public class MapToolServer implements IMapToolServer {
       heartbeatThread = new HeartbeatThread();
       heartbeatThread.start();
     }
+  }
+
+  @Override
+  public Handshake<Player> createHandshake(Connection conn) {
+    return new ServerHandshake(this, conn, playerDatabase, config.getUseEasyConnect());
   }
 
   @Override
@@ -99,89 +105,79 @@ public class MapToolServer implements IMapToolServer {
     return config.getPort();
   }
 
-  public ServerSidePlayerDatabase getPlayerDatabase() {
-    return playerDatabase;
-  }
-
+  @Override
   public void configureClientConnection(Connection connection) {
     String id = connection.getId();
     assetManagerMap.put(id, new AssetTransferManager());
     connectionMap.put(id, connection);
   }
 
-  public Connection getClientConnection(String id) {
-    return connectionMap.get(id);
-  }
-
-  public String getConnectionId(String playerId) {
-    return conn.getConnectionId(playerId);
-  }
-
-  /**
-   * Forceably disconnects a client and cleans up references to it
-   *
-   * @param id the connection ID
-   */
-  public void releaseClientConnection(String id) {
-    Connection connection = getClientConnection(id);
-    if (connection != null) {
-      connection.close();
+  @Override
+  public Connection getClientConnection(String playerName) {
+    var connectionId = conn.getConnectionId(playerName);
+    if (connectionId == null) {
+      return null;
     }
-    assetManagerMap.remove(id);
-    connectionMap.remove(id);
+
+    return connectionMap.get(connectionId);
   }
 
+  /** Forceably disconnects a client and cleans up references to it */
+  @Override
+  public void releaseClientConnection(Connection connection) {
+    var removed = null != connectionMap.remove(connection.getId());
+    if (!removed) {
+      // This isn't even our connection.
+      log.warn(
+          "Attempt to release client connection not owned by this server: {}", connection.getId());
+      return;
+    }
+
+    connection.close();
+    assetManagerMap.remove(connection.getId());
+  }
+
+  @Override
   public void addAssetProducer(String connectionId, AssetProducer producer) {
     AssetTransferManager manager = assetManagerMap.get(connectionId);
     manager.addProducer(producer);
   }
 
-  public void addObserver(ServerObserver observer) {
-    if (observer != null) {
-      conn.addObserver(observer);
-    }
-  }
-
-  public void removeObserver(ServerObserver observer) {
-    conn.removeObserver(observer);
-  }
-
-  public boolean isHostId(String playerId) {
-    return config.getHostPlayerId() != null && config.getHostPlayerId().equals(playerId);
-  }
-
+  @Override
   public MapToolServerConnection getConnection() {
     return conn;
   }
 
+  @Override
   public boolean isPlayerConnected(String id) {
     return conn.getPlayer(id) != null;
   }
 
+  @Override
   public void updatePlayerStatus(String playerName, GUID zoneId, boolean loaded) {
     var player = conn.getPlayer(playerName);
     player.setLoaded(loaded);
     player.setZoneId(zoneId);
   }
 
+  @Override
   public void setCampaign(Campaign campaign) {
-    // Don't allow null campaigns, but allow the campaign to be cleared out
-    if (campaign == null) {
-      campaign = new Campaign();
-    }
     this.campaign = campaign;
   }
 
+  @Override
   public Campaign getCampaign() {
     return campaign;
   }
 
+  @Override
   public ServerPolicy getPolicy() {
     return policy;
   }
 
+  @Override
   public void updateServerPolicy(ServerPolicy policy) {
-    this.policy = policy;
+    this.policy = new ServerPolicy(policy);
   }
 
   public ServerConfig getConfig() {
@@ -201,6 +197,7 @@ public class MapToolServer implements IMapToolServer {
 
   private static final Random random = new Random();
 
+  @Override
   public void start() throws IOException {
     conn.open();
   }
@@ -217,7 +214,7 @@ public class MapToolServer implements IMapToolServer {
       int WARNING_TIME = 2; // number of heartbeats before popup warning
       int errors = 0;
       String IP_addr = ConnectionInfoDialog.getExternalAddress();
-      int port = getConfig().getPort();
+      int port = config.getPort();
 
       while (!stop) {
         try {
@@ -319,7 +316,7 @@ public class MapToolServer implements IMapToolServer {
             Thread.sleep(500);
           }
         } catch (Exception e) {
-          log.warn("Couldn't retrieve AssetChunk for " + entryForException.getKey(), e);
+          log.warn("Couldn't retrieve AssetChunk for {}", entryForException.getKey(), e);
           // keep on going
         }
       }

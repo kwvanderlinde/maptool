@@ -46,6 +46,7 @@ import javax.annotation.Nonnull;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
+import net.rptools.clientserver.ConnectionFactory;
 import net.rptools.lib.BackupManager;
 import net.rptools.lib.DebugStream;
 import net.rptools.lib.FileUtil;
@@ -87,6 +88,7 @@ import net.rptools.maptool.model.ZoneFactory;
 import net.rptools.maptool.model.library.url.LibraryURLStreamHandler;
 import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.model.player.Player;
+import net.rptools.maptool.model.player.PlayerDatabaseFactory;
 import net.rptools.maptool.model.player.PlayerZoneListener;
 import net.rptools.maptool.model.player.ServerSidePlayerDatabase;
 import net.rptools.maptool.model.zones.TokensAdded;
@@ -182,9 +184,12 @@ public class MapTool {
   static {
     try {
       final var player = new LocalPlayer();
-      final var personalServer = new PersonalServer(player);
+      final var playerDatabase = PlayerDatabaseFactory.getPersonalServerPlayerDatabase(player);
+      final var personalServer = new PersonalServer(player, new ServerPolicy(), new Campaign());
       server = personalServer;
-      client = new MapToolClient(personalServer);
+      client =
+          new MapToolClient(
+              player, new ServerPolicy(), playerDatabase, personalServer.getClientSideConnection());
     } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
       throw new RuntimeException("Unable to create default personal server", e);
     }
@@ -960,7 +965,7 @@ public class MapTool {
     if (announcer != null) {
       announcer.stop();
     }
-    announcer = new ServiceAnnouncer(id, server.getConfig().getPort(), AppConstants.SERVICE_GROUP);
+    announcer = new ServiceAnnouncer(id, config.getPort(), AppConstants.SERVICE_GROUP);
     announcer.start();
 
     // Registered ?
@@ -983,8 +988,9 @@ public class MapTool {
     }
 
     // Create the local connection so we aren't left hanging.
+    var connection = ConnectionFactory.getInstance().createConnection(player.getName(), config);
     installClient(
-        new MapToolClient(player, server),
+        new MapToolClient(player, policy, playerDatabase, connection),
         () -> {
           // connecting
           MapTool.getFrame()
@@ -1128,12 +1134,22 @@ public class MapTool {
 
   public static void startPersonalServer(Campaign campaign)
       throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+    assetTransferManager.flush();
+
     final var player = new LocalPlayer();
-    server = new PersonalServer(player);
-    client = new MapToolClient((PersonalServer) server);
+    final var playerDatabase = PlayerDatabaseFactory.getPersonalServerPlayerDatabase(player);
+    var personalServer = new PersonalServer(player, new ServerPolicy(), new Campaign(campaign));
+    server = personalServer;
+    client =
+        new MapToolClient(
+            player,
+            personalServer.getPolicy(),
+            playerDatabase,
+            personalServer.getClientSideConnection());
 
     MapTool.getFrame().getCommandPanel().clearAllIdentities();
 
+    server.start();
     client.start();
     setCampaign(campaign);
   }
@@ -1143,7 +1159,7 @@ public class MapTool {
 
     MapTool.getFrame().getCommandPanel().clearAllIdentities();
 
-    IMapToolConnection clientConn = client.getConnection();
+    MapToolConnection clientConn = client.getConnection();
     clientConn.addActivityListener(clientFrame.getActivityMonitor());
     clientConn.onCompleted(
         () -> {
@@ -1155,7 +1171,8 @@ public class MapTool {
 
   public static void createConnection(ServerConfig config, LocalPlayer player, Runnable onCompleted)
       throws IOException {
-    installClient(new MapToolClient(player, config), onCompleted);
+    var connection = ConnectionFactory.getInstance().createConnection(player.getName(), config);
+    installClient(new MapToolClient(player, connection), onCompleted);
     client.start();
   }
 

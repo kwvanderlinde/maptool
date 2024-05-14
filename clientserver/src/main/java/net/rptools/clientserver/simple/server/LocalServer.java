@@ -12,27 +12,26 @@
  * <http://www.gnu.org/licenses/> and specifically the Affero license
  * text at <http://www.gnu.org/licenses/agpl.html>.
  */
-package net.rptools.maptool.client;
+package net.rptools.clientserver.simple.server;
 
 import java.io.IOException;
-import net.rptools.clientserver.simple.DisconnectHandler;
-import net.rptools.maptool.client.ui.ActivityMonitorPanel;
-import net.rptools.maptool.server.proto.Message;
+import net.rptools.clientserver.simple.MessageHandler;
+import net.rptools.clientserver.simple.connection.DirectConnection;
 
-public interface IMapToolConnection {
-  void onCompleted(Runnable onCompleted);
+public class LocalServer extends AbstractServer {
+  private final DirectConnection connection;
 
-  void start() throws IOException;
+  public LocalServer(
+      DirectConnection connection,
+      HandshakeProvider<?> handshakeProvider,
+      MessageHandler messageHandler) {
+    super(handshakeProvider, messageHandler);
+    this.connection = connection;
+  }
 
-  void addMessageHandler(ClientMessageHandler handler);
-
-  boolean isAlive();
-
-  void close() throws IOException;
-
-  void sendMessage(Message msg);
-
-  void addActivityListener(ActivityMonitorPanel activityMonitor);
-
-  void addDisconnectHandler(DisconnectHandler serverDisconnectHandler);
+  @Override
+  public void start() throws IOException {
+    handleConnection(connection);
+    connection.open();
+  }
 }

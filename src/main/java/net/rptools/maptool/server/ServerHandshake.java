@@ -75,7 +75,7 @@ public class ServerHandshake implements Handshake<Player>, MessageHandler {
   /** The database used for retrieving players. */
   private final ServerSidePlayerDatabase playerDatabase;
 
-  private final MapToolServer server;
+  private final IMapToolServer server;
 
   /** The connection to the client. */
   private final Connection connection;
@@ -113,7 +113,7 @@ public class ServerHandshake implements Handshake<Player>, MessageHandler {
    * @param useEasyConnect If true, the client will use the easy connect method.
    */
   public ServerHandshake(
-      MapToolServer server,
+      IMapToolServer server,
       Connection connection,
       ServerSidePlayerDatabase playerDatabase,
       boolean useEasyConnect) {

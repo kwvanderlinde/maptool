@@ -14,9 +14,25 @@
  */
 package net.rptools.maptool.server;
 
-import net.rptools.maptool.model.player.PlayerDatabase;
+import java.io.IOException;
+import net.rptools.clientserver.simple.Handshake;
+import net.rptools.clientserver.simple.connection.Connection;
+import net.rptools.maptool.model.Campaign;
+import net.rptools.maptool.model.GUID;
+import net.rptools.maptool.model.player.Player;
+import net.rptools.maptool.transfer.AssetProducer;
 
 public interface IMapToolServer {
+  MapToolServerConnection getConnection();
+
+  Handshake<Player> createHandshake(Connection conn);
+
+  void addAssetProducer(String connectionId, AssetProducer producer);
+
+  Campaign getCampaign();
+
+  void setCampaign(Campaign campaign);
+
   boolean isPersonalServer();
 
   boolean isServerRegistered();
@@ -25,7 +41,22 @@ public interface IMapToolServer {
 
   int getPort();
 
-  PlayerDatabase getPlayerDatabase();
+  ServerPolicy getPolicy();
+
+  void updateServerPolicy(ServerPolicy policy);
+
+  boolean isPlayerConnected(String id);
+
+  void updatePlayerStatus(String playerName, GUID zoneId, boolean loaded);
+
+  void start() throws IOException;
 
   void stop();
+
+  Connection getClientConnection(String playerName);
+
+  void configureClientConnection(Connection connection);
+
+  /** Forceably disconnects a client and cleans up references to it */
+  void releaseClientConnection(Connection connection);
 }

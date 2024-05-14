@@ -20,7 +20,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import javax.annotation.Nullable;
 import net.rptools.clientserver.simple.connection.Connection;
 import net.rptools.lib.Callback;
 import net.rptools.maptool.client.events.PlayerConnected;
@@ -35,10 +34,8 @@ import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.player.PlayerDatabase;
 import net.rptools.maptool.model.player.PlayerDatabaseFactory;
 import net.rptools.maptool.model.player.Players;
-import net.rptools.maptool.server.MapToolServer;
-import net.rptools.maptool.server.PersonalServer;
+import net.rptools.maptool.model.player.ServerSidePlayerDatabase;
 import net.rptools.maptool.server.ServerCommand;
-import net.rptools.maptool.server.ServerConfig;
 import net.rptools.maptool.server.ServerPolicy;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -66,7 +63,7 @@ public class MapToolClient {
   /** Case-insensitive ordered set of player names. */
   private final List<Player> playerList;
 
-  private final IMapToolConnection conn;
+  private final MapToolConnection conn;
   private Campaign campaign;
   private ServerPolicy serverPolicy;
   private final ServerCommand serverCommand;
@@ -78,17 +75,14 @@ public class MapToolClient {
       LocalPlayer player,
       PlayerDatabase playerDatabase,
       ServerPolicy serverPolicy,
-      @Nullable ServerConfig serverConfig) {
+      Connection connection) {
     this.campaign = new Campaign();
     this.player = player;
     this.playerDatabase = playerDatabase;
     this.playerList = new ArrayList<>();
     this.serverPolicy = new ServerPolicy(serverPolicy);
 
-    this.conn =
-        serverConfig == null
-            ? new NilMapToolConnection()
-            : new MapToolConnection(this, serverConfig, player);
+    this.conn = new MapToolConnection(this, player, connection);
 
     this.serverCommand = new ServerCommandClientImpl(this);
 
@@ -105,37 +99,30 @@ public class MapToolClient {
   }
 
   /**
-   * Creates a client for use with a personal server.
+   * Creates a client for use with a personal server or locally hosted server.
    *
-   * @param server The personal server that will run with this client.
+   * @param connection The connection to the local server
    */
-  public MapToolClient(PersonalServer server) {
-    this(true, server.getLocalPlayer(), server.getPlayerDatabase(), new ServerPolicy(), null);
+  public MapToolClient(
+      LocalPlayer player,
+      ServerPolicy policy,
+      ServerSidePlayerDatabase playerDatabase,
+      Connection connection) {
+    this(true, player, playerDatabase, policy, connection);
   }
 
   /**
    * Creates a client for use with a remote hosted server.
    *
    * @param player The player connecting to the server.
-   * @param config The configuration details needed to connect to the server.
    */
-  public MapToolClient(LocalPlayer player, ServerConfig config) {
+  public MapToolClient(LocalPlayer player, Connection connection) {
     this(
         false,
         player,
         PlayerDatabaseFactory.getLocalPlayerDatabase(player),
         new ServerPolicy(),
-        config);
-  }
-
-  /**
-   * Creates a client for a server hosted in the same MapTool process.
-   *
-   * @param player The player who started the server.
-   * @param server The local server.
-   */
-  public MapToolClient(LocalPlayer player, MapToolServer server) {
-    this(true, player, server.getPlayerDatabase(), server.getPolicy(), server.getConfig());
+        connection);
   }
 
   /**
@@ -239,7 +226,7 @@ public class MapToolClient {
     return playerDatabase;
   }
 
-  public IMapToolConnection getConnection() {
+  public MapToolConnection getConnection() {
     return conn;
   }
 

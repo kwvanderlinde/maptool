@@ -21,10 +21,10 @@ import net.rptools.clientserver.ConnectionFactory;
 import net.rptools.clientserver.simple.Handshake;
 import net.rptools.clientserver.simple.connection.Connection;
 import net.rptools.clientserver.simple.server.HandshakeProvider;
+import net.rptools.clientserver.simple.server.LocalServer;
 import net.rptools.clientserver.simple.server.Server;
 import net.rptools.clientserver.simple.server.ServerObserver;
 import net.rptools.maptool.model.player.Player;
-import net.rptools.maptool.model.player.ServerSidePlayerDatabase;
 import net.rptools.maptool.server.proto.Message;
 import net.rptools.maptool.server.proto.PlayerConnectedMsg;
 import net.rptools.maptool.server.proto.PlayerDisconnectedMsg;
@@ -38,18 +38,19 @@ import org.apache.logging.log4j.Logger;
 public class MapToolServerConnection implements ServerObserver, HandshakeProvider<Player> {
   private static final Logger log = LogManager.getLogger(MapToolServerConnection.class);
   private final Map<String, Player> playerMap = new ConcurrentHashMap<>();
-  private final MapToolServer server;
+  private final IMapToolServer server;
   private final Server connection;
-  private final ServerSidePlayerDatabase playerDatabase;
-  private final boolean useEasyConnect;
 
-  public MapToolServerConnection(
-      MapToolServer server, ServerSidePlayerDatabase playerDatabase, ServerMessageHandler handler) {
+  public MapToolServerConnection(PersonalServer server, ServerMessageHandler handler) {
+    this.connection = new LocalServer(server.getServerSideConnection(), this, handler);
+    this.server = server;
+    addObserver(this);
+  }
+
+  public MapToolServerConnection(MapToolServer server, ServerMessageHandler handler) {
     this.connection =
         ConnectionFactory.getInstance().createServer(server.getConfig(), this, handler);
     this.server = server;
-    this.playerDatabase = playerDatabase;
-    this.useEasyConnect = server.getConfig().getUseEasyConnect();
     addObserver(this);
   }
 
@@ -59,7 +60,7 @@ public class MapToolServerConnection implements ServerObserver, HandshakeProvide
    * @see net.rptools.clientserver.simple.server.ServerConnection# handleConnectionHandshake(java.net.Socket)
    */
   public Handshake<Player> getConnectionHandshake(Connection conn) {
-    var handshake = new ServerHandshake(server, conn, playerDatabase, useEasyConnect);
+    var handshake = server.createHandshake(conn);
 
     handshake.whenComplete(
         (player, ex) -> {
@@ -101,69 +102,51 @@ public class MapToolServerConnection implements ServerObserver, HandshakeProvide
     Player connectedPlayer = playerMap.get(conn.getId().toUpperCase());
     for (Player player : playerMap.values()) {
       var msg = PlayerConnectedMsg.newBuilder().setPlayer(player.toDto());
-      server
-          .getConnection()
-          .sendMessage(conn.getId(), Message.newBuilder().setPlayerConnectedMsg(msg).build());
+      sendMessage(conn.getId(), Message.newBuilder().setPlayerConnectedMsg(msg).build());
     }
     var msg =
         PlayerConnectedMsg.newBuilder().setPlayer(connectedPlayer.getTransferablePlayer().toDto());
-    server
-        .getConnection()
-        .broadcastMessage(Message.newBuilder().setPlayerConnectedMsg(msg).build());
+    broadcastMessage(Message.newBuilder().setPlayerConnectedMsg(msg).build());
 
     var msg2 = SetCampaignMsg.newBuilder().setCampaign(server.getCampaign().toDto());
-    server
-        .getConnection()
-        .sendMessage(conn.getId(), Message.newBuilder().setSetCampaignMsg(msg2).build());
+    sendMessage(conn.getId(), Message.newBuilder().setSetCampaignMsg(msg2).build());
   }
 
   public void connectionRemoved(Connection conn) {
-    server.releaseClientConnection(conn.getId());
+    server.releaseClientConnection(conn);
     var player = playerMap.get(conn.getId().toUpperCase()).getTransferablePlayer();
     var msg = PlayerDisconnectedMsg.newBuilder().setPlayer(player.toDto());
-    server
-        .getConnection()
-        .broadcastMessage(
-            new String[] {conn.getId()},
-            Message.newBuilder().setPlayerDisconnectedMsg(msg).build());
+    broadcastMessage(
+        new String[] {conn.getId()}, Message.newBuilder().setPlayerDisconnectedMsg(msg).build());
     playerMap.remove(conn.getId().toUpperCase());
   }
 
   public void sendMessage(String id, Message message) {
-    log.debug(
-        server.getConfig().getServerName()
-            + " sent to "
-            + id
-            + ": "
-            + message.getMessageTypeCase());
+    log.debug("{} sent to {}: {}", server.getName(), id, message.getMessageTypeCase());
     connection.sendMessage(id, message.toByteArray());
   }
 
   public void sendMessage(String id, Object channel, Message message) {
     log.debug(
-        server.getConfig().getServerName()
-            + " sent to "
-            + id
-            + ":"
-            + message.getMessageTypeCase()
-            + " ("
-            + channel.toString()
-            + ")");
+        "{} sent to {}: {} ({})",
+        server.getName(),
+        id,
+        message.getMessageTypeCase(),
+        channel.toString());
     connection.sendMessage(id, channel, message.toByteArray());
   }
 
   public void broadcastMessage(Message message) {
-    log.debug(server.getConfig().getServerName() + " broadcast: " + message.getMessageTypeCase());
+    log.debug("{} broadcast: {}", server.getName(), message.getMessageTypeCase());
     connection.broadcastMessage(message.toByteArray());
   }
 
   public void broadcastMessage(String[] exclude, Message message) {
     log.debug(
-        server.getConfig().getServerName()
-            + " broadcast: "
-            + message.getMessageTypeCase()
-            + " except to "
-            + String.join(",", exclude));
+        "{} broadcast: {} except to {}",
+        server.getName(),
+        message.getMessageTypeCase(),
+        String.join(",", exclude));
     connection.broadcastMessage(exclude, message.toByteArray());
   }
 
