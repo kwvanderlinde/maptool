@@ -95,6 +95,10 @@ public class AssetManager {
     layeredCache = new LayeredAssetCache(inMemoryCache, persistentAssetCache, linkCache);
   }
 
+  public static AssetCache getCache() {
+    return layeredCache;
+  }
+
   /**
    * Brute force clear asset cache... TODO: Create preferences and filter to clear cache
    * automatically by age of asset
