@@ -29,7 +29,6 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ServerCommandClientImpl;
 import net.rptools.maptool.client.ui.zone.FogUtil;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
-import net.rptools.maptool.common.MapToolConstants;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.InitiativeList.TokenInitiative;
@@ -757,6 +756,12 @@ public class ServerMessageHandler implements MessageHandler {
   }
 
   private void getAsset(String id, MD5Key assetID) {
+    // TODO Servers can receive assets from clients, e.g., if the client is a GM and imports a
+    //  map. While we can send the StartAssetTransferMsg, we must not send any more data than we
+    //  have. In other words, the asset producer should be blocked until we have the data.
+    //      Also be careful below. The asset manager may itself not have the data yet, but we
+    //  should still be able to "reserve" the fact that we are pending assets.
+
     if (assetID == null) {
       return;
     }
@@ -774,12 +779,11 @@ public class ServerMessageHandler implements MessageHandler {
 
     AssetProducer producer = new AssetProducer(asset);
     var msg = StartAssetTransferMsg.newBuilder().setHeader(producer.getHeader().toDto());
+    // The asset data is sent over the IMAGE channel. But the instruction to start is sent over the
+    // regular channel.
     server
         .getConnection()
-        .sendMessage(
-            id,
-            MapToolConstants.Channel.IMAGE,
-            Message.newBuilder().setStartAssetTransferMsg(msg).build());
+        .sendMessage(id, Message.newBuilder().setStartAssetTransferMsg(msg).build());
     server.addAssetProducer(id, producer);
   }
 
