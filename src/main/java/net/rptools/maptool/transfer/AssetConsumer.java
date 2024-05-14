@@ -14,8 +14,7 @@
  */
 package net.rptools.maptool.transfer;
 
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.server.proto.AssetChunkDto;
@@ -26,34 +25,20 @@ import net.rptools.maptool.server.proto.AssetChunkDto;
  * @author trevor
  */
 public class AssetConsumer {
-  private File destinationDir;
-  private AssetHeader header;
-  private long currentPosition;
+  private final ByteArrayOutputStream buffer = new ByteArrayOutputStream(8 * 1024);
+  private final AssetHeader header;
 
   /**
    * Create a new asset consumer, it will prepare a place to receive the incoming data chunks. When
    * complete the resulting file can be found at getFilename()
    *
-   * @param destinationDir - location to store the incoming file
    * @param header - from the corresponding AssetProducer
    */
-  public AssetConsumer(File destinationDir, AssetHeader header) {
+  public AssetConsumer(AssetHeader header) {
     if (header == null) {
       throw new IllegalArgumentException("Header cannot be null");
     }
-    if (destinationDir == null) {
-      destinationDir = new File(".");
-    }
-    this.destinationDir = destinationDir;
     this.header = header;
-    // Setup
-    if (!destinationDir.exists()) {
-      destinationDir.mkdirs();
-    }
-    // Cleanup
-    if (getFilename().exists()) {
-      getFilename().delete();
-    }
   }
 
   /**
@@ -75,12 +60,8 @@ public class AssetConsumer {
    *     exist but cannot be created, or cannot be opened for any other reason
    */
   public void update(AssetChunkDto chunk) throws IOException {
-    File file = getFilename();
     byte[] data = chunk.getData().toByteArray();
-    try (FileOutputStream out = new FileOutputStream(file, true)) {
-      out.write(data);
-    }
-    currentPosition += data.length;
+    buffer.writeBytes(data);
   }
 
   /**
@@ -89,11 +70,11 @@ public class AssetConsumer {
    * @return true if all data been transferred
    */
   public boolean isComplete() {
-    return currentPosition >= header.getSize();
+    return buffer.size() >= header.getSize();
   }
 
   public double getPercentComplete() {
-    return currentPosition / (double) header.getSize();
+    return buffer.size() / (double) header.getSize();
   }
 
   public long getSize() {
@@ -101,11 +82,11 @@ public class AssetConsumer {
   }
 
   /**
-   * When complete this will point to the file containing the data
+   * When complete this will have all the data for the asset.
    *
-   * @return the file with the data
+   * @return The asset data
    */
-  public File getFilename() {
-    return new File(destinationDir.getAbsolutePath() + "/" + header.getId() + ".part");
+  public byte[] getData() {
+    return buffer.toByteArray();
   }
 }

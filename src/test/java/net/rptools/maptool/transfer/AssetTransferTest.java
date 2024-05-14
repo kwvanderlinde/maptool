@@ -17,8 +17,6 @@ package net.rptools.maptool.transfer;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import java.io.File;
-import java.io.FileInputStream;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.server.proto.AssetChunkDto;
@@ -52,33 +50,21 @@ class AssetTransferTest {
     assertFalse(producer.isComplete());
 
     // CONSUMER
-    AssetConsumer consumer = new AssetConsumer(new File("."), header);
+    AssetConsumer consumer = new AssetConsumer(header);
 
     assertFalse(consumer.isComplete());
 
     // TEST
     while (!producer.isComplete()) {
       AssetChunkDto chunk = producer.nextChunk(10);
-
       consumer.update(chunk);
     }
 
     // CHECK
     assertTrue(consumer.isComplete());
-    assertTrue(consumer.getFilename().exists());
-    assertEquals(header.getSize(), consumer.getFilename().length());
 
-    int count = 0;
-    int val;
-    FileInputStream in = new FileInputStream(consumer.getFilename());
-    while ((val = in.read()) != -1) {
-      assertEquals(data[count], (byte) val);
-      count++;
-    }
-    in.close();
-    assertEquals(data.length, count);
-
-    // CLEANUP
-    consumer.getFilename().delete();
+    var dataOut = consumer.getData();
+    assertEquals(header.getSize(), dataOut.length);
+    assertArrayEquals(data, dataOut);
   }
 }

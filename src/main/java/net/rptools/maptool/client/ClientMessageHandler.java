@@ -515,7 +515,7 @@ public class ClientMessageHandler implements MessageHandler {
 
   private void handle(StartAssetTransferMsg msg) {
     AssetHeader header = AssetHeader.fromDto(msg.getHeader());
-    MapTool.getAssetTransferManager().addConsumer(new AssetConsumer(AppUtil.getTmpDir(), header));
+    MapTool.getAssetTransferManager().addConsumer(new AssetConsumer(header));
   }
 
   private void handle(SetZoneHasFowMsg msg) {

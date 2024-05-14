@@ -14,13 +14,12 @@
  */
 package net.rptools.maptool.transfer;
 
-import java.io.File;
 import net.rptools.lib.MD5Key;
 
 public interface ConsumerListener {
   void assetAdded(MD5Key id);
 
-  void assetComplete(MD5Key id, String name, File data);
+  void assetComplete(MD5Key id, String name, byte[] data);
 
   void assetUpdated(MD5Key id);
 }

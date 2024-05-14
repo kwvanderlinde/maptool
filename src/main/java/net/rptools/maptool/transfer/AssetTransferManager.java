@@ -101,7 +101,7 @@ public class AssetTransferManager {
     if (consumer.isComplete()) {
       consumerMap.remove(consumer.getId());
       for (ConsumerListener listener : consumerListenerList) {
-        listener.assetComplete(consumer.getId(), consumer.getName(), consumer.getFilename());
+        listener.assetComplete(consumer.getId(), consumer.getName(), consumer.getData());
       }
     } else {
       for (ConsumerListener listener : consumerListenerList) {

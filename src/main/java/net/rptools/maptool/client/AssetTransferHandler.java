@@ -14,13 +14,11 @@
  */
 package net.rptools.maptool.client;
 
-import java.io.File;
 import java.io.IOException;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.AssetManager;
 import net.rptools.maptool.transfer.ConsumerListener;
-import org.apache.commons.io.FileUtils;
 
 /**
  * Handles incoming segmented assets
@@ -28,12 +26,9 @@ import org.apache.commons.io.FileUtils;
  * @author trevor
  */
 public class AssetTransferHandler implements ConsumerListener {
-  public void assetComplete(MD5Key id, String name, File data) {
-    byte[] assetData = null;
+  public void assetComplete(MD5Key id, String name, byte[] assetData) {
     try {
-      assetData = FileUtils.readFileToByteArray(data);
-
-      Asset asset = Asset.createAssetDetectType(name, assetData, data);
+      Asset asset = Asset.createAssetDetectType(name, assetData);
       if (!asset.getMD5Key().equals(id)) {
         MapTool.showError("Received an invalid image: " + id);
         return;
@@ -45,8 +40,6 @@ public class AssetTransferHandler implements ConsumerListener {
       MapTool.showError("Error loading composed asset file: " + id);
       return;
     }
-    // Remove the temp file
-    data.delete();
     MapTool.getFrame().refresh();
   }
 

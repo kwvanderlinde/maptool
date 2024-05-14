@@ -15,7 +15,6 @@
 package net.rptools.maptool.client.ui.transferprogressdialog;
 
 import java.awt.EventQueue;
-import java.io.File;
 import java.text.NumberFormat;
 import java.util.List;
 import javax.swing.JButton;
@@ -149,7 +148,7 @@ public class TransferProgressDialog extends AbeillePanel<Token> implements Consu
 
   ////
   // CONSUMER LISTENER
-  public void assetComplete(MD5Key id, String name, File data) {
+  public void assetComplete(MD5Key id, String name, byte[] data) {
     updateTransferTable();
   }
 
