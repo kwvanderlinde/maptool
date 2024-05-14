@@ -26,7 +26,7 @@ import org.apache.logging.log4j.Logger;
  *
  * @author trevor
  */
-public class AssetProducer {
+public class AssetProducer implements IAssetProducer {
   private static final Logger log = LogManager.getLogger(AssetProducer.class);
 
   private final AssetHeader header;
@@ -44,6 +44,7 @@ public class AssetProducer {
   /**
    * @return the header needed to create the corresponding AssetConsumer
    */
+  @Override
   public AssetHeader getHeader() {
     return header;
   }
@@ -54,6 +55,7 @@ public class AssetProducer {
    * @param size how many bytes to grab, may end up being less if there isn't enough data
    * @return an {@link AssetChunkDto} with the next chunk of data
    */
+  @Override
   public AssetChunkDto nextChunk(int size) {
     log.info("We've been asked for a chunk of size {}", size);
 
@@ -69,6 +71,7 @@ public class AssetProducer {
    *
    * @return true if all data been transferred
    */
+  @Override
   public boolean isComplete() {
     return position >= data.length;
   }
