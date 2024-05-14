@@ -31,8 +31,10 @@ import net.rptools.maptool.model.AssetAvailableListener;
 import net.rptools.maptool.model.AssetManager;
 import org.apache.commons.collections4.map.AbstractReferenceMap;
 import org.apache.commons.collections4.map.ReferenceMap;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 
 /**
  * The ImageManager class keeps a cache of loaded images. This class can be used to load the raw
@@ -46,6 +48,10 @@ import org.apache.logging.log4j.Logger;
  */
 public class ImageManager {
   private static final Logger log = LogManager.getLogger(ImageManager.class);
+
+  static {
+    Configurator.setLevel(log, Level.DEBUG);
+  }
 
   /** Cache of images loaded for assets. */
   private static final Map<MD5Key, BufferedImage> imageMap = new HashMap<MD5Key, BufferedImage>();
