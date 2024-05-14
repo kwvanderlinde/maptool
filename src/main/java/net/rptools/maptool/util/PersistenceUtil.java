@@ -57,8 +57,10 @@ import net.rptools.maptool.model.AssetManager;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.CampaignProperties;
 import net.rptools.maptool.model.GUID;
+import net.rptools.maptool.model.IAssetManager;
 import net.rptools.maptool.model.LookupTable;
 import net.rptools.maptool.model.MacroButtonProperties;
+import net.rptools.maptool.model.StaticAssetManager;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.campaign.CampaignManager;
@@ -304,7 +306,7 @@ public class PersistenceUtil {
         persistedMap = (PersistedMap) o;
 
         // Now load up any images that we need
-        loadAssets(persistedMap.assetMap.keySet(), pakFile);
+        loadAssets(persistedMap.assetMap.keySet(), pakFile, new StaticAssetManager());
 
         // FJE We only want the token's graphical data, so loop through all tokens and
         // destroy all properties and macros. Keep some fields, though. Since that type
@@ -393,7 +395,7 @@ public class PersistenceUtil {
             }
             // Save all assets in active use (consolidate duplicates between maps)
             saveTimer.start("Collect all assets");
-            Set<MD5Key> allAssetIds = campaign.getAllAssetIds();
+            Collection<MD5Key> allAssetIds = campaign.getAllAssetIds();
             for (MD5Key key : allAssetIds) {
               // Put in a placeholder; all we really care about is the MD5Key for now...
               persistedCampaign.assetMap.put(key, null);
@@ -558,7 +560,8 @@ public class PersistenceUtil {
         // Now load up any images that we need
         // Note that the values are all placeholders
         Set<MD5Key> allAssetIds = persistedCampaign.assetMap.keySet();
-        loadAssets(allAssetIds, pakFile);
+        // TODO This should be the campaign's asset manager.
+        loadAssets(allAssetIds, pakFile, new StaticAssetManager());
         for (Zone zone : persistedCampaign.campaign.getZones()) {
           zone.optimize();
         }
@@ -702,7 +705,7 @@ public class PersistenceUtil {
       if (!versionCheck(progVersion)) return null;
 
       token = (Token) pakFile.getContent(progVersion);
-      loadAssets(token.getAllImageAssets(), pakFile);
+      loadAssets(token.getAllImageAssets(), pakFile, new StaticAssetManager());
     } catch (ConversionException ce) {
       MapTool.showError("PersistenceUtil.error.tokenVersion", ce);
     } catch (IOException ioe) {
@@ -734,7 +737,8 @@ public class PersistenceUtil {
    * @param pakFile The packed file containing the assets
    * @throws IOException If an I/O error occurs while loading the assets
    */
-  private static void loadAssets(Collection<MD5Key> assetIds, PackedFile pakFile)
+  private static void loadAssets(
+      Collection<MD5Key> assetIds, PackedFile pakFile, IAssetManager assetManager)
       throws IOException {
     log.info("loadAssets: {}", assetIds.size());
     CodeTimer.using(
@@ -743,12 +747,13 @@ public class PersistenceUtil {
           timer.setEnabled(true);
 
           timer.start("total");
-          loadAssetsImpl(assetIds, pakFile);
+          loadAssetsImpl(assetIds, pakFile, assetManager);
           timer.stop("total");
         });
   }
 
-  private static void loadAssetsImpl(Collection<MD5Key> assetIds, PackedFile pakFile)
+  private static void loadAssetsImpl(
+      Collection<MD5Key> assetIds, PackedFile pakFile, IAssetManager assetManager)
       throws IOException {
     final var timer = CodeTimer.get();
 
@@ -1076,11 +1081,13 @@ public class PersistenceUtil {
   public static CampaignProperties loadCampaignProperties(File file) {
     try (PackedFile pakFile = new PackedFile(file)) {
       String progVersion = (String) pakFile.getProperty(PROP_VERSION);
-      if (!versionCheck(progVersion)) return null;
+      if (!versionCheck(progVersion)) {
+        return null;
+      }
       CampaignProperties props = null;
       try {
         props = (CampaignProperties) pakFile.getContent();
-        loadAssets(props.getAllImageAssets(), pakFile);
+        loadAssets(props.getAllImageAssets(), pakFile, new StaticAssetManager());
       } catch (ConversionException ce) {
         MapTool.showError(I18N.getText("PersistenceUtil.error.campaignPropertiesVersion"), ce);
       } catch (IOException ioe) {
@@ -1300,7 +1307,7 @@ public class PersistenceUtil {
         if (!versionCheck(progVersion)) return null;
 
         LookupTable lookupTable = (LookupTable) pakFile.getContent();
-        loadAssets(lookupTable.getAllAssetIds(), pakFile);
+        loadAssets(lookupTable.getAllAssetIds(), pakFile, new StaticAssetManager());
         return lookupTable;
       } catch (ConversionException ce) {
         MapTool.showError("PersistenceUtil.error.tableVersion", ce);
