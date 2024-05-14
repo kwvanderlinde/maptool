@@ -514,6 +514,9 @@ public class ClientMessageHandler implements MessageHandler {
   }
 
   private void handle(StartAssetTransferMsg msg) {
+    // TODO We should only receive these in response to us sending GetAssetMsg. So don't
+    //  arbitrarily accept this, instead check that we have a reservation for it.
+
     AssetHeader header = AssetHeader.fromDto(msg.getHeader());
     MapTool.getAssetTransferManager().addConsumer(new AssetConsumer(header));
   }
