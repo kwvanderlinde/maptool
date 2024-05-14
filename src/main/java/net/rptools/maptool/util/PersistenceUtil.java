@@ -765,11 +765,13 @@ public class PersistenceUtil {
     boolean fixRequired = "1.3.b64".equals(progVersion);
 
     for (MD5Key key : assetIds) {
+      log.info("Want to load asset {}", key);
       timer.start("single asset");
       try {
         if (key == null) continue;
 
         if (!AssetManager.hasAsset(key)) {
+          log.info("Asset is not in asset manager");
           String pathname = ASSET_DIR + key;
           Asset asset = null;
           if (fixRequired) {
@@ -819,6 +821,8 @@ public class PersistenceUtil {
           }
           AssetManager.putAsset(asset);
           addToServer.add(asset);
+        } else {
+          log.info("Asset is already in asset manager");
         }
       } finally {
         timer.start("single asset");
