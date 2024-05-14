@@ -671,6 +671,7 @@ message AssetTransferHeaderDto {
   string id = 1;
   string name = 2;
   int64  size = 3;
+  AssetDtoType type = 4;
 }
 
 message AssetChunkDto {

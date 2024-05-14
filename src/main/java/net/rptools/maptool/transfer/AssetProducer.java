@@ -15,7 +15,6 @@
 package net.rptools.maptool.transfer;
 
 import com.google.protobuf.ByteString;
-import net.rptools.lib.MD5Key;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.server.proto.AssetChunkDto;
 import org.apache.logging.log4j.LogManager;
@@ -30,16 +29,15 @@ import org.apache.logging.log4j.Logger;
 public class AssetProducer {
   private static final Logger log = LogManager.getLogger(AssetProducer.class);
 
-  private final MD5Key key;
-  private final String name;
+  private final AssetHeader header;
   private final byte[] data;
 
   private int position;
 
   public AssetProducer(Asset asset) {
-    this.key = asset.getMD5Key();
-    this.name = asset.getName();
     this.data = asset.getData();
+    this.header =
+        new AssetHeader(asset.getMD5Key(), asset.getName(), this.data.length, asset.getType());
     this.position = 0;
   }
 
@@ -47,7 +45,7 @@ public class AssetProducer {
    * @return the header needed to create the corresponding AssetConsumer
    */
   public AssetHeader getHeader() {
-    return new AssetHeader(key, name, data.length);
+    return header;
   }
 
   /**
@@ -63,7 +61,7 @@ public class AssetProducer {
     var data = ByteString.copyFrom(this.data, position, size);
     position += size;
 
-    return AssetChunkDto.newBuilder().setId(key.toString()).setData(data).build();
+    return AssetChunkDto.newBuilder().setId(header.getId().toString()).setData(data).build();
   }
 
   /**

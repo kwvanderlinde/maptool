@@ -126,7 +126,7 @@ public class PersistentAssetCache implements AssetCache {
     var type = propType == null ? Asset.Type.UNKNOWN : Asset.Type.valueOf(propType);
     return Optional.of(
         new LazyAsset(
-            new AssetHeader(id, name, size),
+            new AssetHeader(id, name, size, type),
             new VerifyingLoader(this, id, () -> type.create(name, Files.readAllBytes(assetPath)))));
   }
 

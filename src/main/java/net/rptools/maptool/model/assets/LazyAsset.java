@@ -20,7 +20,10 @@ import net.rptools.maptool.transfer.AssetHeader;
 
 public record LazyAsset(AssetHeader header, Loader loader) {
   public LazyAsset(Asset asset) {
-    this(new AssetHeader(asset.getMD5Key(), asset.getName(), asset.getData().length), () -> asset);
+    this(
+        new AssetHeader(
+            asset.getMD5Key(), asset.getName(), asset.getData().length, asset.getType()),
+        () -> asset);
   }
 
   @FunctionalInterface

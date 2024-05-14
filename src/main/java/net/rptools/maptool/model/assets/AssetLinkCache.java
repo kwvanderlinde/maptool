@@ -64,7 +64,7 @@ public class AssetLinkCache implements AssetCache {
     //  ought to do is note the type in the link file so we can establish an expectation.
     return Optional.of(
         new LazyAsset(
-            new AssetHeader(id, name, size),
+            new AssetHeader(id, name, size, Asset.Type.UNKNOWN),
             new VerifyingLoader(
                 this, id, () -> Asset.createAssetDetectType(name, Files.readAllBytes(path)))));
   }
