@@ -29,6 +29,7 @@ import net.rptools.maptool.model.gamedata.proto.GameDataDto;
 import net.rptools.maptool.model.gamedata.proto.GameDataValueDto;
 import net.rptools.maptool.model.library.addon.TransferableAddOnLibrary;
 import net.rptools.maptool.model.player.Player;
+import net.rptools.maptool.transfer.AssetHeader;
 
 public interface ServerCommand {
   void bootPlayer(String player);
@@ -72,6 +73,14 @@ public interface ServerCommand {
   void removeZone(GUID zoneGUID);
 
   void setZoneVisibility(GUID zoneGUID, boolean visible);
+
+  /**
+   * Informs the server of a new asset. The server may already have the asset, but if not can
+   * request the data.
+   *
+   * @param asset
+   */
+  void putAsset(AssetHeader asset);
 
   void putAsset(Asset asset);
 

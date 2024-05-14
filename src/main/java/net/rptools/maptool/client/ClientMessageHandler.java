@@ -123,6 +123,7 @@ public class ClientMessageHandler implements MessageHandler {
         case PLAYER_CONNECTED_MSG -> handle(msg.getPlayerConnectedMsg());
         case PLAYER_DISCONNECTED_MSG -> handle(msg.getPlayerDisconnectedMsg());
         case PUT_ASSET_MSG -> handle(msg.getPutAssetMsg());
+        case GET_ASSET_MSG -> handle(msg.getGetAssetMsg());
         case PUT_LABEL_MSG -> handle(msg.getPutLabelMsg());
         case PUT_ZONE_MSG -> handle(msg.getPutZoneMsg());
         case REMOVE_LABEL_MSG -> handle(msg.getRemoveLabelMsg());
@@ -789,6 +790,16 @@ public class ClientMessageHandler implements MessageHandler {
           MapTool.getFrame().getCurrentZoneRenderer().flushDrawableRenderer();
           MapTool.getFrame().refresh();
         });
+  }
+
+  private void handle(GetAssetMsg msg1) {
+    var assetID = new MD5Key(msg1.getAssetId());
+
+    // Don;t bother with incremental transfer. Just load the whole thing.
+    var asset = AssetManager.getAsset(assetID);
+    if (asset != null) {
+      MapTool.serverCommand().putAsset(asset);
+    }
   }
 
   private void handle(PlayerDisconnectedMsg msg) {

@@ -42,6 +42,7 @@ import net.rptools.maptool.model.zones.TokensRemoved;
 import net.rptools.maptool.model.zones.ZoneAdded;
 import net.rptools.maptool.model.zones.ZoneRemoved;
 import net.rptools.maptool.server.proto.*;
+import net.rptools.maptool.transfer.AssetHeader;
 import net.rptools.maptool.transfer.AssetProducer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -145,6 +146,7 @@ public class ServerMessageHandler implements MessageHandler {
           sendToAllClients(msg);
         }
         case HIDE_POINTER_MSG, MOVE_POINTER_MSG, SHOW_POINTER_MSG -> sendToAllClients(msg);
+        case PUT_ASSET_HEADER_MSG -> handle(id, msg.getPutAssetHeaderMsg());
         case PUT_ASSET_MSG -> handle(msg.getPutAssetMsg());
         case PUT_LABEL_MSG -> {
           handle(msg.getPutLabelMsg());
@@ -553,6 +555,20 @@ public class ServerMessageHandler implements MessageHandler {
         () -> {
           Zone zone = server.getCampaign().getZone(GUID.valueOf(msg.getZoneGuid()));
           zone.putLabel(Label.fromDto(msg.getLabel()));
+        });
+  }
+
+  private void handle(String id, PutAssetHeaderMsg msg) {
+    EventQueue.invokeLater(
+        () -> {
+          var header = AssetHeader.fromDto(msg.getHeader());
+          if (!AssetManager.hasAsset(header.getId())) {
+            // We don't have this one yet, so ask for it from the client.
+            var response = GetAssetMsg.newBuilder().setAssetId(header.getId().toString());
+            server
+                .getConnection()
+                .sendMessage(id, Message.newBuilder().setGetAssetMsg(response).build());
+          }
         });
   }
 

@@ -41,6 +41,7 @@ import net.rptools.maptool.server.ServerMessageHandler;
 import net.rptools.maptool.server.ServerPolicy;
 import net.rptools.maptool.server.proto.*;
 import net.rptools.maptool.server.proto.drawing.IntPointDto;
+import net.rptools.maptool.transfer.AssetHeader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -130,6 +131,11 @@ public class ServerCommandClientImpl implements ServerCommand {
     var msg = ChangeZoneDisplayNameMsg.newBuilder().setName(name).setZoneGuid(zoneGUID.toString());
 
     makeServerCall(Message.newBuilder().setChangeZoneDisplayNameMsg(msg).build());
+  }
+
+  public void putAsset(AssetHeader header) {
+    var msg = PutAssetHeaderMsg.newBuilder().setHeader(header.toDto());
+    makeServerCall(Message.newBuilder().setPutAssetHeaderMsg(msg).build());
   }
 
   public void putAsset(Asset asset) {
