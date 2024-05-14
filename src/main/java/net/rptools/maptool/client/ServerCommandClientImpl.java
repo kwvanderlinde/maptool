@@ -525,7 +525,7 @@ public class ServerCommandClientImpl implements ServerCommand {
         client.getState());
 
     if (client.getState() == MapToolClient.State.Connected) {
-      client.getConnection().sendMessage(msg);
+      client.sendMessage(msg);
     }
   }
 

@@ -77,7 +77,7 @@ public class ClientHandshake implements Handshake<Void>, MessageHandler {
   private WindowListener easyConnectWindowListener;
 
   /** The current state of the handshake process. */
-  private State currentState = State.AwaitingUseAuthType;
+  private State currentState = State.New;
 
   public ClientHandshake(MapToolClient client, Connection connection) {
     this.client = client;
@@ -179,6 +179,12 @@ public class ClientHandshake implements Handshake<Void>, MessageHandler {
         return;
       }
 
+      // Always allow the server to accept us.
+      if (msgType == MessageTypeCase.CONNECTION_SUCCESSFUL_MSG) {
+        handle(handshakeMsg.getConnectionSuccessfulMsg());
+        return;
+      }
+
       switch (currentState) {
         case AwaitingUseAuthType:
           if (msgType == MessageTypeCase.REQUEST_PUBLIC_KEY_MSG) {
@@ -206,13 +212,11 @@ public class ClientHandshake implements Handshake<Void>, MessageHandler {
           }
           break;
         case AwaitingConnectionSuccessful:
-          if (msgType == MessageTypeCase.CONNECTION_SUCCESSFUL_MSG) {
-            handle(handshakeMsg.getConnectionSuccessfulMsg());
-          } else {
-            var errorMessage = I18N.getText("Handshake.msg.invalidHandshake");
-            setCurrentState(State.Error);
-            future.completeExceptionally(new Failure(errorMessage));
-          }
+          // ConnectionSuccessfulMsg is handled before the `switch`, for this state and others.
+          // If we get here it is certainly an error.
+          var errorMessage = I18N.getText("Handshake.msg.invalidHandshake");
+          setCurrentState(State.Error);
+          future.completeExceptionally(new Failure(errorMessage));
           break;
       }
 
@@ -395,6 +399,7 @@ public class ClientHandshake implements Handshake<Void>, MessageHandler {
   private enum State {
     Error,
     Success,
+    New,
     AwaitingUseAuthType,
     AwaitingConnectionSuccessful,
     AwaitingPublicKeyAddition

@@ -2337,19 +2337,10 @@ public class AppActions {
           MapTool.disconnect();
           MapTool.stopServer();
 
-          // Install a temporary gimped campaign until we get the one from the
-          // server
           final Campaign oldCampaign = MapTool.getCampaign();
-          MapTool.setCampaign(new Campaign());
 
-          // connecting
-          MapTool.getFrame()
-              .getConnectionStatusPanel()
-              .setStatus(ConnectionStatusPanel.Status.connected);
-
-          // Show the user something interesting until we've got the campaign
-          // Look in ClientMethodHandler.setCampaign() for the corresponding
-          // hideGlassPane
+          // Show the user something interesting until we've got the campaign.
+          // Look in connectToRemoteServer() for the corresponding hideGlassPane().
           StaticMessageDialog progressDialog =
               new StaticMessageDialog(I18N.getText("msg.info.connecting"));
           MapTool.getFrame().showFilledGlassPane(progressDialog);
@@ -2374,15 +2365,9 @@ public class AppActions {
                       prefs.getUsePublicKey()
                           ? new PasswordGenerator().getPassword()
                           : prefs.getPassword();
-                  MapTool.createConnection(
-                      config,
-                      new LocalPlayer(prefs.getUsername(), prefs.getRole(), password),
-                      () -> {
-                        MapTool.getFrame().hideGlassPane();
-                        MapTool.getFrame()
-                            .showFilledGlassPane(
-                                new StaticMessageDialog(I18N.getText("msg.info.campaignLoading")));
-                      });
+
+                  MapTool.connectToRemoteServer(
+                      config, new LocalPlayer(prefs.getUsername(), prefs.getRole(), password));
 
                 } catch (UnknownHostException e1) {
                   MapTool.showError("msg.error.unknownHost", e1);
