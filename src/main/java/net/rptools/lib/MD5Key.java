@@ -19,8 +19,6 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * Represents the MD5 key for a certain set of data. Can be used in maps as keys.
@@ -39,8 +37,6 @@ import org.apache.logging.log4j.Logger;
  */
 @SuppressWarnings("serial")
 public final class MD5Key implements Serializable {
-  private static final Logger log = LogManager.getLogger(MD5Key.class);
-
   /** The {@link MessageDigest} used for calculation of the md5 sum. */
   private static final ThreadLocal<MessageDigest> md5Digest =
       ThreadLocal.withInitial(
@@ -132,15 +128,6 @@ public final class MD5Key implements Serializable {
     digest.reset();
     digest.update(data);
 
-    log.info("Digested {} bytes from array", data.length);
-
-    if (data.length < 100) {
-      log.info("That's a little...");
-    }
-    if (data.length > 1_300_000) {
-      log.info("That's a lot!");
-    }
-
     return digest.digest();
   }
 
@@ -165,7 +152,6 @@ public final class MD5Key implements Serializable {
       digest.update(buffer, 0, bytesRead);
       count += bytesRead;
     }
-    log.info("Digested {} bytes from stream", count);
 
     return digest.digest();
   }
