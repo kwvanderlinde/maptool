@@ -747,7 +747,7 @@ public class ServerMessageHandler implements MessageHandler {
     try {
       var asset = AssetManager.getAsset(assetID);
       if (asset == null) {
-        return;
+        asset = Asset.createBrokenImageAsset(assetID);
       }
 
       AssetProducer producer = new AssetProducer(asset);
