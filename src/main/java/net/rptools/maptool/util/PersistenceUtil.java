@@ -33,6 +33,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import javax.imageio.ImageIO;
@@ -63,6 +64,7 @@ import net.rptools.maptool.model.MacroButtonProperties;
 import net.rptools.maptool.model.StaticAssetManager;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.assets.LazyAsset;
 import net.rptools.maptool.model.campaign.CampaignManager;
 import net.rptools.maptool.model.gamedata.DataStoreManager;
 import net.rptools.maptool.model.gamedata.GameDataImporter;
@@ -560,8 +562,7 @@ public class PersistenceUtil {
         // Now load up any images that we need
         // Note that the values are all placeholders
         Set<MD5Key> allAssetIds = persistedCampaign.assetMap.keySet();
-        // TODO This should be the campaign's asset manager.
-        loadAssets(allAssetIds, pakFile, new StaticAssetManager());
+        loadAssets(allAssetIds, pakFile, persistedCampaign.campaign.getAssetManager());
         for (Zone zone : persistedCampaign.campaign.getZones()) {
           zone.optimize();
         }
@@ -773,66 +774,72 @@ public class PersistenceUtil {
       log.info("Want to load asset {}", key);
       timer.start("single asset");
       try {
-        if (key == null) continue;
-
-        if (!AssetManager.hasAsset(key)) {
-          log.info("Asset is not in asset manager");
-          String pathname = ASSET_DIR + key;
-          Asset asset = null;
-          if (fixRequired) {
-            try (InputStream is = pakFile.getFileAsInputStream(pathname)) {
-              asset =
-                  Asset.createAssetDetectType(
-                      key.toString(), IOUtils.toByteArray(is)); // Ugly bug fix :(
-            } catch (FileNotFoundException fnf) {
-              // Doesn't need to be reported, since that's handled below.
-            } catch (Exception e) {
-              log.error("Could not load asset from 1.3.b64 file in compatibility mode", e);
-            }
-          } else {
-            try {
-              asset = pakFile.getAsset(pathname);
-            } catch (Exception e) {
-              // Do nothing. The asset will be 'null' and it'll be handled below.
-              log.info("Exception while handling asset '" + pathname + "'", e);
-            }
-          }
-          if (asset == null) { // Referenced asset not included in PackedFile??
-            log.error("Referenced asset '" + pathname + "' not found while loading?!");
-            continue;
-          }
-          // If the asset was marked as "broken" then ignore it completely. The end
-          // result is that MT will attempt to load it from a repository again, as normal.
-          if ("broken".equals(asset.getName())) {
-            log.warn("Reference to 'broken' asset '" + pathname + "' not restored.");
-            ImageManager.flushImage(asset.getMD5Key());
-            continue;
-          }
-          // pre 1.3b52 campaign files stored the image data directly in the asset serialization.
-          // New XStreamConverter creates empty byte[] for image.
-          if (asset.getData() == null || asset.getData().length < 4) {
-            String ext = asset.getExtension();
-            pathname = pathname + "." + (StringUtil.isEmpty(ext) ? "dat" : ext);
-            pathname = assetnameVersionManager.transform(pathname, campaignVersion);
-            try (InputStream is = pakFile.getFileAsInputStream(pathname)) {
-              asset = asset.setData(IOUtils.toByteArray(is), false);
-            } catch (FileNotFoundException fnf) {
-              log.error("Image data for '" + pathname + "' not found?!", fnf);
-              continue;
-            } catch (Exception e) {
-              log.error("While reading image data for '" + pathname + "'", e);
-              continue;
-            }
-          }
-          AssetManager.putAsset(asset);
-          addToServer.add(asset);
-        } else {
-          log.info("Asset is already in asset manager");
+        if (key == null) {
+          continue;
         }
+
+        assetManager.add(
+            key,
+            () -> {
+              log.info("Asset is not in asset manager");
+              String pathname = ASSET_DIR + key;
+              Asset asset = null;
+              if (fixRequired) {
+                try (InputStream is = pakFile.getFileAsInputStream(pathname)) {
+                  asset =
+                      Asset.createAssetDetectType(
+                          key.toString(), IOUtils.toByteArray(is)); // Ugly bug fix :(
+                } catch (FileNotFoundException fnf) {
+                  // Doesn't need to be reported, since that's handled below.
+                } catch (Exception e) {
+                  log.error("Could not load asset from 1.3.b64 file in compatibility mode", e);
+                }
+              } else {
+                try {
+                  asset = pakFile.getAsset(pathname);
+                } catch (Exception e) {
+                  // Do nothing. The asset will be 'null' and it'll be handled below.
+                  log.info("Exception while handling asset '" + pathname + "'", e);
+                }
+              }
+              if (asset == null) { // Referenced asset not included in PackedFile??
+                log.error("Referenced asset '" + pathname + "' not found while loading?!");
+                return Optional.empty();
+              }
+              // If the asset was marked as "broken" then ignore it completely. The end
+              // result is that MT will attempt to load it from a repository again, as normal.
+              if ("broken".equals(asset.getName())) {
+                log.warn("Reference to 'broken' asset '" + pathname + "' not restored.");
+                ImageManager.flushImage(asset.getMD5Key());
+                return Optional.empty();
+              }
+              // pre 1.3b52 campaign files stored the image data directly in the asset
+              // serialization.
+              // New XStreamConverter creates empty byte[] for image.
+              if (asset.getData() == null || asset.getData().length < 4) {
+                String ext = asset.getExtension();
+                pathname = pathname + "." + (StringUtil.isEmpty(ext) ? "dat" : ext);
+                pathname = assetnameVersionManager.transform(pathname, campaignVersion);
+                try (InputStream is = pakFile.getFileAsInputStream(pathname)) {
+                  asset = asset.setData(IOUtils.toByteArray(is), false);
+                } catch (FileNotFoundException fnf) {
+                  log.error("Image data for '" + pathname + "' not found?!", fnf);
+                  return Optional.empty();
+                } catch (Exception e) {
+                  log.error("While reading image data for '" + pathname + "'", e);
+                  return Optional.empty();
+                }
+              }
+              AssetManager.putAsset(asset);
+              addToServer.add(asset);
+
+              return Optional.of(asset).map(LazyAsset::of);
+            });
       } finally {
         timer.start("single asset");
       }
     }
+
     timer.start("addToServer");
     if (!addToServer.isEmpty()) {
       // Isn't this the same as (MapTool.getServer() == null) ? And won't there always

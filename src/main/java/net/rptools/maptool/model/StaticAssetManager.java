@@ -22,10 +22,13 @@ import net.rptools.maptool.model.assets.LazyAsset;
 
 public class StaticAssetManager implements IAssetManager {
   @Override
-  public void add(MD5Key id, Supplier<LazyAsset> supplier) {
+  public void add(MD5Key id, Supplier<Optional<LazyAsset>> supplier) {
     if (!AssetManager.hasAsset(id)) {
       try {
-        AssetManager.putAsset(supplier.get().loader().load());
+        var lazy = supplier.get();
+        if (lazy.isPresent()) {
+          AssetManager.putAsset(lazy.get().loader().load());
+        }
       } catch (IOException e) {
         // Nothing to do, we can't get the asset.
       }

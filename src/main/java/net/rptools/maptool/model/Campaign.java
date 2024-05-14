@@ -33,6 +33,8 @@ import net.rptools.maptool.client.ui.token.SingleImageBarTokenOverlay;
 import net.rptools.maptool.client.ui.token.TwoImageBarTokenOverlay;
 import net.rptools.maptool.model.sheet.stats.StatSheetProperties;
 import net.rptools.maptool.server.proto.CampaignDto;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * This object contains {@link Zone}s and {@link Asset}s that make up a campaign as well as links to
@@ -43,6 +45,8 @@ import net.rptools.maptool.server.proto.CampaignDto;
  * images that will appear on it (and also campaign macro buttons).
  */
 public class Campaign {
+  private static final Logger log = LogManager.getLogger(Campaign.class);
+
   private GUID id = new GUID();
 
   /** The {@link Zone}s that make up this {@code Campaign}. */
@@ -86,6 +90,9 @@ public class Campaign {
   private Map<String, Map<GUID, LightSource>> lightSourcesMap;
   private Map<String, LookupTable> lookupTableMap;
 
+  private transient CampaignAssetManager assetManager =
+      new CampaignAssetManager(AssetManager.getCache());
+
   // DEPRECATED: as of 1.3b19 here to support old serialized versions
   // private Map<GUID, LightSource> lightSourceMap;
 
@@ -124,7 +131,13 @@ public class Campaign {
       exportSettings = new HashMap<>();
     }
 
+    assetManager = new CampaignAssetManager(AssetManager.getCache());
+
     return this;
+  }
+
+  public CampaignAssetManager getAssetManager() {
+    return assetManager;
   }
 
   private void checkCampaignPropertyConversion() {
@@ -628,8 +641,7 @@ public class Campaign {
    *
    * @return a set of MD5 keys
    */
-  public Set<MD5Key> getAllAssetIds() {
-
+  public Collection<MD5Key> getAllAssetIds() {
     // Maps (tokens are implicit)
     Set<MD5Key> assetSet = new HashSet<MD5Key>();
     for (Zone zone : getZones()) {
@@ -658,6 +670,23 @@ public class Campaign {
     // Tables
     for (LookupTable table : getCampaignProperties().getLookupTableMap().values()) {
       assetSet.addAll(table.getAllAssetIds());
+    }
+
+    // Backwards compatibility feature: write all assets into the campaign asset manager.
+    // In the future we should eliminate this in favour of assuming the CampaignAssetManager to be
+    // the source of all assets, thus knowing about them.
+    for (var assetId : assetSet) {
+      var asset = AssetManager.getAsset(assetId);
+      if (asset != null) {
+        assetManager.putAsset(asset);
+      }
+    }
+
+    var difference = new HashSet<>(assetManager.getAllKeys());
+    difference.removeAll(assetSet);
+    if (!difference.isEmpty()) {
+      log.warn("Found {} assets not known by the campaign asset manager", difference.size());
+      assetSet.addAll(assetManager.getAllKeys());
     }
 
     return assetSet;

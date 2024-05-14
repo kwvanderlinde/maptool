@@ -35,9 +35,10 @@ public class CampaignAssetManager implements IAssetManager {
   }
 
   @Override
-  public void add(MD5Key id, Supplier<LazyAsset> supplier) {
+  public void add(MD5Key id, Supplier<Optional<LazyAsset>> supplier) {
     // We assume supplier is slow (e.g., reading from PackedFile) so prefer cache.
-    knownAssets.computeIfAbsent(id, id2 -> cache.get(id).orElseGet(supplier));
+    // Note: if the value is null, no entry is added.
+    knownAssets.computeIfAbsent(id, id2 -> cache.get(id).or(supplier).orElse(null));
   }
 
   public Set<MD5Key> getAllKeys() {

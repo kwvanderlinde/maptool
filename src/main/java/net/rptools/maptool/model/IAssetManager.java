@@ -20,7 +20,8 @@ import net.rptools.lib.MD5Key;
 import net.rptools.maptool.model.assets.LazyAsset;
 
 public interface IAssetManager {
-  void add(MD5Key id, Supplier<LazyAsset> supplier);
+  // TODO Consider a Callback<SomeException> so we can report errors.
+  void add(MD5Key id, Supplier<Optional<LazyAsset>> supplier);
 
   boolean hasAsset(MD5Key key);
 
