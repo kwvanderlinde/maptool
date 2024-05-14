@@ -561,8 +561,10 @@ public class ServerMessageHandler implements MessageHandler {
     EventQueue.invokeLater(
         () -> {
           var header = AssetHeader.fromDto(msg.getHeader());
-          if (!AssetManager.hasAsset(header.getId())) {
-            // We don't have this one yet, so ask for it from the client.
+          var added = AssetManager.pushPendingHeader(header);
+          if (added) {
+            // We don't yet have this asset, but we've reserved a spot in the asset manager. Now
+            // get it from the client.
             var response = GetAssetMsg.newBuilder().setAssetId(header.getId().toString());
             server
                 .getConnection()
@@ -762,10 +764,25 @@ public class ServerMessageHandler implements MessageHandler {
     //      Also be careful below. The asset manager may itself not have the data yet, but we
     //  should still be able to "reserve" the fact that we are pending assets.
 
-    if (assetID == null) {
+    var pendingHeader = AssetManager.getPendingHeader(assetID);
+    if (pendingHeader != null) {
+      final var producer = new AssetProducer(pendingHeader);
+      AssetManager.addAssetListener(
+          assetID,
+          key -> {
+            producer.setData(AssetManager.getAsset(key).getData());
+          });
+
+      var msg = StartAssetTransferMsg.newBuilder().setHeader(producer.getHeader().toDto());
+      server
+          .getConnection()
+          .sendMessage(id, Message.newBuilder().setStartAssetTransferMsg(msg).build());
+      server.addAssetProducer(id, producer);
       return;
     }
+
     var asset = AssetManager.getAsset(assetID);
+
     if (asset == null) {
       /*
        * Sending an empty asset will cause a failure of the image to load on the client side,

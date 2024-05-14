@@ -15,6 +15,7 @@
 package net.rptools.maptool.transfer;
 
 import com.google.protobuf.ByteString;
+import javax.annotation.Nullable;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.server.proto.AssetChunkDto;
 import org.apache.logging.log4j.LogManager;
@@ -30,15 +31,27 @@ public class AssetProducer implements IAssetProducer {
   private static final Logger log = LogManager.getLogger(AssetProducer.class);
 
   private final AssetHeader header;
-  private final byte[] data;
+  private @Nullable byte[] data;
 
   private int position;
+
+  public AssetProducer(AssetHeader header) {
+    this.header = header;
+    this.position = 0;
+  }
 
   public AssetProducer(Asset asset) {
     this.data = asset.getData();
     this.header =
         new AssetHeader(asset.getMD5Key(), asset.getName(), this.data.length, asset.getType());
     this.position = 0;
+  }
+
+  public void setData(byte[] data) {
+    if (this.data != null) {
+      throw new IllegalStateException("Data is already set");
+    }
+    this.data = data;
   }
 
   /**
@@ -58,6 +71,10 @@ public class AssetProducer implements IAssetProducer {
   @Override
   public AssetChunkDto nextChunk(int size) {
     log.info("We've been asked for a chunk of size {}", size);
+
+    if (data == null) {
+      return null;
+    }
 
     size = Math.min(size, data.length - position);
     var data = ByteString.copyFrom(this.data, position, size);

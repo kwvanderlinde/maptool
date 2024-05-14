@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import javax.annotation.Nullable;
 import net.rptools.lib.FileUtil;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.AppUtil;
@@ -39,6 +40,7 @@ import net.rptools.maptool.model.assets.InMemoryAssetCache;
 import net.rptools.maptool.model.assets.LayeredAssetCache;
 import net.rptools.maptool.model.assets.LazyAsset;
 import net.rptools.maptool.model.assets.PersistentAssetCache;
+import net.rptools.maptool.transfer.AssetHeader;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -72,6 +74,9 @@ public class AssetManager {
   private static final AssetLinkCache linkCache;
   private static final AssetCache layeredCache;
 
+  /** For assets coming to the server from clients, and which other clients may depend on. */
+  private static Map<MD5Key, AssetHeader> pendingAssets = new ConcurrentHashMap<>();
+
   /**
    * A list of listeners which should be notified when the asset associated with a given MD5 sum has
    * finished downloading.
@@ -93,6 +98,19 @@ public class AssetManager {
     linkCache = new AssetLinkCache(cacheDir.toPath());
     // Ordered fastest to slowest.
     layeredCache = new LayeredAssetCache(inMemoryCache, persistentAssetCache, linkCache);
+  }
+
+  public static boolean pushPendingHeader(AssetHeader assetHeader) {
+    if (layeredCache.has(assetHeader.getId())) {
+      return false;
+    }
+
+    var previous = pendingAssets.putIfAbsent(assetHeader.getId(), assetHeader);
+    return previous == null;
+  }
+
+  public static @Nullable AssetHeader getPendingHeader(MD5Key id) {
+    return pendingAssets.get(id);
   }
 
   public static AssetCache getCache() {
