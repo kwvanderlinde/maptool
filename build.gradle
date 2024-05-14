@@ -49,7 +49,7 @@ def javaArgs = [
 // Used by gradle assemble & run tasks
 application {
     mainClass = 'net.rptools.maptool.client.LaunchInstructions'
-    applicationDefaultJvmArgs = javaArgs + ["-DRUN_FROM_IDE=true"]
+    applicationDefaultJvmArgs = javaArgs + ["-DRUN_FROM_IDE=true", "-ea"]
     if (osdetector.os.is('osx')) {
         applicationDefaultJvmArgs += [ '-Xdock:name=' + project.name + developerRelease ]
     }
