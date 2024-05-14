@@ -594,6 +594,7 @@ public class PackedFile implements AutoCloseable {
     }
   }
 
+  // TODO Return optional.
   public LazyAsset getAsset(MD5Key key, String path) throws IOException {
     // TODO Can we not just XStream the asset here?
     var reader = getFileAsReader(path);

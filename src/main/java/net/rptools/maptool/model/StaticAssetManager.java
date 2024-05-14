@@ -23,6 +23,7 @@ import net.rptools.maptool.model.assets.LazyAsset;
 public class StaticAssetManager implements IAssetManager {
   @Override
   public void add(MD5Key id, Supplier<Optional<LazyAsset>> supplier) {
+    // TODO Prefer reading from caches.
     if (!AssetManager.hasAsset(id)) {
       try {
         var lazy = supplier.get();

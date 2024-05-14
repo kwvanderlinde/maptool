@@ -765,8 +765,7 @@ public class PersistenceUtil {
 
     String campaignVersion = (String) pakFile.getProperty(PROP_CAMPAIGN_VERSION);
     String progVersion = (String) pakFile.getProperty(PROP_VERSION);
-    List<AssetHeader> addToServer2 = new ArrayList<>(assetIds.size());
-    List<Asset> addToServer = new ArrayList<Asset>(assetIds.size());
+    List<AssetHeader> addToServer = new ArrayList<>(assetIds.size());
 
     // FJE: Ugly fix for a bug I introduced in b64. :(
     // kwv: I would like to know what the bug is :) Also TODO Rewrite to emphasize happy path.
@@ -780,89 +779,84 @@ public class PersistenceUtil {
           continue;
         }
 
-        assetManager.add(
-            key,
-            () -> {
-              log.info("Asset is not in asset manager");
-              String pathname = ASSET_DIR + key;
-              Asset asset = null;
-              if (fixRequired) {
-                try (InputStream is = pakFile.getFileAsInputStream(pathname)) {
-                  asset =
-                      Asset.createAssetDetectType(
-                          key.toString(), IOUtils.toByteArray(is)); // Ugly bug fix :(
-                } catch (FileNotFoundException fnf) {
-                  // Doesn't need to be reported, since that's handled below.
-                } catch (Exception e) {
-                  log.error("Could not load asset from 1.3.b64 file in compatibility mode", e);
-                }
-              } else {
-                try {
-                  var lazy = pakFile.getAsset(key, pathname);
-                  if (lazy != null) {
-                    asset = lazy.loader().load();
-                  }
-                } catch (Exception e) {
-                  // Do nothing. The asset will be 'null' and it'll be handled below.
-                  log.info("Exception while handling asset '" + pathname + "'", e);
-                }
-              }
-              if (asset == null) { // Referenced asset not included in PackedFile??
-                log.error("Referenced asset '" + pathname + "' not found while loading?!");
-                return Optional.empty();
-              }
-              // If the asset was marked as "broken" then ignore it completely. The end
-              // result is that MT will attempt to load it from a repository again, as normal.
-              if ("broken".equals(asset.getName())) {
-                log.warn("Reference to 'broken' asset '" + pathname + "' not restored.");
-                ImageManager.flushImage(asset.getMD5Key());
-                return Optional.empty();
-              }
-              // pre 1.3b52 campaign files stored the image data directly in the asset
-              // serialization.
-              // New XStreamConverter creates empty byte[] for image.
-              if (asset.getData() == null || asset.getData().length < 4) {
-                String ext = asset.getExtension();
-                pathname = pathname + "." + (StringUtil.isEmpty(ext) ? "dat" : ext);
-                pathname = assetnameVersionManager.transform(pathname, campaignVersion);
-                try (InputStream is = pakFile.getFileAsInputStream(pathname)) {
-                  asset = asset.setData(IOUtils.toByteArray(is), false);
-                } catch (FileNotFoundException fnf) {
-                  log.error("Image data for '" + pathname + "' not found?!", fnf);
-                  return Optional.empty();
-                } catch (Exception e) {
-                  log.error("While reading image data for '" + pathname + "'", e);
-                  return Optional.empty();
-                }
-              }
-              AssetManager.putAsset(asset);
-              addToServer.add(asset);
+        final var pathname = ASSET_DIR + key;
+        final var lazyAsset = pakFile.getAsset(key, pathname);
+        if (lazyAsset == null) {
+          // TODO Log this.
+          continue;
+        }
+        addToServer.add(lazyAsset.header());
 
-              return Optional.of(asset).map(LazyAsset::new);
-            });
+        if (fixRequired) {
+          // ken: I don't know what this fix is supposed to be. Looks like we're just loading the
+          // asset normally to me...
+          try (InputStream is = pakFile.getFileAsInputStream(pathname)) {
+            var asset =
+                Asset.createAssetDetectType(
+                    key.toString(), IOUtils.toByteArray(is)); // Ugly bug fix :(
+            assetManager.putAsset(asset);
+          } catch (FileNotFoundException fnf) {
+            // Doesn't need to be reported, since that's handled below.
+          } catch (Exception e) {
+            log.error("Could not load asset from 1.3.b64 file in compatibility mode", e);
+          }
+        } else {
+          assetManager.add(
+              key,
+              () ->
+                  Optional.of(
+                      new LazyAsset(
+                          lazyAsset.header(),
+                          () -> {
+                            var asset = lazyAsset.loader().load();
+
+                            if (asset == null) { // Referenced asset not included in PackedFile??
+                              throw new IOException(
+                                  "Referenced asset '" + pathname + "' not found while loading?!");
+                            }
+                            // If the asset was marked as "broken" then ignore it completely. The
+                            // end
+                            // result is that MT will attempt to load it from a repository again, as
+                            // normal.
+                            if ("broken".equals(asset.getName())) {
+                              ImageManager.flushImage(asset.getMD5Key());
+                              throw new IOException(
+                                  "Reference to 'broken' asset '" + pathname + "' not restored.");
+                            }
+                            // pre 1.3b52 campaign files stored the image data directly in the asset
+                            // serialization.
+                            // New XStreamConverter creates empty byte[] for image.
+                            if (asset.getData() == null || asset.getData().length < 4) {
+                              String ext = asset.getExtension();
+                              var datapathname =
+                                  pathname + "." + (StringUtil.isEmpty(ext) ? "dat" : ext);
+                              datapathname =
+                                  assetnameVersionManager.transform(datapathname, campaignVersion);
+                              try (InputStream is = pakFile.getFileAsInputStream(datapathname)) {
+                                asset = asset.setData(IOUtils.toByteArray(is), false);
+                              } catch (FileNotFoundException fnf) {
+                                throw new IOException(
+                                    "Image data for '" + datapathname + "' not found?!", fnf);
+                              } catch (Exception e) {
+                                throw new IOException(
+                                    "While reading image data for '" + datapathname + "'", e);
+                              }
+                            }
+
+                            return asset;
+                          })));
+        }
       } finally {
         timer.start("single asset");
       }
     }
 
     timer.start("addToServer");
-    if (!addToServer.isEmpty()) {
-      // Isn't this the same as (MapTool.getServer() == null) ? And won't there always
-      // be a server? Even if we don't start one explicitly, MapTool keeps a server
-      // running in the background all the time (called a "personal server") so that the rest
-      // of the code is consistent with regard to client<->server operations...
-      boolean server = !MapTool.isHostingServer() && !MapTool.isPersonalServer();
-      if (server) {
-        if (MapTool.isDevelopment())
-          MapTool.showInformation(
-              "Please report this:  (!isHostingServer() && !isPersonalServer()) == true");
-        // If we are remotely installing this token, we'll need to send the image data to the
-        // server.
-        for (Asset asset : addToServer) {
-          MapTool.serverCommand().putAsset(asset);
-        }
+    if (!MapTool.isHostingServer() && !MapTool.isPersonalServer()) {
+      for (AssetHeader asset : addToServer) {
+        // Inform the remote server of the assets. Let it ask for the data if it needs it.
+        MapTool.serverCommand().putAsset(asset);
       }
-      addToServer.clear();
     }
     timer.stop("addToServer");
   }
