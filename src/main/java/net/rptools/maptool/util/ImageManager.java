@@ -171,19 +171,6 @@ public class ImageManager {
    * @return the image, or BROKEN_IMAGE if assetId null, or TRANSFERING_IMAGE if loading.
    */
   public static BufferedImage getImage(MD5Key assetId, ImageObserver... observers) {
-    return getImage(assetId, null, observers);
-  }
-
-  /**
-   * Return the image corresponding to the assetId.
-   *
-   * @param assetId Load image data from this asset.
-   * @param hints hints used when loading image data, if it isn't in the imageMap already.
-   * @param observers the observers to be notified when the image loads, if it hasn't already.
-   * @return the image, or BROKEN_IMAGE if assetId null, or TRANSFERING_IMAGE if loading.
-   */
-  public static BufferedImage getImage(
-      MD5Key assetId, Map<String, Object> hints, ImageObserver... observers) {
     if (assetId == null) {
       return BROKEN_IMAGE;
     }
@@ -208,7 +195,7 @@ public class ImageManager {
 
       // Force a load of the asset, this will trigger a transfer if the
       // asset is not available locally
-      AssetManager.getAssetAsynchronously(assetId, new AssetListener(assetId, hints));
+      AssetManager.getAssetAsynchronously(assetId, new AssetListener(assetId, null));
       return TRANSFERING_IMAGE;
     }
   }
