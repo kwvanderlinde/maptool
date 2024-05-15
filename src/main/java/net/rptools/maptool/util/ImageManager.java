@@ -50,6 +50,10 @@ import org.apache.logging.log4j.core.config.Configurator;
  * @author RPTools Team.
  */
 public class ImageManager {
+  public interface Observer {
+    void imageLoaded(BufferedImage image);
+  }
+
   private static final AtomicInteger skip = new AtomicInteger(0);
 
   public static void considerSkipping(int count) {
@@ -175,8 +179,17 @@ public class ImageManager {
       return BROKEN_IMAGE;
     }
 
+    var realObservers = new Observer[observers.length];
+    for (int i = 0; i < realObservers.length; ++i) {
+      var o = observers[i];
+      realObservers[i] =
+          image -> {
+            o.imageUpdate(image, ImageObserver.ALLBITS, 0, 0, image.getWidth(), image.getHeight());
+          };
+    }
+
     var entry = imageMap.computeIfAbsent(assetId, ImageEntry::new);
-    var image = entry.getIfAvailable(observers);
+    var image = entry.getIfAvailable(realObservers);
     return Objects.requireNonNullElse(image, TRANSFERING_IMAGE);
   }
 
@@ -330,7 +343,7 @@ public class ImageManager {
      *
      * <p>Note: This field must only be accessed under {@code synchronized (this)}.
      */
-    private final Set<ImageObserver> observers;
+    private final Set<Observer> observers;
 
     public ImageEntry(MD5Key key) {
       this.key = key;
@@ -342,7 +355,7 @@ public class ImageManager {
       return key;
     }
 
-    public synchronized @Nullable BufferedImage getIfAvailable(ImageObserver... observers) {
+    public synchronized @Nullable BufferedImage getIfAvailable(Observer... observers) {
       var shouldSkip = ImageManager.shouldSkip();
       if (shouldSkip) {
         log.debug("Skipping the checks; assuming the image is not loaded");
@@ -377,7 +390,7 @@ public class ImageManager {
      * @param image The image to resolve.
      */
     public void resolve(BufferedImage image) {
-      List<ImageObserver> observers;
+      List<Observer> observers;
       synchronized (this) {
         if (this.image != null) {
           log.debug("Image wasn't in transit: {}", key);
@@ -405,12 +418,10 @@ public class ImageManager {
     }
 
     // Core of the resolve() method, but static so we don't accidentally access fields we shouldn't
-    private static void notify(
-        MD5Key key, BufferedImage image, Collection<ImageObserver> observers) {
+    private static void notify(MD5Key key, BufferedImage image, Collection<Observer> observers) {
       log.debug("Notifying {} observers of image availability: {}", observers.size(), key);
       for (var observer : observers) {
-        observer.imageUpdate(
-            image, ImageObserver.ALLBITS, 0, 0, image.getWidth(), image.getHeight());
+        observer.imageLoaded(image);
       }
     }
   }
