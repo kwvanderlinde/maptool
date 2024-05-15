@@ -43,7 +43,10 @@ import net.rptools.maptool.client.ui.javfx.AbstractSwingJavaFXDialogController;
 import net.rptools.maptool.client.ui.javfx.SwingJavaFXDialogController;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.player.PasswordDatabaseException;
+import net.rptools.maptool.model.player.PersistedPlayerDatabase;
+import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.player.Player.Role;
+import net.rptools.maptool.model.player.PlayerDBPropertyChange;
 import net.rptools.maptool.model.player.PlayerDatabase.AuthMethod;
 import net.rptools.maptool.model.player.PlayerInfo;
 import net.rptools.maptool.model.player.Players;
@@ -71,20 +74,20 @@ public class PlayerDatabaseDialogController extends AbstractSwingJavaFXDialogCon
         Platform.runLater(
             () -> {
               switch (e.getPropertyName()) {
-                case Players.PROPERTY_CHANGE_PLAYER_CHANGED -> {
-                  removePlayer(e.getNewValue().toString());
-                  addPlayer(e.getNewValue().toString());
+                case PlayerDBPropertyChange.PROPERTY_CHANGE_PLAYER_CHANGED -> {
+                  removePlayer(((Player) e.getNewValue()).getName());
+                  addPlayer(((Player) e.getNewValue()).getName());
                   playersTable.sort();
                 }
-                case Players.PROPERTY_CHANGE_PLAYER_ADDED -> {
-                  addPlayer(e.getNewValue().toString());
+                case PlayerDBPropertyChange.PROPERTY_CHANGE_PLAYER_ADDED -> {
+                  addPlayer(((Player) e.getNewValue()).getName());
                   playersTable.sort();
                 }
-                case Players.PROPERTY_CHANGE_PLAYER_REMOVED -> {
-                  removePlayer(e.getOldValue().toString());
+                case PlayerDBPropertyChange.PROPERTY_CHANGE_PLAYER_REMOVED -> {
+                  removePlayer(((Player) e.getOldValue()).getName());
                   playersTable.sort();
                 }
-                case Players.PROPERTY_CHANGE_DATABASE_CHANGED -> {
+                case PlayerDBPropertyChange.PROPERTY_CHANGE_DATABASE_CHANGED -> {
                   addPlayers();
                 }
               }
@@ -92,6 +95,8 @@ public class PlayerDatabaseDialogController extends AbstractSwingJavaFXDialogCon
       };
 
   ObservableList<PlayerInfo> playerInfoList = FXCollections.observableArrayList();
+  private PersistedPlayerDatabase playerDatabase;
+  private Players players;
 
   @FXML // This method is called by the FXMLLoader when initialization is complete
   void initialize() {
@@ -105,8 +110,14 @@ public class PlayerDatabaseDialogController extends AbstractSwingJavaFXDialogCon
 
   @Override
   public void init() {
-
-    Players.addPropertyChangeListener(changeListener);
+    var currentDb = MapTool.getClient().getPlayerDatabase();
+    if (!(currentDb instanceof PersistedPlayerDatabase persistedPlayerDatabase)) {
+      throw new RuntimeException(
+          "Player database dialog is only valid for persisted player databases");
+    }
+    playerDatabase = persistedPlayerDatabase;
+    playerDatabase.addPropertyChangeListener(changeListener);
+    players = new Players(currentDb);
 
     String gmI81n = I18N.getString("userTerm.GM");
     String playerI81n = I18N.getString("userTerm.Player");
@@ -153,14 +164,10 @@ public class PlayerDatabaseDialogController extends AbstractSwingJavaFXDialogCon
         createButtonCellFactory(
             I18N.getText("playerDB.dialog.delete"),
             p -> {
-              String playerName = p.name();
               SwingUtilities.invokeLater(
                   () -> {
                     if (MapTool.confirm("playerDB.dialog.deleteConfirm", p.name())) {
-                      Platform.runLater(
-                          () ->
-                              new Players(MapTool.getClient().getPlayerDatabase())
-                                  .removePlayer(p.name()));
+                      Platform.runLater(() -> playerDatabase.deletePlayer(p.name()));
                     }
                   });
             });
@@ -191,7 +198,7 @@ public class PlayerDatabaseDialogController extends AbstractSwingJavaFXDialogCon
   @Override
   public void close() {
     try {
-      new Players(MapTool.getClient().getPlayerDatabase()).commitChanges();
+      playerDatabase.commitChanges();
     } catch (NoSuchPaddingException
         | NoSuchAlgorithmException
         | InvalidKeySpecException
@@ -199,14 +206,13 @@ public class PlayerDatabaseDialogController extends AbstractSwingJavaFXDialogCon
         | InvalidKeyException e) {
       MapTool.showError("playerDB.dialog.error.savingChanges", e);
     }
-    ;
-    Players.removePropertyChangeListener(changeListener);
+
+    playerDatabase.removePropertyChangeListener(changeListener);
   }
 
   private void addPlayer(String name) {
     try {
-      PlayerInfo playerInfo =
-          new Players(MapTool.getClient().getPlayerDatabase()).getPlayer(name).get();
+      PlayerInfo playerInfo = players.getPlayer(name).get();
       playerInfoList.add(playerInfo);
     } catch (InterruptedException | ExecutionException e) {
       throw new RuntimeException(e);
@@ -218,7 +224,7 @@ public class PlayerDatabaseDialogController extends AbstractSwingJavaFXDialogCon
   }
 
   private void addPlayers() {
-    new Players(MapTool.getClient().getPlayerDatabase())
+    players
         .getDatabasePlayers()
         .thenAccept(
             p ->
