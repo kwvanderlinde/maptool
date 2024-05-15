@@ -19,9 +19,12 @@ import java.awt.image.ImageObserver;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+import javax.annotation.Nullable;
 import net.rptools.lib.MD5Key;
 import net.rptools.lib.image.ImageUtil;
 import net.rptools.maptool.client.ui.theme.Images;
@@ -47,18 +50,30 @@ import org.apache.logging.log4j.core.config.Configurator;
  * @author RPTools Team.
  */
 public class ImageManager {
+  private static final AtomicInteger skip = new AtomicInteger(0);
+
+  public static void considerSkipping(int count) {
+    skip.set(count);
+  }
+
+  public static boolean shouldSkip() {
+    var remainingSkips = skip.decrementAndGet();
+    log.debug("{} skips remaining", remainingSkips);
+    return remainingSkips >= 0;
+  }
+
   private static final Logger log = LogManager.getLogger(ImageManager.class);
 
   static {
     Configurator.setLevel(log, Level.DEBUG);
   }
 
-  /** Cache of images loaded for assets. */
-  private static final Map<MD5Key, BufferedImage> imageMap = new HashMap<MD5Key, BufferedImage>();
+  private static final ConcurrentMap<MD5Key, ImageEntry> imageMap = new ConcurrentHashMap<>();
 
+  // TODO This map is not and may not be concurrent. It should be synchronized upon or wrapped.
   /** Additional Soft-reference Cache of images that allows best . */
   private static final Map<MD5Key, BufferedImage> backupImageMap =
-      new ReferenceMap(
+      new ReferenceMap<>(
           AbstractReferenceMap.ReferenceStrength.HARD, AbstractReferenceMap.ReferenceStrength.SOFT);
 
   /**
@@ -70,20 +85,6 @@ public class ImageManager {
 
   /** The broken image, a "X" is used for all situations where the asset or image was invalid. */
   public static BufferedImage BROKEN_IMAGE;
-
-  /** Small and large thread pools for background processing of asset raw image data. */
-  private static ExecutorService smallImageLoader = Executors.newFixedThreadPool(1);
-
-  private static ExecutorService largeImageLoader = Executors.newFixedThreadPool(1);
-
-  private static final Object imageLoaderMutex = new Object();
-
-  /**
-   * A Map containing sets of observers for each asset id. Observers are notified when the image is
-   * done loading.
-   */
-  private static Map<MD5Key, Set<ImageObserver>> imageObserverMap =
-      new ConcurrentHashMap<MD5Key, Set<ImageObserver>>();
 
   static {
     TRANSFERING_IMAGE = RessourceManager.getImage(Images.UNKNOWN);
@@ -116,13 +117,11 @@ public class ImageManager {
    * @param exceptionSet a set of images not to be flushed
    */
   public static void flush(Set<MD5Key> exceptionSet) {
-    synchronized (imageLoaderMutex) {
-      for (MD5Key id : new HashSet<MD5Key>(imageMap.keySet())) {
-        if (!exceptionSet.contains(id)) {
-          imageMap.remove(id);
-        }
-      }
-    }
+    // Since our images are backed by a soft reference map, this should be fine. No need to be too
+    // precise.
+    // TODO Still, figure out a way to make it work in a concurrent setting. E.g., queue it up or
+    //  something. Making ImageObserver an active object actually seems like a good idea in general.
+    flush();
   }
 
   /**
@@ -136,7 +135,7 @@ public class ImageManager {
     if (assetId == null) {
       return BROKEN_IMAGE;
     }
-    BufferedImage image = null;
+    BufferedImage image;
     final CountDownLatch loadLatch = new CountDownLatch(1);
     image =
         getImage(
@@ -144,24 +143,25 @@ public class ImageManager {
             (img, infoflags, x, y, width, height) -> {
               // If we're here then the image has just finished loading
               // release the blocked thread
-              log.debug("Countdown: " + assetId);
+              log.debug("Countdown: {}", assetId);
               loadLatch.countDown();
               return false;
             });
     if (image == TRANSFERING_IMAGE) {
       try {
-        log.debug("Wait for:  " + assetId);
+        log.debug("Wait for: {}", assetId);
         loadLatch.await();
         // This time we'll get the cached version
         image = getImage(assetId);
       } catch (InterruptedException ie) {
-        log.error(
-            "getImageAndWait(" + assetId + "):  image not resolved; InterruptedException", ie);
+        log.error("getImageAndWait({}):  image not resolved; InterruptedException", assetId, ie);
         image = BROKEN_IMAGE;
       }
     }
     return image;
   }
+
+  // TODO getImage() should itself support scaling to simplify some callers.
 
   /**
    * Return the image corresponding to the assetId.
@@ -174,30 +174,10 @@ public class ImageManager {
     if (assetId == null) {
       return BROKEN_IMAGE;
     }
-    synchronized (imageLoaderMutex) {
-      BufferedImage image = imageMap.get(assetId);
-      if (image != null && image != TRANSFERING_IMAGE) {
-        return image;
-      }
 
-      // check if the soft reference still resolves image
-      image = backupImageMap.get(assetId);
-      if (image != null) {
-        imageMap.put(assetId, image);
-        return image;
-      }
-
-      // Make note that we're currently processing it
-      imageMap.put(assetId, TRANSFERING_IMAGE);
-
-      // Make sure we are informed when it's done loading
-      addObservers(assetId, observers);
-
-      // Force a load of the asset, this will trigger a transfer if the
-      // asset is not available locally
-      AssetManager.getAssetAsynchronously(assetId, new AssetListener(assetId, null));
-      return TRANSFERING_IMAGE;
-    }
+    var entry = imageMap.computeIfAbsent(assetId, ImageEntry::new);
+    var image = entry.getIfAvailable(observers);
+    return Objects.requireNonNullElse(image, TRANSFERING_IMAGE);
   }
 
   /**
@@ -325,23 +305,114 @@ public class ImageManager {
    */
   public static void flushImage(MD5Key assetId) {
     // LATER: investigate how this effects images that are already in progress
-    imageMap.remove(assetId);
+    // TODO I _think_ this has no effect on in-progress images since the loader should have the
+    //  entry itself. If not, I should make sure the listener does so.
+    if (assetId != null) {
+      imageMap.remove(assetId);
+    }
   }
 
-  /**
-   * Add observers, and associated hints for image loading, to be notified when the asset has
-   * completed loading.
-   *
-   * @param assetId Waiting for this asset to load
-   * @param observers Observers to be notified
-   */
-  public static void addObservers(MD5Key assetId, ImageObserver... observers) {
-    if (observers == null || observers.length == 0) {
-      return;
+  /** Represents an image that is either being loaded or has been loaded. */
+  private static class ImageEntry {
+    /** The ID of the asset that the image will be created from. */
+    private final MD5Key key;
+
+    /**
+     * The loaded image, or {@code null} if still in progress.
+     *
+     * <p>Note: This field must only be accessed under {@code synchronized (this)}.
+     */
+    private @Nullable BufferedImage image;
+
+    // TODO Make this ordered. I see no reason to introduce uncertainty.
+    /**
+     * The observers that need to be notified when the image is available.
+     *
+     * <p>Note: This field must only be accessed under {@code synchronized (this)}.
+     */
+    private final Set<ImageObserver> observers;
+
+    public ImageEntry(MD5Key key) {
+      this.key = key;
+      this.image = null;
+      this.observers = new HashSet<>();
     }
-    Set<ImageObserver> observerSet =
-        imageObserverMap.computeIfAbsent(assetId, k -> new HashSet<ImageObserver>());
-    observerSet.addAll(Arrays.asList(observers));
+
+    public MD5Key getKey() {
+      return key;
+    }
+
+    public synchronized @Nullable BufferedImage getIfAvailable(ImageObserver... observers) {
+      var shouldSkip = ImageManager.shouldSkip();
+      if (shouldSkip) {
+        log.debug("Skipping the checks; assuming the image is not loaded");
+        this.observers.addAll(Arrays.asList(observers));
+        // TODO I realize now that my testing methodology is more than a bit flawed.
+        AssetManager.getAssetAsynchronously(key, new AssetListener(this, null));
+        return null;
+      }
+
+      if (image == null) {
+        // Check if the soft reference still resolves image
+        var backupImage = backupImageMap.get(key);
+        if (backupImage != null) {
+          resolve(backupImage);
+        } else {
+          // Entry still not resolved.
+          this.observers.addAll(Arrays.asList(observers));
+          // TODO Do I need a different listener now?
+          AssetManager.getAssetAsynchronously(key, new AssetListener(this, null));
+        }
+      }
+      return image;
+    }
+
+    /**
+     * Resolves the entry with an image.
+     *
+     * <p>Any observers that have not been notified will will be notified.
+     *
+     * <p>After this method completes, the entry is <emph>resolved</emph>.
+     *
+     * @param image The image to resolve.
+     */
+    public void resolve(BufferedImage image) {
+      List<ImageObserver> observers;
+      synchronized (this) {
+        if (this.image != null) {
+          log.debug("Image wasn't in transit: {}", key);
+          // Stick with the existing image. We still need to notify any pending observers.
+          image = this.image;
+        } else {
+          this.image = image;
+        }
+        // At this point the entry is resolved.
+
+        observers = new ArrayList<>(this.observers);
+        this.observers.clear();
+      }
+
+      // Note: if a call to getIfAvailable() happens at this point in time or later, those new
+      // observers do not need to be included since the caller will have the image already.
+
+      // Help out with future lookups - even after flushes - by remembering a soft reference.
+      if (image != ImageManager.BROKEN_IMAGE) {
+        backupImageMap.putIfAbsent(key, image);
+      }
+
+      // Notify outside of any mutex.
+      notify(key, image, observers);
+    }
+
+    // Core of the resolve() method, but static so we don't accidentally access fields we shouldn't
+    private static void notify(
+        MD5Key key, BufferedImage image, Collection<ImageObserver> observers) {
+      log.debug("Notifying {} observers of image availability: {}", observers.size(), key);
+      for (var observer : observers) {
+        observer.imageUpdate(
+            image, ImageObserver.ALLBITS, 0, 0, image.getWidth(), image.getHeight());
+      }
+    }
   }
 
   /**
@@ -350,6 +421,7 @@ public class ImageManager {
    * @author RPTools Team.
    */
   private static class BackgroundImageLoader implements Runnable {
+    private final ImageEntry entry;
     private final Asset asset;
     private final Map<String, Object> hints;
 
@@ -359,32 +431,24 @@ public class ImageManager {
      * @param asset Asset to load
      * @param hints Hints to use for image loading
      */
-    public BackgroundImageLoader(Asset asset, Map<String, Object> hints) {
+    public BackgroundImageLoader(ImageEntry entry, Asset asset, Map<String, Object> hints) {
+      this.entry = entry;
       this.asset = asset;
       this.hints = hints;
     }
 
     /** Load the asset raw image data and notify observers that the image is loaded. */
     public void run() {
-      log.debug("Loading asset: " + asset.getMD5Key());
-      BufferedImage image = imageMap.get(asset.getMD5Key());
+      log.debug("Loading asset: {}", asset.getMD5Key());
 
-      if (image != null && image != TRANSFERING_IMAGE) {
-        // We've somehow already loaded this image
-        log.debug("Image wasn't in transit: " + asset.getMD5Key());
-        return;
-      }
-
+      BufferedImage image;
       if (asset.getExtension().equals(Asset.DATA_EXTENSION)) {
         log.debug(
-            "BackgroundImageLoader.run("
-                + asset.getName()
-                + ","
-                + asset.getExtension()
-                + ", "
-                + asset.getMD5Key()
-                + "): looks like data and skipped");
-        image = BROKEN_IMAGE; // we should never see this
+            "BackgroundImageLoader.run({}, {}, {}): looks like data and skipped",
+            asset.getName(),
+            asset.getExtension(),
+            asset.getMD5Key());
+        image = ImageManager.BROKEN_IMAGE; // we should never see this
       } else {
         try {
           assert asset.getData() != null
@@ -402,86 +466,54 @@ public class ImageManager {
                 asset.getMD5Key(),
                 t);
           }
-          image = BROKEN_IMAGE;
+          image = ImageManager.BROKEN_IMAGE;
         }
       }
 
-      synchronized (imageLoaderMutex) {
-        // Replace placeholder with actual image
-        imageMap.put(asset.getMD5Key(), image);
-        backupImageMap.put(asset.getMD5Key(), image);
-        notifyObservers(asset, image);
-      }
-    }
-  }
-
-  /**
-   * Notify all observers watching the asset that the image is loaded.
-   *
-   * @param asset Loaded image from this asset
-   * @param image Result of loading the asset raw image data
-   */
-  private static void notifyObservers(Asset asset, BufferedImage image) {
-    // Notify observers
-    log.debug("Notifying observers of image availability: " + asset.getMD5Key());
-    Set<ImageObserver> observerSet = imageObserverMap.remove(asset.getMD5Key());
-    if (observerSet != null) {
-      // ImageObservers are part of swing so they generally expect to run on that thread.
-      // But that hangs start up, so we'll leave it on each observer to handle threading.
-      for (ImageObserver observer : observerSet) {
-        observer.imageUpdate(
-            image, ImageObserver.ALLBITS, 0, 0, image.getWidth(), image.getHeight());
-      }
-    }
-  }
-
-  /**
-   * Run a thread to load the asset raw image data in the background using the provided hints.
-   *
-   * @param asset Load raw image data from this asset
-   * @param hints Hints used when loading image data
-   */
-  private static void backgroundLoadImage(Asset asset, Map<String, Object> hints) {
-    // Use large image loader if the image is larger than 128kb.
-    if (asset.getData().length > 128 * 1024) {
-      largeImageLoader.execute(new BackgroundImageLoader(asset, hints));
-    } else {
-      smallImageLoader.execute(new BackgroundImageLoader(asset, hints));
+      entry.resolve(image);
     }
   }
 
   private static class AssetListener implements AssetAvailableListener {
-    private final MD5Key id;
+    /** Small and large thread pools for background processing of asset raw image data. */
+    private static final ExecutorService smallImageLoader = Executors.newFixedThreadPool(1);
+
+    private static final ExecutorService largeImageLoader = Executors.newFixedThreadPool(1);
+
+    private final ImageEntry entry;
     private final Map<String, Object> hints;
 
-    public AssetListener(MD5Key id, Map<String, Object> hints) {
-      this.id = id;
+    public AssetListener(ImageEntry entry, Map<String, Object> hints) {
+      this.entry = entry;
       this.hints = hints;
     }
 
     public void assetAvailable(MD5Key key) {
-      if (!key.equals(id)) {
+      if (!key.equals(entry.getKey())) {
         return;
       }
       // No longer need to be notified when this asset is available
-      AssetManager.removeAssetListener(id, this);
+      AssetManager.removeAssetListener(entry.getKey(), this);
 
       // Image is now available for loading
-      log.debug("Asset available: " + id);
-      backgroundLoadImage(AssetManager.getAsset(id), hints);
+      log.debug("Asset available: {}", entry.getKey());
+      backgroundLoadImage(entry, AssetManager.getAsset(entry.getKey()), hints);
     }
 
-    @Override
-    public int hashCode() {
-      return id.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-      AssetListener that = (AssetListener) o;
-      return Objects.equals(id, that.id);
+    /**
+     * Run a thread to load the asset raw image data in the background using the provided hints.
+     *
+     * @param asset Load raw image data from this asset
+     * @param hints Hints used when loading image data
+     */
+    private static void backgroundLoadImage(
+        ImageEntry entry, Asset asset, Map<String, Object> hints) {
+      // Use large image loader if the image is larger than 128kb.
+      if (asset.getData().length > 128 * 1024) {
+        largeImageLoader.execute(new BackgroundImageLoader(entry, asset, hints));
+      } else {
+        smallImageLoader.execute(new BackgroundImageLoader(entry, asset, hints));
+      }
     }
   }
 }
