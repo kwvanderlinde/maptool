@@ -582,6 +582,8 @@ public class TokenStatesController
    */
   public static class StateListRenderer extends DefaultListCellRenderer {
 
+    JList list;
+
     /** Bounds sent to the token state */
     Rectangle bounds = new Rectangle(0, 0, ICON_SIZE, ICON_SIZE);
 
@@ -617,7 +619,7 @@ public class TokenStatesController
             g.translate(x + 1, y + 1);
             Shape old = g.getClip();
             g.setClip(bounds.intersection(old.getBounds()));
-            overlay.paintOverlay((Graphics2D) g, token, bounds, value);
+            overlay.paintOverlay((Graphics2D) g, token, bounds, value, list);
             g.setClip(old);
             g.translate(-(x + 1), -(y + 1));
           }
@@ -633,6 +635,7 @@ public class TokenStatesController
     public Component getListCellRendererComponent(
         JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
       super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+      this.list = list;
       overlay = (AbstractTokenOverlay) value;
       setText(overlay.getName());
       setIcon(icon);

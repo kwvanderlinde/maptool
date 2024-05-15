@@ -26,6 +26,7 @@ import net.rptools.maptool.util.ImageManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+// TODO Is this not identical to HTMLPanelImageCache? Modulo interface?
 public class ImageLoaderCache {
 
   private static final Logger log = LogManager.getLogger(ImageLoaderCache.class);
@@ -56,7 +57,17 @@ public class ImageLoaderCache {
           return ImageManager.BROKEN_IMAGE;
         }
       } else if ("asset".equals(protocol)) {
-        image = ImageManager.getImageFromUrl(url);
+        image =
+            ImageManager.getImageFromUrlAsync(
+                url,
+                (img) -> {
+                  imageMap.put(url.toString(), img);
+
+                  for (var o : observers) {
+                    o.imageUpdate(
+                        img, ImageObserver.ALLBITS, 0, 0, img.getWidth(), img.getHeight());
+                  }
+                });
       } else {
         try {
           image = ImageIO.read(url);

@@ -868,12 +868,9 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
     // First background image extents
     // TODO: when the background image can be resized, fix this!
     if (zone.getMapAssetId() != null) {
+      var image = ImageManager.getImage(zone.getMapAssetId(), this);
       extents =
-          new Rectangle(
-              zone.getBoardX(),
-              zone.getBoardY(),
-              ImageManager.getImage(zone.getMapAssetId(), this).getWidth(),
-              ImageManager.getImage(zone.getMapAssetId(), this).getHeight());
+          new Rectangle(zone.getBoardX(), zone.getBoardY(), image.getWidth(), image.getHeight());
     }
     // next, extents of drawing objects
     List<DrawnElement> drawableList = zone.getAllDrawnElements();

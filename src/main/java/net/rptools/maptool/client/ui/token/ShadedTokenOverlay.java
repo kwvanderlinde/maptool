@@ -19,6 +19,7 @@ import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.image.ImageObserver;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.server.proto.BooleanTokenOverlayDto;
 
@@ -67,10 +68,11 @@ public class ShadedTokenOverlay extends BooleanTokenOverlay {
 
   /**
    * @see BooleanTokenOverlay#paintOverlay(java.awt.Graphics2D, net.rptools.maptool.model.Token,
-   *     Rectangle)
+   *     java.awt.Rectangle, java.awt.image.ImageObserver...)
    */
   @Override
-  public void paintOverlay(Graphics2D g, Token aToken, Rectangle bounds) {
+  public void paintOverlay(
+      Graphics2D g, Token aToken, Rectangle bounds, ImageObserver... observers) {
     Color temp = g.getColor();
     g.setColor(color);
     Composite tempComposite = g.getComposite();

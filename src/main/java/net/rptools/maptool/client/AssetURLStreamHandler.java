@@ -18,6 +18,8 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
@@ -35,34 +37,61 @@ import net.rptools.maptool.util.ImageManager;
 public class AssetURLStreamHandler extends URLStreamHandler {
 
   @Override
-  protected URLConnection openConnection(URL u) {
+  protected URLConnection openConnection(URL u) throws IOException {
     return new AssetURLConnection(u);
   }
 
   public static class AssetURLConnection extends URLConnection {
+    private final boolean isRaw;
+    private InputStream in;
 
-    public AssetURLConnection(URL url) {
+    public AssetURLConnection(URL url) throws IOException {
       super(url);
+
+      this.isRaw =
+          (url.getQuery() != null)
+              && Arrays.stream(url.getQuery().split("&"))
+                  .anyMatch(q -> q.equalsIgnoreCase("raw=true"));
     }
 
     @Override
-    public void connect() {
-      // Nothing to do
+    public void connect() throws IOException {
+      if (this.connected) {
+        return;
+      }
+
+      if (isRaw) {
+        // TODO I don't want to block.
+        var asset = AssetManager.getAssetAndWait(new MD5Key(url.getHost()));
+        this.in = new ByteArrayInputStream(asset.getData());
+      } else {
+        var out = new PipedOutputStream();
+        var in = new PipedInputStream(out);
+
+        BufferedImage img =
+            ImageManager.getImageFromUrlAsync(
+                url,
+                (i) -> {
+                  try {
+                    out.write(ImageUtil.imageToBytes(i, "png"));
+                    out.flush();
+                    out.close();
+                  } catch (IOException e) {
+                    throw new RuntimeException(e);
+                  }
+                });
+        if (img == ImageManager.TRANSFERING_IMAGE) {
+          this.in = in;
+        } else {
+          // We already have the data. Push it right away.
+          this.in = new ByteArrayInputStream(ImageUtil.imageToBytes(img, "png"));
+        }
+      }
     }
 
     @Override
     public InputStream getInputStream() throws IOException {
-
-      if (url.getQuery() != null) {
-        if (Arrays.stream(url.getQuery().split("&"))
-            .anyMatch(q -> q.equalsIgnoreCase("raw=true"))) {
-          var asset = AssetManager.getAssetAndWait(new MD5Key(url.getHost()));
-          return new ByteArrayInputStream(asset.getData());
-        }
-      }
-
-      BufferedImage img = ImageManager.getImageFromUrl(url);
-      return new ByteArrayInputStream(ImageUtil.imageToBytes(img, "png"));
+      return this.in;
     }
   }
 }

@@ -63,7 +63,7 @@ public class HTMLPanelImageCache extends Dictionary<URL, Image> {
           return ImageManager.BROKEN_IMAGE;
         }
       } else if ("asset".equals(protocol)) {
-        image = ImageManager.getImageFromUrl(url);
+        image = ImageManager.getImageFromUrlAsync(url, (img) -> imageMap.put(url.toString(), img));
       } else {
         try {
           image = ImageIO.read(url);

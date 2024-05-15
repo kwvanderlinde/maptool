@@ -94,16 +94,6 @@ public class ImageManager {
   }
 
   /**
-   * Loads the asset's raw image data into a buffered image, and waits for the image to load.
-   *
-   * @param assetId Load image data from this asset
-   * @return BufferedImage Return the loaded image
-   */
-  public static BufferedImage getImageAndWait(MD5Key assetId) {
-    return getImageAndWait(assetId, null);
-  }
-
-  /**
    * Flush all images that are <b>not</b> in the provided set. This presumes that the images in the
    * exception set will still be in use after the flush.
    *
@@ -117,10 +107,9 @@ public class ImageManager {
    * Loads the asset's raw image data into a buffered image, and waits for the image to load.
    *
    * @param assetId Load image data from this asset
-   * @param hintMap Hints used when loading the image
    * @return BufferedImage Return the loaded image
    */
-  public static BufferedImage getImageAndWait(final MD5Key assetId, Map<String, Object> hintMap) {
+  public static BufferedImage getImageAndWait(final MD5Key assetId) {
     if (assetId == null) {
       return BROKEN_IMAGE;
     }
@@ -210,7 +199,8 @@ public class ImageManager {
    * @return the image, scaled if indicated by the URL, or {@code BROKEN_IMAGE} if url is null, the
    *     URL protocol is not asset://, or it has invalid parameter values.
    */
-  public static BufferedImage getImageFromUrl(URL url) {
+  // TODO Document TRANSFERRING case.
+  public static BufferedImage getImageFromUrlAsync(URL url, Observer observer) {
     if (url == null || !url.getProtocol().equals("asset")) {
       return BROKEN_IMAGE;
     }
@@ -218,7 +208,7 @@ public class ImageManager {
     String id = url.getHost();
     String query = url.getQuery();
     BufferedImage image;
-    int imageW, imageH, scaleW = -1, scaleH = -1, size = -1;
+    int scaleW = -1, scaleH = -1, size = -1;
 
     // Get size parameter
     int szIndex = id.indexOf('-');
@@ -278,9 +268,22 @@ public class ImageManager {
       }
     }
 
-    image = getImageAndWait(new MD5Key(id), null);
-    imageW = image.getWidth();
-    imageH = image.getHeight();
+    final var sW = scaleW;
+    final var sH = scaleH;
+    final var s = size;
+    image =
+        getImage(
+            new MD5Key(id),
+            (img) -> {
+              img = scaled(img, sW, sH, s);
+              observer.imageLoaded(img);
+            });
+    return scaled(image, scaleW, scaleH, size);
+  }
+
+  private static BufferedImage scaled(BufferedImage image, int scaleW, int scaleH, int size) {
+    var imageW = image.getWidth();
+    var imageH = image.getHeight();
 
     // We only want to scale down, so if scaleW or ScaleH are too large just return the image
     if (scaleW > imageW || scaleH > imageH) {

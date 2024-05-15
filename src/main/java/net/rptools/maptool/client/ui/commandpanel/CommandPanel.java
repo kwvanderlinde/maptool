@@ -247,12 +247,19 @@ public class CommandPanel extends JPanel {
    * @param label the backup label to set the name to if the token is null
    */
   private void updateImageAndLabel(Token token, String label) {
-    BufferedImage image = null;
-    if (token != null) {
-      image = ImageManager.getImageAndWait(token.getImageAssetId());
+    if (token == null) {
+      avatarPanel.setImage(null);
+      setCharacterLabel(label);
+    } else {
+      var image =
+          ImageManager.getImage(
+              token.getImageAssetId(),
+              (img) -> {
+                EventQueue.invokeLater(() -> avatarPanel.setImage(img));
+              });
+      avatarPanel.setImage(image);
+      setCharacterLabel(token.getName());
     }
-    avatarPanel.setImage(image);
-    setCharacterLabel(token == null ? label : token.getName());
   }
 
   private boolean isTokenImpersonated(Token token) {

@@ -26,7 +26,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -643,6 +642,7 @@ public class TokenBarController
    * @author Jay
    */
   private class ImageListRenderer extends DefaultListCellRenderer {
+    JList list;
 
     /** Bounds of the image on the line */
     Rectangle bounds = new Rectangle(0, 0, ICON_SIZE, ICON_SIZE);
@@ -650,10 +650,7 @@ public class TokenBarController
     /** Image being rendered. */
     MD5Key key;
 
-    /** Cached images */
-    private transient Map<MD5Key, BufferedImage> imageCache = new HashMap<>();
-
-    /** Create an icon from the token bar. */
+    /** Create an icon from a token bar. */
     Icon icon =
         new Icon() {
           public int getIconHeight() {
@@ -665,9 +662,10 @@ public class TokenBarController
           }
 
           public void paintIcon(Component c, java.awt.Graphics g, int x, int y) {
+            BufferedImage image = ImageManager.getImage(key, list);
+
             Shape old = g.getClip();
             g.setClip(bounds.intersection(old.getBounds()));
-            BufferedImage image = ImageManager.getImageAndWait(key);
             g.drawImage(image, x, y, bounds.width, bounds.height, null);
             g.setClip(old);
           }

@@ -16,6 +16,7 @@ package net.rptools.maptool.client.ui.macrobuttons.buttongroups;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.EventQueue;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Image;
@@ -32,7 +33,6 @@ import java.awt.event.MouseListener;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -208,13 +208,22 @@ public abstract class AbstractButtonGroup extends JPanel
 
   public void mouseExited(MouseEvent event) {}
 
-  protected ThumbnailedBorder createBorder(String label) {
+  protected void setBorder(String label) {
     if (getToken() != null) {
-      ImageIcon i = new ImageIcon(ImageManager.getImageAndWait(getToken().getImageAssetId()));
-      Image icon = i.getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT);
-      return new ThumbnailedBorder(icon, label);
+      var image =
+          ImageManager.getImage(
+              getToken().getImageAssetId(),
+              (img) -> {
+                EventQueue.invokeLater(
+                    () -> {
+                      var icon = img.getScaledInstance(20, 20, Image.SCALE_DEFAULT);
+                      setBorder(new ThumbnailedBorder(icon, label));
+                    });
+              });
+      var icon = image.getScaledInstance(20, 20, Image.SCALE_DEFAULT);
+      setBorder(new ThumbnailedBorder(icon, label));
     } else {
-      return new ThumbnailedBorder(null, label);
+      setBorder(new ThumbnailedBorder(null, label));
     }
   }
 

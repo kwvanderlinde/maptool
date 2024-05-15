@@ -17,7 +17,6 @@ package net.rptools.maptool.client.ui.mappropertiesdialog;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
-import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.io.File;
 import java.io.IOException;
@@ -756,7 +755,8 @@ public class MapPropertiesDialog extends JDialog {
       }
       // Map
       if (mapAsset != null) {
-        BufferedImage image = ImageManager.getImageAndWait(mapAsset.getMD5Key());
+        var image = ImageManager.getImage(mapAsset.getMD5Key(), MapPreviewPanel.this);
+
         Dimension imgSize = new Dimension(image.getWidth(), image.getHeight());
         SwingUtil.constrainTo(imgSize, size.width - 10 * 4, size.height - 10 * 4);
 

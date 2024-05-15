@@ -16,6 +16,7 @@ package net.rptools.maptool.client.ui.token;
 
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.image.ImageObserver;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.server.proto.BarTokenOverlayDto;
 import net.rptools.maptool.server.proto.BarTokenOverlayDto.SideDto;
@@ -124,10 +125,11 @@ public abstract class BarTokenOverlay extends AbstractTokenOverlay {
 
   /**
    * @see AbstractTokenOverlay#paintOverlay(java.awt.Graphics2D, net.rptools.maptool.model.Token,
-   *     java.awt.Rectangle, java.lang.Object)
+   *     java.awt.Rectangle, Object, java.awt.image.ImageObserver...)
    */
   @Override
-  public void paintOverlay(Graphics2D g, Token token, Rectangle bounds, Object value) {
+  public void paintOverlay(
+      Graphics2D g, Token token, Rectangle bounds, Object value, ImageObserver... observers) {
     if (value == null) return;
     double val = 0;
     if (value instanceof Number) {
@@ -141,7 +143,7 @@ public abstract class BarTokenOverlay extends AbstractTokenOverlay {
     } // endif
     if (val < 0) val = 0;
     if (val > 1) val = 1;
-    paintOverlay(g, token, bounds, val);
+    paintOverlay(g, token, bounds, val, observers);
   }
 
   /*---------------------------------------------------------------------------------------------
@@ -160,7 +162,8 @@ public abstract class BarTokenOverlay extends AbstractTokenOverlay {
    *     will be off for partial token painting.
    * @param value A value between 0 and 1 inclusive used to paint the bar.
    */
-  public abstract void paintOverlay(Graphics2D g, Token token, Rectangle bounds, double value);
+  public abstract void paintOverlay(
+      Graphics2D g, Token token, Rectangle bounds, double value, ImageObserver... observers);
 
   /*---------------------------------------------------------------------------------------------
    * Side enumeration

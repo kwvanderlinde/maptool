@@ -38,6 +38,7 @@ import net.rptools.maptool.model.tokens.TokenMacroChanged;
 import net.rptools.maptool.model.tokens.TokenPanelChanged;
 import net.rptools.maptool.model.zones.TokenEdited;
 import net.rptools.maptool.model.zones.TokensRemoved;
+import net.rptools.maptool.util.ImageManager;
 
 public class ImpersonatePanel extends AbstractMacroPanel {
   private boolean currentlyImpersonating = false;
@@ -65,7 +66,21 @@ public class ImpersonatePanel extends AbstractMacroPanel {
 
       if (currentlyImpersonating && getToken() != null) {
         Token token = getToken();
-        mtf.getFrame(MTFrame.IMPERSONATED).setFrameIcon(token.getIcon(16, 16));
+
+        var icon =
+            createIcon(
+                ImageManager.getImage(
+                    token.getImageAssetId(),
+                    (img) -> {
+                      EventQueue.invokeLater(
+                          () -> {
+                            mtf.getFrame(MTFrame.IMPERSONATED).setFrameIcon(createIcon(img));
+                            invalidate();
+                            repaint();
+                          });
+                    }));
+        mtf.getFrame(MTFrame.IMPERSONATED).setFrameIcon(icon);
+
         mtf.setFrameTitle(MTFrame.IMPERSONATED, getTitle(token));
         addArea(getTokenId());
       } else if (selectedTokenList.size() != 1) {
@@ -76,8 +91,7 @@ public class ImpersonatePanel extends AbstractMacroPanel {
 
         if (AppUtil.playerOwns(t)) {
           JButton button =
-              new JButton(
-                  I18N.getText("panel.Impersonate.button.impersonateSelected"), t.getIcon(16, 16)) {
+              new JButton(I18N.getText("panel.Impersonate.button.impersonateSelected")) {
                 private static final long serialVersionUID = 1L;
 
                 @Override
@@ -85,6 +99,16 @@ public class ImpersonatePanel extends AbstractMacroPanel {
                   return new Insets(2, 2, 2, 2);
                 }
               };
+          var icon =
+              createIcon(
+                  ImageManager.getImage(
+                      t.getImageAssetId(),
+                      (img) -> {
+                        button.setIcon(createIcon(img));
+                        button.invalidate();
+                      }));
+          button.setIcon(icon);
+
           button.addMouseListener(
               new MouseAdapter() {
                 @Override
@@ -97,6 +121,11 @@ public class ImpersonatePanel extends AbstractMacroPanel {
         }
       }
     }
+  }
+
+  private Icon createIcon(Image image) {
+    image = image.getScaledInstance(16, 16, Image.SCALE_DEFAULT);
+    return new ImageIcon(image);
   }
 
   public void startImpersonating(Token token) {

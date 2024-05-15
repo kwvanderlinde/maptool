@@ -20,6 +20,10 @@ import java.awt.image.BufferedImage;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.util.ImageManager;
 
+// TODO Detach from assets. It's really an Image navigator, with some ability (based on file
+//  extensions) to display some canned icons. It has nothing to do with in-campaign assets.
+//      Most importantly, things like image data and dimension are available without having to go
+//  through ImageManager.getImageAndWait().
 public class AssetPaint extends TexturePaint {
 
   private Asset asset;

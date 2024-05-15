@@ -155,9 +155,7 @@ public class TokenImage extends AbstractFunction {
         properties.addProperty("id", asset.getMD5Key().toString());
         properties.addProperty("name", asset.getName());
 
-        Image img =
-            ImageManager.getImageAndWait(
-                asset.getMD5Key()); // wait until loaded, so width/height are correct
+        Image img = ImageManager.getImage(asset.getMD5Key());
         String status = "loaded";
         if (img == ImageManager.BROKEN_IMAGE) {
           status = "broken";
@@ -165,6 +163,7 @@ public class TokenImage extends AbstractFunction {
           status = "transferring";
         }
         properties.addProperty("status", status);
+        // Note: width and height will not be correct when status is broken or transferring.
         properties.addProperty("width", img.getWidth(null));
         properties.addProperty("height", img.getHeight(null));
         return properties;

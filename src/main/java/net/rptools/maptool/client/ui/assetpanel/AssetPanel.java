@@ -47,6 +47,10 @@ import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Asset;
 
+// TODO Detach from assets. It's really an Image navigator, with some ability (based on file
+//  extensions) to display some canned icons. It has nothing to do with in-campaign assets.
+//      Most importantly, things like image data and dimension are available without having to go
+//  through ImageManager.getImageAndWait().
 public class AssetPanel extends JComponent {
   private static final ImageIcon FILTER_IMAGE =
       RessourceManager.getSmallIcon(Icons.ASSETPANEL_SEARCH);

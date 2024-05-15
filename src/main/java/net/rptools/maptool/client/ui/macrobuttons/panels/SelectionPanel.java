@@ -16,7 +16,12 @@ package net.rptools.maptool.client.ui.macrobuttons.panels;
 
 import com.google.common.eventbus.Subscribe;
 import com.jidesoft.docking.DockableFrame;
+import java.awt.EventQueue;
+import java.awt.Image;
+import java.awt.image.ImageObserver;
 import java.util.*;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.SwingUtilities;
 import net.rptools.lib.CodeTimer;
 import net.rptools.maptool.client.AppUtil;
@@ -35,6 +40,7 @@ import net.rptools.maptool.model.tokens.TokenMacroChanged;
 import net.rptools.maptool.model.tokens.TokenPanelChanged;
 import net.rptools.maptool.model.zones.TokenEdited;
 import net.rptools.maptool.model.zones.TokensRemoved;
+import net.rptools.maptool.util.ImageManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -101,13 +107,33 @@ public class SelectionPanel extends AbstractMacroPanel {
             }
             if (selectedTokenList.size() == 1 && AppUtil.playerOwns(selectedTokenList.get(0))) {
               // if only one token selected, show its image as tab icon
-              MapTool.getFrame()
-                  .getFrame(MTFrame.SELECTION)
-                  .setFrameIcon(selectedTokenList.get(0).getIcon(16, 16));
+              var token = selectedTokenList.get(0);
+              var frame = MapTool.getFrame().getFrame(MTFrame.SELECTION);
+              var image =
+                  ImageManager.getImage(
+                      token.getImageAssetId(),
+                      (img, flags, x, y, w, h) -> {
+                        if ((flags & ImageObserver.ALLBITS) != 0) {
+                          EventQueue.invokeLater(
+                              () -> {
+                                frame.setFrameIcon(createIcon(img));
+                                invalidate();
+                                repaint();
+                              });
+                          return true;
+                        }
+                        return false;
+                      });
+              frame.setFrameIcon(createIcon(image));
             }
           }
           timer.stop("painting");
         });
+  }
+
+  private Icon createIcon(Image image) {
+    image = image.getScaledInstance(16, 16, Image.SCALE_DEFAULT);
+    return new ImageIcon(image);
   }
 
   @Subscribe

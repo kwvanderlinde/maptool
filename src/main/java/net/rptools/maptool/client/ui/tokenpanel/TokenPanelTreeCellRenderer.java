@@ -64,7 +64,7 @@ public class TokenPanelTreeCellRenderer extends DefaultTreeCellRenderer {
 
       // Make a thumbnail of the image
       // TODO: This could be cached somehow, right now it's quick enough though
-      BufferedImage tokenImage = ImageManager.getImage(token.getImageAssetId(), this);
+      BufferedImage tokenImage = ImageManager.getImage(token.getImageAssetId(), tree);
       Dimension dim = new Dimension(tokenImage.getWidth(), tokenImage.getHeight());
       SwingUtil.constrainTo(dim, height);
 

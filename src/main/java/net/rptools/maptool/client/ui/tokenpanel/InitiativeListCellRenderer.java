@@ -54,6 +54,8 @@ public class InitiativeListCellRenderer extends JPanel
    * Instance Variables
    *-------------------------------------------------------------------------------------------*/
 
+  private JList parentList;
+
   /** The label used to display the current item indicator. */
   private final JLabel currentIndicator;
 
@@ -145,6 +147,7 @@ public class InitiativeListCellRenderer extends JPanel
   @Override
   public Component getListCellRendererComponent(
       JList list, TokenInitiative ti, int index, boolean isSelected, boolean cellHasFocus) {
+    parentList = list;
 
     setOpaque(false);
 
@@ -298,7 +301,7 @@ public class InitiativeListCellRenderer extends JPanel
      * @return The properly scaled image.
      */
     public Image scaleImage() {
-      Image image = ImageManager.getImageAndWait(tokenInitiative.getToken().getImageAssetId());
+      Image image = ImageManager.getImage(tokenInitiative.getToken().getImageAssetId(), parentList);
       BufferedImage bi =
           ImageUtil.createCompatibleImage(
               getIconWidth(), getIconHeight(), Transparency.TRANSLUCENT);
@@ -378,13 +381,13 @@ public class InitiativeListCellRenderer extends JPanel
             || overlay == null
             || !overlay.showPlayer(token, MapTool.getPlayer())
             || overlay.isMouseover()) continue;
-        overlay.paintOverlay((Graphics2D) g, token, bounds, stateSet);
+        overlay.paintOverlay((Graphics2D) g, token, bounds, stateSet, parentList);
       } // endfor
       for (String bar : MapTool.getCampaign().getTokenBarsMap().keySet()) {
         Object barSet = token.getState(bar);
         BarTokenOverlay overlay = MapTool.getCampaign().getTokenBarsMap().get(bar);
         if (overlay == null || !overlay.showPlayer(token, MapTool.getPlayer())) continue;
-        overlay.paintOverlay((Graphics2D) g, token, bounds, barSet);
+        overlay.paintOverlay((Graphics2D) g, token, bounds, barSet, parentList);
       } // endfor
       g.setClip(old);
       g.translate(-x, -y);

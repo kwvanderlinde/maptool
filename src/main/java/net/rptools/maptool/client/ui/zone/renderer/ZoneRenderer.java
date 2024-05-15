@@ -2643,7 +2643,7 @@ public class ZoneRenderer extends JComponent
             || !overlay.showPlayer(token, MapTool.getPlayer())) {
           continue;
         }
-        overlay.paintOverlay(locg, token, bounds, stateValue);
+        overlay.paintOverlay(locg, token, bounds, stateValue, this);
       }
       timer.stop("tokenlist-9");
 
@@ -2658,7 +2658,7 @@ public class ZoneRenderer extends JComponent
           continue;
         }
 
-        overlay.paintOverlay(locg, token, bounds, barValue);
+        overlay.paintOverlay(locg, token, bounds, barValue, this);
       } // endfor
       locg.dispose();
       timer.stop("tokenlist-10");

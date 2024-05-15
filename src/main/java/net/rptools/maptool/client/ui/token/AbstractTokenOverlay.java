@@ -17,6 +17,7 @@ package net.rptools.maptool.client.ui.token;
 import com.google.protobuf.StringValue;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.image.ImageObserver;
 import java.util.Comparator;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.player.Player;
@@ -238,8 +239,10 @@ public abstract class AbstractTokenOverlay implements Cloneable {
    *     clip also has to take into account the edge of the window. If you draw based on the clip it
    *     will be off for partial token painting.
    * @param value The value for the token state.
+   * @param observers
    */
-  public abstract void paintOverlay(Graphics2D g, Token token, Rectangle bounds, Object value);
+  public abstract void paintOverlay(
+      Graphics2D g, Token token, Rectangle bounds, Object value, ImageObserver... observers);
 
   /**
    * @see java.lang.Object#clone()

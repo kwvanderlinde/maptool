@@ -33,14 +33,12 @@ import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.io.Serializable;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import net.rptools.CaseInsensitiveHashMap;
 import net.rptools.lib.MD5Key;
@@ -1185,15 +1183,14 @@ public class Token implements Cloneable {
    * @param assetId the asset MD5Key.
    */
   public void setImageAsset(String name, MD5Key assetId) {
+    // TODO It cannot be appropriate that we have to adjust the token and wait on the image every
+    //  time we modify the asset ID. Figure out a way to support this in a non-blocking fashion.
+
     imageAssetMap.put(name, assetId);
 
     BufferedImage image = ImageManager.getImageAndWait(assetId);
     setWidth(image.getWidth(null));
     setHeight(image.getHeight(null));
-  }
-
-  public void setImageAsset(String name) {
-    currentImageAsset = name;
   }
 
   public Set<MD5Key> getAllImageAssets() {
@@ -2220,52 +2217,6 @@ public class Token implements Cloneable {
   }
 
   /**
-   * Convert the token into a hash map. This is used to ship all of the properties for the token to
-   * other apps that do need access to the <code>Token</code> class.
-   *
-   * @return A map containing the properties of the token.
-   */
-  public TokenTransferData toTransferData() {
-    TokenTransferData td = new TokenTransferData();
-    td.setName(name);
-    td.setPlayers(ownerList);
-    td.setVisible(isVisible);
-    td.setLocation(new Point(x, y));
-    td.setFacing(facing);
-
-    // Set the properties
-    td.put(TokenTransferData.ID, id.toString());
-    td.put(TokenTransferData.ASSET_ID, imageAssetMap.get(null));
-    td.put(TokenTransferData.Z, z);
-    td.put(TokenTransferData.SNAP_TO_SCALE, snapToScale);
-    td.put(TokenTransferData.WIDTH, scaleX);
-    td.put(TokenTransferData.HEIGHT, scaleY);
-    td.put(TokenTransferData.SNAP_TO_GRID, snapToGrid);
-    td.put(TokenTransferData.OWNER_TYPE, ownerType);
-    td.put(TokenTransferData.VISIBLE_OWNER_ONLY, visibleOnlyToOwner);
-    td.put(TokenTransferData.TOKEN_TYPE, tokenShape);
-    td.put(TokenTransferData.NOTES, notes);
-    td.put(TokenTransferData.GM_NOTES, gmNotes);
-    td.put(TokenTransferData.GM_NAME, gmName);
-
-    // Put all of the serializable state into the map
-    for (String key : getStatePropertyNames()) {
-      Object value = getState(key);
-      if (value instanceof Serializable) {
-        td.put(key, value);
-      }
-    }
-    td.putAll(state);
-
-    // Create the image from the asset and add it to the map
-    Image image = ImageManager.getImageAndWait(imageAssetMap.get(null));
-    if (image != null) {
-      td.setToken(new ImageIcon(image)); // Image icon makes it serializable.
-    }
-    return td;
-  }
-
-  /**
    * Constructor to create a new token from a transfer object containing its property values. This
    * is used to read in a new token from other apps that don't have access to the <code>Token</code>
    * class.
@@ -2428,12 +2379,6 @@ public class Token implements Cloneable {
 
   public static boolean isTokenFile(String filename) {
     return filename != null && filename.toLowerCase().endsWith(FILE_EXTENSION);
-  }
-
-  public Icon getIcon(int width, int height) {
-    ImageIcon icon = new ImageIcon(ImageManager.getImageAndWait(getImageAssetId()));
-    Image image = icon.getImage().getScaledInstance(width, height, Image.SCALE_DEFAULT);
-    return new ImageIcon(image);
   }
 
   public boolean isBeingImpersonated() {

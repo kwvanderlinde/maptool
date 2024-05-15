@@ -23,6 +23,7 @@ import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.ImageObserver;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.server.proto.BooleanTokenOverlayDto;
 
@@ -85,10 +86,11 @@ public class FlowColorDotTokenOverlay extends XTokenOverlay {
 
   /**
    * @see BooleanTokenOverlay#paintOverlay(java.awt.Graphics2D, net.rptools.maptool.model.Token,
-   *     Rectangle)
+   *     java.awt.Rectangle, java.awt.image.ImageObserver...)
    */
   @Override
-  public void paintOverlay(Graphics2D g, Token aToken, Rectangle bounds) {
+  public void paintOverlay(
+      Graphics2D g, Token aToken, Rectangle bounds, ImageObserver... observers) {
     Color tempColor = g.getColor();
     Stroke tempStroke = g.getStroke();
     Composite tempComposite = g.getComposite();

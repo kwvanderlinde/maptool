@@ -25,6 +25,7 @@ import java.awt.font.TextAttribute;
 import java.awt.font.TextLayout;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 import java.text.BreakIterator;
@@ -1724,7 +1725,8 @@ public class PointerTool extends DefaultTool {
                   (img) -> {
                     // The image was loading, so now rebuild the portrait panel with the real image
                     statSheet = null;
-                    renderer.repaint();
+                    renderer.imageUpdate(
+                        img, ImageObserver.ALLBITS, 0, 0, img.getWidth(), img.getHeight());
                   });
 
           imgSize = new Dimension(image.getWidth(), image.getHeight());
@@ -2074,8 +2076,7 @@ public class PointerTool extends DefaultTool {
       builder.append(gmNotes);
     }
     if (marker.getPortraitImage() != null) {
-      BufferedImage image = ImageManager.getImageAndWait(marker.getPortraitImage());
-      Dimension imgSize = new Dimension(image.getWidth(), image.getHeight());
+      Dimension imgSize = new Dimension(200, 200);
       if (imgSize.width > AppConstants.NOTE_PORTRAIT_SIZE
           || imgSize.height > AppConstants.NOTE_PORTRAIT_SIZE) {
         SwingUtil.constrainTo(imgSize, AppConstants.NOTE_PORTRAIT_SIZE);

@@ -69,8 +69,7 @@ public class AreaGroup extends AbstractButtonGroup {
     if (getToken() == null && getGroupLabel().equals("")) {
       // don't put an extra border around the campaign/global panels, or if there is no label
     } else {
-      ThumbnailedBorder border = createBorder(getGroupLabel());
-      setBorder(border);
+      setBorder(getGroupLabel());
       add(new AreaGroup(12, getPanel())); // spacer
     }
     String lastGroup = "akjaA#$Qq4jakjj#%455jkkajDAJFAJ"; // random string

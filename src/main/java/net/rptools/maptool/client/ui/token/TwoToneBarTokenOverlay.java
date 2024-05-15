@@ -17,6 +17,7 @@ package net.rptools.maptool.client.ui.token;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.image.ImageObserver;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.server.proto.BarTokenOverlayDto;
 
@@ -60,12 +61,9 @@ public class TwoToneBarTokenOverlay extends DrawnBarTokenOverlay {
     this.bgColor = bgColor;
   }
 
-  /**
-   * @see BarTokenOverlay#paintOverlay(java.awt.Graphics2D, net.rptools.maptool.model.Token,
-   *     java.awt.Rectangle, double)
-   */
   @Override
-  public void paintOverlay(Graphics2D g, Token token, Rectangle bounds, double value) {
+  public void paintOverlay(
+      Graphics2D g, Token token, Rectangle bounds, double value, ImageObserver... observers) {
     int width = (getSide() == Side.TOP || getSide() == Side.BOTTOM) ? bounds.width : getThickness();
     int height =
         (getSide() == Side.LEFT || getSide() == Side.RIGHT) ? bounds.height : getThickness();

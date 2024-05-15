@@ -17,6 +17,7 @@ package net.rptools.maptool.client.ui.token;
 import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.image.ImageObserver;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.server.proto.BooleanTokenOverlayDto;
 import net.rptools.maptool.util.FunctionUtil;
@@ -49,17 +50,18 @@ public abstract class BooleanTokenOverlay extends AbstractTokenOverlay {
 
   /**
    * @see AbstractTokenOverlay#paintOverlay(java.awt.Graphics2D, net.rptools.maptool.model.Token,
-   *     java.awt.Rectangle, java.lang.Object)
+   *     java.awt.Rectangle, Object, java.awt.image.ImageObserver...)
    */
   @Override
-  public void paintOverlay(Graphics2D g, Token token, Rectangle bounds, Object value) {
+  public void paintOverlay(
+      Graphics2D g, Token token, Rectangle bounds, Object value, ImageObserver... observers) {
     if (FunctionUtil.getBooleanValue(value)) {
       // Apply Alpha Transparency
       float opacity = token.getTokenOpacity();
       if (opacity < 1.0f)
         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
 
-      paintOverlay(g, token, bounds);
+      paintOverlay(g, token, bounds, observers);
     }
   }
 
@@ -77,8 +79,10 @@ public abstract class BooleanTokenOverlay extends AbstractTokenOverlay {
    * @param bounds The bounds of the actual token. This will be different than the clip since the
    *     clip also has to take into account the edge of the window. If you draw based on the clip it
    *     will be off for partial token painting.
+   * @param observers
    */
-  public abstract void paintOverlay(Graphics2D g, Token token, Rectangle bounds);
+  public abstract void paintOverlay(
+      Graphics2D g, Token token, Rectangle bounds, ImageObserver... observers);
 
   public static BooleanTokenOverlay fromDto(BooleanTokenOverlayDto dto) {
     switch (dto.getType()) {

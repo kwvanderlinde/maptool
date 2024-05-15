@@ -22,6 +22,7 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.geom.Line2D;
+import java.awt.image.ImageObserver;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.server.Mapper;
 import net.rptools.maptool.server.proto.BooleanTokenOverlayDto;
@@ -63,10 +64,11 @@ public class XTokenOverlay extends BooleanTokenOverlay {
 
   /**
    * @see BooleanTokenOverlay#paintOverlay(java.awt.Graphics2D, net.rptools.maptool.model.Token,
-   *     Rectangle)
+   *     java.awt.Rectangle, java.awt.image.ImageObserver...)
    */
   @Override
-  public void paintOverlay(Graphics2D g, Token aToken, Rectangle bounds) {
+  public void paintOverlay(
+      Graphics2D g, Token aToken, Rectangle bounds, ImageObserver... observers) {
     Color tempColor = g.getColor();
     g.setColor(color);
     Stroke tempStroke = g.getStroke();
