@@ -144,12 +144,10 @@ public class ImageManager {
     image =
         getImage(
             assetId,
-            (img, infoflags, x, y, width, height) -> {
-              // If we're here then the image has just finished loading
-              // release the blocked thread
+            (img) -> {
+              // If we're here then the image has just finished loading. Release the blocked thread
               log.debug("Countdown: {}", assetId);
               loadLatch.countDown();
-              return false;
             });
     if (image == TRANSFERING_IMAGE) {
       try {

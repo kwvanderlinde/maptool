@@ -1721,13 +1721,10 @@ public class PointerTool extends DefaultTool {
           image =
               ImageManager.getImage(
                   portraitId,
-                  (img, infoflags, x, y, width, height) -> {
-                    // The image was loading, so now rebuild the portrait panel with the
-                    // real
-                    // image
+                  (img) -> {
+                    // The image was loading, so now rebuild the portrait panel with the real image
                     statSheet = null;
                     renderer.repaint();
-                    return true;
                   });
 
           imgSize = new Dimension(image.getWidth(), image.getHeight());
