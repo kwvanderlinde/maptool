@@ -167,6 +167,27 @@ public class ImageManager {
 
   // TODO getImage() should itself support scaling to simplify some callers.
 
+  public static BufferedImage getImage(MD5Key assetId) {
+    return getImage(assetId, new Observer[0]);
+  }
+
+  /**
+   * Return the image corresponding to the assetId.
+   *
+   * @param assetId Load image data from this asset.
+   * @param observers the observers to be notified when the image loads, if it hasn't already.
+   * @return the image, or BROKEN_IMAGE if assetId null, or TRANSFERING_IMAGE if loading.
+   */
+  public static BufferedImage getImage(MD5Key assetId, Observer... observers) {
+    if (assetId == null) {
+      return BROKEN_IMAGE;
+    }
+
+    var entry = imageMap.computeIfAbsent(assetId, ImageEntry::new);
+    var image = entry.getIfAvailable(observers);
+    return Objects.requireNonNullElse(image, TRANSFERING_IMAGE);
+  }
+
   /**
    * Return the image corresponding to the assetId.
    *
