@@ -442,6 +442,8 @@ public class ImageManager {
     log.debug("Notifying observers of image availability: " + asset.getMD5Key());
     Set<ImageObserver> observerSet = imageObserverMap.remove(asset.getMD5Key());
     if (observerSet != null) {
+      // ImageObservers are part of swing so they generally expect to run on that thread.
+      // But that hangs start up, so we'll leave it on each observer to handle threading.
       for (ImageObserver observer : observerSet) {
         observer.imageUpdate(
             image, ImageObserver.ALLBITS, 0, 0, image.getWidth(), image.getHeight());
