@@ -50,6 +50,7 @@ import org.apache.logging.log4j.core.config.Configurator;
  * @author RPTools Team.
  */
 public class ImageManager {
+  @FunctionalInterface
   public interface Observer {
     void imageLoaded(BufferedImage image);
   }
@@ -166,50 +167,48 @@ public class ImageManager {
   // TODO getImage() should itself support scaling to simplify some callers.
 
   public static BufferedImage getImage(MD5Key assetId) {
-    return getImage(assetId, new Observer[0]);
+    return getImage(assetId, img -> {});
   }
 
   /**
    * Return the image corresponding to the assetId.
    *
    * @param assetId Load image data from this asset.
-   * @param observers the observers to be notified when the image loads, if it hasn't already.
+   * @param observer the observer to be notified when the image loads, if it hasn't already.
    * @return the image, or BROKEN_IMAGE if assetId null, or TRANSFERING_IMAGE if loading.
    */
-  public static BufferedImage getImage(MD5Key assetId, Observer... observers) {
+  public static BufferedImage getImage(MD5Key assetId, Observer observer) {
     if (assetId == null) {
       return BROKEN_IMAGE;
     }
 
     var entry = imageMap.computeIfAbsent(assetId, ImageEntry::new);
-    var image = entry.getIfAvailable(observers);
+    var image = entry.getIfAvailable(observer);
     return Objects.requireNonNullElse(image, TRANSFERING_IMAGE);
   }
 
   /**
    * Return the image corresponding to the assetId.
+   *
+   * <p>This is a convenience wrapper for {@link #getImage(net.rptools.lib.MD5Key,
+   * net.rptools.maptool.util.ImageManager.Observer)}. Since many of the callers are swing
+   * components, this allows more direct use without requiring non-swing component to think through
+   * the meaning of {@code ImageObserver}. Each observer will be notified only when the full image
+   * is loaded, with the flag {@link java.awt.image.ImageObserver#ALLBITS} and the dimensions of the
+   * full image.
    *
    * @param assetId Load image data from this asset.
    * @param observers the observers to be notified when the image loads, if it hasn't already.
    * @return the image, or BROKEN_IMAGE if assetId null, or TRANSFERING_IMAGE if loading.
    */
   public static BufferedImage getImage(MD5Key assetId, ImageObserver... observers) {
-    if (assetId == null) {
-      return BROKEN_IMAGE;
-    }
-
-    var realObservers = new Observer[observers.length];
-    for (int i = 0; i < realObservers.length; ++i) {
-      var o = observers[i];
-      realObservers[i] =
-          image -> {
-            o.imageUpdate(image, ImageObserver.ALLBITS, 0, 0, image.getWidth(), image.getHeight());
-          };
-    }
-
-    var entry = imageMap.computeIfAbsent(assetId, ImageEntry::new);
-    var image = entry.getIfAvailable(realObservers);
-    return Objects.requireNonNullElse(image, TRANSFERING_IMAGE);
+    return getImage(
+        assetId,
+        (img) -> {
+          for (var observer : observers) {
+            observer.imageUpdate(img, ImageObserver.ALLBITS, 0, 0, img.getWidth(), img.getHeight());
+          }
+        });
   }
 
   /**
