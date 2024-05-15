@@ -406,16 +406,13 @@ public class ImageManager {
               ImageUtil.createCompatibleImage(
                   ImageUtil.bytesToImage(asset.getData(), asset.getName()), hints);
         } catch (Throwable t) {
-          if (!AssetManager.BAD_ASSET_LOCATION_KEY.toString().equals(asset.getMD5Key())) {
+          if (!AssetManager.BAD_ASSET_LOCATION_KEY.equals(asset.getMD5Key())) {
             // Don't bother logging cache miss of internal bad location asset
             log.error(
-                "BackgroundImageLoader.run("
-                    + asset.getName()
-                    + ","
-                    + asset.getExtension()
-                    + ", "
-                    + asset.getMD5Key()
-                    + "): image not resolved",
+                "BackgroundImageLoader.run({}, {}, {}): image not resolved",
+                asset.getName(),
+                asset.getExtension(),
+                asset.getMD5Key(),
                 t);
           }
           image = BROKEN_IMAGE;
