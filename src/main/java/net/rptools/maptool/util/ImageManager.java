@@ -18,9 +18,10 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -140,28 +141,26 @@ public class ImageManager {
     if (assetId == null) {
       return BROKEN_IMAGE;
     }
-    BufferedImage image;
-    final CountDownLatch loadLatch = new CountDownLatch(1);
-    image =
+
+    var future = new CompletableFuture<BufferedImage>();
+    var image =
         getImage(
             assetId,
             (img) -> {
               // If we're here then the image has just finished loading. Release the blocked thread
-              log.debug("Countdown: {}", assetId);
-              loadLatch.countDown();
+              log.debug("Completed for asset: {}", assetId);
+              future.complete(img);
             });
-    if (image == TRANSFERING_IMAGE) {
-      try {
-        log.debug("Wait for: {}", assetId);
-        loadLatch.await();
-        // This time we'll get the cached version
-        image = getImage(assetId);
-      } catch (InterruptedException ie) {
-        log.error("getImageAndWait({}):  image not resolved; InterruptedException", assetId, ie);
-        image = BROKEN_IMAGE;
-      }
+    if (image != TRANSFERING_IMAGE) {
+      return image;
     }
-    return image;
+
+    try {
+      return future.get();
+    } catch (InterruptedException | ExecutionException e) {
+      log.error("Error waiting for image", e);
+      return BROKEN_IMAGE;
+    }
   }
 
   // TODO getImage() should itself support scaling to simplify some callers.
