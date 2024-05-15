@@ -779,7 +779,7 @@ public class PersistenceUtil {
         // result is that MT will attempt to load it from a repository again, as normal.
         if ("broken".equals(asset.getName())) {
           log.warn("Reference to 'broken' asset '" + pathname + "' not restored.");
-          ImageManager.flushImage(asset);
+          ImageManager.flushImage(asset.getMD5Key());
           continue;
         }
         // pre 1.3b52 campaign files stored the image data directly in the asset serialization.

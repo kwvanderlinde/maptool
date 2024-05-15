@@ -332,15 +332,6 @@ public class ImageManager {
   }
 
   /**
-   * Remove the image associated the asset from the cache.
-   *
-   * @param asset Asset associated with this image
-   */
-  public static void flushImage(Asset asset) {
-    flushImage(asset.getMD5Key());
-  }
-
-  /**
    * Remove the image associated this MD5Key from the cache.
    *
    * @param assetId MD5Key associated with this image
