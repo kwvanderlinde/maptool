@@ -14,6 +14,7 @@
  */
 package net.rptools.maptool.model;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -27,7 +28,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import net.rptools.lib.FileUtil;
 import net.rptools.lib.MD5Key;
@@ -42,8 +45,10 @@ import net.rptools.maptool.model.assets.LazyAsset;
 import net.rptools.maptool.model.assets.PersistentAssetCache;
 import net.rptools.maptool.transfer.AssetHeader;
 import org.apache.commons.io.FileUtils;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 
 /**
  * This class handles the caching, loading, and downloading of assets. All assets are loaded through
@@ -87,9 +92,20 @@ public class AssetManager {
   /** Used to load assets from storage */
   private static AssetLoader assetLoader = new AssetLoader();
 
-  private static ExecutorService assetLoaderThreadPool = Executors.newFixedThreadPool(1);
+  private static ExecutorService assetLoaderThreadPool =
+      new ThreadPoolExecutor(
+          5,
+          50,
+          60,
+          TimeUnit.SECONDS,
+          new SynchronousQueue<>(),
+          new ThreadFactoryBuilder()
+              .setNameFormat("AssetManager.loaderThread-%d")
+              .setDaemon(true)
+              .build());
 
   static {
+    Configurator.setLevel(log, Level.DEBUG);
     inMemoryCache = new InMemoryAssetCache();
 
     // TODO Make sure cacheDir is absolute.
@@ -283,6 +299,7 @@ public class AssetManager {
 
     assetLoaderThreadPool.submit(
         () -> {
+          log.debug("Starting an asset loader for {}", id);
           Asset asset = getAsset(id);
 
           // Simplest case, we already have it

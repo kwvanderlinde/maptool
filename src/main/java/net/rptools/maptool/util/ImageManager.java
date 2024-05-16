@@ -14,6 +14,7 @@
  */
 package net.rptools.maptool.util;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.net.URL;
@@ -24,6 +25,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import javax.annotation.Nullable;
 import net.rptools.lib.MD5Key;
 import net.rptools.lib.image.ImageUtil;
@@ -478,10 +480,18 @@ public class ImageManager {
   }
 
   private static class AssetListener implements AssetAvailableListener {
-    /** Small and large thread pools for background processing of asset raw image data. */
-    private static final ExecutorService smallImageLoader = Executors.newFixedThreadPool(1);
+    private static final ThreadFactory threadFactory =
+        new ThreadFactoryBuilder()
+            .setNameFormat("ImageManager.BackgroundImageLoader-%d")
+            .setDaemon(true)
+            .build();
 
-    private static final ExecutorService largeImageLoader = Executors.newFixedThreadPool(1);
+    /** Small and large thread pools for background processing of asset raw image data. */
+    private static final ExecutorService smallImageLoader =
+        Executors.newFixedThreadPool(10, threadFactory);
+
+    private static final ExecutorService largeImageLoader =
+        Executors.newFixedThreadPool(10, threadFactory);
 
     private final ImageEntry entry;
     private final Map<String, Object> hints;
