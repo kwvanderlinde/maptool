@@ -360,8 +360,18 @@ public class ImageManager {
 
     public ImageEntry(MD5Key key) {
       this.key = key;
-      this.image = null;
+
+      // TODO Testing snippet.
+      final var shouldSkip = ImageManager.shouldSkip();
+
+      // We may still have a soft reference. If so, use it. Otherwise, we'll have to load it.
+      this.image = shouldSkip ? null : backupImageMap.get(key);
       this.observers = new HashSet<>();
+
+      if (this.image == null) {
+        // No image available yet. Start loading it.
+        AssetManager.getAssetAsynchronously(key, new AssetListener(this, null));
+      }
     }
 
     public MD5Key getKey() {
@@ -369,30 +379,19 @@ public class ImageManager {
     }
 
     public synchronized @Nullable BufferedImage getIfAvailable(Observer observer) {
+      // TODO Testing snippet.
       var shouldSkip = ImageManager.shouldSkip();
       if (shouldSkip) {
         log.debug("Skipping the checks; assuming the image is not loaded");
         if (observer != null) {
           this.observers.add(observer);
         }
-        // TODO I realize now that my testing methodology is more than a bit flawed.
-        AssetManager.getAssetAsynchronously(key, new AssetListener(this, null));
         return null;
       }
 
-      if (image == null) {
-        // Check if the soft reference still resolves image
-        var backupImage = backupImageMap.get(key);
-        if (backupImage != null) {
-          resolve(backupImage);
-        } else {
-          // Entry still not resolved.
-          if (observer != null) {
-            this.observers.add(observer);
-          }
-          // TODO Do I need a different listener now?
-          AssetManager.getAssetAsynchronously(key, new AssetListener(this, null));
-        }
+      if (image == null && observer != null) {
+        // Entry still not resolved, so make sure the obserer is informed.
+        this.observers.add(observer);
       }
       return image;
     }
