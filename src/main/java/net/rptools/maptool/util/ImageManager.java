@@ -24,7 +24,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nullable;
 import net.rptools.lib.MD5Key;
 import net.rptools.lib.image.ImageUtil;
@@ -54,18 +53,6 @@ public class ImageManager {
   @FunctionalInterface
   public interface Observer {
     void imageLoaded(BufferedImage image);
-  }
-
-  private static final AtomicInteger skip = new AtomicInteger(0);
-
-  public static void considerSkipping(int count) {
-    skip.set(count);
-  }
-
-  public static boolean shouldSkip() {
-    var remainingSkips = skip.decrementAndGet();
-    log.debug("{} skips remaining", remainingSkips);
-    return remainingSkips >= 0;
   }
 
   private static final Logger log = LogManager.getLogger(ImageManager.class);
@@ -360,12 +347,8 @@ public class ImageManager {
 
     public ImageEntry(MD5Key key) {
       this.key = key;
-
-      // TODO Testing snippet.
-      final var shouldSkip = ImageManager.shouldSkip();
-
       // We may still have a soft reference. If so, use it. Otherwise, we'll have to load it.
-      this.image = shouldSkip ? null : backupImageMap.get(key);
+      this.image = backupImageMap.get(key);
       this.observers = new HashSet<>();
 
       if (this.image == null) {
@@ -379,16 +362,6 @@ public class ImageManager {
     }
 
     public synchronized @Nullable BufferedImage getIfAvailable(Observer observer) {
-      // TODO Testing snippet.
-      var shouldSkip = ImageManager.shouldSkip();
-      if (shouldSkip) {
-        log.debug("Skipping the checks; assuming the image is not loaded");
-        if (observer != null) {
-          this.observers.add(observer);
-        }
-        return null;
-      }
-
       if (image == null && observer != null) {
         // Entry still not resolved, so make sure the obserer is informed.
         this.observers.add(observer);
