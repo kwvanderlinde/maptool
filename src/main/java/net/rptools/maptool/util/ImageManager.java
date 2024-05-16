@@ -162,7 +162,7 @@ public class ImageManager {
   // TODO getImage() should itself support scaling to simplify some callers.
 
   public static BufferedImage getImage(MD5Key assetId) {
-    return getImage(assetId, img -> {});
+    return getImage(assetId, (Observer) null);
   }
 
   /**
@@ -368,11 +368,13 @@ public class ImageManager {
       return key;
     }
 
-    public synchronized @Nullable BufferedImage getIfAvailable(Observer... observers) {
+    public synchronized @Nullable BufferedImage getIfAvailable(Observer observer) {
       var shouldSkip = ImageManager.shouldSkip();
       if (shouldSkip) {
         log.debug("Skipping the checks; assuming the image is not loaded");
-        this.observers.addAll(Arrays.asList(observers));
+        if (observer != null) {
+          this.observers.add(observer);
+        }
         // TODO I realize now that my testing methodology is more than a bit flawed.
         AssetManager.getAssetAsynchronously(key, new AssetListener(this, null));
         return null;
@@ -385,7 +387,9 @@ public class ImageManager {
           resolve(backupImage);
         } else {
           // Entry still not resolved.
-          this.observers.addAll(Arrays.asList(observers));
+          if (observer != null) {
+            this.observers.add(observer);
+          }
           // TODO Do I need a different listener now?
           AssetManager.getAssetAsynchronously(key, new AssetListener(this, null));
         }
