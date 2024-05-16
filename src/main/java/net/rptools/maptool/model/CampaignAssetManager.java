@@ -70,6 +70,6 @@ public class CampaignAssetManager implements IAssetManager {
   @Override
   public void putAsset(Asset asset) {
     cache.add(asset);
-    knownAssets.put(asset.getMD5Key(), LazyAsset.of(asset));
+    knownAssets.put(asset.getMD5Key(), new LazyAsset(asset));
   }
 }

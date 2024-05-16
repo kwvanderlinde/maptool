@@ -669,7 +669,7 @@ public class PackedFile implements AutoCloseable {
                 }
               });
         } else {
-          return LazyAsset.of(Asset.Type.IMAGE.create(name, embeddedImage));
+          return new LazyAsset(Asset.Type.IMAGE.create(name, embeddedImage));
         }
 
       } catch (ParserConfigurationException | SAXException | IOException e) {

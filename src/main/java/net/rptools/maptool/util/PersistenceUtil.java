@@ -838,7 +838,7 @@ public class PersistenceUtil {
               AssetManager.putAsset(asset);
               addToServer.add(asset);
 
-              return Optional.of(asset).map(LazyAsset::of);
+              return Optional.of(asset).map(LazyAsset::new);
             });
       } finally {
         timer.start("single asset");
