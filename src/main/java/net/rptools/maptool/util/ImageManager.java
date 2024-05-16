@@ -123,11 +123,7 @@ public class ImageManager {
    * @param exceptionSet a set of images not to be flushed
    */
   public static void flush(Set<MD5Key> exceptionSet) {
-    // Since our images are backed by a soft reference map, this should be fine. No need to be too
-    // precise.
-    // TODO Still, figure out a way to make it work in a concurrent setting. E.g., queue it up or
-    //  something. Making ImageObserver an active object actually seems like a good idea in general.
-    flush();
+    imageMap.keySet().removeAll(exceptionSet);
   }
 
   /**
@@ -516,6 +512,7 @@ public class ImageManager {
       this.hints = hints;
     }
 
+    @Override
     public void assetAvailable(MD5Key key) {
       if (!key.equals(entry.getKey())) {
         return;
