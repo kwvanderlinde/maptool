@@ -34,7 +34,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Objects;
-import java.util.function.BiFunction;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
@@ -53,10 +52,14 @@ import org.apache.tika.mime.MediaType;
 
 /** Asset used in the campaign. */
 public final class Asset {
+  public interface TypeFactory {
+    Asset apply(String name, byte[] data) throws IOException;
+  }
 
   /** The type of {@code Asset}. */
   public enum Type {
-
+    /** We don't know what the asset is. */
+    UNKNOWN(false, "", Asset::createAssetDetectType),
     /** The {@code Asset} is an image. */
     IMAGE(false, "", Asset::createImageAsset), // extension is determined from format.
     /** The {@code Asset} is an audio file. */
@@ -88,7 +91,7 @@ public final class Asset {
     private final boolean stringType;
 
     /** Method uses to create an {@code Asset} of this type. */
-    private final transient BiFunction<String, byte[], Asset> factory;
+    private final transient TypeFactory factory;
 
     /** The default extension for this type. */
     private final String defaultExtension;
@@ -100,7 +103,7 @@ public final class Asset {
      * @param extension the default extension for this {@code Asset} type.
      * @param factoryFunction the method used to create {@code Asset}s of this type.
      */
-    Type(boolean isString, String extension, BiFunction<String, byte[], Asset> factoryFunction) {
+    Type(boolean isString, String extension, TypeFactory factoryFunction) {
       stringType = isString;
       defaultExtension = extension;
       factory = factoryFunction;
@@ -120,7 +123,7 @@ public final class Asset {
      *
      * @return the method that can be used to create an {@code Asset} of this type.
      */
-    public BiFunction<String, byte[], Asset> getFactory() {
+    public TypeFactory getFactory() {
       return factory;
     }
 
@@ -442,7 +445,7 @@ public final class Asset {
    * @param type The {@link Type} of the {@code Asset}.
    * @return the new {@code Asset}.
    */
-  public static Asset createAsset(String name, byte[] data, Type type) {
+  public static Asset createAsset(String name, byte[] data, Type type) throws IOException {
     Type assetType = type != null ? type : Type.DATA;
     return assetType.getFactory().apply(name, data);
   }
