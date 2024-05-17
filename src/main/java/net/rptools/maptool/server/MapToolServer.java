@@ -79,6 +79,7 @@ public class MapToolServer {
   private Campaign campaign;
   private ServerPolicy policy;
   private HeartbeatThread heartbeatThread;
+  private final DirectConnection.Pair localConnection;
   private final MapToolClient localClient;
 
   public MapToolServer(
@@ -87,7 +88,7 @@ public class MapToolServer {
       ServerConfig config,
       ServerPolicy policy,
       ServerSidePlayerDatabase playerDb) {
-    var direct = DirectConnection.create("local"); // TODO Should have a real name
+    this.localConnection = DirectConnection.create("local"); // TODO Should have a real name
 
     this.config = config;
     this.policy = policy;
@@ -99,7 +100,8 @@ public class MapToolServer {
     assetProducerThread = new AssetProducerThread();
 
     this.localClient =
-        new MapToolClient(campaign, localPlayer, direct.clientSide(), policy, playerDatabase);
+        new MapToolClient(
+            campaign, localPlayer, localConnection.clientSide(), policy, playerDatabase);
 
     this.router = new Router();
     this.messageHandler = new ServerMessageHandler(this);
@@ -112,11 +114,6 @@ public class MapToolServer {
       receiver = new SocketChannelReceiver(config.getPort());
     }
     receiver.addListener(new ReceiverObserver());
-
-    // Adopt the local connection right away.
-    connectionAdded(direct.serverSide(), localPlayer);
-
-    direct.serverSide().open();
   }
 
   public MapToolClient getLocalClient() {
@@ -252,6 +249,12 @@ public class MapToolServer {
   private static final Random random = new Random();
 
   public void start() throws IOException {
+    localClient.start();
+
+    // Adopt the local connection right away.
+    localConnection.serverSide().open();
+    connectionAdded(localConnection.serverSide(), localClient.getPlayer());
+
     assetProducerThread.start();
 
     // Start a heartbeat if requested
