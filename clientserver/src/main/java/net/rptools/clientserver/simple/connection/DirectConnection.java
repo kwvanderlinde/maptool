@@ -25,14 +25,16 @@ import org.apache.logging.log4j.Logger;
 public class DirectConnection extends AbstractConnection {
   private static final Logger log = LogManager.getLogger(DirectConnection.class);
 
-  public static Pair<DirectConnection, DirectConnection> create(String id) {
+  public record Pair(DirectConnection clientSide, DirectConnection serverSide) {}
+
+  public static Pair create(String id) {
     var clientToServerQueue = new ArrayBlockingQueue<byte[]>(128);
     var serverToClientQueue = new ArrayBlockingQueue<byte[]>(128);
 
-    var clientSide = new DirectConnection(id, clientToServerQueue, serverToClientQueue);
-    var serverSide = new DirectConnection(id, serverToClientQueue, clientToServerQueue);
+    var clientSide = new DirectConnection(id + "-client", clientToServerQueue, serverToClientQueue);
+    var serverSide = new DirectConnection(id + "-server", serverToClientQueue, clientToServerQueue);
 
-    return Pair.of(clientSide, serverSide);
+    return new Pair(clientSide, serverSide);
   }
 
   private final String id;
