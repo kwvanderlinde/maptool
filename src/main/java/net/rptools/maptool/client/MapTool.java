@@ -964,8 +964,6 @@ public class MapTool {
     // TODO: the client and server campaign MUST be different objects.
     //  Figure out a better init method
     server = new MapToolServer(campaign, player, config, policy, playerDatabase);
-    // Create the local connection so we aren't left hanging.
-    client = server.getLocalClient();
 
     if (announcer != null) {
       announcer.stop();
@@ -990,20 +988,16 @@ public class MapTool {
 
     getFrame().getConnectionPanel().startHosting();
 
-    // region installClient()
-    MapTool.getFrame().getCommandPanel().clearAllIdentities();
-
-    client.addActivityListener(clientFrame.getActivityMonitor());
-
-    // Connection is immediately connected.
-    clientFrame.getLookupTablePanel().updateView();
-    clientFrame.getInitiativePanel().updateView();
-    // endregion
-
-    // connected
-    MapTool.getFrame().getConnectionStatusPanel().setStatus(ConnectionStatusPanel.Status.server);
-    MapTool.addLocalMessage(
-        MessageUtil.getFormattedSystemMsg(I18N.getText("msg.info.startServer")));
+    // Create the local connection so we aren't left hanging.
+    var client = installClient(server.getLocalClient());
+    client.onCompleted(
+        (success) -> {
+          MapTool.getFrame()
+              .getConnectionStatusPanel()
+              .setStatus(ConnectionStatusPanel.Status.server);
+          MapTool.addLocalMessage(
+              MessageUtil.getFormattedSystemMsg(I18N.getText("msg.info.startServer")));
+        });
 
     server.start();
     client.start();
@@ -1156,26 +1150,27 @@ public class MapTool {
             new ServerPolicy(),
             PlayerDatabaseFactory.getPersonalServerPlayerDatabase(player));
     server = personalServer;
-    client = personalServer.getLocalClient();
 
-    // region installClient()
-    MapTool.getFrame().getCommandPanel().clearAllIdentities();
-
-    client.addActivityListener(clientFrame.getActivityMonitor());
-
-    // Connection is immediately connected.
-    clientFrame.getLookupTablePanel().updateView();
-    clientFrame.getInitiativePanel().updateView();
-    // endregion
-
-    // connected
-    MapTool.getFrame().getConnectionStatusPanel().setStatus(ConnectionStatusPanel.Status.server);
+    var client = installClient(personalServer.getLocalClient());
 
     // Show the user the campaign right away even though the server will try to send it.
     setCampaign(campaign);
 
+    client.onCompleted(
+        (success) -> {
+          // Should be no possibility of failure, but just check to be sure.
+          // TODO How to handle failure should it arise?
+          if (success) {
+            MapTool.getFrame()
+                .getConnectionStatusPanel()
+                .setStatus(ConnectionStatusPanel.Status.server);
+          }
+        });
+
     server.start();
     client.start();
+
+    // TODO Verify that the onComplete() from installClient() is called by this point.
   }
 
   private static MapToolClient installClient(MapToolClient client) {
@@ -1219,6 +1214,7 @@ public class MapTool {
         new ChannelConnection(player.getName(), new DeferredChannel(futureChannel));
 
     var client = installClient(new MapToolClient(campaign, player, connection));
+
     // Show the user the campaign right away, while we wait a moment to receive one from the server.
     setCampaign(campaign);
 
