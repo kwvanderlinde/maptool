@@ -92,7 +92,6 @@ import net.rptools.maptool.client.ui.tokenpanel.TokenPanelTreeCellRenderer;
 import net.rptools.maptool.client.ui.tokenpanel.TokenPanelTreeModel;
 import net.rptools.maptool.client.ui.zone.PointerOverlay;
 import net.rptools.maptool.client.ui.zone.PointerToolOverlay;
-import net.rptools.maptool.client.ui.zone.ZoneMiniMapPanel;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
@@ -150,7 +149,6 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
   private final ColorPicker colorPicker;
   private final Toolbox toolbox;
   private final ToolbarPanel toolbarPanel;
-  private final ZoneMiniMapPanel zoneMiniMapPanel;
 
   /** Contains the zoneRenderer, as well as all overlays. */
   private final JPanel zoneRendererPanel;
@@ -404,13 +402,8 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     statusPanel.addPanel(activityMonitor);
     statusPanel.addPanel(new SpacerStatusBar(25));
 
-    zoneMiniMapPanel = new ZoneMiniMapPanel();
-    // zoneMiniMapPanel.setSize(100, 100);
-
     zoneRendererPanel = new JPanel(new PositionalLayout(5));
     zoneRendererPanel.setBackground(Color.black);
-    // zoneRendererPanel.add(zoneMiniMapPanel, PositionalLayout.Position.SE);
-    // zoneRendererPanel.add(getChatTypingLabel(), PositionalLayout.Position.NW);
     zoneRendererPanel.add(getChatTypingPanel(), PositionalLayout.Position.NW);
     zoneRendererPanel.add(getChatActionLabel(), PositionalLayout.Position.SW);
 
@@ -1470,10 +1463,6 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     progressBar.endDeterminate();
   }
 
-  public ZoneMiniMapPanel getZoneMiniMapPanel() {
-    return zoneMiniMapPanel;
-  }
-
   // /////////////////////////////////////////////////////////////////////////
   // static methods
   // /////////////////////////////////////////////////////////////////////////
@@ -1539,7 +1528,6 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
 
   /**
    * Remove the ZoneRenderer. If it's the current ZoneRenderer, set a new current ZoneRenderer.
-   * Flush zoneMiniMapPanel.
    *
    * @param renderer the ZoneRenderer to remove.
    */
@@ -1560,14 +1548,10 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
         setCurrentZoneRenderer(null);
       }
     }
-    zoneMiniMapPanel.flush();
-    zoneMiniMapPanel.repaint();
   }
 
   public void clearZoneRendererList() {
     zoneRendererList.clear();
-    zoneMiniMapPanel.flush();
-    zoneMiniMapPanel.repaint();
   }
 
   /** Stop the drag of the token, if any is being dragged. */

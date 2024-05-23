@@ -130,7 +130,6 @@ public class MapFunctions extends AbstractFunction {
       // Set the zone and return the visibility of the current map/zone
       zone.setVisible(visible);
       MapTool.serverCommand().setZoneVisibility(zone.getId(), zone.isVisible());
-      MapTool.getFrame().getZoneMiniMapPanel().flush();
       MapTool.getFrame().repaint();
       return zone.isVisible() ? BigDecimal.ONE : BigDecimal.ZERO;
 

@@ -1927,7 +1927,6 @@ public class AppActions {
           zone.setVisible(!zone.isVisible());
 
           MapTool.serverCommand().setZoneVisibility(zone.getId(), zone.isVisible());
-          MapTool.getFrame().getZoneMiniMapPanel().flush();
           MapTool.getFrame().repaint();
         }
       };
@@ -2070,24 +2069,6 @@ public class AppActions {
             }
             renderer.maybeForcePlayersView();
           }
-        }
-      };
-
-  public static final Action TOGGLE_ZONE_SELECTOR =
-      new DefaultClientAction() {
-        {
-          init("action.showMapSelector");
-        }
-
-        @Override
-        public boolean isSelected() {
-          return MapTool.getFrame().getZoneMiniMapPanel().isVisible();
-        }
-
-        @Override
-        protected void executeAction() {
-          JComponent panel = MapTool.getFrame().getZoneMiniMapPanel();
-          panel.setVisible(!panel.isVisible());
         }
       };
 

@@ -42,7 +42,6 @@ public class ZonePopupMenu extends JPopupMenu {
             public void actionPerformed(ActionEvent e) {
               ZonePopupMenu.this.zone.setVisible(false);
               MapTool.serverCommand().setZoneVisibility(ZonePopupMenu.this.zone.getId(), false);
-              MapTool.getFrame().getZoneMiniMapPanel().flush();
               MapTool.getFrame().refresh();
             }
           };
@@ -57,7 +56,6 @@ public class ZonePopupMenu extends JPopupMenu {
 
               ZonePopupMenu.this.zone.setVisible(true);
               MapTool.serverCommand().setZoneVisibility(ZonePopupMenu.this.zone.getId(), true);
-              MapTool.getFrame().getZoneMiniMapPanel().flush();
               MapTool.getFrame().refresh();
             }
           };

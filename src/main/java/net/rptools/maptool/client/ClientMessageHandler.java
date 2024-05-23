@@ -365,7 +365,6 @@ public class ClientMessageHandler implements MessageHandler {
             currentRenderer = MapTool.getFrame().getZoneRenderer(zoneGUID);
             MapTool.getFrame().setCurrentZoneRenderer(currentRenderer);
           }
-          MapTool.getFrame().getZoneMiniMapPanel().flush();
           MapTool.getFrame().refresh();
         });
   }

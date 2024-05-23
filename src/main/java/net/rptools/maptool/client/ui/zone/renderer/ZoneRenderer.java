@@ -128,7 +128,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   private String loadingProgress;
   private boolean isLoaded;
 
-  private BufferedImage miniImage;
   private BufferedImage backbuffer;
   private boolean drawBackground = true;
   private int lastX;
@@ -731,19 +730,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     if (AppState.isPlayerViewLinked() && MapTool.getPlayer().isGM()) {
       forcePlayersView();
     }
-  }
-
-  public BufferedImage getMiniImage(int size) {
-    // if (miniImage == null && getTileImage() !=
-    // ImageManager.UNKNOWN_IMAGE) {
-    // miniImage = new BufferedImage(size, size, Transparency.OPAQUE);
-    // Graphics2D g = miniImage.createGraphics();
-    // g.setPaint(new TexturePaint(getTileImage(), new Rectangle(0, 0,
-    // miniImage.getWidth(), miniImage.getHeight())));
-    // g.fillRect(0, 0, size, size);
-    // g.dispose();
-    // }
-    return miniImage;
   }
 
   @Override
