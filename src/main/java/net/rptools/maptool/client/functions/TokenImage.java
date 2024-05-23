@@ -20,11 +20,11 @@ import java.math.BigDecimal;
 import java.util.List;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.AssetManager;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.util.AssetResolver;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.maptool.util.ImageManager;
@@ -298,10 +298,8 @@ public class TokenImage extends AbstractFunction {
   private static Token findImageToken(final String name, String functionName) {
     Token imageToken = null;
     if (name != null && name.length() > 0) {
-      List<ZoneRenderer> zrenderers = MapTool.getFrame().getZoneRenderers();
-      for (ZoneRenderer zr : zrenderers) {
-        List<Token> tokenList =
-            zr.getZone().getTokensFiltered(t -> t.getName().equalsIgnoreCase(name));
+      for (Zone zone : MapTool.getClient().getCampaign().getZones()) {
+        List<Token> tokenList = zone.getTokensFiltered(t -> t.getName().equalsIgnoreCase(name));
         for (Token token : tokenList) {
           // If we are not the GM and the token is not visible to players then we don't
           // let them get functions from it.

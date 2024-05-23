@@ -29,11 +29,11 @@ import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.functions.FindTokenFunctions;
 import net.rptools.maptool.client.functions.StringFunctions;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.InvalidGUIDException;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.drawing.DrawablePaint;
 import net.rptools.maptool.model.drawing.DrawableTexturePaint;
@@ -141,7 +141,7 @@ public class FunctionUtil {
       if (token == null) {
         if (map == null) {
           throw new ParserException(I18N.getText(KEY_UNKNOWN_TOKEN, functionName, id));
-        } else if (MapTool.getFrame().getZoneRenderer(map) == null) {
+        } else if (MapTool.getClient().getCampaign().getZoneByName(map) == null) {
           throw new ParserException(I18N.getText(KEY_UNKNOWN_MAP, functionName, map));
         } else {
           throw new ParserException(I18N.getText(KEY_UNKNOWN_TOKEN_ON_MAP, functionName, id, map));
@@ -157,60 +157,60 @@ public class FunctionUtil {
   }
 
   /**
-   * Gets the ZoneRender with the given name, throwing a ParserException if it does not exist.
+   * Gets the Zone with the given name or ID, throwing a ParserException if it does not exist.
    *
    * @param functionName the function name (used for generating exception messages).
    * @param map the name or ID of the map
-   * @return the ZoneRenderer.
+   * @return the Zone.
    * @throws ParserException if the map cannot be found
    */
-  public static @Nonnull ZoneRenderer getZoneRenderer(String functionName, String map)
-      throws ParserException {
+  public static @Nonnull Zone getZone(String functionName, String map) throws ParserException {
     if (!GUID.isNotGUID(map)) {
       try {
-        final var zr = MapTool.getFrame().getZoneRenderer(GUID.valueOf(map));
-        if (zr != null) {
-          return zr;
+        final var zone = MapTool.getClient().getCampaign().getZone(GUID.valueOf(map));
+        if (zone != null) {
+          return zone;
         }
       } catch (InvalidGUIDException ignored) {
         // Wasn't a GUID after all. Fall back to looking up by name.
       }
     }
 
-    ZoneRenderer zoneRenderer = MapTool.getFrame().getZoneRenderer(map);
-    if (zoneRenderer == null) {
-      throw new ParserException(I18N.getText(KEY_UNKNOWN_MAP, functionName, map));
+    var zone = MapTool.getClient().getCampaign().getZoneByName(map);
+    if (zone != null) {
+      return zone;
     }
-    return zoneRenderer;
+
+    throw new ParserException(I18N.getText(KEY_UNKNOWN_MAP, functionName, map));
   }
 
   /**
-   * Gets the ZoneRender from the specified index or returns the current ZoneRender. This method
-   * will check the list size before trying to retrieve the token so it is safe to use for functions
-   * that have the map as a optional argument.
+   * Gets the Zone from the specified index or returns the current Zone. This method will check the
+   * list size before trying to retrieve the token so it is safe to use for functions that have the
+   * map as a optional argument.
    *
    * @param functionName the function name (used for generating exception messages).
    * @param param the parameters for the function
    * @param indexMap the index to find the map name or ID at. If -1, use current map instead.
-   * @return the ZoneRenderer.
+   * @return the Zone.
    * @throws ParserException if the map cannot be found
    */
-  public static @Nonnull ZoneRenderer getZoneRendererFromParam(
+  public static @Nonnull Zone getZoneFromParam(
       String functionName, List<Object> param, int indexMap) throws ParserException {
 
     String map = indexMap >= 0 && param.size() > indexMap ? param.get(indexMap).toString() : null;
 
-    ZoneRenderer zoneRenderer;
+    Zone zone;
     if (map == null) {
-      zoneRenderer = MapTool.getFrame().getCurrentZoneRenderer();
-      if (zoneRenderer == null) {
+      zone = MapTool.getClient().getCurrentZone();
+      if (zone == null) {
         throw new ParserException(I18N.getText("macro.function.map.none", functionName));
       }
     } else {
-      zoneRenderer = getZoneRenderer(functionName, map);
+      zone = getZone(functionName, map);
     }
 
-    return zoneRenderer;
+    return zone;
   }
 
   /**
@@ -533,8 +533,8 @@ public class FunctionUtil {
         id = assetKey.get().toString();
       }
     } else if (assetUrlOrId.toLowerCase().startsWith("image:")) {
-      for (ZoneRenderer z : MapTool.getFrame().getZoneRenderers()) {
-        Token t = z.getZone().getTokenByName(assetUrlOrId);
+      for (Zone z : MapTool.getCampaign().getZones()) {
+        Token t = z.getTokenByName(assetUrlOrId);
         if (t != null) {
           id = t.getImageAssetId().toString();
         }

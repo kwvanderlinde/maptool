@@ -567,15 +567,17 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-          Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
+          MapToolClient client = MapTool.getClient();
+          Zone zone = client.getCurrentZone();
           String oldName = zone.getName();
-          if (oldName == null) oldName = "";
           String msg = I18N.getText("msg.confirm.renameMap", oldName);
           String name = JOptionPane.showInputDialog(MapTool.getFrame(), msg, oldName);
           if (name != null) {
             zone.setName(name);
             MapTool.serverCommand().renameZone(zone.getId(), name);
-            MapTool.getFrame().setCurrentZoneRenderer(MapTool.getFrame().getCurrentZoneRenderer());
+            // TODO This triggers onChangeMap despite no map change. Unfortunately it means we can't
+            //  get rid of it right now, but I will push for that in the future.
+            client.setCurrentZoneId(zone.getId());
           }
         }
       };
@@ -1978,11 +1980,6 @@ public class AppActions {
           AppState.setCampaignFile(null);
           MapTool.setCampaign(campaign);
           MapTool.serverCommand().setCampaign(campaign);
-
-          ImageManager.flush();
-          MapTool.getFrame()
-              .setCurrentZoneRenderer(
-                  MapTool.getFrame().getZoneRenderer(campaign.getZones().get(0)));
         }
       };
 
@@ -2420,7 +2417,7 @@ public class AppActions {
    */
   public static void disconnectFromServer() {
     // hide map so player doesn't get a brief GM view
-    MapTool.getFrame().setCurrentZoneRenderer(null);
+    MapTool.getClient().setCurrentZoneId(null);
 
     Campaign campaign;
     if (MapTool.isHostingServer()) {
@@ -3157,22 +3154,25 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
+          MapToolClient client = MapTool.getClient();
+          Zone zone = client.getCurrentZone();
+          if (zone == null) {
+            // Shouldn't happen, but just be sure.
+            return;
+          }
+
           runBackground(
               () -> {
-                Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
                 MapPropertiesDialog newMapDialog =
                     MapPropertiesDialog.createMapPropertiesDialog(MapTool.getFrame());
                 newMapDialog.setZone(zone);
                 newMapDialog.setVisible(true);
                 // Too many things can change to send them 1 by 1 to the client... just resend the
                 // zone
-                // MapTool.serverCommand().setBoard(zone.getId(), zone.getMapAssetId(),
-                // zone.getBoardX(), zone.getBoardY());
-                MapTool.serverCommand().removeZone(zone.getId());
-                MapTool.serverCommand().putZone(zone);
-                // MapTool.getFrame().getCurrentZoneRenderer().flush();
-                MapTool.getFrame()
-                    .setCurrentZoneRenderer(MapTool.getFrame().getCurrentZoneRenderer());
+                MapTool.serverCommand().updateZone(zone);
+                // TODO This triggers onChangeMap despite no map change. Unfortunately it means we
+                //  can't get rid of it right now, but I will push for that in the future.
+                MapTool.getClient().setCurrentZoneId(zone.getId());
               });
         }
       };
@@ -3452,7 +3452,7 @@ public class AppActions {
   public abstract static class ZoneAdminClientAction extends AdminClientAction {
     @Override
     public boolean isAvailable() {
-      return super.isAvailable() && MapTool.getFrame().getCurrentZoneRenderer() != null;
+      return super.isAvailable() && MapTool.getClient().getCurrentZone() != null;
     }
   }
 

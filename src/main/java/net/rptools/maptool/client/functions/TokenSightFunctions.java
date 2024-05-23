@@ -93,7 +93,8 @@ public class TokenSightFunctions extends AbstractFunction {
       if (!token.getHasSight()) {
         return "[]";
       }
-      ZoneRenderer zoneRenderer = token.getZoneRenderer();
+      Zone zone = token.getZone();
+      ZoneRenderer zoneRenderer = MapTool.getFrame().getZoneRenderer(zone.getId());
       Area tokensVisibleArea =
           zoneRenderer.getZoneView().getVisibleArea(token, zoneRenderer.getPlayerView());
       if (tokensVisibleArea == null) {
@@ -103,7 +104,6 @@ public class TokenSightFunctions extends AbstractFunction {
       if (!target.isVisible() || (target.isVisibleOnlyToOwner() && !AppUtil.playerOwns(target))) {
         return "[]";
       }
-      Zone zone = zoneRenderer.getZone();
       Grid grid = zone.getGrid();
 
       Rectangle bounds =

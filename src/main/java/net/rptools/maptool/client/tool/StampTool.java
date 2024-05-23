@@ -334,7 +334,7 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
       } else {
         // Single
         Token token = getTokenAt(e.getX(), e.getY());
-        MapTool.getFrame().showTokenPropertiesDialog(token, renderer);
+        MapTool.getFrame().showTokenPropertiesDialog(token, renderer.getZone());
       }
       return;
     }

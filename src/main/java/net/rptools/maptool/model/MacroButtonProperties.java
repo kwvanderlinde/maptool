@@ -536,9 +536,8 @@ public class MacroButtonProperties implements Comparable<MacroButtonProperties> 
 
     // If token not in current map, look for token in other maps.
     if (token == null) {
-      List<ZoneRenderer> zrenderers = MapTool.getFrame().getZoneRenderers();
-      for (ZoneRenderer zr : zrenderers) {
-        token = zr.getZone().getToken(this.tokenId);
+      for (Zone zone : MapTool.getClient().getCampaign().getZones()) {
+        token = zone.getToken(this.tokenId);
         if (token != null) {
           break;
         }

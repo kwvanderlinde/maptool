@@ -951,7 +951,7 @@ public class Zone {
     // Token is visible, and there is fog
     Rectangle tokenSize = token.getBounds(this);
     Area combined = new Area(exposedArea);
-    PlayerView view = MapTool.getFrame().getZoneRenderer(this).getPlayerView();
+    PlayerView view = MapTool.getFrame().getZoneRenderer(this.getId()).getPlayerView();
     if (MapTool.getServerPolicy().isUseIndividualFOW() && getVisionType() != VisionType.OFF) {
       // Jamz: Lets change the logic a bit looking for ownerships
       if (view.isUsingTokenView()) {
@@ -987,7 +987,7 @@ public class Zone {
     Rectangle tokenSize = token.getBounds(this);
     Area tokenFootprint = getGrid().getTokenCellArea(tokenSize);
     Area combined = new Area(exposedArea);
-    PlayerView view = MapTool.getFrame().getZoneRenderer(this).getPlayerView();
+    PlayerView view = MapTool.getFrame().getZoneRenderer(this.getId()).getPlayerView();
     if (MapTool.getServerPolicy().isUseIndividualFOW() && getVisionType() != VisionType.OFF) {
       if (view.isUsingTokenView()) {
         // Should this use FindTokenFunctions.OwnedFilter and zone.getTokenList()?

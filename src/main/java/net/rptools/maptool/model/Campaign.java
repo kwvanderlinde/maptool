@@ -16,9 +16,9 @@ package net.rptools.maptool.model;
 
 import com.google.protobuf.BoolValue;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import net.rptools.lib.MD5Key;
 import net.rptools.lib.net.Location;
 import net.rptools.maptool.client.MapTool;
@@ -169,14 +169,11 @@ public class Campaign {
      * as is done below for the campaign properties and macro buttons. Iteration over a synchronized
      *  map must lock the map.
      */
-    Map<GUID, Zone> zonesToCopy;
-    synchronized (zones) {
-      zonesToCopy = new LinkedHashMap<>(campaign.zones);
-    }
-    for (Entry<GUID, Zone> entry : zonesToCopy.entrySet()) {
-      Zone copy = new Zone(entry.getValue(), true);
+    for (var zoneToCopy : campaign.getZones()) {
+      Zone copy = new Zone(zoneToCopy, true);
       zones.put(copy.getId(), copy);
     }
+
     campaignProperties = new CampaignProperties(campaign.campaignProperties);
     macroButtonProperties =
         new ArrayList<MacroButtonProperties>(campaign.getMacroButtonPropertiesArray());
@@ -389,8 +386,24 @@ public class Campaign {
    * @param id the id to look for
    * @return the Zone for the id
    */
-  public Zone getZone(GUID id) {
+  public @Nullable Zone getZone(GUID id) {
     return zones.get(id);
+  }
+
+  /**
+   * Return the first zone that has the name {@code zoneName}.
+   *
+   * @param zoneName The name of the zone to find.
+   * @return The first {@link net.rptools.maptool.model.Zone} with name equal to {@code zoneName}.
+   */
+  public @Nullable Zone getZoneByName(@Nonnull String zoneName) {
+    for (Zone zone : getZones()) {
+      if (zoneName.equals(zone.getName())) {
+        return zone;
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -403,17 +416,14 @@ public class Campaign {
     zones.put(zone.getId(), zone);
   }
 
-  public void removeAllZones() {
-    zones.clear();
-  }
-
   /**
    * Remove a zone from zones.
    *
    * @param id the GUID of the zone.
+   * @return The removed zone, or {@code null} if no zone with ID {@code id} exists in the campaign.
    */
-  public void removeZone(GUID id) {
-    zones.remove(id);
+  public @Nullable Zone removeZone(GUID id) {
+    return zones.remove(id);
   }
 
   public boolean containsAsset(Asset asset) {
@@ -421,12 +431,7 @@ public class Campaign {
   }
 
   public boolean containsAsset(MD5Key key) {
-    Collection<Zone> zonesToCheck;
-    synchronized (zones) { // iteration over synchronized map must lock the map
-      zonesToCheck = zones.values();
-    }
-
-    for (Zone zone : zonesToCheck) {
+    for (Zone zone : getZones()) {
       Set<MD5Key> assetSet = zone.getAllAssetIds();
       if (assetSet.contains(key)) {
         return true;
@@ -778,7 +783,7 @@ public class Campaign {
         macroButtonProperties.stream()
             .map(MacroButtonProperties::toDto)
             .collect(Collectors.toList()));
-    dto.addAllZones(zones.values().stream().map(Zone::toDto).collect(Collectors.toList()));
+    dto.addAllZones(getZones().stream().map(Zone::toDto).collect(Collectors.toList()));
     // gmMacroButtonProperties is null if you are loading an old campaign file < 1.5.6
     if (gmMacroButtonProperties != null) {
       dto.addAllGmMacroButtonProperties(

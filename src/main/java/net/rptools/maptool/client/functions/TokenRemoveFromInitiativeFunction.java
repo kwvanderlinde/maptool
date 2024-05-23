@@ -58,7 +58,7 @@ public class TokenRemoveFromInitiativeFunction extends AbstractFunction {
       throws ParserException {
     Token token = FunctionUtil.getTokenFromParam(resolver, functionName, args, 0, 1);
 
-    InitiativeList list = token.getZoneRenderer().getZone().getInitiativeList();
+    InitiativeList list = token.getZone().getInitiativeList();
 
     if (!MapTool.getParser().isMacroTrusted()) {
       if (!MapTool.getFrame().getInitiativePanel().hasOwnerPermission(token)) {

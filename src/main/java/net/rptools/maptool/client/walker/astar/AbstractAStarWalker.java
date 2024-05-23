@@ -189,7 +189,7 @@ public abstract class AbstractAStarWalker extends AbstractZoneWalker {
     // Note: zoneRenderer will be null if map is not visible to players.
     Area newVbl = new Area();
     Area newFowExposedArea = new Area();
-    final var zoneRenderer = MapTool.getFrame().getZoneRenderer(zone);
+    final var zoneRenderer = MapTool.getFrame().getZoneRenderer(zone.getId());
     if (zoneRenderer != null) {
       final var zoneView = zoneRenderer.getZoneView();
 

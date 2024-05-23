@@ -29,11 +29,9 @@ import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
 import net.rptools.maptool.client.ui.htmlframe.HTMLFrameFactory;
 import net.rptools.maptool.client.ui.htmlframe.HTMLFrameFactory.FrameType;
 import net.rptools.maptool.client.ui.macrobuttons.buttons.MacroButtonPrefs;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.MacroButtonProperties;
 import net.rptools.maptool.model.Token;
-import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.library.LibraryManager;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.function.Function;
@@ -528,9 +526,8 @@ public class MapToolLineParser {
                     throw new ParserException(I18N.getText("macro.function.roll.noPerm"));
                   }
                   Token newToken =
-                      MapTool.getFrame()
-                          .getCurrentZoneRenderer()
-                          .getZone()
+                      MapTool.getClient()
+                          .getCurrentZone()
                           .resolveToken(option.getParsedParam(0, resolver, this).toString());
                   if (newToken != null) {
                     contextTokenStack.push(resolver.getTokenInContext());
@@ -1275,89 +1272,6 @@ public class MapToolLineParser {
       throws ParserException {
     String macroOutput = parseLine(resolver, macroBody, context);
     return macroOutput;
-  }
-
-  /**
-   * Searches all maps for a token and returns the the requested lib: macro.
-   *
-   * @param location the location of the library macro.
-   * @return The token which holds the library.
-   * @throws ParserException if the token name is illegal, the token appears multiple times, or if
-   *     the caller doesn't have access to the token.
-   */
-  public Token getTokenMacroLib(String location) throws ParserException {
-    if (location == null) {
-      return null;
-    }
-    if (!location.matches("(?i)^lib:.*")) {
-      throw new ParserException(I18N.getText("lineParser.notALibToken"));
-    }
-    final String libTokenName = location;
-    Token libToken = null;
-    if (libTokenName.length() > 0) {
-      List<ZoneRenderer> zrenderers = MapTool.getFrame().getZoneRenderers();
-      for (ZoneRenderer zr : zrenderers) {
-        List<Token> tokenList =
-            zr.getZone().getTokensFiltered(t -> t.getName().equalsIgnoreCase(libTokenName));
-
-        for (Token token : tokenList) {
-          // If we are not the GM and the token is not visible to players then we don't
-          // let them get functions from it.
-          if (!MapTool.getPlayer().isGM() && !token.isVisible()) {
-            throw new ParserException(I18N.getText("lineParser.libUnableToExec", libTokenName));
-          }
-          if (libToken != null) {
-            throw new ParserException(I18N.getText("lineParser.duplicateLibTokens", libTokenName));
-          }
-
-          libToken = token;
-        }
-      }
-      return libToken;
-    }
-    return null;
-  }
-
-  /**
-   * Searches all maps for a token and returns the zone that the lib: macro is in.
-   *
-   * @param location the location of the library macro.
-   * @return The zone which holds the library.
-   * @throws ParserException if the token name is illegal, the token appears multiple times, or if
-   *     the caller doesn't have access to the token.
-   */
-  public Zone getTokenMacroLibZone(String location) throws ParserException {
-    if (location == null) {
-      return null;
-    }
-    if (!location.matches("(?i)^lib:.*")) {
-      throw new ParserException(I18N.getText("lineParser.notALibToken"));
-    }
-    final String libTokenName = location;
-    Zone libTokenZone = null;
-    if (libTokenName.length() > 0) {
-      List<ZoneRenderer> zrenderers = MapTool.getFrame().getZoneRenderers();
-      for (ZoneRenderer zr : zrenderers) {
-        List<Token> tokenList =
-            zr.getZone().getTokensFiltered(t -> t.getName().equalsIgnoreCase(libTokenName));
-
-        for (Token token : tokenList) {
-          // If we are not the GM and the token is not visible to players then we don't
-          // let them get functions from it.
-          if (!MapTool.getPlayer().isGM() && !token.isVisible()) {
-            throw new ParserException(I18N.getText("lineParser.libUnableToExec", libTokenName));
-          }
-
-          if (libTokenZone != null) {
-            throw new ParserException(I18N.getText("lineParser.duplicateLibTokens", libTokenName));
-          }
-
-          libTokenZone = zr.getZone();
-        }
-      }
-      return libTokenZone;
-    }
-    return null;
   }
 
   /**

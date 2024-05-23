@@ -20,7 +20,6 @@ import java.awt.geom.Area;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -28,13 +27,13 @@ import javax.swing.SwingUtilities;
 import net.rptools.clientserver.simple.MessageHandler;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.events.PlayerStatusChanged;
+import net.rptools.maptool.client.events.ZoneModified;
 import net.rptools.maptool.client.functions.ExecFunction;
 import net.rptools.maptool.client.functions.MacroLinkFunction;
 import net.rptools.maptool.client.ui.MapToolFrame;
 import net.rptools.maptool.client.ui.tokenpanel.InitiativePanel;
 import net.rptools.maptool.client.ui.zone.FogUtil;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRendererFactory;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Asset;
@@ -68,6 +67,8 @@ import net.rptools.maptool.model.zones.TokensAdded;
 import net.rptools.maptool.model.zones.TokensRemoved;
 import net.rptools.maptool.model.zones.ZoneAdded;
 import net.rptools.maptool.model.zones.ZoneRemoved;
+import net.rptools.maptool.model.zones.ZoneReplaced;
+import net.rptools.maptool.model.zones.ZoneVisibilityChanged;
 import net.rptools.maptool.server.Mapper;
 import net.rptools.maptool.server.ServerMessageHandler;
 import net.rptools.maptool.server.ServerPolicy;
@@ -125,6 +126,7 @@ public class ClientMessageHandler implements MessageHandler {
         case PUT_ASSET_MSG -> handle(msg.getPutAssetMsg());
         case PUT_LABEL_MSG -> handle(msg.getPutLabelMsg());
         case PUT_ZONE_MSG -> handle(msg.getPutZoneMsg());
+        case UPDATE_ZONE_MSG -> handle(msg.getUpdateZoneMsg());
         case REMOVE_LABEL_MSG -> handle(msg.getRemoveLabelMsg());
         case REMOVE_TOKEN_MSG -> handle(msg.getRemoveTokenMsg());
         case REMOVE_TOKENS_MSG -> handle(msg.getRemoveTokensMsg());
@@ -169,9 +171,9 @@ public class ClientMessageHandler implements MessageHandler {
         case UPDATE_EXPOSED_AREA_META_MSG -> handle(msg.getUpdateExposedAreaMetaMsg());
         case UPDATE_TOKEN_MOVE_MSG -> handle(msg.getUpdateTokenMoveMsg());
         case UPDATE_PLAYER_STATUS_MSG -> handle(msg.getUpdatePlayerStatusMsg());
-        default -> log.warn(msgType + "not handled.");
+        default -> log.warn("{} not handled.", msgType);
       }
-      log.debug(id + " handled: " + msgType);
+      log.debug("{} handled: {}", id, msgType);
     } catch (Exception e) {
       log.error(e);
     }
@@ -348,23 +350,13 @@ public class ClientMessageHandler implements MessageHandler {
           boolean visible = msg.getIsVisible();
 
           var zone = client.getCampaign().getZone(zoneGUID);
+          if (zone == null) {
+            // That ID doesn't exist.
+            return;
+          }
           zone.setVisible(visible);
-          ZoneRenderer currentRenderer = MapTool.getFrame().getCurrentZoneRenderer();
-          if (!visible
-              && !client.getPlayer().isGM()
-              && currentRenderer != null
-              && currentRenderer.getZone().getId().equals(zoneGUID)) {
-            Collection<GUID> AllTokenIDs = new ArrayList<>();
-            for (Token token : currentRenderer.getZone().getAllTokens()) {
-              AllTokenIDs.add(token.getId());
-            }
-            currentRenderer.getSelectionModel().removeTokensFromSelection(AllTokenIDs);
-            MapTool.getFrame().setCurrentZoneRenderer(null);
-          }
-          if (visible && currentRenderer == null) {
-            currentRenderer = MapTool.getFrame().getZoneRenderer(zoneGUID);
-            MapTool.getFrame().setCurrentZoneRenderer(currentRenderer);
-          }
+          new MapToolEventBus().getMainEventBus().post(new ZoneVisibilityChanged(zone));
+
           MapTool.getFrame().refresh();
         });
   }
@@ -591,7 +583,7 @@ public class ClientMessageHandler implements MessageHandler {
 
             Grid grid = zone.getGrid();
             // Convert the X/Y to the screen point
-            var renderer = MapTool.getFrame().getZoneRenderer(zone);
+            var renderer = MapTool.getFrame().getZoneRenderer(zoneGUID);
             CellPoint newPoint = renderer.getCellAt(new ScreenPoint(x, y));
             ZonePoint zp2 = grid.convert(newPoint);
 
@@ -678,8 +670,8 @@ public class ClientMessageHandler implements MessageHandler {
           var zone = client.getCampaign().getZone(zoneGUID);
           if (zone != null) {
             zone.setName(name);
+            new MapToolEventBus().getMainEventBus().post(new ZoneModified(zone));
           }
-          MapTool.getFrame().setTitleViaRenderer(MapTool.getFrame().getCurrentZoneRenderer());
         });
   }
 
@@ -687,10 +679,12 @@ public class ClientMessageHandler implements MessageHandler {
     EventQueue.invokeLater(
         () -> {
           var zoneGUID = GUID.valueOf(msg.getZoneGuid());
-          final var renderer = MapTool.getFrame().getZoneRenderer(zoneGUID);
-          final var zone = renderer.getZone();
-          client.getCampaign().removeZone(zoneGUID);
-          MapTool.getFrame().removeZoneRenderer(renderer);
+          var campaign = client.getCampaign();
+
+          var zone = campaign.removeZone(zoneGUID);
+          if (zone == null) {
+            return;
+          }
 
           // Now we have fire off adding the tokens in the zone
           new MapToolEventBus()
@@ -708,9 +702,10 @@ public class ClientMessageHandler implements MessageHandler {
           var topologyType = Zone.TopologyType.valueOf(msg.getType().name());
 
           var zone = client.getCampaign().getZone(zoneGUID);
-          zone.removeTopology(area, topologyType);
-
-          MapTool.getFrame().getZoneRenderer(zoneGUID).repaint();
+          if (zone != null) {
+            zone.removeTopology(area, topologyType);
+            new MapToolEventBus().getMainEventBus().post(new ZoneModified(zone));
+          }
         });
   }
 
@@ -754,16 +749,45 @@ public class ClientMessageHandler implements MessageHandler {
           Zone zone = Zone.fromDto(msg.getZone());
           client.getCampaign().putZone(zone);
 
-          // TODO: combine this with MapTool.addZone()
-          var renderer = ZoneRendererFactory.newRenderer(zone);
-          MapTool.getFrame().addZoneRenderer(renderer);
-          if (MapTool.getFrame().getCurrentZoneRenderer() == null && zone.isVisible()) {
-            MapTool.getFrame().setCurrentZoneRenderer(renderer);
-          }
-
           new MapToolEventBus().getMainEventBus().post(new ZoneAdded(zone));
           // Now we have fire off adding the tokens in the zone
           new MapToolEventBus().getMainEventBus().post(new TokensAdded(zone, zone.getAllTokens()));
+        });
+  }
+
+  private void handle(UpdateZoneMsg msg) {
+    EventQueue.invokeLater(
+        () -> {
+          Zone zone = Zone.fromDto(msg.getZone());
+          Campaign campaign = client.getCampaign();
+
+          var existingZone = campaign.getZone(zone.getId());
+          if (existingZone == null) {
+            // Edge case, but if the zone was removed it should not be readded or otherwise used.
+            return;
+          }
+
+          campaign.removeZone(zone.getId());
+          campaign.putZone(zone);
+
+          var existingZoneTokens = existingZone.getAllTokens();
+          var newZoneTokens = zone.getAllTokens();
+
+          var newTokens = new ArrayList<>(newZoneTokens);
+          newTokens.removeAll(existingZoneTokens);
+
+          var removedTokens = new ArrayList<>(existingZoneTokens);
+          removedTokens.removeAll(newZoneTokens);
+
+          // TODO I don't like this remove/add, but it mirrors the existing behaviour from when we
+          //  did a real remote+put.
+          new MapToolEventBus().getMainEventBus().post(new TokensRemoved(zone, removedTokens));
+          new MapToolEventBus().getMainEventBus().post(new ZoneReplaced(zone));
+          new MapToolEventBus().getMainEventBus().post(new TokensAdded(zone, newTokens));
+
+          new MapToolEventBus().getMainEventBus().post(new ZoneVisibilityChanged(zone));
+
+          MapTool.getFrame().refresh();
         });
   }
 
@@ -929,13 +953,17 @@ public class ClientMessageHandler implements MessageHandler {
     EventQueue.invokeLater(
         () -> {
           var zoneGUID = GUID.valueOf(msg.getZoneGuid());
-          ZoneRenderer renderer = MapTool.getFrame().getZoneRenderer(zoneGUID);
-
-          if (renderer != null
-              && renderer != MapTool.getFrame().getCurrentZoneRenderer()
-              && (renderer.getZone().isVisible() || client.getPlayer().isGM())) {
-            MapTool.getFrame().setCurrentZoneRenderer(renderer);
+          var zone = client.getCampaign().getZone(zoneGUID);
+          if (zone == null) {
+            // No zone to switch to.
+            return;
           }
+
+          if (client.getPlayer().isGM() || zone.isVisible()) {
+            // Player can see the zone, so allow the switch.
+            MapTool.getClient().setCurrentZoneId(zoneGUID);
+          }
+          // Otherwise, the player can't see the zone, so no sense switching.
         });
   }
 
@@ -1008,12 +1036,8 @@ public class ClientMessageHandler implements MessageHandler {
           var zone = client.getCampaign().getZone(zoneGUID);
           if (zone != null) {
             zone.setPlayerAlias(displayName);
+            new MapToolEventBus().getMainEventBus().post(new ZoneModified(zone));
           }
-          MapTool.getFrame()
-              .setTitleViaRenderer(
-                  MapTool.getFrame()
-                      .getCurrentZoneRenderer()); // fixes a bug where the display name at the
-          // program title was not updating
         });
   }
 
@@ -1025,9 +1049,10 @@ public class ClientMessageHandler implements MessageHandler {
           var topologyType = Zone.TopologyType.valueOf(addTopologyMsg.getType().name());
 
           var zone = client.getCampaign().getZone(zoneGUID);
-          zone.addTopology(area, topologyType);
-
-          MapTool.getFrame().getZoneRenderer(zoneGUID).repaint();
+          if (zone != null) {
+            zone.addTopology(area, topologyType);
+            new MapToolEventBus().getMainEventBus().post(new ZoneModified(zone));
+          }
         });
   }
 
@@ -1053,7 +1078,7 @@ public class ClientMessageHandler implements MessageHandler {
             .orElse(null);
 
     if (player == null) {
-      log.warn("UpdatePlayerStatusMsg failed. No player with name: '" + playerName + "'");
+      log.warn("UpdatePlayerStatusMsg failed. No player with name: '{}'", playerName);
       return;
     }
 

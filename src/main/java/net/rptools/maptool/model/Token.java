@@ -43,7 +43,6 @@ import net.rptools.lib.transferable.TokenTransferData;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.swing.SwingUtil;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.sheet.stats.StatSheetProperties;
 import net.rptools.maptool.server.Mapper;
@@ -1142,7 +1141,7 @@ public class Token implements Cloneable {
    */
   public void validateName(String name) throws ParserException {
     if (!MapTool.getPlayer().isGM() && !MapTool.getParser().isMacroTrusted()) {
-      Zone curZone = getZoneRenderer().getZone();
+      Zone curZone = getZone();
       List<Token> tokensList = curZone.getAllTokens();
 
       for (Token token : tokensList) {
@@ -1214,20 +1213,27 @@ public class Token implements Cloneable {
     return id;
   }
 
-  public ZoneRenderer getZoneRenderer() { // Returns the ZoneRenderer the token is on
-    ZoneRenderer zoneRenderer = MapTool.getFrame().getCurrentZoneRenderer();
-    Token token = zoneRenderer.getZone().getToken(getId());
+  /**
+   * Get the zone the token belongs to.
+   *
+   * @return The zone the toke is in, or the current zone of the token could not be found.
+   */
+  public Zone getZone() {
+    // TODO A token should not have to discover its container.
+    var currentZone = MapTool.getClient().getCurrentZone();
+    var token = currentZone == null ? null : currentZone.getToken(getId());
+    if (token != null) {
+      return currentZone;
+    }
 
-    if (token == null) {
-      List<ZoneRenderer> zrenderers = MapTool.getFrame().getZoneRenderers();
-      for (ZoneRenderer zr : zrenderers) {
-        token = zr.getZone().getToken(getId());
-        if (token != null) {
-          return zr;
-        }
+    for (Zone zone : MapTool.getClient().getCampaign().getZones()) {
+      token = zone.getToken(getId());
+      if (token != null) {
+        return zone;
       }
     }
-    return zoneRenderer;
+
+    return currentZone;
   }
 
   public void setId(GUID id) {
@@ -2262,7 +2268,7 @@ public class Token implements Cloneable {
    */
   @SuppressWarnings("unchecked")
   public List<InitiativeList.TokenInitiative> getInitiatives() {
-    Zone zone = getZoneRenderer().getZone();
+    Zone zone = getZone();
     List<Integer> list = zone.getInitiativeList().indexOf(this);
     if (list.isEmpty()) {
       return Collections.emptyList();
@@ -2280,7 +2286,7 @@ public class Token implements Cloneable {
    * @return The first token initiative value for the token
    */
   public InitiativeList.TokenInitiative getInitiative() {
-    Zone zone = getZoneRenderer().getZone();
+    Zone zone = getZone();
     List<Integer> list = zone.getInitiativeList().indexOf(this);
     if (list.isEmpty()) {
       return null;
@@ -2772,7 +2778,11 @@ public class Token implements Cloneable {
         break;
     }
     if (lightChanged) {
-      getZoneRenderer().flushLight(); // flush lights if it changed
+      var z = getZone();
+      var renderer = zone == null ? null : MapTool.getFrame().getZoneRenderer(z.getId());
+      if (renderer != null) {
+        renderer.flushLight(); // flush lights if it changed
+      }
     }
     if (macroChanged) {
       zone.tokenMacroChanged(this);

@@ -69,6 +69,8 @@ public interface ServerCommand {
 
   void putZone(Zone zone);
 
+  void updateZone(Zone zone);
+
   void removeZone(GUID zoneGUID);
 
   void setZoneVisibility(GUID zoneGUID, boolean visible);
@@ -79,7 +81,7 @@ public interface ServerCommand {
 
   void removeAsset(MD5Key assetID);
 
-  void editToken(GUID zoneGUID, Token token);
+  void editToken(Zone zone, Token token);
 
   void putToken(GUID zoneGUID, Token token);
 

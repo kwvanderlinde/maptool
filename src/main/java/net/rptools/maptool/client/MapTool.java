@@ -77,7 +77,6 @@ import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.ui.theme.ThemeSupport;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRendererFactory;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.events.TokenHoverListener;
 import net.rptools.maptool.events.ZoneLoadedListener;
@@ -107,6 +106,7 @@ import net.rptools.maptool.server.ServerCommand;
 import net.rptools.maptool.server.ServerConfig;
 import net.rptools.maptool.server.ServerPolicy;
 import net.rptools.maptool.transfer.AssetTransferManager;
+import net.rptools.maptool.util.ImageManager;
 import net.rptools.maptool.util.MessageUtil;
 import net.rptools.maptool.util.StringUtil;
 import net.rptools.maptool.util.UserJvmOptions;
@@ -892,26 +892,14 @@ public class MapTool {
     campaign = Objects.requireNonNullElseGet(campaign, Campaign::new);
 
     // Load up the new
-    client.setCampaign(campaign);
-    ZoneRenderer currRenderer = null;
+    ImageManager.flush();
 
     clientFrame.clearZoneRendererList();
     clientFrame.getInitiativePanel().setZone(null);
     clientFrame.clearTokenTree();
 
-    // Install new campaign
-    for (Zone zone : campaign.getZones()) {
-      ZoneRenderer renderer = ZoneRendererFactory.newRenderer(zone);
-      clientFrame.addZoneRenderer(renderer);
-      if ((currRenderer == null || zone.getId().equals(defaultRendererId))
-          && (getPlayer().isGM() || zone.isVisible())) {
-        currRenderer = renderer;
-      }
-      new MapToolEventBus().getMainEventBus().post(new ZoneAdded(zone));
-      // Now we have fire off adding the tokens in the zone
-      new MapToolEventBus().getMainEventBus().post(new TokensAdded(zone, zone.getAllTokens()));
-    }
-    clientFrame.setCurrentZoneRenderer(currRenderer);
+    client.setCampaign(campaign);
+
     clientFrame.getInitiativePanel().setOwnerPermissions(campaign.isInitiativeOwnerPermissions());
     clientFrame.getInitiativePanel().setMovementLock(campaign.isInitiativeMovementLock());
     clientFrame.getInitiativePanel().setInitUseReverseSort(campaign.isInitiativeUseReverseSort());
@@ -1064,7 +1052,6 @@ public class MapTool {
 
   public static void removeZone(Zone zone) {
     MapTool.serverCommand().removeZone(zone.getId());
-    MapTool.getFrame().removeZoneRenderer(MapTool.getFrame().getZoneRenderer(zone.getId()));
     MapTool.getCampaign().removeZone(zone.getId());
 
     // Now we have fire off adding the tokens in the zone
@@ -1077,15 +1064,17 @@ public class MapTool {
   }
 
   public static void addZone(Zone zone, boolean changeZone) {
+    var campaign = client.getCampaign();
+
     Zone zoneToRemove = null;
-    if (getCampaign().getZones().size() == 1) {
+    if (campaign.getZones().size() == 1) {
       // Remove the default map
-      Zone singleZone = getCampaign().getZones().get(0);
+      Zone singleZone = campaign.getZones().get(0);
       if (ZoneFactory.DEFAULT_MAP_NAME.equals(singleZone.getName()) && singleZone.isEmpty()) {
         zoneToRemove = singleZone;
       }
     }
-    getCampaign().putZone(zone);
+    campaign.putZone(zone);
     serverCommand().putZone(zone);
 
     // Now that clients know about the new zone, we can delete the single empty zone. Otherwise
@@ -1101,9 +1090,7 @@ public class MapTool {
 
     // Show the new zone
     if (changeZone) {
-      clientFrame.setCurrentZoneRenderer(ZoneRendererFactory.newRenderer(zone));
-    } else {
-      getFrame().getZoneRenderers().add(ZoneRendererFactory.newRenderer(zone));
+      client.setCurrentZoneId(zone.getId());
     }
   }
 

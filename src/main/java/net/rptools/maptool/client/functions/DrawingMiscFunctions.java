@@ -64,7 +64,7 @@ public class DrawingMiscFunctions extends DrawingFunctions {
     checkTrusted(functionName);
     String mapName = parameters.get(0).toString();
     String drawing = parameters.get(1).toString();
-    Zone map = FunctionUtil.getZoneRenderer(functionName, mapName).getZone();
+    Zone map = FunctionUtil.getZone(functionName, mapName);
     if ("movedOverDrawing".equalsIgnoreCase(functionName)) {
       FunctionUtil.checkNumberParam(functionName, parameters, 3, 3);
       String jsonPath = parameters.get(2).toString();

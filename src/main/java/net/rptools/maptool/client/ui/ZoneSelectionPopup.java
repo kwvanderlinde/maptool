@@ -17,16 +17,16 @@ package net.rptools.maptool.client.ui;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Comparator;
 import javax.swing.*;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.theme.Icons;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
+import net.rptools.maptool.model.Zone;
 
 public class ZoneSelectionPopup extends JScrollPopupMenu {
 
@@ -48,36 +48,24 @@ public class ZoneSelectionPopup extends JScrollPopupMenu {
     if (MapTool.getServerPolicy().getMapSelectUIHidden() && !MapTool.getPlayer().isGM()) {
       MapTool.getFrame().getToolbarPanel().getMapselect().setVisible(false);
     } else {
-      List<ZoneRenderer> rendererList =
-          new LinkedList<ZoneRenderer>(MapTool.getFrame().getZoneRenderers());
+      var zoneList = new ArrayList<>(MapTool.getClient().getCampaign().getZones());
       if (!MapTool.getPlayer().isGM()) {
-        rendererList.removeIf(renderer -> !renderer.getZone().isVisible());
+        zoneList.removeIf(zone -> !zone.isVisible());
       }
 
-      if (AppPreferences.getMapSortType().equals(AppPreferences.MapSortType.GMNAME))
-        rendererList.sort(
-            (o1, o2) -> {
-              String name1 = o1.getZone().getName();
-              String name2 = o2.getZone().getName();
+      if (AppPreferences.getMapSortType().equals(AppPreferences.MapSortType.GMNAME)) {
+        zoneList.sort(Comparator.comparing(Zone::getName, String.CASE_INSENSITIVE_ORDER));
+      } else {
+        zoneList.sort(Comparator.comparing(Zone::toString, String.CASE_INSENSITIVE_ORDER));
+      }
 
-              return String.CASE_INSENSITIVE_ORDER.compare(name1, name2);
-            });
-      else
-        rendererList.sort(
-            (o1, o2) -> {
-              String name1 = o1.getZone().toString();
-              String name2 = o2.getZone().toString();
-
-              return String.CASE_INSENSITIVE_ORDER.compare(name1, name2);
-            });
-
-      for (ZoneRenderer renderer : rendererList) {
-        ZoneItem item = new ZoneItem(renderer);
-        boolean current = renderer == MapTool.getFrame().getCurrentZoneRenderer();
-        if (current) {
+      var currentZone = MapTool.getClient().getCurrentZone();
+      for (Zone zone : zoneList) {
+        ZoneItem item = new ZoneItem(zone);
+        if (currentZone != null && currentZone.getId().equals(zone.getId())) {
           item.setSelected(true);
           selection = item;
-        } else if (!renderer.getZone().isVisible()) {
+        } else if (!zone.isVisible()) {
           item.setIcon(RessourceManager.getSmallIcon(Icons.TOOLBAR_ZONE_NOT_VISIBLE));
         }
         add(item);
@@ -89,11 +77,12 @@ public class ZoneSelectionPopup extends JScrollPopupMenu {
 
   private static class ZoneItem extends JCheckBoxMenuItem implements ActionListener {
 
-    private ZoneRenderer renderer;
+    private final Zone zone;
 
-    ZoneItem(ZoneRenderer renderer) {
-      this.renderer = renderer;
-      String name = renderer.getZone().toString();
+    ZoneItem(Zone zone) {
+      this.zone = zone;
+
+      String name = zone.toString();
       if ("".equals(name)) {
         name = I18N.getText("Button.map");
       }
@@ -117,14 +106,18 @@ public class ZoneSelectionPopup extends JScrollPopupMenu {
 
     @Override
     public void actionPerformed(ActionEvent e) {
+      var client = MapTool.getClient();
 
       // Set current zone renderer if new
-      if (MapTool.getFrame().getCurrentZoneRenderer() != renderer) {
-        MapTool.getFrame().setCurrentZoneRenderer(renderer);
+      if (client.getCurrentZone() == null
+          || !client.getCurrentZone().getId().equals(zone.getId())) {
+        client.setCurrentZoneId(zone.getId());
         MapTool.getFrame().refresh();
 
-        if (AppState.isPlayerViewLinked() && MapTool.getPlayer().isGM()) {
-          MapTool.serverCommand().enforceZone(renderer.getZone().getId());
+        if (AppState.isPlayerViewLinked() && client.getPlayer().isGM()) {
+          client.getServerCommand().enforceZone(zone.getId());
+
+          var renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
           renderer.forcePlayersView();
         }
       }

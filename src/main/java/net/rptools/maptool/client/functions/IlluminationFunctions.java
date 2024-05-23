@@ -62,7 +62,8 @@ public class IlluminationFunctions extends AbstractFunction {
     final var y = FunctionUtil.paramAsInteger(functionName, parameters, 1, false);
     final var point = new Point2D.Double(x, y);
 
-    final var renderer = FunctionUtil.getZoneRendererFromParam(functionName, parameters, 2);
+    final var zone = FunctionUtil.getZoneFromParam(functionName, parameters, 2);
+    final var renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
     final var playerView = getPlayerView(functionName, renderer, parameters, 3);
 
     for (final var lumensLevel :

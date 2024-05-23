@@ -15,12 +15,14 @@
 package net.rptools.maptool.client.script.javascript.api;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import javax.annotation.Nonnull;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.script.javascript.*;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.Zone;
 import org.graalvm.polyglot.HostAccess;
 
 public class JSAPITokens implements MapToolJSAPIInterface {
@@ -31,21 +33,21 @@ public class JSAPITokens implements MapToolJSAPIInterface {
 
   @HostAccess.Export
   public List<Object> getMapTokens() {
-    return getMapTokens(MapTool.getFrame().getCurrentZoneRenderer());
+    var currentZone = MapTool.getClient().getCurrentZone();
+    return currentZone == null ? Collections.emptyList() : getMapTokens(currentZone);
   }
 
   @HostAccess.Export
   public List<Object> getMapTokens(String zoneName) {
-
-    return getMapTokens(MapTool.getFrame().getZoneRenderer(zoneName));
+    var zone = MapTool.getClient().getCampaign().getZoneByName(zoneName);
+    return zone == null ? Collections.emptyList() : getMapTokens(zone);
   }
 
-  public List<Object> getMapTokens(ZoneRenderer zr) {
+  private List<Object> getMapTokens(@Nonnull Zone zone) {
     final List<Object> tokens = new ArrayList<>();
     boolean trusted = JSScriptEngine.inTrustedContext();
     String playerId = MapTool.getPlayer().getName();
-    zr.getZone()
-        .getAllTokens()
+    zone.getAllTokens()
         .forEach(
             (t -> {
               if (trusted || t.isOwner(playerId)) {
@@ -60,9 +62,9 @@ public class JSAPITokens implements MapToolJSAPIInterface {
   public JSAPIToken getTokenByName(String tokenName) {
     boolean trusted = JSScriptEngine.inTrustedContext();
     String playerId = MapTool.getPlayer().getName();
-    for (ZoneRenderer z : MapTool.getFrame().getZoneRenderers()) {
-      if (trusted || z.getZone().isVisible()) {
-        Token t = z.getZone().getTokenByName(tokenName);
+    for (Zone zone : MapTool.getClient().getCampaign().getZones()) {
+      if (trusted || zone.isVisible()) {
+        Token t = zone.getTokenByName(tokenName);
         if (t != null && (trusted || t.isOwner(playerId))) {
           return new JSAPIToken(t);
         }
@@ -99,12 +101,11 @@ public class JSAPITokens implements MapToolJSAPIInterface {
       token = new JSAPIToken(findToken);
       token.setMap(MapTool.getFrame().getCurrentZoneRenderer().getZone());
     } else {
-      List<ZoneRenderer> zrenderers = MapTool.getFrame().getZoneRenderers();
-      for (ZoneRenderer zr : zrenderers) {
-        findToken = zr.getZone().resolveToken(uuid);
+      for (Zone zone : MapTool.getClient().getCampaign().getZones()) {
+        findToken = zone.resolveToken(uuid);
         if (findToken != null) {
           token = new JSAPIToken(findToken);
-          token.setMap(zr.getZone());
+          token.setMap(zone);
           break;
         }
       }

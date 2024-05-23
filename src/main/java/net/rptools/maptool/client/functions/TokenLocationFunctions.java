@@ -25,7 +25,6 @@ import java.util.stream.Stream;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.client.walker.WalkerMetric;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.client.walker.astar.AStarSquareEuclideanWalker;
@@ -177,7 +176,7 @@ public class TokenLocationFunctions extends AbstractFunction {
       tokens.add((String) tokenString);
     }
 
-    final var zone = FunctionUtil.getZoneRenderer(functionName, map).getZone();
+    final var zone = FunctionUtil.getZone(functionName, map);
 
     Zone toZone;
     Zone fromZone;
@@ -241,7 +240,7 @@ public class TokenLocationFunctions extends AbstractFunction {
   private TokenLocation getTokenLocation(boolean useDistancePerCell, Token token) {
     TokenLocation loc = new TokenLocation();
     if (useDistancePerCell) {
-      Rectangle tokenBounds = token.getBounds(token.getZoneRenderer().getZone());
+      Rectangle tokenBounds = token.getBounds(token.getZone());
       loc.x = tokenBounds.x;
       loc.y = tokenBounds.y;
     } else {
@@ -284,7 +283,7 @@ public class TokenLocationFunctions extends AbstractFunction {
   public double getDistance(Token source, Token target, boolean units, String metric)
       throws ParserException {
     boolean closedForm = true; // VBL & terrain ignored, so closedForm always work
-    Zone zone = source.getZoneRenderer().getZone();
+    Zone zone = source.getZone();
     Grid grid = zone.getGrid();
     double distance;
 
@@ -365,7 +364,7 @@ public class TokenLocationFunctions extends AbstractFunction {
   public double getDistance(
       Token source, int x, int y, boolean units, String metric, boolean pixels)
       throws ParserException {
-    Zone zone = source.getZoneRenderer().getZone();
+    Zone zone = source.getZone();
     Grid grid = zone.getGrid();
 
     if (grid.getCapabilities().isPathingSupported() && !NO_GRID.equals(metric)) {
@@ -601,7 +600,7 @@ public class TokenLocationFunctions extends AbstractFunction {
    * @return the CellPoint where the token is.
    */
   public CellPoint getTokenCell(Token token) {
-    Zone zone = token.getZoneRenderer().getZone();
+    Zone zone = token.getZone();
     return zone.getGrid().convert(new ZonePoint(token.getX(), token.getY()));
   }
 
@@ -612,8 +611,7 @@ public class TokenLocationFunctions extends AbstractFunction {
    * @return all zones containing the token.
    */
   private Stream<Zone> getTokenZones(String identifier) {
-    return MapTool.getFrame().getZoneRenderers().stream()
-        .map(ZoneRenderer::getZone)
+    return MapTool.getClient().getCampaign().getZones().stream()
         .filter(zone -> zone.resolveToken(identifier) != null);
   }
 }

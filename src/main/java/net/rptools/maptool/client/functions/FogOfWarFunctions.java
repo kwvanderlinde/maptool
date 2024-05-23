@@ -77,7 +77,8 @@ public class FogOfWarFunctions extends AbstractFunction {
               parameters.size()));
     }
 
-    final var zoneRenderer = FunctionUtil.getZoneRendererFromParam(functionName, parameters, 0);
+    final var zone = FunctionUtil.getZoneFromParam(functionName, parameters, 0);
+    final var zoneRenderer = MapTool.getFrame().getZoneRenderer(zone.getId());
 
     /*
      * String empty = exposePCOnlyArea(optional String mapName)

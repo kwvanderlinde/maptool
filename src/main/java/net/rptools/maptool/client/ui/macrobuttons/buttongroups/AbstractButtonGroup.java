@@ -288,17 +288,17 @@ public abstract class AbstractButtonGroup extends JPanel
       public void mouseReleased(MouseEvent event) {
         Token token = getToken();
         if (imageBounds != null && imageBounds.contains(event.getPoint())) {
+          var currentZone = MapTool.getClient().getCurrentZone();
           if (SwingUtilities.isLeftMouseButton(event)
               && event.getClickCount() == 2
               && !SwingUtil.isShiftDown(event)) {
             // open edit token dialog
-            MapTool.getFrame()
-                .showTokenPropertiesDialog(token, MapTool.getFrame().getCurrentZoneRenderer());
+            MapTool.getFrame().showTokenPropertiesDialog(token, currentZone);
           } else if (SwingUtilities.isRightMouseButton(event)) {
             // open token popup menu
             Set<GUID> GUIDSet = new HashSet<GUID>();
             GUIDSet.add(tokenId);
-            ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
+            ZoneRenderer renderer = MapTool.getFrame().getZoneRenderer(currentZone.getId());
             new TokenPopupMenu(GUIDSet, event.getX(), event.getY(), renderer, token)
                 .showPopup(AbstractButtonGroup.this);
           } else if (SwingUtilities.isLeftMouseButton(event) && SwingUtil.isShiftDown(event)) {

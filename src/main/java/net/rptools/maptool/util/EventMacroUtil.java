@@ -20,10 +20,10 @@ import java.util.concurrent.ExecutionException;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.functions.exceptions.*;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.TextMessage;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.library.LibraryManager;
 import net.rptools.parser.ParserException;
 import org.apache.logging.log4j.LogManager;
@@ -41,10 +41,9 @@ public class EventMacroUtil {
    */
   public static List<Token> getEventMacroTokens(final String macroCallback) {
     List<Token> found = new ArrayList<>();
-    List<ZoneRenderer> zrenderers = MapTool.getFrame().getZoneRenderers();
-    for (ZoneRenderer zr : zrenderers) {
+    for (Zone zone : MapTool.getClient().getCampaign().getZones()) {
       List<Token> tokenList =
-          zr.getZone().getTokensFiltered(t -> t.getName().toLowerCase().startsWith("lib:"));
+          zone.getTokensFiltered(t -> t.getName().toLowerCase().startsWith("lib:"));
       var nonGms = MapTool.getNonGMs();
       for (Token token : tokenList) {
         // If the token is not owned by everyone and all owners are GMs then we are in

@@ -153,7 +153,7 @@ public class TokenCopyDeleteFunctions extends AbstractFunction {
    * @return a string describing which token got deleted
    */
   private String deleteToken(Token token) {
-    Zone zone = token.getZoneRenderer().getZone();
+    Zone zone = token.getZone();
     MapTool.serverCommand().removeToken(zone.getId(), token.getId());
     return "Deleted token " + token.getId() + " (" + token.getName() + ")";
   }

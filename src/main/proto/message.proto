@@ -43,6 +43,7 @@ message Message {
     PutLabelMsg put_label_msg = 26;
     PutTokenMsg put_token_msg = 27;
     PutZoneMsg put_zone_msg = 28;
+    UpdateZoneMsg update_zone_msg = 75;
     RemoveAssetMsg remove_asset_msg = 29;
     RemoveLabelMsg remove_label_msg = 30;
     RemoveTokenMsg remove_token_msg = 31;

@@ -116,6 +116,11 @@ public class ServerCommandClientImpl implements ServerCommand {
     makeServerCall(Message.newBuilder().setPutZoneMsg(msg).build());
   }
 
+  public void updateZone(Zone zone) {
+    var msg = UpdateZoneMsg.newBuilder().setZone(zone.toDto());
+    makeServerCall(Message.newBuilder().setUpdateZoneMsg(msg).build());
+  }
+
   public void removeZone(GUID zoneGUID) {
     var msg = RemoveZoneMsg.newBuilder().setZoneGuid(zoneGUID.toString());
     makeServerCall(Message.newBuilder().setRemoveZoneMsg(msg).build());
@@ -164,9 +169,10 @@ public class ServerCommandClientImpl implements ServerCommand {
     makeServerCall(Message.newBuilder().setRestoreZoneViewMsg(msg).build());
   }
 
-  public void editToken(GUID zoneGUID, Token token) {
-    client.getCampaign().getZone(zoneGUID).editToken(token);
-    var msg = EditTokenMsg.newBuilder().setZoneGuid(zoneGUID.toString()).setToken(token.toDto());
+  public void editToken(Zone zone, Token token) {
+    zone.editToken(token);
+    var msg =
+        EditTokenMsg.newBuilder().setZoneGuid(zone.getId().toString()).setToken(token.toDto());
     makeServerCall(Message.newBuilder().setEditTokenMsg(msg).build());
   }
 
@@ -228,7 +234,7 @@ public class ServerCommandClientImpl implements ServerCommand {
    */
   public void updateTokenProperty(
       Token token, Token.Update update, TokenPropertyValueDto... parameters) {
-    Zone zone = token.getZoneRenderer().getZone();
+    Zone zone = token.getZone();
     GUID tokenGUID = token.getId();
     GUID zoneGUID = zone.getId();
 

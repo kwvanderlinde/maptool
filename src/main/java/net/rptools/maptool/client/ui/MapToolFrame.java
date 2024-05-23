@@ -30,8 +30,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.swing.*;
 import javax.swing.Timer;
 import javax.swing.border.BevelBorder;
@@ -46,6 +49,8 @@ import net.rptools.maptool.client.AppActions.ClientAction;
 import net.rptools.maptool.client.events.ZoneActivated;
 import net.rptools.maptool.client.events.ZoneDeactivated;
 import net.rptools.maptool.client.events.ZoneLoading;
+import net.rptools.maptool.client.events.ZoneModified;
+import net.rptools.maptool.client.events.ZoneSwitched;
 import net.rptools.maptool.client.swing.AboutDialog;
 import net.rptools.maptool.client.swing.AppHomeDiskSpaceStatusBar;
 import net.rptools.maptool.client.swing.AssetCacheStatusBar;
@@ -93,6 +98,7 @@ import net.rptools.maptool.client.ui.tokenpanel.TokenPanelTreeModel;
 import net.rptools.maptool.client.ui.zone.PointerOverlay;
 import net.rptools.maptool.client.ui.zone.PointerToolOverlay;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
+import net.rptools.maptool.client.ui.zone.renderer.ZoneRendererFactory;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Asset;
@@ -106,6 +112,9 @@ import net.rptools.maptool.model.drawing.DrawablePaint;
 import net.rptools.maptool.model.drawing.DrawableTexturePaint;
 import net.rptools.maptool.model.drawing.DrawnElement;
 import net.rptools.maptool.model.drawing.Pen;
+import net.rptools.maptool.model.zones.ZoneAdded;
+import net.rptools.maptool.model.zones.ZoneRemoved;
+import net.rptools.maptool.model.zones.ZoneReplaced;
 import net.rptools.maptool.util.ImageManager;
 import org.apache.commons.collections4.map.LinkedMap;
 import org.apache.commons.lang.ArrayUtils;
@@ -131,7 +140,6 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
   private boolean paintDrawingMeasurement = true;
 
   private ImageChooserDialog imageChooserDialog;
-  private ZoneRenderer currentRenderer;
 
   // Components
   private final AssetPanel assetPanel;
@@ -150,6 +158,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
   private final Toolbox toolbox;
   private final ToolbarPanel toolbarPanel;
 
+  // TODO I would actually like a single ZoneRenderer component that we can swap Zones out of.
   /** Contains the zoneRenderer, as well as all overlays. */
   private final JPanel zoneRendererPanel;
 
@@ -161,7 +170,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
   private JButton fullsZoneButton;
   private JPanel fullScreenToolPanel;
   private final JPanel rendererBorderPanel;
-  private final List<ZoneRenderer> zoneRendererList;
+  private final ConcurrentMap<GUID, ZoneRenderer> zoneRenderers;
   private final JMenuBar menuBar;
   private final StatusPanel statusPanel;
   private String statusMessage = "";
@@ -182,7 +191,6 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
   private Timer chatTimer;
   private long chatNotifyDuration;
   private final ChatNotificationTimers chatTyperTimers;
-  private GUID PreRemoveRenderGUID = null;
 
   private final GlassPane glassPane;
 
@@ -365,7 +373,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     initiativePanel = new InitiativePanel();
     overlayPanel = new HTMLOverlayPanel();
 
-    zoneRendererList = new CopyOnWriteArrayList<ZoneRenderer>();
+    zoneRenderers = new ConcurrentHashMap<>();
     pointerOverlay = new PointerOverlay();
     colorPicker = new ColorPicker(this);
     textureChooserPanel =
@@ -456,6 +464,9 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     chatTyperTimers = new ChatNotificationTimers();
     chatTimer = getChatTimer();
     setChatTypingLabelColor(AppPreferences.getChatNotificationColor());
+
+    // Hopefully this is temporary, just to keep the current zone renderer up-to-date for now.
+    new MapToolEventBus().getMainEventBus().register(this);
   }
 
   public ChatNotificationTimers getChatNotificationTimers() {
@@ -751,18 +762,16 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
    * Shows the token properties dialog, and saves the token.
    *
    * @param token the token to edit
-   * @param zr the ZoneRenderer of the token
+   * @param zone the Zone of the token
    */
-  public void showTokenPropertiesDialog(Token token, ZoneRenderer zr) {
-    if (token != null && zr != null) {
+  public void showTokenPropertiesDialog(Token token, Zone zone) {
+    if (token != null && zone != null) {
       if (MapTool.getPlayer().isGM() || !MapTool.getServerPolicy().isTokenEditorLocked()) {
-        EditTokenDialog dialog = MapTool.getFrame().getTokenPropertiesDialog();
+        EditTokenDialog dialog = getTokenPropertiesDialog();
         dialog.showDialog(token);
         if (dialog.isTokenSaved()) {
           // Checks if the map still exists. Fixes #1646.
-          if (getZoneRenderers().contains(zr) && zr.getZone().getToken(token.getId()) != null) {
-            MapTool.serverCommand().editToken(zr.getZone().getId(), token);
-          }
+          MapTool.serverCommand().editToken(zone, token);
         }
       }
     }
@@ -1496,13 +1505,9 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     return pen;
   }
 
-  public List<ZoneRenderer> getZoneRenderers() {
-    // TODO: This should prob be immutable
-    return zoneRendererList;
-  }
-
-  public ZoneRenderer getCurrentZoneRenderer() {
-    return currentRenderer;
+  public @Nullable ZoneRenderer getCurrentZoneRenderer() {
+    var currentId = MapTool.getClient().getCurrentZoneId();
+    return currentId == null ? null : zoneRenderers.getOrDefault(currentId, null);
   }
 
   /**
@@ -1512,46 +1517,28 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     return overlayPanel;
   }
 
-  public void addZoneRenderer(ZoneRenderer renderer) {
-    zoneRendererList.add(renderer);
-    if (renderer.getZone().getId().equals(this.PreRemoveRenderGUID)) {
-      if (MapTool.getPlayer().isGM() || renderer.getZone().isVisible()) {
-        this.PreRemoveRenderGUID = null;
-        setCurrentZoneRenderer(renderer);
-      } else {
-        this.PreRemoveRenderGUID = null;
-      }
-    } else {
-      this.PreRemoveRenderGUID = null;
+  private void addZoneRenderer(ZoneRenderer renderer) {
+    var zoneId = renderer.getZone().getId();
+    var previous = zoneRenderers.put(zoneId, renderer);
+    if (previous != null) {
+      log.warn("Adding a zone renderer for an existing zone {}", zoneId);
     }
   }
 
   /**
-   * Remove the ZoneRenderer. If it's the current ZoneRenderer, set a new current ZoneRenderer.
+   * Remove the ZoneRenderer.
    *
-   * @param renderer the ZoneRenderer to remove.
+   * @param zoneId the ID of the zone whose ZoneRenderer will be removed.
    */
-  public void removeZoneRenderer(ZoneRenderer renderer) {
-    boolean isCurrent = renderer == getCurrentZoneRenderer();
-    this.PreRemoveRenderGUID = getCurrentZoneRenderer().getZone().getId();
-    zoneRendererList.remove(renderer);
-    if (isCurrent) {
-      boolean rendererSet = false;
-      for (ZoneRenderer currRenderer : zoneRendererList) {
-        if (MapTool.getPlayer().isGM() || currRenderer.getZone().isVisible()) {
-          setCurrentZoneRenderer(currRenderer);
-          rendererSet = true;
-          break;
-        }
-      }
-      if (!rendererSet) {
-        setCurrentZoneRenderer(null);
-      }
+  private void removeZoneRenderer(@Nonnull GUID zoneId) {
+    var renderer = zoneRenderers.remove(zoneId);
+    if (renderer != null) {
+      zoneRendererPanel.remove(renderer);
     }
   }
 
   public void clearZoneRendererList() {
-    zoneRendererList.clear();
+    zoneRenderers.clear();
   }
 
   /** Stop the drag of the token, if any is being dragged. */
@@ -1563,62 +1550,126 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     }
   }
 
-  /**
-   * Set the current ZoneRenderer
-   *
-   * @param renderer the ZoneRenderer
-   */
-  public void setCurrentZoneRenderer(ZoneRenderer renderer) {
-    // Flush first so that the new zone renderer can inject the newly needed images
-    if (renderer != null) {
-      new MapToolEventBus().getMainEventBus().post(new ZoneLoading(renderer.getZone()));
+  @Subscribe
+  private void onZoneAdded(ZoneAdded event) {
+    addZoneRenderer(ZoneRendererFactory.newRenderer(event.zone()));
+  }
 
-      ImageManager.flush(renderer.getZone().getAllAssetIds());
+  @Subscribe
+  private void onZoneRemoved(ZoneRemoved event) {
+    removeZoneRenderer(event.zone().getId());
+  }
+
+  @Subscribe
+  private void onZoneReplaced(ZoneReplaced event) {
+    // Remove any existing renderer for the zone. We'll create a new one below.
+    ImageManager.flush(event.zone().getAllAssetIds());
+    removeZoneRenderer(event.zone().getId());
+
+    var newRenderer = ZoneRendererFactory.newRenderer(event.zone());
+    addZoneRenderer(newRenderer);
+
+    // This might have been the current zone.
+    var currentZone = MapTool.getClient().getCurrentZone();
+    if (currentZone != null && currentZone.getId().equals(event.zone().getId())) {
+      // TODO I think just `-1` for thie index will suffice.
+      zoneRendererPanel.add(
+          newRenderer, PositionalLayout.Position.CENTER, zoneRendererPanel.getComponentCount() - 1);
+    }
+
+    initiativePanel.update();
+    toolbox.setTargetRenderer(newRenderer);
+    newRenderer.requestFocusInWindow();
+    // Updates the VBL/MBL button. Fixes #1642.
+    TopologyModeSelectionPanel.getInstance().setMode(event.zone().getTopologyTypes());
+    AppActions.updateActions();
+    repaint();
+    setTitleViaZone(event.zone());
+    getZoomStatusBar().update();
+  }
+
+  @Subscribe
+  private void onZoneModified(ZoneModified event) {
+    if (event.zone().getId().equals(MapTool.getClient().getCurrentZoneId())) {
+      setTitleViaZone(event.zone());
+      var renderer = getZoneRenderer(event.zone().getId());
+      if (renderer != null) {
+        renderer.repaint();
+      }
+    }
+  }
+
+  @Subscribe
+  private void onZoneSwitch(ZoneSwitched event) {
+    // Flush first so that the new zone renderer can inject the newly needed images
+    // TODO Why are we flushing the new zone?
+
+    if (event.zone() != null) {
+      new MapToolEventBus().getMainEventBus().post(new ZoneLoading(event.zone()));
+      ImageManager.flush(event.zone().getAllAssetIds());
     } else {
       ImageManager.flush();
-      // zoneRendererList.remove(currentRenderer);
     }
+    if (event.previousZone() != null) {
+      ImageManager.flush(event.previousZone().getAllAssetIds());
+    }
+
     // Handle new renderers
     // TODO: should this be here ?
-    if (renderer != null && !zoneRendererList.contains(renderer)) {
-      zoneRendererList.add(renderer);
+    var newRenderer = event.zone() == null ? null : getZoneRenderer(event.zone().getId());
+    if (newRenderer == null && event.zone() != null) {
+      newRenderer = ZoneRendererFactory.newRenderer(event.zone());
+      addZoneRenderer(newRenderer);
     }
-    Zone oldZone = null;
-    if (currentRenderer != null) {
+
+    var previousRenderer =
+        event.previousZone() == null ? null : getZoneRenderer(event.previousZone().getId());
+    if (previousRenderer != null) {
       // Check if the zone still exists. Fix #1568
-      if (MapTool.getFrame().getZoneRenderers().contains(currentRenderer)) {
-        stopTokenDrag(); // if a token is being dragged, stop the drag
-      }
-      oldZone = currentRenderer.getZone();
-      currentRenderer.flush();
-      zoneRendererPanel.remove(currentRenderer);
+      stopTokenDrag(); // if a token is being dragged, stop the drag
+      previousRenderer.flush();
+      zoneRendererPanel.remove(previousRenderer);
     }
-    if (renderer != null) {
+
+    if (newRenderer != null) {
+      // region TODO Yuck, but we're not otherwise clearing out previous renderers yet, particularly
+      //         after campaign loads.
+      var children = new ArrayList<>(Arrays.asList(zoneRendererPanel.getComponents()));
+      for (var child : children) {
+        if (child instanceof ZoneRenderer zr) {
+          log.warn(
+              "Found stray zone renderer still installed in the panel. Zone ID: {}",
+              zr.getZone().getId());
+          zoneRendererPanel.remove(child);
+        }
+      }
+      // endregion
+
       zoneRendererPanel.add(
-          renderer, PositionalLayout.Position.CENTER, zoneRendererPanel.getComponentCount() - 1);
+          newRenderer, PositionalLayout.Position.CENTER, zoneRendererPanel.getComponentCount() - 1);
       zoneRendererPanel.doLayout();
     }
-    currentRenderer = renderer;
     initiativePanel.update();
-    toolbox.setTargetRenderer(renderer);
+    toolbox.setTargetRenderer(newRenderer);
 
-    if (renderer != null) {
+    if (event.zone() != null) {
       // Previous zone must be passed for the listeners to be properly removed. Fix #1670.
 
       final var eventBus = new MapToolEventBus().getMainEventBus();
-      if (oldZone != null) {
-        eventBus.post(new ZoneDeactivated(oldZone));
+      if (event.previousZone() != null) {
+        // TODO Also ZoneDeactivated etc., on campaign switch.
+        eventBus.post(new ZoneDeactivated(event.previousZone()));
       }
-      eventBus.post(new ZoneActivated(renderer.getZone()));
+      eventBus.post(new ZoneActivated(event.zone()));
 
-      renderer.requestFocusInWindow();
+      newRenderer.requestFocusInWindow();
       // Updates the VBL/MBL button. Fixes #1642.
-      TopologyModeSelectionPanel.getInstance().setMode(renderer.getZone().getTopologyTypes());
+      TopologyModeSelectionPanel.getInstance().setMode(event.zone().getTopologyTypes());
     }
     AppActions.updateActions();
     repaint();
 
-    setTitleViaRenderer(renderer);
+    setTitleViaZone(event.zone());
     getZoomStatusBar().update();
   }
 
@@ -1626,17 +1677,17 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
    * Set the MapTool title bar. The title includes the name of the app, the player name, the
    * campaign name and the name of the specified zone.
    *
-   * @param renderer the ZoneRenderer of the zone.
+   * @param zone the zone to pull information from
    */
-  public void setTitleViaRenderer(ZoneRenderer renderer) {
+  private void setTitleViaZone(@Nullable Zone zone) {
     String campaignName = " - [" + MapTool.getCampaign().getName() + "]";
     String versionString =
         MapTool.getVersion().equals("unspecified") ? "Development" : "v" + MapTool.getVersion();
     var title =
         AppConstants.APP_NAME + " " + versionString + " - " + MapTool.getPlayer() + campaignName;
 
-    if (renderer != null) {
-      title += "-" + renderer.getZone().toString();
+    if (zone != null) {
+      title += "-" + zone.toString();
     }
     setTitle(title);
   }
@@ -1646,7 +1697,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
    * campaign name and the current zone name.
    */
   public void setTitle() {
-    setTitleViaRenderer(MapTool.getFrame().getCurrentZoneRenderer());
+    setTitleViaZone(MapTool.getClient().getCurrentZone());
   }
 
   public Toolbox getToolbox() {
@@ -1658,49 +1709,13 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
   }
 
   /**
-   * Return the first ZoneRender for which the zone is the same as the passed zone (should be only
-   * one).
-   *
-   * @param zone the zone.
-   * @return the ZoneRenderer.
-   */
-  public ZoneRenderer getZoneRenderer(Zone zone) {
-    for (ZoneRenderer renderer : zoneRendererList) {
-      if (zone == renderer.getZone()) {
-        return renderer;
-      }
-    }
-    return null;
-  }
-
-  /**
    * Return the first ZoneRender for which the zone has the zoneGUID (should be only one).
    *
    * @param zoneGUID the zoneGUID of the zone.
    * @return the ZoneRenderer.
    */
-  public ZoneRenderer getZoneRenderer(GUID zoneGUID) {
-    for (ZoneRenderer renderer : zoneRendererList) {
-      if (zoneGUID.equals(renderer.getZone().getId())) {
-        return renderer;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Return the first ZoneRender for which the zone has the zoneName (could be multiples).
-   *
-   * @param zoneName the name of the zone.
-   * @return the ZoneRenderer.
-   */
-  public ZoneRenderer getZoneRenderer(final String zoneName) {
-    for (ZoneRenderer renderer : zoneRendererList) {
-      if (zoneName.equals(renderer.getZone().getName())) {
-        return renderer;
-      }
-    }
-    return null;
+  public @Nullable ZoneRenderer getZoneRenderer(@Nonnull GUID zoneGUID) {
+    return zoneRenderers.getOrDefault(zoneGUID, null);
   }
 
   /**

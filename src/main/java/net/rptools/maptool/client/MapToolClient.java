@@ -14,6 +14,7 @@
  */
 package net.rptools.maptool.client;
 
+import com.google.common.eventbus.Subscribe;
 import java.awt.EventQueue;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -25,15 +26,23 @@ import javax.annotation.Nullable;
 import net.rptools.clientserver.simple.connection.Connection;
 import net.rptools.maptool.client.events.PlayerConnected;
 import net.rptools.maptool.client.events.PlayerDisconnected;
+import net.rptools.maptool.client.events.ZoneSwitched;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.CampaignFactory;
+import net.rptools.maptool.model.GUID;
+import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.campaign.CampaignManager;
 import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.player.PlayerDatabase;
 import net.rptools.maptool.model.player.PlayerDatabaseFactory;
+import net.rptools.maptool.model.zones.TokensAdded;
+import net.rptools.maptool.model.zones.TokensRemoved;
+import net.rptools.maptool.model.zones.ZoneAdded;
+import net.rptools.maptool.model.zones.ZoneRemoved;
+import net.rptools.maptool.model.zones.ZoneVisibilityChanged;
 import net.rptools.maptool.server.ClientHandshake;
 import net.rptools.maptool.server.MapToolServer;
 import net.rptools.maptool.server.ServerCommand;
@@ -67,6 +76,10 @@ public class MapToolClient {
 
   private final MapToolConnection conn;
   private Campaign campaign;
+  // null means no zone should be shown to the user.
+  // Note: we don't just track the GUID because if the zone is directly removed from the campaign we
+  // would no longer know about it for the sake of events and such.
+  private @Nullable Zone currentZone;
   private ServerPolicy serverPolicy;
   private final ServerCommand serverCommand;
   private State currentState = State.New;
@@ -178,6 +191,8 @@ public class MapToolClient {
 
   public void start() throws IOException {
     if (transitionToState(State.New, State.Started)) {
+      new MapToolEventBus().getMainEventBus().register(this);
+
       try {
         conn.start();
       } catch (IOException e) {
@@ -197,6 +212,10 @@ public class MapToolClient {
       }
 
       playerList.clear();
+
+      if (previousState != State.New) {
+        new MapToolEventBus().getMainEventBus().unregister(this);
+      }
     }
   }
 
@@ -265,7 +284,101 @@ public class MapToolClient {
   }
 
   public void setCampaign(Campaign campaign) {
+    // First remove the old campaign + zones.
+    for (var zone : campaign.getZones()) {
+      new MapToolEventBus().getMainEventBus().post(new TokensRemoved(zone, zone.getAllTokens()));
+      new MapToolEventBus().getMainEventBus().post(new ZoneRemoved(zone));
+    }
+
     this.campaign = campaign;
+
+    for (var zone : campaign.getZones()) {
+      new MapToolEventBus().getMainEventBus().post(new ZoneAdded(zone));
+      new MapToolEventBus().getMainEventBus().post(new TokensAdded(zone, zone.getAllTokens()));
+    }
+
+    var intiialZone = findFirstVisibleZone();
+    setCurrentZoneId(intiialZone == null ? null : intiialZone.getId());
+  }
+
+  /**
+   * Set the current zone.
+   *
+   * <p>Note: if {@code zoneId} does not exist in the current campaign, this call will set it to
+   * {@code null} instead.
+   *
+   * @param zoneId The ID of the zone to make current, or {@code null} if no zone should be current.
+   */
+  public void setCurrentZoneId(@Nullable GUID zoneId) {
+    // TODO Also subscribe to ZoneRemoved or some other event so we can clear automatically.
+
+    var previousZone = currentZone;
+
+    var newZone = zoneId == null ? null : campaign.getZone(zoneId);
+    if (zoneId != null && newZone == null) {
+      log.warn("Attempted to switch to zone {} but it's not in the campaign", zoneId);
+    }
+    if (newZone != null && !player.isGM() && !newZone.isVisible()) {
+      log.warn("Attempted to switch to zone {} but it's not visible to this player", zoneId);
+      newZone = null;
+    }
+
+    currentZone = newZone;
+    new MapToolEventBus().getMainEventBus().post(new ZoneSwitched(previousZone, newZone));
+  }
+
+  /**
+   * @return The current zone ID, or {@code null} if there is no current zone.
+   */
+  public @Nullable GUID getCurrentZoneId() {
+    return currentZone == null ? null : currentZone.getId();
+  }
+
+  /**
+   * @return The current zone, or {@code null} if there is no current zone.
+   */
+  public @Nullable Zone getCurrentZone() {
+    return currentZone == null ? null : currentZone;
+  }
+
+  @Subscribe
+  private void onZoneAdded(ZoneAdded event) {
+    var visibleToPlayer = player.isGM() || event.zone().isVisible();
+    if (currentZone == null && visibleToPlayer) {
+      setCurrentZoneId(event.zone().getId());
+    }
+  }
+
+  @Subscribe
+  private void onZoneRemoved(ZoneRemoved event) {
+    if (currentZone != null && currentZone.getId().equals(event.zone().getId())) {
+      var switchTo = findFirstVisibleZone();
+      setCurrentZoneId(switchTo == null ? null : switchTo.getId());
+    }
+  }
+
+  @Subscribe
+  private void onZoneVisibilityChanged(ZoneVisibilityChanged event) {
+    var visibleToPlayer = player.isGM() || event.zone().isVisible();
+    if (currentZone == null) {
+      if (visibleToPlayer) {
+        setCurrentZoneId(event.zone().getId());
+      }
+    } else if (currentZone.getId().equals(event.zone().getId())) {
+      if (!visibleToPlayer) {
+        // TODO Switch to another zone if available.
+        setCurrentZoneId(null);
+      }
+    }
+  }
+
+  private @Nullable Zone findFirstVisibleZone() {
+    for (var zone : campaign.getZones()) {
+      if (player.isGM() || zone.isVisible()) {
+        return zone;
+      }
+    }
+    return null;
   }
 
   private void onDisconnect(Connection connection) {
@@ -300,7 +413,7 @@ public class MapToolClient {
             MapTool.showError(errorMessage);
 
             // hide map so player doesn't get a brief GM view
-            MapTool.getFrame().setCurrentZoneRenderer(null);
+            setCurrentZoneId(null);
             MapTool.getFrame().getToolbarPanel().getMapselect().setVisible(true);
             MapTool.getFrame().getAssetPanel().enableAssets();
             new CampaignManager().clearCampaignData();

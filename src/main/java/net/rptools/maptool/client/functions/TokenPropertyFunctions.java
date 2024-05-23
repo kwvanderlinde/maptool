@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Grid;
 import net.rptools.maptool.model.Token;
@@ -487,7 +486,7 @@ public class TokenPropertyFunctions extends AbstractFunction {
     if (functionName.equalsIgnoreCase("bringToFront")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 2);
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, 1);
-      Zone zone = token.getZoneRenderer().getZone();
+      Zone zone = token.getZone();
       int zOrder = zone.getLargestZOrder() + 1;
       MapTool.serverCommand().updateTokenProperty(token, Token.Update.setZOrder, zOrder);
       return BigDecimal.valueOf(token.getZOrder());
@@ -499,7 +498,7 @@ public class TokenPropertyFunctions extends AbstractFunction {
     if (functionName.equalsIgnoreCase("sendToBack")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 2);
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, 1);
-      Zone zone = token.getZoneRenderer().getZone();
+      Zone zone = token.getZone();
       int zOrder = zone.getSmallestZOrder() - 1;
       MapTool.serverCommand().updateTokenProperty(token, Token.Update.setZOrder, zOrder);
       return BigDecimal.valueOf(token.getZOrder());
@@ -725,11 +724,8 @@ public class TokenPropertyFunctions extends AbstractFunction {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 3);
       boolean trusted = MapTool.getParser().isMacroTrusted();
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 1, 2);
-      ZoneRenderer zoneR = token.getZoneRenderer();
-      Zone zone = zoneR.getZone();
       // Remove current owners, but if this macro is untrusted and the current player is an owner,
-      // keep the
-      // ownership there.
+      // keep the ownership there.
       String myself = MapTool.getPlayer().getName();
       MapTool.serverCommand().updateTokenProperty(token, Token.Update.clearAllOwners);
       String s = parameters.get(0).toString();
@@ -832,8 +828,7 @@ public class TokenPropertyFunctions extends AbstractFunction {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 2);
 
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, 1);
-      ZoneRenderer zoneR = token.getZoneRenderer();
-      Zone zone = zoneR.getZone();
+      Zone zone = token.getZone();
 
       // Get the pixel width or height of a given token
       Rectangle tokenBounds = token.getBounds(zone);
@@ -856,8 +851,7 @@ public class TokenPropertyFunctions extends AbstractFunction {
         || functionName.equalsIgnoreCase("setTokenHeight")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 3);
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 1, 2);
-      ZoneRenderer zoneR = token.getZoneRenderer();
-      Zone zone = zoneR.getZone();
+      Zone zone = token.getZone();
 
       double magnitude = getBigDecimalFromParam(functionName, parameters, 0).doubleValue();
       Rectangle tokenBounds = token.getBounds(zone);
@@ -1063,7 +1057,7 @@ public class TokenPropertyFunctions extends AbstractFunction {
    * @return the size of the token.
    */
   private String getSize(Token token) {
-    Grid grid = token.getZoneRenderer().getZone().getGrid();
+    Grid grid = token.getZone().getGrid();
     if (token.isSnapToScale()) {
       for (TokenFootprint footprint : grid.getFootprints()) {
         if (token.getFootprint(grid) == footprint) {
@@ -1087,7 +1081,7 @@ public class TokenPropertyFunctions extends AbstractFunction {
       MapTool.serverCommand().updateTokenProperty(token, Token.Update.setSnapToScale, false);
       return getSize(token);
     }
-    Grid grid = token.getZoneRenderer().getZone().getGrid();
+    Grid grid = token.getZone().getGrid();
     for (TokenFootprint footprint : grid.getFootprints()) {
       if (footprint.getName().equalsIgnoreCase(size)) {
         MapTool.serverCommand()
@@ -1105,7 +1099,7 @@ public class TokenPropertyFunctions extends AbstractFunction {
    * @param token The token to reset the size of.
    */
   private void resetSize(Token token) {
-    Grid grid = token.getZoneRenderer().getZone().getGrid();
+    Grid grid = token.getZone().getGrid();
     TokenFootprint footprint = grid.getDefaultFootprint();
     MapTool.serverCommand().updateTokenProperty(token, Token.Update.setFootprint, grid, footprint);
   }

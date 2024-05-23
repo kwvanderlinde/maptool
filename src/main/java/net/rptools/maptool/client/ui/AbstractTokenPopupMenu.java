@@ -981,7 +981,7 @@ public abstract class AbstractTokenPopupMenu extends JPopupMenu {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-      MapTool.getFrame().showTokenPropertiesDialog(getTokenUnderMouse(), getRenderer());
+      MapTool.getFrame().showTokenPropertiesDialog(getTokenUnderMouse(), getRenderer().getZone());
     }
 
     /**

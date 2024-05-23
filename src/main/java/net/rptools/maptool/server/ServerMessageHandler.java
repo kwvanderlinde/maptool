@@ -30,17 +30,12 @@ import net.rptools.maptool.client.ServerCommandClientImpl;
 import net.rptools.maptool.client.ui.zone.FogUtil;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.common.MapToolConstants;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.InitiativeList.TokenInitiative;
 import net.rptools.maptool.model.Zone.VisionType;
 import net.rptools.maptool.model.drawing.Drawable;
 import net.rptools.maptool.model.drawing.DrawnElement;
 import net.rptools.maptool.model.drawing.Pen;
-import net.rptools.maptool.model.zones.TokensAdded;
-import net.rptools.maptool.model.zones.TokensRemoved;
-import net.rptools.maptool.model.zones.ZoneAdded;
-import net.rptools.maptool.model.zones.ZoneRemoved;
 import net.rptools.maptool.server.proto.*;
 import net.rptools.maptool.transfer.AssetProducer;
 import org.apache.logging.log4j.LogManager;
@@ -156,6 +151,10 @@ public class ServerMessageHandler implements MessageHandler {
         }
         case PUT_ZONE_MSG -> {
           handle(msg.getPutZoneMsg());
+          sendToClients(id, msg);
+        }
+        case UPDATE_ZONE_MSG -> {
+          handle(msg.getUpdateZoneMsg());
           sendToClients(id, msg);
         }
         case REMOVE_ASSET_MSG -> handle(msg.getRemoveAssetMsg());
@@ -482,14 +481,7 @@ public class ServerMessageHandler implements MessageHandler {
     EventQueue.invokeLater(
         () -> {
           var zoneGUID = GUID.valueOf(msg.getZoneGuid());
-          var zone = server.getCampaign().getZone(zoneGUID);
           server.getCampaign().removeZone(zoneGUID);
-
-          // Now we have fire off adding the tokens in the zone
-          new MapToolEventBus()
-              .getMainEventBus()
-              .post(new TokensRemoved(zone, zone.getAllTokens()));
-          new MapToolEventBus().getMainEventBus().post(new ZoneRemoved(zone));
         });
   }
 
@@ -541,10 +533,17 @@ public class ServerMessageHandler implements MessageHandler {
         () -> {
           final var zone = Zone.fromDto(msg.getZone());
           server.getCampaign().putZone(zone);
+        });
+  }
 
-          // Now we have fire off adding the tokens in the zone
-          new MapToolEventBus().getMainEventBus().post(new ZoneAdded(zone));
-          new MapToolEventBus().getMainEventBus().post(new TokensAdded(zone, zone.getAllTokens()));
+  private void handle(UpdateZoneMsg msg) {
+    EventQueue.invokeLater(
+        () -> {
+          final var zone = Zone.fromDto(msg.getZone());
+          final var campaign = server.getCampaign();
+
+          campaign.removeZone(zone.getId());
+          campaign.putZone(zone);
         });
   }
 

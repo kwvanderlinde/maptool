@@ -38,6 +38,7 @@ import javax.swing.*;
 import net.rptools.lib.CodeTimer;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.*;
+import net.rptools.maptool.client.events.PreferencesChanged;
 import net.rptools.maptool.client.events.ZoneLoaded;
 import net.rptools.maptool.client.functions.TokenMoveFunctions;
 import net.rptools.maptool.client.swing.ImageBorder;
@@ -224,6 +225,11 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     // fps.start();
 
     new MapToolEventBus().getMainEventBus().register(this);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("ZoneRenderer[%s]", zone.getId().toString());
   }
 
   public void setFrameRateCap(int cap) {
@@ -3389,6 +3395,23 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    */
   @Override
   public void dropActionChanged(DropTargetDragEvent dtde) {}
+
+  @Subscribe
+  private void onPreferencesChanged(PreferencesChanged event) {
+    setFrameRateCap(AppPreferences.getFrameRateCap());
+  }
+
+  @Subscribe
+  private void onZoneVisibilityChanged(ZoneVisibilityChanged event) {
+    if (event.zone() != zone) {
+      return;
+    }
+
+    if (!event.zone().isVisible() && !MapTool.getPlayer().isGM()) {
+      // Map is hidden. Clear the selection.
+      selectionModel.replaceSelection(Collections.emptyList());
+    }
+  }
 
   @Subscribe
   private void onSelectionChanged(SelectionModel.SelectionChanged event) {

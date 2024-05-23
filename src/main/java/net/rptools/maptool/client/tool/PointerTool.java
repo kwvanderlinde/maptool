@@ -334,7 +334,7 @@ public class PointerTool extends DefaultTool {
           return;
         }
         tokenUnderMouse = token;
-        MapTool.getFrame().showTokenPropertiesDialog(tokenUnderMouse, renderer);
+        MapTool.getFrame().showTokenPropertiesDialog(tokenUnderMouse, renderer.getZone());
       }
       if (SwingUtilities.isRightMouseButton(event)) {
         Token token = getTokenAt(event.getX(), event.getY());
@@ -487,7 +487,7 @@ public class PointerTool extends DefaultTool {
           if (!AppUtil.playerOwns(token)) {
             return;
           }
-          MapTool.getFrame().showTokenPropertiesDialog(token, renderer);
+          MapTool.getFrame().showTokenPropertiesDialog(token, renderer.getZone());
         }
       }
       return;

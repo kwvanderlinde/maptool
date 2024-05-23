@@ -155,6 +155,10 @@ message PutZoneMsg {
   ZoneDto zone = 1;
 }
 
+message UpdateZoneMsg {
+  ZoneDto zone = 1;
+}
+
 message RemoveAssetMsg {
   string asset_id = 1;
 }

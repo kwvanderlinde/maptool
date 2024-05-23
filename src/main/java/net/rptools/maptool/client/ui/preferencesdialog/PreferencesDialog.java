@@ -940,10 +940,7 @@ public class PreferencesDialog extends JDialog {
                 AppPreferences.setFrameRateCap(value);
 
                 // AppPreferences may have rejected the value, so read it back.
-                final var cap = AppPreferences.getFrameRateCap();
-                for (final var renderer : MapTool.getFrame().getZoneRenderers()) {
-                  renderer.setFrameRateCap(cap);
-                }
+                new MapToolEventBus().getMainEventBus().post(new PreferencesChanged());
               }
 
               @Override

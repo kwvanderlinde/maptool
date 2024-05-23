@@ -1674,13 +1674,13 @@ public class AppPreferences {
   // Based off vision type enum in Zone.java, this could easily get tossed somewhere else if
   // preferred.
   public enum MapSortType {
-    DISPLAYNAME(),
-    GMNAME();
+    DISPLAYNAME("mapSortType.DISPLAYNAME"),
+    GMNAME("mapSortType.GMNAME");
 
     private final String displayName;
 
-    MapSortType() {
-      displayName = I18N.getString("mapSortType." + name());
+    MapSortType(String key) {
+      displayName = I18N.getString(key);
     }
 
     @Override

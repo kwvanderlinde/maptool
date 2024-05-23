@@ -112,7 +112,7 @@ public class TokenInitFunction extends AbstractFunction {
       throw new ParserException(message);
     } // endif
 
-    InitiativeList list = token.getZoneRenderer().getZone().getInitiativeList();
+    InitiativeList list = token.getZone().getInitiativeList();
     // insert the token if needed
     TokenInitiative ti = null;
     if (allowDuplicates || list.indexOf(token).isEmpty()) {
