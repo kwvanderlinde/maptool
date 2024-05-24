@@ -137,16 +137,19 @@ public class MapToolClient {
    * Transition from any state except {@code newState} to {@code newState}.
    *
    * @param newState The new state to set.
+   * @return The previous state set. If not equal to {@code newState}, the transition was
+   *     successful.
    */
-  private boolean transitionToState(State newState) {
-    if (currentState == newState) {
+  private State transitionToState(State newState) {
+    var previousState = currentState;
+    currentState = newState;
+
+    if (previousState == newState) {
       log.warn(
           "Failed to transition to state {} because that is already the current state", newState);
-      return false;
-    } else {
-      currentState = newState;
-      return true;
     }
+
+    return previousState;
   }
 
   /**
@@ -187,7 +190,8 @@ public class MapToolClient {
   }
 
   public void close() {
-    if (transitionToState(State.Closed)) {
+    State previousState = transitionToState(State.Closed);
+    if (previousState != State.Closed) {
       if (conn.isAlive()) {
         conn.close();
       }
