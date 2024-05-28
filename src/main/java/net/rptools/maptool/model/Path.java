@@ -81,6 +81,7 @@ public class Path<T extends AbstractPoint> {
     waypointList.add(copyPoint(cells.getLast()));
   }
 
+  // TODO Strange name when used with gridless.
   public List<T> getCellPath() {
     return Collections.unmodifiableList(cellList);
   }

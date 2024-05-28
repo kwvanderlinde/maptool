@@ -14,24 +14,31 @@
  */
 package net.rptools.maptool.client.ui.zone.renderer;
 
+import java.awt.Font;
 import java.awt.Rectangle;
 import java.awt.geom.Area;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.text.NumberFormat;
 import java.util.*;
 import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.AppUtil;
+import net.rptools.maptool.client.DeveloperOptions;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ScreenPoint;
+import net.rptools.maptool.client.ui.theme.Images;
+import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.ui.zone.PlayerView;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderablePath;
 import net.rptools.maptool.client.walker.ZoneWalker;
-import net.rptools.maptool.model.AbstractPoint;
+import net.rptools.maptool.model.CellPoint;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.IsometricGrid;
 import net.rptools.maptool.model.LookupTable;
 import net.rptools.maptool.model.Path;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.TokenFootprint;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.util.ImageManager;
@@ -67,23 +74,17 @@ public class ZoneCompositor {
     return objectCache;
   }
 
-  public Map<Token, Path<? extends AbstractPoint>> getOwnedPaths(
-      PlayerView view, boolean ownedByCurrentPlayer) {
-    final var result = new HashMap<Token, Path<? extends AbstractPoint>>();
+  public Map<Token, RenderablePath> getOwnedPaths(PlayerView view, boolean ownedByCurrentPlayer) {
+    final var result = new HashMap<Token, RenderablePath>();
 
     Set<SelectionSet> movementSet =
         ownedByCurrentPlayer
             ? renderer.getOwnedMovementSet(view)
             : renderer.getUnOwnedMovementSet(view);
-    if (movementSet.isEmpty()) {
-      return Collections.emptyMap();
-    }
-
     for (SelectionSet set : movementSet) {
       Token keyToken = zone.getToken(set.getKeyToken());
       if (keyToken == null) {
         // It was removed ?
-        // selectionSetMap.remove(set.getKeyToken());
         continue;
       }
       // Hide the hidden layer
@@ -91,18 +92,152 @@ public class ZoneCompositor {
         continue;
       }
 
-      ZoneWalker walker = set.getWalker();
+      final var tokenFootprint = keyToken.getFootprint(zone.getGrid());
 
       // Show path only on the key token on token layer that are visible to the owner or gm while
       // fow and vision is on
       if (keyToken.getLayer().supportsWalker()) {
-        final Path<? extends AbstractPoint> path =
-            walker != null ? walker.getPath() : set.getGridlessPath();
-        result.put(keyToken, path);
+        ZoneWalker walker = set.getWalker();
+        if (walker != null) {
+          // Gridded path
+          var path = walker.getPath();
+          result.put(keyToken, griddedPathToRenderable(path, tokenFootprint));
+        } else {
+          // Gridless path.
+          var path = set.getGridlessPath();
+          result.put(keyToken, gridlessPathToRenderable(path, tokenFootprint));
+        }
       }
     }
 
     return result;
+  }
+
+  public RenderablePath.CellPath griddedPathToRenderable(
+      Path<CellPoint> path, TokenFootprint tokenFootprint) {
+    final var grid = zone.getGrid();
+    double distanceTextFontSize = 12. * grid.getSize() / 50.;
+    final var useDistanceWithoutTerrain = DeveloperOptions.Toggle.ShowAiDebugging.isEnabled();
+    if (useDistanceWithoutTerrain) {
+      distanceTextFontSize *= 0.75;
+    }
+    final var distanceTextFont = new Font(Font.DIALOG, Font.BOLD, (int) distanceTextFontSize);
+
+    var occupiedCells = new HashMap<CellPoint, RenderablePath.PathCell>();
+    var pathPoints = new ArrayList<Point2D>();
+    for (var cellPoint : path.getCellPath()) {
+      for (var occupiedCellPoint : tokenFootprint.getOccupiedCells(cellPoint)) {
+        occupiedCells.computeIfAbsent(
+            occupiedCellPoint,
+            c -> {
+              ZonePoint zonePoint = grid.convert(c);
+              return new RenderablePath.PathCell(
+                  new Rectangle2D.Double(
+                      zonePoint.x + grid.getCellOffset().width,
+                      zonePoint.y + grid.getCellOffset().height,
+                      grid.getCellWidth(),
+                      grid.getCellHeight()),
+                  null,
+                  false);
+            });
+      }
+
+      var pathCell = occupiedCells.get(cellPoint);
+      if (pathCell == null) {
+        // Should not happen since it should have been added as an occupied cell.
+        continue;
+      }
+
+      // Font size of 12 at grid size 50 is default
+      RenderablePath.DistanceText distanceText = null;
+      if (AppState.getShowMovementMeasurements()) {
+        var distance = cellPoint.getDistanceTraveled(zone);
+        var distanceWithoutTerrain = cellPoint.getDistanceTraveledWithoutTerrain();
+
+        var text = NumberFormat.getInstance().format(distance);
+        if (useDistanceWithoutTerrain) {
+          text += " (" + NumberFormat.getInstance().format(distanceWithoutTerrain) + ")";
+        }
+
+        // Padding is 7 pixels at 100% zoom and grid size of 50.
+        var textPadding = 0.14 * grid.getSize();
+        var textPosition = new Point2D.Double(textPadding, textPadding);
+        if (grid.isHex()) {
+          textPosition.x += grid.getCellWidth() / 10.;
+          textPosition.y += grid.getCellHeight() / 10.;
+        }
+        distanceText = new RenderablePath.DistanceText(text, textPosition);
+      }
+
+      var isFirstOrLast =
+          pathPoints.isEmpty() || pathPoints.size() >= path.getCellPath().size() - 1;
+
+      pathCell.distanceText = distanceText;
+
+      pathPoints.add(
+          new Point2D.Double(pathCell.bounds.getCenterX(), pathCell.bounds.getCenterY()));
+    }
+
+    // Add in waypoint information, but exclude the first and last since those are
+    // waypoints according to the user.
+    var waypointList = path.getWayPointList();
+    if (waypointList.size() > 2) {
+      waypointList = waypointList.subList(1, waypointList.size() - 1);
+      for (var waypoint : waypointList) {
+        var pathCell = occupiedCells.get(waypoint);
+        if (pathCell == null) {
+          // Should not happen, but just in case.
+          continue;
+        }
+
+        pathCell.isWaypoint = true;
+      }
+    }
+
+    return new RenderablePath.CellPath(
+        grid.getCellHighlight(),
+        RessourceManager.getImage(Images.ZONE_RENDERER_CELL_WAYPOINT),
+        0.333,
+        distanceTextFont,
+        List.copyOf(occupiedCells.values()),
+        pathPoints);
+  }
+
+  public RenderablePath.PointPath gridlessPathToRenderable(
+      Path<ZonePoint> path, TokenFootprint tokenFootprint) {
+    var points = new ArrayList<Point2D>();
+    var waypoints = new ArrayList<Point2D>();
+
+    var grid = zone.getGrid();
+    var footprintBounds = tokenFootprint.getBounds(grid);
+
+    for (var zp : path.getCellPath()) {
+      var point =
+          new Point2D.Double(
+              zp.x + (footprintBounds.width / 2.) * tokenFootprint.getScale(),
+              zp.y + (footprintBounds.height / 2.) * tokenFootprint.getScale());
+      points.add(point);
+    }
+
+    var waypointList = path.getWayPointList();
+    // We don't want to render the first and last point since those are not "waypoints"
+    // according to the user
+    if (waypointList.size() > 2) {
+      for (var zp : waypointList.subList(1, waypointList.size() - 1)) {
+        var point =
+            new Point2D.Double(
+                zp.x + (footprintBounds.width / 2.) * tokenFootprint.getScale(),
+                zp.y + (footprintBounds.height / 2.) * tokenFootprint.getScale());
+        waypoints.add(point);
+      }
+    }
+
+    return new RenderablePath.PointPath(
+        RessourceManager.getImage(Images.ZONE_RENDERER_CELL_WAYPOINT),
+        grid.getCellWidth() * 0.333,
+        grid.getCellHeight() * 0.333,
+        points,
+        waypoints);
   }
 
   public List<MovementResult> getMovingTokens(PlayerView view, boolean ownedByCurrentPlayer) {

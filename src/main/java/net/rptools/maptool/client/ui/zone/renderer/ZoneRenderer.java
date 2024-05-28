@@ -183,7 +183,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     this.lumensRenderer = new LumensRenderer(renderHelper, zone, zoneView);
     this.fogRenderer = new FogRenderer(renderHelper, zone, zoneView);
     this.visionOverlayRenderer = new VisionOverlayRenderer(renderHelper, zone, zoneView);
-    this.pathRenderer = new PathRenderer(renderHelper, zone);
+    this.pathRenderer = new PathRenderer(renderHelper);
     this.tokenRenderer = new TokenRenderer(renderHelper, zone);
     this.debugRenderer = new DebugRenderer(renderHelper);
     repaintDebouncer = new DebounceExecutor(1000 / AppPreferences.getFrameRateCap(), this::repaint);
@@ -1350,7 +1350,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     final var allPaths = compositor.getOwnedPaths(view, owned);
     for (final var entry : allPaths.entrySet()) {
-      pathRenderer.renderPath(g, entry.getValue(), entry.getKey().getFootprint(zone.getGrid()));
+      pathRenderer.renderPath(g, entry.getValue());
     }
 
     final var allTokens = compositor.getMovingTokens(view, owned);
@@ -1376,7 +1376,18 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    */
   public void renderPath(
       Graphics2D g, Path<? extends AbstractPoint> path, TokenFootprint footprint) {
-    pathRenderer.renderPath(g, path, footprint);
+    if (path.getCellPath().isEmpty()) {
+      // Nothing to render.
+      return;
+    }
+    var renderable =
+        switch (path.getCellPath().getFirst()) {
+          case CellPoint ignored -> compositor.griddedPathToRenderable(
+              (Path<CellPoint>) path, footprint);
+          case ZonePoint ignored -> compositor.gridlessPathToRenderable(
+              (Path<ZonePoint>) path, footprint);
+        };
+    pathRenderer.renderPath(g, renderable);
   }
 
   public void drawText(String text, int x, int y) {
@@ -1803,7 +1814,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       // TODO Pull this out an render all of showPathList in one go.
       timer.start("renderTokens:ShowPath");
       if (showPathList.contains(token) && token.getLastPath() != null) {
-        pathRenderer.renderPath(g, token.getLastPath(), token.getFootprint(zone.getGrid()));
+        renderPath(g, token.getLastPath(), token.getFootprint(zone.getGrid()));
       }
       timer.stop("renderTokens:ShowPath");
 

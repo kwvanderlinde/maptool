@@ -18,6 +18,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.*;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.server.Mapper;
 import net.rptools.maptool.server.proto.TokenFootPrintDto;
@@ -127,7 +128,7 @@ public class TokenFootprint {
   }
 
   public Rectangle getBounds(Grid grid) {
-    return getBounds(grid, null);
+    return getBounds(grid, new CellPoint(0, 0));
   }
 
   public double getScale() {
@@ -138,12 +139,10 @@ public class TokenFootprint {
    * Return a rectangle that exactly bounds the footprint, values are in {@link ZonePoint} space.
    *
    * @param grid the {@link Grid} that the footprint corresponds to
-   * @param cell origin cell of this footprint; <code>null</code> means that <code>(0,0)</code> will
-   *     be used
+   * @param cell origin cell of this footprint
    * @return the bounding rectangle that bounds the footprint
    */
-  public Rectangle getBounds(Grid grid, CellPoint cell) {
-    cell = cell != null ? cell : new CellPoint(0, 0);
+  public Rectangle getBounds(Grid grid, @Nonnull CellPoint cell) {
     Rectangle bounds = new Rectangle(grid.getBounds(cell));
 
     for (CellPoint cp : getOccupiedCells(cell)) {
