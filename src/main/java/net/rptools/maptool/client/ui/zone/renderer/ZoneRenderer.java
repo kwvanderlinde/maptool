@@ -1800,6 +1800,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       }
 
       // Previous path
+      // TODO Pull this out an render all of showPathList in one go.
       timer.start("renderTokens:ShowPath");
       if (showPathList.contains(token) && token.getLastPath() != null) {
         pathRenderer.renderPath(g, token.getLastPath(), token.getFootprint(zone.getGrid()));
