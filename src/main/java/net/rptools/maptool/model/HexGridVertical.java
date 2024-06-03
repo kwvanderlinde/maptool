@@ -191,7 +191,7 @@ public class HexGridVertical extends HexGrid {
       try {
         footprintList =
             loadFootprints(
-                "net/rptools/maptool/model/hexGridVertFootprints.xml", getOffsetTranslator());
+                "net/rptools/maptool/model/hexGridVertFootprints.xml", OFFSET_TRANSLATOR);
       } catch (IOException ioe) {
         MapTool.showError("Could not load Hex Grid footprints", ioe);
       }
@@ -267,11 +267,6 @@ public class HexGridVertical extends HexGrid {
   @Override
   public ZonePoint convert(CellPoint cp) {
     return convertCP(cp.x, cp.y);
-  }
-
-  @Override
-  protected OffsetTranslator getOffsetTranslator() {
-    return OFFSET_TRANSLATOR;
   }
 
   /** Returns the cell centre as well as nearest vertex */
