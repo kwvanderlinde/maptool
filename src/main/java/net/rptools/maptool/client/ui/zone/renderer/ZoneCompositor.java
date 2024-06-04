@@ -34,6 +34,7 @@ import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderableImage;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderablePath;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderableText;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.model.CellPoint;
 import net.rptools.maptool.model.GUID;
@@ -244,10 +245,10 @@ public class ZoneCompositor {
         waypoints);
   }
 
-  public Pair<List<RenderableImage>, List<Label>> getMovingTokens2(
+  public Pair<List<RenderableImage>, List<RenderableText>> getMovingTokens(
       PlayerView view, boolean ownedByCurrentPlayer) {
     final var result = new ArrayList<RenderableImage>();
-    final var labels = new ArrayList<Label>();
+    final var labels = new ArrayList<RenderableText>();
 
     // Regardless of vision settings, no need to render beyond the fog.
     final var zoneView = renderer.getZoneView();
@@ -358,12 +359,12 @@ public class ZoneCompositor {
             double distanceTraveled = calculateTraveledDistance(set);
             if (distanceTraveled >= 0) {
               String distance = NumberFormat.getInstance().format(distanceTraveled);
-              labels.add(new Label(distance, (int) labelX, (int) labelY));
+              labels.add(new RenderableText(distance, (int) labelX, (int) labelY));
               labelY += 20;
             }
           }
           if (set.getPlayerId() != null && !set.getPlayerId().isEmpty()) {
-            labels.add(new Label(set.getPlayerId(), (int) labelX, (int) labelY));
+            labels.add(new RenderableText(set.getPlayerId(), (int) labelX, (int) labelY));
           }
         }
 
@@ -443,149 +444,6 @@ public class ZoneCompositor {
 
     return new Pair<>(result, labels);
   }
-
-  public List<MovementResult> getMovingTokens(PlayerView view, boolean ownedByCurrentPlayer) {
-    final var result = new ArrayList<MovementResult>();
-
-    // Regardless of vision settings, no need to render beyond the fog.
-    final var zoneView = renderer.getZoneView();
-    Area clearArea = null;
-    if (!view.isGMView()) {
-      if (zone.hasFog() && zoneView.isUsingVision()) {
-        clearArea = new Area(zoneView.getExposedArea(view));
-        clearArea.intersect(zoneView.getVisibleArea(view));
-      } else if (zone.hasFog()) {
-        clearArea = zoneView.getExposedArea(view);
-      } else if (zoneView.isUsingVision()) {
-        clearArea = zoneView.getVisibleArea(view);
-      }
-    }
-
-    Set<SelectionSet> movementSet =
-        ownedByCurrentPlayer
-            ? renderer.getOwnedMovementSet(view)
-            : renderer.getUnOwnedMovementSet(view);
-    if (movementSet.isEmpty()) {
-      return Collections.emptyList();
-    }
-
-    double scale = renderer.getScale();
-    for (SelectionSet set : movementSet) {
-      Token keyToken = zone.getToken(set.getKeyToken());
-      if (keyToken == null) {
-        // It was removed ?
-        continue;
-      }
-      // Hide the hidden layer
-      if (!keyToken.getLayer().isVisibleToPlayers() && !view.isGMView()) {
-        continue;
-      }
-      ZoneWalker walker = set.getWalker();
-
-      // TODO A different method for ShowAiDebugging.
-
-      for (GUID tokenGUID : set.getTokens()) {
-        Token token = zone.getToken(tokenGUID);
-
-        // Perhaps deleted?
-        if (token == null) {
-          continue;
-        }
-
-        // Don't bother if it's not visible
-        if (!token.isVisible() && !view.isGMView()) {
-          continue;
-        }
-
-        // ... or if it's visible only to the owner and that's not us!
-        final boolean isOwner = view.isGMView() || AppUtil.playerOwns(token);
-        if (token.isVisibleOnlyToOwner() && !isOwner) {
-          continue;
-        }
-
-        Rectangle footprintBounds = token.getBounds(zone);
-
-        // get token image, using image table if present
-        var image = getTokenImage(token);
-
-        // on the iso plane
-        if (token.isFlippedIso()) {
-          // TODO Image caching, or come up with an alternative.
-          //  I am also confused, where does the flipping happen?
-          //  I am even more confused - why would we modify the token as part of rendering?
-          //      if (flipIsoImageMap.get(token) == null) {
-          image = IsometricGrid.isoImage(image);
-          //      } else {
-          //        workImage = flipIsoImageMap.get(token);
-          //      }
-          token.setHeight(image.getHeight());
-          token.setWidth(image.getWidth());
-          footprintBounds = token.getBounds(zone);
-        }
-
-        if (token.getShape() == Token.TokenShape.FIGURE) {
-          double th = token.getHeight() * (double) footprintBounds.width / token.getWidth();
-          final double iso_ho = footprintBounds.height - th;
-          footprintBounds =
-              new Rectangle(
-                  footprintBounds.x,
-                  footprintBounds.y - (int) iso_ho,
-                  footprintBounds.width,
-                  (int) th);
-        }
-
-        footprintBounds.x += set.offsetX;
-        footprintBounds.y += set.offsetY;
-
-        // TODO This dependence on scaled with etc would probably not be needed if we operated in
-        //  world space.
-
-        final var labels = new ArrayList<Label>();
-        ScreenPoint newScreenPoint =
-            ScreenPoint.fromZonePoint(renderer, footprintBounds.x, footprintBounds.y);
-        // Tokens are centered on the image center point
-        int x = (int) (newScreenPoint.x);
-        int y = (int) (newScreenPoint.y);
-        int scaledWidth = (int) (footprintBounds.width * scale);
-        int scaledHeight = (int) (footprintBounds.height * scale);
-
-        // Other details.
-        // If the token is visible on the screen it will be in the location cache
-        if (token == keyToken && (isOwner || shouldShowMovementLabels(token, set, clearArea))
-        // TODO don't depend on a location cache for this nonsense. We need some manner of checking
-        //  if the label would be on-screen, or at worst, if the token is on-screen.
-        // && tokenLocationCache.containsKey(token)
-        ) {
-          var labelY = y + 10 + scaledHeight;
-          var labelX = x + scaledWidth / 2;
-
-          if (token.getLayer().supportsWalker() && AppState.getShowMovementMeasurements()) {
-            double distanceTraveled = calculateTraveledDistance(set);
-            if (distanceTraveled >= 0) {
-              String distance = NumberFormat.getInstance().format(distanceTraveled);
-              labels.add(new Label(distance, labelX, labelY));
-              labelY += 20;
-            }
-          }
-          if (set.getPlayerId() != null && set.getPlayerId().length() >= 1) {
-            labels.add(new Label(set.getPlayerId(), labelX, labelY));
-          }
-        }
-
-        result.add(new MovementResult(clearArea, token, footprintBounds, image, labels));
-      }
-    }
-
-    return result;
-  }
-
-  // TODO clearArea is not properly part of the result (the renderer should decide its own clipping)
-  //  but in this case it determines whether labels _should_ be rendered, not just whether they are
-  //  clipped.
-  public record MovementResult(
-      Area clearArea, Token token, Rectangle footprint, BufferedImage image, List<Label> labels) {}
-
-  public record Label(String text, int x, int y) {}
 
   /**
    * Checks to see if token has an image table and references that if the token has a facing
