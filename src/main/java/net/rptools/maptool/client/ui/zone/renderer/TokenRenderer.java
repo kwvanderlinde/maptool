@@ -21,24 +21,20 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.swing.SwingUtil;
-import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.model.Token;
-import net.rptools.maptool.model.Zone;
 
 public class TokenRenderer {
   private final RenderHelper renderHelper;
-  private final Zone zone;
 
-  public TokenRenderer(RenderHelper renderHelper, Zone zone) {
+  public TokenRenderer(RenderHelper renderHelper) {
     this.renderHelper = renderHelper;
-    this.zone = zone;
   }
 
   // TODO Methinks offsetX, offsetY is the position of the SelectionSet relative to the actual
   //  token. Which means I should be able to ask the caller to translate the bounds first. Though
   //  our figure logic would suffer.
   public void renderTokens(
-      Graphics2D g, PlayerView view, Token token, BufferedImage image, Rectangle footprintBounds) {
+      Graphics2D g, Token token, BufferedImage image, Rectangle footprintBounds) {
     double scale = renderHelper.getScale();
 
     // handle flipping

@@ -184,7 +184,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     this.fogRenderer = new FogRenderer(renderHelper, zone, zoneView);
     this.visionOverlayRenderer = new VisionOverlayRenderer(renderHelper, zone, zoneView);
     this.pathRenderer = new PathRenderer(renderHelper);
-    this.tokenRenderer = new TokenRenderer(renderHelper, zone);
+    this.tokenRenderer = new TokenRenderer(renderHelper);
     this.debugRenderer = new DebugRenderer(renderHelper);
     repaintDebouncer = new DebounceExecutor(1000 / AppPreferences.getFrameRateCap(), this::repaint);
 
@@ -1359,7 +1359,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       final var image = movement.image();
       final var footprint = movement.footprint();
 
-      tokenRenderer.renderTokens(g, view, token, image, footprint);
+      tokenRenderer.renderTokens(g, token, image, footprint);
       for (final var label : movement.labels()) {
         delayRendering(new LabelRenderer(this, label.text(), label.x(), label.y()));
       }
