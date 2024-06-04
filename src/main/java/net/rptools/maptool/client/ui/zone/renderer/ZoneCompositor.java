@@ -412,7 +412,7 @@ public class ZoneCompositor {
         int tx = x + offsetx;
         int ty = y + offsety + (int) iso_ho;
 
-        var bounds = new Rectangle2D.Double(x, y, imgSize.width, imgSize.height);
+        var bounds = new Rectangle2D.Double(tx, ty, imgSize.width, imgSize.height);
 
         AffineTransform at = new AffineTransform();
 

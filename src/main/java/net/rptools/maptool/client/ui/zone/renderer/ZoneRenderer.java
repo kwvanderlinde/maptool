@@ -1356,17 +1356,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       pathRenderer.renderPath(g, entry.getValue());
     }
 
-    //    final var allTokens = compositor.getMovingTokens(view, owned);
-    //    for (final var movement : allTokens) {
-    //      final var token = movement.token();
-    //      final var image = movement.image();
-    //      final var footprint = movement.footprint();
-    //
-    //      tokenRenderer.renderTokens(g, token, image, footprint);
-    //      for (final var label : movement.labels()) {
-    //        delayRendering(new LabelRenderer(this, label.text(), label.x(), label.y()));
-    //      }
-    //    }
     final var pair = compositor.getMovingTokens2(view, owned);
     for (final RenderableImage movement : pair.getValue0()) {
       tokenRenderer2.renderToken(g, movement);
