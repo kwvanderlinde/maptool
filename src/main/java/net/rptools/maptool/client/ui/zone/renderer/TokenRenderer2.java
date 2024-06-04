@@ -16,6 +16,7 @@ package net.rptools.maptool.client.ui.zone.renderer;
 
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
+import net.rptools.lib.CodeTimer;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderableImage;
 
 public class TokenRenderer2 {
@@ -26,7 +27,13 @@ public class TokenRenderer2 {
   }
 
   public void renderToken(Graphics2D g, RenderableImage renderable) {
-    renderToken2(g, renderable);
+    var timer = CodeTimer.get();
+    timer.start("renderToken");
+    try {
+      renderHelper.render(g, worldG -> renderToken2(worldG, renderable));
+    } finally {
+      timer.stop("renderToken");
+    }
   }
 
   private void renderToken2(Graphics2D g, RenderableImage renderable) {
