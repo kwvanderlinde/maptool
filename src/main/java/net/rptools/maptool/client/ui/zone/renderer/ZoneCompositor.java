@@ -14,8 +14,10 @@
  */
 package net.rptools.maptool.client.ui.zone.renderer;
 
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Rectangle;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -27,9 +29,11 @@ import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.DeveloperOptions;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ScreenPoint;
+import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.ui.theme.Images;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.ui.zone.PlayerView;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderableImage;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderablePath;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.model.CellPoint;
@@ -43,6 +47,7 @@ import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.util.ImageManager;
 import net.rptools.parser.ParserException;
+import org.javatuples.Pair;
 
 /**
  * The Zone Compositor is responsible for providing the Zone Renderer with what needs to be
@@ -238,6 +243,216 @@ public class ZoneCompositor {
         grid.getCellHeight() * 0.333,
         points,
         waypoints);
+  }
+
+  public Pair<List<RenderableImage>, List<Label>> getMovingTokens2(
+      PlayerView view, boolean ownedByCurrentPlayer) {
+    final var result = new ArrayList<RenderableImage>();
+    final var labels = new ArrayList<Label>();
+
+    // Regardless of vision settings, no need to render beyond the fog.
+    final var zoneView = renderer.getZoneView();
+    Area clearArea = null;
+    if (!view.isGMView()) {
+      if (zone.hasFog() && zoneView.isUsingVision()) {
+        clearArea = new Area(zoneView.getExposedArea(view));
+        clearArea.intersect(zoneView.getVisibleArea(view));
+      } else if (zone.hasFog()) {
+        clearArea = zoneView.getExposedArea(view);
+      } else if (zoneView.isUsingVision()) {
+        clearArea = zoneView.getVisibleArea(view);
+      }
+    }
+
+    Set<SelectionSet> movementSet =
+        ownedByCurrentPlayer
+            ? renderer.getOwnedMovementSet(view)
+            : renderer.getUnOwnedMovementSet(view);
+    if (movementSet.isEmpty()) {
+      return new Pair<>(result, labels);
+    }
+
+    double scale = renderer.getScale();
+    for (SelectionSet set : movementSet) {
+      Token keyToken = zone.getToken(set.getKeyToken());
+      if (keyToken == null) {
+        // It was removed ?
+        continue;
+      }
+      // Hide the hidden layer
+      if (!keyToken.getLayer().isVisibleToPlayers() && !view.isGMView()) {
+        continue;
+      }
+      ZoneWalker walker = set.getWalker();
+
+      // TODO A different method for ShowAiDebugging.
+
+      for (GUID tokenGUID : set.getTokens()) {
+        Token token = zone.getToken(tokenGUID);
+
+        // Perhaps deleted?
+        if (token == null) {
+          continue;
+        }
+
+        // Don't bother if it's not visible
+        if (!token.isVisible() && !view.isGMView()) {
+          continue;
+        }
+
+        // ... or if it's visible only to the owner and that's not us!
+        final boolean isOwner = view.isGMView() || AppUtil.playerOwns(token);
+        if (token.isVisibleOnlyToOwner() && !isOwner) {
+          continue;
+        }
+
+        Rectangle footprintBounds = token.getBounds(zone);
+
+        // get token image, using image table if present
+        var image = getTokenImage(token);
+
+        // on the iso plane
+        if (token.isFlippedIso()) {
+          // TODO Image caching, or come up with an alternative.
+          //  I am also confused, where does the flipping happen?
+          //  I am even more confused - why would we modify the token as part of rendering?
+          //      if (flipIsoImageMap.get(token) == null) {
+          image = IsometricGrid.isoImage(image);
+          //      } else {
+          //        workImage = flipIsoImageMap.get(token);
+          //      }
+          token.setHeight(image.getHeight());
+          token.setWidth(image.getWidth());
+          footprintBounds = token.getBounds(zone);
+        }
+
+        if (token.getShape() == Token.TokenShape.FIGURE) {
+          double th = token.getHeight() * (double) footprintBounds.width / token.getWidth();
+          final double iso_ho = footprintBounds.height - th;
+          footprintBounds =
+              new Rectangle(
+                  footprintBounds.x,
+                  footprintBounds.y - (int) iso_ho,
+                  footprintBounds.width,
+                  (int) th);
+        }
+
+        footprintBounds.x += set.offsetX;
+        footprintBounds.y += set.offsetY;
+
+        // TODO This dependence on scaled with etc would probably not be needed if we operated in
+        //  world space.
+
+        ScreenPoint newScreenPoint =
+            ScreenPoint.fromZonePoint(renderer, footprintBounds.x, footprintBounds.y);
+        // Tokens are centered on the image center point
+        // TODO x, y, scaledWidth, scaledHeight should be doubles.
+        int x = (int) (newScreenPoint.x);
+        int y = (int) (newScreenPoint.y);
+        int scaledWidth = (int) (footprintBounds.width * scale);
+        int scaledHeight = (int) (footprintBounds.height * scale);
+
+        // Other details.
+        // If the token is visible on the screen it will be in the location cache
+        if (token == keyToken && (isOwner || shouldShowMovementLabels(token, set, clearArea))
+        // TODO don't depend on a location cache for this nonsense. We need some manner of checking
+        //  if the label would be on-screen, or at worst, if the token is on-screen.
+        // && tokenLocationCache.containsKey(token)
+        ) {
+          var labelY = y + 10 + scaledHeight;
+          var labelX = x + scaledWidth / 2;
+
+          if (token.getLayer().supportsWalker() && AppState.getShowMovementMeasurements()) {
+            double distanceTraveled = calculateTraveledDistance(set);
+            if (distanceTraveled >= 0) {
+              String distance = NumberFormat.getInstance().format(distanceTraveled);
+              labels.add(new Label(distance, labelX, labelY));
+              labelY += 20;
+            }
+          }
+          if (set.getPlayerId() != null && !set.getPlayerId().isEmpty()) {
+            labels.add(new Label(set.getPlayerId(), labelX, labelY));
+          }
+        }
+
+        // region Insanity
+        double iso_ho = 0;
+        Dimension imgSize = new Dimension(image.getWidth(), image.getHeight());
+        if (token.getShape() == Token.TokenShape.FIGURE) {
+          double th = token.getHeight() * (double) footprintBounds.width / token.getWidth();
+          iso_ho = footprintBounds.height - th;
+          footprintBounds =
+              new Rectangle(
+                  footprintBounds.x,
+                  footprintBounds.y - (int) iso_ho,
+                  footprintBounds.width,
+                  (int) th);
+          iso_ho = iso_ho * scale;
+        }
+        SwingUtil.constrainTo(imgSize, footprintBounds.width, footprintBounds.height);
+
+        int offsetx = 0;
+        int offsety = 0;
+        if (token.isSnapToScale()) {
+          offsetx =
+              (int)
+                  (imgSize.width < footprintBounds.width
+                      ? (footprintBounds.width - imgSize.width) / 2 * scale
+                      : 0);
+          offsety =
+              (int)
+                  (imgSize.height < footprintBounds.height
+                      ? (footprintBounds.height - imgSize.height) / 2 * scale
+                      : 0);
+        }
+
+        // TODO This dependence on scaled with etc would probably not be needed if we operated in
+        //  world space.
+
+        int tx = x + offsetx;
+        int ty = y + offsety + (int) iso_ho;
+
+        var bounds = new Rectangle2D.Double(x, y, imgSize.width, imgSize.height);
+
+        AffineTransform at = new AffineTransform();
+
+        // facing defaults to down, or -90 degrees.
+        double rotation = 0.;
+        Point2D rotationAnchor =
+            new Point2D.Double(
+                scaledWidth / 2 - token.getAnchor().x * scale - offsetx,
+                scaledHeight / 2 - token.getAnchor().y * scale - offsety);
+        if (token.hasFacing() && token.getShape() == Token.TokenShape.TOP_DOWN) {
+          rotation = Math.toRadians(-token.getFacing() - 90);
+        }
+        if (token.isSnapToScale()) {
+          bounds.width = imgSize.width * scale;
+          bounds.height = imgSize.height * scale;
+        } else {
+          if (token.getShape() == Token.TokenShape.FIGURE) {
+            var ratio = bounds.width / scaledWidth;
+            bounds.width *= ratio;
+            bounds.height *= ratio;
+          } else {
+            bounds.width = scaledWidth;
+            bounds.height = scaledHeight;
+          }
+        }
+        // endregion
+
+        result.add(
+            new RenderableImage(
+                image,
+                clearArea,
+                rotation,
+                rotationAnchor,
+                token.isFlippedX(),
+                token.isFlippedY(),
+                bounds));
+      }
+    }
+
+    return new Pair<>(result, labels);
   }
 
   public List<MovementResult> getMovingTokens(PlayerView view, boolean ownedByCurrentPlayer) {

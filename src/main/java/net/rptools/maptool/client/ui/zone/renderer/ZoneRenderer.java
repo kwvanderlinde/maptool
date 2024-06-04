@@ -58,6 +58,7 @@ import net.rptools.maptool.client.ui.token.AbstractTokenOverlay;
 import net.rptools.maptool.client.ui.token.BarTokenOverlay;
 import net.rptools.maptool.client.ui.token.dialog.create.NewTokenDialog;
 import net.rptools.maptool.client.ui.zone.*;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderableImage;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.*;
@@ -155,6 +156,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   private final VisionOverlayRenderer visionOverlayRenderer;
   private final PathRenderer pathRenderer;
   private final TokenRenderer tokenRenderer;
+  private final TokenRenderer2 tokenRenderer2;
   private final DebugRenderer debugRenderer;
 
   /**
@@ -185,6 +187,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     this.visionOverlayRenderer = new VisionOverlayRenderer(renderHelper, zone, zoneView);
     this.pathRenderer = new PathRenderer(renderHelper);
     this.tokenRenderer = new TokenRenderer(renderHelper);
+    this.tokenRenderer2 = new TokenRenderer2(renderHelper);
     this.debugRenderer = new DebugRenderer(renderHelper);
     repaintDebouncer = new DebounceExecutor(1000 / AppPreferences.getFrameRateCap(), this::repaint);
 
@@ -1353,16 +1356,23 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       pathRenderer.renderPath(g, entry.getValue());
     }
 
-    final var allTokens = compositor.getMovingTokens(view, owned);
-    for (final var movement : allTokens) {
-      final var token = movement.token();
-      final var image = movement.image();
-      final var footprint = movement.footprint();
-
-      tokenRenderer.renderTokens(g, token, image, footprint);
-      for (final var label : movement.labels()) {
-        delayRendering(new LabelRenderer(this, label.text(), label.x(), label.y()));
-      }
+    //    final var allTokens = compositor.getMovingTokens(view, owned);
+    //    for (final var movement : allTokens) {
+    //      final var token = movement.token();
+    //      final var image = movement.image();
+    //      final var footprint = movement.footprint();
+    //
+    //      tokenRenderer.renderTokens(g, token, image, footprint);
+    //      for (final var label : movement.labels()) {
+    //        delayRendering(new LabelRenderer(this, label.text(), label.x(), label.y()));
+    //      }
+    //    }
+    final var pair = compositor.getMovingTokens2(view, owned);
+    for (final RenderableImage movement : pair.getValue0()) {
+      tokenRenderer2.renderToken(g, movement);
+    }
+    for (final ZoneCompositor.Label label : pair.getValue1()) {
+      delayRendering(new LabelRenderer(this, label.text(), label.x(), label.y()));
     }
   }
 
