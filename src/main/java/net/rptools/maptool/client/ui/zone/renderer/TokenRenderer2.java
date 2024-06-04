@@ -34,6 +34,7 @@ public class TokenRenderer2 {
   //  our figure logic would suffer.
   private void renderToken2(Graphics2D g, RenderableImage renderable) {
     AffineTransform at = new AffineTransform();
+    at.translate(renderable.bounds().getX(), renderable.bounds().getY());
     at.scale(
         (renderable.flipX() ? -1 : 1)
             * renderable.bounds().getWidth()
@@ -41,7 +42,6 @@ public class TokenRenderer2 {
         (renderable.flipY() ? -1 : 1)
             * renderable.bounds().getHeight()
             / renderable.image().getHeight());
-    at.translate(renderable.bounds().getX(), renderable.bounds().getY());
     at.rotate(
         renderable.rotation(),
         renderable.rotationAnchor().getX(),
