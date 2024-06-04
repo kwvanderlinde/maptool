@@ -17,7 +17,6 @@ package net.rptools.maptool.client.ui.zone.renderer;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Rectangle;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -272,7 +271,6 @@ public class ZoneCompositor {
       return new Pair<>(result, labels);
     }
 
-    double scale = renderer.getScale();
     for (SelectionSet set : movementSet) {
       Token keyToken = zone.getToken(set.getKeyToken());
       if (keyToken == null) {
@@ -283,7 +281,6 @@ public class ZoneCompositor {
       if (!keyToken.getLayer().isVisibleToPlayers() && !view.isGMView()) {
         continue;
       }
-      ZoneWalker walker = set.getWalker();
 
       // TODO A different method for ShowAiDebugging.
 
@@ -343,15 +340,6 @@ public class ZoneCompositor {
         // TODO This dependence on scaled with etc would probably not be needed if we operated in
         //  world space.
 
-        ScreenPoint newScreenPoint =
-            ScreenPoint.fromZonePoint(renderer, footprintBounds.x, footprintBounds.y);
-        // Tokens are centered on the image center point
-        // TODO x, y, scaledWidth, scaledHeight should be doubles.
-        int x = (int) (newScreenPoint.x);
-        int y = (int) (newScreenPoint.y);
-        int scaledWidth = (int) (footprintBounds.width * scale);
-        int scaledHeight = (int) (footprintBounds.height * scale);
-
         // Other details.
         // If the token is visible on the screen it will be in the location cache
         if (token == keyToken && (isOwner || shouldShowMovementLabels(token, set, clearArea))
@@ -359,19 +347,23 @@ public class ZoneCompositor {
         //  if the label would be on-screen, or at worst, if the token is on-screen.
         // && tokenLocationCache.containsKey(token)
         ) {
-          var labelY = y + 10 + scaledHeight;
-          var labelX = x + scaledWidth / 2;
+          var scale = renderer.getScale();
+          ScreenPoint labelScreenPoint =
+              ScreenPoint.fromZonePoint(renderer, footprintBounds.x, footprintBounds.y);
+          // Tokens are centered on the image center point
+          var labelY = labelScreenPoint.y + 10 + footprintBounds.height * scale;
+          var labelX = labelScreenPoint.x + footprintBounds.width * scale / 2.;
 
           if (token.getLayer().supportsWalker() && AppState.getShowMovementMeasurements()) {
             double distanceTraveled = calculateTraveledDistance(set);
             if (distanceTraveled >= 0) {
               String distance = NumberFormat.getInstance().format(distanceTraveled);
-              labels.add(new Label(distance, labelX, labelY));
+              labels.add(new Label(distance, (int) labelX, (int) labelY));
               labelY += 20;
             }
           }
           if (set.getPlayerId() != null && !set.getPlayerId().isEmpty()) {
-            labels.add(new Label(set.getPlayerId(), labelX, labelY));
+            labels.add(new Label(set.getPlayerId(), (int) labelX, (int) labelY));
           }
         }
 
@@ -387,7 +379,6 @@ public class ZoneCompositor {
                   footprintBounds.y - (int) iso_ho,
                   footprintBounds.width,
                   (int) th);
-          iso_ho = iso_ho * scale;
         }
         SwingUtil.constrainTo(imgSize, footprintBounds.width, footprintBounds.height);
 
@@ -397,45 +388,43 @@ public class ZoneCompositor {
           offsetx =
               (int)
                   (imgSize.width < footprintBounds.width
-                      ? (footprintBounds.width - imgSize.width) / 2 * scale
+                      ? (footprintBounds.width - imgSize.width) / 2
                       : 0);
           offsety =
               (int)
                   (imgSize.height < footprintBounds.height
-                      ? (footprintBounds.height - imgSize.height) / 2 * scale
+                      ? (footprintBounds.height - imgSize.height) / 2
                       : 0);
         }
 
         // TODO This dependence on scaled with etc would probably not be needed if we operated in
         //  world space.
 
-        int tx = x + offsetx;
-        int ty = y + offsety + (int) iso_ho;
+        int tx = footprintBounds.x + offsetx;
+        int ty = footprintBounds.y + offsety + (int) iso_ho;
 
         var bounds = new Rectangle2D.Double(tx, ty, imgSize.width, imgSize.height);
-
-        AffineTransform at = new AffineTransform();
 
         // facing defaults to down, or -90 degrees.
         double rotation = 0.;
         Point2D rotationAnchor =
             new Point2D.Double(
-                scaledWidth / 2 - token.getAnchor().x * scale - offsetx,
-                scaledHeight / 2 - token.getAnchor().y * scale - offsety);
+                footprintBounds.width / 2. - token.getAnchor().x - offsetx,
+                footprintBounds.height / 2. - token.getAnchor().y - offsety);
         if (token.hasFacing() && token.getShape() == Token.TokenShape.TOP_DOWN) {
           rotation = Math.toRadians(-token.getFacing() - 90);
         }
         if (token.isSnapToScale()) {
-          bounds.width = imgSize.width * scale;
-          bounds.height = imgSize.height * scale;
+          bounds.width = imgSize.width;
+          bounds.height = imgSize.height;
         } else {
           if (token.getShape() == Token.TokenShape.FIGURE) {
-            var ratio = bounds.width / scaledWidth;
+            var ratio = bounds.width / footprintBounds.width;
             bounds.width *= ratio;
             bounds.height *= ratio;
           } else {
-            bounds.width = scaledWidth;
-            bounds.height = scaledHeight;
+            bounds.width = footprintBounds.width;
+            bounds.height = footprintBounds.height;
           }
         }
         // endregion
