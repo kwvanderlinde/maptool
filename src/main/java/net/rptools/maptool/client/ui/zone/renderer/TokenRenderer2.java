@@ -29,9 +29,6 @@ public class TokenRenderer2 {
     renderToken2(g, renderable);
   }
 
-  // TODO Methinks offsetX, offsetY is the position of the SelectionSet relative to the actual
-  //  token. Which means I should be able to ask the caller to translate the bounds first. Though
-  //  our figure logic would suffer.
   private void renderToken2(Graphics2D g, RenderableImage renderable) {
     AffineTransform at = new AffineTransform();
     at.translate(renderable.bounds().getX(), renderable.bounds().getY());
