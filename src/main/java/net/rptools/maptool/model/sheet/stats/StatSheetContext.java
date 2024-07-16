@@ -210,7 +210,7 @@ public class StatSheetContext {
                   return;
                 }
 
-                Object value = token.getEvaluatedProperty(resolver, tp.getName());
+                Object value = resolver.getEvaluatedTokenProperty(tp.getName());
                 if (value == null) {
                   return;
                 }

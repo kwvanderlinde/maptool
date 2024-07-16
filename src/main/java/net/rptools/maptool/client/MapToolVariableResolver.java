@@ -14,11 +14,16 @@
  */
 package net.rptools.maptool.client;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import java.io.IOException;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.util.*;
 import javax.swing.JOptionPane;
@@ -91,6 +96,11 @@ public class MapToolVariableResolver implements VariableResolver {
           CAMPAIGN_PANEL,
           "panel.gm",
           GM_PANEL);
+
+  /** the only way to make Gson apply strict evaluation to JsonObjects, apparently. see #2396 */
+  private static final TypeAdapter<JsonObject> strictGsonObjectAdapter =
+      new Gson().getAdapter(JsonObject.class);
+
   private final Map<String, Object> variables = new CaseInsensitiveHashMap<>();
 
   private List<Runnable> delayedActionList;
@@ -235,7 +245,7 @@ public class MapToolVariableResolver implements VariableResolver {
       } // endif
 
       if (this.validTokenProperty(name, tokenInContext)) {
-        result = tokenInContext.getEvaluatedProperty(name);
+        result = getEvaluatedTokenProperty(name);
       } else {
         // If the token has no property of that name check to see if there s a defaulted
         // value for the property for the token type.
@@ -406,6 +416,84 @@ public class MapToolVariableResolver implements VariableResolver {
       return;
     }
     variables.put(varname, value);
+  }
+
+  public Object getEvaluatedTokenProperty(String key) {
+    if (tokenInContext == null) {
+      return null;
+    }
+
+    Object val = tokenInContext.getProperty(key);
+    if (val == null) {
+      // Global default ?
+      List<TokenProperty> propertyList =
+          MapTool.getCampaign()
+              .getCampaignProperties()
+              .getTokenPropertyList(tokenInContext.getPropertyType());
+      if (propertyList != null) {
+        for (TokenProperty property : propertyList) {
+          if (key.equalsIgnoreCase(property.getName())) {
+            val = property.getDefaultValue();
+            break;
+          }
+        }
+      }
+    }
+    if (val == null) {
+      return "";
+    }
+    if (val.toString().trim().startsWith("{")) {
+      /*
+       * The normal Gson evaluator was too lenient in identifying JSON objects, so we had to move
+       * that lower (see #1560). But we would really like to avoid the performance cost of
+       * attempting to parse anything that actually is a proper JSON, so let's try a stricter
+       * evaluation process here first (see #2396).
+       */
+      try {
+        try (JsonReader reader = new JsonReader(new StringReader(val.toString()))) {
+          JsonObject result = strictGsonObjectAdapter.read(reader);
+          // in case of a situation like {"a": 1}{"b": 2}, the above would have stopped at the first
+          // complete object.  This next line will throw an exception on finding another top-level
+          // object, allowing us to move on with other evaluation.
+          reader.hasNext();
+          if (result.isJsonObject()) {
+            return result;
+          }
+        }
+      } catch (IOException e) {
+        // deliberately ignored - continue parsing
+      }
+    }
+    // try to convert it to a JSON array. Fixes #2057.
+    if (val.toString().trim().startsWith("[")) {
+      JsonElement json = JSONMacroFunctions.getInstance().asJsonElement(val.toString());
+      if (json.isJsonArray()) {
+        return json;
+      }
+    }
+    try {
+      LOGGER.debug(
+          "Evaluating property: '{}' for token {} ({})----------------------------------------------------------------------------------",
+          key,
+          tokenInContext.getName(),
+          tokenInContext.getId());
+      val = MapTool.getParser().parseLine(this, tokenInContext, val.toString());
+    } catch (ParserException pe) {
+      LOGGER.debug("Ignoring Parse Exception, continuing to evaluate {}", key);
+      val = val.toString();
+    }
+    if (val == null) {
+      val = "";
+    } else {
+      // Finally we try convert it to a JSON object. Fixes #1560.
+      if (val.toString().trim().startsWith("{")) {
+        JsonElement json = JSONMacroFunctions.getInstance().asJsonElement(val.toString());
+        if (json.isJsonObject()) {
+          return json;
+        }
+      }
+    }
+    return val;
   }
 
   /**
