@@ -111,6 +111,7 @@ public class MapToolVariableResolver implements VariableResolver {
 
   public MapToolVariableResolver(Token tokenInContext) {
     this.tokenInContext = tokenInContext;
+
     autoPrompt = true;
     // Set the default macro.args to "" so that it is always present.
     try {
@@ -327,7 +328,9 @@ public class MapToolVariableResolver implements VariableResolver {
       if (evaluate) {
         // Try parse the value if we can not parse it then just return it as a string.
         try {
-          value = MapTool.getParser().parseLine(tokenInContext, result.toString());
+          value =
+              MapTool.getParser()
+                  .parseLine(new MapToolVariableResolver(tokenInContext), result.toString(), null);
         } catch (Exception e) {
           value = result.toString();
         }
@@ -477,7 +480,7 @@ public class MapToolVariableResolver implements VariableResolver {
           key,
           tokenInContext.getName(),
           tokenInContext.getId());
-      val = MapTool.getParser().parseLine(this, tokenInContext, val.toString());
+      val = MapTool.getParser().parseLine(this, val.toString(), null);
     } catch (ParserException pe) {
       LOGGER.debug("Ignoring Parse Exception, continuing to evaluate {}", key);
       val = val.toString();

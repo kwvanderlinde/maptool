@@ -492,7 +492,7 @@ public class MacroLinkFunction extends AbstractFunction {
 
     // Execute the macro
     MapToolVariableResolver resolver = new MapToolVariableResolver(token);
-    String line = MapTool.getParser().runMacro(resolver, token, macroName, args);
+    String line = MapTool.getParser().runMacro(resolver, macroName, args);
 
     // Don't output blank messages. Fixes #1867.
     if ("".equals(line)) {

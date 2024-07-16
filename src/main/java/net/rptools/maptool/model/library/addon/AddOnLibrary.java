@@ -639,7 +639,7 @@ public class AddOnLibrary implements Library {
     if (SwingUtilities.isEventDispatchThread()) {
       var resolver = new MapToolVariableResolver(null);
       try {
-        MapTool.getParser().runMacro(resolver, null, name + "@lib:" + namespace, "");
+        MapTool.getParser().runMacro(resolver, name + "@lib:" + namespace, "");
       } catch (ParserException e) {
         throw new CompletionException(e);
       }
@@ -648,7 +648,7 @@ public class AddOnLibrary implements Library {
           () -> {
             var resolver = new MapToolVariableResolver(null);
             try {
-              MapTool.getParser().runMacro(resolver, null, name + "@lib:" + namespace, "");
+              MapTool.getParser().runMacro(resolver, name + "@lib:" + namespace, "");
             } catch (ParserException e) {
               throw new CompletionException(e);
             }

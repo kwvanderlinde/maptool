@@ -20,11 +20,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import javax.swing.text.JTextComponent;
-import net.rptools.maptool.client.AppPreferences;
-import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.MapToolLineParser;
-import net.rptools.maptool.client.MapToolMacroContext;
-import net.rptools.maptool.client.MapToolUtil;
+import net.rptools.maptool.client.*;
 import net.rptools.maptool.client.ui.macrobuttons.MacroButtonHotKeyManager;
 import net.rptools.maptool.client.ui.macrobuttons.buttons.MacroButtonPrefs;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
@@ -773,7 +769,7 @@ public class MacroButtonProperties implements Comparable<MacroButtonProperties> 
             token.getName(),
             token.getId());
       }
-      return MapTool.getParser().parseLine(token, toolTip, context);
+      return MapTool.getParser().parseLine(new MapToolVariableResolver(token), toolTip, context);
     } catch (ParserException pe) {
       return toolTip;
     }

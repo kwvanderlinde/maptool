@@ -24,7 +24,6 @@ import net.rptools.maptool.client.functions.MacroJavaScriptBridge;
 import net.rptools.maptool.client.functions.exceptions.*;
 import net.rptools.maptool.client.script.javascript.*;
 import net.rptools.maptool.language.I18N;
-import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.Token;
 import net.rptools.parser.ParserException;
 import org.graalvm.polyglot.*;
@@ -93,24 +92,22 @@ public class JSAPIMTScript implements MapToolJSAPIInterface {
   public Object execMacro(String macro) throws ParserException {
     Token tokenInContext = MacroJavaScriptBridge.getInstance().getTokenInContext();
     MapToolVariableResolver res = new MapToolVariableResolver(tokenInContext);
-    return _evalMacro(res, tokenInContext, macro);
+    return _evalMacro(res, macro);
   }
 
   @HostAccess.Export
   public Object evalMacro(String macro) throws ParserException {
-    Token tokenInContext = MacroJavaScriptBridge.getInstance().getTokenInContext();
     MapToolVariableResolver res = MacroJavaScriptBridge.getInstance().getVariableResolver();
-    return _evalMacro(res, tokenInContext, macro);
+    return _evalMacro(res, macro);
   }
 
-  private Object _evalMacro(MapToolVariableResolver res, Token tokenInContext, String line)
-      throws ParserException {
+  private Object _evalMacro(MapToolVariableResolver res, String line) throws ParserException {
     MapToolMacroContext context =
         new MapToolMacroContext(
             "<javascript>",
             MapTool.getParser().getContext().getSource(),
             JSScriptEngine.inTrustedContext());
-    String ret = MapTool.getParser().parseLine(res, tokenInContext, line, context);
+    String ret = MapTool.getParser().parseLine(res, line, context);
     try {
       return new BigDecimal(ret);
     } catch (Exception e) {
