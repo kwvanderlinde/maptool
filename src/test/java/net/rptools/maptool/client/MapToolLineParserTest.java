@@ -35,9 +35,7 @@ public class MapToolLineParserTest {
       String expression, boolean makeDeterministic, MapToolVariableResolver resolver)
       throws ParserException {
     return parser.parseExpression(
-        resolver == null ? new MapToolVariableResolver(null) : resolver,
-        expression,
-        makeDeterministic);
+        resolver == null ? new MapToolVariableResolver() : resolver, expression, makeDeterministic);
   }
 
   private void assertEqualsIgnoreSpaces(String expected, String actual) {
@@ -60,44 +58,44 @@ public class MapToolLineParserTest {
 
     // no branch
     assertEquals(
-        "a var gives 1", parseLine("a var gives [r: a = 1]", new MapToolVariableResolver(null)));
+        "a var gives 1", parseLine("a var gives [r: a = 1]", new MapToolVariableResolver()));
 
     // branch type if
     assertEquals(
         "a condition leads to 1",
-        parseLine("a condition leads to [r: if(1 == 1, 1, 0)]", new MapToolVariableResolver(null)));
+        parseLine("a condition leads to [r: if(1 == 1, 1, 0)]", new MapToolVariableResolver()));
     assertEquals(
         "a d10 roll is always a No Critical Hit",
         parseLine(
             "a d10 roll[h: d20roll = 1d10] is always a [r,if(d20roll == 20): output = \"Critical Hit\"; output = \"No Critical Hit\"]",
-            new MapToolVariableResolver(null)));
+            new MapToolVariableResolver()));
     assertEquals(
         "a hidden evaluation gives nothing",
         parseLine(
             "a hidden evaluation gives nothing[h: if(1 == 1, 1, 0)]",
-            new MapToolVariableResolver(null)));
+            new MapToolVariableResolver()));
     // expanded rolls contain MessagePanel's ASCII control characters that mark of roll information
     // (line 182)
     assertMatches(
         "expanded roll shows ...if(1 == 1, 1, 0) = 1.",
-        parseLine("expanded roll shows [e: if(1 == 1, 1, 0)]", new MapToolVariableResolver(null)));
+        parseLine("expanded roll shows [e: if(1 == 1, 1, 0)]", new MapToolVariableResolver()));
 
     // branch type count loop
     assertEquals(
         "a loop yields hit, hit, hit",
-        parseLine("a loop yields [r, count(3): \"hit\" ]", new MapToolVariableResolver(null)));
+        parseLine("a loop yields [r, count(3): \"hit\" ]", new MapToolVariableResolver()));
 
     // branch type switch
     assertEquals(
         "switched is 1",
         parseLine(
             "switched is [h:a=1][r,switch(a): case 0: 0; case 1: 1; case 2: 2; default: -1]",
-            new MapToolVariableResolver(null)));
+            new MapToolVariableResolver()));
 
     // eval macro
     assertEquals(
         "got evaluated",
-        parseLine("got [r: evalMacro('[r:\"evaluated\"]')]", new MapToolVariableResolver(null)));
+        parseLine("got [r: evalMacro('[r:\"evaluated\"]')]", new MapToolVariableResolver()));
 
     // macro
     MacroButtonProperties macro = new MacroButtonProperties(0);
@@ -147,15 +145,15 @@ public class MapToolLineParserTest {
 
     // no branch
     String macro = "[r: 1]";
-    assertEquals("1", parseLine(macro, new MapToolVariableResolver(null)));
+    assertEquals("1", parseLine(macro, new MapToolVariableResolver()));
 
     // no branch code
     macro = "[r, code: {  1 }]";
-    assertEquals("1", parseLine(macro, new MapToolVariableResolver(null)));
+    assertEquals("1", parseLine(macro, new MapToolVariableResolver()));
 
     // if
     macro = "[r, if(1 == 1): \"true\"; \"false\"]";
-    assertEquals("true", parseLine(macro, new MapToolVariableResolver(null)));
+    assertEquals("true", parseLine(macro, new MapToolVariableResolver()));
 
     // if CODE
     macro =
@@ -165,10 +163,10 @@ public class MapToolLineParserTest {
             + "{"
             + "  [\"always false\"]"
             + "}]";
-    assertEquals("still true", parseLine(macro, new MapToolVariableResolver(null)));
+    assertEquals("still true", parseLine(macro, new MapToolVariableResolver()));
 
     // switch
-    MapToolVariableResolver res = new MapToolVariableResolver(null);
+    MapToolVariableResolver res = new MapToolVariableResolver();
     res.setVariable("a", "2");
     macro =
         "[r, switch(a):"
@@ -230,7 +228,7 @@ public class MapToolLineParserTest {
   @Test
   public void testValue() throws ParserException {
 
-    MapToolVariableResolver resolver = new MapToolVariableResolver(null);
+    MapToolVariableResolver resolver = new MapToolVariableResolver();
 
     // "match" + "this", deterministic
     Result result = parseExpression("\"match\"+\"this\"", true, resolver);
@@ -246,7 +244,7 @@ public class MapToolLineParserTest {
   @Test
   public void testExpression() throws ParserException {
 
-    MapToolVariableResolver resolver = new MapToolVariableResolver(null);
+    MapToolVariableResolver resolver = new MapToolVariableResolver();
 
     // a = 1, deterministic
     Result result = parseExpression("a = 1", true, resolver);

@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.util.*;
+import javax.annotation.Nullable;
 import javax.swing.JOptionPane;
 import net.rptools.CaseInsensitiveHashMap;
 import net.rptools.maptool.client.functions.*;
@@ -109,7 +110,11 @@ public class MapToolVariableResolver implements VariableResolver {
 
   private boolean autoPrompt;
 
-  public MapToolVariableResolver(Token tokenInContext) {
+  public MapToolVariableResolver() {
+    this(null);
+  }
+
+  public MapToolVariableResolver(@Nullable Token tokenInContext) {
     this.tokenInContext = tokenInContext;
 
     autoPrompt = true;
@@ -133,6 +138,13 @@ public class MapToolVariableResolver implements VariableResolver {
         LOGGER.error("Error: Unable to set constant " + entry.getKey() + " to " + entry.getValue());
       }
     }
+  }
+
+  /**
+   * @return a new resolver with the same token context.
+   */
+  public MapToolVariableResolver createDerived() {
+    return new MapToolVariableResolver(tokenInContext);
   }
 
   /**
@@ -328,9 +340,7 @@ public class MapToolVariableResolver implements VariableResolver {
       if (evaluate) {
         // Try parse the value if we can not parse it then just return it as a string.
         try {
-          value =
-              MapTool.getParser()
-                  .parseLine(new MapToolVariableResolver(tokenInContext), result.toString(), null);
+          value = MapTool.getParser().parseLine(createDerived(), result.toString(), null);
         } catch (Exception e) {
           value = result.toString();
         }

@@ -637,7 +637,7 @@ public class AddOnLibrary implements Library {
    */
   private CompletableFuture<Void> callMTSFunction(String name) {
     if (SwingUtilities.isEventDispatchThread()) {
-      var resolver = new MapToolVariableResolver(null);
+      var resolver = new MapToolVariableResolver();
       try {
         MapTool.getParser().runMacro(resolver, name + "@lib:" + namespace, "");
       } catch (ParserException e) {
@@ -646,7 +646,7 @@ public class AddOnLibrary implements Library {
     } else {
       SwingUtilities.invokeLater(
           () -> {
-            var resolver = new MapToolVariableResolver(null);
+            var resolver = new MapToolVariableResolver();
             try {
               MapTool.getParser().runMacro(resolver, name + "@lib:" + namespace, "");
             } catch (ParserException e) {

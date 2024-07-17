@@ -136,7 +136,7 @@ public class TestFunctions extends AbstractFunction {
         failures = 0;
         messages.clear();
         // Each call gets its own variable parser
-        MapToolVariableResolver resolver = new MapToolVariableResolver(null);
+        MapToolVariableResolver resolver = new MapToolVariableResolver();
         MapToolMacroContext context =
             new MapToolMacroContext(
                 TEST_CONTEXT_NAME, MapTool.getParser().getContext().getSource(), true);

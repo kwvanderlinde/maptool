@@ -24,7 +24,7 @@ public abstract class AbstractRollMacro extends AbstractMacro {
 
     try {
       String text =
-          roll + " => " + MapTool.getParser().expandRoll(new MapToolVariableResolver(null), roll);
+          roll + " => " + MapTool.getParser().expandRoll(new MapToolVariableResolver(), roll);
 
       return text;
     } catch (Exception e) {

@@ -1198,7 +1198,7 @@ public class MapToolLineParser {
     }
     MapToolVariableResolver macroResolver;
     if (createNewVariableContext) {
-      macroResolver = new MapToolVariableResolver(tokenInContext);
+      macroResolver = resolver.createDerived();
     } else {
       macroResolver = resolver;
     }

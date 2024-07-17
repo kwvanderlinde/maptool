@@ -22,7 +22,6 @@ import net.rptools.maptool.client.MapToolLineParser;
 import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.language.I18N;
-import net.rptools.maptool.model.Token;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
@@ -56,25 +55,13 @@ public class EvalMacroFunctions extends AbstractFunction {
     }
 
     // execMacro has new variable scope whereas evalMacro does not.
+    var mtResolver = (MapToolVariableResolver) resolver;
     if (functionName.equalsIgnoreCase("execMacro")) {
-      return execMacro(
-          ((MapToolVariableResolver) resolver).getTokenInContext(), parameters.get(0).toString());
+      return evalMacro(mtResolver.createDerived(), parameters.get(0).toString());
     } else if ("evalMacro".equalsIgnoreCase(functionName)) {
-      return evalMacro((MapToolVariableResolver) resolver, parameters.get(0).toString());
+      return evalMacro(mtResolver, parameters.get(0).toString());
     }
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));
-  }
-
-  /**
-   * Executes the macro with a new variable scope.
-   *
-   * @param tokenInContext The token in context.
-   * @param line the macro to execute.
-   * @return the result of the execution.
-   * @throws ParserException if an error occurs.
-   */
-  public static Object execMacro(Token tokenInContext, String line) throws ParserException {
-    return evalMacro(new MapToolVariableResolver(tokenInContext), line);
   }
 
   /**

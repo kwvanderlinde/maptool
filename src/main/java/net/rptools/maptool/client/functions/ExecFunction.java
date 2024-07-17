@@ -208,7 +208,7 @@ public class ExecFunction extends AbstractFunction {
     Function function = parser.getFunction(functionName);
     MapTool.getParser().enterTrustedContext(functionName, "execFunction");
     try {
-      function.evaluate(parser, new MapToolVariableResolver(null), functionName, execArgs);
+      function.evaluate(parser, new MapToolVariableResolver(), functionName, execArgs);
     } catch (ParserException pe) {
       log.error("execFunction failed:", pe);
     }
