@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import javax.swing.Icon;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.library.Library;
 import net.rptools.maptool.model.library.LibraryManager;
@@ -693,7 +694,7 @@ public class InitiativeList implements Serializable {
                     ON_INITIATIVE_CHANGE_VETOABLE_MACRO_CALLBACK,
                     libraryNamespace,
                     argStr,
-                    null,
+                    new MapToolVariableResolver(),
                     ON_INITIATIVE_CHANGE_DENY_VARIABLE,
                     Collections.emptyMap());
             isVetoed = isVetoed || thisVote;
@@ -745,8 +746,9 @@ public class InitiativeList implements Serializable {
                 ON_INITIATIVE_CHANGE_COMMIT_MACRO_CALLBACK,
                 libraryNamespace,
                 argStr,
-                null,
-                Collections.emptyMap());
+                new MapToolVariableResolver(),
+                Collections.emptyMap(),
+                false);
           } catch (InterruptedException | ExecutionException e) {
             // Should not be possible
             throw new AssertionError("Error retrieving library namespace");

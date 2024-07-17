@@ -17,6 +17,7 @@ package net.rptools.maptool.events;
 import com.google.common.eventbus.Subscribe;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
+import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.events.TokenHoverEnter;
 import net.rptools.maptool.client.events.TokenHoverExit;
 import net.rptools.maptool.language.I18N;
@@ -47,7 +48,7 @@ public class TokenHoverListener {
               ON_MOUSE_OVER_CALLBACK,
               libraryNamespace,
               token.getId().toString() + "," + tokX + "," + tokY + "," + shiftKey + "," + ctrlKey,
-              null,
+              new MapToolVariableResolver(),
               Collections.emptyMap(),
               false);
         } catch (InterruptedException | ExecutionException e) {
@@ -73,7 +74,7 @@ public class TokenHoverListener {
               ON_MOUSE_OVER_CALLBACK,
               libraryNamespace,
               token.getId().toString() + ",exit",
-              null,
+              new MapToolVariableResolver(),
               Collections.emptyMap(),
               false);
         } catch (InterruptedException | ExecutionException e) {

@@ -239,8 +239,9 @@ public class UserDefinedMacroFunctions implements Function, AdditionalFunctionDe
     List<Token> libTokens = EventMacroUtil.getEventMacroTokens(ON_LOAD_CAMPAIGN_CALLBACK);
     String prefix = ON_LOAD_CAMPAIGN_CALLBACK + "@";
     for (Token handler : libTokens) {
+      var resolver = new MapToolVariableResolver(handler);
       EventMacroUtil.callEventHandlerOld(
-          prefix + handler.getName(), "", handler, Collections.emptyMap(), true);
+          prefix + handler.getName(), "", resolver, Collections.emptyMap(), true);
     }
   }
 

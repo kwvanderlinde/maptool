@@ -74,7 +74,8 @@ public class EventMacroUtil {
    * @param eventName the name of the event being run
    * @param libraryNamespace the namespace of the library containing the event handler
    * @param args the argument string to pass
-   * @param tokenInContext token to set as current, if any
+   * @param resolver the {@link MapToolVariableResolver} used for resolving variables in the macro
+   *     being run.
    * @param vetoVariable the specific variable to check for a veto
    * @param otherVars any other variables that should be initialized in the macro scope
    * @return true if the handler vetoed the event, false otherwise
@@ -83,7 +84,7 @@ public class EventMacroUtil {
       final String eventName,
       final String libraryNamespace,
       final String args,
-      final Token tokenInContext,
+      final MapToolVariableResolver resolver,
       final String vetoVariable,
       final Map<String, Object> otherVars) {
     Map<String, Object> varsToInitialize =
@@ -92,8 +93,7 @@ public class EventMacroUtil {
 
     boolean isVetoed = false;
     try {
-      MapToolVariableResolver resolver =
-          callEventHandler(eventName, libraryNamespace, args, tokenInContext, varsToInitialize);
+      callEventHandler(eventName, libraryNamespace, args, resolver, varsToInitialize, false);
       BigDecimal vetoValue = BigDecimal.ZERO;
       if (resolver.getVariable(vetoVariable) instanceof BigDecimal) {
         vetoValue = (BigDecimal) resolver.getVariable(vetoVariable);
@@ -121,54 +121,29 @@ public class EventMacroUtil {
    * Utility wrapper for running a specified macro as an event handler, getting back the variable
    * resolver instance that can be checked for any particular outputs.
    *
-   * <p>Called macros will output to chat as normal - to suppress, see {@link
-   * #callEventHandler(String, String, String, Token, Map, boolean)}
-   *
-   * @param eventName the name of the event being run
-   * @param libraryNamespace the namespace of the library containing the event handler
-   * @param args the argument string to pass
-   * @param tokenInContext token to set as current, if any
-   * @param varsToSet any variables that should be initialized in the macro scope
-   * @return the variable resolver containing the resulting variable states
-   */
-  public static MapToolVariableResolver callEventHandler(
-      final String eventName,
-      final String libraryNamespace,
-      final String args,
-      final Token tokenInContext,
-      Map<String, Object> varsToSet) {
-
-    return callEventHandler(eventName, libraryNamespace, args, tokenInContext, varsToSet, false);
-  }
-
-  /**
-   * Utility wrapper for running a specified macro as an event handler, getting back the variable
-   * resolver instance that can be checked for any particular outputs.
-   *
    * <p>Optionally suppresses chat output.
    *
    * @param eventName the name of the event being run
    * @param libraryNamespace the namespace of the library containing the event handler
    * @param args the argument string to pass
-   * @param tokenInContext token to set as current, if any
+   * @param resolver the {@link MapToolVariableResolver} used for resolving variables in the macro
+   *     being run.
    * @param varsToSet any variables that should be initialized in the macro scope
    * @param suppressChatOutput whether normal macro chat output should be suppressed
-   * @return the variable resolver containing the resulting variable states
    */
-  public static MapToolVariableResolver callEventHandler(
+  public static void callEventHandler(
       final String eventName,
       final String libraryNamespace,
       final String args,
-      final Token tokenInContext,
+      final MapToolVariableResolver resolver,
       Map<String, Object> varsToSet,
       boolean suppressChatOutput) {
     if (varsToSet == null) {
       varsToSet = Collections.emptyMap();
     }
-    MapToolVariableResolver newResolver = new MapToolVariableResolver(tokenInContext);
     try {
       for (Map.Entry<String, Object> entry : varsToSet.entrySet()) {
-        newResolver.setVariable(entry.getKey(), entry.getValue());
+        resolver.setVariable(entry.getKey(), entry.getValue());
       }
 
       var library =
@@ -189,7 +164,7 @@ public class EventMacroUtil {
                               "library.error.noEventHandler", eventName, libraryNamespace)));
       String macroTarget = eventTarget + "@lib:" + libraryNamespace;
 
-      String resultVal = MapTool.getParser().runMacro(newResolver, macroTarget, args, false);
+      String resultVal = MapTool.getParser().runMacro(resolver, macroTarget, args, false);
       if (!suppressChatOutput && resultVal != null && !resultVal.equals("")) {
         MapTool.addMessage(
             new TextMessage(
@@ -208,28 +183,6 @@ public class EventMacroUtil {
               "library.error.errorRunningEvent", eventName, libraryNamespace, e.getMessage()),
           e);
     }
-    return newResolver;
-  }
-
-  /**
-   * Utility wrapper for running a specified macro as an event handler, getting back the variable
-   * resolver instance that can be checked for any particular outputs.
-   *
-   * <p>Called macros will output to chat as normal - to suppress, see {@link
-   * #callEventHandlerOld(String, String, Token, Map, boolean)}
-   *
-   * @param macroTarget the fully-qualified macro name
-   * @param args the argument string to pass
-   * @param tokenInContext token to set as current, if any
-   * @param varsToSet any variables that should be initialized in the macro scope
-   * @return the variable resolver containing the resulting variable states
-   */
-  public static MapToolVariableResolver callEventHandlerOld(
-      final String macroTarget,
-      final String args,
-      final Token tokenInContext,
-      Map<String, Object> varsToSet) {
-    return callEventHandlerOld(macroTarget, args, tokenInContext, varsToSet, false);
   }
 
   /**
@@ -240,24 +193,23 @@ public class EventMacroUtil {
    *
    * @param macroTarget the fully-qualified macro name
    * @param args the argument string to pass
-   * @param tokenInContext token to set as current, if any
+   * @param resolver the {@link MapToolVariableResolver} used for resolving variables in the macro
+   *     being run.
    * @param varsToSet any variables that should be initialized in the macro scope
    * @param suppressChatOutput whether normal macro chat output should be suppressed
-   * @return the variable resolver containing the resulting variable states
    */
-  public static MapToolVariableResolver callEventHandlerOld(
+  public static void callEventHandlerOld(
       final String macroTarget,
       final String args,
-      final Token tokenInContext,
+      final MapToolVariableResolver resolver,
       Map<String, Object> varsToSet,
       boolean suppressChatOutput) {
     if (varsToSet == null) varsToSet = Collections.emptyMap();
-    MapToolVariableResolver newResolver = new MapToolVariableResolver(tokenInContext);
     try {
       for (Map.Entry<String, Object> entry : varsToSet.entrySet()) {
-        newResolver.setVariable(entry.getKey(), entry.getValue());
+        resolver.setVariable(entry.getKey(), entry.getValue());
       }
-      String resultVal = MapTool.getParser().runMacro(newResolver, macroTarget, args, false);
+      String resultVal = MapTool.getParser().runMacro(resolver, macroTarget, args, false);
       if (!suppressChatOutput && resultVal != null && !resultVal.equals("")) {
         MapTool.addMessage(
             new TextMessage(
@@ -272,6 +224,5 @@ public class EventMacroUtil {
           "Event continuing after error running " + macroTarget + ": " + e.getMessage());
       LOGGER.debug("error running {}: {}", macroTarget, e.getMessage(), e);
     }
-    return newResolver;
   }
 }
