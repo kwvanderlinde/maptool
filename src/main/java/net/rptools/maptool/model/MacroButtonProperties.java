@@ -752,9 +752,13 @@ public class MacroButtonProperties implements Comparable<MacroButtonProperties> 
       return toolTip;
     }
 
+    Zone zone = null;
     Token token = null;
     if (tokenId != null) {
-      token = MapTool.getFrame().getCurrentZoneRenderer().getZone().getToken(tokenId);
+      zone = MapTool.getClient().getCurrentZone();
+      if (zone != null) {
+        token = zone.getToken(tokenId);
+      }
     }
     try {
       MapToolMacroContext context =
@@ -768,7 +772,8 @@ public class MacroButtonProperties implements Comparable<MacroButtonProperties> 
             token.getName(),
             token.getId());
       }
-      return MapTool.getParser().parseLine(new MapToolVariableResolver(token), toolTip, context);
+      return MapTool.getParser()
+          .parseLine(new MapToolVariableResolver(token, zone), toolTip, context);
     } catch (ParserException pe) {
       return toolTip;
     }

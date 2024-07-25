@@ -24,6 +24,7 @@ import net.rptools.dicelib.expression.Result;
 import net.rptools.maptool.model.CampaignFactory;
 import net.rptools.maptool.model.MacroButtonProperties;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.Zone;
 import net.rptools.parser.ParserException;
 import org.junit.jupiter.api.Test;
 
@@ -102,13 +103,16 @@ public class MapToolLineParserTest {
     macro.setLabel("testMacro");
     macro.setCommand("[r:macro.args]");
 
+    Zone zone = new Zone();
     Token token = new Token();
+    zone.putToken(token);
     token.saveMacro(macro);
 
     assertEquals(
         "hello world",
         parseLine(
-            "hello [MACRO(\"testMacro@TOKEN\"): \"world\"]", new MapToolVariableResolver(token)));
+            "hello [MACRO(\"testMacro@TOKEN\"): \"world\"]",
+            new MapToolVariableResolver(token, zone)));
   }
 
   @Test
@@ -116,11 +120,13 @@ public class MapToolLineParserTest {
     // We need the campaign to have the "Strength" property defined.
     MapTool.getClient().setCampaign(CampaignFactory.createBasicCampaign());
 
+    Zone zone = new Zone();
     Token token = new Token();
+    zone.putToken(token);
     token.setProperty("Strength", "1");
 
     MapToolVariableResolver res =
-        new MapToolVariableResolver(token) {
+        new MapToolVariableResolver(token, zone) {
           @Override
           protected void updateTokenProperty(
               Token tokenToUpdate, String varToUpdate, String valueToSet) {

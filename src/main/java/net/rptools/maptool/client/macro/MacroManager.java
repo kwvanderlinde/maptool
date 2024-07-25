@@ -24,9 +24,9 @@ import net.rptools.maptool.client.functions.exceptions.*;
 import net.rptools.maptool.client.macro.impl.*;
 import net.rptools.maptool.client.ui.MapToolFrame;
 import net.rptools.maptool.client.ui.commandpanel.CommandPanel;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.util.StringUtil;
 import net.rptools.parser.ParserException;
 import org.apache.logging.log4j.LogManager;
@@ -322,18 +322,22 @@ public class MacroManager {
         if (def == null || def.expandRolls()) {
           // TODO: fix this, wow I really hate this, it's very, very ugly.
           Token tokenInContext = null;
-          ZoneRenderer zr = MapTool.getFrame().getCurrentZoneRenderer();
-          if (zr != null) {
+          Zone zone = MapTool.getClient().getCurrentZone();
+          if (zone != null) {
             final MapToolFrame frame = MapTool.getFrame();
             final CommandPanel cpanel = frame.getCommandPanel();
-            if (cpanel.getIdentityGUID() != null)
-              tokenInContext = zr.getZone().getToken(cpanel.getIdentityGUID());
-            else tokenInContext = zr.getZone().resolveToken(cpanel.getIdentity());
+            if (cpanel.getIdentityGUID() != null) {
+              tokenInContext = zone.getToken(cpanel.getIdentityGUID());
+            } else {
+              tokenInContext = zone.resolveToken(cpanel.getIdentity());
+            }
           }
           details =
               MapTool.getParser()
                   .parseLine(
-                      new MapToolVariableResolver(tokenInContext), details, macroExecutionContext);
+                      new MapToolVariableResolver(tokenInContext, zone),
+                      details,
+                      macroExecutionContext);
           trustedPath = MapTool.getParser().isMacroPathTrusted();
         }
         context.addTransform(key + " " + details);

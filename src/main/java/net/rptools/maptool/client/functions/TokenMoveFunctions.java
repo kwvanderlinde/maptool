@@ -436,11 +436,12 @@ public class TokenMoveFunctions extends AbstractFunction {
    * order is unpredictable, this is very much not encouraged.
    *
    * @param path the path token
+   * @param zone the zone in which {@code filteredTokens} reside.
    * @param filteredTokens the tokens being moved (each one will be evaluated individually)
    * @return the list of tokens from the given list that have their movement rejected
    */
   public static List<Token> callForIndividualTokenMoveVetoes(
-      final Path<?> path, final List<Token> filteredTokens) {
+      final Path<?> path, Zone zone, final List<Token> filteredTokens) {
     List<Token> deniedTokens = new ArrayList<>();
     try {
       var libraries =
@@ -459,10 +460,12 @@ public class TokenMoveFunctions extends AbstractFunction {
                   ON_TOKEN_MOVE_COMPLETE_CALLBACK,
                   libraryNamespace,
                   pathCoordinates,
-                  new MapToolVariableResolver(token),
+                  new MapToolVariableResolver(token, zone),
                   ON_TOKEN_MOVE_DENY_VARIABLE,
                   varsToSet);
-          if (moveDenied) deniedTokens.add(token);
+          if (moveDenied) {
+            deniedTokens.add(token);
+          }
         }
       }
     } catch (InterruptedException | ExecutionException e) {

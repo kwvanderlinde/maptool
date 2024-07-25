@@ -28,6 +28,7 @@ import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
 import net.rptools.maptool.model.MacroButtonProperties;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.Zone;
 import net.rptools.parser.ParserException;
 import org.junit.jupiter.api.*;
 
@@ -117,11 +118,13 @@ public class GetRolledTest {
     macro.setLabel("testUDF");
     macro.setCommand(UDF_CONTENTS);
 
+    Zone zone = new Zone();
     Token token = new Token();
+    zone.putToken(token);
     token.setName("testUDF");
     token.saveMacro(macro);
 
-    MapToolVariableResolver resolver = new MapToolVariableResolver(token);
+    MapToolVariableResolver resolver = new MapToolVariableResolver(token, zone);
     parser.parseExpression(resolver, "defineFunction('testUDF', 'testUDF@TOKEN')", false);
 
     Result result = parser.parseExpression(resolver, "testUDF()", false);
@@ -146,11 +149,13 @@ public class GetRolledTest {
     macro.setLabel("testUDF");
     macro.setCommand(UDF_CONTENTS);
 
+    Zone zone = new Zone();
     Token token = new Token();
+    zone.putToken(token);
     token.setName("testUDF");
     token.saveMacro(macro);
 
-    MapToolVariableResolver resolver = new MapToolVariableResolver(token);
+    MapToolVariableResolver resolver = new MapToolVariableResolver(token, zone);
     parser.parseExpression(resolver, "defineFunction('testUDF', 'testUDF@TOKEN')", false);
 
     mostRecentRolls =
@@ -210,11 +215,13 @@ public class GetRolledTest {
     macro.setLabel("testMacro");
     macro.setCommand(UDF_CONTENTS);
 
+    Zone zone = new Zone();
     Token token = new Token();
+    zone.putToken(token);
     token.setName("testToken");
     token.saveMacro(macro);
 
-    MapToolVariableResolver resolver = new MapToolVariableResolver(token);
+    MapToolVariableResolver resolver = new MapToolVariableResolver(token, zone);
     String result =
         parser.parseLine(
             resolver,

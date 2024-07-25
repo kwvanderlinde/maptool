@@ -48,14 +48,14 @@ public class SwitchTokenFunction extends AbstractFunction {
           I18N.getText(
               "macro.function.general.notEnoughParam", functionName, 1, parameters.size()));
     }
-    Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
-    Token token = zone.resolveToken(parameters.get(0).toString());
+    Zone zone = MapTool.getClient().getCurrentZone();
+    Token token = zone == null ? null : zone.resolveToken(parameters.get(0).toString());
     if (token == null) {
       throw new ParserException(
           I18N.getText(
               "macro.function.general.unknownToken", functionName, parameters.get(0).toString()));
     }
-    ((MapToolVariableResolver) resolver).setTokenIncontext(token);
+    ((MapToolVariableResolver) resolver).setTokenIncontext(token, zone);
     return "";
   }
 }

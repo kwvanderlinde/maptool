@@ -478,7 +478,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
               List<Token> tokensToCheck =
                   filteredTokens.stream().map(zone::getToken).collect(Collectors.toList());
               List<Token> tokensDenied =
-                  TokenMoveFunctions.callForIndividualTokenMoveVetoes(path, tokensToCheck);
+                  TokenMoveFunctions.callForIndividualTokenMoveVetoes(path, zone, tokensToCheck);
               for (Token token : tokensDenied) {
                 denyMovement(token);
               }

@@ -32,6 +32,7 @@ import net.rptools.maptool.client.ui.macrobuttons.buttons.MacroButtonPrefs;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.MacroButtonProperties;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.library.LibraryManager;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.function.Function;
@@ -133,6 +134,8 @@ public class MapToolLineParser {
     SKIP_NEXT_CHAR
   }
 
+  private record TokenStackEntry(Token token, Zone zone) {}
+
   public Map<String, String> listAllMacroFunctions() {
     Map<String, String> functionList = new HashMap<String, String>();
 
@@ -225,7 +228,7 @@ public class MapToolLineParser {
     if (line.length() == 0) {
       return "";
     }
-    Stack<Token> contextTokenStack = new Stack<Token>();
+    Stack<TokenStackEntry> contextTokenStack = new Stack<>();
     context = enterContext(context);
     boolean resolverInitialized = false;
     String opts = null;
@@ -525,13 +528,14 @@ public class MapToolLineParser {
                   if (!isMacroTrusted()) {
                     throw new ParserException(I18N.getText("macro.function.roll.noPerm"));
                   }
+                  var zone = MapTool.getClient().getCurrentZone();
                   Token newToken =
-                      MapTool.getClient()
-                          .getCurrentZone()
-                          .resolveToken(option.getParsedParam(0, resolver, this).toString());
+                      zone.resolveToken(option.getParsedParam(0, resolver, this).toString());
                   if (newToken != null) {
-                    contextTokenStack.push(resolver.getTokenInContext());
-                    resolver.setTokenIncontext(newToken);
+                    contextTokenStack.push(
+                        new TokenStackEntry(
+                            resolver.getTokenInContext(), resolver.getZoneOfTokenInContext()));
+                    resolver.setTokenIncontext(newToken, zone);
                   }
                   break;
                 default:
@@ -946,7 +950,8 @@ public class MapToolLineParser {
 
           // Revert to our previous token if [token(): ] was used
           if (contextTokenStack.size() > 0) {
-            resolver.setTokenIncontext(contextTokenStack.pop());
+            var last = contextTokenStack.pop();
+            resolver.setTokenIncontext(last.token(), last.zone());
           }
         } else if (match.getMatch().startsWith("{")) {
           roll = match.getRoll();

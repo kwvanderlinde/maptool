@@ -19,6 +19,7 @@ import javafx.application.Platform;
 import net.rptools.maptool.client.AppConstants;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.sheet.stats.StatSheetContext;
 import net.rptools.maptool.model.sheet.stats.StatSheetLocation;
 import net.rptools.maptool.util.HandlebarsUtil;
@@ -36,12 +37,13 @@ public class StatSheet {
    * Handlebars template engine.
    *
    * @param token the token to render the stat sheet for.
+   * @param zone the zone where {@code token} can be found
    * @param content the content of the stat sheet.
    * @param location the location of the stat sheet.
    */
-  public void setContent(Token token, String content, StatSheetLocation location) {
+  public void setContent(Token token, Zone zone, String content, StatSheetLocation location) {
     try {
-      var statSheetContext = new StatSheetContext(token, MapTool.getPlayer(), location);
+      var statSheetContext = new StatSheetContext(token, zone, MapTool.getPlayer(), location);
       var output = new HandlebarsUtil<>(content).apply(statSheetContext);
       Platform.runLater(
           () -> {

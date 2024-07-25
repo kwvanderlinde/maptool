@@ -17,6 +17,7 @@ package net.rptools.maptool.util;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BiConsumer;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.functions.exceptions.*;
@@ -37,10 +38,10 @@ public class EventMacroUtil {
    * Scans all maps to find any Lib:Tokens that contain a macro matching the given "callback" label.
    *
    * @param macroCallback the macro name to find
-   * @return a (possibly empty) list of Lib:tokens that contain the requested macro
+   * @param consumer the callback to invoke for each Lib:token that contains the requested macro
    */
-  public static List<Token> getEventMacroTokens(final String macroCallback) {
-    List<Token> found = new ArrayList<>();
+  public static void forEachEventMacroTokens(
+      final String macroCallback, BiConsumer<Token, Zone> consumer) {
     for (Zone zone : MapTool.getClient().getCampaign().getZones()) {
       List<Token> tokenList =
           zone.getTokensFiltered(t -> t.getName().toLowerCase().startsWith("lib:"));
@@ -56,11 +57,10 @@ public class EventMacroUtil {
           continue;
         }
         if (token.getMacro(macroCallback, false) != null) {
-          found.add(token);
+          consumer.accept(token, zone);
         }
       }
     }
-    return found;
   }
 
   /**

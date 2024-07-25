@@ -449,19 +449,19 @@ public class MacroLinkFunction extends AbstractFunction {
       try {
         for (String t : targets) {
           if (zone == null) {
-            doOutput(null, outputTo, macroName, args, outputToPlayers);
+            doOutput(null, null, outputTo, macroName, args, outputToPlayers);
           } else if (t.equalsIgnoreCase("impersonated")) {
             CommandPanel cmd = MapTool.getFrame().getCommandPanel();
             GUID guid = cmd.getIdentityGUID();
             Token token = guid != null ? zone.getToken(guid) : zone.resolveToken(cmd.getIdentity());
 
-            doOutput(token, outputTo, macroName, args, outputToPlayers);
+            doOutput(token, zone, outputTo, macroName, args, outputToPlayers);
           } else if (t.equalsIgnoreCase("selected")) {
             for (GUID id : zr.getSelectedTokenSet()) {
-              doOutput(zone.getToken(id), outputTo, macroName, args, outputToPlayers);
+              doOutput(zone.getToken(id), zone, outputTo, macroName, args, outputToPlayers);
             }
           } else {
-            doOutput(zone.resolveToken(t), outputTo, macroName, args, outputToPlayers);
+            doOutput(zone.resolveToken(t), zone, outputTo, macroName, args, outputToPlayers);
           }
         }
       } catch (AbortFunctionException e) {
@@ -480,6 +480,7 @@ public class MacroLinkFunction extends AbstractFunction {
    * Run the macro and display the output.
    *
    * @param token the token on which the macro is executed
+   * @param zone the zone in which {@code token} resides
    * @param outputTo who should get the output
    * @param macroName the name of the macro
    * @param args the arguments of the macro
@@ -487,11 +488,16 @@ public class MacroLinkFunction extends AbstractFunction {
    * @throws ParserException if the macro cannot be executed
    */
   private static void doOutput(
-      Token token, OutputTo outputTo, String macroName, String args, Set<String> playerList)
+      Token token,
+      Zone zone,
+      OutputTo outputTo,
+      String macroName,
+      String args,
+      Set<String> playerList)
       throws ParserException {
 
     // Execute the macro
-    MapToolVariableResolver resolver = new MapToolVariableResolver(token);
+    MapToolVariableResolver resolver = new MapToolVariableResolver(token, zone);
     String line = MapTool.getParser().runMacro(resolver, macroName, args);
 
     // Don't output blank messages. Fixes #1867.

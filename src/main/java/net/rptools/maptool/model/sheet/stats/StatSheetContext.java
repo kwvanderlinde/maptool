@@ -25,6 +25,7 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.util.ImageManager;
 import net.rptools.maptool.util.StringUtil;
@@ -164,10 +165,11 @@ public class StatSheetContext {
    * Creates a new instance of the class.
    *
    * @param token The token to extract the information from.
+   * @param zone The zone where {@code token} can be found.
    * @param player The player to extract the information for.
    * @param location The location of the stat sheet.
    */
-  public StatSheetContext(Token token, Player player, StatSheetLocation location) {
+  public StatSheetContext(Token token, Zone zone, Player player, StatSheetLocation location) {
 
     name = token.getName();
     tokenType = token.getType().name();
@@ -195,7 +197,7 @@ public class StatSheetContext {
       portraitAsset = null;
     }
     label = token.getLabel();
-    MapToolVariableResolver resolver = new MapToolVariableResolver(token);
+    MapToolVariableResolver resolver = new MapToolVariableResolver(token, zone);
     MapTool.getCampaign()
         .getCampaignProperties()
         .getTokenPropertyList(token.getPropertyType())

@@ -51,11 +51,13 @@ public class TokenPropertiesTest {
     propsList.add(new TokenProperty("badJson", null, true, false, false, "{\"a\": 1}{\"b\": 2}"));
     MapTool.getCampaign().putTokenType("testType", propsList);
 
+    Zone zone = new Zone();
     testToken = new Token();
+    zone.putToken(testToken);
     testToken.setPropertyType("testType");
 
     variableResolver =
-        new MapToolVariableResolver(testToken) {
+        new MapToolVariableResolver(testToken, zone) {
           @Override
           protected void updateTokenProperty(
               Token tokenToUpdate, String varToUpdate, String valueToSet) {

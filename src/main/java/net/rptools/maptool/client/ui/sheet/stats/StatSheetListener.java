@@ -55,7 +55,7 @@ public class StatSheetListener {
             || AppUtil.playerOwns(token)
             || token.getType() != Type.NPC) {
           statSheet.setContent(
-              event.token(), ssManager.getStatSheetContent(ss.id()), ss.location());
+              event.token(), event.zone(), ssManager.getStatSheetContent(ss.id()), ss.location());
         }
       }
     }

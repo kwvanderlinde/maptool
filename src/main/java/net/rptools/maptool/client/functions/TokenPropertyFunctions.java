@@ -369,7 +369,7 @@ public class TokenPropertyFunctions extends AbstractFunction {
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 3);
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 1, 2);
       Object val =
-          new MapToolVariableResolver(token)
+          new MapToolVariableResolver(token, token.getZone())
               .getEvaluatedTokenProperty(parameters.get(0).toString());
 
       if (val instanceof String) {

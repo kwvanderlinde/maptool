@@ -14,10 +14,7 @@
  */
 package net.rptools.maptool.client.macro.impl;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.rptools.maptool.client.MapTool;
@@ -69,7 +66,9 @@ public class SetTokenPropertyMacro implements Macro {
       MapTool.addLocalMessage(I18N.getText("settokenproperty.param"));
       return;
     }
-    Set<Token> selectedTokenSet = getTokens(tokenName);
+    Zone zone = MapTool.getClient().getCurrentZone();
+    Set<Token> selectedTokenSet =
+        zone == null ? Collections.emptySet() : getTokens(zone, tokenName);
 
     assert selectedTokenSet != null : I18N.getText("settokenproperty.unknownTokens");
     if (selectedTokenSet.isEmpty()) {
@@ -79,7 +78,8 @@ public class SetTokenPropertyMacro implements Macro {
     for (Token token : selectedTokenSet) {
       for (String command : commands) {
         try {
-          MapTool.getParser().parseExpression(new MapToolVariableResolver(token), command, false);
+          MapTool.getParser()
+              .parseExpression(new MapToolVariableResolver(token, zone), command, false);
         } catch (ParserException e) {
           MapTool.addLocalMessage(I18N.getText("msg.error.evaluatingExpr", e.getMessage()));
           break;
@@ -103,15 +103,15 @@ public class SetTokenPropertyMacro implements Macro {
   /**
    * Gets the token specified on command line or the selected tokens if no token is specified.
    *
+   * @param zone The zone in which to find tokens.
    * @param tokenName The name of the token to try retrieve.
    * @return The tokens. If the token in <code>tokenName</code> is empty or <code>tokenName</code>
    *     is null then the selected tokens are returned.
    */
-  protected Set<Token> getTokens(String tokenName) {
+  protected Set<Token> getTokens(Zone zone, String tokenName) {
     Set<Token> selectedTokenSet = new HashSet<Token>();
 
     if (tokenName != null && tokenName.length() > 0) {
-      Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
       Token token = zone.getTokenByName(tokenName);
       /*
        * Give the player the benefit of the doubt. If they specified a token that is invisible then try the name as a property. This will also stop players that are trying to "guess" token names
@@ -129,11 +129,15 @@ public class SetTokenPropertyMacro implements Macro {
       }
       return selectedTokenSet;
     }
+
     // Use the selected tokens.
-    selectedTokenSet = new HashSet<Token>();
-    Set<GUID> sTokenSet = MapTool.getFrame().getCurrentZoneRenderer().getSelectedTokenSet();
+    var renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
+    if (renderer == null) {
+      return selectedTokenSet;
+    }
+    Set<GUID> sTokenSet = renderer.getSelectedTokenSet();
     for (GUID tokenId : sTokenSet) {
-      Token tok = MapTool.getFrame().getCurrentZoneRenderer().getZone().getToken(tokenId);
+      Token tok = zone.getToken(tokenId);
       selectedTokenSet.add(tok);
     }
     return selectedTokenSet;

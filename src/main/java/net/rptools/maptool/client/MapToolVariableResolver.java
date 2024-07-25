@@ -107,15 +107,18 @@ public class MapToolVariableResolver implements VariableResolver {
   private List<Runnable> delayedActionList;
 
   private Token tokenInContext;
+  private Zone zoneOfTokenInContext;
 
   private boolean autoPrompt;
 
   public MapToolVariableResolver() {
-    this(null);
+    this(null, null);
   }
 
-  public MapToolVariableResolver(@Nullable Token tokenInContext) {
+  public MapToolVariableResolver(
+      @Nullable Token tokenInContext, @Nullable Zone zoneOfTokenInContext) {
     this.tokenInContext = tokenInContext;
+    this.zoneOfTokenInContext = zoneOfTokenInContext;
 
     autoPrompt = true;
     // Set the default macro.args to "" so that it is always present.
@@ -144,7 +147,7 @@ public class MapToolVariableResolver implements VariableResolver {
    * @return a new resolver with the same token context.
    */
   public MapToolVariableResolver createDerived() {
-    return new MapToolVariableResolver(tokenInContext);
+    return new MapToolVariableResolver(tokenInContext, zoneOfTokenInContext);
   }
 
   /**
@@ -209,6 +212,10 @@ public class MapToolVariableResolver implements VariableResolver {
    */
   public Token getTokenInContext() {
     return tokenInContext;
+  }
+
+  public Zone getZoneOfTokenInContext() {
+    return zoneOfTokenInContext;
   }
 
   @Override
@@ -532,7 +539,8 @@ public class MapToolVariableResolver implements VariableResolver {
    *
    * @param token The new token in context.
    */
-  public void setTokenIncontext(Token token) {
+  public void setTokenIncontext(Token token, Zone zone) {
     tokenInContext = token;
+    zoneOfTokenInContext = zone;
   }
 }

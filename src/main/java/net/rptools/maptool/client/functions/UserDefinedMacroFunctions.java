@@ -34,7 +34,6 @@ import net.rptools.maptool.client.ui.macrobuttons.buttons.MacroButtonPrefs;
 import net.rptools.maptool.client.ui.syntax.MapToolScriptSyntax;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.MacroButtonProperties;
-import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.library.LibraryManager;
 import net.rptools.maptool.util.EventMacroUtil;
 import net.rptools.parser.Parser;
@@ -236,13 +235,14 @@ public class UserDefinedMacroFunctions implements Function, AdditionalFunctionDe
    * called macros.
    */
   public void handleCampaignLoadMacroEvent() {
-    List<Token> libTokens = EventMacroUtil.getEventMacroTokens(ON_LOAD_CAMPAIGN_CALLBACK);
-    String prefix = ON_LOAD_CAMPAIGN_CALLBACK + "@";
-    for (Token handler : libTokens) {
-      var resolver = new MapToolVariableResolver(handler);
-      EventMacroUtil.callEventHandlerOld(
-          prefix + handler.getName(), "", resolver, Collections.emptyMap(), true);
-    }
+    final String prefix = ON_LOAD_CAMPAIGN_CALLBACK + "@";
+    EventMacroUtil.forEachEventMacroTokens(
+        ON_LOAD_CAMPAIGN_CALLBACK,
+        (handler, zone) -> {
+          var resolver = new MapToolVariableResolver(handler, zone);
+          EventMacroUtil.callEventHandlerOld(
+              prefix + handler.getName(), "", resolver, Collections.emptyMap(), true);
+        });
   }
 
   /**

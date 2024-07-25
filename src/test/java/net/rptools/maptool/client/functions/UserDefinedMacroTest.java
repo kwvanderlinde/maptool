@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import net.rptools.maptool.client.*;
 import net.rptools.maptool.model.MacroButtonProperties;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.Zone;
 import net.rptools.parser.ParserException;
 import org.junit.jupiter.api.Test;
 
@@ -33,11 +34,13 @@ public class UserDefinedMacroTest {
     macro.setCommand("[r:'got parameter ' + arg(0)]");
 
     // create a token w/macro
+    Zone zone = new Zone();
     Token token = new Token();
+    zone.putToken(token);
     token.saveMacro(macro);
 
     // setup evaluation, trusted, on token
-    MapToolVariableResolver resolver = new MapToolVariableResolver(token);
+    MapToolVariableResolver resolver = new MapToolVariableResolver(token, zone);
     MapTool.getParser().enterContext(new MapToolMacroContext("test", "test", true));
 
     // define myfunction
