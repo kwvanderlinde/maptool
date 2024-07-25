@@ -861,7 +861,7 @@ public class AppActions {
     List<GUID> tokensToRemove = new ArrayList<>();
     if (!tokenSet.isEmpty()) {
       if (copy) {
-        copyTokens(tokenSet);
+        copyTokens(zone, tokenSet);
       }
       // add tokens to delete to the list
       for (GUID tokenGUID : tokenSet) {
@@ -894,7 +894,7 @@ public class AppActions {
         @Override
         protected void executeAction() {
           ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
-          copyTokens(renderer.getSelectedTokenSet());
+          copyTokens(renderer.getZone(), renderer.getSelectedTokenSet());
         }
       };
 
@@ -903,15 +903,14 @@ public class AppActions {
    * be pasted back in again later. This is the highest level function in that it determines token
    * ownership (only owners can copy/cut tokens).
    *
+   * @param zone The current zone.
    * @param tokenSet the set of tokens to copy; if empty, plays the {@link
    *     MapTool#SND_INVALID_OPERATION} sound.
    */
-  public static void copyTokens(Set<GUID> tokenSet) {
+  public static void copyTokens(Zone zone, Set<GUID> tokenSet) {
     List<Token> tokenList = null;
     boolean anythingCopied = false;
     if (!tokenSet.isEmpty()) {
-      ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
-      Zone zone = renderer.getZone();
       tokenCopySet = new HashSet<Token>();
       tokenList = new ArrayList<Token>();
 
@@ -926,7 +925,7 @@ public class AppActions {
     // Only cut if some tokens are selected. Don't want to accidentally
     // lose what might already be in the clipboard.
     if (anythingCopied) {
-      copyTokens(tokenList);
+      copyTokens(zone, tokenList);
     } else {
       MapTool.playSound(MapTool.SND_INVALID_OPERATION);
     }
@@ -983,7 +982,7 @@ public class AppActions {
    * @param tokenList the list of tokens to copy; if empty, plays the {@link
    *     MapTool#SND_INVALID_OPERATION} sound.
    */
-  public static void copyTokens(List<Token> tokenList) {
+  public static void copyTokens(Zone zone, List<Token> tokenList) {
     // Only cut if some tokens are selected. Don't want to accidentally
     // lose what might already be in the clipboard.
     if (!tokenList.isEmpty()) {
@@ -1006,7 +1005,6 @@ public class AppActions {
        * coordinates of all tokens by subtracting the position of the one in 'topLeft'. On paste we can use the saved 'gridCopiedFrom' to determine whether to use pixel distances or convert to
        * cell distances.
        */
-      Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
       try {
         gridCopiedFrom = (Grid) zone.getGrid().clone();
       } catch (CloneNotSupportedException e) {
@@ -1057,8 +1055,8 @@ public class AppActions {
 
   /**
    * Pastes tokens from {@link #tokenCopySet} into the current zone at the specified location on the
-   * given layer. See {@link #copyTokens(List)} for details of how the copy/paste operations work
-   * with respect to grid type on the source and destination zones.
+   * given layer. See {@link #copyTokens(Zone, List)} for details of how the copy/paste operations
+   * work with respect to grid type on the source and destination zones.
    *
    * @param destination ZonePoint specifying where to paste; normally this is unchanged from the
    *     MouseEvent

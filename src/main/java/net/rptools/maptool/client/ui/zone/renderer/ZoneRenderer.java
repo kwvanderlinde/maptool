@@ -3320,7 +3320,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       MapTool.addMessage(msg);
     }
     // Copy them to the clipboard so that we can quickly copy them onto the map
-    AppActions.copyTokens(tokens);
+    AppActions.copyTokens(zone, tokens);
     AppActions.updateActions();
     requestFocusInWindow();
   }
