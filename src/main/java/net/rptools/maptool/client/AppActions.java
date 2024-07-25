@@ -147,13 +147,25 @@ public class AppActions {
         @Override
         protected void executeAction() {
           Token chosenOne = null;
-          ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
-          List<Token> myPlayers = new ArrayList<Token>();
-          for (Token t : renderer.getZone().getPlayerTokens()) {
-            if (AppUtil.playerOwns(t) && t.isVisible() && renderer.getZone().isTokenVisible(t))
-              myPlayers.add(t);
+          Zone zone = MapTool.getClient().getCurrentZone();
+          if (zone == null) {
+            return;
           }
+
+          ZoneRenderer renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
+          if (renderer == null) {
+            return;
+          }
+
+          List<Token> myPlayers = new ArrayList<Token>();
+          for (Token t : zone.getPlayerTokens()) {
+            if (AppUtil.playerOwns(t) && t.isVisible() && zone.isTokenVisible(t)) {
+                myPlayers.add(t);
+            }
+          }
+
           if (myPlayers.size() > 0) {
+
             // We want to wrap round the list of player tokens.
             // But this process only selects 1 player token.
             if (renderer.getSelectedTokensList().size() > 0) {
@@ -490,12 +502,12 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-          ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
-          if (renderer == null) {
+          Zone zone = MapTool.getClient().getCurrentZone();
+          if (zone == null) {
             return;
           }
 
-          MapTool.serverCommand().enforceZone(renderer.getZone().getId());
+          MapTool.serverCommand().enforceZone(zone.getId());
         }
       };
 
@@ -704,7 +716,11 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-          Zone z = MapTool.getFrame().getCurrentZoneRenderer().getZone();
+          Zone z = MapTool.getClient().getCurrentZone();
+          if (z == null) {
+            return;
+          }
+
           z.undoDrawable();
           isAvailable();
           REDO_PER_MAP
@@ -715,13 +731,9 @@ public class AppActions {
         @Override
         public boolean isAvailable() {
           boolean result = false;
-          MapToolFrame mtf = MapTool.getFrame();
-          if (mtf != null) {
-            ZoneRenderer zr = mtf.getCurrentZoneRenderer();
-            if (zr != null) {
-              Zone z = zr.getZone();
-              result = z.canUndo();
-            }
+          Zone z = MapTool.getClient().getCurrentZone();
+          if (z != null) {
+            result = z.canUndo();
           }
           setEnabled(result);
           return isEnabled();
@@ -737,7 +749,10 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-          Zone z = MapTool.getFrame().getCurrentZoneRenderer().getZone();
+          Zone z = MapTool.getClient().getCurrentZone();
+          if (z == null) {
+            return;
+          }
           z.redoDrawable();
           isAvailable();
           UNDO_PER_MAP.isAvailable();
@@ -746,13 +761,9 @@ public class AppActions {
         @Override
         public boolean isAvailable() {
           boolean result = false;
-          MapToolFrame mtf = MapTool.getFrame();
-          if (mtf != null) {
-            ZoneRenderer zr = mtf.getCurrentZoneRenderer();
-            if (zr != null) {
-              Zone z = zr.getZone();
-              result = z.canRedo();
-            }
+          Zone z = MapTool.getClient().getCurrentZone();
+          if (z != null) {
+            return z.canRedo();
           }
           setEnabled(result);
           return isEnabled();
