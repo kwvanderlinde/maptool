@@ -873,10 +873,10 @@ public class AppActions {
     }
     if (!tokensToRemove.isEmpty()) {
       MapTool.serverCommand().removeTokens(zone.getId(), tokensToRemove);
-      MapTool.getFrame()
-          .getCurrentZoneRenderer()
-          .getSelectionModel()
-          .replaceSelection(Collections.emptyList());
+      var renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
+      if (renderer != null) {
+        renderer.getSelectionModel().replaceSelection(Collections.emptyList());
+      }
       if (copy) {
         keepIdsOnPaste = true; // pasted tokens should have same ids as cut ones
       }
@@ -1037,17 +1037,23 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-          ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
+          var zone = MapTool.getClient().getCurrentZone();
+          if (zone == null) {
+            return;
+          }
+
+          var renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
           if (renderer == null) {
             return;
           }
+
           ScreenPoint screenPoint = renderer.getPointUnderMouse();
           if (screenPoint == null) {
             // Pick the middle of the map
             screenPoint = ScreenPoint.fromZonePoint(renderer, renderer.getCenterPoint());
           }
           ZonePoint zonePoint = screenPoint.convertToZone(renderer);
-          pasteTokens(zonePoint, renderer.getActiveLayer());
+          pasteTokens(zone, zonePoint, renderer.getActiveLayer());
           keepIdsOnPaste = false; // once pasted, subsequent paste should have new ids
           renderer.repaint();
         }
@@ -1058,12 +1064,12 @@ public class AppActions {
    * given layer. See {@link #copyTokens(Zone, List)} for details of how the copy/paste operations
    * work with respect to grid type on the source and destination zones.
    *
+   * @param zone The zone in which to paste the tokens.
    * @param destination ZonePoint specifying where to paste; normally this is unchanged from the
    *     MouseEvent
    * @param layer the Zone.Layer that specifies which layer to paste onto
    */
-  private static void pasteTokens(ZonePoint destination, Layer layer) {
-    Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
+  private static void pasteTokens(Zone zone, ZonePoint destination, Layer layer) {
     Grid grid = zone.getGrid();
 
     boolean snapToGrid = false;
