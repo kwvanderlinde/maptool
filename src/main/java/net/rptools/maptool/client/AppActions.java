@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import javax.annotation.Nullable;
 import javax.crypto.NoSuchPaddingException;
 import javax.swing.*;
 import javax.swing.text.BadLocationException;
@@ -1295,9 +1296,12 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-
           AppState.setPlayerViewLinked(!AppState.isPlayerViewLinked());
-          MapTool.getFrame().getCurrentZoneRenderer().maybeForcePlayersView();
+
+          var renderer = getCurrentRenderer();
+          if (renderer != null) {
+              renderer.maybeForcePlayersView();
+          }
         }
       };
 
@@ -1387,10 +1391,11 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-
           AppState.setShowTextLabels(!AppState.getShowTextLabels());
-          if (MapTool.getFrame().getCurrentZoneRenderer() != null) {
-            MapTool.getFrame().getCurrentZoneRenderer().repaint();
+
+          var renderer = getCurrentRenderer();
+          if (renderer != null) {
+            renderer.repaint();
           }
         }
       };
@@ -1408,10 +1413,11 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-
           AppState.setShowMovementMeasurements(!AppState.getShowMovementMeasurements());
-          if (MapTool.getFrame().getCurrentZoneRenderer() != null) {
-            MapTool.getFrame().getCurrentZoneRenderer().repaint();
+
+          var renderer = getCurrentRenderer();
+          if (renderer != null) {
+            renderer.repaint();
           }
         }
       };
@@ -1666,8 +1672,10 @@ public class AppActions {
         @Override
         protected void executeAction() {
           AppState.setShowGrid(!AppState.isShowGrid());
-          if (MapTool.getFrame().getCurrentZoneRenderer() != null) {
-            MapTool.getFrame().getCurrentZoneRenderer().repaint();
+
+          var renderer = getCurrentRenderer();
+          if (renderer != null) {
+            renderer.repaint();
           }
         }
       };
@@ -1680,7 +1688,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
+          ZoneRenderer renderer = getCurrentRenderer();
           return renderer != null
               && renderer.getZone().getGrid().getCapabilities().isCoordinatesSupported();
         }
@@ -1692,10 +1700,8 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-
           AppState.setShowCoordinates(!AppState.isShowCoordinates());
-
-          MapTool.getFrame().getCurrentZoneRenderer().repaint();
+          getCurrentRenderer().repaint();
         }
       };
 
@@ -1708,8 +1714,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
-          return renderer != null;
+          return getCurrentRenderer() != null;
         }
 
         @Override
@@ -1826,10 +1831,11 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-
           AppState.setShowTokenNames(!AppState.isShowTokenNames());
-          if (MapTool.getFrame().getCurrentZoneRenderer() != null) {
-            MapTool.getFrame().getCurrentZoneRenderer().repaint();
+
+          var renderer = getCurrentRenderer();
+          if (renderer != null) {
+            renderer.repaint();
           }
         }
       };
@@ -1927,7 +1933,7 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-          ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
+          ZoneRenderer renderer = getCurrentRenderer();
           if (renderer != null) {
             Dimension size = renderer.getSize();
             renderer.zoomIn(size.width / 2, size.height / 2);
@@ -1949,7 +1955,7 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-          ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
+          ZoneRenderer renderer = getCurrentRenderer();
           if (renderer != null) {
             Dimension size = renderer.getSize();
             renderer.zoomOut(size.width / 2, size.height / 2);
@@ -1973,7 +1979,7 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-          ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
+          ZoneRenderer renderer = getCurrentRenderer();
           if (renderer != null) {
             // Revert to last zoom if we have one, but don't if the user has manually
             // changed the scale since the last reset zoom (one to one index)
@@ -2716,14 +2722,18 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getFrame().getCurrentZoneRenderer() != null
+          return getCurrentRenderer() != null
               && (MapTool.isHostingServer()
                   || (MapTool.getPlayer() != null && MapTool.getPlayer().isGM()));
         }
 
         @Override
         protected void executeAction() {
-          ZoneRenderer zr = MapTool.getFrame().getCurrentZoneRenderer();
+          ZoneRenderer zr = getCurrentRenderer();
+          if (zr == null) {
+              return;
+          }
+
           JFileChooser chooser = MapTool.getFrame().getSaveMapFileChooser();
           chooser.setFileFilter(MapTool.getFrame().getMapFileFilter());
           chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -3194,8 +3204,10 @@ public class AppActions {
         @Override
         protected void executeAction() {
           AppState.setUseDoubleWideLine(!AppState.useDoubleWideLine());
-          if (MapTool.getFrame() != null && MapTool.getFrame().getCurrentZoneRenderer() != null)
-            MapTool.getFrame().getCurrentZoneRenderer().repaint();
+
+          var renderer = getCurrentRenderer();
+          if (renderer != null)
+            renderer.repaint();
         }
       };
 
@@ -3339,6 +3351,15 @@ public class AppActions {
       updateActions();
     }
 
+    protected @Nullable ZoneRenderer getCurrentRenderer() {
+      var zone = MapTool.getClient().getCurrentZone();
+      if (zone == null) {
+        return null;
+      }
+
+      return MapTool.getFrame().getZoneRenderer(zone.getId());
+    }
+
     protected abstract void executeAction();
 
     public void runBackground(final Runnable r) {
@@ -3374,16 +3395,10 @@ public class AppActions {
         return false;
       }
 
-      var zone = MapTool.getClient().getCurrentZone();
-      if (zone == null) {
-        return false;
-      }
-
-      var renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
+      var renderer = getCurrentRenderer();
       if (renderer == null) {
         return false;
       }
-
       return isSelected(renderer);
     }
 
@@ -3393,12 +3408,7 @@ public class AppActions {
         return false;
       }
 
-      var zone = MapTool.getClient().getCurrentZone();
-      if (zone == null) {
-        return false;
-      }
-
-      var renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
+      var renderer = getCurrentRenderer();
       if (renderer == null) {
         return false;
       }
@@ -3408,12 +3418,7 @@ public class AppActions {
 
     @Override
     protected final void executeAction() {
-      var zone = MapTool.getClient().getCurrentZone();
-      if (zone == null) {
-        return;
-      }
-
-      var renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
+      var renderer = getCurrentRenderer();
       if (renderer == null) {
         return;
       }
@@ -3439,12 +3444,7 @@ public class AppActions {
   public abstract static class ZoneClientAction extends ClientAction {
     @Override
     public final boolean isSelected() {
-      var zone = MapTool.getClient().getCurrentZone();
-      if (zone == null) {
-        return false;
-      }
-
-      var renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
+      var renderer = getCurrentRenderer();
       if (renderer == null) {
         return false;
       }
@@ -3454,12 +3454,7 @@ public class AppActions {
 
     @Override
     public final boolean isAvailable() {
-      var zone = MapTool.getClient().getCurrentZone();
-      if (zone == null) {
-        return false;
-      }
-
-      var renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
+      var renderer = getCurrentRenderer();
       if (renderer == null) {
         return false;
       }
@@ -3469,12 +3464,7 @@ public class AppActions {
 
     @Override
     protected final void executeAction() {
-      var zone = MapTool.getClient().getCurrentZone();
-      if (zone == null) {
-        return;
-      }
-
-      var renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
+      var renderer = getCurrentRenderer();
       if (renderer == null) {
         return;
       }
