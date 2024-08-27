@@ -145,22 +145,14 @@ public class AppActions {
         }
 
         @Override
-        protected void executeAction() {
+        protected void executeAction(ZoneRenderer renderer) {
           Token chosenOne = null;
-          Zone zone = MapTool.getClient().getCurrentZone();
-          if (zone == null) {
-            return;
-          }
-
-          ZoneRenderer renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
-          if (renderer == null) {
-            return;
-          }
+          Zone zone = renderer.getZone();
 
           List<Token> myPlayers = new ArrayList<Token>();
           for (Token t : zone.getPlayerTokens()) {
             if (AppUtil.playerOwns(t) && t.isVisible() && zone.isTokenVisible(t)) {
-                myPlayers.add(t);
+              myPlayers.add(t);
             }
           }
 
@@ -215,7 +207,7 @@ public class AppActions {
         }
 
         @Override
-        protected void executeAction() {
+        protected void executeAction(ZoneRenderer renderer) {
           try {
             ExportDialog d = MapTool.getCampaign().getExportDialog();
             d.setVisible(true);
@@ -233,7 +225,7 @@ public class AppActions {
         }
 
         @Override
-        protected void executeAction() {
+        protected void executeAction(ZoneRenderer renderer) {
           ExportDialog d = MapTool.getCampaign().getExportDialog();
           if (d == null || d.getExportLocation() == null || d.getExportSettings() == null) {
             // Can't do a save.. so try "save as"
@@ -501,13 +493,8 @@ public class AppActions {
         }
 
         @Override
-        protected void executeAction() {
-          Zone zone = MapTool.getClient().getCurrentZone();
-          if (zone == null) {
-            return;
-          }
-
-          MapTool.serverCommand().enforceZone(zone.getId());
+        protected void executeAction(ZoneRenderer renderer) {
+          MapTool.serverCommand().enforceZone(renderer.getZone().getId());
         }
       };
 
@@ -578,9 +565,8 @@ public class AppActions {
         }
 
         @Override
-        protected void executeAction() {
-          MapToolClient client = MapTool.getClient();
-          Zone zone = client.getCurrentZone();
+        protected void executeAction(ZoneRenderer renderer) {
+          Zone zone = renderer.getZone();
           String oldName = zone.getName();
           String msg = I18N.getText("msg.confirm.renameMap", oldName);
           String name = JOptionPane.showInputDialog(MapTool.getFrame(), msg, oldName);
@@ -589,7 +575,7 @@ public class AppActions {
             MapTool.serverCommand().renameZone(zone.getId(), name);
             // TODO This triggers onChangeMap despite no map change. Unfortunately it means we can't
             //  get rid of it right now, but I will push for that in the future.
-            client.setCurrentZoneId(zone.getId());
+            MapTool.getClient().setCurrentZoneId(zone.getId());
           }
         }
       };
@@ -715,27 +701,18 @@ public class AppActions {
         }
 
         @Override
-        protected void executeAction() {
-          Zone z = MapTool.getClient().getCurrentZone();
-          if (z == null) {
-            return;
-          }
-
+        protected void executeAction(ZoneRenderer renderer) {
+          Zone z = renderer.getZone();
           z.undoDrawable();
           isAvailable();
-          REDO_PER_MAP
-              .isAvailable(); // XXX FJE Calling these forces the update, but won't the framework
-          // call them?
+          // XXX FJE Calling these forces the update, but won't the framework call them?
+          REDO_PER_MAP.isAvailable();
         }
 
         @Override
-        public boolean isAvailable() {
-          boolean result = false;
-          Zone z = MapTool.getClient().getCurrentZone();
-          if (z != null) {
-            result = z.canUndo();
-          }
-          setEnabled(result);
+        protected boolean isAvailable(ZoneRenderer renderer) {
+          Zone z = renderer.getZone();
+          setEnabled(z.canUndo());
           return isEnabled();
         }
       };
@@ -748,24 +725,17 @@ public class AppActions {
         }
 
         @Override
-        protected void executeAction() {
-          Zone z = MapTool.getClient().getCurrentZone();
-          if (z == null) {
-            return;
-          }
+        protected void executeAction(ZoneRenderer renderer) {
+          Zone z = renderer.getZone();
           z.redoDrawable();
           isAvailable();
           UNDO_PER_MAP.isAvailable();
         }
 
         @Override
-        public boolean isAvailable() {
-          boolean result = false;
-          Zone z = MapTool.getClient().getCurrentZone();
-          if (z != null) {
-            return z.canRedo();
-          }
-          setEnabled(result);
+        protected boolean isAvailable(ZoneRenderer renderer) {
+          Zone z = renderer.getZone();
+          setEnabled(z.canRedo());
           return isEnabled();
         }
       };
@@ -792,11 +762,7 @@ public class AppActions {
         }
 
         @Override
-        protected void executeAction() {
-          ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
-          if (renderer == null) {
-            return;
-          }
+        protected void executeAction(ZoneRenderer renderer) {
           Zone.Layer layer = renderer.getActiveLayer();
           if (!MapTool.confirm("msg.confirm.clearAllDrawings", layer)) {
             return;
@@ -814,8 +780,7 @@ public class AppActions {
         }
 
         @Override
-        protected void executeAction() {
-          ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
+        protected void executeAction(ZoneRenderer renderer) {
           Set<GUID> selectedSet = renderer.getSelectedTokenSet();
           cutTokens(renderer.getZone(), selectedSet);
         }
@@ -903,8 +868,7 @@ public class AppActions {
         }
 
         @Override
-        protected void executeAction() {
-          ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
+        protected void executeAction(ZoneRenderer renderer) {
           copyTokens(renderer.getZone(), renderer.getSelectedTokenSet());
         }
       };
@@ -1042,29 +1006,19 @@ public class AppActions {
         }
 
         @Override
-        public boolean isAvailable() {
-          return super.isAvailable() && tokenCopySet != null;
+        protected boolean isAvailable(ZoneRenderer renderer) {
+          return tokenCopySet != null;
         }
 
         @Override
-        protected void executeAction() {
-          var zone = MapTool.getClient().getCurrentZone();
-          if (zone == null) {
-            return;
-          }
-
-          var renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
-          if (renderer == null) {
-            return;
-          }
-
+        protected void executeAction(ZoneRenderer renderer) {
           ScreenPoint screenPoint = renderer.getPointUnderMouse();
           if (screenPoint == null) {
             // Pick the middle of the map
             screenPoint = ScreenPoint.fromZonePoint(renderer, renderer.getCenterPoint());
           }
           ZonePoint zonePoint = screenPoint.convertToZone(renderer);
-          pasteTokens(zone, zonePoint, renderer.getActiveLayer());
+          pasteTokens(renderer.getZone(), zonePoint, renderer.getActiveLayer());
           keepIdsOnPaste = false; // once pasted, subsequent paste should have new ids
           renderer.repaint();
         }
@@ -1469,8 +1423,8 @@ public class AppActions {
         }
 
         @Override
-        protected void executeAction() {
-          Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
+        protected void executeAction(ZoneRenderer renderer) {
+          Zone zone = renderer.getZone();
           // XXX Perhaps ask the user if the copied map should have its GEA and/or TEA cleared? An
           // imported map would ask...
           String zoneName =
@@ -1492,11 +1446,10 @@ public class AppActions {
         }
 
         @Override
-        protected void executeAction() {
+        protected void executeAction(ZoneRenderer renderer) {
           if (!MapTool.confirm("msg.confirm.removeZone")) {
             return;
           }
-          ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
           MapTool.removeZone(renderer.getZone());
         }
       };
@@ -1521,11 +1474,7 @@ public class AppActions {
         }
 
         @Override
-        protected void executeAction() {
-          ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
-          if (renderer == null) {
-            return;
-          }
+        protected void executeAction(ZoneRenderer renderer) {
           renderer.forcePlayersView();
         }
       };
@@ -1538,12 +1487,12 @@ public class AppActions {
         }
 
         @Override
-        public boolean isSelected() {
+        protected boolean isSelected(ZoneRenderer renderer) {
           return AppState.isShowLumensOverlay();
         }
 
         @Override
-        protected void executeAction() {
+        protected void executeAction(ZoneRenderer renderer) {
           AppState.setShowLumensOverlay(!AppState.isShowLumensOverlay());
           MapTool.getFrame().refresh();
         }
@@ -1557,12 +1506,12 @@ public class AppActions {
         }
 
         @Override
-        public boolean isSelected() {
+        protected boolean isSelected(ZoneRenderer renderer) {
           return AppState.isShowLights();
         }
 
         @Override
-        protected void executeAction() {
+        protected void executeAction(ZoneRenderer renderer) {
           AppState.setShowLights(!AppState.isShowLights());
           MapTool.getFrame().refresh();
         }
@@ -1659,8 +1608,7 @@ public class AppActions {
         }
 
         @Override
-        protected void executeAction() {
-
+        protected void executeAction(ZoneRenderer renderer) {
           MapTool.getFrame().getToolbox().setSelectedTool(GridTool.class);
         }
       };
@@ -1672,9 +1620,8 @@ public class AppActions {
         }
 
         @Override
-        protected void executeAction() {
-
-          if (MapTool.getFrame().getCurrentZoneRenderer().getZone().getMapAssetId() != null) {
+        protected void executeAction(ZoneRenderer renderer) {
+          if (renderer.getZone().getMapAssetId() != null) {
             MapTool.getFrame().getToolbox().setSelectedTool(BoardTool.class);
           } else {
             MapTool.showInformation(I18N.getText("action.error.noMapBoard"));
@@ -1777,30 +1724,19 @@ public class AppActions {
         }
       };
 
-  public static final Action TOGGLE_FOG =
+  public static final ClientAction TOGGLE_FOG =
       new ZoneAdminClientAction() {
         {
           init("action.enableFogOfWar");
         }
 
         @Override
-        public boolean isSelected() {
-          ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
-          if (renderer == null) {
-            return false;
-          }
-
+        protected boolean isSelected(ZoneRenderer renderer) {
           return renderer.getZone().hasFog();
         }
 
         @Override
-        protected void executeAction() {
-
-          ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
-          if (renderer == null) {
-            return;
-          }
-
+        protected void executeAction(ZoneRenderer renderer) {
           Zone zone = renderer.getZone();
           zone.setHasFog(!zone.hasFog());
 
@@ -1818,26 +1754,21 @@ public class AppActions {
         }
 
         @Override
-        public boolean isAvailable() {
-          return ((ZoneAdminClientAction) TOGGLE_FOG).isSelected();
+        protected boolean isAvailable(ZoneRenderer renderer) {
+          return TOGGLE_FOG.isSelected();
         }
 
         @Override
-        public boolean isSelected() {
-          if (isAvailable())
-            return MapTool.getFrame()
-                .getCurrentZoneRenderer()
-                .getZone()
-                .getWaypointExposureToggle();
+        protected boolean isSelected(ZoneRenderer renderer) {
+          if (isAvailable()) {
+            return renderer.getZone().getWaypointExposureToggle();
+          }
           return false;
         }
 
         @Override
-        protected void executeAction() {
-          MapTool.getFrame()
-              .getCurrentZoneRenderer()
-              .getZone()
-              .setWaypointExposureToggle(!this.isSelected());
+        protected void executeAction(ZoneRenderer renderer) {
+          renderer.getZone().setWaypointExposureToggle(!this.isSelected());
         }
       };
 
@@ -1848,12 +1779,12 @@ public class AppActions {
         }
 
         @Override
-        protected void executeAction() {
+        protected void executeAction(ZoneRenderer renderer) {
           if (!MapTool.confirm("msg.confirm.restoreFoW")) {
             return;
           }
 
-          FogUtil.restoreFoW(MapTool.getFrame().getCurrentZoneRenderer());
+          FogUtil.restoreFoW(renderer);
         }
       };
 
@@ -1866,27 +1797,15 @@ public class AppActions {
     }
 
     @Override
-    public boolean isSelected() {
-      ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
-      if (renderer == null) {
-        return false;
-      }
-
+    protected boolean isSelected(ZoneRenderer renderer) {
       return renderer.getZone().getVisionType() == visionType;
     }
 
     @Override
-    protected void executeAction() {
-
-      ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
-      if (renderer == null) {
-        return;
-      }
-
+    protected void executeAction(ZoneRenderer renderer) {
       Zone zone = renderer.getZone();
 
       if (zone.getVisionType() != visionType) {
-
         zone.setVisionType(visionType);
 
         MapTool.serverCommand().setVisionType(zone.getId(), visionType);
@@ -1923,22 +1842,12 @@ public class AppActions {
         }
 
         @Override
-        public boolean isSelected() {
-          ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
-          if (renderer == null) {
-            return false;
-          }
+        protected boolean isSelected(ZoneRenderer renderer) {
           return renderer.getZone().isVisible();
         }
 
         @Override
-        protected void executeAction() {
-
-          ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
-          if (renderer == null) {
-            return;
-          }
-
+        protected void executeAction(ZoneRenderer renderer) {
           // TODO: consolidate this code with ZonePopupMenu
           Zone zone = renderer.getZone();
           zone.setVisible(!zone.isVisible());
@@ -3168,14 +3077,8 @@ public class AppActions {
         }
 
         @Override
-        protected void executeAction() {
-          MapToolClient client = MapTool.getClient();
-          Zone zone = client.getCurrentZone();
-          if (zone == null) {
-            // Shouldn't happen, but just be sure.
-            return;
-          }
-
+        protected void executeAction(ZoneRenderer renderer) {
+          Zone zone = renderer.getZone();
           runBackground(
               () -> {
                 MapPropertiesDialog newMapDialog =
@@ -3466,9 +3369,67 @@ public class AppActions {
    */
   public abstract static class ZoneAdminClientAction extends AdminClientAction {
     @Override
-    public boolean isAvailable() {
-      return super.isAvailable() && MapTool.getClient().getCurrentZone() != null;
+    public final boolean isSelected() {
+      if (!super.isSelected()) {
+        return false;
+      }
+
+      var zone = MapTool.getClient().getCurrentZone();
+      if (zone == null) {
+        return false;
+      }
+
+      var renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
+      if (renderer == null) {
+        return false;
+      }
+
+      return isSelected(renderer);
     }
+
+    @Override
+    public final boolean isAvailable() {
+      if (!super.isAvailable()) {
+        return false;
+      }
+
+      var zone = MapTool.getClient().getCurrentZone();
+      if (zone == null) {
+        return false;
+      }
+
+      var renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
+      if (renderer == null) {
+        return false;
+      }
+
+      return isAvailable(renderer);
+    }
+
+    @Override
+    protected final void executeAction() {
+      var zone = MapTool.getClient().getCurrentZone();
+      if (zone == null) {
+        return;
+      }
+
+      var renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
+      if (renderer == null) {
+        return;
+      }
+
+      executeAction(renderer);
+    }
+
+    protected boolean isAvailable(ZoneRenderer renderer) {
+      return true;
+    }
+
+    protected boolean isSelected(ZoneRenderer renderer) {
+      return false;
+    }
+
+    protected abstract void executeAction(ZoneRenderer renderer);
   }
 
   /**
@@ -3477,9 +3438,59 @@ public class AppActions {
    */
   public abstract static class ZoneClientAction extends ClientAction {
     @Override
-    public boolean isAvailable() {
-      return MapTool.getFrame().getCurrentZoneRenderer() != null;
+    public final boolean isSelected() {
+      var zone = MapTool.getClient().getCurrentZone();
+      if (zone == null) {
+        return false;
+      }
+
+      var renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
+      if (renderer == null) {
+        return false;
+      }
+
+      return isSelected(renderer);
     }
+
+    @Override
+    public final boolean isAvailable() {
+      var zone = MapTool.getClient().getCurrentZone();
+      if (zone == null) {
+        return false;
+      }
+
+      var renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
+      if (renderer == null) {
+        return false;
+      }
+
+      return isAvailable(renderer);
+    }
+
+    @Override
+    protected final void executeAction() {
+      var zone = MapTool.getClient().getCurrentZone();
+      if (zone == null) {
+        return;
+      }
+
+      var renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
+      if (renderer == null) {
+        return;
+      }
+
+      executeAction(renderer);
+    }
+
+    protected boolean isAvailable(ZoneRenderer renderer) {
+      return true;
+    }
+
+    protected boolean isSelected(ZoneRenderer renderer) {
+      return false;
+    }
+
+    protected abstract void executeAction(ZoneRenderer renderer);
   }
 
   /**
