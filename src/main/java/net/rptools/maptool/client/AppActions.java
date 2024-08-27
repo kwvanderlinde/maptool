@@ -1300,7 +1300,7 @@ public class AppActions {
 
           var renderer = getCurrentRenderer();
           if (renderer != null) {
-              renderer.maybeForcePlayersView();
+            renderer.maybeForcePlayersView();
           }
         }
       };
@@ -2731,7 +2731,7 @@ public class AppActions {
         protected void executeAction() {
           ZoneRenderer zr = getCurrentRenderer();
           if (zr == null) {
-              return;
+            return;
           }
 
           JFileChooser chooser = MapTool.getFrame().getSaveMapFileChooser();
@@ -3206,8 +3206,9 @@ public class AppActions {
           AppState.setUseDoubleWideLine(!AppState.useDoubleWideLine());
 
           var renderer = getCurrentRenderer();
-          if (renderer != null)
-            renderer.repaint();
+          if (renderer != null) {
+              renderer.repaint();
+          }
         }
       };
 
