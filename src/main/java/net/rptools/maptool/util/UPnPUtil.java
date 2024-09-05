@@ -20,7 +20,6 @@ import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
 import net.sbbi.upnp.Discovery;
@@ -37,11 +36,8 @@ import org.javatuples.Pair;
 public class UPnPUtil {
   private static final Logger log = LogManager.getLogger(UPnPUtil.class);
   private static Map<InternetGatewayDevice, NetworkInterface> igds;
-  private static List<InternetGatewayDevice> mappings;
 
   private static List<InternetGatewayDevice> findIgdsForInterface(NetworkInterface ni) {
-    var start = System.nanoTime();
-
     var result = new ArrayList<InternetGatewayDevice>();
 
     try {
@@ -63,14 +59,14 @@ public class UPnPUtil {
 
     log.info("Found {} IGDs on interface {}", result.size(), ni.getDisplayName());
 
-    var end = System.nanoTime();
-    log.info("\tTook {} seconds", TimeUnit.NANOSECONDS.toSeconds(end - start));
-
     return result;
   }
 
-  // TODO Return IGDS map.
-  private static void findIgdsFast() {
+  private static Map<InternetGatewayDevice, NetworkInterface> findIgdsFast() {
+    if (igds != null && !igds.isEmpty()) {
+      return igds;
+    }
+
     List<NetworkInterface> interfaces;
     try {
       interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
@@ -107,15 +103,14 @@ public class UPnPUtil {
 
     igds = result;
 
-    // TODO This is the responsibility of openPort()!!
-    mappings = new ArrayList<InternetGatewayDevice>(result.size());
+    return result;
   }
 
   public static boolean openPort(int port) {
-    if (igds == null || igds.isEmpty()) {
-      findIgdsFast();
-    }
-    if (igds == null || igds.isEmpty()) {
+    var igds = findIgdsFast();
+    var mappings = new ArrayList<InternetGatewayDevice>(igds.size());
+
+    if (igds.isEmpty()) {
       MapTool.showError("msg.error.server.upnp.noigd");
       return false;
     }
@@ -163,13 +158,16 @@ public class UPnPUtil {
             ioe);
       }
     }
-    if (mappings.isEmpty())
+    if (mappings.isEmpty()) {
       MapTool.showError("UPnP: found " + igds.size() + " IGDs but no port mapping succeeded!?");
+    }
     return !mappings.isEmpty();
   }
 
   public static boolean closePort(int port) {
-    if (igds == null || igds.isEmpty()) return true;
+    if (igds == null || igds.isEmpty()) {
+      return true;
+    }
 
     int count = 0;
     for (var iter = igds.entrySet().iterator(); iter.hasNext(); ) {
