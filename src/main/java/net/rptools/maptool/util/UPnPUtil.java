@@ -20,12 +20,16 @@ import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
 import net.sbbi.upnp.Discovery;
 import net.sbbi.upnp.impls.InternetGatewayDevice;
 import net.sbbi.upnp.messages.ActionResponse;
 import net.sbbi.upnp.messages.UPNPResponseException;
+import org.apache.commons.lang3.concurrent.ConcurrentException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.javatuples.Pair;
@@ -67,39 +71,54 @@ public class UPnPUtil {
       return igds;
     }
 
+    var result = new HashMap<InternetGatewayDevice, NetworkInterface>();
+
     List<NetworkInterface> interfaces;
     try {
       interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
     } catch (SocketException e) {
-      interfaces = new ArrayList<>();
+      return result;
+    }
+    if (interfaces.isEmpty()) {
+      return result;
     }
 
-    var result = new HashMap<InternetGatewayDevice, NetworkInterface>();
-    interfaces.stream()
-        .parallel()
-        .map(ni -> Pair.with(ni, findIgdsForInterface(ni)))
-        .toList()
-        .forEach(
-            pair -> {
-              NetworkInterface ni = pair.getValue0();
-              List<InternetGatewayDevice> devices = pair.getValue1();
-              for (var igd : devices) {
-                log.info(
-                    "UPnP:  Found IGD '{}' for network interface '{}'",
-                    igd.getIGDRootDevice().getModelName(),
-                    ni.getDisplayName());
-                if (result.put(igd, ni) != null) {
-                  // There was a previous mapping for this IGD! It's unlikely to have two NICs on
-                  // the same network segment, but it IS possible. For example, both a wired and
-                  // wireless connection using the same router as the gateway. For our purposes it
-                  // doesn't really matter which one we use, but in the future we should give the
-                  // user a choice.
-                  // FIXME We SHOULD be using the "networking binding order" (Windows)
-                  // or "network service order" on OSX.
-                  log.info("UPnP:  This was not the first time this IGD was found!");
-                }
-              }
-            });
+    // Each thread will basically spend its time blocked, so large amounts makes sense here.
+    try (var pool = new ForkJoinPool(interfaces.size())) {
+      pool.submit(() -> {
+        interfaces.stream()
+                .parallel()
+                .map(ni -> Pair.with(ni, findIgdsForInterface(ni)))
+                .toList()
+                .forEach(
+                        pair -> {
+                          NetworkInterface ni = pair.getValue0();
+                          List<InternetGatewayDevice> devices = pair.getValue1();
+                          for (var igd : devices) {
+                            log.info(
+                                    "UPnP:  Found IGD '{}' for network interface '{}'",
+                                    igd.getIGDRootDevice().getModelName(),
+                                    ni.getDisplayName());
+                            if (result.put(igd, ni) != null) {
+                              // There was a previous mapping for this IGD! It's unlikely to have two NICs on
+                              // the same network segment, but it IS possible. For example, both a wired and
+                              // wireless connection using the same router as the gateway. For our purposes it
+                              // doesn't really matter which one we use, but in the future we should give the
+                              // user a choice.
+                              // FIXME We SHOULD be using the "networking binding order" (Windows)
+                              // or "network service order" on OSX.
+                              log.info("UPnP:  This was not the first time this IGD was found!");
+                            }
+                          }
+                        });
+      }).get();
+    }
+    catch (InterruptedException e) {
+      // Nothing to do aside from set igds field below.
+    }
+    catch (ExecutionException e) {
+      log.error("Error during UPnP discovery", e);
+    }
 
     igds = result;
 
