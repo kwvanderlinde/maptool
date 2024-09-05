@@ -22,11 +22,7 @@ import java.net.Inet4Address;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -77,7 +73,47 @@ public class UPnPUtil {
     }
   }
 
-  public static boolean findIGDs() {
+  private static void findIgdsForInterface(NetworkInterface ni) {
+    if (!ni.isUp() || ni.isLoopback() || ni.isVirtual()) {
+      return;
+    }
+
+    int found = 0;
+    log.info("UPnP:  Looking for gateway devices on {}", ni.getDisplayName());
+    InternetGatewayDevice[] thisNI =
+        InternetGatewayDevice.getDevices(
+            AppPreferences.getUpnpDiscoveryTimeout(),
+            Discovery.DEFAULT_TTL,
+            Discovery.DEFAULT_MX,
+            ni);
+    if (thisNI == null) {
+      return;
+    }
+
+    for (InternetGatewayDevice igd : thisNI) {
+      found++;
+      log.info("UPnP:  Found IGD: {}", igd.getIGDRootDevice().getModelName());
+      if (igds.put(igd, ni) != null) {
+        // There was a previous mapping for this IGD! It's unlikely to have two NICs on
+        // the
+        // the same network segment, but it IS possible. For example, both a wired and
+        // wireless connection using the same router as the gateway. For our purposes it
+        // doesn't really matter which one we use, but in the future we should give the
+        // user a choice.
+        // FIXME We SHOULD be using the "networking binding order" (Windows)
+        // or "network service order" on OSX.
+        log.info("UPnP:  This was not the first time this IGD was found!");
+      }
+    }
+    log.info("Found {} IGDs on interface {}", found, ni.getDisplayName());
+  }
+
+  private static void findIgdsFast() throws IOException {
+    var interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+    interfaces.stream().parallel().forEach(ni -> {});
+  }
+
+  private static boolean findIGDs() {
     igds = new HashMap<InternetGatewayDevice, NetworkInterface>();
     try {
       Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
