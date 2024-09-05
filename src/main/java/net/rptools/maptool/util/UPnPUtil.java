@@ -14,28 +14,22 @@
  */
 package net.rptools.maptool.util;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.Font;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.*;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.SwingConstants;
+import java.util.concurrent.TimeUnit;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.swing.SwingUtil;
 import net.sbbi.upnp.Discovery;
 import net.sbbi.upnp.impls.InternetGatewayDevice;
 import net.sbbi.upnp.messages.ActionResponse;
 import net.sbbi.upnp.messages.UPNPResponseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.javatuples.Pair;
 
 /**
  * @author Phil Wright
@@ -44,134 +38,82 @@ public class UPnPUtil {
   private static final Logger log = LogManager.getLogger(UPnPUtil.class);
   private static Map<InternetGatewayDevice, NetworkInterface> igds;
   private static List<InternetGatewayDevice> mappings;
-  private static JDialog dialog = null;
-  private static JPanel panel = new JPanel(new BorderLayout());
-  private static Font labelFont = new Font("Dialog", Font.BOLD, 14);
-  private static JLabel label = new JLabel("", SwingConstants.CENTER);
 
-  private static void showMessage(String device, String msg) {
-    if (dialog == null) {
-      dialog = new JDialog(MapTool.getFrame());
-      dialog.setContentPane(panel);
-      panel.add(label, BorderLayout.CENTER);
-      label.setFont(labelFont);
-    }
-    if (device == null) {
-      dialog.setVisible(false);
-    } else {
-      dialog.setTitle("Scanning device " + device);
-      label.setText(msg);
+  private static List<InternetGatewayDevice> findIgdsForInterface(NetworkInterface ni) {
+    var start = System.nanoTime();
 
-      Dimension d = label.getMinimumSize();
-      d.width += 50;
-      d.height += 50;
-      label.setPreferredSize(d);
+    var result = new ArrayList<InternetGatewayDevice>();
 
-      dialog.pack();
-      SwingUtil.centerOver(dialog, MapTool.getFrame());
-      dialog.setVisible(true);
-    }
-  }
-
-  private static void findIgdsForInterface(NetworkInterface ni) {
-    if (!ni.isUp() || ni.isLoopback() || ni.isVirtual()) {
-      return;
-    }
-
-    int found = 0;
-    log.info("UPnP:  Looking for gateway devices on {}", ni.getDisplayName());
-    InternetGatewayDevice[] thisNI =
-        InternetGatewayDevice.getDevices(
-            AppPreferences.getUpnpDiscoveryTimeout(),
-            Discovery.DEFAULT_TTL,
-            Discovery.DEFAULT_MX,
-            ni);
-    if (thisNI == null) {
-      return;
-    }
-
-    for (InternetGatewayDevice igd : thisNI) {
-      found++;
-      log.info("UPnP:  Found IGD: {}", igd.getIGDRootDevice().getModelName());
-      if (igds.put(igd, ni) != null) {
-        // There was a previous mapping for this IGD! It's unlikely to have two NICs on
-        // the
-        // the same network segment, but it IS possible. For example, both a wired and
-        // wireless connection using the same router as the gateway. For our purposes it
-        // doesn't really matter which one we use, but in the future we should give the
-        // user a choice.
-        // FIXME We SHOULD be using the "networking binding order" (Windows)
-        // or "network service order" on OSX.
-        log.info("UPnP:  This was not the first time this IGD was found!");
-      }
-    }
-    log.info("Found {} IGDs on interface {}", found, ni.getDisplayName());
-  }
-
-  private static void findIgdsFast() throws IOException {
-    var interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
-    interfaces.stream().parallel().forEach(ni -> {});
-  }
-
-  private static boolean findIGDs() {
-    igds = new HashMap<InternetGatewayDevice, NetworkInterface>();
     try {
-      Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
-      while (e.hasMoreElements()) {
-        NetworkInterface ni = e.nextElement();
-        try {
-          if (ni.isUp() && !ni.isLoopback() && !ni.isVirtual()) {
-            int found = 0;
-            try {
-              log.info("UPnP:  Trying interface {}", ni.getDisplayName());
-              InternetGatewayDevice[] thisNI;
-              showMessage(
-                  ni.getDisplayName(), "Looking for gateway devices on " + ni.getDisplayName());
-              thisNI =
-                  InternetGatewayDevice.getDevices(
-                      AppPreferences.getUpnpDiscoveryTimeout(),
-                      Discovery.DEFAULT_TTL,
-                      Discovery.DEFAULT_MX,
-                      ni);
-              showMessage(null, null);
-              if (thisNI != null) {
-                for (InternetGatewayDevice igd : thisNI) {
-                  found++;
-                  log.info("UPnP:  Found IGD: {}", igd.getIGDRootDevice().getModelName());
-                  if (igds.put(igd, ni) != null) {
-                    // There was a previous mapping for this IGD! It's unlikely to have two NICs on
-                    // the
-                    // the same network segment, but it IS possible. For example, both a wired and
-                    // wireless connection using the same router as the gateway. For our purposes it
-                    // doesn't really matter which one we use, but in the future we should give the
-                    // user a choice.
-                    // FIXME We SHOULD be using the "networking binding order" (Windows)
-                    // or "network service order" on OSX.
-                    log.info("UPnP:  This was not the first time this IGD was found!");
-                  }
-                }
-              }
-            } catch (IOException ex) {
-              showMessage(null, null);
-              // some IO Exception occurred during communication with device
-              log.warn("While searching for internet gateway devices", ex);
-            }
-            log.info("Found {} IGDs on interface {}", found, ni.getDisplayName());
-          }
-        } catch (SocketException se) {
-          continue;
+      if (ni.isUp() && !ni.isLoopback() && !ni.isVirtual()) {
+        log.info("UPnP:  Looking for gateway devices on {}", ni.getDisplayName());
+        InternetGatewayDevice[] thisNI =
+            InternetGatewayDevice.getDevices(
+                AppPreferences.getUpnpDiscoveryTimeout(),
+                Discovery.DEFAULT_TTL,
+                Discovery.DEFAULT_MX,
+                ni);
+        if (thisNI != null) {
+          result.addAll(Arrays.asList(thisNI));
         }
       }
-    } catch (SocketException se) {
-      // Nothing to do, but we DO want the 'mappings' member to be initialized
+    } catch (IOException e) {
+      log.warn("Error while searching for internet gateway devices", e);
     }
-    mappings = new ArrayList<InternetGatewayDevice>(igds.size());
-    return !igds.isEmpty();
+
+    log.info("Found {} IGDs on interface {}", result.size(), ni.getDisplayName());
+
+    var end = System.nanoTime();
+    log.info("\tTook {} seconds", TimeUnit.NANOSECONDS.toSeconds(end - start));
+
+    return result;
+  }
+
+  // TODO Return IGDS map.
+  private static void findIgdsFast() {
+    List<NetworkInterface> interfaces;
+    try {
+      interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+    } catch (SocketException e) {
+      interfaces = new ArrayList<>();
+    }
+
+    var result = new HashMap<InternetGatewayDevice, NetworkInterface>();
+    interfaces.stream()
+        .parallel()
+        .map(ni -> Pair.with(ni, findIgdsForInterface(ni)))
+        .toList()
+        .forEach(
+            pair -> {
+              NetworkInterface ni = pair.getValue0();
+              List<InternetGatewayDevice> devices = pair.getValue1();
+              for (var igd : devices) {
+                log.info(
+                    "UPnP:  Found IGD '{}' for network interface '{}'",
+                    igd.getIGDRootDevice().getModelName(),
+                    ni.getDisplayName());
+                if (result.put(igd, ni) != null) {
+                  // There was a previous mapping for this IGD! It's unlikely to have two NICs on
+                  // the same network segment, but it IS possible. For example, both a wired and
+                  // wireless connection using the same router as the gateway. For our purposes it
+                  // doesn't really matter which one we use, but in the future we should give the
+                  // user a choice.
+                  // FIXME We SHOULD be using the "networking binding order" (Windows)
+                  // or "network service order" on OSX.
+                  log.info("UPnP:  This was not the first time this IGD was found!");
+                }
+              }
+            });
+
+    igds = result;
+
+    // TODO This is the responsibility of openPort()!!
+    mappings = new ArrayList<InternetGatewayDevice>(result.size());
   }
 
   public static boolean openPort(int port) {
     if (igds == null || igds.isEmpty()) {
-      findIGDs();
+      findIgdsFast();
     }
     if (igds == null || igds.isEmpty()) {
       MapTool.showError("msg.error.server.upnp.noigd");
