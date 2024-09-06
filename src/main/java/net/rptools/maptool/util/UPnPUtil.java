@@ -22,6 +22,7 @@ import java.net.SocketException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
 
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
@@ -41,6 +42,18 @@ public class UPnPUtil {
   private static final Logger log = LogManager.getLogger(UPnPUtil.class);
   private static Map<InternetGatewayDevice, NetworkInterface> igds;
 
+  // TODO It looks like sbbi upnp library can accept a `null` NetworkInterface to indicate that it
+  //  should look them all up. What's not clear is whether this is of any performance advantage over
+  //  how we're doing it now. I am definitely seeing a blocking socket send, but it's purely a send
+  //  over a UDP socket. Therefore I expect there could be an improvement.
+  //      Just tested it, and this certainly does do them all at once. Unfortunately,
+  //  InternetGatewayDevice is not strictly associated with the original NetworkInterface, and
+  //  indeed multiple interfaces can share the same gateway. This is bad news for us, because even
+  //  though we can discover the gateways, we also need to know the local address to use in the port
+  //  mapping, and the local address is specific to a network interface.
+  //      However, we can probably pry open InternetGatewayDevice.getDevices() and instead use
+  //  a DiscoveryListener and DiscoveryResultsHandler directly in order to associated IGDs with
+  //  their NIs.
   private static List<InternetGatewayDevice> findIgdsForInterface(NetworkInterface ni) {
     var result = new ArrayList<InternetGatewayDevice>();
 
@@ -126,7 +139,27 @@ public class UPnPUtil {
   }
 
   public static boolean openPort(int port) {
-    var igds = findIgdsFast();
+      try {
+        var start = System.nanoTime();
+          var igds0 = InternetGatewayDevice.getDevices(
+                  AppPreferences.getUpnpDiscoveryTimeout(),
+                  Discovery.DEFAULT_TTL,
+                  Discovery.DEFAULT_MX,
+                  null
+          );
+          var end = System.nanoTime();
+          log.info("New approach takes {} seconds", TimeUnit.NANOSECONDS.toSeconds(end - start));
+          final var i = 0;
+
+          for (final var gd : igds0) {
+            boolean mapped = gd.addPortMapping("MapTool", null, port, port, localHostIP, 0, "TCP");
+          }
+
+      } catch (IOException e) {
+        log.error(e);
+      }
+
+      var igds = findIgdsFast();
     var mappings = new ArrayList<InternetGatewayDevice>(igds.size());
 
     if (igds.isEmpty()) {
