@@ -780,7 +780,7 @@ public class ZoneView {
                         // accounting for darkness effects.
                         final var obscuredArea = new Area(laud.litArea().area());
                         final var lumensLevel =
-                            illumination.getObscuredLumensLevel(Math.abs(laud.litArea().lumens()));
+                            illumination.getDisjointLumensLevel(Math.abs(laud.litArea().lumens()));
                         // Should always be present based on construction, but just in case.
                         if (lumensLevel.isEmpty()) {
                           return null;
