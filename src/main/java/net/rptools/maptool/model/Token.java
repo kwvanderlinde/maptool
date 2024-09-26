@@ -1578,6 +1578,22 @@ public class Token implements Cloneable {
   }
 
   /**
+   * Get the rotation anchor for the token.
+   *
+   * <p>This is often the center of the token's bounds. But if the token layout has been changed -
+   * i.e., {@link #anchorX} or {@link #anchorY} is non-zero - then is will be displaced.
+   *
+   * <p>This is also the point to use as the origin for vision and lights.
+   *
+   * @return
+   */
+  public ZonePoint getRotationAnchor(Zone zone) {
+    var bounds = getBounds(zone);
+    return new ZonePoint(
+        bounds.x + bounds.width / 2 - anchorX, bounds.y + bounds.height / 2 - anchorY);
+  }
+
+  /**
    * Return the drag anchor of the token.
    *
    * <p>The drag anchor is the point relative to which a drag should be applied. For snap-to-grid

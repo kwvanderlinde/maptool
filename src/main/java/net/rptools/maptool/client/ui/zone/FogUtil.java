@@ -15,7 +15,6 @@
 package net.rptools.maptool.client.ui.zone;
 
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.geom.Area;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -472,22 +471,7 @@ public class FogUtil {
    * @return the center point
    */
   public static Point calculateVisionCenter(Token token, Zone zone) {
-    Grid grid = zone.getGrid();
-    int x = 0, y = 0;
-
-    Rectangle bounds = null;
-    if (token.isSnapToGrid()) {
-      bounds =
-          token
-              .getFootprint(grid)
-              .getBounds(grid, grid.convert(new ZonePoint(token.getX(), token.getY())));
-    } else {
-      bounds = token.getBounds(zone);
-    }
-
-    x = bounds.x + bounds.width / 2;
-    y = bounds.y + bounds.height / 2;
-
-    return new Point(x, y);
+    var anchor = token.getRotationAnchor(zone);
+    return new Point(anchor.x, anchor.y);
   }
 }
