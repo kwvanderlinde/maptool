@@ -14,7 +14,6 @@
  */
 package net.rptools.maptool.client.ui.zone;
 
-import java.awt.Point;
 import java.awt.geom.Area;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -63,7 +62,7 @@ public class FogUtil {
    * @return the visible area.
    */
   public static @Nonnull Area calculateVisibility(
-      Point origin,
+      ZonePoint origin,
       Area vision,
       AreaTree wallVbl,
       AreaTree hillVbl,
@@ -459,19 +458,5 @@ public class FogUtil {
             timer.stop("exposeLastPath-" + token.getName());
           }
         });
-  }
-
-  /**
-   * Find the center point of a vision TODO: This is a horrible horrible method. the API is just
-   * plain disgusting. But it'll work to consolidate all the places this has to be done until we can
-   * encapsulate it into the vision itself.
-   *
-   * @param token the token to get the vision center of.
-   * @param zone the Zone where the token is.
-   * @return the center point
-   */
-  public static Point calculateVisionCenter(Token token, Zone zone) {
-    var anchor = token.getRotationAnchor(zone);
-    return new Point(anchor.x, anchor.y);
   }
 }

@@ -335,7 +335,7 @@ public class ZoneView {
       return Collections.emptyList();
     }
 
-    final var p = FogUtil.calculateVisionCenter(lightSourceToken, zone);
+    final var p = lightSourceToken.getVisionOrigin(zone);
     final var translateTransform = AffineTransform.getTranslateInstance(p.x, p.y);
 
     // Calculate exposed area
@@ -588,7 +588,7 @@ public class ZoneView {
 
     if (tokenVisibleArea == null) {
       // Not cached yet.
-      Point p = FogUtil.calculateVisionCenter(token, zone);
+      ZonePoint p = token.getVisionOrigin(zone);
       Area visibleArea = sight.getVisionShape(token, zone);
       visibleArea.transform(AffineTransform.getTranslateInstance(p.x, p.y));
       tokenVisibleArea =
@@ -666,7 +666,7 @@ public class ZoneView {
                   continue;
                 }
                 boolean isOwner = token.isOwner(MapTool.getPlayer().getName());
-                Point p = FogUtil.calculateVisionCenter(token, zone);
+                ZonePoint p = token.getVisionOrigin(zone);
 
                 for (AttachedLightSource als : token.getLightSources()) {
                   LightSource lightSource = als.resolve(MapTool.getCampaign());

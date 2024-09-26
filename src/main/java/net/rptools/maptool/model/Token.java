@@ -1578,19 +1578,32 @@ public class Token implements Cloneable {
   }
 
   /**
-   * Get the rotation anchor for the token.
+   * Get the rotation anchor for the token, i.e., the point around which the token rotates.
    *
    * <p>This is often the center of the token's bounds. But if the token layout has been changed -
    * i.e., {@link #anchorX} or {@link #anchorY} is non-zero - then is will be displaced.
    *
    * <p>This is also the point to use as the origin for vision and lights.
    *
-   * @return
+   * @param zone The zone in which the token lives.
+   * @return The rotation anchor for the token.
    */
   public ZonePoint getRotationAnchor(Zone zone) {
     var bounds = getBounds(zone);
     return new ZonePoint(
         bounds.x + bounds.width / 2 - anchorX, bounds.y + bounds.height / 2 - anchorY);
+  }
+
+  /**
+   * Find the center point of the token's vision.
+   *
+   * <p>Note: this is currently the same as the rotation center, but don't assume that is true.
+   *
+   * @param zone The zone in which the token lives.
+   * @return The origin point for vision and lighting on this token.
+   */
+  public ZonePoint getVisionOrigin(Zone zone) {
+    return getRotationAnchor(zone);
   }
 
   /**

@@ -37,6 +37,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.ui.zone.FogUtil;
 import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.util.GraphicsUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -153,7 +154,7 @@ public class VisibilityInspector extends JPanel {
     Area vision;
     vision =
         FogUtil.calculateVisibility(
-            new Point((int) point.getX(), (int) point.getY()),
+            new ZonePoint((int) point.getX(), (int) point.getY()),
             unobstructedVision,
             toplogyTrees.get(Zone.TopologyType.WALL_VBL),
             toplogyTrees.get(Zone.TopologyType.HILL_VBL),
