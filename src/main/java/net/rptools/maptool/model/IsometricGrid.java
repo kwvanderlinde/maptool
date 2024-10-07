@@ -199,7 +199,7 @@ public class IsometricGrid extends Grid {
   @Override
   public ZoneWalker createZoneWalker() {
     WalkerMetric metric =
-        MapTool.isPersonalServer()
+        MapTool.getClient().isPersonalServer()
             ? AppPreferences.getMovementMetric()
             : MapTool.getServerPolicy().getMovementMetric();
     return new AStarSquareEuclideanWalker(getZone(), metric);

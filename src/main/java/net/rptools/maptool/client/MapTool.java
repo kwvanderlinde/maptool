@@ -1151,11 +1151,6 @@ public class MapTool {
     return Locale.getDefault(Locale.Category.DISPLAY).getLanguage();
   }
 
-  /** returns whether the player is using a personal server. */
-  public static boolean isPersonalServer() {
-    return server != null && server.isPersonalServer();
-  }
-
   public static MapToolFrame getFrame() {
     return clientFrame;
   }
@@ -1319,10 +1314,10 @@ public class MapTool {
   }
 
   public static boolean useToolTipsForUnformatedRolls() {
-    if (isPersonalServer() || getServerPolicy() == null) {
+    if (client.isPersonalServer() || client.getServerPolicy() == null) {
       return AppPreferences.getUseToolTipForInlineRoll();
     } else {
-      return getServerPolicy().getUseToolTipsForDefaultRollFormat();
+      return client.getServerPolicy().getUseToolTipsForDefaultRollFormat();
     }
   }
 
@@ -1736,7 +1731,7 @@ public class MapTool {
           .getConnectionStatusPanel()
           .setStatus(ConnectionStatusPanel.Status.disconnected);
 
-      if (!event.client().isPersonal()) {
+      if (!event.client().isPersonalServer()) {
         MapTool.addLocalMessage(
             MessageUtil.getFormattedSystemMsg(I18N.getText("msg.info.disconnected")));
       }

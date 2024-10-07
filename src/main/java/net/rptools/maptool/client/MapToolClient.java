@@ -152,7 +152,12 @@ public class MapToolClient {
     return localServer != null && !localServer.isPersonalServer();
   }
 
-  public boolean isPersonal() {
+  /**
+   * @return {@code true} if connected to a personal server.
+   */
+  // TODO Some callers check this to dodge checking the server policy. Instead the server policy
+  //  should have any necessary defaults and can always be queried.
+  public boolean isPersonalServer() {
     return localServer != null && localServer.isPersonalServer();
   }
 

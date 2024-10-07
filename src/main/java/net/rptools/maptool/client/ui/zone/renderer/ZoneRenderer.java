@@ -839,7 +839,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     if (selectedTokens == null || selectedTokens.isEmpty()) {
       // if no selected token qualifying for view, use owned tokens or player tokens with sight
       final boolean checkOwnership =
-          MapTool.getServerPolicy().isUseIndividualViews() || MapTool.isPersonalServer();
+          MapTool.getServerPolicy().isUseIndividualViews()
+              || MapTool.getClient().isPersonalServer();
       selectedTokens =
           checkOwnership
               ? zone.getOwnedTokensWithSight(MapTool.getPlayer())

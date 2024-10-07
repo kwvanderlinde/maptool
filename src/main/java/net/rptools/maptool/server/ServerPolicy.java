@@ -290,7 +290,9 @@ public class ServerPolicy {
         getDisablePlayerAssetPanel() ? BigDecimal.ONE : BigDecimal.ZERO);
 
     WalkerMetric metric =
-        MapTool.isPersonalServer() ? AppPreferences.getMovementMetric() : getMovementMetric();
+        MapTool.getClient().isPersonalServer()
+            ? AppPreferences.getMovementMetric()
+            : getMovementMetric();
     sinfo.addProperty("movement metric", metric.name());
 
     sinfo.addProperty("using ai", isUsingAstarPathfinding() ? BigDecimal.ONE : BigDecimal.ZERO);
@@ -309,7 +311,8 @@ public class ServerPolicy {
         "hosting server", MapTool.getClient().isHostingServer() ? BigDecimal.ONE : BigDecimal.ZERO);
 
     sinfo.addProperty(
-        "personal server", MapTool.isPersonalServer() ? BigDecimal.ONE : BigDecimal.ZERO);
+        "personal server",
+        MapTool.getClient().isPersonalServer() ? BigDecimal.ONE : BigDecimal.ZERO);
 
     StartServerDialogPreferences prefs = new StartServerDialogPreferences();
     sinfo.addProperty("useWebRTC", prefs.getUseWebRtc() ? BigDecimal.ONE : BigDecimal.ZERO);

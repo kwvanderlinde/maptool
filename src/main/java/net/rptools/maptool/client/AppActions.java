@@ -2149,14 +2149,14 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.isPersonalServer();
+          return MapTool.getClient().isPersonalServer();
         }
 
         @Override
         protected void executeAction() {
           runBackground(
               () -> {
-                if (!MapTool.isPersonalServer()) {
+                if (!MapTool.getClient().isPersonalServer()) {
                   MapTool.showError("msg.error.alreadyRunningServer");
                   return;
                 }
@@ -2321,7 +2321,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.isPersonalServer();
+          return MapTool.getClient().isPersonalServer();
         }
 
         @Override
@@ -2425,7 +2425,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return !MapTool.isPersonalServer();
+          return !MapTool.getClient().isPersonalServer();
         }
 
         @Override

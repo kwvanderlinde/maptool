@@ -478,7 +478,7 @@ public class TokenMoveFunctions extends AbstractFunction {
     ZoneWalker walker = null;
 
     WalkerMetric metric =
-        MapTool.isPersonalServer()
+        MapTool.getClient().isPersonalServer()
             ? AppPreferences.getMovementMetric()
             : MapTool.getServerPolicy().getMovementMetric();
 

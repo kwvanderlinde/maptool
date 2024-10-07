@@ -1965,7 +1965,7 @@ public class PointerTool extends DefaultTool {
       boolean hasOwnerReveal; // if true, reveal FoW if token has an owner.
       boolean noOwnerReveal; // if true, reveal FoW if token has no owners.
 
-      if (MapTool.isPersonalServer()) {
+      if (MapTool.getClient().isPersonalServer()) {
         ownerReveal =
             hasOwnerReveal = noOwnerReveal = AppPreferences.getAutoRevealVisionOnGMMovement();
       } else {

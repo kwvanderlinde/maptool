@@ -297,7 +297,8 @@ public class FogUtil {
       // why check ownership? Only GM can run this.
       boolean owner = token.isOwner(playerName) || isGM;
 
-      if ((!MapTool.isPersonalServer() || MapTool.getServerPolicy().isUseIndividualViews())
+      if ((!MapTool.getClient().isPersonalServer()
+              || MapTool.getServerPolicy().isUseIndividualViews())
           && !owner) {
         continue;
       }

@@ -1154,7 +1154,7 @@ public class Zone {
       return;
     }
     if (tok != null) {
-      if (MapTool.isPersonalServer()
+      if (MapTool.getClient().isPersonalServer()
           || (MapTool.getServerPolicy().isUseIndividualFOW() && AppUtil.playerOwns(tok))) {
         GUID tea = tok.getExposedAreaGUID();
         ExposedAreaMetaData meta = exposedAreaMeta.get(tea);
@@ -1198,7 +1198,8 @@ public class Zone {
     }
     if (selectedToks != null
         && !selectedToks.isEmpty()
-        && (MapTool.getServerPolicy().isUseIndividualFOW() || MapTool.isPersonalServer())) {
+        && (MapTool.getServerPolicy().isUseIndividualFOW()
+            || MapTool.getClient().isPersonalServer())) {
       boolean isAllowed =
           MapTool.getPlayer().isGM() || !MapTool.getServerPolicy().useStrictTokenManagement();
       String playerId = MapTool.getPlayer().getName();
@@ -1277,7 +1278,8 @@ public class Zone {
     }
     if (selectedToks != null
         && !selectedToks.isEmpty()
-        && (MapTool.getServerPolicy().isUseIndividualFOW() || MapTool.isPersonalServer())) {
+        && (MapTool.getServerPolicy().isUseIndividualFOW()
+            || MapTool.getClient().isPersonalServer())) {
       List<Token> allToks = new ArrayList<Token>();
 
       for (GUID guid : selectedToks) {

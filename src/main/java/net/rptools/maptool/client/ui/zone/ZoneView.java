@@ -174,7 +174,7 @@ public class ZoneView {
     if (exposed == null) {
       boolean combinedView =
           !isUsingVision()
-              || MapTool.isPersonalServer()
+              || MapTool.getClient().isPersonalServer()
               || !MapTool.getServerPolicy().isUseIndividualFOW()
               || view.isGMView();
 
@@ -413,7 +413,7 @@ public class ZoneView {
   private Stream<Token> getTokensForView(PlayerView view) {
     final boolean isGMview = view.isGMView();
     final boolean checkOwnership =
-        MapTool.getServerPolicy().isUseIndividualViews() || MapTool.isPersonalServer();
+        MapTool.getServerPolicy().isUseIndividualViews() || MapTool.getClient().isPersonalServer();
     List<Token> tokenList =
         view.isUsingTokenView()
             ? view.getTokens()
