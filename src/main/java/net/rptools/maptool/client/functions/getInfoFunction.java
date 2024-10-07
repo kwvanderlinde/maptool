@@ -234,7 +234,7 @@ public class getInfoFunction extends AbstractFunction {
     cinfo.addProperty("timeInMs", System.currentTimeMillis());
     cinfo.addProperty("timeDate", getTimeDate());
     cinfo.addProperty("isoTimeDate", getIsoTimeDate());
-    cinfo.addProperty("isHosting", MapTool.getClient().isHosting());
+    cinfo.addProperty("isHosting", MapTool.getClient().isHostingServer());
     cinfo.addProperty("isPersonalServer", MapTool.isPersonalServer());
     cinfo.addProperty("userLanguage", MapTool.getLanguage());
 

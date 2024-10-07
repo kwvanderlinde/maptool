@@ -166,7 +166,7 @@ public class LibraryManager {
   public boolean registerAddOnLibrary(AddOnLibrary addOn) {
     try {
       addOnLibraryManager.registerLibrary(addOn);
-      if (MapTool.getClient().isHosting()) {
+      if (MapTool.getClient().isHostingServer()) {
         MapTool.serverCommand().addAddOnLibrary(List.of(new TransferableAddOnLibrary(addOn)));
       }
     } catch (ExecutionException | InterruptedException | IllegalStateException e) {
@@ -183,7 +183,7 @@ public class LibraryManager {
    */
   public void deregisterAddOnLibrary(String namespace) {
     addOnLibraryManager.deregisterLibrary(namespace);
-    if (MapTool.getClient().isHosting()) {
+    if (MapTool.getClient().isHostingServer()) {
       MapTool.serverCommand().removeAddOnLibrary(List.of(namespace));
     }
   }
@@ -197,7 +197,7 @@ public class LibraryManager {
     try {
       addOnLibraryManager.deregisterLibrary(addOnLibrary.getNamespace().get());
       addOnLibraryManager.registerLibrary(addOnLibrary);
-      if (MapTool.getClient().isHosting()) {
+      if (MapTool.getClient().isHostingServer()) {
         MapTool.serverCommand()
             .addAddOnLibrary(List.of(new TransferableAddOnLibrary(addOnLibrary)));
       }
@@ -307,7 +307,7 @@ public class LibraryManager {
   /** de-registers all the add-on in libraries. */
   public void deregisterAddOnLibraries() {
     addOnLibraryManager.removeAllLibraries();
-    if (MapTool.getClient().isHosting()) {
+    if (MapTool.getClient().isHostingServer()) {
       MapTool.serverCommand().removeAllAddOnLibraries();
     }
   }

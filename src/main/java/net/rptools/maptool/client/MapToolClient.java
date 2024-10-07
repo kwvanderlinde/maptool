@@ -148,7 +148,7 @@ public class MapToolClient {
    */
   // TODO Lots of callers check this before executing server commands. Ideally they would just do
   //  the server command, and the server command would not dispatch to local.
-  public boolean isHosting() {
+  public boolean isHostingServer() {
     return localServer != null && !localServer.isPersonalServer();
   }
 

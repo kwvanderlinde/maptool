@@ -153,7 +153,7 @@ public class MapToolEventQueue extends EventQueue {
     Sentry.getContext().setUser(user.build());
 
     Sentry.getContext().addTag("role", player != null ? player.getRole().name() : null);
-    boolean hostingServer = MapTool.getClient().isHosting();
+    boolean hostingServer = MapTool.getClient().isHostingServer();
     Sentry.getContext().addTag("hosting", String.valueOf(hostingServer));
 
     Sentry.getContext().addExtra("System Info", new MapToolSysInfoProvider().getSysInfoJSON());
