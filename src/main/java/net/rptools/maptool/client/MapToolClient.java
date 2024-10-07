@@ -16,8 +16,6 @@ package net.rptools.maptool.client;
 
 import java.awt.EventQueue;
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,8 +27,6 @@ import net.rptools.maptool.client.events.PlayerDisconnected;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Campaign;
-import net.rptools.maptool.model.CampaignFactory;
-import net.rptools.maptool.model.campaign.CampaignManager;
 import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.player.PlayerDatabase;
@@ -132,6 +128,10 @@ public class MapToolClient {
         connection,
         new ServerPolicy(),
         PlayerDatabaseFactory.getLocalPlayerDatabase(player));
+  }
+
+  public @Nullable MapToolServer getLocalServer() {
+    return localServer;
   }
 
   public boolean isRemote() {
@@ -289,12 +289,6 @@ public class MapToolClient {
 
     // If closed, this was either expected or already handled.
     if (transitionToState(State.Closed)) {
-      // TODO This is application logic, not client logic per se.
-
-      // Keep any local server campaign around in the new personal server.
-      final var newPersonalServerCampaign =
-          localServer == null ? CampaignFactory.createBasicCampaign() : localServer.getCampaign();
-
       playerList.clear();
       new MapToolEventBus().getMainEventBus().post(new LocalClientDisconnected(this, false));
 
@@ -305,19 +299,6 @@ public class MapToolClient {
             var errorMessage =
                 errorText + (connectionError != null ? (": " + connectionError) : "");
             MapTool.showError(errorMessage);
-
-            // hide map so player doesn't get a brief GM view
-            MapTool.getFrame().setCurrentZoneRenderer(null);
-            MapTool.getFrame().getToolbarPanel().getMapselect().setVisible(true);
-            MapTool.getFrame().getAssetPanel().enableAssets();
-            new CampaignManager().clearCampaignData();
-            MapTool.getFrame().getToolbarPanel().setTokenSelectionGroupEnabled(true);
-
-            try {
-              MapTool.startPersonalServer(newPersonalServerCampaign);
-            } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
-              MapTool.showError(I18N.getText("msg.error.server.cantrestart"), e);
-            }
           });
     }
   }

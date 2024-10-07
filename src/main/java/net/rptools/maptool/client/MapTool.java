@@ -90,6 +90,7 @@ import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.TextMessage;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZoneFactory;
+import net.rptools.maptool.model.campaign.CampaignManager;
 import net.rptools.maptool.model.library.LibraryManager;
 import net.rptools.maptool.model.library.url.LibraryURLStreamHandler;
 import net.rptools.maptool.model.player.LocalPlayer;
@@ -1751,11 +1752,6 @@ public class MapTool {
   private static final class ConnectionListener {
     @Subscribe
     public void onLocalClientDisconnected(LocalClientDisconnected event) {
-      if (!event.expected() && !event.client().isRemote()) {
-        // Make sure the connection state is cleaned up since we can't count on it having been done.
-        MapTool.stopServer();
-      }
-
       MapTool.getFrame()
           .getConnectionStatusPanel()
           .setStatus(ConnectionStatusPanel.Status.disconnected);
@@ -1763,6 +1759,32 @@ public class MapTool {
       if (!event.client().isPersonal()) {
         MapTool.addLocalMessage(
             MessageUtil.getFormattedSystemMsg(I18N.getText("msg.info.disconnected")));
+      }
+
+      if (!event.expected()) {
+        // Make sure the connection state is cleaned up since we can't count on it having been done.
+        MapTool.stopServer();
+
+        // Also need to automatically install a replacement server.
+        // hide map so player doesn't get a brief GM view
+        MapTool.getFrame().setCurrentZoneRenderer(null);
+        MapTool.getFrame().getToolbarPanel().getMapselect().setVisible(true);
+        MapTool.getFrame().getAssetPanel().enableAssets();
+        new CampaignManager().clearCampaignData();
+        MapTool.getFrame().getToolbarPanel().setTokenSelectionGroupEnabled(true);
+
+        // If the server was local, use that campaign.
+        // Note: don't use the client's campaign since that was a copy. The server has the original.
+        final var server = event.client().getLocalServer();
+        final var newPersonalServerCampaign =
+            server == null
+                ? CampaignFactory.createBasicCampaign()
+                : event.client().getLocalServer().getCampaign();
+        try {
+          MapTool.startPersonalServer(newPersonalServerCampaign);
+        } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+          MapTool.showError(I18N.getText("msg.error.server.cantrestart"), e);
+        }
       }
     }
   }
