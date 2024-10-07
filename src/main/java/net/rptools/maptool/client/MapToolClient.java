@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import net.rptools.clientserver.simple.connection.Connection;
 import net.rptools.maptool.client.events.LocalClientDisconnected;
@@ -130,12 +131,15 @@ public class MapToolClient {
         PlayerDatabaseFactory.getLocalPlayerDatabase(player));
   }
 
-  public @Nullable MapToolServer getLocalServer() {
-    return localServer;
+  /**
+   * @return The server, if hosting one locally.
+   */
+  public Optional<MapToolServer> getLocalServer() {
+    return Optional.ofNullable(localServer);
   }
 
-  public boolean isRemote() {
-    return localServer == null;
+  public boolean hasLocalServer() {
+    return localServer != null;
   }
 
   public boolean isPersonal() {

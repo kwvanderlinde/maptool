@@ -32,9 +32,11 @@ import net.rptools.clientserver.simple.server.ServerObserver;
 import net.rptools.maptool.client.AppConstants;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolRegistry;
+import net.rptools.maptool.client.events.LocalServerStopped;
 import net.rptools.maptool.client.ui.StaticMessageDialog;
 import net.rptools.maptool.client.ui.connectioninfodialog.ConnectionInfoDialog;
 import net.rptools.maptool.common.MapToolConstants;
+import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.GUID;
@@ -369,6 +371,8 @@ public class MapToolServer {
       int port = config.getPort();
       UPnPUtil.closePort(port);
     }
+
+    new MapToolEventBus().getMainEventBus().post(new LocalServerStopped(this));
   }
 
   public void start() throws IOException {

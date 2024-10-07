@@ -62,6 +62,7 @@ import net.rptools.lib.sound.SoundManager;
 import net.rptools.maptool.client.MapToolConnection.HandshakeCompletionObserver;
 import net.rptools.maptool.client.events.ChatMessageAdded;
 import net.rptools.maptool.client.events.LocalClientDisconnected;
+import net.rptools.maptool.client.events.LocalServerStopped;
 import net.rptools.maptool.client.functions.UserDefinedMacroFunctions;
 import net.rptools.maptool.client.swing.MapToolEventQueue;
 import net.rptools.maptool.client.swing.NoteFrame;
@@ -682,7 +683,7 @@ public class MapTool {
 
       // Stop the pre-init client/server.
       client.close();
-      stopServer();
+      client.getLocalServer().ifPresent(MapToolServer::stop);
 
       startPersonalServer(cmpgn);
     } catch (Exception e) {
@@ -748,13 +749,6 @@ public class MapTool {
 
   public static @Nonnull ServerCommand serverCommand() {
     return client.getServerCommand();
-  }
-
-  /**
-   * @return the server, or null if player is a client.
-   */
-  public static MapToolServer getServer() {
-    return server;
   }
 
   /**
@@ -942,9 +936,9 @@ public class MapTool {
    * @param policy the server policy configuration to use.
    * @param campaign the campaign.
    * @param playerDatabase the player database to use for the connection.
-   * @throws IOException if we fail to start the new server. In this case, the new client and server
-   *     will be available via {@link #getServer()} and {@link #getClient()}, but neither will be in
-   *     a started state.
+   * @throws IOException if we fail to start the new server. In this case, the new client will be
+   *     available via {@link #getClient()} and the server through that, but neither will be in a
+   *     started state.
    */
   public static void startServer(
       String id,
@@ -1020,20 +1014,6 @@ public class MapTool {
     }
 
     return thumbnailManager;
-  }
-
-  /**
-   * Shutdown the current server.
-   *
-   * <p>The client must have already been disconnected if necessary.
-   */
-  public static void stopServer() {
-    if (server == null) {
-      return;
-    }
-
-    server.stop();
-    getFrame().getConnectionPanel().stopHosting();
   }
 
   public static List<Player> getPlayerList() {
@@ -1751,6 +1731,11 @@ public class MapTool {
 
   private static final class ConnectionListener {
     @Subscribe
+    public void onLocalServerStopped(LocalServerStopped event) {
+      getFrame().getConnectionPanel().stopHosting();
+    }
+
+    @Subscribe
     public void onLocalClientDisconnected(LocalClientDisconnected event) {
       MapTool.getFrame()
           .getConnectionStatusPanel()
@@ -1762,8 +1747,17 @@ public class MapTool {
       }
 
       if (!event.expected()) {
+        // If the server was local, reuse that campaign.
+        // Note: don't use the client's campaign since that was a copy. The server has the original.
+        final var newPersonalServerCampaign =
+            event
+                .client()
+                .getLocalServer()
+                .map(MapToolServer::getCampaign)
+                .orElseGet(CampaignFactory::createBasicCampaign);
+
         // Make sure the connection state is cleaned up since we can't count on it having been done.
-        MapTool.stopServer();
+        event.client().getLocalServer().ifPresent(MapToolServer::stop);
 
         // Also need to automatically install a replacement server.
         // hide map so player doesn't get a brief GM view
@@ -1773,13 +1767,6 @@ public class MapTool {
         new CampaignManager().clearCampaignData();
         MapTool.getFrame().getToolbarPanel().setTokenSelectionGroupEnabled(true);
 
-        // If the server was local, use that campaign.
-        // Note: don't use the client's campaign since that was a copy. The server has the original.
-        final var server = event.client().getLocalServer();
-        final var newPersonalServerCampaign =
-            server == null
-                ? CampaignFactory.createBasicCampaign()
-                : event.client().getLocalServer().getCampaign();
         try {
           MapTool.startPersonalServer(newPersonalServerCampaign);
         } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {

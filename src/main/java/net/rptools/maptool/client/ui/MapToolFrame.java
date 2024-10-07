@@ -107,6 +107,7 @@ import net.rptools.maptool.model.drawing.DrawablePaint;
 import net.rptools.maptool.model.drawing.DrawableTexturePaint;
 import net.rptools.maptool.model.drawing.DrawnElement;
 import net.rptools.maptool.model.drawing.Pen;
+import net.rptools.maptool.server.MapToolServer;
 import net.rptools.maptool.util.ImageManager;
 import org.apache.commons.collections4.map.LinkedMap;
 import org.apache.commons.lang.ArrayUtils;
@@ -1959,8 +1960,9 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
   }
 
   public void close() {
-    MapTool.getClient().close();
-    MapTool.stopServer();
+    var client = MapTool.getClient();
+    client.close();
+    client.getLocalServer().ifPresent(MapToolServer::stop);
 
     getDockingManager()
         .saveLayoutDataToFile(AppUtil.getAppHome("config").getAbsolutePath() + "/layout.dat");

@@ -346,43 +346,40 @@ public class ClientHandshake implements Handshake<Void>, MessageHandler {
     } else {
       MapTool.getFrame().getAssetPanel().disableAssets();
     }
-    if (!MapTool.isHostingServer()) {
-      if (!MapTool.isPersonalServer()) {
-        new CampaignManager().clearCampaignData();
-        if (connectionSuccessfulMsg.hasGameDataDto()) {
-          var dataStore = new DataStoreManager().getDefaultDataStoreForRemoteUpdate();
-          try {
-            new GameDataImporter(dataStore).importData(connectionSuccessfulMsg.getGameDataDto());
-          } catch (ExecutionException | InterruptedException e) {
-            log.error(I18N.getText("data.error.importGameData"), e);
-            throw new IOException(e.getCause());
-          }
+    if (!client.hasLocalServer()) {
+      new CampaignManager().clearCampaignData();
+      if (connectionSuccessfulMsg.hasGameDataDto()) {
+        var dataStore = new DataStoreManager().getDefaultDataStoreForRemoteUpdate();
+        try {
+          new GameDataImporter(dataStore).importData(connectionSuccessfulMsg.getGameDataDto());
+        } catch (ExecutionException | InterruptedException e) {
+          log.error(I18N.getText("data.error.importGameData"), e);
+          throw new IOException(e.getCause());
         }
-        if (!policy.isUseIndividualViews()) {
-          MapTool.getFrame().getToolbarPanel().setTokenSelectionGroupEnabled(false);
-          log.info("No individual views, disabling FoW buttons");
-        }
-        var libraryManager = new LibraryManager();
-        for (var library : connectionSuccessfulMsg.getAddOnLibraryListDto().getLibrariesList()) {
-          var md5key = new MD5Key(library.getMd5Hash());
-          AssetManager.getAssetAsynchronously(
-              md5key,
-              a -> {
-                Asset asset = AssetManager.getAsset(a);
-                try {
-                  var addOnLibrary = new AddOnLibraryImporter().importFromAsset(asset);
-                  libraryManager.reregisterAddOnLibrary(addOnLibrary);
-                } catch (IOException e) {
-                  SwingUtilities.invokeLater(
-                      () -> {
-                        MapTool.showError(
-                            I18N.getText(
-                                "library.import.error", library.getDetails().getNamespace()),
-                            e);
-                      });
-                }
-              });
-        }
+      }
+      if (!policy.isUseIndividualViews()) {
+        MapTool.getFrame().getToolbarPanel().setTokenSelectionGroupEnabled(false);
+        log.info("No individual views, disabling FoW buttons");
+      }
+      var libraryManager = new LibraryManager();
+      for (var library : connectionSuccessfulMsg.getAddOnLibraryListDto().getLibrariesList()) {
+        var md5key = new MD5Key(library.getMd5Hash());
+        AssetManager.getAssetAsynchronously(
+            md5key,
+            a -> {
+              Asset asset = AssetManager.getAsset(a);
+              try {
+                var addOnLibrary = new AddOnLibraryImporter().importFromAsset(asset);
+                libraryManager.reregisterAddOnLibrary(addOnLibrary);
+              } catch (IOException e) {
+                SwingUtilities.invokeLater(
+                    () -> {
+                      MapTool.showError(
+                          I18N.getText("library.import.error", library.getDetails().getNamespace()),
+                          e);
+                    });
+              }
+            });
       }
     }
     setCurrentState(State.Success);

@@ -806,15 +806,11 @@ public class PersistenceUtil {
       }
     }
     if (!addToServer.isEmpty()) {
-      // Isn't this the same as (MapTool.getServer() == null) ? And won't there always
-      // be a server? Even if we don't start one explicitly, MapTool keeps a server
-      // running in the background all the time (called a "personal server") so that the rest
-      // of the code is consistent with regard to client<->server operations...
-      boolean server = !MapTool.isHostingServer() && !MapTool.isPersonalServer();
-      if (server) {
-        if (MapTool.isDevelopment())
+      if (!MapTool.getClient().hasLocalServer()) {
+        if (MapTool.isDevelopment()) {
           MapTool.showInformation(
               "Please report this:  (!isHostingServer() && !isPersonalServer()) == true");
+        }
         // If we are remotely installing this token, we'll need to send the image data to the
         // server.
         for (Asset asset : addToServer) {

@@ -47,7 +47,7 @@ public class ServerFunctions extends AbstractFunction {
 
     String fName = functionName.toLowerCase();
     return switch (fName) {
-      case "server.isserver" -> MapTool.isHostingServer() || MapTool.isPersonalServer()
+      case "server.isserver" -> MapTool.getClient().hasLocalServer()
           ? BigDecimal.ONE
           : BigDecimal.ZERO;
       case "server.ishosting" -> MapTool.isHostingServer() ? BigDecimal.ONE : BigDecimal.ZERO;

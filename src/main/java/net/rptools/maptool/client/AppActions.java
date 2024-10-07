@@ -77,6 +77,7 @@ import net.rptools.maptool.model.campaign.CampaignManager;
 import net.rptools.maptool.model.drawing.DrawableTexturePaint;
 import net.rptools.maptool.model.player.*;
 import net.rptools.maptool.model.player.Player.Role;
+import net.rptools.maptool.server.MapToolServer;
 import net.rptools.maptool.server.ServerConfig;
 import net.rptools.maptool.server.ServerPolicy;
 import net.rptools.maptool.util.*;
@@ -187,7 +188,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.isHostingServer() || MapTool.isPersonalServer();
+          return MapTool.getClient().hasLocalServer();
         }
 
         @Override
@@ -633,16 +634,18 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return super.isAvailable() && (MapTool.isPersonalServer() || MapTool.isHostingServer());
+          return super.isAvailable() && MapTool.getClient().hasLocalServer();
         }
 
         @Override
         protected void executeAction() {
-          final var server = MapTool.getServer();
-          if (server != null) {
-            ConnectionInfoDialog dialog = new ConnectionInfoDialog(server);
-            dialog.setVisible(true);
-          }
+          MapTool.getClient()
+              .getLocalServer()
+              .ifPresent(
+                  (server) -> {
+                    ConnectionInfoDialog dialog = new ConnectionInfoDialog(server);
+                    dialog.setVisible(true);
+                  });
         }
       };
 
@@ -2228,8 +2231,9 @@ public class AppActions {
 
                 boolean failed = false;
                 try {
-                  MapTool.getClient().close();
-                  MapTool.stopServer();
+                  var client = MapTool.getClient();
+                  client.close();
+                  client.getLocalServer().ifPresent(MapToolServer::stop);
 
                   // Right now set this is set to whatever the last server settings were. If we
                   // wanted to turn it on and
@@ -2332,8 +2336,9 @@ public class AppActions {
 
           LOAD_MAP.setSeenWarning(false);
 
-          MapTool.getClient().close();
-          MapTool.stopServer();
+          var client = MapTool.getClient();
+          client.close();
+          client.getLocalServer().ifPresent(MapToolServer::stop);
 
           // Install a temporary gimped campaign until we get the one from the
           // server
@@ -2451,8 +2456,9 @@ public class AppActions {
 
     LOAD_MAP.setSeenWarning(false);
 
-    MapTool.getClient().close();
-    MapTool.stopServer();
+    var client = MapTool.getClient();
+    client.close();
+    client.getLocalServer().ifPresent(MapToolServer::stop);
 
     MapTool.getFrame().getToolbarPanel().getMapselect().setVisible(true);
     MapTool.getFrame().getToolbarPanel().setTokenSelectionGroupEnabled(true);
@@ -2489,12 +2495,14 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.isHostingServer() || MapTool.isPersonalServer();
+          return MapTool.getClient().hasLocalServer();
         }
 
         @Override
         protected void executeAction() {
-          if (MapTool.isCampaignDirty() && !MapTool.confirm("msg.confirm.loseChanges")) return;
+          if (MapTool.isCampaignDirty() && !MapTool.confirm("msg.confirm.loseChanges")) {
+            return;
+          }
           JFileChooser chooser = new CampaignPreviewFileChooser();
           chooser.setDialogTitle(I18N.getText("msg.title.loadCampaign"));
           chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -2794,7 +2802,7 @@ public class AppActions {
     AppState.setCampaignFile(campaignFile);
     AppPreferences.setSaveDir(campaignFile.getParentFile());
     AppMenuBar.getMruManager().addMRUCampaign(AppState.getCampaignFile());
-    if (MapTool.isHostingServer() || MapTool.isPersonalServer()) {
+    if (!MapTool.getClient().hasLocalServer()) {
       MapTool.serverCommand().setCampaignName(AppState.getCampaignName());
     }
   }
@@ -2894,7 +2902,6 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-          boolean isConnected = !MapTool.isHostingServer() && !MapTool.isPersonalServer();
           JFileChooser chooser = new MapPreviewFileChooser();
           chooser.setDialogTitle(I18N.getText("msg.title.loadMap"));
           chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -2920,7 +2927,6 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-          boolean isConnected = !MapTool.isHostingServer() && !MapTool.isPersonalServer();
           JFileChooser chooser = new MapPreviewFileChooser();
           chooser.setDialogTitle(I18N.getText("action.import.dungeondraft.dialog.title"));
           chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
