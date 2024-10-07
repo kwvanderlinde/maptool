@@ -135,7 +135,7 @@ public class ButtonGroup extends AbstractButtonGroup {
           && (panelClass.equals("CampaignPanel")
               || panelClass.equals("GmPanel")
               || (data.panelClass.equals("CampaignPanel")
-                  && !MapTool.getServerPolicy().playersReceiveCampaignMacros())
+                  && !MapTool.getClient().getServerPolicy().playersReceiveCampaignMacros())
               || data.panelClass.equals("GmPanel"))) {
         MapTool.showError(
             I18N.getText(

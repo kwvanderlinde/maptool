@@ -31,7 +31,7 @@ public class CampaignPanel extends AbstractMacroPanel {
   private void init() {
     if (MapTool.getPlayer() == null
         || MapTool.getPlayer().isGM()
-        || MapTool.getServerPolicy().playersReceiveCampaignMacros()) {
+        || MapTool.getClient().getServerPolicy().playersReceiveCampaignMacros()) {
       addArea(MapTool.getCampaign().getMacroButtonPropertiesArray(), "");
     }
   }

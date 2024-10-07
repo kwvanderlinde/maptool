@@ -743,10 +743,6 @@ public class MapTool {
     return System.getProperty("RUN_FROM_IDE") != null;
   }
 
-  public static ServerPolicy getServerPolicy() {
-    return client.getServerPolicy();
-  }
-
   public static @Nonnull ServerCommand serverCommand() {
     return client.getServerCommand();
   }

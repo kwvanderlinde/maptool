@@ -315,7 +315,7 @@ public class AppUtil {
     if (player.isGM()) {
       return true;
     }
-    if (!MapTool.getServerPolicy().useStrictTokenManagement()) {
+    if (!MapTool.getClient().getServerPolicy().useStrictTokenManagement()) {
       return true;
     }
     return token.isOwner(player.getName());
@@ -341,7 +341,7 @@ public class AppUtil {
   public static boolean gmOwns(Token token) {
     Player player = MapTool.getPlayer();
 
-    if (!MapTool.getServerPolicy().useStrictTokenManagement()) {
+    if (!MapTool.getClient().getServerPolicy().useStrictTokenManagement()) {
       return true;
     }
     return (token.isOwner(player.getName()) && !token.isOwnedByAll()) || !token.hasOwners();

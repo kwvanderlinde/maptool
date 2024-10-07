@@ -295,7 +295,7 @@ public class TokenPanelTreeModel implements TreeModel {
         return true;
       }
       if (!AppUtil.playerOwns(token)
-          && (MapTool.getServerPolicy().isUseIndividualViews() || token.isVisibleOnlyToOwner())) {
+          && (MapTool.getClient().getServerPolicy().isUseIndividualViews() || token.isVisibleOnlyToOwner())) {
         return false;
       }
       return token.isVisible() && token.getLayer().isVisibleToPlayers();

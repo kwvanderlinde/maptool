@@ -415,7 +415,7 @@ public class InitiativePanel extends JPanel
     if (token == null) return false;
     if (hasGMPermission()) return true;
     if (ownerPermissions
-        && (!MapTool.getServerPolicy().useStrictTokenManagement()
+        && (!MapTool.getClient().getServerPolicy().useStrictTokenManagement()
             || token.isOwner(MapTool.getPlayer().getName()))) return true;
     return false;
   }

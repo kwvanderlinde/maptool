@@ -89,7 +89,7 @@ public abstract class AbstractTokenPopupMenu extends JPopupMenu {
 
   private void setOwnership() {
     areTokensOwned = true;
-    if (!MapTool.getPlayer().isGM() && MapTool.getServerPolicy().useStrictTokenManagement()) {
+    if (!MapTool.getPlayer().isGM() && MapTool.getClient().getServerPolicy().useStrictTokenManagement()) {
       for (GUID tokenGUID : selectedTokenSet) {
         Token token = getRenderer().getZone().getToken(tokenGUID);
 
@@ -983,7 +983,7 @@ public abstract class AbstractTokenPopupMenu extends JPopupMenu {
       // Jamz: Bug fix, we don't support editing multiple tokens here.
       if (selectedTokenSet.size() > 1) {
         setEnabled(false);
-      } else if (!MapTool.getPlayer().isGM() && MapTool.getServerPolicy().isTokenEditorLocked()) {
+      } else if (!MapTool.getPlayer().isGM() && MapTool.getClient().getServerPolicy().isTokenEditorLocked()) {
         setEnabled(false);
       }
     }
@@ -1002,7 +1002,7 @@ public abstract class AbstractTokenPopupMenu extends JPopupMenu {
       JMenuItem jMenuItem = new JMenuItem(this);
       if (selectedTokenSet.size() > 1) {
         jMenuItem.setToolTipText(I18N.getText("token.popup.menu.edit.toomany.tooltip"));
-      } else if (!MapTool.getPlayer().isGM() && MapTool.getServerPolicy().isTokenEditorLocked()) {
+      } else if (!MapTool.getPlayer().isGM() && MapTool.getClient().getServerPolicy().isTokenEditorLocked()) {
         jMenuItem.setToolTipText(I18N.getText("token.popup.menu.edit.notallowed.tooltip"));
       }
       return jMenuItem;

@@ -893,7 +893,7 @@ public class Zone {
     if (!hasFog() || view.isGMView()) {
       return true;
     }
-    if (MapTool.getServerPolicy().isUseIndividualFOW() && getVisionType() != VisionType.OFF) {
+    if (MapTool.getClient().getServerPolicy().isUseIndividualFOW() && getVisionType() != VisionType.OFF) {
       Area combined = new Area(exposedArea);
       if (view.isUsingTokenView()) {
         for (Token tok : view.getTokens()) { // only owned and HasSight tokens are returned
@@ -954,7 +954,7 @@ public class Zone {
     Rectangle tokenSize = token.getBounds(this);
     Area combined = new Area(exposedArea);
     PlayerView view = MapTool.getFrame().getZoneRenderer(this).getPlayerView();
-    if (MapTool.getServerPolicy().isUseIndividualFOW() && getVisionType() != VisionType.OFF) {
+    if (MapTool.getClient().getServerPolicy().isUseIndividualFOW() && getVisionType() != VisionType.OFF) {
       // Jamz: Lets change the logic a bit looking for ownerships
       if (view.isUsingTokenView()) {
         for (Token tok : view.getTokens()) {
@@ -990,7 +990,7 @@ public class Zone {
     Area tokenFootprint = getGrid().getTokenCellArea(tokenSize);
     Area combined = new Area(exposedArea);
     PlayerView view = MapTool.getFrame().getZoneRenderer(this).getPlayerView();
-    if (MapTool.getServerPolicy().isUseIndividualFOW() && getVisionType() != VisionType.OFF) {
+    if (MapTool.getClient().getServerPolicy().isUseIndividualFOW() && getVisionType() != VisionType.OFF) {
       if (view.isUsingTokenView()) {
         // Should this use FindTokenFunctions.OwnedFilter and zone.getTokenList()?
         for (Token tok : view.getTokens()) {
@@ -1155,7 +1155,7 @@ public class Zone {
     }
     if (tok != null) {
       if (MapTool.getClient().isPersonalServer()
-          || (MapTool.getServerPolicy().isUseIndividualFOW() && AppUtil.playerOwns(tok))) {
+          || (MapTool.getClient().getServerPolicy().isUseIndividualFOW() && AppUtil.playerOwns(tok))) {
         GUID tea = tok.getExposedAreaGUID();
         ExposedAreaMetaData meta = exposedAreaMeta.get(tea);
         if (meta == null) {
@@ -1198,10 +1198,10 @@ public class Zone {
     }
     if (selectedToks != null
         && !selectedToks.isEmpty()
-        && (MapTool.getServerPolicy().isUseIndividualFOW()
+        && (MapTool.getClient().getServerPolicy().isUseIndividualFOW()
             || MapTool.getClient().isPersonalServer())) {
       boolean isAllowed =
-          MapTool.getPlayer().isGM() || !MapTool.getServerPolicy().useStrictTokenManagement();
+          MapTool.getPlayer().isGM() || !MapTool.getClient().getServerPolicy().useStrictTokenManagement();
       String playerId = MapTool.getPlayer().getName();
       MapToolFrame frame = MapTool.getFrame();
       // FIXME 'zr' was null -- how can this happen? Fix is to use getId() instead of 'this'
@@ -1278,7 +1278,7 @@ public class Zone {
     }
     if (selectedToks != null
         && !selectedToks.isEmpty()
-        && (MapTool.getServerPolicy().isUseIndividualFOW()
+        && (MapTool.getClient().getServerPolicy().isUseIndividualFOW()
             || MapTool.getClient().isPersonalServer())) {
       List<Token> allToks = new ArrayList<Token>();
 

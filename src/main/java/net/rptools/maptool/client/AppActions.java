@@ -2102,7 +2102,7 @@ public class AppActions {
 
         @Override
         public boolean isSelected() {
-          return MapTool.getServerPolicy().isMovementLocked();
+          return MapTool.getClient().getServerPolicy().isMovementLocked();
         }
 
         @Override
@@ -2126,7 +2126,7 @@ public class AppActions {
 
         @Override
         public boolean isSelected() {
-          return MapTool.getServerPolicy().isTokenEditorLocked();
+          return MapTool.getClient().getServerPolicy().isTokenEditorLocked();
         }
 
         @Override

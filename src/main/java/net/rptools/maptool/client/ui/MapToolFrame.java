@@ -763,7 +763,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
    */
   public void showTokenPropertiesDialog(Token token, ZoneRenderer zr) {
     if (token != null && zr != null) {
-      if (MapTool.getPlayer().isGM() || !MapTool.getServerPolicy().isTokenEditorLocked()) {
+      if (MapTool.getPlayer().isGM() || !MapTool.getClient().getServerPolicy().isTokenEditorLocked()) {
         EditTokenDialog dialog = MapTool.getFrame().getTokenPropertiesDialog();
         dialog.showDialog(token);
         if (dialog.isTokenSaved()) {

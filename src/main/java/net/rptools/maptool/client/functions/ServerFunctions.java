@@ -56,7 +56,7 @@ public class ServerFunctions extends AbstractFunction {
       case "server.ispersonal" -> MapTool.getClient().isPersonalServer()
           ? BigDecimal.ONE
           : BigDecimal.ZERO;
-      case "getmovelock" -> MapTool.getServerPolicy().isMovementLocked();
+      case "getmovelock" -> MapTool.getClient().getServerPolicy().isMovementLocked();
       case "setmovelock" -> {
         if (parameters.size() == 1) {
           BigDecimal ml = (BigDecimal) parameters.get(0);

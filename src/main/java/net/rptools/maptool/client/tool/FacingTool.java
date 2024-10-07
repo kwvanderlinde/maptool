@@ -118,9 +118,10 @@ public class FacingTool extends DefaultTool {
       ownerReveal =
           hasOwnerReveal = noOwnerReveal = AppPreferences.getAutoRevealVisionOnGMMovement();
     } else {
-      ownerReveal = MapTool.getServerPolicy().isAutoRevealOnMovement();
-      hasOwnerReveal = isGM && MapTool.getServerPolicy().isAutoRevealOnMovement();
-      noOwnerReveal = isGM && MapTool.getServerPolicy().getGmRevealsVisionForUnownedTokens();
+      var policy = MapTool.getClient().getServerPolicy();
+      ownerReveal = policy.isAutoRevealOnMovement();
+      hasOwnerReveal = isGM && policy.isAutoRevealOnMovement();
+      noOwnerReveal = isGM && policy.getGmRevealsVisionForUnownedTokens();
     }
     for (GUID tokenGUID : selectedTokenSet) {
       Token token = renderer.getZone().getToken(tokenGUID);

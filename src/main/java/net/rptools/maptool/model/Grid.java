@@ -937,7 +937,7 @@ public abstract class Grid implements Cloneable {
   protected WalkerMetric getCurrentMetric() {
     return MapTool.getClient().isPersonalServer()
         ? AppPreferences.getMovementMetric()
-        : MapTool.getServerPolicy().getMovementMetric();
+        : MapTool.getClient().getServerPolicy().getMovementMetric();
   }
 
   /**

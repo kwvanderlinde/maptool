@@ -162,7 +162,7 @@ public class MapToolEventQueue extends EventQueue {
 
     if (hostingServer) {
       addGetInfoToSentry("server");
-      Sentry.getContext().addExtra("Server Policy", MapTool.getServerPolicy().toJSON());
+      Sentry.getContext().addExtra("Server Policy", MapTool.getClient().getServerPolicy().toJSON());
     }
 
     // Send the event!

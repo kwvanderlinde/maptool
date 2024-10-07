@@ -839,7 +839,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     if (selectedTokens == null || selectedTokens.isEmpty()) {
       // if no selected token qualifying for view, use owned tokens or player tokens with sight
       final boolean checkOwnership =
-          MapTool.getServerPolicy().isUseIndividualViews()
+          MapTool.getClient().getServerPolicy().isUseIndividualViews()
               || MapTool.getClient().isPersonalServer();
       selectedTokens =
           checkOwnership
@@ -2678,7 +2678,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       // g.drawLine(0, tmpsp.y, getSize().width, tmpsp.y);
     }
     timer.start("tokenlist-12");
-    boolean useIF = MapTool.getServerPolicy().isUseIndividualFOW();
+    boolean useIF = MapTool.getClient().getServerPolicy().isUseIndividualFOW();
 
     final var movingTokens = new HashSet<GUID>();
     for (final var selectionSet : selectionSetMap.values()) {
@@ -2757,7 +2757,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       // if policy does not auto-reveal FoW, check if fog covers the token (slow)
       if (showCurrentTokenLabel
           && !isGMView
-          && (!zoneView.isUsingVision() || !MapTool.getServerPolicy().isAutoRevealOnMovement())
+          && (!zoneView.isUsingVision() || !MapTool.getClient().getServerPolicy().isAutoRevealOnMovement())
           && !zone.isTokenVisible(token)) {
         showCurrentTokenLabel = false;
       }
@@ -3417,7 +3417,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    */
   @Override
   public void drop(DropTargetDropEvent dtde) {
-    if (MapTool.getPlayer().isGM() || !MapTool.getServerPolicy().getDisablePlayerAssetPanel()) {
+    if (MapTool.getPlayer().isGM() || !MapTool.getClient().getServerPolicy().getDisablePlayerAssetPanel()) {
       ZonePoint zp =
           new ScreenPoint((int) dtde.getLocation().getX(), (int) dtde.getLocation().getY())
               .convertToZone(this);

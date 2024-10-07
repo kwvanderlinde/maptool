@@ -138,7 +138,7 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
 
   private void startTokenDrag(
       Token keyToken, Set<GUID> tokens, ZonePoint dragStart, boolean isMovingWithKeys) {
-    if (!MapTool.getPlayer().isGM() && MapTool.getServerPolicy().isMovementLocked()) {
+    if (!MapTool.getPlayer().isGM() && MapTool.getClient().getServerPolicy().isMovementLocked()) {
       // Not allowed
       return;
     }
@@ -601,7 +601,7 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
       isNewTokenSelected = false;
 
       // Make user we're allowed
-      if (!MapTool.getPlayer().isGM() && MapTool.getServerPolicy().isMovementLocked()) {
+      if (!MapTool.getPlayer().isGM() && MapTool.getClient().getServerPolicy().isMovementLocked()) {
         return;
       }
 
@@ -610,7 +610,7 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
       Set<GUID> selectedTokenSet = renderer.getSelectedTokenSet();
       if (selectedTokenSet.size() > 0) {
         // Make sure we can do this
-        if (!MapTool.getPlayer().isGM() && MapTool.getServerPolicy().useStrictTokenManagement()) {
+        if (!MapTool.getPlayer().isGM() && MapTool.getClient().getServerPolicy().useStrictTokenManagement()) {
           for (GUID tokenGUID : selectedTokenSet) {
             Token token = renderer.getZone().getToken(tokenGUID);
             if (!token.isOwner(playerId)) {

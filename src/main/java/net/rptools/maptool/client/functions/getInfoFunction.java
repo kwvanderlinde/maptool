@@ -325,7 +325,7 @@ public class getInfoFunction extends AbstractFunction {
    * @return the server side preferences
    */
   private JsonObject getServerInfo() {
-    ServerPolicy sp = MapTool.getServerPolicy();
+    ServerPolicy sp = MapTool.getClient().getServerPolicy();
 
     return sp.toJSON();
   }

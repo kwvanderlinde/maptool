@@ -76,6 +76,8 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
       Set<GUID> selectedTokenSet, int x, int y, ZoneRenderer renderer, Token tokenUnderMouse) {
     super(selectedTokenSet, x, y, renderer, tokenUnderMouse);
 
+    var client = MapTool.getClient();
+
     add(new SetFacingAction());
     add(new ClearFacingAction());
     add(new StartMoveAction());
@@ -101,10 +103,10 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
     /*
      * This adds the expose menu to token right click when the player is GM and the server setting is set to use individual FOW
      */
-    if (MapTool.getPlayer().isGM() && MapTool.getServerPolicy().isUseIndividualFOW()) {
+    if (MapTool.getPlayer().isGM() && client.getServerPolicy().isUseIndividualFOW()) {
       add(createExposedFOWMenu());
     }
-    if (MapTool.getPlayer().isGM() || MapTool.getServerPolicy().getPlayersCanRevealVision()) {
+    if (MapTool.getPlayer().isGM() || client.getServerPolicy().getPlayersCanRevealVision()) {
       add(createExposeMenu());
       // if (MapTool.getPlayer().isGM()) {
       // addGMItem(createVisionMenu());
@@ -331,7 +333,7 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-      if (MapTool.getServerPolicy().isUseIndividualFOW()) {
+      if (MapTool.getClient().getServerPolicy().isUseIndividualFOW()) {
         Zone zone = getRenderer().getZone();
         for (GUID tok : selectedTokenSet) {
           Token token = zone.getToken(tok);

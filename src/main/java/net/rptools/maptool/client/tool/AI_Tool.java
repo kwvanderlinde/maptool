@@ -42,9 +42,7 @@ public class AI_Tool extends DefaultTool {
   }
 
   public void updateButtonState() {
-    if (MapTool.getServerPolicy() != null) {
-      setSelected(MapTool.getServerPolicy().isUsingAstarPathfinding());
-    }
+    setSelected(MapTool.getClient().getServerPolicy().isUsingAstarPathfinding());
   }
 
   @Override

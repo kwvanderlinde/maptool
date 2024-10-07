@@ -210,7 +210,7 @@ public class PointerTool extends DefaultTool {
   private void startTokenDrag(
       Token keyToken, Set<GUID> tokens, ZonePoint dragStart, boolean isMovingWithKeys) {
     if (!MapTool.getPlayer().isGM()
-        && (MapTool.getServerPolicy().isMovementLocked()
+        && (MapTool.getClient().getServerPolicy().isMovementLocked()
             || MapTool.getFrame().getInitiativePanel().isMovementLocked(keyToken))) {
       // Not allowed
       return;
@@ -749,7 +749,7 @@ public class PointerTool extends DefaultTool {
       isNewTokenSelected = false;
 
       // Make sure we're allowed
-      if (!MapTool.getPlayer().isGM() && MapTool.getServerPolicy().isMovementLocked()) {
+      if (!MapTool.getPlayer().isGM() && MapTool.getClient().getServerPolicy().isMovementLocked()) {
         return;
       }
       // Might be dragging a token
@@ -758,7 +758,7 @@ public class PointerTool extends DefaultTool {
       if (!selectedTokenSet.isEmpty()) {
         // Make sure we can do this
         // Possibly let unowned tokens be moved?
-        if (!MapTool.getPlayer().isGM() && MapTool.getServerPolicy().useStrictTokenManagement()) {
+        if (!MapTool.getPlayer().isGM() && MapTool.getClient().getServerPolicy().useStrictTokenManagement()) {
           for (GUID tokenGUID : selectedTokenSet) {
             Token token = renderer.getZone().getToken(tokenGUID);
             if (!token.isOwner(playerId)) {
@@ -1028,7 +1028,7 @@ public class PointerTool extends DefaultTool {
 
           public void actionPerformed(ActionEvent e) {
             if (MapTool.getPlayer().isGM()
-                || MapTool.getServerPolicy().getPlayersCanRevealVision()) {
+                || MapTool.getClient().getServerPolicy().getPlayersCanRevealVision()) {
               FogUtil.exposeVisibleArea(
                   renderer, renderer.getOwnedTokens(renderer.getSelectedTokenSet()));
             }
@@ -1065,7 +1065,7 @@ public class PointerTool extends DefaultTool {
 
           public void actionPerformed(ActionEvent e) {
             if (MapTool.getPlayer().isGM()
-                || MapTool.getServerPolicy().getPlayersCanRevealVision()) {
+                || MapTool.getClient().getServerPolicy().getPlayersCanRevealVision()) {
               FogUtil.exposeLastPath(
                   renderer, renderer.getOwnedTokens(renderer.getSelectedTokenSet()));
             }
@@ -1969,9 +1969,10 @@ public class PointerTool extends DefaultTool {
         ownerReveal =
             hasOwnerReveal = noOwnerReveal = AppPreferences.getAutoRevealVisionOnGMMovement();
       } else {
-        ownerReveal = MapTool.getServerPolicy().isAutoRevealOnMovement();
-        hasOwnerReveal = isGM && MapTool.getServerPolicy().isAutoRevealOnMovement();
-        noOwnerReveal = isGM && MapTool.getServerPolicy().getGmRevealsVisionForUnownedTokens();
+        var policy = MapTool.getClient().getServerPolicy();
+        ownerReveal = policy.isAutoRevealOnMovement();
+        hasOwnerReveal = isGM && policy.isAutoRevealOnMovement();
+        noOwnerReveal = isGM && policy.getGmRevealsVisionForUnownedTokens();
       }
       if (renderer.getZone().hasFog() && (ownerReveal || hasOwnerReveal || noOwnerReveal)) {
         Set<GUID> exposeSet = new HashSet<GUID>();
@@ -2011,7 +2012,7 @@ public class PointerTool extends DefaultTool {
         Area zoneFog = zone.getExposedArea();
         if (zoneFog == null) zoneFog = new Area();
         boolean useTokenExposedArea =
-            MapTool.getServerPolicy().isUseIndividualFOW()
+            MapTool.getClient().getServerPolicy().isUseIndividualFOW()
                 && zone.getVisionType() != VisionType.OFF;
         int deltaX = point.x - leadToken.getX();
         int deltaY = point.y - leadToken.getY();
@@ -2101,7 +2102,7 @@ public class PointerTool extends DefaultTool {
               // arithmetic
               bounds.height = intervalX * (dx + 1) / 3 - intervalX * dx / 3;
 
-              if (!MapTool.getServerPolicy().isUseIndividualFOW()
+              if (!MapTool.getClient().getServerPolicy().isUseIndividualFOW()
                   || zone.getVisionType() == VisionType.OFF) {
                 if (fow.contains(bounds)) {
                   counter++;

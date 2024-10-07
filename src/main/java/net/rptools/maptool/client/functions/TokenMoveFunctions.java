@@ -480,7 +480,7 @@ public class TokenMoveFunctions extends AbstractFunction {
     WalkerMetric metric =
         MapTool.getClient().isPersonalServer()
             ? AppPreferences.getMovementMetric()
-            : MapTool.getServerPolicy().getMovementMetric();
+            : MapTool.getClient().getServerPolicy().getMovementMetric();
 
     ZoneRenderer zr = MapTool.getFrame().getCurrentZoneRenderer();
     Zone zone = zr.getZone();

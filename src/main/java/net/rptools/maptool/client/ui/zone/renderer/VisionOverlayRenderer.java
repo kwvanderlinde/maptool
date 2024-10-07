@@ -53,8 +53,7 @@ public class VisionOverlayRenderer {
 
       boolean isOwner = AppUtil.playerOwns(tokenUnderMouse);
       boolean tokenIsPC = tokenUnderMouse.getType() == Token.Type.PC;
-      boolean strictOwnership =
-          MapTool.getServerPolicy() != null && MapTool.getServerPolicy().useStrictTokenManagement();
+      boolean strictOwnership = MapTool.getClient().getServerPolicy().useStrictTokenManagement();
       boolean showVisionAndHalo = isOwner || view.isGMView() || (tokenIsPC && !strictOwnership);
       if (!showVisionAndHalo) {
         return;

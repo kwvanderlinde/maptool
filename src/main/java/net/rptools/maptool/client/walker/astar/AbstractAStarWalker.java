@@ -199,7 +199,7 @@ public abstract class AbstractAStarWalker extends AbstractZoneWalker {
         mbl.subtract(tokenMbl);
       }
 
-      if (MapTool.getServerPolicy().getVblBlocksMove()) {
+      if (MapTool.getClient().getServerPolicy().getVblBlocksMove()) {
         var wallVbl = zoneView.getTopology(Zone.TopologyType.WALL_VBL);
         var hillVbl = zoneView.getTopology(Zone.TopologyType.HILL_VBL);
         var pitVbl = zoneView.getTopology(Zone.TopologyType.PIT_VBL);

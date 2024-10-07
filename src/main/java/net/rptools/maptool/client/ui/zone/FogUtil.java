@@ -298,7 +298,7 @@ public class FogUtil {
       boolean owner = token.isOwner(playerName) || isGM;
 
       if ((!MapTool.getClient().isPersonalServer()
-              || MapTool.getServerPolicy().isUseIndividualViews())
+              || MapTool.getClient().getServerPolicy().isUseIndividualViews())
           && !owner) {
         continue;
       }

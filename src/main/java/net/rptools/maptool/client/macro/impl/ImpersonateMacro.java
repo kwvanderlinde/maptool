@@ -84,7 +84,7 @@ public class ImpersonateMacro implements Macro {
    */
   private boolean canImpersonate(Token token) {
     // my addition
-    if (!MapTool.getServerPolicy().isRestrictedImpersonation()) {
+    if (!MapTool.getClient().getServerPolicy().isRestrictedImpersonation()) {
       return true;
     }
     if (MapTool.getPlayer().isGM()) {
