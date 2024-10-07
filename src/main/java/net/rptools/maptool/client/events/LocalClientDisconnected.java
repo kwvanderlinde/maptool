@@ -14,4 +14,13 @@
  */
 package net.rptools.maptool.client.events;
 
-public record ServerDisconnected() {}
+import net.rptools.maptool.client.MapToolClient;
+
+/**
+ * Event raised whenever the local client is disconnected from a server (local or remote).
+ *
+ * @param client The client that disconnected.
+ * @param expected If {@code true}, the disconnection was at the request of the user and does
+ *     indicate an error.
+ */
+public record LocalClientDisconnected(MapToolClient client, boolean expected) {}

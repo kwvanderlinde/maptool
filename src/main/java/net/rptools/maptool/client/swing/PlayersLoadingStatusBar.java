@@ -19,10 +19,10 @@ import java.awt.Dimension;
 import javax.swing.Icon;
 import javax.swing.JLabel;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.events.LocalClientDisconnected;
 import net.rptools.maptool.client.events.PlayerConnected;
 import net.rptools.maptool.client.events.PlayerDisconnected;
 import net.rptools.maptool.client.events.PlayerStatusChanged;
-import net.rptools.maptool.client.events.ServerDisconnected;
 import net.rptools.maptool.client.ui.theme.Icons;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.events.MapToolEventBus;
@@ -118,7 +118,7 @@ public class PlayersLoadingStatusBar extends JLabel {
   }
 
   @Subscribe
-  private void onServerDisconnected(ServerDisconnected event) {
+  private void onServerDisconnected(LocalClientDisconnected event) {
     refreshCount();
   }
 }

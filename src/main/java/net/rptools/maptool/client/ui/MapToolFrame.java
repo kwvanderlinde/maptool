@@ -1959,7 +1959,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
   }
 
   public void close() {
-    MapTool.disconnect();
+    MapTool.getClient().close();
     MapTool.stopServer();
 
     getDockingManager()

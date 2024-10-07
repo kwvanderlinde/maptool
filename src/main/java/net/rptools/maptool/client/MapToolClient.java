@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import javax.annotation.Nullable;
 import net.rptools.clientserver.simple.connection.Connection;
+import net.rptools.maptool.client.events.LocalClientDisconnected;
 import net.rptools.maptool.client.events.PlayerConnected;
 import net.rptools.maptool.client.events.PlayerDisconnected;
 import net.rptools.maptool.events.MapToolEventBus;
@@ -133,6 +134,14 @@ public class MapToolClient {
         PlayerDatabaseFactory.getLocalPlayerDatabase(player));
   }
 
+  public boolean isRemote() {
+    return localServer == null;
+  }
+
+  public boolean isPersonal() {
+    return localServer != null && localServer.isPersonalServer();
+  }
+
   /**
    * Transition from any state except {@code newState} to {@code newState}.
    *
@@ -193,6 +202,7 @@ public class MapToolClient {
       }
 
       playerList.clear();
+      new MapToolEventBus().getMainEventBus().post(new LocalClientDisconnected(this, true));
     }
   }
 
@@ -276,16 +286,17 @@ public class MapToolClient {
      *    shutting down the server. We need to clean up the connection, stop the server, show an
      *    error to the user, and start a new personal server with the current campaign.
      */
-    var disconnectExpected = currentState == State.Closed;
 
-    if (!disconnectExpected) {
+    // If closed, this was either expected or already handled.
+    if (transitionToState(State.Closed)) {
+      // TODO This is application logic, not client logic per se.
+
       // Keep any local server campaign around in the new personal server.
       final var newPersonalServerCampaign =
           localServer == null ? CampaignFactory.createBasicCampaign() : localServer.getCampaign();
 
-      // Make sure the connection state is cleaned up since we can't count on it having been done.
-      MapTool.disconnect();
-      MapTool.stopServer();
+      playerList.clear();
+      new MapToolEventBus().getMainEventBus().post(new LocalClientDisconnected(this, false));
 
       EventQueue.invokeLater(
           () -> {

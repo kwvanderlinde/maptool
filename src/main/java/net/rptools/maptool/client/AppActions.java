@@ -2228,7 +2228,7 @@ public class AppActions {
 
                 boolean failed = false;
                 try {
-                  MapTool.disconnect();
+                  MapTool.getClient().close();
                   MapTool.stopServer();
 
                   // Right now set this is set to whatever the last server settings were. If we
@@ -2332,7 +2332,7 @@ public class AppActions {
 
           LOAD_MAP.setSeenWarning(false);
 
-          MapTool.disconnect();
+          MapTool.getClient().close();
           MapTool.stopServer();
 
           // Install a temporary gimped campaign until we get the one from the
@@ -2451,7 +2451,7 @@ public class AppActions {
 
     LOAD_MAP.setSeenWarning(false);
 
-    MapTool.disconnect();
+    MapTool.getClient().close();
     MapTool.stopServer();
 
     MapTool.getFrame().getToolbarPanel().getMapselect().setVisible(true);

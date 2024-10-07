@@ -14,6 +14,7 @@
  */
 package net.rptools.maptool.client;
 
+import com.google.common.eventbus.Subscribe;
 import com.jidesoft.plaf.LookAndFeelFactory;
 import com.jidesoft.plaf.UIDefaultsLookup;
 import com.jidesoft.plaf.basic.ThemePainter;
@@ -60,7 +61,7 @@ import net.rptools.lib.net.RPTURLStreamHandlerFactory;
 import net.rptools.lib.sound.SoundManager;
 import net.rptools.maptool.client.MapToolConnection.HandshakeCompletionObserver;
 import net.rptools.maptool.client.events.ChatMessageAdded;
-import net.rptools.maptool.client.events.ServerDisconnected;
+import net.rptools.maptool.client.events.LocalClientDisconnected;
 import net.rptools.maptool.client.functions.UserDefinedMacroFunctions;
 import net.rptools.maptool.client.swing.MapToolEventQueue;
 import net.rptools.maptool.client.swing.NoteFrame;
@@ -640,6 +641,8 @@ public class MapTool {
   }
 
   private static void initialize() {
+    new MapToolEventBus().getMainEventBus().register(new ConnectionListener());
+
     // First time
     AppSetup.install();
     LibraryManager.init();
@@ -677,7 +680,7 @@ public class MapTool {
       cmpgn.getZones().forEach(zone -> zone.setTopologyTypes(AppPreferences.getTopologyTypes()));
 
       // Stop the pre-init client/server.
-      disconnect();
+      client.close();
       stopServer();
 
       startPersonalServer(cmpgn);
@@ -1175,19 +1178,6 @@ public class MapTool {
   /** returns whether the player is hosting a server - personal servers do not count. */
   public static boolean isHostingServer() {
     return server != null && !server.isPersonalServer();
-  }
-
-  public static void disconnect() {
-    client.close();
-    new MapToolEventBus().getMainEventBus().post(new ServerDisconnected());
-
-    MapTool.getFrame()
-        .getConnectionStatusPanel()
-        .setStatus(ConnectionStatusPanel.Status.disconnected);
-
-    if (!isPersonalServer()) {
-      addLocalMessage(MessageUtil.getFormattedSystemMsg(I18N.getText("msg.info.disconnected")));
-    }
   }
 
   public static MapToolFrame getFrame() {
@@ -1756,5 +1746,24 @@ public class MapTool {
               });
         });
     // new Thread(new HeapSpy()).start();
+  }
+
+  private static final class ConnectionListener {
+    @Subscribe
+    public void onLocalClientDisconnected(LocalClientDisconnected event) {
+      if (!event.expected() && !event.client().isRemote()) {
+        // Make sure the connection state is cleaned up since we can't count on it having been done.
+        MapTool.stopServer();
+      }
+
+      MapTool.getFrame()
+          .getConnectionStatusPanel()
+          .setStatus(ConnectionStatusPanel.Status.disconnected);
+
+      if (!event.client().isPersonal()) {
+        MapTool.addLocalMessage(
+            MessageUtil.getFormattedSystemMsg(I18N.getText("msg.info.disconnected")));
+      }
+    }
   }
 }
