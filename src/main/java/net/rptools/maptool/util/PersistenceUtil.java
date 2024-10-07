@@ -806,7 +806,7 @@ public class PersistenceUtil {
       }
     }
     if (!addToServer.isEmpty()) {
-      if (!MapTool.getClient().hasLocalServer()) {
+      if (MapTool.getClient().getLocalServer().isEmpty()) {
         if (MapTool.isDevelopment()) {
           MapTool.showInformation(
               "Please report this:  (!isHostingServer() && !isPersonalServer()) == true");

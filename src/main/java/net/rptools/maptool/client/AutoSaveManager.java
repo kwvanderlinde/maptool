@@ -79,7 +79,7 @@ public class AutoSaveManager {
     if (System.currentTimeMillis() - lastAutoSave < interval) return true;
 
     // Don't autosave if we don't "own" the campaign
-    if (!MapTool.getClient().hasLocalServer()) {
+    if (MapTool.getClient().getLocalServer().isEmpty()) {
       log.debug("Skipping autosave because we're not a server"); // $NON-NLS-1$
       return true;
     }

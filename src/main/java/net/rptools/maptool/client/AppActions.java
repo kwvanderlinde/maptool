@@ -188,7 +188,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getClient().hasLocalServer();
+          return MapTool.getClient().getLocalServer().isPresent();
         }
 
         @Override
@@ -634,7 +634,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return super.isAvailable() && MapTool.getClient().hasLocalServer();
+          return super.isAvailable() && MapTool.getClient().getLocalServer().isPresent();
         }
 
         @Override
@@ -2495,7 +2495,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getClient().hasLocalServer();
+          return MapTool.getClient().getLocalServer().isPresent();
         }
 
         @Override
@@ -2802,7 +2802,7 @@ public class AppActions {
     AppState.setCampaignFile(campaignFile);
     AppPreferences.setSaveDir(campaignFile.getParentFile());
     AppMenuBar.getMruManager().addMRUCampaign(AppState.getCampaignFile());
-    if (!MapTool.getClient().hasLocalServer()) {
+    if (MapTool.getClient().getLocalServer().isEmpty()) {
       MapTool.serverCommand().setCampaignName(AppState.getCampaignName());
     }
   }

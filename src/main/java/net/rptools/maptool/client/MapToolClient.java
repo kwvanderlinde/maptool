@@ -138,10 +138,6 @@ public class MapToolClient {
     return Optional.ofNullable(localServer);
   }
 
-  public boolean hasLocalServer() {
-    return localServer != null;
-  }
-
   public boolean isPersonal() {
     return localServer != null && localServer.isPersonalServer();
   }

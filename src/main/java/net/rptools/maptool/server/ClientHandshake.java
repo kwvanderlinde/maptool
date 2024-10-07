@@ -346,7 +346,7 @@ public class ClientHandshake implements Handshake<Void>, MessageHandler {
     } else {
       MapTool.getFrame().getAssetPanel().disableAssets();
     }
-    if (!client.hasLocalServer()) {
+    if (client.getLocalServer().isEmpty()) {
       new CampaignManager().clearCampaignData();
       if (connectionSuccessfulMsg.hasGameDataDto()) {
         var dataStore = new DataStoreManager().getDefaultDataStoreForRemoteUpdate();
