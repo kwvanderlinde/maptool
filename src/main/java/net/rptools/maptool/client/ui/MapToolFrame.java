@@ -1927,7 +1927,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
   }
 
   public boolean confirmClose() {
-    return !MapTool.isHostingServer() || MapTool.confirm("msg.confirm.hostingDisconnect");
+    return !MapTool.getClient().isHosting() || MapTool.confirm("msg.confirm.hostingDisconnect");
   }
 
   public void closingMaintenance() {

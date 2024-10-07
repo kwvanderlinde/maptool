@@ -1156,11 +1156,6 @@ public class MapTool {
     return server != null && server.isPersonalServer();
   }
 
-  /** returns whether the player is hosting a server - personal servers do not count. */
-  public static boolean isHostingServer() {
-    return server != null && !server.isPersonalServer();
-  }
-
   public static MapToolFrame getFrame() {
     return clientFrame;
   }

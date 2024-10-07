@@ -130,7 +130,7 @@ public class AssetManager {
     }
 
     if (!invalidRepos.isEmpty()) {
-      if (MapTool.isHostingServer()) {
+      if (MapTool.getClient().isHosting()) {
         String tab = "    ";
         String repos = tab + String.join("\n" + tab, invalidRepos);
         MapTool.showError(I18N.getText("msg.error.host.inaccessibleRepo", repos));

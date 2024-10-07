@@ -50,7 +50,7 @@ public class ServerFunctions extends AbstractFunction {
       case "server.isserver" -> MapTool.getClient().getLocalServer().isPresent()
           ? BigDecimal.ONE
           : BigDecimal.ZERO;
-      case "server.ishosting" -> MapTool.isHostingServer() ? BigDecimal.ONE : BigDecimal.ZERO;
+      case "server.ishosting" -> MapTool.getClient().isHosting() ? BigDecimal.ONE : BigDecimal.ZERO;
       case "server.ispersonal" -> MapTool.isPersonalServer() ? BigDecimal.ONE : BigDecimal.ZERO;
       case "getmovelock" -> MapTool.getServerPolicy().isMovementLocked();
       case "setmovelock" -> {

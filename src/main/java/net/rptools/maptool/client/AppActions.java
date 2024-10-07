@@ -1263,7 +1263,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.isHostingServer() || MapTool.getPlayer().isGM();
+          return MapTool.getClient().isHosting() || MapTool.getPlayer().isGM();
         }
 
         @Override
@@ -2430,8 +2430,10 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-          if (MapTool.isHostingServer() && !MapTool.confirm("msg.confirm.hostingDisconnect"))
+          if (MapTool.getClient().isHosting()
+              && !MapTool.confirm("msg.confirm.hostingDisconnect")) {
             return;
+          }
           disconnectFromServer();
         }
       };
@@ -2447,7 +2449,7 @@ public class AppActions {
     MapTool.getFrame().setCurrentZoneRenderer(null);
 
     Campaign campaign;
-    if (MapTool.isHostingServer()) {
+    if (MapTool.getClient().isHosting()) {
       campaign = MapTool.getCampaign();
     } else {
       campaign = CampaignFactory.createBasicCampaign();
@@ -2665,7 +2667,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return (MapTool.isHostingServer() || MapTool.getPlayer().isGM());
+          return (MapTool.getClient().isHosting() || MapTool.getPlayer().isGM());
         }
 
         @Override
@@ -2682,7 +2684,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.isHostingServer() || MapTool.getPlayer().isGM();
+          return MapTool.getClient().isHosting() || MapTool.getPlayer().isGM();
         }
 
         @Override
@@ -2823,8 +2825,7 @@ public class AppActions {
         @Override
         public boolean isAvailable() {
           return MapTool.getFrame().getCurrentZoneRenderer() != null
-              && (MapTool.isHostingServer()
-                  || (MapTool.getPlayer() != null && MapTool.getPlayer().isGM()));
+              && (MapTool.getClient().isHosting() || MapTool.getPlayer().isGM());
         }
 
         @Override
@@ -2896,8 +2897,7 @@ public class AppActions {
           // return MapTool.isHostingServer() || MapTool.isPersonalServer();
           // I'd like to be able to use this instead as it's less restrictive, but it's safer to
           // disallow for now.
-          return MapTool.isHostingServer()
-              || (MapTool.getPlayer() != null && MapTool.getPlayer().isGM());
+          return MapTool.getClient().isHosting() || MapTool.getPlayer().isGM();
         }
 
         @Override
@@ -2921,8 +2921,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.isHostingServer()
-              || (MapTool.getPlayer() != null && MapTool.getPlayer().isGM());
+          return MapTool.getClient().isHosting() || MapTool.getPlayer().isGM();
         }
 
         @Override
@@ -3238,8 +3237,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.isHostingServer()
-              || (MapTool.getPlayer() != null && MapTool.getPlayer().isGM());
+          return MapTool.getClient().isHosting() || MapTool.getPlayer().isGM();
         }
 
         @Override

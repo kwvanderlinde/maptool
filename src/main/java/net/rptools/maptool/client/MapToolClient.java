@@ -138,6 +138,20 @@ public class MapToolClient {
     return Optional.ofNullable(localServer);
   }
 
+  /**
+   * Checks whether the client is hosting a non-personal server.
+   *
+   * <p>Think twice before checking this method. Personal servers are real servers and should
+   * typically be treated as any other.
+   *
+   * @return {@code true} if hosting a non-personal server.
+   */
+  // TODO Lots of callers check this before executing server commands. Ideally they would just do
+  //  the server command, and the server command would not dispatch to local.
+  public boolean isHosting() {
+    return localServer != null && !localServer.isPersonalServer();
+  }
+
   public boolean isPersonal() {
     return localServer != null && localServer.isPersonalServer();
   }

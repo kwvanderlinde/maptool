@@ -313,7 +313,7 @@ public class ToolbarPanel extends JToolBar {
             // Check if there is a map. Fix #1605
             if (zr != null) {
               boolean tokensSelected = !zr.getSelectedTokenSet().isEmpty();
-              if (tokensSelected && !c.hasUsedFogToolbar() && !MapTool.isHostingServer()) {
+              if (tokensSelected && !c.hasUsedFogToolbar() && !MapTool.getClient().isHosting()) {
                 MapTool.addLocalMessage(
                     MessageUtil.getFormattedSystemMsg(
                         I18N.getText("ToolbarPanel.manualFogActivated")));
