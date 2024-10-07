@@ -949,6 +949,8 @@ public class MapTool {
       ServerSidePlayerDatabase playerDatabase,
       LocalPlayer player)
       throws IOException {
+    // TODO If a server is already running, that's a logic error. We should force-stop it and create
+    //  a new one as the user requested.
     if (server != null && server.getState() == MapToolServer.State.Started) {
       log.error("A server is already running.", new Exception());
       showError("msg.error.alreadyRunningServer");
@@ -1723,6 +1725,9 @@ public class MapTool {
     @Subscribe
     public void onLocalServerStopped(LocalServerStopped event) {
       getFrame().getConnectionPanel().stopHosting();
+
+      // TODO I'd like to start a new server here in cases where we aren't starting a new one
+      //  otherwise. Anyway to do that?
     }
 
     @Subscribe
