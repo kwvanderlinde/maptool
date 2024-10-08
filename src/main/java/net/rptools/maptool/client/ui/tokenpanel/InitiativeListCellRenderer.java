@@ -95,7 +95,7 @@ public class InitiativeListCellRenderer extends JPanel
           RessourceManager.getBorder(Borders.RED).getRightMargin());
 
   /** Border used for name plate */
-  public static final Border NAME_BORDER = BorderFactory.createEmptyBorder(2, 4, 3, 4);
+  public static final Border NAME_BORDER = BorderFactory.createEmptyBorder(2, 4, 3, 8);
 
   /** The size of the ICON shown in the list renderer */
   public static final int ICON_SIZE = 50;
@@ -134,14 +134,22 @@ public class InitiativeListCellRenderer extends JPanel
     validate();
   }
 
+  private boolean shouldPlaceInitStateOnSecondLine() {
+    return panel.isInitStateSecondLine() && panel.isShowInitState();
+  }
+
+  private int getLineCount() {
+    if (shouldPlaceInitStateOnSecondLine()) {
+      return 2;
+    }
+
+    return 1;
+  }
+
   /*---------------------------------------------------------------------------------------------
    * ListCellRenderer Interface Methods
    *-------------------------------------------------------------------------------------------*/
 
-  /**
-   * @see javax.swing.ListCellRenderer#getListCellRendererComponent(javax.swing.JList,
-   *     java.lang.Object, int, boolean, boolean)
-   */
   @Override
   public Component getListCellRendererComponent(
       JList list, TokenInitiative ti, int index, boolean isSelected, boolean cellHasFocus) {
@@ -174,11 +182,14 @@ public class InitiativeListCellRenderer extends JPanel
     } // endif
 
     // Get the name string, add the state if displayed, then get the icon if needed
-    boolean initStateSecondLine = panel.isInitStateSecondLine() && panel.isShowInitState();
+    boolean initStateSecondLine = shouldPlaceInitStateOnSecondLine();
     String sName = (initStateSecondLine ? "<html>" : "") + ti.getToken().getName();
-    if (MapTool.getFrame().getInitiativePanel().hasGMPermission()
-        && token.getGMName() != null
-        && token.getGMName().trim().length() != 0) sName += " (" + token.getGMName().trim() + ")";
+    if (MapTool.getFrame().getInitiativePanel().hasGMPermission() && token.getGMName() != null) {
+      var gmName = token.getGMName().trim();
+      if (!gmName.isEmpty()) {
+        sName += " (" + gmName + ")";
+      }
+    }
     if (panel.isShowInitState() && ti.getState() != null)
       sName += (initStateSecondLine ? "<br>" : " = ") + ti.getState();
     if (initStateSecondLine) sName += "</html>";
@@ -225,30 +236,27 @@ public class InitiativeListCellRenderer extends JPanel
    */
   public class NameLabel extends JLabel {
 
-    /**
-     * @see javax.swing.JComponent#paintComponent(java.awt.Graphics)
-     */
     @Override
     protected void paintComponent(Graphics g) {
-      boolean initStateSecondLine = panel.isInitStateSecondLine() && panel.isShowInitState();
-      Dimension s = name.getSize();
-      int th = (textHeight + 2) * (initStateSecondLine ? 2 : 1);
+      Dimension s = getSize();
+      int th = getNamePlateHeight(getLineCount());
       backgroundImageLabel.renderLabel((Graphics2D) g, 0, (s.height - th) / 2, s.width, th);
       super.paintComponent(g);
     }
 
-    /**
-     * @see javax.swing.JComponent#getPreferredSize()
-     */
     @Override
     public Dimension getPreferredSize() {
-      boolean initStateSecondLine = panel.isInitStateSecondLine() && panel.isShowInitState();
       Dimension s = super.getPreferredSize();
-      int th = textHeight * (initStateSecondLine ? 2 : 1);
-      Insets insets = getInsets();
-      if (getIcon() != null) th = Math.max(th, getIcon().getIconHeight());
-      s.height = th + insets.top + insets.bottom - 4;
+      int th = getNamePlateHeight(getLineCount());
+      if (getIcon() != null) {
+        th = Math.max(th, getIcon().getIconHeight());
+      }
+      s.height = Math.max(s.height, th);
       return s;
+    }
+
+    private int getNamePlateHeight(int lineCount) {
+      return (textHeight + 2) * lineCount + getInsets().top + getInsets().bottom;
     }
   }
 
@@ -274,9 +282,6 @@ public class InitiativeListCellRenderer extends JPanel
 
     /** The image that is displayed when states are being shown. */
     private Image stateTokenImage;
-
-    /** Size of the text only token */
-    private final int textTokenSize = Math.max(textHeight + 4, 16);
 
     /**
      * Create the image from the token and then build an icon suitable for displaying state.
@@ -319,27 +324,16 @@ public class InitiativeListCellRenderer extends JPanel
       return bi;
     }
 
-    /**
-     * @see javax.swing.ImageIcon#getIconHeight()
-     */
     @Override
     public int getIconHeight() {
-      return panel.isShowTokenStates() ? ICON_SIZE : textTokenSize;
+      return ICON_SIZE;
     }
 
-    /**
-     * @see javax.swing.ImageIcon#getIconWidth()
-     */
     @Override
     public int getIconWidth() {
-      return panel.isShowTokenStates() ? ICON_SIZE : textTokenSize;
+      return ICON_SIZE;
     }
 
-    /**
-     * Paint the icon and then the image.
-     *
-     * @see javax.swing.ImageIcon#paintIcon(java.awt.Component, java.awt.Graphics, int, int)
-     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
 
