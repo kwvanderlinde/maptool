@@ -2448,6 +2448,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       tokensToRender.add(
           new TokenRenderInstruction(
               token,
+              isTokenInNeedOfClipping(
+                  token, zone.getGrid().getTokenCellArea(location.bounds), view.isGMView()),
               token.getFootprint(zone.getGrid()),
               location,
               footprintBounds,
@@ -2766,7 +2768,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       }
 
       timer.start("tokenlist-1a");
-      // TODO processTokens() should place this in the TokenLocation.
       Rectangle footprintBounds = instruction.bounds();
       timer.stop("tokenlist-1a");
 
@@ -2851,8 +2852,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
       // create a per token Graphics object - normally clipped, unless always visible
       Graphics2D tokenG;
-      if (isTokenInNeedOfClipping(
-          token, zone.getGrid().getTokenCellArea(location.bounds), isGMView)) {
+      if (instruction.clipIt()) {
         tokenG = (Graphics2D) clippedG.create();
       } else {
         tokenG = (Graphics2D) g.create();

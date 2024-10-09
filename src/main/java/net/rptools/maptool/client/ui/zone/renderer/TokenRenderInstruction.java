@@ -29,6 +29,7 @@ import org.javatuples.Pair;
 // - tokenImageMap
 public record TokenRenderInstruction(
     Token token,
+    boolean clipIt,
     TokenFootprint footprint,
     TokenLocation location,
     Rectangle bounds,
