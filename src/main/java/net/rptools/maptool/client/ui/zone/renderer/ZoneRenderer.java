@@ -967,10 +967,12 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       renderDrawableOverlay(g2d, drawableRenderers.get(Layer.BACKGROUND), view, drawables);
       timer.stop("drawableBackground");
       // }
+
       List<Token> background = zone.getTokensOnLayer(Layer.BACKGROUND, false);
       if (!background.isEmpty()) {
         timer.start("tokensBackground");
         renderTokens(g2d, background, view, false);
+        renderStacks(g2d, view, Layer.BACKGROUND);
         timer.stop("tokensBackground");
       }
     }
@@ -994,6 +996,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       if (!stamps.isEmpty()) {
         timer.start("tokensStamp");
         renderTokens(g2d, stamps, view, false);
+        renderStacks(g2d, view, Layer.OBJECT);
         timer.stop("tokensStamp");
       }
     }
@@ -1045,6 +1048,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         if (!stamps.isEmpty()) {
           timer.start("tokensGM");
           renderTokens(g2d, stamps, view, false);
+          renderStacks(g2d, view, Layer.GM);
           timer.stop("tokensGM");
         }
       }
@@ -1052,6 +1056,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       if (!tokens.isEmpty()) {
         timer.start("tokens");
         renderTokens(g2d, tokens, view, false);
+        renderStacks(g2d, view, Layer.TOKEN);
         timer.stop("tokens");
       }
       timer.start("unowned movement");
@@ -1097,6 +1102,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       if (!vblTokens.isEmpty()) {
         timer.start("tokens - always visible");
         renderTokens(g2d, vblTokens, view, true);
+        renderStacks(g2d, view, Layer.TOKEN);
         timer.stop("tokens - always visible");
       }
 
@@ -1108,6 +1114,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       if (!tokens.isEmpty()) {
         timer.start("tokens - figures");
         renderTokens(g2d, sortedTokens, view, true);
+        renderStacks(g2d, view, Layer.TOKEN);
         timer.stop("tokens - figures");
       }
 
@@ -2075,6 +2082,51 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     return gp.createTransformedShape(AffineTransform.getScaleInstance(getScale(), getScale()));
   }
 
+  protected void renderStacks(Graphics2D g, PlayerView view, Zone.Layer layer) {
+    if (!layer.isTokenLayer()) {
+      return;
+    }
+
+    final var timer = CodeTimer.get();
+
+    Graphics2D clippedG = g;
+    timer.start("createClip");
+    if (!view.isGMView()
+        // TODO Should we actually check zoneView.isUsingVision() for parity with later checks?
+        && visibleScreenArea != null
+        && layer.supportsVision()) {
+      clippedG = (Graphics2D) g.create();
+
+      Area visibleArea = new Area(g.getClipBounds());
+      visibleArea.intersect(visibleScreenArea);
+      clippedG.setClip(new GeneralPath(visibleArea));
+      AppPreferences.renderQuality.get().setRenderingHints(clippedG);
+    }
+    timer.stop("createClip");
+
+    // Stacks
+    boolean hideTSI = AppPreferences.hideTokenStackIndicator.get();
+    if (tokenStackMap != null && !hideTSI) { // FIXME Needed to prevent NPE but how can it be null?
+      for (Token token : tokenStackMap.keySet()) {
+        Area bounds = getTokenBounds(token);
+        if (bounds == null) {
+          // token is offscreen
+          continue;
+        }
+        BufferedImage stackImage = RessourceManager.getImage(Images.ZONE_RENDERER_STACK_IMAGE);
+        clippedG.drawImage(
+            stackImage,
+            bounds.getBounds().x + bounds.getBounds().width - stackImage.getWidth() + 2,
+            bounds.getBounds().y - 2,
+            null);
+      }
+    }
+
+    if (clippedG != g) {
+      clippedG.dispose();
+    }
+  }
+
   protected void renderTokens(
       Graphics2D g, List<Token> tokenList, PlayerView view, boolean figuresOnly) {
     final var timer = CodeTimer.get();
@@ -2123,6 +2175,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     // tokenLocationCache.clear();
 
     List<Token> tokenPostProcessing = new ArrayList<Token>(tokenList.size());
+    // region Main token rendering
     for (Token token : tokenList) {
       if (token.getShape() != Token.TokenShape.FIGURE && figuresOnly && !token.isAlwaysVisible()) {
         continue;
@@ -2500,7 +2553,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         Token.TokenShape tokenType = token.getShape();
         switch (tokenType) {
           case FIGURE:
-            if (token.getHasImageTable() && !AppPreferences.forceFacingArrow.get()) {
+            if (token.getHasImageTable() && AppPreferences.forceFacingArrow.get() == false) {
               break;
             }
             Shape arrow = getFigureFacingArrow(token.getFacing(), footprintBounds.width / 2);
@@ -2524,7 +2577,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             tokenG.translate(-fx, -fy);
             break;
           case TOP_DOWN:
-            if (!AppPreferences.forceFacingArrow.get()) {
+            if (AppPreferences.forceFacingArrow.get() == false) {
               break;
             }
           case CIRCLE:
@@ -2674,6 +2727,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       // g.drawLine(tmpsp.x, 0, tmpsp.x, getSize().height);
       // g.drawLine(0, tmpsp.y, getSize().width, tmpsp.y);
     }
+    // endregion
     timer.start("tokenlist-12");
     boolean useIF = MapTool.getServerPolicy().isUseIndividualFOW();
 
@@ -2682,6 +2736,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       movingTokens.addAll(selectionSet.getTokens());
     }
 
+    // region Token post processing: selections and labels
     // Selection and labels
     for (Token token : tokenPostProcessing) {
       TokenLocation location = tokenLocationCache.get(token);
@@ -2825,37 +2880,10 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
                 tokId));
       }
     }
+    // endregion
     timer.stop("tokenlist-12");
 
     timer.start("tokenlist-13");
-    // Stacks
-    // TODO: find a cleaner way to indicate token layer
-    if (!tokenList.isEmpty() && tokenList.get(0).getLayer().isTokenLayer()) {
-      boolean hideTSI = AppPreferences.hideTokenStackIndicator.get();
-      if (tokenStackMap != null
-          && !hideTSI) { // FIXME Needed to prevent NPE but how can it be null?
-        for (Token token : tokenStackMap.keySet()) {
-          Area bounds = getTokenBounds(token);
-          if (bounds == null) {
-            // token is offscreen
-            continue;
-          }
-          BufferedImage stackImage = RessourceManager.getImage(Images.ZONE_RENDERER_STACK_IMAGE);
-          clippedG.drawImage(
-              stackImage,
-              bounds.getBounds().x + bounds.getBounds().width - stackImage.getWidth() + 2,
-              bounds.getBounds().y - 2,
-              null);
-        }
-      }
-    }
-
-    // Markers
-    // for (TokenLocation location : getMarkerLocations()) {
-    // BufferedImage stackImage = AppStyle.markerImage;
-    // g.drawImage(stackImage, location.bounds.getBounds().x, location.bounds.getBounds().y, null);
-    // }
-
     if (clippedG != g) {
       clippedG.dispose();
     }
