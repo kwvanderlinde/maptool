@@ -981,8 +981,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       if (!background.isEmpty()) {
         timer.start("tokensBackground");
         var postProcess = processTokens(g2d, view, background, false);
+        renderPaths(g2d, postProcess);
         renderTokens(g2d, postProcess, view, Layer.BACKGROUND);
-        renderPaths(g2d, postProcess.stream().map(TokenRenderInstruction::token).toList());
         if (Layer.BACKGROUND.equals(getActiveLayer())) {
           postProcessTokens(
               g2d,
@@ -1014,8 +1014,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       if (!stamps.isEmpty()) {
         timer.start("tokensStamp");
         var postProcess = processTokens(g2d, view, stamps, false);
+        renderPaths(g2d, postProcess);
         renderTokens(g2d, postProcess, view, Layer.OBJECT);
-        renderPaths(g2d, postProcess.stream().map(TokenRenderInstruction::token).toList());
         if (Layer.OBJECT.equals(getActiveLayer())) {
           postProcessTokens(
               g2d,
@@ -1075,8 +1075,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         if (!stamps.isEmpty()) {
           timer.start("tokensGM");
           var postProcess = processTokens(g2d, view, stamps, false);
+          renderPaths(g2d, postProcess);
           renderTokens(g2d, postProcess, view, Layer.GM);
-          renderPaths(g2d, postProcess.stream().map(TokenRenderInstruction::token).toList());
           if (Layer.GM.equals(getActiveLayer())) {
             postProcessTokens(
                 g2d,
@@ -1092,8 +1092,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       if (!tokens.isEmpty()) {
         timer.start("tokens");
         var postProcess = processTokens(g2d, view, tokens, false);
+        renderPaths(g2d, postProcess);
         renderTokens(g2d, postProcess, view, Layer.TOKEN);
-        renderPaths(g2d, postProcess.stream().map(TokenRenderInstruction::token).toList());
         if (Layer.TOKEN.equals(getActiveLayer())) {
           postProcessTokens(
               g2d,
@@ -1149,8 +1149,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       if (!vblTokens.isEmpty()) {
         timer.start("tokens - always visible");
         var postProcess = processTokens(g2d, view, vblTokens, true);
+        renderPaths(g2d, postProcess);
         renderTokens(g2d, postProcess, view, Layer.TOKEN);
-        renderPaths(g2d, postProcess.stream().map(TokenRenderInstruction::token).toList());
         if (Layer.TOKEN.equals(getActiveLayer())) {
           postProcessTokens(
               g2d,
@@ -1172,8 +1172,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       if (!tokens.isEmpty()) {
         timer.start("tokens - figures");
         var postProcess = processTokens(g2d, view, sortedTokens, true);
+        renderPaths(g2d, postProcess);
         renderTokens(g2d, postProcess, view, Layer.TOKEN);
-        renderPaths(g2d, postProcess.stream().map(TokenRenderInstruction::token).toList());
         if (Layer.TOKEN.equals(getActiveLayer())) {
           postProcessTokens(
               g2d,
@@ -2434,20 +2434,28 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         }
         stateAndBarOverlays.add(Pair.with(barValue, overlay));
       }
-
       timer.stop("tokenlist-9");
+
+      timer.start("renderTokens:ShowPath");
+      Path<?> path = null;
+      if (showPathList.contains(token) && token.getLastPath() != null) {
+        path = token.getLastPath();
+      }
+      timer.stop("renderTokens:ShowPath");
 
       timer.start("tokenlist-11");
       // Keep track of which tokens have been accepted for rendering.
       tokensToRender.add(
           new TokenRenderInstruction(
               token,
+              token.getFootprint(zone.getGrid()),
               location,
               footprintBounds,
               tokenImage,
               token.getTokenOpacity() * (isTokenMoving(token) ? 0.5f : 1.0f),
               bounds,
-              stateAndBarOverlays));
+              stateAndBarOverlays,
+              path));
       timer.stop("tokenlist-11");
     }
 
@@ -2460,13 +2468,13 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     return tokensToRender;
   }
 
-  protected void renderPaths(Graphics2D g, List<Token> tokens) {
+  protected void renderPaths(Graphics2D g, List<TokenRenderInstruction> instructions) {
     // Previous path
     final var timer = CodeTimer.get();
-    for (var token : tokens) {
+    for (var instruction : instructions) {
       timer.start("renderTokens:ShowPath");
-      if (showPathList.contains(token) && token.getLastPath() != null) {
-        renderPath(g, token.getLastPath(), token.getFootprint(zone.getGrid()));
+      if (instruction.path() != null) {
+        renderPath(g, instruction.path(), instruction.footprint());
       }
       timer.stop("renderTokens:ShowPath");
     }
