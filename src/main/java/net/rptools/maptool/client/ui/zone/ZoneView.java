@@ -210,6 +210,8 @@ public class ZoneView {
    * @param view the PlayerView
    * @return the visible area
    */
+  // TODO Any callers that check this for whether to clip should also check isUsingVision() and
+  //  disable the check.
   public @Nonnull Area getVisibleArea(PlayerView view) {
     return visibleAreaMap.computeIfAbsent(
         view,
