@@ -2728,21 +2728,21 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       Zone.Layer layer) {
     final var timer = CodeTimer.get();
 
-    Graphics2D clippedG = g;
-
-    boolean isGMView = view.isGMView(); // speed things up
-
     timer.start("createClip");
-    if (!isGMView
+    var unclippedG = (Graphics2D) g.create();
+    AppPreferences.renderQuality.get().setRenderingHints(unclippedG);
+
+    Graphics2D clippedG = (Graphics2D) g.create();
+    AppPreferences.renderQuality.get().setRenderingHints(clippedG);
+    if (!view.isGMView()
         // TODO Should we actually check zoneView.isUsingVision() for parity with later checks?
         && visibleScreenArea != null
         && layer.supportsVision()) {
-      clippedG = (Graphics2D) g.create();
-
-      Area visibleArea = new Area(g.getClipBounds());
+      // TODO We shouldn't have to intersect it ourselves. We can just call:
+      //  clippedG.clip(visibleScreenArea);
+      Area visibleArea = new Area(clippedG.getClipBounds());
       visibleArea.intersect(visibleScreenArea);
       clippedG.setClip(new GeneralPath(visibleArea));
-      AppPreferences.renderQuality.get().setRenderingHints(clippedG);
     }
     timer.stop("createClip");
 
@@ -2851,13 +2851,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       timer.stop("tokenlist-6");
 
       // create a per token Graphics object - normally clipped, unless always visible
-      Graphics2D tokenG;
-      if (instruction.clipIt()) {
-        tokenG = (Graphics2D) clippedG.create();
-      } else {
-        tokenG = (Graphics2D) g.create();
-        AppPreferences.renderQuality.get().setRenderingHints(tokenG);
-      }
+      Graphics2D tokenG = (Graphics2D) (instruction.clipIt() ? clippedG : unclippedG).create();
 
       // Render Halo
       haloRenderer.renderHalo(tokenG, token, location);
@@ -2867,7 +2861,9 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
       // Finally render the token image
       timer.start("tokenlist-7");
-      if (!isGMView && zoneView.isUsingVision() && (token.getShape() == Token.TokenShape.FIGURE)) {
+      if (!view.isGMView()
+          && zoneView.isUsingVision()
+          && (token.getShape() == Token.TokenShape.FIGURE)) {
         Area cb = zone.getGrid().getTokenCellArea(location.bounds);
         if (GraphicsUtil.intersects(visibleScreenArea, cb)) {
           // the cell intersects visible area so
@@ -2893,7 +2889,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             tokenG.setComposite(oldComposite);
           }
         }
-      } else if (!isGMView && zoneView.isUsingVision() && token.isAlwaysVisible()) {
+      } else if (!view.isGMView() && zoneView.isUsingVision() && token.isAlwaysVisible()) {
         // Jamz: Always Visible tokens will get rendered again here to place on top of FoW
         Area cb = zone.getGrid().getTokenCellArea(location.bounds);
         if (GraphicsUtil.intersects(visibleScreenArea, cb)) {
@@ -3064,14 +3060,14 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
       timer.start("tokenlist-10");
       locg.dispose();
+      tokenG.dispose();
       timer.stop("tokenlist-10");
     }
     // endregion
 
     timer.start("tokenlist-13");
-    if (clippedG != g) {
-      clippedG.dispose();
-    }
+    clippedG.dispose();
+    unclippedG.dispose();
     timer.stop("tokenlist-13");
   }
 
