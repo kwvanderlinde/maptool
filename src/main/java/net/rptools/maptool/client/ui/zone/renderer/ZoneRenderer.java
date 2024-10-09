@@ -2318,45 +2318,42 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       timer.stop("renderTokens:OnscreenCheck");
 
       timer.start("tokenlist-5");
-      // TODO get()-else-put() is just computeIfAbsent().
-      BufferedImage image = tokenImageMap.get(token);
-      if (image == null) {
-        // Nothing calculated yet. Do so now.
-        // Get token image, using image table if present
-        image = getTokenImage(token);
+      tokenImageMap.computeIfAbsent(
+          token,
+          t -> {
+            // Nothing calculated yet. Do so now.
+            // Get token image, using image table if present
+            var image = getTokenImage(token);
 
-        // handle flipping
-        if (token.isFlippedX() || token.isFlippedY()) {
-          // TODO get()-else-put() is just computeIfAbsent().
-          var workImage =
-              new BufferedImage(image.getWidth(), image.getHeight(), image.getTransparency());
+            // handle flipping
+            if (token.isFlippedX() || token.isFlippedY()) {
+              // TODO get()-else-put() is just computeIfAbsent().
+              var workImage =
+                  new BufferedImage(image.getWidth(), image.getHeight(), image.getTransparency());
 
-          int workW = image.getWidth() * (token.isFlippedX() ? -1 : 1);
-          int workH = image.getHeight() * (token.isFlippedY() ? -1 : 1);
-          int workX = token.isFlippedX() ? image.getWidth() : 0;
-          int workY = token.isFlippedY() ? image.getHeight() : 0;
+              int workW = image.getWidth() * (token.isFlippedX() ? -1 : 1);
+              int workH = image.getHeight() * (token.isFlippedY() ? -1 : 1);
+              int workX = token.isFlippedX() ? image.getWidth() : 0;
+              int workY = token.isFlippedY() ? image.getHeight() : 0;
 
-          Graphics2D wig = workImage.createGraphics();
-          wig.drawImage(image, workX, workY, workW, workH, null);
-          wig.dispose();
+              Graphics2D wig = workImage.createGraphics();
+              wig.drawImage(image, workX, workY, workW, workH, null);
+              wig.dispose();
 
-          image = workImage;
-        }
-        // on the iso plane
-        if (token.isFlippedIso()) {
-          var workImage = IsometricGrid.isoImage(image);
-          // TODO This is garbage.
-          token.setHeight(workImage.getHeight());
-          token.setWidth(workImage.getWidth());
-          image = workImage;
-        }
+              image = workImage;
+            }
+            // on the iso plane
+            if (token.isFlippedIso()) {
+              var workImage = IsometricGrid.isoImage(image);
+              // TODO This is garbage.
+              token.setHeight(workImage.getHeight());
+              token.setWidth(workImage.getWidth());
+              image = workImage;
+            }
 
-        tokenImageMap.put(token, image);
-      }
+            return image;
+          });
       timer.stop("tokenlist-5");
-
-      timer.start("tokenlist-5a");
-      timer.stop("tokenlist-5a");
 
       timer.start("tokenlist-11");
       // Keep track of which tokens have been accepted for rendering.
