@@ -1766,7 +1766,7 @@ public class Zone {
         copy.add(token);
       }
     }
-    return Collections.unmodifiableList(copy);
+    return copy;
   }
 
   public List<Token> getTokensOnLayer(Layer layer) {
