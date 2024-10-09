@@ -2850,7 +2850,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       }
       timer.stop("tokenlist-6");
 
-      // create a per token Graphics object - normally clipped, unless always visible
+      // create a per token Graphics object - normally clipped, unless always visible or figure
       Graphics2D tokenG = (Graphics2D) (instruction.clipIt() ? clippedG : unclippedG).create();
 
       // Render Halo
@@ -2861,71 +2861,12 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
       // Finally render the token image
       timer.start("tokenlist-7");
-      if (!view.isGMView()
-          && zoneView.isUsingVision()
-          && (token.getShape() == Token.TokenShape.FIGURE)) {
-        Area cb = zone.getGrid().getTokenCellArea(location.bounds);
-        if (GraphicsUtil.intersects(visibleScreenArea, cb)) {
-          // the cell intersects visible area so
-          if (zone.getGrid().checkCenterRegion(cb.getBounds(), visibleScreenArea)) {
-            // if we can see the centre, draw the whole token
-            Composite oldComposite = tokenG.getComposite();
-            if (opacity < 1.0f) {
-              tokenG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
-            }
-            tokenG.drawImage(image, at, this);
-            tokenG.setComposite(oldComposite);
-            // g.draw(cb); // debugging
-          } else {
-            // else draw the clipped token
-            Area cellArea = new Area(visibleScreenArea);
-            cellArea.intersect(cb);
-            tokenG.setClip(cellArea);
-            Composite oldComposite = tokenG.getComposite();
-            if (opacity < 1.0f) {
-              tokenG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
-            }
-            tokenG.drawImage(image, at, this);
-            tokenG.setComposite(oldComposite);
-          }
-        }
-      } else if (!view.isGMView() && zoneView.isUsingVision() && token.isAlwaysVisible()) {
-        // Jamz: Always Visible tokens will get rendered again here to place on top of FoW
-        Area cb = zone.getGrid().getTokenCellArea(location.bounds);
-        if (GraphicsUtil.intersects(visibleScreenArea, cb)) {
-          // if we can see a portion of the stamp/token, draw the whole thing, defaults to 2/9ths
-          if (zone.getGrid()
-              .checkRegion(cb.getBounds(), visibleScreenArea, token.getAlwaysVisibleTolerance())) {
-            Composite oldComposite = tokenG.getComposite();
-            if (opacity < 1.0f) {
-              tokenG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
-            }
-            tokenG.drawImage(image, at, this);
-            tokenG.setComposite(oldComposite);
-          } else {
-            // else draw the clipped stamp/token
-            // This will only show the part of the token that does not have VBL on it
-            // as any VBL on the token will block LOS, affecting the clipping.
-            Area cellArea = new Area(visibleScreenArea);
-            cellArea.intersect(cb);
-            tokenG.setClip(cellArea);
-            Composite oldComposite = tokenG.getComposite();
-            if (opacity < 1.0f) {
-              tokenG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
-            }
-            tokenG.drawImage(image, at, this);
-            tokenG.setComposite(oldComposite);
-          }
-        }
-      } else {
-        // fallthrough normal token rendered against visible area
-        Composite oldComposite = tokenG.getComposite();
-        if (opacity < 1.0f) {
-          tokenG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
-        }
-        tokenG.drawImage(image, at, this);
-        tokenG.setComposite(oldComposite);
+      var originalTokenGComposite = tokenG.getComposite();
+      if (opacity < 1.0f) {
+        tokenG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
       }
+      tokenG.drawImage(image, at, this);
+      tokenG.setComposite(originalTokenGComposite);
       timer.stop("tokenlist-7");
 
       timer.start("tokenlist-8");
