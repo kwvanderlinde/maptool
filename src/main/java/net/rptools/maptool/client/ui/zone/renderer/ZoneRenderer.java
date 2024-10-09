@@ -971,8 +971,12 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       List<Token> background = zone.getTokensOnLayer(Layer.BACKGROUND, false);
       if (!background.isEmpty()) {
         timer.start("tokensBackground");
-        var postProcess = renderTokens(g2d, background, view, false);
-        postProcessTokens(g2d, view, Layer.BACKGROUND, postProcess);
+        var postProcess = processTokens(g2d, view, background, false);
+        renderTokens(g2d, postProcess, view, false);
+        renderPaths(g2d, postProcess);
+        if (Layer.BACKGROUND.equals(getActiveLayer())) {
+          postProcessTokens(g2d, view, Layer.BACKGROUND, postProcess);
+        }
         renderStacks(g2d, view, Layer.BACKGROUND);
         timer.stop("tokensBackground");
       }
@@ -996,8 +1000,12 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       List<Token> stamps = zone.getTokensOnLayer(Layer.OBJECT, false);
       if (!stamps.isEmpty()) {
         timer.start("tokensStamp");
-        var postProcess = renderTokens(g2d, stamps, view, false);
-        postProcessTokens(g2d, view, Layer.OBJECT, postProcess);
+        var postProcess = processTokens(g2d, view, stamps, false);
+        renderTokens(g2d, postProcess, view, false);
+        renderPaths(g2d, postProcess);
+        if (Layer.OBJECT.equals(getActiveLayer())) {
+          postProcessTokens(g2d, view, Layer.OBJECT, postProcess);
+        }
         renderStacks(g2d, view, Layer.OBJECT);
         timer.stop("tokensStamp");
       }
@@ -1049,8 +1057,12 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         List<Token> stamps = zone.getTokensOnLayer(Layer.GM, false);
         if (!stamps.isEmpty()) {
           timer.start("tokensGM");
-          var postProcess = renderTokens(g2d, stamps, view, false);
-          postProcessTokens(g2d, view, Layer.GM, postProcess);
+          var postProcess = processTokens(g2d, view, stamps, false);
+          renderTokens(g2d, postProcess, view, false);
+          renderPaths(g2d, postProcess);
+          if (Layer.GM.equals(getActiveLayer())) {
+            postProcessTokens(g2d, view, Layer.GM, postProcess);
+          }
           renderStacks(g2d, view, Layer.GM);
           timer.stop("tokensGM");
         }
@@ -1058,8 +1070,12 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       List<Token> tokens = zone.getTokensOnLayer(Layer.TOKEN, false);
       if (!tokens.isEmpty()) {
         timer.start("tokens");
-        var postProcess = renderTokens(g2d, tokens, view, false);
-        postProcessTokens(g2d, view, Layer.TOKEN, postProcess);
+        var postProcess = processTokens(g2d, view, tokens, false);
+        renderTokens(g2d, postProcess, view, false);
+        renderPaths(g2d, postProcess);
+        if (Layer.TOKEN.equals(getActiveLayer())) {
+          postProcessTokens(g2d, view, Layer.TOKEN, postProcess);
+        }
         renderStacks(g2d, view, Layer.TOKEN);
         timer.stop("tokens");
       }
@@ -1107,8 +1123,12 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       List<Token> vblTokens = zone.getTokensAlwaysVisible();
       if (!vblTokens.isEmpty()) {
         timer.start("tokens - always visible");
-        var postProcess = renderTokens(g2d, vblTokens, view, true);
-        postProcessTokens(g2d, view, Layer.TOKEN, postProcess);
+        var postProcess = processTokens(g2d, view, vblTokens, true);
+        renderTokens(g2d, postProcess, view, true);
+        renderPaths(g2d, postProcess);
+        if (Layer.TOKEN.equals(getActiveLayer())) {
+          postProcessTokens(g2d, view, Layer.TOKEN, postProcess);
+        }
         renderStacks(g2d, view, Layer.TOKEN);
         timer.stop("tokens - always visible");
       }
@@ -1122,8 +1142,12 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       sortedTokens.sort(zone.getFigureZOrderComparator());
       if (!tokens.isEmpty()) {
         timer.start("tokens - figures");
-        var postProcess = renderTokens(g2d, sortedTokens, view, true);
-        postProcessTokens(g2d, view, Layer.TOKEN, postProcess);
+        var postProcess = processTokens(g2d, view, sortedTokens, true);
+        renderTokens(g2d, postProcess, view, true);
+        renderPaths(g2d, postProcess);
+        if (Layer.TOKEN.equals(getActiveLayer())) {
+          postProcessTokens(g2d, view, Layer.TOKEN, postProcess);
+        }
         renderStacks(g2d, view, Layer.TOKEN);
         timer.stop("tokens - figures");
       }
@@ -2090,6 +2114,290 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             facingArrow.createTransformedShape(
                 AffineTransform.getRotateInstance(-Math.toRadians(angle)));
     return gp.createTransformedShape(AffineTransform.getScaleInstance(getScale(), getScale()));
+  }
+
+  // TODO We shouldn't need Graphics2D, just its clip bounds for this one disgusting check.
+  //  And even that should not be necessary, since it should be equivalent to the viewport.
+  // TODO PlayerView before List<Token>
+  // TODO Get rid of any rendering concerns. Return list of tokens that ought to be rendered.
+  //  Document which caches are populated or used.
+
+  /**
+   * Identifes all tokens required for rendering.
+   *
+   * <p>Populates {@link #tokenStackMap}, {@link #tokenLocationCache}, {@link #markerLocationList},
+   * {@link #tokenStackMap}, {@link #flipImageMap}, {@link #flipIsoImageMap}, {@link
+   * #visibleTokenSet}, and {@link #tokenLocationMap} (by appending to {@link
+   * #getTokenLocations(net.rptools.maptool.model.Zone.Layer)}).
+   *
+   * @param g
+   * @param tokenList
+   * @param view
+   * @param figuresOnly
+   * @return The subset of {@code tokenList} that need to be rendered.
+   */
+  protected List<Token> processTokens(
+      Graphics2D g, PlayerView view, List<Token> tokenList, boolean figuresOnly) {
+    final var timer = CodeTimer.get();
+
+    // This is in screen coordinates
+    Rectangle viewport = new Rectangle(0, 0, getSize().width, getSize().height);
+
+    // TODO Can probably replace clipBounds with viewport. In practice I think they should be the
+    //  same. And if they're not, that indicates we are rendering a subset of the screen, therefore
+    //  the clip bounds is the wrong choich.
+    Rectangle clipBounds = g.getClipBounds();
+    double scale = zoneScale.getScale();
+    Set<GUID> tempVisTokens = new HashSet<GUID>();
+
+    // calculations
+    boolean calculateStacks =
+        !tokenList.isEmpty() && tokenList.get(0).getLayer().isTokenLayer() && tokenStackMap == null;
+    if (calculateStacks) {
+      tokenStackMap = new HashMap<Token, Set<Token>>();
+    }
+
+    // TODO: I (Craig) have commented out the clearing of the tokenLocationCache.clear() for now as
+    // it introduced a more serious bug with resizing.
+
+    // Clearing the cache here removes a bug in which campaigns are not initially drawn. Why?
+    // Is that because the rendering pipeline thinks they've already been drawn so isn't forced to
+    // re-render them? So how does this cache get filled then? It's not part of the campaign
+    // state...
+    // tokenLocationCache.clear();
+
+    List<Token> tokensToRender = new ArrayList<Token>(tokenList.size());
+    for (Token token : tokenList) {
+      if (token.getShape() != Token.TokenShape.FIGURE && figuresOnly && !token.isAlwaysVisible()) {
+        continue;
+      }
+
+      timer.start("tokenlist-1");
+      try {
+        if (token.getLayer().isStampLayer() && isTokenMoving(token)) {
+          continue;
+        }
+        // Don't bother if it's not visible
+        // NOTE: Not going to use zone.isTokenVisible as it is very slow. In fact, it's faster
+        // to just draw the tokens and let them be clipped
+        if ((!token.isVisible() || !token.getLayer().isVisibleToPlayers()) && !view.isGMView()) {
+          continue;
+        }
+        if (token.isVisibleOnlyToOwner() && !AppUtil.playerOwns(token)) {
+          continue;
+        }
+      } finally {
+        // This ensures that the timer is always stopped
+        timer.stop("tokenlist-1");
+      }
+      timer.start("tokenlist-1.1");
+      TokenLocation location = tokenLocationCache.get(token);
+      if (location != null && !location.maybeOnscreen(viewport)) {
+        timer.stop("tokenlist-1.1");
+        continue;
+      }
+      timer.stop("tokenlist-1.1");
+
+      timer.start("tokenlist-1a");
+      Rectangle footprintBounds = token.getBounds(zone);
+      timer.stop("tokenlist-1a");
+
+      timer.start("tokenlist-1b");
+      // get token image, using image table if present
+      BufferedImage image = getTokenImage(token);
+      timer.stop("tokenlist-1b");
+
+      timer.start("tokenlist-1c");
+      double scaledWidth = (footprintBounds.width * scale);
+      double scaledHeight = (footprintBounds.height * scale);
+
+      // if (!token.isStamp()) {
+      // // Fit inside the grid
+      // scaledWidth --;
+      // scaledHeight --;
+      // }
+
+      ScreenPoint tokenScreenLocation =
+          ScreenPoint.fromZonePoint(this, footprintBounds.x, footprintBounds.y);
+      timer.stop("tokenlist-1c");
+
+      timer.start("tokenlist-1d");
+      // Tokens are centered on the image center point
+      // TODO Erm... only kind of??
+      double x = tokenScreenLocation.x;
+      double y = tokenScreenLocation.y;
+
+      Rectangle2D origBounds = new Rectangle2D.Double(x, y, scaledWidth, scaledHeight);
+      Area tokenBounds = new Area(origBounds);
+      if (token.hasFacing() && token.getShape() == Token.TokenShape.TOP_DOWN) {
+        double sx = scaledWidth / 2 + x - (token.getAnchor().x * scale);
+        double sy = scaledHeight / 2 + y - (token.getAnchor().y * scale);
+        tokenBounds.transform(
+            AffineTransform.getRotateInstance(
+                Math.toRadians(token.getFacingInDegrees()), sx, sy)); // facing
+        // defaults
+        // to
+        // down,
+        // or
+        // -90
+        // degrees
+      }
+      timer.stop("tokenlist-1d");
+
+      timer.start("tokenlist-1e");
+      try {
+        location =
+            new TokenLocation(
+                this,
+                tokenBounds,
+                origBounds,
+                token,
+                x,
+                y,
+                footprintBounds.width,
+                footprintBounds.height,
+                scaledWidth,
+                scaledHeight);
+        tokenLocationCache.put(token, location);
+        // Too small ?
+        if (location.scaledHeight < 1 || location.scaledWidth < 1) {
+          continue;
+        }
+        // Vision visibility
+        if (!view.isGMView() && token.getLayer().supportsVision() && zoneView.isUsingVision()) {
+          if (!GraphicsUtil.intersects(visibleScreenArea, location.bounds)) {
+            continue;
+          }
+        }
+      } finally {
+        // This ensures that the timer is always stopped
+        timer.stop("tokenlist-1e");
+      }
+      // Markers
+      timer.start("renderTokens:Markers");
+      // System.out.println("Token " + token.getName() + " is a marker? " + token.isMarker());
+      if (token.isMarker() && canSeeMarker(token)) {
+        markerLocationList.add(location);
+      }
+      timer.stop("renderTokens:Markers");
+
+      // Stacking check
+      if (calculateStacks) {
+        timer.start("tokenStack");
+        // System.out.println(token.getName() + " - " + location.boundsCache);
+
+        Set<Token> tokenStackSet = null;
+        for (TokenLocation currLocation : getTokenLocations(Zone.Layer.TOKEN)) {
+          // Are we covering anyone ?
+          // System.out.println("\t" + currLocation.token.getName() + " - " +
+          // location.boundsCache.contains(currLocation.boundsCache));
+          if (location.boundsCache.contains(currLocation.boundsCache)) {
+            if (tokenStackSet == null) {
+              tokenStackSet = new HashSet<Token>();
+              // Sometimes got NPE here
+              if (tokenStackMap == null) {
+                tokenStackMap = new HashMap<Token, Set<Token>>();
+              }
+              tokenStackMap.put(token, tokenStackSet);
+              tokenStackSet.add(token);
+            }
+            tokenStackSet.add(currLocation.token);
+
+            if (tokenStackMap.get(currLocation.token) != null) {
+              tokenStackSet.addAll(tokenStackMap.get(currLocation.token));
+              tokenStackMap.remove(currLocation.token);
+            }
+          }
+        }
+        timer.stop("tokenStack");
+      }
+
+      // Keep track of the location on the screen
+      // Note the order -- the top most token is at the end of the list
+      timer.start("renderTokens:Locations");
+      Zone.Layer layer = token.getLayer();
+      List<TokenLocation> locationList = getTokenLocations(layer);
+      if (locationList != null) {
+        locationList.add(location);
+      }
+      timer.stop("renderTokens:Locations");
+
+      // Add the token to our visible set.
+      tempVisTokens.add(token.getId());
+
+      // Only draw if we're visible
+      // NOTE: this takes place AFTER resizing the image, that's so that the user
+      // suffers a pause only once while scaling, and not as new tokens are
+      // scrolled onto the screen
+      timer.start("renderTokens:OnscreenCheck");
+      if (!location.bounds.intersects(clipBounds)) {
+        timer.stop("renderTokens:OnscreenCheck");
+        continue;
+      }
+      timer.stop("renderTokens:OnscreenCheck");
+
+      timer.start("tokenlist-5");
+      // handle flipping
+      BufferedImage workImage = image;
+      if (token.isFlippedX() || token.isFlippedY()) {
+        workImage = flipImageMap.get(token);
+        if (workImage == null) {
+          workImage =
+              new BufferedImage(image.getWidth(), image.getHeight(), image.getTransparency());
+
+          int workW = image.getWidth() * (token.isFlippedX() ? -1 : 1);
+          int workH = image.getHeight() * (token.isFlippedY() ? -1 : 1);
+          int workX = token.isFlippedX() ? image.getWidth() : 0;
+          int workY = token.isFlippedY() ? image.getHeight() : 0;
+
+          Graphics2D wig = workImage.createGraphics();
+          wig.drawImage(image, workX, workY, workW, workH, null);
+          wig.dispose();
+
+          flipImageMap.put(token, workImage);
+        }
+      }
+      timer.stop("tokenlist-5");
+
+      timer.start("tokenlist-5a");
+      if (token.isFlippedIso()) {
+        if (flipIsoImageMap.get(token) == null) {
+          workImage = IsometricGrid.isoImage(workImage);
+          flipIsoImageMap.put(token, workImage);
+        } else {
+          workImage = flipIsoImageMap.get(token);
+        }
+        // TODO This is garbage.
+        token.setHeight(workImage.getHeight());
+        token.setWidth(workImage.getWidth());
+      }
+      timer.stop("tokenlist-5a");
+
+      timer.start("tokenlist-11");
+      // Keep track of which tokens have been accepted for rendering.
+      tokensToRender.add(token);
+      timer.stop("tokenlist-11");
+    }
+
+    if (figuresOnly) {
+      tempVisTokens.addAll(visibleTokenSet);
+    }
+
+    visibleTokenSet = Collections.unmodifiableSet(tempVisTokens);
+
+    return tokensToRender;
+  }
+
+  protected void renderPaths(Graphics2D g, List<Token> tokens) {
+    // Previous path
+    final var timer = CodeTimer.get();
+    for (var token : tokens) {
+      timer.start("renderTokens:ShowPath");
+      if (showPathList.contains(token) && token.getLastPath() != null) {
+        renderPath(g, token.getLastPath(), token.getFootprint(zone.getGrid()));
+      }
+      timer.stop("renderTokens:ShowPath");
+    }
   }
 
   protected void postProcessTokens(
