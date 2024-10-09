@@ -2880,6 +2880,11 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       // Facing ?
       // TODO: Optimize this by doing it once per token per facing
       if (token.hasFacing()) {
+        var facingG = (Graphics2D) tokenG.create();
+        double cx = location.x + location.scaledWidth / 2;
+        double cy = location.y + location.scaledHeight / 2;
+        facingG.translate(cx, cy);
+
         Token.TokenShape tokenType = token.getShape();
         switch (tokenType) {
           case FIGURE:
@@ -2892,19 +2897,14 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
               arrow = getCircleFacingArrow(token.getFacing(), footprintBounds.width / 2);
             }
 
-            double fx = location.x + location.scaledWidth / 2;
-            double fy = location.y + location.scaledHeight / 2;
-
-            tokenG.translate(fx, fy);
             if (token.getFacing() < 0) {
-              tokenG.setColor(Color.yellow);
+              facingG.setColor(Color.yellow);
             } else {
-              tokenG.setColor(ZoneRendererConstants.TRANSLUCENT_YELLOW);
+              facingG.setColor(ZoneRendererConstants.TRANSLUCENT_YELLOW);
             }
-            tokenG.fill(arrow);
-            tokenG.setColor(Color.darkGray);
-            tokenG.draw(arrow);
-            tokenG.translate(-fx, -fy);
+            facingG.fill(arrow);
+            facingG.setColor(Color.darkGray);
+            facingG.draw(arrow);
             break;
           case TOP_DOWN:
             if (AppPreferences.forceFacingArrow.get() == false) {
@@ -2916,21 +2916,14 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
               arrow = getFigureFacingArrow(token.getFacing(), footprintBounds.width / 2);
             }
 
-            double cx = location.x + location.scaledWidth / 2;
-            double cy = location.y + location.scaledHeight / 2;
-
-            tokenG.translate(cx, cy);
-            tokenG.setColor(Color.yellow);
-            tokenG.fill(arrow);
-            tokenG.setColor(Color.darkGray);
-            tokenG.draw(arrow);
-            tokenG.translate(-cx, -cy);
+            facingG.setColor(Color.yellow);
+            facingG.fill(arrow);
+            facingG.setColor(Color.darkGray);
+            facingG.draw(arrow);
             break;
           case SQUARE:
             if (zone.getGrid().isIsometric()) {
               arrow = getFigureFacingArrow(token.getFacing(), footprintBounds.width / 2);
-              cx = location.x + location.scaledWidth / 2;
-              cy = location.y + location.scaledHeight / 2;
             } else {
               int facing = token.getFacing();
               while (facing < 0) {
@@ -2940,9 +2933,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
               // of breaking something, so change this when it's safe to break stuff
               facing %= 360;
               arrow = getSquareFacingArrow(facing, footprintBounds.width / 2);
-
-              cx = location.x + location.scaledWidth / 2;
-              cy = location.y + location.scaledHeight / 2;
 
               // Find the edge of the image
               // TODO: Man, this is horrible, there's gotta be a better way to do this
@@ -2961,18 +2951,18 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
                   yp = -yp;
                 }
               }
-              cx += xp;
-              cy -= yp;
+
+              // Additional tweak to position. For reasons.
+              facingG.translate(xp, -yp);
             }
 
-            tokenG.translate(cx, cy);
-            tokenG.setColor(Color.yellow);
-            tokenG.fill(arrow);
-            tokenG.setColor(Color.darkGray);
-            tokenG.draw(arrow);
-            tokenG.translate(-cx, -cy);
+            facingG.setColor(Color.yellow);
+            facingG.fill(arrow);
+            facingG.setColor(Color.darkGray);
+            facingG.draw(arrow);
             break;
         }
+        facingG.dispose();
       }
       timer.stop("tokenlist-8");
 
