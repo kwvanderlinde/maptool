@@ -120,8 +120,18 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   private boolean showAllPaths = true; // Jamz: new option to show path
   // Optimizations
   final Map<GUID, BufferedImage> labelRenderingCache = new HashMap<GUID, BufferedImage>();
-  private final Map<Token, BufferedImage> flipImageMap = new HashMap<Token, BufferedImage>();
-  private final Map<Token, BufferedImage> flipIsoImageMap = new HashMap<Token, BufferedImage>();
+
+  /**
+   * TODO {@link #tokenImageMap}, {@link #tokenLocationCache}, {@link #markerLocationList}, {@link
+   * #tokenStackMap}, {@link #tokenStackMap} should all be a single map mapping a token to the
+   * various properties calculated by {@link #processTokens(java.awt.Graphics2D,
+   * net.rptools.maptool.client.ui.zone.PlayerView, java.util.List, boolean)}. This would serve as
+   * the render instructions for {@link #renderTokens(java.awt.Graphics2D, java.util.List,
+   * net.rptools.maptool.client.ui.zone.PlayerView)}. At least until such time as this rendering is
+   * more split up.
+   */
+  private final Map<Token, BufferedImage> tokenImageMap = new HashMap<>();
+
   private Token tokenUnderMouse;
 
   private ScreenPoint pointUnderMouse;
@@ -578,9 +588,9 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   }
 
   /**
-   * Remove the token from: {@link #tokenLocationCache}, {@link #flipImageMap}, {@link
-   * #flipIsoImageMap}, {@link #labelRenderingCache}. Set the {@link #visibleScreenArea}, {@link
-   * #tokenStackMap} to null. Flush the token from {@link #zoneView}.
+   * Remove the token from: {@link #tokenLocationCache}, {@link #tokenImageMap}, {@link
+   * #labelRenderingCache}. Set the {@link #visibleScreenArea}, {@link #tokenStackMap} to null.
+   * Flush the token from {@link #zoneView}.
    *
    * @param token the token to flush
    */
@@ -590,8 +600,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     synchronized (tokenLocationCache) {
       tokenLocationCache.remove(token);
     }
-    flipImageMap.remove(token);
-    flipIsoImageMap.remove(token);
+    tokenImageMap.remove(token);
     labelRenderingCache.remove(token.getId());
 
     // This should be smarter, but whatever
@@ -626,8 +635,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     // tokenLocationCache.clear();
 
     flushDrawableRenderer();
-    flipImageMap.clear();
-    flipIsoImageMap.clear();
+    tokenImageMap.clear();
     zoneView.flushFog();
 
     isLoaded = false;
@@ -1440,9 +1448,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             ScreenPoint.fromZonePoint(
                 this, footprintBounds.x + set.getOffsetX(), footprintBounds.y + set.getOffsetY());
 
-        // get token image, using image table if present
-        BufferedImage image = getTokenImage(token);
-
         int scaledWidth = (int) (footprintBounds.width * scale);
         int scaledHeight = (int) (footprintBounds.height * scale);
 
@@ -1475,35 +1480,18 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             }
           }
         }
-        // handle flipping
-        BufferedImage workImage = image;
-        if (token.isFlippedX() || token.isFlippedY()) {
-          workImage =
-              new BufferedImage(image.getWidth(), image.getHeight(), image.getTransparency());
 
-          int workW = image.getWidth() * (token.isFlippedX() ? -1 : 1);
-          int workH = image.getHeight() * (token.isFlippedY() ? -1 : 1);
-          int workX = token.isFlippedX() ? image.getWidth() : 0;
-          int workY = token.isFlippedY() ? image.getHeight() : 0;
+        // processTokens() should have populated the image. Skip if not.
+        BufferedImage image = tokenImageMap.get(token);
+        if (image == null) {
+          // TODO Distinguish the log message.
+          log.warn("Missing image for token {}", token.getId());
+          continue;
+        }
 
-          Graphics2D wig = workImage.createGraphics();
-          wig.drawImage(image, workX, workY, workW, workH, null);
-          wig.dispose();
-        }
-        // on the iso plane
-        if (token.isFlippedIso()) {
-          if (flipIsoImageMap.get(token) == null) {
-            workImage = IsometricGrid.isoImage(workImage);
-          } else {
-            workImage = flipIsoImageMap.get(token);
-          }
-          token.setHeight(workImage.getHeight());
-          token.setWidth(workImage.getWidth());
-          footprintBounds = token.getBounds(zone);
-        }
         // Draw token
         double iso_ho = 0;
-        Dimension imgSize = new Dimension(workImage.getWidth(), workImage.getHeight());
+        Dimension imgSize = new Dimension(image.getWidth(), image.getHeight());
         if (token.getShape() == TokenShape.FIGURE) {
           double th = token.getHeight() * (double) footprintBounds.width / token.getWidth();
           iso_ho = footprintBounds.height - th;
@@ -1547,22 +1535,20 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         }
         if (token.isSnapToScale()) {
           at.scale(
-              (double) imgSize.width / workImage.getWidth(),
-              (double) imgSize.height / workImage.getHeight());
+              (double) imgSize.width / image.getWidth(),
+              (double) imgSize.height / image.getHeight());
           at.scale(getScale(), getScale());
         } else {
           if (token.getShape() == TokenShape.FIGURE) {
             at.scale(
-                (double) scaledWidth / workImage.getWidth(),
-                (double) scaledWidth / workImage.getWidth());
+                (double) scaledWidth / image.getWidth(), (double) scaledWidth / image.getWidth());
           } else {
             at.scale(
-                (double) scaledWidth / workImage.getWidth(),
-                (double) scaledHeight / workImage.getHeight());
+                (double) scaledWidth / image.getWidth(), (double) scaledHeight / image.getHeight());
           }
         }
 
-        g.drawImage(workImage, at, this);
+        g.drawImage(image, at, this);
 
         // Other details.
         // If the token is visible on the screen it will be in the location cache
@@ -2126,8 +2112,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    * Identifes all tokens required for rendering.
    *
    * <p>Populates {@link #tokenStackMap}, {@link #tokenLocationCache}, {@link #markerLocationList},
-   * {@link #tokenStackMap}, {@link #flipImageMap}, {@link #flipIsoImageMap}, {@link
-   * #visibleTokenSet}, and {@link #tokenLocationMap} (by appending to {@link
+   * {@link #tokenStackMap}, {@link #tokenImageMap}, {@link #visibleTokenSet}, and {@link
+   * #tokenLocationMap} (by appending to {@link
    * #getTokenLocations(net.rptools.maptool.model.Zone.Layer)}).
    *
    * @param g
@@ -2201,11 +2187,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       timer.start("tokenlist-1a");
       Rectangle footprintBounds = token.getBounds(zone);
       timer.stop("tokenlist-1a");
-
-      timer.start("tokenlist-1b");
-      // get token image, using image table if present
-      BufferedImage image = getTokenImage(token);
-      timer.stop("tokenlist-1b");
 
       timer.start("tokenlist-1c");
       double scaledWidth = (footprintBounds.width * scale);
@@ -2337,12 +2318,17 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       timer.stop("renderTokens:OnscreenCheck");
 
       timer.start("tokenlist-5");
-      // handle flipping
-      BufferedImage workImage = image;
-      if (token.isFlippedX() || token.isFlippedY()) {
-        workImage = flipImageMap.get(token);
-        if (workImage == null) {
-          workImage =
+      // TODO get()-else-put() is just computeIfAbsent().
+      BufferedImage image = tokenImageMap.get(token);
+      if (image == null) {
+        // Nothing calculated yet. Do so now.
+        // Get token image, using image table if present
+        image = getTokenImage(token);
+
+        // handle flipping
+        if (token.isFlippedX() || token.isFlippedY()) {
+          // TODO get()-else-put() is just computeIfAbsent().
+          var workImage =
               new BufferedImage(image.getWidth(), image.getHeight(), image.getTransparency());
 
           int workW = image.getWidth() * (token.isFlippedX() ? -1 : 1);
@@ -2354,23 +2340,22 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           wig.drawImage(image, workX, workY, workW, workH, null);
           wig.dispose();
 
-          flipImageMap.put(token, workImage);
+          image = workImage;
         }
+        // on the iso plane
+        if (token.isFlippedIso()) {
+          var workImage = IsometricGrid.isoImage(image);
+          // TODO This is garbage.
+          token.setHeight(workImage.getHeight());
+          token.setWidth(workImage.getWidth());
+          image = workImage;
+        }
+
+        tokenImageMap.put(token, image);
       }
       timer.stop("tokenlist-5");
 
       timer.start("tokenlist-5a");
-      if (token.isFlippedIso()) {
-        if (flipIsoImageMap.get(token) == null) {
-          workImage = IsometricGrid.isoImage(workImage);
-          flipIsoImageMap.put(token, workImage);
-        } else {
-          workImage = flipIsoImageMap.get(token);
-        }
-        // TODO This is garbage.
-        token.setHeight(workImage.getHeight());
-        token.setWidth(workImage.getWidth());
-      }
       timer.stop("tokenlist-5a");
 
       timer.start("tokenlist-11");
@@ -2679,34 +2664,19 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       timer.stop("tokenlist-1a");
 
       timer.start("tokenlist-5");
-      // handle flipping
-      // TODO The final flipped image (if needed) should be stored by processTokens() and looked up
-      // here.
-      BufferedImage workImage = getTokenImage(token);
-      if (token.isFlippedX() || token.isFlippedY()) {
-        var flip = flipImageMap.get(token);
-        // Should be populated already, but check to be sure.
-        if (flip != null) {
-          workImage = flip;
-        }
+      // processTokens() should have populated the image. Skip if not.
+      BufferedImage image = tokenImageMap.get(token);
+      if (image == null) {
+        log.warn("Missing image for token {}", token.getId());
+        continue;
       }
       timer.stop("tokenlist-5");
-
-      timer.start("tokenlist-5a");
-      if (token.isFlippedIso()) {
-        var flipIso = flipIsoImageMap.get(token);
-        // Should be populated already, but check to be sure.
-        if (flipIso != null) {
-          workImage = flipIso;
-        }
-      }
-      timer.stop("tokenlist-5a");
 
       timer.start("tokenlist-6");
       // Position
       // For Isometric Grid we alter the height offset
       double iso_ho = 0;
-      Dimension imgSize = new Dimension(workImage.getWidth(), workImage.getHeight());
+      Dimension imgSize = new Dimension(image.getWidth(), image.getHeight());
       if (token.getShape() == TokenShape.FIGURE) {
         double th = token.getHeight() * (double) footprintBounds.width / token.getWidth();
         iso_ho = footprintBounds.height - th;
@@ -2758,18 +2728,16 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       // Snap
       if (token.isSnapToScale()) {
         at.scale(
-            ((double) imgSize.width) / workImage.getWidth(),
-            ((double) imgSize.height) / workImage.getHeight());
+            ((double) imgSize.width) / image.getWidth(),
+            ((double) imgSize.height) / image.getHeight());
         at.scale(getScale(), getScale());
       } else {
         if (token.getShape() == TokenShape.FIGURE) {
           at.scale(
-              location.scaledWidth / workImage.getWidth(),
-              location.scaledWidth / workImage.getWidth());
+              location.scaledWidth / image.getWidth(), location.scaledWidth / image.getWidth());
         } else {
           at.scale(
-              location.scaledWidth / workImage.getWidth(),
-              location.scaledHeight / workImage.getHeight());
+              location.scaledWidth / image.getWidth(), location.scaledHeight / image.getHeight());
         }
       }
       timer.stop("tokenlist-6");
@@ -2805,7 +2773,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             if (opacity < 1.0f) {
               tokenG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
             }
-            tokenG.drawImage(workImage, at, this);
+            tokenG.drawImage(image, at, this);
             tokenG.setComposite(oldComposite);
             // g.draw(cb); // debugging
           } else {
@@ -2817,7 +2785,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             if (opacity < 1.0f) {
               tokenG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
             }
-            tokenG.drawImage(workImage, at, this);
+            tokenG.drawImage(image, at, this);
             tokenG.setComposite(oldComposite);
           }
         }
@@ -2832,7 +2800,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             if (opacity < 1.0f) {
               tokenG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
             }
-            tokenG.drawImage(workImage, at, this);
+            tokenG.drawImage(image, at, this);
             tokenG.setComposite(oldComposite);
           } else {
             // else draw the clipped stamp/token
@@ -2845,7 +2813,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             if (opacity < 1.0f) {
               tokenG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
             }
-            tokenG.drawImage(workImage, at, this);
+            tokenG.drawImage(image, at, this);
             tokenG.setComposite(oldComposite);
           }
         }
@@ -2855,7 +2823,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         if (opacity < 1.0f) {
           tokenG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
         }
-        tokenG.drawImage(workImage, at, this);
+        tokenG.drawImage(image, at, this);
         tokenG.setComposite(oldComposite);
       }
       timer.stop("tokenlist-7");
