@@ -17,8 +17,11 @@ package net.rptools.maptool.client.ui.zone.renderer;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.util.List;
+import javax.annotation.Nullable;
 import net.rptools.maptool.client.ui.token.AbstractTokenOverlay;
+import net.rptools.maptool.model.Path;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.TokenFootprint;
 import org.javatuples.Pair;
 
 // TODO This should obviate the need for:
@@ -26,9 +29,11 @@ import org.javatuples.Pair;
 // - tokenImageMap
 public record TokenRenderInstruction(
     Token token,
+    TokenFootprint footprint,
     TokenLocation location,
     Rectangle bounds,
     BufferedImage image,
     float opacity,
     Rectangle boundsForStatesAndBars,
-    List<Pair<Object, AbstractTokenOverlay>> stateAndBarOverlays) {}
+    List<Pair<Object, AbstractTokenOverlay>> stateAndBarOverlays,
+    @Nullable Path<?> path) {}
