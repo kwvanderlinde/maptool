@@ -78,6 +78,7 @@ import net.rptools.maptool.util.StringUtil;
 import net.rptools.parser.ParserException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.javatuples.Pair;
 
 /** */
 public class ZoneRenderer extends JComponent implements DropTargetListener {
@@ -127,8 +128,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    * various properties calculated by {@link #processTokens(java.awt.Graphics2D,
    * net.rptools.maptool.client.ui.zone.PlayerView, java.util.List, boolean)}. This would serve as
    * the render instructions for {@link #renderTokens(java.awt.Graphics2D, java.util.List,
-   * net.rptools.maptool.client.ui.zone.PlayerView)}. At least until such time as this rendering is
-   * more split up.
+   * net.rptools.maptool.client.ui.zone.PlayerView, net.rptools.maptool.model.Zone.Layer)}. At least
+   * until such time as this rendering is more split up.
    */
   private final Map<Token, BufferedImage> tokenImageMap = new HashMap<>();
 
@@ -980,10 +981,14 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       if (!background.isEmpty()) {
         timer.start("tokensBackground");
         var postProcess = processTokens(g2d, view, background, false);
-        renderTokens(g2d, postProcess, view);
-        renderPaths(g2d, postProcess);
+        renderTokens(g2d, postProcess, view, Layer.BACKGROUND);
+        renderPaths(g2d, postProcess.stream().map(TokenRenderInstruction::token).toList());
         if (Layer.BACKGROUND.equals(getActiveLayer())) {
-          postProcessTokens(g2d, view, Layer.BACKGROUND, postProcess);
+          postProcessTokens(
+              g2d,
+              view,
+              Layer.BACKGROUND,
+              postProcess.stream().map(TokenRenderInstruction::token).toList());
         }
         renderStacks(g2d, view, Layer.BACKGROUND);
         timer.stop("tokensBackground");
@@ -1009,10 +1014,14 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       if (!stamps.isEmpty()) {
         timer.start("tokensStamp");
         var postProcess = processTokens(g2d, view, stamps, false);
-        renderTokens(g2d, postProcess, view);
-        renderPaths(g2d, postProcess);
+        renderTokens(g2d, postProcess, view, Layer.OBJECT);
+        renderPaths(g2d, postProcess.stream().map(TokenRenderInstruction::token).toList());
         if (Layer.OBJECT.equals(getActiveLayer())) {
-          postProcessTokens(g2d, view, Layer.OBJECT, postProcess);
+          postProcessTokens(
+              g2d,
+              view,
+              Layer.OBJECT,
+              postProcess.stream().map(TokenRenderInstruction::token).toList());
         }
         renderStacks(g2d, view, Layer.OBJECT);
         timer.stop("tokensStamp");
@@ -1066,10 +1075,14 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         if (!stamps.isEmpty()) {
           timer.start("tokensGM");
           var postProcess = processTokens(g2d, view, stamps, false);
-          renderTokens(g2d, postProcess, view);
-          renderPaths(g2d, postProcess);
+          renderTokens(g2d, postProcess, view, Layer.GM);
+          renderPaths(g2d, postProcess.stream().map(TokenRenderInstruction::token).toList());
           if (Layer.GM.equals(getActiveLayer())) {
-            postProcessTokens(g2d, view, Layer.GM, postProcess);
+            postProcessTokens(
+                g2d,
+                view,
+                Layer.GM,
+                postProcess.stream().map(TokenRenderInstruction::token).toList());
           }
           renderStacks(g2d, view, Layer.GM);
           timer.stop("tokensGM");
@@ -1079,10 +1092,14 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       if (!tokens.isEmpty()) {
         timer.start("tokens");
         var postProcess = processTokens(g2d, view, tokens, false);
-        renderTokens(g2d, postProcess, view);
-        renderPaths(g2d, postProcess);
+        renderTokens(g2d, postProcess, view, Layer.TOKEN);
+        renderPaths(g2d, postProcess.stream().map(TokenRenderInstruction::token).toList());
         if (Layer.TOKEN.equals(getActiveLayer())) {
-          postProcessTokens(g2d, view, Layer.TOKEN, postProcess);
+          postProcessTokens(
+              g2d,
+              view,
+              Layer.TOKEN,
+              postProcess.stream().map(TokenRenderInstruction::token).toList());
         }
         renderStacks(g2d, view, Layer.TOKEN);
         timer.stop("tokens");
@@ -1132,10 +1149,14 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       if (!vblTokens.isEmpty()) {
         timer.start("tokens - always visible");
         var postProcess = processTokens(g2d, view, vblTokens, true);
-        renderTokens(g2d, postProcess, view);
-        renderPaths(g2d, postProcess);
+        renderTokens(g2d, postProcess, view, Layer.TOKEN);
+        renderPaths(g2d, postProcess.stream().map(TokenRenderInstruction::token).toList());
         if (Layer.TOKEN.equals(getActiveLayer())) {
-          postProcessTokens(g2d, view, Layer.TOKEN, postProcess);
+          postProcessTokens(
+              g2d,
+              view,
+              Layer.TOKEN,
+              postProcess.stream().map(TokenRenderInstruction::token).toList());
         }
         renderStacks(g2d, view, Layer.TOKEN);
         timer.stop("tokens - always visible");
@@ -1151,10 +1172,14 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       if (!tokens.isEmpty()) {
         timer.start("tokens - figures");
         var postProcess = processTokens(g2d, view, sortedTokens, true);
-        renderTokens(g2d, postProcess, view);
-        renderPaths(g2d, postProcess);
+        renderTokens(g2d, postProcess, view, Layer.TOKEN);
+        renderPaths(g2d, postProcess.stream().map(TokenRenderInstruction::token).toList());
         if (Layer.TOKEN.equals(getActiveLayer())) {
-          postProcessTokens(g2d, view, Layer.TOKEN, postProcess);
+          postProcessTokens(
+              g2d,
+              view,
+              Layer.TOKEN,
+              postProcess.stream().map(TokenRenderInstruction::token).toList());
         }
         renderStacks(g2d, view, Layer.TOKEN);
         timer.stop("tokens - figures");
@@ -2122,7 +2147,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    * @param figuresOnly
    * @return The subset of {@code tokenList} that need to be rendered.
    */
-  protected List<Token> processTokens(
+  protected List<TokenRenderInstruction> processTokens(
       Graphics2D g, PlayerView view, List<Token> tokenList, boolean figuresOnly) {
     final var timer = CodeTimer.get();
 
@@ -2152,7 +2177,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     // state...
     // tokenLocationCache.clear();
 
-    List<Token> tokensToRender = new ArrayList<Token>(tokenList.size());
+    List<TokenRenderInstruction> tokensToRender = new ArrayList<>(tokenList.size());
     for (Token token : tokenList) {
       if (token.getShape() != Token.TokenShape.FIGURE && figuresOnly && !token.isAlwaysVisible()) {
         continue;
@@ -2318,46 +2343,111 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       timer.stop("renderTokens:OnscreenCheck");
 
       timer.start("tokenlist-5");
-      tokenImageMap.computeIfAbsent(
-          token,
-          t -> {
-            // Nothing calculated yet. Do so now.
-            // Get token image, using image table if present
-            var image = getTokenImage(token);
+      var tokenImage =
+          tokenImageMap.computeIfAbsent(
+              token,
+              t -> {
+                // Nothing calculated yet. Do so now.
+                // Get token image, using image table if present
+                var image = getTokenImage(token);
 
-            // handle flipping
-            if (token.isFlippedX() || token.isFlippedY()) {
-              // TODO get()-else-put() is just computeIfAbsent().
-              var workImage =
-                  new BufferedImage(image.getWidth(), image.getHeight(), image.getTransparency());
+                // handle flipping
+                if (token.isFlippedX() || token.isFlippedY()) {
+                  // TODO get()-else-put() is just computeIfAbsent().
+                  var workImage =
+                      new BufferedImage(
+                          image.getWidth(), image.getHeight(), image.getTransparency());
 
-              int workW = image.getWidth() * (token.isFlippedX() ? -1 : 1);
-              int workH = image.getHeight() * (token.isFlippedY() ? -1 : 1);
-              int workX = token.isFlippedX() ? image.getWidth() : 0;
-              int workY = token.isFlippedY() ? image.getHeight() : 0;
+                  int workW = image.getWidth() * (token.isFlippedX() ? -1 : 1);
+                  int workH = image.getHeight() * (token.isFlippedY() ? -1 : 1);
+                  int workX = token.isFlippedX() ? image.getWidth() : 0;
+                  int workY = token.isFlippedY() ? image.getHeight() : 0;
 
-              Graphics2D wig = workImage.createGraphics();
-              wig.drawImage(image, workX, workY, workW, workH, null);
-              wig.dispose();
+                  Graphics2D wig = workImage.createGraphics();
+                  wig.drawImage(image, workX, workY, workW, workH, null);
+                  wig.dispose();
 
-              image = workImage;
-            }
-            // on the iso plane
-            if (token.isFlippedIso()) {
-              var workImage = IsometricGrid.isoImage(image);
-              // TODO This is garbage.
-              token.setHeight(workImage.getHeight());
-              token.setWidth(workImage.getWidth());
-              image = workImage;
-            }
+                  image = workImage;
+                }
+                // on the iso plane
+                if (token.isFlippedIso()) {
+                  var workImage = IsometricGrid.isoImage(image);
+                  // TODO This is garbage.
+                  token.setHeight(workImage.getHeight());
+                  token.setWidth(workImage.getWidth());
+                  image = workImage;
+                }
 
-            return image;
-          });
+                return image;
+              });
       timer.stop("tokenlist-5");
+
+      timer.start("tokenlist-9");
+      /**
+       * Paint States and Bars Set up the graphics so that the overlay can just be painted. Use
+       * non-rotated token bounds to avoid odd size changes
+       */
+      Token tmpToken = new Token(token);
+      tmpToken.setFacing(270);
+      Rectangle tmpBounds = tmpToken.getBounds(this.zone);
+
+      // Unless it is isometric, make it square to avoid distortion
+      double maxDim = Math.max(tmpBounds.getWidth(), tmpBounds.getHeight());
+      // scale it to the view
+      maxDim *= this.getScale();
+      Rectangle bounds;
+      if (zone.getGrid().isIsometric()) {
+        bounds =
+            new Rectangle(
+                0,
+                0,
+                (int) (tmpBounds.getWidth() * this.getScale()),
+                (int) (tmpBounds.getHeight() * this.getScale()));
+      } else {
+        bounds = new Rectangle(0, 0, (int) maxDim, (int) maxDim);
+      }
+
+      var stateAndBarOverlays = new ArrayList<Pair<Object, AbstractTokenOverlay>>();
+      // Check each of the set values and draw
+      for (String state : MapTool.getCampaign().getTokenStatesMap().keySet()) {
+        Object stateValue = token.getState(state);
+        AbstractTokenOverlay overlay = MapTool.getCampaign().getTokenStatesMap().get(state);
+        if (stateValue instanceof AbstractTokenOverlay) {
+          // TODO Uh... the value is the overlay? overlay.paintOverlay() would disagree methinks.
+          // TODO Overlays have boolean values. Why is paintOverlay() being so general?
+          overlay = (AbstractTokenOverlay) stateValue;
+        }
+        if (overlay == null
+            || overlay.isMouseover() && token != tokenUnderMouse
+            || !overlay.showPlayer(token, MapTool.getPlayer())) {
+          continue;
+        }
+        stateAndBarOverlays.add(Pair.with(stateValue, overlay));
+      }
+      for (String bar : MapTool.getCampaign().getTokenBarsMap().keySet()) {
+        Object barValue = token.getState(bar);
+        BarTokenOverlay overlay = MapTool.getCampaign().getTokenBarsMap().get(bar);
+        if (overlay == null
+            || overlay.isMouseover() && token != tokenUnderMouse
+            || !overlay.showPlayer(token, MapTool.getPlayer())) {
+          continue;
+        }
+        stateAndBarOverlays.add(Pair.with(barValue, overlay));
+      }
+
+      timer.stop("tokenlist-9");
 
       timer.start("tokenlist-11");
       // Keep track of which tokens have been accepted for rendering.
-      tokensToRender.add(token);
+      tokensToRender.add(
+          new TokenRenderInstruction(
+              token,
+              location,
+              footprintBounds,
+              tokenImage,
+              token.getTokenOpacity() * (isTokenMoving(token) ? 0.5f : 1.0f),
+              bounds,
+              stateAndBarOverlays));
       timer.stop("tokenlist-11");
     }
 
@@ -2611,10 +2701,21 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     }
   }
 
+  // TODO Even though this method is still massive (~400 lines) I think it is in a state that could
+  //  be translated into a TokenRenderer. However, for even better effect, I should define a
+  //  TokenRenderInstruction which processTokens() would output, containing:
+  //  1. The layout (position, anchor, bounds) of the token.
+  //  2. The image to render.
+  //  3. The opacity (incorporating movement; renderer should be agnostic).
+  //  Ultimately this would actually be output by the compositor.
   /**
-   * @return The list of tokens that need post-processing. TODO Should just be rendered tokens?
+   * @return The list of tokens that need to be rendered.
    */
-  protected void renderTokens(Graphics2D g, List<Token> tokenList, PlayerView view) {
+  protected void renderTokens(
+      Graphics2D g,
+      List<TokenRenderInstruction> renderInstructions,
+      PlayerView view,
+      Zone.Layer layer) {
     final var timer = CodeTimer.get();
 
     Graphics2D clippedG = g;
@@ -2625,8 +2726,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     if (!isGMView
         // TODO Should we actually check zoneView.isUsingVision() for parity with later checks?
         && visibleScreenArea != null
-        && !tokenList.isEmpty()
-        && tokenList.get(0).getLayer().supportsVision()) {
+        && layer.supportsVision()) {
       clippedG = (Graphics2D) g.create();
 
       Area visibleArea = new Area(g.getClipBounds());
@@ -2646,9 +2746,11 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     // tokenLocationCache.clear();
 
     // region Main token rendering
-    for (Token token : tokenList) {
+    for (var instruction : renderInstructions) {
+      var token = instruction.token();
+
       timer.start("tokenlist-1.1");
-      TokenLocation location = tokenLocationCache.get(token);
+      TokenLocation location = instruction.location();
       if (location == null) {
         // processTokens() should have set this for any rendered token.
         timer.stop("tokenlist-1.1");
@@ -2657,12 +2759,12 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
       timer.start("tokenlist-1a");
       // TODO processTokens() should place this in the TokenLocation.
-      Rectangle footprintBounds = token.getBounds(zone);
+      Rectangle footprintBounds = instruction.bounds();
       timer.stop("tokenlist-1a");
 
       timer.start("tokenlist-5");
       // processTokens() should have populated the image. Skip if not.
-      BufferedImage image = tokenImageMap.get(token);
+      BufferedImage image = instruction.image();
       if (image == null) {
         log.warn("Missing image for token {}", token.getId());
         continue;
@@ -2753,10 +2855,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       haloRenderer.renderHalo(tokenG, token, location);
 
       // Calculate alpha Transparency from token and use opacity for indicating that token is moving
-      float opacity = token.getTokenOpacity();
-      if (isTokenMoving(token)) {
-        opacity = opacity / 2.0f;
-      }
+      float opacity = instruction.opacity();
 
       // Finally render the token image
       timer.start("tokenlist-7");
@@ -2933,29 +3032,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       timer.stop("tokenlist-8");
 
       timer.start("tokenlist-9");
-      /**
-       * Paint States and Bars Set up the graphics so that the overlay can just be painted. Use
-       * non-rotated token bounds to avoid odd size changes
-       */
-      Token tmpToken = new Token(token);
-      tmpToken.setFacing(270);
-      Rectangle tmpBounds = tmpToken.getBounds(this.zone);
-
-      // Unless it is isometric, make it square to avoid distortion
-      double maxDim = Math.max(tmpBounds.getWidth(), tmpBounds.getHeight());
-      // scale it to the view
-      maxDim *= this.getScale();
-      Rectangle bounds;
-      if (zone.getGrid().isIsometric()) {
-        bounds =
-            new Rectangle(
-                0,
-                0,
-                (int) (tmpBounds.getWidth() * this.getScale()),
-                (int) (tmpBounds.getHeight() * this.getScale()));
-      } else {
-        bounds = new Rectangle(0, 0, (int) maxDim, (int) maxDim);
-      }
+      Rectangle bounds = instruction.boundsForStatesAndBars();
 
       // calculate the drawing region from the token centre.
       Graphics2D locg =
@@ -2970,35 +3047,14 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
                   bounds.width,
                   bounds.height);
 
-      // Check each of the set values and draw
-      for (String state : MapTool.getCampaign().getTokenStatesMap().keySet()) {
-        Object stateValue = token.getState(state);
-        AbstractTokenOverlay overlay = MapTool.getCampaign().getTokenStatesMap().get(state);
-        if (stateValue instanceof AbstractTokenOverlay) {
-          overlay = (AbstractTokenOverlay) stateValue;
-        }
-        if (overlay == null
-            || overlay.isMouseover() && token != tokenUnderMouse
-            || !overlay.showPlayer(token, MapTool.getPlayer())) {
-          continue;
-        }
-        overlay.paintOverlay(locg, token, bounds, stateValue);
+      for (var pair : instruction.stateAndBarOverlays()) {
+        var value = pair.getValue0();
+        var overlay = pair.getValue1();
+        overlay.paintOverlay(locg, token, bounds, value);
       }
       timer.stop("tokenlist-9");
 
       timer.start("tokenlist-10");
-
-      for (String bar : MapTool.getCampaign().getTokenBarsMap().keySet()) {
-        Object barValue = token.getState(bar);
-        BarTokenOverlay overlay = MapTool.getCampaign().getTokenBarsMap().get(bar);
-        if (overlay == null
-            || overlay.isMouseover() && token != tokenUnderMouse
-            || !overlay.showPlayer(token, MapTool.getPlayer())) {
-          continue;
-        }
-
-        overlay.paintOverlay(locg, token, bounds, barValue);
-      } // endfor
       locg.dispose();
       timer.stop("tokenlist-10");
     }
