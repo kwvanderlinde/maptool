@@ -1105,7 +1105,18 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         timer.stop("tokens");
       }
       timer.start("unowned movement");
-      showBlockedMoves(g2d, view, getUnOwnedMovementSet(view));
+      var movementSets = getUnOwnedMovementSet(view);
+      var instructions = processMovement(g2d, view, movementSets);
+      renderMovement(g2d, view, instructions);
+
+      for (var set : movementSets) {
+        var walker = set.getWalker();
+        if (walker != null && DeveloperOptions.Toggle.ShowAiDebugging.isEnabled()) {
+          // Show current Blocked Movement directions for A*
+          renderBlockedMovesDebug(g2d, view, walker);
+        }
+      }
+
       timer.stop("unowned movement");
 
       // Moved below, after the renderFog() call...
@@ -1186,7 +1197,16 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       }
 
       timer.start("owned movement");
-      showBlockedMoves(g2d, view, getOwnedMovementSet(view));
+      var movementSets = getOwnedMovementSet(view);
+      var instructions = processMovement(g2d, view, movementSets);
+      renderMovement(g2d, view, instructions);
+      for (var set : movementSets) {
+        var walker = set.getWalker();
+        if (walker != null && DeveloperOptions.Toggle.ShowAiDebugging.isEnabled()) {
+          // Show current Blocked Movement directions for A*
+          renderBlockedMovesDebug(g2d, view, walker);
+        }
+      }
       timer.stop("owned movement");
 
       // Text associated with tokens being moved is added to a list to be drawn after, i.e. on top
@@ -1400,10 +1420,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     return movementSet;
   }
 
-  protected void showBlockedMoves(Graphics2D g, PlayerView view, Set<SelectionSet> movementSet) {
-    if (selectionSetMap.isEmpty()) {
-      return;
-    }
+  protected void renderMovement(
+      Graphics2D g, PlayerView view, List<MovementRenderInstruction> instructions) {
     g = (Graphics2D) g.create();
 
     // Regardless of vision settings, no need to render beyond the fog.
@@ -1429,172 +1447,124 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     }
 
     double scale = zoneScale.getScale();
-    for (SelectionSet set : movementSet) {
-      Token keyToken = zone.getToken(set.getKeyToken());
-      if (keyToken == null) {
-        // It was removed ?
-        selectionSetMap.remove(set.getKeyToken());
-        continue;
+    for (var instruction : instructions) {
+      var token = instruction.token();
+      var footprintBounds = instruction.bounds();
+
+      // OPTIMIZE: combine this with the code in renderTokens()
+      ScreenPoint newScreenPoint =
+          ScreenPoint.fromZonePoint(this, footprintBounds.x, footprintBounds.y);
+
+      int scaledWidth = (int) (footprintBounds.width * scale);
+      int scaledHeight = (int) (footprintBounds.height * scale);
+
+      // Tokens are centered on the image center point
+      int x = (int) (newScreenPoint.x);
+      int y = (int) (newScreenPoint.y);
+
+      if (instruction.path() != null) {
+        // TODO Like renderTokens(), move this instead a separate renderPaths() call? Or should I
+        //  merge renderPaths() back into renderTokens()?
+        renderPath(g, instruction.path(), instruction.footprint());
       }
-      // Hide the hidden layer
-      if (!keyToken.getLayer().isVisibleToPlayers() && !view.isGMView()) {
-        continue;
+
+      BufferedImage image = instruction.image();
+
+      // Draw token
+      Dimension imgSize = new Dimension(image.getWidth(), image.getHeight());
+      SwingUtil.constrainTo(imgSize, footprintBounds.width, footprintBounds.height);
+
+      int offsetx = 0;
+      int offsety = 0;
+      if (token.isSnapToScale()) {
+        offsetx =
+            (int)
+                (imgSize.width < footprintBounds.width
+                    ? (footprintBounds.width - imgSize.width) / 2 * getScale()
+                    : 0);
+        offsety =
+            (int)
+                (imgSize.height < footprintBounds.height
+                    ? (footprintBounds.height - imgSize.height) / 2 * getScale()
+                    : 0);
       }
-      ZoneWalker walker = set.getWalker();
+      int tx = x + offsetx;
+      int ty = y + offsety;
 
-      for (GUID tokenGUID : set.getTokens()) {
-        Token token = zone.getToken(tokenGUID);
+      AffineTransform at = new AffineTransform();
+      at.translate(tx, ty);
 
-        // Perhaps deleted?
-        if (token == null) {
-          continue;
-        }
-
-        // Don't bother if it's not visible
-        if (!token.isVisible() && !view.isGMView()) {
-          continue;
-        }
-
-        // ... or if it's visible only to the owner and that's not us!
-        final boolean isOwner = view.isGMView() || AppUtil.playerOwns(token);
-        if (token.isVisibleOnlyToOwner() && !isOwner) {
-          continue;
-        }
-
-        // ... or if it doesn't have an image to display. (Hm, should still show *something*?)
-        Asset asset = AssetManager.getAsset(token.getImageAssetId());
-        if (asset == null) {
-          continue;
-        }
-
-        // OPTIMIZE: combine this with the code in renderTokens()
-        Rectangle footprintBounds = token.getBounds(zone);
-        ScreenPoint newScreenPoint =
-            ScreenPoint.fromZonePoint(
-                this, footprintBounds.x + set.getOffsetX(), footprintBounds.y + set.getOffsetY());
-
-        int scaledWidth = (int) (footprintBounds.width * scale);
-        int scaledHeight = (int) (footprintBounds.height * scale);
-
-        // Tokens are centered on the image center point
-        int x = (int) (newScreenPoint.x);
-        int y = (int) (newScreenPoint.y);
-
-        // Show path only on the key token on token layer that are visible to the owner or gm while
-        // fow and vision is on
-        if (token == keyToken && token.getLayer().supportsWalker()) {
-          renderPath(
-              g,
-              walker != null ? walker.getPath() : set.getGridlessPath(),
-              token.getFootprint(zone.getGrid()));
-        }
-
-        // Show current Blocked Movement directions for A*
-        if (walker != null && DeveloperOptions.Toggle.ShowAiDebugging.isEnabled()) {
-          Map<CellPoint, Set<CellPoint>> blockedMovesByTarget = walker.getBlockedMoves();
-          // Color currentColor = g.getColor();
-          for (var entry : blockedMovesByTarget.entrySet()) {
-            var position = entry.getKey();
-            var blockedMoves = entry.getValue();
-
-            for (CellPoint point : blockedMoves) {
-              ZonePoint zp = point.midZonePoint(getZone().getGrid(), position);
-              double r = (zp.x - 1) * 45;
-              showBlockedMoves(
-                  g, zp, r, RessourceManager.getImage(Images.ZONE_RENDERER_BLOCK_MOVE), 1.0f);
-            }
-          }
-        }
-
-        // processTokens() should have populated the image. Skip if not.
-        BufferedImage image = tokenImageMap.get(token);
-        if (image == null) {
-          // TODO Distinguish the log message.
-          log.warn("Missing image for token {}", token.getId());
-          continue;
-        }
-
-        // Draw token
-        double iso_ho = 0;
-        Dimension imgSize = new Dimension(image.getWidth(), image.getHeight());
+      if (token.hasFacing() && token.getShape() == Token.TokenShape.TOP_DOWN) {
+        at.rotate(
+            Math.toRadians(token.getFacingInDegrees()),
+            scaledWidth / 2 - token.getAnchor().x * scale - offsetx,
+            scaledHeight / 2 - token.getAnchor().y * scale - offsety);
+      }
+      if (token.isSnapToScale()) {
+        at.scale(
+            (double) imgSize.width / image.getWidth(), (double) imgSize.height / image.getHeight());
+        at.scale(getScale(), getScale());
+      } else {
         if (token.getShape() == TokenShape.FIGURE) {
-          double th = token.getHeight() * (double) footprintBounds.width / token.getWidth();
-          iso_ho = footprintBounds.height - th;
-          footprintBounds =
-              new Rectangle(
-                  footprintBounds.x,
-                  footprintBounds.y - (int) iso_ho,
-                  footprintBounds.width,
-                  (int) th);
-          iso_ho = iso_ho * getScale();
-        }
-        SwingUtil.constrainTo(imgSize, footprintBounds.width, footprintBounds.height);
-
-        int offsetx = 0;
-        int offsety = 0;
-        if (token.isSnapToScale()) {
-          offsetx =
-              (int)
-                  (imgSize.width < footprintBounds.width
-                      ? (footprintBounds.width - imgSize.width) / 2 * getScale()
-                      : 0);
-          offsety =
-              (int)
-                  (imgSize.height < footprintBounds.height
-                      ? (footprintBounds.height - imgSize.height) / 2 * getScale()
-                      : 0);
-        }
-        int tx = x + offsetx;
-        int ty = y + offsety + (int) iso_ho;
-
-        AffineTransform at = new AffineTransform();
-        at.translate(tx, ty);
-
-        if (token.hasFacing() && token.getShape() == Token.TokenShape.TOP_DOWN) {
-          at.rotate(
-              Math.toRadians(token.getFacingInDegrees()),
-              scaledWidth / 2 - token.getAnchor().x * scale - offsetx,
-              scaledHeight / 2
-                  - token.getAnchor().y * scale
-                  - offsety); // facing defaults to down, or -90 degrees
-        }
-        if (token.isSnapToScale()) {
           at.scale(
-              (double) imgSize.width / image.getWidth(),
-              (double) imgSize.height / image.getHeight());
-          at.scale(getScale(), getScale());
+              (double) scaledWidth / image.getWidth(), (double) scaledWidth / image.getWidth());
         } else {
-          if (token.getShape() == TokenShape.FIGURE) {
-            at.scale(
-                (double) scaledWidth / image.getWidth(), (double) scaledWidth / image.getWidth());
-          } else {
-            at.scale(
-                (double) scaledWidth / image.getWidth(), (double) scaledHeight / image.getHeight());
-          }
+          at.scale(
+              (double) scaledWidth / image.getWidth(), (double) scaledHeight / image.getHeight());
         }
+      }
 
-        g.drawImage(image, at, this);
+      g.drawImage(image, at, this);
 
-        // Other details.
-        // If the token is visible on the screen it will be in the location cache
-        if (token == keyToken
-            && (isOwner || shouldShowMovementLabels(token, set, clearArea))
-            && tokenLocationCache.containsKey(token)) {
-          var labelY = y + 10 + scaledHeight;
-          var labelX = x + scaledWidth / 2;
+      var labelY = y + 10 + scaledHeight;
+      var labelX = x + scaledWidth / 2;
+      if (instruction.distanceTravaledToShow() != null) {
+        String distance = NumberFormat.getInstance().format(instruction.distanceTravaledToShow());
+        delayRendering(new LabelRenderer(this, distance, labelX, labelY));
+        labelY += 20;
+      }
+      if (instruction.playerName() != null) {
+        delayRendering(new LabelRenderer(this, instruction.playerName(), labelX, labelY));
+      }
+    }
+  }
 
-          if (token.getLayer().supportsWalker() && AppState.getShowMovementMeasurements()) {
-            double distanceTraveled = calculateTraveledDistance(set);
-            if (distanceTraveled >= 0) {
-              String distance = NumberFormat.getInstance().format(distanceTraveled);
-              delayRendering(new LabelRenderer(this, distance, labelX, labelY));
-              labelY += 20;
-            }
-          }
-          if (set.getPlayerId() != null && set.getPlayerId().length() >= 1) {
-            delayRendering(new LabelRenderer(this, set.getPlayerId(), labelX, labelY));
-          }
-        }
+  protected void renderBlockedMovesDebug(Graphics2D g, PlayerView view, ZoneWalker walker) {
+    g = (Graphics2D) g.create();
+
+    // Regardless of vision settings, no need to render beyond the fog.
+    Area clearArea = null;
+    if (!view.isGMView()) {
+      if (zone.hasFog() && zoneView.isUsingVision()) {
+        clearArea = new Area(zoneView.getExposedArea(view));
+        clearArea.intersect(zoneView.getVisibleArea(view));
+      } else if (zone.hasFog()) {
+        clearArea = zoneView.getExposedArea(view);
+      } else if (zoneView.isUsingVision()) {
+        clearArea = zoneView.getVisibleArea(view);
+      }
+
+      if (clearArea != null) {
+        AffineTransform af = new AffineTransform();
+        af.translate(zoneScale.getOffsetX(), zoneScale.getOffsetY());
+        af.scale(getScale(), getScale());
+        var clip = clearArea.createTransformedArea(af);
+
+        g.clip(clip);
+      }
+    }
+
+    Map<CellPoint, Set<CellPoint>> blockedMovesByTarget = walker.getBlockedMoves();
+    // Color currentColor = g.getColor();
+    for (var entry : blockedMovesByTarget.entrySet()) {
+      var position = entry.getKey();
+      var blockedMoves = entry.getValue();
+
+      for (CellPoint point : blockedMoves) {
+        ZonePoint zp = point.midZonePoint(getZone().getGrid(), position);
+        double r = (zp.x - 1) * 45;
+        showBlockedMoves(
+            g, zp, r, RessourceManager.getImage(Images.ZONE_RENDERER_BLOCK_MOVE), 1.0f);
       }
     }
   }
@@ -2239,14 +2209,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         double sx = scaledWidth / 2 + x - (token.getAnchor().x * scale);
         double sy = scaledHeight / 2 + y - (token.getAnchor().y * scale);
         tokenBounds.transform(
-            AffineTransform.getRotateInstance(
-                Math.toRadians(token.getFacingInDegrees()), sx, sy)); // facing
-        // defaults
-        // to
-        // down,
-        // or
-        // -90
-        // degrees
+            AffineTransform.getRotateInstance(Math.toRadians(token.getFacingInDegrees()), sx, sy));
       }
       timer.stop("tokenlist-1d");
 
@@ -3000,6 +2963,126 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     clippedG.dispose();
     unclippedG.dispose();
     timer.stop("tokenlist-13");
+  }
+
+  protected List<MovementRenderInstruction> processMovement(
+      Graphics2D g, PlayerView view, Set<SelectionSet> movementSet) {
+    var result = new ArrayList<MovementRenderInstruction>();
+    if (selectionSetMap.isEmpty()) {
+      return result;
+    }
+
+    // Regardless of vision settings, no need to render beyond the fog.
+    Area clearArea = null;
+    if (!view.isGMView()) {
+      if (zone.hasFog() && zoneView.isUsingVision()) {
+        clearArea = new Area(zoneView.getExposedArea(view));
+        clearArea.intersect(zoneView.getVisibleArea(view));
+      } else if (zone.hasFog()) {
+        clearArea = zoneView.getExposedArea(view);
+      } else if (zoneView.isUsingVision()) {
+        clearArea = zoneView.getVisibleArea(view);
+      }
+    }
+
+    for (SelectionSet set : movementSet) {
+      Token keyToken = zone.getToken(set.getKeyToken());
+      if (keyToken == null) {
+        // It was removed ?
+        selectionSetMap.remove(set.getKeyToken());
+        continue;
+      }
+      // Hide the hidden layer
+      if (!keyToken.getLayer().isVisibleToPlayers() && !view.isGMView()) {
+        continue;
+      }
+      ZoneWalker walker = set.getWalker();
+      final var path = walker != null ? walker.getPath() : set.getGridlessPath();
+
+      for (GUID tokenGUID : set.getTokens()) {
+        Token token = zone.getToken(tokenGUID);
+
+        // Perhaps deleted?
+        if (token == null) {
+          continue;
+        }
+
+        // Don't bother if it's not visible
+        if (!token.isVisible() && !view.isGMView()) {
+          continue;
+        }
+
+        // ... or if it's visible only to the owner and that's not us!
+        final boolean isOwner = view.isGMView() || AppUtil.playerOwns(token);
+        if (token.isVisibleOnlyToOwner() && !isOwner) {
+          continue;
+        }
+
+        // OPTIMIZE: combine this with the code in renderTokens()
+        Rectangle footprintBounds = token.getBounds(zone);
+        footprintBounds.x += set.getOffsetX();
+        footprintBounds.y += set.getOffsetY();
+
+        // processTokens() should have populated the image. Skip if not.
+        BufferedImage image = tokenImageMap.get(token);
+        if (image == null) {
+          // TODO Distinguish the log message.
+          log.warn("Missing image for token {}", token.getId());
+          continue;
+        }
+
+        // Draw token
+        /* For figure tokens, how much the token "hangs over" the top of the footprint. Note that
+         * this value will be negative. */
+        double iso_ho = 0;
+        if (token.getShape() == TokenShape.FIGURE) {
+          /* The height of the token, determined by scaling the width to match the footprint width.
+           * This avoids discrepancies between different size interpretations. */
+          double th = token.getHeight() * (double) footprintBounds.width / token.getWidth();
+          iso_ho = footprintBounds.height - th;
+          footprintBounds =
+              new Rectangle(
+                  footprintBounds.x,
+                  // TODO The original has a minus sign, but I believe that was just confusion over
+                  //  the sign of iso_ho.
+                  footprintBounds.y + (int) iso_ho,
+                  footprintBounds.width,
+                  (int) th);
+        }
+
+        // Other details.
+        // If the token is visible on the screen it will be in the location cache
+        Double distanceTraveled = null;
+        String playerName = null;
+        if (token == keyToken
+            && (isOwner || shouldShowMovementLabels(token, set, clearArea))
+            && tokenLocationCache.containsKey(token)) {
+          if (token.getLayer().supportsWalker() && AppState.getShowMovementMeasurements()) {
+            var tmp = calculateTraveledDistance(set);
+            if (tmp >= 0) {
+              distanceTraveled = tmp;
+            }
+          }
+          if (set.getPlayerId() != null && !set.getPlayerId().isEmpty()) {
+            playerName = set.getPlayerId();
+          }
+        }
+
+        result.add(
+            new MovementRenderInstruction(
+                token,
+                token.getFootprint(zone.getGrid()),
+                footprintBounds,
+                // Show path only on the key token on token layer that are visible to the owner or
+                // gm while fow and vision is on
+                (token == keyToken && token.getLayer().supportsWalker()) ? path : null,
+                image,
+                distanceTraveled,
+                playerName));
+      }
+    }
+
+    return result;
   }
 
   /**
