@@ -167,6 +167,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   private final LumensRenderer lumensRenderer;
   private final FogRenderer fogRenderer;
   private final VisionOverlayRenderer visionOverlayRenderer;
+  private final MovementRenderer movementRenderer;
   private final DebugRenderer debugRenderer;
 
   /**
@@ -195,6 +196,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     this.lumensRenderer = new LumensRenderer(renderHelper, zone, zoneView);
     this.fogRenderer = new FogRenderer(renderHelper, zone, zoneView);
     this.visionOverlayRenderer = new VisionOverlayRenderer(renderHelper, zone, zoneView);
+    this.movementRenderer = new MovementRenderer(renderHelper, this, zone, zoneView);
     this.debugRenderer = new DebugRenderer(renderHelper);
     repaintDebouncer =
         new DebounceExecutor(1000 / AppPreferences.frameRateCap.get(), this::repaint);
@@ -1107,8 +1109,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       timer.start("unowned movement");
       var movementSets = getUnOwnedMovementSet(view);
       var instructions = processMovement(g2d, view, movementSets);
-      renderMovement(g2d, view, instructions);
-
+      movementRenderer.renderMovement(g2d, view, instructions);
       for (var set : movementSets) {
         var walker = set.getWalker();
         if (walker != null && DeveloperOptions.Toggle.ShowAiDebugging.isEnabled()) {
@@ -1199,7 +1200,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       timer.start("owned movement");
       var movementSets = getOwnedMovementSet(view);
       var instructions = processMovement(g2d, view, movementSets);
-      renderMovement(g2d, view, instructions);
+      movementRenderer.renderMovement(g2d, view, instructions);
       for (var set : movementSets) {
         var walker = set.getWalker();
         if (walker != null && DeveloperOptions.Toggle.ShowAiDebugging.isEnabled()) {
@@ -1246,7 +1247,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     debugRenderer.renderShapes(g2d, Arrays.asList(shape, shape2, shape3, shape4));
   }
 
-  private void delayRendering(ItemRenderer renderer) {
+  protected void delayRendering(ItemRenderer renderer) {
     itemRenderList.add(renderer);
   }
 
@@ -1418,115 +1419,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       }
     }
     return movementSet;
-  }
-
-  protected void renderMovement(
-      Graphics2D g, PlayerView view, List<MovementRenderInstruction> instructions) {
-    g = (Graphics2D) g.create();
-
-    // Regardless of vision settings, no need to render beyond the fog.
-    Area clearArea = null;
-    if (!view.isGMView()) {
-      if (zone.hasFog() && zoneView.isUsingVision()) {
-        clearArea = new Area(zoneView.getExposedArea(view));
-        clearArea.intersect(zoneView.getVisibleArea(view));
-      } else if (zone.hasFog()) {
-        clearArea = zoneView.getExposedArea(view);
-      } else if (zoneView.isUsingVision()) {
-        clearArea = zoneView.getVisibleArea(view);
-      }
-
-      if (clearArea != null) {
-        AffineTransform af = new AffineTransform();
-        af.translate(zoneScale.getOffsetX(), zoneScale.getOffsetY());
-        af.scale(getScale(), getScale());
-        var clip = clearArea.createTransformedArea(af);
-
-        g.clip(clip);
-      }
-    }
-
-    double scale = zoneScale.getScale();
-    for (var instruction : instructions) {
-      var token = instruction.token();
-      var footprintBounds = instruction.bounds();
-
-      // OPTIMIZE: combine this with the code in renderTokens()
-      ScreenPoint newScreenPoint =
-          ScreenPoint.fromZonePoint(this, footprintBounds.x, footprintBounds.y);
-
-      int scaledWidth = (int) (footprintBounds.width * scale);
-      int scaledHeight = (int) (footprintBounds.height * scale);
-
-      // Tokens are centered on the image center point
-      int x = (int) (newScreenPoint.x);
-      int y = (int) (newScreenPoint.y);
-
-      if (instruction.path() != null) {
-        // TODO Like renderTokens(), move this instead a separate renderPaths() call? Or should I
-        //  merge renderPaths() back into renderTokens()?
-        renderPath(g, instruction.path(), instruction.footprint());
-      }
-
-      BufferedImage image = instruction.image();
-
-      // Draw token
-      Dimension imgSize = new Dimension(image.getWidth(), image.getHeight());
-      SwingUtil.constrainTo(imgSize, footprintBounds.width, footprintBounds.height);
-
-      int offsetx = 0;
-      int offsety = 0;
-      if (token.isSnapToScale()) {
-        offsetx =
-            (int)
-                (imgSize.width < footprintBounds.width
-                    ? (footprintBounds.width - imgSize.width) / 2 * getScale()
-                    : 0);
-        offsety =
-            (int)
-                (imgSize.height < footprintBounds.height
-                    ? (footprintBounds.height - imgSize.height) / 2 * getScale()
-                    : 0);
-      }
-      int tx = x + offsetx;
-      int ty = y + offsety;
-
-      AffineTransform at = new AffineTransform();
-      at.translate(tx, ty);
-
-      if (token.hasFacing() && token.getShape() == Token.TokenShape.TOP_DOWN) {
-        at.rotate(
-            Math.toRadians(token.getFacingInDegrees()),
-            scaledWidth / 2 - token.getAnchor().x * scale - offsetx,
-            scaledHeight / 2 - token.getAnchor().y * scale - offsety);
-      }
-      if (token.isSnapToScale()) {
-        at.scale(
-            (double) imgSize.width / image.getWidth(), (double) imgSize.height / image.getHeight());
-        at.scale(getScale(), getScale());
-      } else {
-        if (token.getShape() == TokenShape.FIGURE) {
-          at.scale(
-              (double) scaledWidth / image.getWidth(), (double) scaledWidth / image.getWidth());
-        } else {
-          at.scale(
-              (double) scaledWidth / image.getWidth(), (double) scaledHeight / image.getHeight());
-        }
-      }
-
-      g.drawImage(image, at, this);
-
-      var labelY = y + 10 + scaledHeight;
-      var labelX = x + scaledWidth / 2;
-      if (instruction.distanceTravaledToShow() != null) {
-        String distance = NumberFormat.getInstance().format(instruction.distanceTravaledToShow());
-        delayRendering(new LabelRenderer(this, distance, labelX, labelY));
-        labelY += 20;
-      }
-      if (instruction.playerName() != null) {
-        delayRendering(new LabelRenderer(this, instruction.playerName(), labelX, labelY));
-      }
-    }
   }
 
   protected void renderBlockedMovesDebug(Graphics2D g, PlayerView view, ZoneWalker walker) {
