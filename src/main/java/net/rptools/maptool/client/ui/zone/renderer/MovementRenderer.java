@@ -48,8 +48,8 @@ public class MovementRenderer {
     var timer = CodeTimer.get();
     timer.start("renderTokens");
     try {
-      // renderHelper.render(g, worldG -> renderWorld(worldG, view, layer, tokens));
-      renderScreen((Graphics2D) g.create(), view, instructions);
+      renderHelper.render(g, worldG -> renderWorld(worldG, view, instructions));
+      //renderScreen((Graphics2D) g.create(), view, instructions);
     } finally {
       timer.stop("renderAuras");
     }
@@ -166,4 +166,100 @@ public class MovementRenderer {
       }
     }
   }
+
+    private void renderWorld(
+            Graphics2D worldG, PlayerView view, List<MovementRenderInstruction> instructions) {
+        // Regardless of vision settings, no need to render beyond the fog.
+        Area clearArea = null;
+        if (!view.isGMView()) {
+            if (zone.hasFog() && zoneView.isUsingVision()) {
+                clearArea = new Area(zoneView.getExposedArea(view));
+                clearArea.intersect(zoneView.getVisibleArea(view));
+            } else if (zone.hasFog()) {
+                clearArea = zoneView.getExposedArea(view);
+            } else if (zoneView.isUsingVision()) {
+                clearArea = zoneView.getVisibleArea(view);
+            }
+
+            if (clearArea != null) {
+                worldG.clip(clearArea);
+            }
+        }
+
+        for (var instruction : instructions) {
+            var token = instruction.token();
+            var footprintBounds = instruction.bounds();
+
+            // OPTIMIZE: combine this with the code in renderTokens()
+            if (instruction.path() != null) {
+                // TODO Like renderTokens(), move this instead a separate renderPaths() call? Or should I
+                //  merge renderPaths() back into renderTokens()?
+                // TODO Hmm... this probably won't fly. with a worldG.
+                renderer.renderPath(worldG, instruction.path(), instruction.footprint());
+            }
+
+            BufferedImage image = instruction.image();
+
+            // Draw token
+            Dimension imgSize = new Dimension(image.getWidth(), image.getHeight());
+            SwingUtil.constrainTo(imgSize, footprintBounds.width, footprintBounds.height);
+
+            // TODO double instead of int here.
+            int offsetx = 0;
+            int offsety = 0;
+            if (token.isSnapToScale()) {
+                offsetx =
+                                (imgSize.width < footprintBounds.width
+                                        ? (footprintBounds.width - imgSize.width) / 2
+                                        : 0);
+                offsety =
+                                (imgSize.height < footprintBounds.height
+                                        ? (footprintBounds.height - imgSize.height) / 2
+                                        : 0);
+            }
+            int tx = footprintBounds.x + offsetx;
+            int ty = footprintBounds.y + offsety;
+
+            AffineTransform at = new AffineTransform();
+            at.translate(tx, ty);
+
+            if (token.hasFacing() && token.getShape() == Token.TokenShape.TOP_DOWN) {
+                at.rotate(
+                        Math.toRadians(token.getFacingInDegrees()),
+                        footprintBounds.width / 2. - token.getAnchor().x - offsetx,
+                        footprintBounds.height / 2. - token.getAnchor().y - offsety);
+            }
+            if (token.isSnapToScale()) {
+                at.scale(
+                        (double) imgSize.width / image.getWidth(), (double) imgSize.height / image.getHeight());
+            } else {
+                if (token.getShape() == Token.TokenShape.FIGURE) {
+                    at.scale(
+                            (double) footprintBounds.width / image.getWidth(), (double) footprintBounds.width / image.getWidth());
+                } else {
+                    at.scale(
+                            (double) footprintBounds.width / image.getWidth(), (double) footprintBounds.height / image.getHeight());
+                }
+            }
+
+            worldG.drawImage(image, at, renderer);
+
+            // TODO Label rendering is inherently world-space yet.
+
+            // int scaledWidth = (int) (footprintBounds.width * renderer.getScale());
+            // int scaledHeight = (int) (footprintBounds.height * renderer.getScale());
+//            var labelY = y + 10 + scaledHeight;
+//            var labelX = x + scaledWidth / 2;
+//            if (instruction.distanceTravaledToShow() != null) {
+//                String distance = NumberFormat.getInstance().format(instruction.distanceTravaledToShow());
+//                renderer.delayRendering(new LabelRenderer(renderer, distance, labelX, labelY));
+//                labelY += 20;
+//            }
+//            if (instruction.playerName() != null) {
+//                renderer.delayRendering(
+//                        new LabelRenderer(renderer, instruction.playerName(), labelX, labelY));
+//            }
+
+        }
+    }
 }
