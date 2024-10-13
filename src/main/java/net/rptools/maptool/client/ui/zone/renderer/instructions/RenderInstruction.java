@@ -20,6 +20,16 @@ import net.rptools.maptool.model.drawing.DrawableNoise;
 import net.rptools.maptool.model.drawing.DrawablePaint;
 
 public sealed interface RenderInstruction {
+  // TODO Each batch comes with a clip. Should probably be an Area, but could be an enum given the
+  //  common cases. E.g., Hard fog, clear area, soft fog, etc.
+  //  ZoneCompositor should produce a stream of RenderInstruction.
+  //  For fidelity with original, would need to include path with the TokenRenderInstruction
+  //  and MovementRenderInstruction, but really we should render them on separate layers. Truly
+  //  the compositor would output a list of rendering instructions, in the rendering order (back-
+  //  to-front), with very direct meaning, e.g., render image x to rectangle y (in world space).
+  //  Not everything comes down to images, but everything should be easily interpretable (minimal
+  //  logic) and expressed in world space.
+
   record Board(DrawablePaint paint, @Nullable DrawableNoise noise) implements RenderInstruction {}
 
   record Map(BufferedImage mapImage, int offsetX, int offsetY, double scaleX, double scaleY) {}
