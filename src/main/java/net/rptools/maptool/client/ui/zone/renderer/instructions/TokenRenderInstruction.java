@@ -12,13 +12,14 @@
  * <http://www.gnu.org/licenses/> and specifically the Affero license
  * text at <http://www.gnu.org/licenses/agpl.html>.
  */
-package net.rptools.maptool.client.ui.zone.renderer;
+package net.rptools.maptool.client.ui.zone.renderer.instructions;
 
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import javax.annotation.Nullable;
 import net.rptools.maptool.client.ui.token.AbstractTokenOverlay;
+import net.rptools.maptool.client.ui.zone.renderer.TokenLocation;
 import net.rptools.maptool.model.Path;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.TokenFootprint;
