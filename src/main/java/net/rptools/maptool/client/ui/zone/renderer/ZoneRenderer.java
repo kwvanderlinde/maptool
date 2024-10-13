@@ -60,6 +60,7 @@ import net.rptools.maptool.client.ui.token.AbstractTokenOverlay;
 import net.rptools.maptool.client.ui.token.BarTokenOverlay;
 import net.rptools.maptool.client.ui.token.dialog.create.NewTokenDialog;
 import net.rptools.maptool.client.ui.zone.*;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
@@ -89,11 +90,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   /** DebounceExecutor for throttling repaint() requests. */
   private final DebounceExecutor repaintDebouncer;
 
-  /** Noise for mask on repeating tiles. */
+  /** Noise for mask on repeating tiles. Null of noise is disabled. */
   private DrawableNoise noise = null;
-
-  /** Is the noise filter on for disrupting pattens in background tiled textures. */
-  private boolean bgTextureNoiseFilterOn = false;
 
   private static LightSourceIconOverlay lightSourceIconOverlay = new LightSourceIconOverlay();
 
@@ -118,8 +116,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   private final List<TokenLocation> markerLocationList = new ArrayList<TokenLocation>();
   private GeneralPath facingArrow;
   private final List<Token> showPathList = new ArrayList<Token>();
-  private boolean showAllPaths = true; // Jamz: new option to show path
-  // Optimizations
   final Map<GUID, BufferedImage> labelRenderingCache = new HashMap<GUID, BufferedImage>();
 
   /**
@@ -141,11 +137,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   private boolean isLoaded;
 
   private BufferedImage miniImage;
-  private BufferedImage backbuffer;
-  private boolean drawBackground = true;
-  private int lastX;
-  private int lastY;
-  private double lastScale;
   private Area visibleScreenArea;
   private final List<ItemRenderer> itemRenderList = new LinkedList<ItemRenderer>();
   private PlayerView lastView;
@@ -160,6 +151,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
   private final EnumSet<Layer> disabledLayers = EnumSet.noneOf(Layer.class);
   private final ZoneCompositor compositor;
+  private final BoardRenderer boardRenderer;
   private final GridRenderer gridRenderer;
   private final HaloRenderer haloRenderer;
   private final LightsRenderer lightsRenderer;
@@ -189,6 +181,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     var renderHelper = new RenderHelper(this, tempBufferPool);
     this.compositor = new ZoneCompositor();
+    this.boardRenderer = new BoardRenderer(renderHelper);
     this.gridRenderer = new GridRenderer();
     this.haloRenderer = new HaloRenderer();
     this.lightsRenderer = new LightsRenderer(renderHelper, zone, zoneView);
@@ -968,7 +961,20 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     // Rendering pipeline
     if (zone.drawBoard()) {
       timer.start("board");
-      renderBoard(g2d, view);
+      boardRenderer.renderBoard(g2d, new RenderInstruction.Board(zone.getBackgroundPaint(), noise));
+
+      if (zone.getMapAssetId() != null) {
+        BufferedImage mapImage = ImageManager.getImage(zone.getMapAssetId(), this);
+        boardRenderer.renderMap(
+            g2d,
+            new RenderInstruction.Map(
+                mapImage,
+                zone.getBoardX(),
+                zone.getBoardY(),
+                zone.getImageScaleX(),
+                zone.getImageScaleY()));
+      }
+
       timer.stop("board");
     }
     if (shouldRenderLayer(Zone.Layer.BACKGROUND, view)) {
@@ -1343,62 +1349,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     // list.addAll(drawnElements);
 
     renderer.renderDrawables(g, drawnElements, viewport, getScale());
-  }
-
-  protected void renderBoard(Graphics2D g, PlayerView view) {
-    Dimension size = getSize();
-    if (backbuffer == null
-        || backbuffer.getWidth() != size.width
-        || backbuffer.getHeight() != size.height) {
-      backbuffer = new BufferedImage(size.width, size.height, Transparency.OPAQUE);
-      drawBackground = true;
-    }
-    Scale scale = getZoneScale();
-    if (scale.getOffsetX() != lastX
-        || scale.getOffsetY() != lastY
-        || scale.getScale() != lastScale) {
-      drawBackground = true;
-    }
-    if (zone.isBoardChanged()) {
-      drawBackground = true;
-      zone.setBoardChanged(false);
-    }
-    if (drawBackground) {
-      Graphics2D bbg = backbuffer.createGraphics();
-      AppPreferences.renderQuality.get().setRenderingHints(bbg);
-
-      // Background texture
-      Paint paint =
-          zone.getBackgroundPaint().getPaint(getViewOffsetX(), getViewOffsetY(), getScale(), this);
-      bbg.setPaint(paint);
-      bbg.fillRect(0, 0, size.width, size.height);
-
-      // Only apply the noise if the feature is on and the background a textured paint
-      if (bgTextureNoiseFilterOn && paint instanceof TexturePaint) {
-        bbg.setPaint(noise.getPaint(getViewOffsetX(), getViewOffsetY(), getScale()));
-        bbg.fillRect(0, 0, size.width, size.height);
-      }
-
-      // Map
-      if (zone.getMapAssetId() != null) {
-        BufferedImage mapImage = ImageManager.getImage(zone.getMapAssetId(), this);
-        double scaleFactor = getScale();
-        bbg.drawImage(
-            mapImage,
-            getViewOffsetX() + (int) (zone.getBoardX() * scaleFactor),
-            getViewOffsetY() + (int) (zone.getBoardY() * scaleFactor),
-            (int) (mapImage.getWidth() * scaleFactor * zone.getImageScaleX()),
-            (int) (mapImage.getHeight() * scaleFactor * zone.getImageScaleY()),
-            null);
-      }
-      bbg.dispose();
-      drawBackground = false;
-    }
-    lastX = scale.getOffsetX();
-    lastY = scale.getOffsetY();
-    lastScale = scale.getScale();
-
-    g.drawImage(backbuffer, 0, 0, this);
   }
 
   private Set<SelectionSet> getOwnedMovementSet(PlayerView view) {
@@ -3818,7 +3768,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    */
   public void setNoiseValues(long seed, float alpha) {
     noise.setNoiseValues(seed, alpha);
-    drawBackground = true;
   }
 
   /**
@@ -3828,7 +3777,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    *     <code>false</code>
    */
   public boolean isBgTextureNoiseFilterOn() {
-    return bgTextureNoiseFilterOn;
+    return noise != null;
   }
 
   /**
@@ -3837,8 +3786,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    * @param on <code>true</code> to turn on, <code>false</code> to turn off.
    */
   public void setBgTextureNoiseFilterOn(boolean on) {
-    bgTextureNoiseFilterOn = on;
-    drawBackground = true;
     if (on) {
       noise = new DrawableNoise();
     } else {
