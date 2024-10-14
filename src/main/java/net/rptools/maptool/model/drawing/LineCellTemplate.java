@@ -15,7 +15,6 @@
 package net.rptools.maptool.model.drawing;
 
 import com.google.protobuf.StringValue;
-import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.Area;
 import java.util.ArrayList;
@@ -66,100 +65,6 @@ public class LineCellTemplate extends AbstractTemplate {
   /*---------------------------------------------------------------------------------------------
    * Overridden AbstractTemplate Methods
    *-------------------------------------------------------------------------------------------*/
-
-  /**
-   * @see net.rptools.maptool.model.drawing.AbstractTemplate#paintArea(java.awt.Graphics2D, int,
-   *     int, int, int, int, int)
-   */
-  @Override
-  protected void paintArea(
-      Graphics2D g, int x, int y, int xOff, int yOff, int gridSize, int distance) {
-    paintArea(g, xOff, yOff, gridSize, getQuadrant());
-  }
-
-  /**
-   * This method is cheating, the distance parameter was replaced with the offset into the path.
-   *
-   * @see net.rptools.maptool.model.drawing.AbstractTemplate#paintBorder(java.awt.Graphics2D, int,
-   *     int, int, int, int, int)
-   */
-  @Override
-  protected void paintBorder(
-      Graphics2D g, int x, int y, int xOff, int yOff, int gridSize, int pElement) {
-    // Have to scan 3 points behind and ahead, since that is the maximum number of points
-    // that can be added to the path from any single intersection.
-    boolean[] noPaint = new boolean[4];
-    final var path = getPath();
-    if (path == null) {
-      return;
-    }
-
-    for (int i = pElement - 3; i < pElement + 3; i++) {
-      if (i < 0 || i >= path.size() || i == pElement) {
-        continue;
-      }
-      CellPoint p = path.get(i);
-
-      // Ignore diagonal cells and cells that are not adjacent
-      int dx = p.x - x;
-      int dy = p.y - y;
-      if (Math.abs(dx) == Math.abs(dy) || Math.abs(dx) > 1 || Math.abs(dy) > 1) continue;
-
-      // Remove the border between the 2 points
-      noPaint[dx != 0 ? (dx < 0 ? 0 : 2) : (dy < 0 ? 3 : 1)] = true;
-    } // endif
-
-    // Paint the borders as needed
-    if (!noPaint[0]) paintCloseVerticalBorder(g, xOff, yOff, gridSize, getQuadrant());
-    if (!noPaint[1]) paintFarHorizontalBorder(g, xOff, yOff, gridSize, getQuadrant());
-    if (!noPaint[2]) paintFarVerticalBorder(g, xOff, yOff, gridSize, getQuadrant());
-    if (!noPaint[3]) paintCloseHorizontalBorder(g, xOff, yOff, gridSize, getQuadrant());
-  }
-
-  @Override
-  protected void paint(Zone zone, Graphics2D g, boolean border, boolean area) {
-    if (zone == null) {
-      return;
-    }
-    final var path = getPath();
-    if (path == null) {
-      return;
-    }
-
-    // Paint each element in the path
-    int gridSize = zone.getGrid().getSize();
-    ListIterator<CellPoint> i = path.listIterator();
-    while (i.hasNext()) {
-      CellPoint p = i.next();
-      int xOff = p.x * gridSize;
-      int yOff = p.y * gridSize;
-      int distance = getDistance(p.x, p.y);
-
-      switch (getQuadrant()) {
-        case NORTH_EAST -> {
-          yOff = yOff - gridSize;
-        }
-        case SOUTH_WEST -> {
-          xOff = xOff - gridSize;
-        }
-        case NORTH_WEST -> {
-          xOff = xOff - gridSize;
-          yOff = yOff - gridSize;
-        }
-        case SOUTH_EAST -> {
-          // Nothing to do.
-        }
-      }
-
-      // Paint what is needed.
-      if (area) {
-        paintArea(g, p.x, p.y, xOff, yOff, gridSize, distance);
-      } // endif
-      if (border) {
-        paintBorder(g, p.x, p.y, xOff, yOff, gridSize, i.previousIndex());
-      } // endif
-    } // endfor
-  }
 
   /**
    * @see net.rptools.maptool.model.drawing.AbstractTemplate#setVertex(ZonePoint)

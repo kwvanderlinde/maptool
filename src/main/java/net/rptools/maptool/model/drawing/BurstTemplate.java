@@ -15,9 +15,7 @@
 package net.rptools.maptool.model.drawing;
 
 import com.google.protobuf.StringValue;
-import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import java.awt.RenderingHints;
 import java.awt.geom.Area;
 import javax.annotation.Nonnull;
 import net.rptools.maptool.model.GUID;
@@ -96,25 +94,6 @@ public class BurstTemplate extends RadiusTemplate {
   /*---------------------------------------------------------------------------------------------
    * Overridden AbstractDrawing Methods
    *-------------------------------------------------------------------------------------------*/
-
-  @Override
-  protected void paint(Zone zone, Graphics2D g, boolean border, boolean area) {
-    Object oldAA = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
-    try {
-      g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-      var shape = makeShape(zone);
-      if (border) {
-        g.draw(shape);
-        g.draw(makeVertexShape(zone));
-      }
-      if (area) {
-        g.fill(shape);
-      }
-    } finally {
-      g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, oldAA);
-    }
-  }
 
   @Override
   public @Nonnull Area getArea(Zone zone) {
