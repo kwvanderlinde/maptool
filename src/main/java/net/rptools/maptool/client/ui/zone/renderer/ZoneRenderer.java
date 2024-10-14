@@ -60,6 +60,7 @@ import net.rptools.maptool.client.ui.token.AbstractTokenOverlay;
 import net.rptools.maptool.client.ui.token.BarTokenOverlay;
 import net.rptools.maptool.client.ui.token.dialog.create.NewTokenDialog;
 import net.rptools.maptool.client.ui.zone.*;
+import net.rptools.maptool.client.ui.zone.DrawableRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.TokenRenderInstruction;
 import net.rptools.maptool.client.walker.ZoneWalker;
@@ -106,7 +107,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   private final SelectionModel selectionModel;
 
   private Scale zoneScale;
-  private final Map<Zone.Layer, DrawableRenderer> drawableRenderers;
+  private final Map<Zone.Layer, net.rptools.maptool.client.ui.zone.DrawableRenderer>
+      drawableRenderers;
   private final List<ZoneOverlay> overlayList = new ArrayList<ZoneOverlay>();
   private final Map<Zone.Layer, List<TokenLocation>> tokenLocationMap =
       new HashMap<Zone.Layer, List<TokenLocation>>();
