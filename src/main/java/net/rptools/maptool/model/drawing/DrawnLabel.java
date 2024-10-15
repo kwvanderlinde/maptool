@@ -79,17 +79,15 @@ public class DrawnLabel extends AbstractDrawable {
     return font;
   }
 
-  public void draw(Zone zone, Graphics2D aG) {
+  @Override
+  public void draw(Zone zone, Graphics2D g, Pen pen) {
     if (renderer == null) {
       renderer = new CellRendererPane();
       textPane = createTextPane(bounds, font);
       textPane.setText(text);
     }
-    renderer.paintComponent(aG, textPane, null, bounds);
+    renderer.paintComponent(g, textPane, null, bounds);
   }
-
-  @Override
-  protected void drawBackground(Zone zone, Graphics2D g) {}
 
   @Override
   public Rectangle getBounds(Zone zone) {
