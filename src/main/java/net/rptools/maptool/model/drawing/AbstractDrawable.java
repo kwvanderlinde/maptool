@@ -94,9 +94,9 @@ public abstract class AbstractDrawable implements Drawable, ImageObserver {
     g.setStroke(oldStroke);
   }
 
-  protected abstract void draw(Zone zone, Graphics2D g);
+  protected void draw(Zone zone, Graphics2D g) {}
 
-  protected abstract void drawBackground(Zone zone, Graphics2D g);
+  protected void drawBackground(Zone zone, Graphics2D g) {}
 
   @VisibleForTesting
   protected Campaign getCampaign() {

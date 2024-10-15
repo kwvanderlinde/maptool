@@ -25,12 +25,14 @@ import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.server.proto.drawing.DrawableDto;
 import net.rptools.maptool.server.proto.drawing.DrawablesGroupDto;
+import org.apache.log4j.Logger;
 
 /**
  * @author Jagged
  *     <p>A grouping of DrawnElements to create a mini-layer like effect
  */
 public class DrawablesGroup extends AbstractDrawable {
+  private static final Logger log = Logger.getLogger(DrawablesGroup.class);
   private List<DrawnElement> drawableList;
 
   public DrawablesGroup(List<DrawnElement> drawableList) {
@@ -123,15 +125,12 @@ public class DrawablesGroup extends AbstractDrawable {
   }
 
   @Override
-  protected void draw(Zone zone, Graphics2D g) {
+  public void draw(Zone zone, Graphics2D g, Pen pen) {
     // This should never be called
+    log.error("DrawablesGroup.draw() called, but never should be.");
+
     for (DrawnElement element : drawableList) {
       element.getDrawable().draw(zone, g, element.getPen());
     }
-  }
-
-  @Override
-  protected void drawBackground(Zone zone, Graphics2D g) {
-    // This should never be called
   }
 }
