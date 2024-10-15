@@ -25,7 +25,7 @@ import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.Pen;
 
-public class HollowDiamondTopologyTool extends AbstractDrawingTool implements MouseMotionListener {
+public class HollowDiamondTopologyTool extends AbstractTopologyDrawingTool implements MouseMotionListener {
   private static final long serialVersionUID = 7227397975734203085L;
   protected Shape diamond;
   protected ZonePoint originPoint;

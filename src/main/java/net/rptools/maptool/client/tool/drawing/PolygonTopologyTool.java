@@ -18,6 +18,7 @@ import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Polygon;
+import java.awt.Shape;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
@@ -31,6 +32,7 @@ import net.rptools.maptool.model.drawing.LineSegment;
 import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.model.drawing.ShapeDrawable;
 
+// TODO These aren't freehand lines. Also it's not worth inheriting from LineTool.
 /** Tool for drawing freehand lines. */
 public class PolygonTopologyTool extends LineTool implements MouseMotionListener {
 
@@ -132,7 +134,7 @@ public class PolygonTopologyTool extends LineTool implements MouseMotionListener
 
   @Override
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    paintTopologyOverlay(g);
+    paintTopologyOverlay(g, (Shape) null, Pen.MODE_SOLID);
     super.paintOverlay(renderer, g);
   }
 }

@@ -26,7 +26,7 @@ import net.rptools.maptool.model.drawing.Oval;
 import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.util.GraphicsUtil;
 
-public class HollowOvalTopologyTool extends AbstractDrawingTool implements MouseMotionListener {
+public class HollowOvalTopologyTool extends AbstractTopologyDrawingTool implements MouseMotionListener {
 
   private static final long serialVersionUID = 3258413928311830325L;
 

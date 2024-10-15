@@ -22,12 +22,13 @@ import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
+import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.model.drawing.Rectangle;
 
 /**
  * @author drice
  */
-public class RectangleTopologyTool extends AbstractDrawingTool implements MouseMotionListener {
+public class RectangleTopologyTool extends AbstractTopologyDrawingTool implements MouseMotionListener {
   private static final long serialVersionUID = 3258413928311830323L;
 
   protected Rectangle rectangle;
@@ -60,7 +61,7 @@ public class RectangleTopologyTool extends AbstractDrawingTool implements MouseM
 
   @Override
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    paintTopologyOverlay(g, rectangle);
+    paintTopologyOverlay(g, rectangle, Pen.MODE_SOLID);
   }
 
   @Override

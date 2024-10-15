@@ -236,20 +236,6 @@ public abstract class AbstractDrawingTool extends DefaultTool implements ZoneOve
   @Override
   public abstract void paintOverlay(ZoneRenderer renderer, Graphics2D g);
 
-  protected void paintTopologyOverlay(Graphics2D g, Drawable drawable) {
-    paintTopologyOverlay(g, drawable, Pen.MODE_SOLID);
-  }
-
-  protected void paintTopologyOverlay(Graphics2D g, Shape shape) {
-    ShapeDrawable drawable = null;
-
-    if (shape != null) {
-      drawable = new ShapeDrawable(shape, false);
-    }
-
-    paintTopologyOverlay(g, drawable, Pen.MODE_SOLID);
-  }
-
   protected void paintTopologyOverlay(Graphics2D g, Shape shape, int penMode) {
     ShapeDrawable drawable = null;
 
@@ -258,11 +244,6 @@ public abstract class AbstractDrawingTool extends DefaultTool implements ZoneOve
     }
 
     paintTopologyOverlay(g, drawable, penMode);
-  }
-
-  protected void paintTopologyOverlay(Graphics2D g) {
-    Rectangle rectangle = null;
-    paintTopologyOverlay(g, rectangle, Pen.MODE_SOLID);
   }
 
   protected void paintTopologyOverlay(Graphics2D g, Drawable drawable, int penMode) {

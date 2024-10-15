@@ -28,7 +28,7 @@ import net.rptools.maptool.model.drawing.Rectangle;
 /**
  * @author drice
  */
-public class HollowRectangleTopologyTool extends AbstractDrawingTool
+public class HollowRectangleTopologyTool extends AbstractTopologyDrawingTool
     implements MouseMotionListener {
   private static final long serialVersionUID = 3258413928311830323L;
 

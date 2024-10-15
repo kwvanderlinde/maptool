@@ -30,7 +30,7 @@ import net.rptools.maptool.util.GraphicsUtil;
 /**
  * @author CoveredInFish
  */
-public class CrossTopologyTool extends AbstractDrawingTool implements MouseMotionListener {
+public class CrossTopologyTool extends AbstractTopologyDrawingTool implements MouseMotionListener {
   private static final long serialVersionUID = 3258413928311830323L;
 
   protected Cross cross;

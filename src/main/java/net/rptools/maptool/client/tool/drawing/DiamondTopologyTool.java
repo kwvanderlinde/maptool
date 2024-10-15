@@ -23,9 +23,10 @@ import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
+import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.model.drawing.ShapeDrawable;
 
-public class DiamondTopologyTool extends AbstractDrawingTool implements MouseMotionListener {
+public class DiamondTopologyTool extends AbstractTopologyDrawingTool implements MouseMotionListener {
 
   private static final long serialVersionUID = -1497583181619555786L;
   protected Shape diamond;
@@ -59,7 +60,7 @@ public class DiamondTopologyTool extends AbstractDrawingTool implements MouseMot
 
   @Override
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    paintTopologyOverlay(g, diamond);
+    paintTopologyOverlay(g, diamond, Pen.MODE_SOLID);
   }
 
   @Override
