@@ -39,6 +39,7 @@ public class Pen {
   private boolean squareCap;
   private float opacity = 1;
 
+  // TODO Convert to DrawablePaint so callers don't need special cases.
   // ***** Legacy support, these supports drawables from 1.1
   private int color;
   private int backgroundColor;
