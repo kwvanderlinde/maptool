@@ -30,7 +30,7 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Zone;
-import net.rptools.maptool.model.drawing.AbstractDrawing;
+import net.rptools.maptool.model.drawing.AbstractDrawable;
 import net.rptools.maptool.model.drawing.DrawablesGroup;
 import net.rptools.maptool.model.drawing.DrawnElement;
 import net.rptools.maptool.util.FunctionUtil;
@@ -167,8 +167,8 @@ public class DrawingMiscFunctions extends DrawingFunctions {
   private List<String> findDrawings(List<DrawnElement> drawableList, String name) {
     List<String> drawingList = new LinkedList<String>();
     for (DrawnElement de : drawableList) {
-      if (de.getDrawable() instanceof AbstractDrawing) {
-        if (name.equals("*") || name.equals(((AbstractDrawing) de.getDrawable()).getName())) {
+      if (de.getDrawable() instanceof AbstractDrawable) {
+        if (name.equals("*") || name.equals(((AbstractDrawable) de.getDrawable()).getName())) {
           drawingList.add(de.getDrawable().getId().toString());
         }
       }

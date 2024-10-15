@@ -23,7 +23,7 @@ import javax.swing.tree.DefaultTreeCellRenderer;
 import net.rptools.maptool.client.ui.theme.Icons;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.language.I18N;
-import net.rptools.maptool.model.drawing.AbstractDrawing;
+import net.rptools.maptool.model.drawing.AbstractDrawable;
 import net.rptools.maptool.model.drawing.AbstractTemplate;
 import net.rptools.maptool.model.drawing.Drawable;
 import net.rptools.maptool.model.drawing.DrawablesGroup;
@@ -101,8 +101,8 @@ public class DrawPanelTreeCellRenderer extends DefaultTreeCellRenderer {
       int perc = (int) (pen.getOpacity() * 100);
       result += " " + I18N.getText("panel.DrawExplorer.opacity", perc);
     }
-    if (drawing instanceof AbstractDrawing) {
-      String dName = ((AbstractDrawing) drawing).getName();
+    if (drawing instanceof AbstractDrawable) {
+      String dName = ((AbstractDrawable) drawing).getName();
       if (dName != null && !"".equals(dName)) result = dName + ": " + result;
     }
     return result;

@@ -30,7 +30,7 @@ import net.rptools.maptool.server.proto.drawing.DrawablesGroupDto;
  * @author Jagged
  *     <p>A grouping of DrawnElements to create a mini-layer like effect
  */
-public class DrawablesGroup extends AbstractDrawing {
+public class DrawablesGroup extends AbstractDrawable {
   private List<DrawnElement> drawableList;
 
   public DrawablesGroup(List<DrawnElement> drawableList) {

@@ -17,7 +17,7 @@ package net.rptools.maptool.client.script.javascript.api;
 import java.util.ArrayList;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.model.GUID;
-import net.rptools.maptool.model.drawing.AbstractDrawing;
+import net.rptools.maptool.model.drawing.AbstractDrawable;
 import net.rptools.maptool.model.drawing.DrawnElement;
 import org.graalvm.polyglot.*;
 
@@ -27,7 +27,7 @@ public class JSAPIDrawing implements MapToolJSAPIInterface {
     return guid.toString();
   }
 
-  @HostAccess.Export public final AbstractDrawing drawing;
+  @HostAccess.Export public final AbstractDrawable drawing;
 
   @HostAccess.Export public final GUID guid;
   private boolean dead = false;
@@ -35,11 +35,11 @@ public class JSAPIDrawing implements MapToolJSAPIInterface {
   @HostAccess.Export
   public JSAPIDrawing(String gid) {
     guid = new GUID(gid);
-    AbstractDrawing target = null;
+    AbstractDrawable target = null;
     for (DrawnElement e :
         MapTool.getFrame().getCurrentZoneRenderer().getZone().getAllDrawnElements()) {
       if (e.getDrawable().getId().equals(guid)) {
-        target = (AbstractDrawing) e.getDrawable();
+        target = (AbstractDrawable) e.getDrawable();
         break;
       }
     }
@@ -49,7 +49,7 @@ public class JSAPIDrawing implements MapToolJSAPIInterface {
     }
   }
 
-  public JSAPIDrawing(AbstractDrawing d) {
+  public JSAPIDrawing(AbstractDrawable d) {
     drawing = d;
     guid = d.getId();
   }
@@ -75,7 +75,7 @@ public class JSAPIDrawing implements MapToolJSAPIInterface {
     ArrayList<Object> out = new ArrayList<>();
     for (DrawnElement e :
         MapTool.getFrame().getCurrentZoneRenderer().getZone().getAllDrawnElements()) {
-      out.add(new JSAPIDrawing((AbstractDrawing) e.getDrawable()));
+      out.add(new JSAPIDrawing((AbstractDrawable) e.getDrawable()));
     }
     return out;
   }

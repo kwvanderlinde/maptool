@@ -42,7 +42,7 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.TextMessage;
 import net.rptools.maptool.model.Zone;
-import net.rptools.maptool.model.drawing.AbstractDrawing;
+import net.rptools.maptool.model.drawing.AbstractDrawable;
 import net.rptools.maptool.model.drawing.AbstractTemplate;
 import net.rptools.maptool.model.drawing.Drawable;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
@@ -196,8 +196,8 @@ public class DrawPanelPopupMenu extends JPopupMenu {
       Pen p = elementUnderMouse.getPen();
       Drawable d = elementUnderMouse.getDrawable();
 
-      if (d instanceof AbstractDrawing) {
-        AbstractDrawing ad = (AbstractDrawing) d;
+      if (d instanceof AbstractDrawable) {
+        AbstractDrawable ad = (AbstractDrawable) d;
         cp.setForegroundPaint(getPaint(p.getPaint(), ad));
         cp.setBackgroundPaint(getPaint(p.getBackgroundPaint(), ad));
         cp.setPenWidth((int) p.getThickness());
@@ -335,7 +335,7 @@ public class DrawPanelPopupMenu extends JPopupMenu {
     }
 
     public void actionPerformed(ActionEvent e) {
-      AbstractDrawing group = (AbstractDrawing) elementUnderMouse.getDrawable();
+      AbstractDrawable group = (AbstractDrawable) elementUnderMouse.getDrawable();
       String groupName =
           (String)
               JOptionPane.showInputDialog(
@@ -503,7 +503,7 @@ public class DrawPanelPopupMenu extends JPopupMenu {
     return shapeVblMenu;
   }
 
-  private Paint getPaint(DrawablePaint paint, AbstractDrawing ad) {
+  private Paint getPaint(DrawablePaint paint, AbstractDrawable ad) {
     if (paint instanceof DrawableColorPaint) {
       return paint.getPaint(ad);
     }

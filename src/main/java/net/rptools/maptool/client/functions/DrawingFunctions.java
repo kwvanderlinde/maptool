@@ -25,7 +25,7 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.Zone.Layer;
-import net.rptools.maptool.model.drawing.AbstractDrawing;
+import net.rptools.maptool.model.drawing.AbstractDrawable;
 import net.rptools.maptool.model.drawing.Drawable;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.drawing.DrawablePaint;
@@ -245,7 +245,7 @@ public class DrawingFunctions extends AbstractFunction {
   protected JsonObject getDrawingJSONInfo(String functionName, Zone map, GUID guid)
       throws ParserException {
     DrawnElement el = getDrawnElement(functionName, map, guid);
-    AbstractDrawing d = (AbstractDrawing) el.getDrawable();
+    AbstractDrawable d = (AbstractDrawable) el.getDrawable();
     JsonObject dinfo = new JsonObject();
     dinfo.addProperty("id", el.getDrawable().getId().toString());
     dinfo.addProperty("name", d.getName());
@@ -262,7 +262,7 @@ public class DrawingFunctions extends AbstractFunction {
     return dinfo;
   }
 
-  private JsonObject boundsToJSON(Zone map, AbstractDrawing d) {
+  private JsonObject boundsToJSON(Zone map, AbstractDrawable d) {
     JsonObject binfo = new JsonObject();
     binfo.addProperty("x", d.getBounds(map).x);
     binfo.addProperty("y", d.getBounds(map).y);
@@ -271,7 +271,7 @@ public class DrawingFunctions extends AbstractFunction {
     return binfo;
   }
 
-  private String getDrawbleType(AbstractDrawing d) {
+  private String getDrawbleType(AbstractDrawable d) {
     if (d instanceof LineSegment) {
       return "Line";
     } else if (d instanceof ShapeDrawable) {
@@ -288,7 +288,7 @@ public class DrawingFunctions extends AbstractFunction {
     }
   }
 
-  private JsonArray pathToJSON(AbstractDrawing d) {
+  private JsonArray pathToJSON(AbstractDrawable d) {
     if (d instanceof LineSegment) {
       JsonArray pinfo = new JsonArray();
       LineSegment line = (LineSegment) d;
@@ -393,7 +393,7 @@ public class DrawingFunctions extends AbstractFunction {
 
   protected void setDrawingName(Zone map, GUID guid, String name) throws ParserException {
     DrawnElement de = getDrawnElement("setDrawingName", map, guid);
-    AbstractDrawing ad = (AbstractDrawing) de.getDrawable();
+    AbstractDrawable ad = (AbstractDrawable) de.getDrawable();
 
     if (name != null) {
       ad.setName(name);
