@@ -43,6 +43,10 @@ import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.model.drawing.ShapeDrawable;
 
+// TODO This doc comment is insane and wrong.
+// TODO Get your act together. This makes no sense as a base class for drawings, templates,
+//  topology, and FoW exposure. The latter two rightly have no concept of a pen, and templates are
+//  +grid-based. Btw, templates are completely busted on gridless maps.
 /** Tool for drawing freehand lines. */
 public abstract class AbstractDrawingTool extends DefaultTool implements ZoneOverlay {
 
