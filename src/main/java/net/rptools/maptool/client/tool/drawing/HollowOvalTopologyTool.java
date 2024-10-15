@@ -26,7 +26,8 @@ import net.rptools.maptool.model.drawing.Oval;
 import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.util.GraphicsUtil;
 
-public class HollowOvalTopologyTool extends AbstractTopologyDrawingTool implements MouseMotionListener {
+public class HollowOvalTopologyTool extends AbstractTopologyDrawingTool
+    implements MouseMotionListener {
 
   private static final long serialVersionUID = 3258413928311830325L;
 
@@ -34,20 +35,6 @@ public class HollowOvalTopologyTool extends AbstractTopologyDrawingTool implemen
   private ZonePoint originPoint;
 
   public HollowOvalTopologyTool() {}
-
-  @Override
-  // Override abstracttool to prevent color palette from
-  // showing up
-  protected void attachTo(ZoneRenderer renderer) {
-    super.attachTo(renderer);
-    // Hide the drawable color palette
-    MapTool.getFrame().removeControlPanel();
-  }
-
-  @Override
-  public boolean isAvailable() {
-    return MapTool.getPlayer().isGM();
-  }
 
   @Override
   public String getInstructions() {

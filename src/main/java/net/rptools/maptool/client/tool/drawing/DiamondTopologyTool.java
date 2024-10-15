@@ -26,27 +26,14 @@ import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.model.drawing.ShapeDrawable;
 
-public class DiamondTopologyTool extends AbstractTopologyDrawingTool implements MouseMotionListener {
+public class DiamondTopologyTool extends AbstractTopologyDrawingTool
+    implements MouseMotionListener {
 
   private static final long serialVersionUID = -1497583181619555786L;
   protected Shape diamond;
   protected ZonePoint originPoint;
 
   public DiamondTopologyTool() {}
-
-  @Override
-  // Override abstracttool to prevent color palette from
-  // showing up
-  protected void attachTo(ZoneRenderer renderer) {
-    super.attachTo(renderer);
-    // Hide the drawable color palette
-    MapTool.getFrame().removeControlPanel();
-  }
-
-  @Override
-  public boolean isAvailable() {
-    return MapTool.getPlayer().isGM();
-  }
 
   @Override
   public String getInstructions() {

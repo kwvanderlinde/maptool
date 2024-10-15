@@ -38,20 +38,6 @@ public class CrossTopologyTool extends AbstractTopologyDrawingTool implements Mo
   public CrossTopologyTool() {}
 
   @Override
-  // Override abstracttool to prevent color palette from
-  // showing up
-  protected void attachTo(ZoneRenderer renderer) {
-    super.attachTo(renderer);
-    // Hide the drawable color palette
-    MapTool.getFrame().removeControlPanel();
-  }
-
-  @Override
-  public boolean isAvailable() {
-    return MapTool.getPlayer().isGM();
-  }
-
-  @Override
   public String getInstructions() {
     return "tool.crosstopology.instructions";
   }

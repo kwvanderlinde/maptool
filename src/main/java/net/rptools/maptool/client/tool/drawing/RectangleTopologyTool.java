@@ -28,26 +28,13 @@ import net.rptools.maptool.model.drawing.Rectangle;
 /**
  * @author drice
  */
-public class RectangleTopologyTool extends AbstractTopologyDrawingTool implements MouseMotionListener {
+public class RectangleTopologyTool extends AbstractTopologyDrawingTool
+    implements MouseMotionListener {
   private static final long serialVersionUID = 3258413928311830323L;
 
   protected Rectangle rectangle;
 
   public RectangleTopologyTool() {}
-
-  @Override
-  // Override abstracttool to prevent color palette from
-  // showing up
-  protected void attachTo(ZoneRenderer renderer) {
-    super.attachTo(renderer);
-    // Hide the drawable color palette
-    MapTool.getFrame().removeControlPanel();
-  }
-
-  @Override
-  public boolean isAvailable() {
-    return MapTool.getPlayer().isGM();
-  }
 
   @Override
   public String getInstructions() {
