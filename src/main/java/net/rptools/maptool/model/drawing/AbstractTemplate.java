@@ -56,6 +56,7 @@ public abstract class AbstractTemplate extends AbstractDrawing {
    * Class Variables
    *-------------------------------------------------------------------------------------------*/
 
+  // TODO Only used for BlastTemplate? Bug #4994
   /** Maximum radius value allowed. */
   public static final int MAX_RADIUS = 100;
 
