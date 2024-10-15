@@ -18,10 +18,8 @@ import com.google.common.annotations.VisibleForTesting;
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Composite;
 import java.awt.Graphics2D;
 import java.awt.Image;
-import java.awt.Stroke;
 import java.awt.image.ImageObserver;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.model.Campaign;
@@ -60,16 +58,16 @@ public abstract class AbstractDrawable implements Drawable, ImageObserver {
 
   @Override
   public void draw(Zone zone, Graphics2D g, Pen pen) {
+    g = (Graphics2D) g.create();
+
     if (pen == null) {
       pen = Pen.DEFAULT;
     }
-    Stroke oldStroke = g.getStroke();
     g.setStroke(new BasicStroke(pen.getThickness(), pen.getStrokeCap(), pen.getStrokeJoin()));
 
-    Composite oldComposite = g.getComposite();
     if (pen.isEraser()) {
       g.setComposite(AlphaComposite.Clear);
-    } else if (pen.getOpacity() != 1) {
+    } else {
       g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, pen.getOpacity()));
     }
     if (pen.getBackgroundMode() == Pen.MODE_SOLID) {
@@ -90,8 +88,6 @@ public abstract class AbstractDrawable implements Drawable, ImageObserver {
       }
       draw(zone, g);
     }
-    g.setComposite(oldComposite);
-    g.setStroke(oldStroke);
   }
 
   protected void draw(Zone zone, Graphics2D g) {}
