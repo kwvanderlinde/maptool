@@ -16,7 +16,7 @@ package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.Graphics2D;
 import java.awt.Shape;
-import java.awt.geom.Area;
+import javax.annotation.Nullable;
 import net.rptools.lib.GeometryUtil;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
@@ -57,25 +57,19 @@ public class DiamondTopologyTool extends AbstractTopologyDrawingTool {
   @Override
   protected void startNewAtPoint(ZonePoint point) {
     originPoint = point;
-    diamond = GeometryUtil.createDiamond(originPoint, originPoint);
+    diamond = GeometryUtil.createIsoRectangle(originPoint, originPoint);
   }
 
   @Override
   protected void updateLastPoint(ZonePoint point) {
-    diamond = GeometryUtil.createDiamond(originPoint, point);
+    diamond = GeometryUtil.createIsoRectangle(originPoint, point);
   }
 
   @Override
-  protected Area finish() {
-    if (diamond.getBounds().width == 0 || diamond.getBounds().height == 0) {
-      diamond = null;
-      return new Area();
-    }
-
-    Area area = new Area(diamond);
-
+  protected @Nullable Shape finish() {
+    var result = diamond.getBounds().isEmpty() ? null : diamond;
     diamond = null;
-    return area;
+    return result;
   }
 
   /** Stop drawing a rectangle and repaint the zone. */

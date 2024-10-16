@@ -15,7 +15,7 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.*;
-import java.awt.geom.Area;
+import javax.annotation.Nullable;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
 
@@ -50,10 +50,12 @@ public class PolygonTopologyTool extends AbstractTopologyDrawingTool {
 
   @Override
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    // TODO Why do we only render the lines and not the fill? I have arbitrarily decided otherwise
-    // now.
-    var shape = lineBuilder.asPolygon();
-    paintTopologyOverlay(g, shape);
+    var path = lineBuilder.asPath();
+    if (path.getCurrentPoint() != null) {
+      // Can only close non-empty paths.
+      path.closePath();
+    }
+    paintTopologyOverlay(g, path);
   }
 
   @Override
@@ -76,12 +78,14 @@ public class PolygonTopologyTool extends AbstractTopologyDrawingTool {
   }
 
   @Override
-  protected Area finish() {
+  protected @Nullable Shape finish() {
     lineBuilder.trim();
-    var polygon = lineBuilder.asPolygon();
-
+    var path = lineBuilder.asPath();
+    if (path.getCurrentPoint() != null) {
+      // Can only close non-empty paths.
+      path.closePath();
+    }
     lineBuilder.clear();
-
-    return new Area(polygon);
+    return path;
   }
 }

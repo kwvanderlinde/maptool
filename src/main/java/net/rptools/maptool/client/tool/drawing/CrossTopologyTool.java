@@ -15,12 +15,12 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.Graphics2D;
-import java.awt.geom.Area;
-import java.awt.geom.Point2D;
+import java.awt.Rectangle;
+import java.awt.Shape;
+import java.awt.geom.Path2D;
+import javax.annotation.Nullable;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
-import net.rptools.maptool.model.drawing.Cross;
-import net.rptools.maptool.util.GraphicsUtil;
 
 /**
  * @author CoveredInFish
@@ -28,7 +28,7 @@ import net.rptools.maptool.util.GraphicsUtil;
 public class CrossTopologyTool extends AbstractTopologyDrawingTool {
   private static final long serialVersionUID = 3258413928311830323L;
 
-  protected Cross cross;
+  private Rectangle bounds;
 
   public CrossTopologyTool() {}
 
@@ -39,7 +39,7 @@ public class CrossTopologyTool extends AbstractTopologyDrawingTool {
 
   @Override
   protected boolean isInProgress() {
-    return cross != null;
+    return bounds != null;
   }
 
   @Override
@@ -52,42 +52,47 @@ public class CrossTopologyTool extends AbstractTopologyDrawingTool {
     return "tool.crosstopology.tooltip";
   }
 
+  private Path2D toPath() {
+    if (bounds == null) {
+      return null;
+    }
+
+    var path = new Path2D.Double();
+    path.moveTo(bounds.x, bounds.y);
+    path.lineTo(bounds.x + bounds.width, bounds.y + bounds.height);
+    path.moveTo(bounds.x, bounds.y + bounds.height);
+    path.lineTo(bounds.x + bounds.width, bounds.y);
+    return path;
+  }
+
   @Override
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    paintTopologyOverlay(g, cross);
+    paintTopologyOverlay(g, toPath());
   }
 
   @Override
   protected void startNewAtPoint(ZonePoint point) {
-    cross = new Cross(point.x, point.y, point.x, point.y);
+    bounds = new Rectangle(point.x, point.y, 0, 0);
   }
 
   @Override
   protected void updateLastPoint(ZonePoint point) {
-    cross.getEndPoint().x = point.x;
-    cross.getEndPoint().y = point.y;
+    bounds.width = point.x - bounds.x;
+    bounds.height = point.y - bounds.y;
   }
 
   @Override
-  protected Area finish() {
-    int x1 = Math.min(cross.getStartPoint().x, cross.getEndPoint().x);
-    int x2 = Math.max(cross.getStartPoint().x, cross.getEndPoint().x);
-    int y1 = Math.min(cross.getStartPoint().y, cross.getEndPoint().y);
-    int y2 = Math.max(cross.getStartPoint().y, cross.getEndPoint().y);
-
-    Area area = GraphicsUtil.createLine(1, new Point2D.Double(x1, y1), new Point2D.Double(x2, y2));
-    area.add(GraphicsUtil.createLine(1, new Point2D.Double(x1, y2), new Point2D.Double(x2, y1)));
-
-    cross = null;
-
-    return area;
+  protected @Nullable Shape finish() {
+    var path = toPath();
+    bounds = null;
+    return path;
   }
 
   /** Stop drawing a cross and repaint the zone. */
   @Override
   public void resetTool() {
-    if (cross != null) {
-      cross = null;
+    if (bounds != null) {
+      bounds = null;
       renderer.repaint();
     } else {
       super.resetTool();

@@ -14,7 +14,6 @@
  */
 package net.rptools.lib;
 
-import java.awt.BasicStroke;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.Area;
@@ -71,6 +70,21 @@ public class GeometryUtil {
     return targetAngle;
   }
 
+  public static Path2D createIsoRectangle(ZonePoint point1, ZonePoint point2) {
+    final double diffX = point2.x - point1.x;
+    final double diffY = point2.y - point1.y;
+    final double avgY = (point1.y + point2.y) / 2.;
+
+    // Points are in counterclockwise order.
+    var path = new Path2D.Double();
+    path.moveTo(point1.x, point1.y);
+    path.lineTo(point1.x - diffY + diffX / 2, avgY - diffX / 4);
+    path.lineTo(point2.x, point2.y);
+    path.lineTo(point1.x + diffY + diffX / 2, avgY + diffX / 4);
+    path.closePath();
+    return path;
+  }
+
   public static Shape createDiamond(ZonePoint originPoint, ZonePoint newPoint) {
     int ox = originPoint.x;
     int oy = originPoint.y;
@@ -83,35 +97,6 @@ public class GeometryUtil {
     int[] x = {originPoint.x, x1, nx, x2};
     int[] y = {originPoint.y, y1, ny, y2};
     return new java.awt.Polygon(x, y, 4);
-  }
-
-  public static Shape createHollowDiamond(
-      float thickness, ZonePoint originPoint, ZonePoint newPoint) {
-    int ox = originPoint.x;
-    int oy = originPoint.y;
-    int nx = newPoint.x;
-    int ny = newPoint.y;
-    int x1 = ox - (ny - oy) + ((nx - ox) / 2);
-    int y1 = ((oy + ny) / 2) - ((nx - ox) / 4);
-    int x2 = ox + (ny - oy) + ((nx - ox) / 2);
-    int y2 = ((oy + ny) / 2) + ((nx - ox) / 4);
-    int[] x = {originPoint.x, x1, nx, x2, originPoint.x};
-    int[] y = {originPoint.y, y1, ny, y2, originPoint.y};
-
-    BasicStroke stroke = new BasicStroke(thickness, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
-
-    Path2D path = new Path2D.Double();
-
-    for (int l = 0; l < 5; l++) {
-      if (path.getCurrentPoint() == null) {
-        path.moveTo(x[l], y[l]);
-      } else {
-        path.lineTo(x[l], y[l]);
-      }
-    }
-
-    Area area = new Area(stroke.createStrokedShape(path));
-    return area;
   }
 
   public static Rectangle createRect(ZonePoint originPoint, ZonePoint newPoint) {

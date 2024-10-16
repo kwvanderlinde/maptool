@@ -15,10 +15,11 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.Graphics2D;
-import java.awt.geom.Area;
+import java.awt.Rectangle;
+import java.awt.Shape;
+import javax.annotation.Nullable;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
-import net.rptools.maptool.model.drawing.Rectangle;
 
 /**
  * @author drice
@@ -26,7 +27,7 @@ import net.rptools.maptool.model.drawing.Rectangle;
 public class RectangleTopologyTool extends AbstractTopologyDrawingTool {
   private static final long serialVersionUID = 3258413928311830323L;
 
-  protected Rectangle rectangle;
+  private Rectangle rectangle;
 
   public RectangleTopologyTool() {}
 
@@ -52,30 +53,28 @@ public class RectangleTopologyTool extends AbstractTopologyDrawingTool {
 
   @Override
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    paintTopologyOverlay(g, rectangle);
+    paintTopologyOverlay(g, rectangle == null ? null : normalizedRectangle(rectangle));
   }
 
   @Override
   protected void startNewAtPoint(ZonePoint point) {
-    rectangle = new Rectangle(point.x, point.y, point.x, point.y);
+    rectangle = new Rectangle(point.x, point.y, 0, 0);
   }
 
   @Override
   protected void updateLastPoint(ZonePoint point) {
-    rectangle.getEndPoint().x = point.x;
-    rectangle.getEndPoint().y = point.y;
+    rectangle.width = point.x - rectangle.x;
+    rectangle.height = point.y - rectangle.y;
   }
 
   @Override
-  protected Area finish() {
-    int x1 = Math.min(rectangle.getStartPoint().x, rectangle.getEndPoint().x);
-    int x2 = Math.max(rectangle.getStartPoint().x, rectangle.getEndPoint().x);
-    int y1 = Math.min(rectangle.getStartPoint().y, rectangle.getEndPoint().y);
-    int y2 = Math.max(rectangle.getStartPoint().y, rectangle.getEndPoint().y);
-
-    Area area = new Area(new java.awt.Rectangle(x1, y1, x2 - x1, y2 - y1));
+  protected @Nullable Shape finish() {
+    var result = normalizedRectangle(rectangle);
+    if (result.isEmpty()) {
+      result = null;
+    }
     rectangle = null;
-    return area;
+    return result;
   }
 
   /** Stop drawing a rectangle and repaint the zone. */

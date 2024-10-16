@@ -15,7 +15,7 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.*;
-import java.awt.geom.Area;
+import javax.annotation.Nullable;
 import net.rptools.lib.GeometryUtil;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
@@ -23,8 +23,6 @@ import net.rptools.maptool.model.ZonePoint;
 public class HollowDiamondTopologyTool extends AbstractTopologyDrawingTool {
   private static final long serialVersionUID = 7227397975734203085L;
 
-  // TODO I would like line thickness to be decided by AbstractTopologyDrawingTool.
-  private final float thickness = 2.f;
   protected Shape diamond;
   protected ZonePoint originPoint;
 
@@ -58,25 +56,19 @@ public class HollowDiamondTopologyTool extends AbstractTopologyDrawingTool {
   @Override
   protected void startNewAtPoint(ZonePoint point) {
     originPoint = point;
-    diamond = GeometryUtil.createHollowDiamond(thickness, originPoint, originPoint);
+    diamond = GeometryUtil.createIsoRectangle(originPoint, originPoint);
   }
 
   @Override
   protected void updateLastPoint(ZonePoint point) {
-    diamond = GeometryUtil.createHollowDiamond(thickness, originPoint, point);
+    diamond = GeometryUtil.createIsoRectangle(originPoint, point);
   }
 
   @Override
-  protected Area finish() {
-    if (diamond.getBounds().width == 0 || diamond.getBounds().height == 0) {
-      diamond = null;
-      return new Area();
-    }
-
-    Area area = new Area(diamond);
-
+  protected @Nullable Shape finish() {
+    var result = diamond.getBounds().isEmpty() ? null : diamond;
     diamond = null;
-    return area;
+    return result;
   }
 
   /** Stop drawing a rectangle and repaint the zone. */

@@ -15,29 +15,30 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.Graphics2D;
-import java.awt.geom.Area;
+import java.awt.Rectangle;
+import java.awt.Shape;
+import javax.annotation.Nullable;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
-import net.rptools.maptool.model.drawing.Oval;
 import net.rptools.maptool.util.GraphicsUtil;
 
 public class OvalTopologyTool extends AbstractTopologyDrawingTool {
 
   private static final long serialVersionUID = 3258413928311830321L;
 
-  protected Oval oval;
+  private Rectangle bounds;
   private ZonePoint originPoint;
 
   public OvalTopologyTool() {}
 
   @Override
   protected boolean isBackgroundFill() {
-    return false;
+    return true;
   }
 
   @Override
   protected boolean isInProgress() {
-    return oval != null;
+    return bounds != null;
   }
 
   @Override
@@ -50,43 +51,48 @@ public class OvalTopologyTool extends AbstractTopologyDrawingTool {
     return "tool.ovaltopology.tooltip";
   }
 
+  private Shape toShape() {
+    if (bounds == null) {
+      return null;
+    }
+
+    var rect = normalizedRectangle(bounds);
+
+    return GraphicsUtil.createLineSegmentEllipsePath(
+        rect.x, rect.y, rect.x + rect.width, rect.y + rect.height, 10);
+  }
+
   @Override
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    paintTopologyOverlay(g, oval);
+    paintTopologyOverlay(g, toShape());
   }
 
   @Override
   protected void startNewAtPoint(ZonePoint point) {
     originPoint = point;
-    oval = new Oval(originPoint.x, originPoint.y, originPoint.x, originPoint.y);
+    bounds = new Rectangle(originPoint.x, originPoint.y, 0, 0);
   }
 
   @Override
   protected void updateLastPoint(ZonePoint point) {
-    oval.getEndPoint().x = point.x;
-    oval.getEndPoint().y = point.y;
-    oval.getStartPoint().x = originPoint.x - (point.x - originPoint.x);
-    oval.getStartPoint().y = originPoint.y - (point.y - originPoint.y);
+    bounds.x = point.x;
+    bounds.y = point.y;
+    bounds.width = 2 * (originPoint.x - point.x);
+    bounds.height = 2 * (originPoint.y - point.y);
   }
 
   @Override
-  protected Area finish() {
-    Area area =
-        GraphicsUtil.createLineSegmentEllipse(
-            oval.getStartPoint().x,
-            oval.getStartPoint().y,
-            oval.getEndPoint().x,
-            oval.getEndPoint().y,
-            10);
-    oval = null;
-    return area;
+  protected @Nullable Shape finish() {
+    var result = toShape();
+    bounds = null;
+    return result;
   }
 
   /** Stop drawing a rectangle and repaint the zone. */
   @Override
   public void resetTool() {
-    if (oval != null) {
-      oval = null;
+    if (bounds != null) {
+      bounds = null;
       renderer.repaint();
     } else {
       super.resetTool();

@@ -18,16 +18,13 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Area;
 import java.util.List;
+import javax.annotation.Nullable;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
-import net.rptools.maptool.model.drawing.Drawable;
-import net.rptools.maptool.model.drawing.DrawableColorPaint;
-import net.rptools.maptool.model.drawing.Pen;
-import net.rptools.maptool.model.drawing.ShapeDrawable;
 
 public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeTool {
   /**
@@ -73,16 +70,33 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
    *
    * <p>Immediately after this call completes, {@link #isInProgress()} must return {@code false}.
    *
-   * @return The area to add to or erase from the zone's topology.
+   * @return The topology to add to or erase from the zone's topology, or {@code null} if there is
+   *     nothing to add or remove.
    */
-  protected abstract Area finish();
+  protected abstract @Nullable Shape finish();
+
+  private BasicStroke getLineStroke() {
+    return new BasicStroke(2.f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
+  }
 
   @Override
   public boolean isAvailable() {
     return MapTool.getPlayer().isGM();
   }
 
-  private void submit(Area area) {
+  private void submit(Shape shape) {
+    Area area;
+    if (shape instanceof Area tmpArea) {
+      area = tmpArea;
+    } else if (isBackgroundFill()) {
+      // Fill the shape without stroking.
+      area = new Area(shape);
+    } else {
+      // Stroke the shape into an area.
+      var stroke = getLineStroke();
+      area = new Area(stroke.createStrokedShape(shape));
+    }
+
     if (isEraser()) {
       getZone().removeTopology(area);
       // TODO Surely the tool should be the place to keep track of the topology types.
@@ -91,6 +105,15 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
       getZone().addTopology(area);
       MapTool.serverCommand().addTopology(getZone().getId(), area, getZone().getTopologyTypes());
     }
+  }
+
+  protected final Rectangle normalizedRectangle(Rectangle rectangle) {
+    // AWT doesn't like drawing rectangles with negative width or height. So normalize it first.
+    int minX = Math.min(rectangle.x, rectangle.x + rectangle.width);
+    int minY = Math.min(rectangle.y, rectangle.y + rectangle.height);
+    int width = Math.abs(rectangle.width);
+    int height = Math.abs(rectangle.height);
+    return new Rectangle(minX, minY, width, height);
   }
 
   protected Area getTokenTopology(Zone.TopologyType topologyType) {
@@ -105,20 +128,11 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
   }
 
   protected void paintTopologyOverlay(Graphics2D g, Shape shape) {
-    ShapeDrawable drawable = null;
-
-    if (shape != null) {
-      drawable = new ShapeDrawable(shape, false);
-    }
-
-    paintTopologyOverlay(g, drawable);
-  }
-
-  protected void paintTopologyOverlay(Graphics2D g, Drawable drawable) {
     if (MapTool.getPlayer().isGM()) {
       Zone zone = renderer.getZone();
 
       Graphics2D g2 = (Graphics2D) g.create();
+      // TODO Ensure SrcOver composite?
       g2.translate(renderer.getViewOffsetX(), renderer.getViewOffsetY());
       g2.scale(renderer.getScale(), renderer.getScale());
 
@@ -148,32 +162,28 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
       g2.setColor(AppStyle.coverVblColor);
       g2.fill(zone.getTopology(Zone.TopologyType.COVER_VBL));
 
+      if (shape != null) {
+        var stroke = getLineStroke();
+        var color = isEraser() ? AppStyle.topologyRemoveColor : AppStyle.topologyAddColor;
+        g2.setColor(color);
+
+        if (isBackgroundFill()) {
+          g2.fill(shape);
+
+          // Render the outline just to make it stand out more.
+          g2.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 255));
+          // This line is purely visual, so keep it a consistent thickness
+          g2.setStroke(
+              new BasicStroke(
+                  1 / (float) renderer.getScale(), stroke.getEndCap(), stroke.getLineJoin()));
+          g2.draw(shape);
+        } else {
+          g2.setStroke(stroke);
+          g2.draw(shape);
+        }
+      }
+
       g2.dispose();
-    }
-
-    if (drawable != null) {
-      Pen pen = new Pen();
-      pen.setEraser(isEraser());
-      pen.setOpacity(AppStyle.topologyRemoveColor.getAlpha() / 255.0f);
-
-      if (isBackgroundFill()) {
-        pen.setBackgroundMode(Pen.MODE_SOLID);
-      } else {
-        pen.setThickness(3.0f);
-        pen.setBackgroundMode(Pen.MODE_TRANSPARENT);
-      }
-
-      if (pen.isEraser()) {
-        pen.setEraser(false);
-      }
-      if (isEraser()) {
-        pen.setPaint(new DrawableColorPaint(AppStyle.topologyRemoveColor));
-        pen.setBackgroundPaint(new DrawableColorPaint(AppStyle.topologyRemoveColor));
-      } else {
-        pen.setPaint(new DrawableColorPaint(AppStyle.topologyAddColor));
-        pen.setBackgroundPaint(new DrawableColorPaint(AppStyle.topologyAddColor));
-      }
-      paintTransformed(g, renderer, drawable, pen);
     }
   }
 
@@ -211,8 +221,10 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
         startNewAtPoint(point);
       } else {
         updateLastPoint(point);
-        var area = finish();
-        submit(area);
+        var shape = finish();
+        if (shape != null) {
+          submit(shape);
+        }
       }
       renderer.repaint();
     }

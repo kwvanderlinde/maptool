@@ -15,6 +15,7 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.*;
+import java.awt.geom.Path2D;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -65,6 +66,18 @@ public class LineBuilder {
       segmentPoints.addLast(new Point(point.x, point.y));
     }
     return segment;
+  }
+
+  public Path2D asPath() {
+    var path = new Path2D.Double();
+    for (var point : points) {
+      if (path.getCurrentPoint() == null) {
+        path.moveTo(point.x, point.y);
+      } else {
+        path.lineTo(point.x, point.y);
+      }
+    }
+    return path;
   }
 
   public Polygon asPolygon() {
