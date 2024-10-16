@@ -57,13 +57,4 @@ public class PolyLineTopologyTool extends PolygonTopologyTool implements MouseMo
 
     return pen;
   }
-
-  protected Polygon getPolygon(LineSegment line) {
-    Polygon polygon = new Polygon();
-    for (Point point : line.getPoints()) {
-      polygon.addPoint(point.x, point.y);
-    }
-
-    return polygon;
-  }
 }

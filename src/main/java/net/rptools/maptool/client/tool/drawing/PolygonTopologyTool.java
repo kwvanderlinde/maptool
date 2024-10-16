@@ -17,12 +17,12 @@ package net.rptools.maptool.client.tool.drawing;
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.Point;
-import java.awt.Polygon;
-import java.awt.Shape;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
+import javax.swing.SwingUtilities;
+
 import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
@@ -34,30 +34,13 @@ import net.rptools.maptool.model.drawing.ShapeDrawable;
 
 // TODO These aren't freehand lines. Also it's not worth inheriting from LineTool.
 /** Tool for drawing freehand lines. */
-public class PolygonTopologyTool extends LineTool implements MouseMotionListener {
+public class PolygonTopologyTool extends AbstractTopologyDrawingTool implements MouseMotionListener {
 
   private static final long serialVersionUID = 3258132466219627316L;
+  // TODO Surely a Path2D would suffice?
+  private LineBuilder lineBuilder = new LineBuilder();
 
   public PolygonTopologyTool() {}
-
-  @Override
-  // Override abstracttool to prevent color palette from
-  // showing up
-  protected void attachTo(ZoneRenderer renderer) {
-    super.attachTo(renderer);
-    // Hide the drawable color palette
-    MapTool.getFrame().removeControlPanel();
-  }
-
-  @Override
-  public boolean isAvailable() {
-    return MapTool.getPlayer().isGM();
-  }
-
-  @Override
-  protected boolean drawMeasurement() {
-    return false;
-  }
 
   @Override
   public String getTooltip() {
@@ -76,6 +59,9 @@ public class PolygonTopologyTool extends LineTool implements MouseMotionListener
 
   @Override
   protected void completeDrawable(Pen pen, Drawable drawable) {
+    // TODO Gross. We should avoid the nonsense of completeDrawable() for non-drawing tools.
+    //  Btw, we do so for other topology tools.
+
     Area area = new Area();
 
     if (drawable instanceof LineSegment) {
@@ -124,17 +110,78 @@ public class PolygonTopologyTool extends LineTool implements MouseMotionListener
   }
 
   @Override
-  protected Polygon getPolygon(LineSegment line) {
-    Polygon polygon = new Polygon();
-    for (Point point : line.getPoints()) {
-      polygon.addPoint(point.x, point.y);
+  public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
+    var shape = lineBuilder.asLineSegment(getPen().getThickness(), getPen().getSquareCap());
+    paintTopologyOverlay(g, shape, Pen.MODE_TRANSPARENT);
+  }
+
+  private void stopLine() {
+    if (lineBuilder.isEmpty()) {
+      // Not started, or was already cancelled.
+      return;
     }
-    return polygon;
+
+    lineBuilder.trim();
+
+    Drawable drawable;
+    if (isBackgroundFill() && lineBuilder.size() > 2) {
+      drawable = new ShapeDrawable(lineBuilder.asPolygon());
+    }
+    else {
+      // TODO The topology tools should not need to have configurable pens.
+      drawable = lineBuilder.asLineSegment(getPen().getThickness(), getPen().getSquareCap());
+    }
+    completeDrawable(getPen(), drawable);
+
+    lineBuilder.clear();
+    renderer.repaint();
+  }
+
+  ////
+  // MOUSE LISTENER
+  @Override
+  public void mousePressed(MouseEvent e) {
+    if (SwingUtilities.isLeftMouseButton(e)) {
+      var isNewLine = lineBuilder.isEmpty();
+      lineBuilder.addPoint(getPoint(e));
+
+      if (isNewLine) {
+        // Yes, add twice. The first is to commit the first point. The second is as the temporary
+        // last point that we will replace as we go.
+        lineBuilder.addPoint(getPoint(e));
+        setIsEraser(isEraser(e));
+      } else {
+        stopLine();
+      }
+      renderer.repaint();
+    } else if (!lineBuilder.isEmpty()) {
+      // Create a joint
+      lineBuilder.addPoint(lineBuilder.getLastPoint());
+      renderer.repaint();
+      return;
+    }
+    super.mousePressed(e);
   }
 
   @Override
-  public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    paintTopologyOverlay(g, (Shape) null, Pen.MODE_SOLID);
-    super.paintOverlay(renderer, g);
+  public void mouseDragged(MouseEvent e) {
+    if (lineBuilder.isEmpty()) {
+      // We're not drawing, so use default behaviour.
+      super.mouseDragged(e);
+    }
+  }
+
+  @Override
+  public void mouseMoved(MouseEvent e) {
+    super.mouseMoved(e);
+    if (SwingUtilities.isRightMouseButton(e)) {
+      // A drag?
+      return;
+    }
+
+    if (!lineBuilder.isEmpty()) {
+      lineBuilder.replaceLastPoint(getPoint(e));
+      renderer.repaint();
+    }
   }
 }
