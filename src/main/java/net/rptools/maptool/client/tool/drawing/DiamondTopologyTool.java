@@ -16,17 +16,12 @@ package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.Graphics2D;
 import java.awt.Shape;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
-import javax.swing.SwingUtilities;
 import net.rptools.lib.GeometryUtil;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
-import net.rptools.maptool.model.drawing.ShapeDrawable;
 
-public class DiamondTopologyTool extends AbstractTopologyDrawingTool
-    implements MouseMotionListener {
+public class DiamondTopologyTool extends AbstractTopologyDrawingTool {
 
   private static final long serialVersionUID = -1497583181619555786L;
   protected Shape diamond;
@@ -37,6 +32,11 @@ public class DiamondTopologyTool extends AbstractTopologyDrawingTool
   @Override
   protected boolean isBackgroundFill() {
     return true;
+  }
+
+  @Override
+  protected boolean isInProgress() {
+    return diamond != null;
   }
 
   @Override
@@ -55,48 +55,28 @@ public class DiamondTopologyTool extends AbstractTopologyDrawingTool
   }
 
   @Override
-  public void mousePressed(MouseEvent e) {
-    if (SwingUtilities.isLeftMouseButton(e)) {
-      ZonePoint zp = getPoint(e);
-
-      if (diamond == null) {
-        originPoint = zp;
-        diamond = GeometryUtil.createDiamond(originPoint, originPoint);
-      } else {
-        diamond = GeometryUtil.createDiamond(originPoint, zp);
-
-        if (diamond.getBounds().width == 0 || diamond.getBounds().height == 0) {
-          diamond = null;
-          renderer.repaint();
-          return;
-        }
-        Area area = new ShapeDrawable(diamond, false).getArea(getZone());
-        submit(area);
-        diamond = null;
-      }
-      setIsEraser(isEraser(e));
-    }
-    super.mousePressed(e);
+  protected void startNewAtPoint(ZonePoint point) {
+    originPoint = point;
+    diamond = GeometryUtil.createDiamond(originPoint, originPoint);
   }
 
   @Override
-  public void mouseDragged(MouseEvent e) {
-    if (diamond == null) {
-      super.mouseDragged(e);
-    }
+  protected void updateLastPoint(ZonePoint point) {
+    diamond = GeometryUtil.createDiamond(originPoint, point);
   }
 
   @Override
-  public void mouseMoved(MouseEvent e) {
-    super.mouseMoved(e);
-
-    setIsEraser(isEraser(e));
-
-    ZonePoint zp = getPoint(e);
-    if (diamond != null) {
-      diamond = GeometryUtil.createDiamond(originPoint, zp);
+  protected Area finish() {
+    if (diamond.getBounds().width == 0 || diamond.getBounds().height == 0) {
+      diamond = null;
       renderer.repaint();
+      return new Area();
     }
+
+    Area area = new Area(diamond);
+
+    diamond = null;
+    return area;
   }
 
   /** Stop drawing a rectangle and repaint the zone. */

@@ -28,17 +28,17 @@ import net.rptools.maptool.server.proto.drawing.OvalDrawableDto;
 /** An oval. */
 public class Oval extends Rectangle {
   /**
-   * @param x the x offset
-   * @param y the y offset
-   * @param width the width of the oval
-   * @param height the height of the oval
+   * @param startX the x offset
+   * @param startY the y offset
+   * @param endX the width of the oval
+   * @param endY the height of the oval
    */
-  public Oval(int x, int y, int width, int height) {
-    super(x, y, width, height);
+  public Oval(int startX, int startY, int endX, int endY) {
+    super(startX, startY, endX, endY);
   }
 
-  public Oval(GUID id, int x, int y, int width, int height) {
-    super(id, x, y, width, height);
+  public Oval(GUID id, int startX, int startY, int endX, int endY) {
+    super(id, startX, startY, endX, endY);
   }
 
   public Oval(Oval other) {

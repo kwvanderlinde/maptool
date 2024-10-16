@@ -15,10 +15,7 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.Graphics2D;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
-import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.Rectangle;
@@ -26,8 +23,7 @@ import net.rptools.maptool.model.drawing.Rectangle;
 /**
  * @author drice
  */
-public class RectangleTopologyTool extends AbstractTopologyDrawingTool
-    implements MouseMotionListener {
+public class RectangleTopologyTool extends AbstractTopologyDrawingTool {
   private static final long serialVersionUID = 3258413928311830323L;
 
   protected Rectangle rectangle;
@@ -50,54 +46,36 @@ public class RectangleTopologyTool extends AbstractTopologyDrawingTool
   }
 
   @Override
+  protected boolean isInProgress() {
+    return rectangle != null;
+  }
+
+  @Override
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
     paintTopologyOverlay(g, rectangle);
   }
 
   @Override
-  public void mousePressed(MouseEvent e) {
-    if (SwingUtilities.isLeftMouseButton(e)) {
-      ZonePoint sp = getPoint(e);
-
-      if (rectangle == null) {
-        rectangle = new Rectangle(sp.x, sp.y, sp.x, sp.y);
-      } else {
-        rectangle.getEndPoint().x = sp.x;
-        rectangle.getEndPoint().y = sp.y;
-
-        int x1 = Math.min(rectangle.getStartPoint().x, rectangle.getEndPoint().x);
-        int x2 = Math.max(rectangle.getStartPoint().x, rectangle.getEndPoint().x);
-        int y1 = Math.min(rectangle.getStartPoint().y, rectangle.getEndPoint().y);
-        int y2 = Math.max(rectangle.getStartPoint().y, rectangle.getEndPoint().y);
-
-        Area area = new Area(new java.awt.Rectangle(x1, y1, x2 - x1, y2 - y1));
-        submit(area);
-        rectangle = null;
-      }
-      setIsEraser(isEraser(e));
-    }
-    super.mousePressed(e);
+  protected void startNewAtPoint(ZonePoint point) {
+    rectangle = new Rectangle(point.x, point.y, point.x, point.y);
   }
 
   @Override
-  public void mouseDragged(MouseEvent e) {
-    if (rectangle == null) {
-      super.mouseDragged(e);
-    }
+  protected void updateLastPoint(ZonePoint point) {
+    rectangle.getEndPoint().x = point.x;
+    rectangle.getEndPoint().y = point.y;
   }
 
   @Override
-  public void mouseMoved(MouseEvent e) {
-    super.mouseMoved(e);
+  protected Area finish() {
+    int x1 = Math.min(rectangle.getStartPoint().x, rectangle.getEndPoint().x);
+    int x2 = Math.max(rectangle.getStartPoint().x, rectangle.getEndPoint().x);
+    int y1 = Math.min(rectangle.getStartPoint().y, rectangle.getEndPoint().y);
+    int y2 = Math.max(rectangle.getStartPoint().y, rectangle.getEndPoint().y);
 
-    setIsEraser(isEraser(e));
-
-    ZonePoint p = getPoint(e);
-    if (rectangle != null) {
-      rectangle.getEndPoint().x = p.x;
-      rectangle.getEndPoint().y = p.y;
-      renderer.repaint();
-    }
+    Area area = new Area(new java.awt.Rectangle(x1, y1, x2 - x1, y2 - y1));
+    rectangle = null;
+    return area;
   }
 
   /** Stop drawing a rectangle and repaint the zone. */

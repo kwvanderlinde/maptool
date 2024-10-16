@@ -15,16 +15,13 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.*;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
-import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
+import net.rptools.maptool.model.ZonePoint;
 
 // TODO These aren't freehand lines. Also it's not worth inheriting from LineTool.
 /** Tool for drawing freehand lines. */
-public class PolygonTopologyTool extends AbstractTopologyDrawingTool
-    implements MouseMotionListener {
+public class PolygonTopologyTool extends AbstractTopologyDrawingTool {
 
   private static final long serialVersionUID = 3258132466219627316L;
   protected final LineBuilder lineBuilder = new LineBuilder();
@@ -47,6 +44,11 @@ public class PolygonTopologyTool extends AbstractTopologyDrawingTool
   }
 
   @Override
+  protected boolean isInProgress() {
+    return !lineBuilder.isEmpty();
+  }
+
+  @Override
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
     // TODO Why do we only render the lines and not the fill? I have arbitrarily decided otherwise
     // now.
@@ -54,57 +56,32 @@ public class PolygonTopologyTool extends AbstractTopologyDrawingTool
     paintTopologyOverlay(g, shape);
   }
 
-  ////
-  // MOUSE LISTENER
   @Override
-  public void mousePressed(MouseEvent e) {
-    if (SwingUtilities.isLeftMouseButton(e)) {
-      var isNewLine = lineBuilder.isEmpty();
-      lineBuilder.addPoint(getPoint(e));
-
-      if (isNewLine) {
-        // Yes, add twice. The first is to commit the first point. The second is as the temporary
-        // last point that we will replace as we go.
-        lineBuilder.addPoint(getPoint(e));
-        setIsEraser(isEraser(e));
-      } else {
-        lineBuilder.trim();
-
-        var polygon = lineBuilder.asPolygon();
-        submit(new Area(polygon));
-
-        lineBuilder.clear();
-        renderer.repaint();
-      }
-      renderer.repaint();
-    } else if (!lineBuilder.isEmpty()) {
-      // Create a joint
-      lineBuilder.addPoint(lineBuilder.getLastPoint());
-      renderer.repaint();
-      return;
-    }
-    super.mousePressed(e);
+  protected void startNewAtPoint(ZonePoint point) {
+    // Yes, add the point twice. The first is to commit the first point, the second is as the
+    // temporary point that can be updated as we go.
+    lineBuilder.addPoint(point);
+    lineBuilder.addPoint(point);
   }
 
   @Override
-  public void mouseDragged(MouseEvent e) {
-    if (lineBuilder.isEmpty()) {
-      // We're not drawing, so use default behaviour.
-      super.mouseDragged(e);
-    }
+  protected void updateLastPoint(ZonePoint point) {
+    lineBuilder.replaceLastPoint(point);
   }
 
   @Override
-  public void mouseMoved(MouseEvent e) {
-    super.mouseMoved(e);
-    if (SwingUtilities.isRightMouseButton(e)) {
-      // A drag?
-      return;
-    }
+  protected void pushPoint() {
+    // Create a joint
+    lineBuilder.addPoint(lineBuilder.getLastPoint());
+  }
 
-    if (!lineBuilder.isEmpty()) {
-      lineBuilder.replaceLastPoint(getPoint(e));
-      renderer.repaint();
-    }
+  @Override
+  protected Area finish() {
+    lineBuilder.trim();
+    var polygon = lineBuilder.asPolygon();
+
+    lineBuilder.clear();
+
+    return new Area(polygon);
   }
 }

@@ -15,12 +15,15 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.*;
+import java.awt.event.MouseEvent;
 import java.awt.geom.Area;
 import java.util.List;
+import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.Drawable;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.drawing.Pen;
@@ -32,6 +35,47 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
    *     they are lines that need to be stroked.
    */
   protected abstract boolean isBackgroundFill();
+
+  /**
+   * @return {@code true} if the tool is in the middle of making a new shape; {@code false} if no
+   *     drawing has started, or if one was cancelled.
+   */
+  protected abstract boolean isInProgress();
+
+  /**
+   * Start a new drawing using {@code point} as the first point.
+   *
+   * <p>Immediately after this call completes, {@link #isInProgress()} must return {@code true}.
+   *
+   * @param point
+   */
+  protected abstract void startNewAtPoint(ZonePoint point);
+
+  /**
+   * Update the last uncommitted point in the drawing.
+   *
+   * <p>This will only ever be called if {@link #isInProgress()} returns {@code true}, and it must
+   * continue to return {@code true} after the call completes.
+   *
+   * @param point
+   */
+  protected abstract void updateLastPoint(ZonePoint point);
+
+  /**
+   * If the tool supports it, commit the last point and create a new one in its place.
+   *
+   * <p>This is only for tools such as line tools, where multiple points can be specified.
+   */
+  protected void pushPoint() {}
+
+  /**
+   * Commit the drawing as topology.
+   *
+   * <p>Immediately after this call completes, {@link #isInProgress()} must return {@code false}.
+   *
+   * @return The area to add to or erase from the zone's topology.
+   */
+  protected abstract Area finish();
 
   @Override
   public boolean isAvailable() {
@@ -132,5 +176,51 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
       }
       paintTransformed(g, renderer, drawable, pen);
     }
+  }
+
+  @Override
+  public final void mouseDragged(MouseEvent e) {
+    if (!isInProgress()) {
+      super.mouseDragged(e);
+    }
+  }
+
+  @Override
+  public final void mouseMoved(MouseEvent e) {
+    super.mouseMoved(e);
+    setIsEraser(isEraser(e));
+    if (isInProgress()) {
+      ZonePoint point = getPoint(e);
+      updateLastPoint(point);
+      renderer.repaint();
+    }
+
+    // TODO Via via via, the original Polygon and Polyline tools would have a guard of
+    //  `SwingUtilities.isRightMouseButton(e)` in (from AbstractLineTool.addPoint()). As far as I
+    //  can tell, this does absolutely nothing for the current implementation since we don't rely
+    //  on the `tempPoint` hack.
+  }
+
+  @Override
+  public final void mousePressed(MouseEvent e) {
+    setIsEraser(isEraser(e));
+
+    if (SwingUtilities.isLeftMouseButton(e)) {
+      ZonePoint point = getPoint(e);
+
+      if (!isInProgress()) {
+        startNewAtPoint(point);
+      } else {
+        updateLastPoint(point);
+        var area = finish();
+        submit(area);
+      }
+    }
+    // TODO Shouldn't we make sure it's a right-click?
+    else if (isInProgress()) {
+      pushPoint();
+    }
+
+    super.mousePressed(e);
   }
 }

@@ -15,17 +15,15 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.*;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import javax.swing.*;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
+import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.*;
 
 /** Tool for drawing freehand lines. */
-public class PolyLineTopologyTool extends AbstractTopologyDrawingTool
-    implements MouseMotionListener {
+public class PolyLineTopologyTool extends AbstractTopologyDrawingTool {
   private static final long serialVersionUID = 3258132466219627316L;
 
   private final float thickness = 2.f;
@@ -45,6 +43,11 @@ public class PolyLineTopologyTool extends AbstractTopologyDrawingTool
 
   protected boolean isBackgroundFill() {
     return false;
+  }
+
+  @Override
+  protected boolean isInProgress() {
+    return !lineBuilder.isEmpty();
   }
 
   protected void complete(LineSegment line) {
@@ -77,59 +80,51 @@ public class PolyLineTopologyTool extends AbstractTopologyDrawingTool
     paintTopologyOverlay(g, shape);
   }
 
-  ////
-  // MOUSE LISTENER
-  // TODO Copied from PolygonTopologyTool. Really what we need is to compositionally define line
-  //  tools, etc., so that we can adapt them to topological, drawing, and exposure cases.
   @Override
-  public void mousePressed(MouseEvent e) {
-    if (SwingUtilities.isLeftMouseButton(e)) {
-      var isNewLine = lineBuilder.isEmpty();
-      lineBuilder.addPoint(getPoint(e));
+  protected void startNewAtPoint(ZonePoint point) {
+    // Yes, add the point twice. The first is to commit the first point, the second is as the
+    // temporary point that can be updated as we go.
+    lineBuilder.addPoint(point);
+    lineBuilder.addPoint(point);
+  }
 
-      if (isNewLine) {
-        // Yes, add twice. The first is to commit the first point. The second is as the temporary
-        // last point that we will replace as we go.
-        lineBuilder.addPoint(getPoint(e));
-        setIsEraser(isEraser(e));
-      } else {
-        lineBuilder.trim();
+  @Override
+  protected void updateLastPoint(ZonePoint point) {
+    lineBuilder.replaceLastPoint(point);
+  }
 
-        var drawable = lineBuilder.asLineSegment(thickness, true);
-        complete(drawable);
+  @Override
+  protected void pushPoint() {
+    // Create a joint
+    lineBuilder.addPoint(lineBuilder.getLastPoint());
+  }
 
-        lineBuilder.clear();
-        renderer.repaint();
+  @Override
+  protected Area finish() {
+    lineBuilder.trim();
+    // TODO Forget the LineSegment. Just build a Path2D out of the points.
+    var line = lineBuilder.asLineSegment(thickness, true);
+
+    // TODO Bleh. Just build a path2d from the get-go.
+    Area area = new Area();
+    BasicStroke stroke =
+        new BasicStroke(line.getWidth(), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
+
+    Path2D path = new Path2D.Double();
+    Point lastPoint = null;
+
+    for (Point point : line.getPoints()) {
+      if (path.getCurrentPoint() == null) {
+        path.moveTo(point.x, point.y);
+      } else if (!point.equals(lastPoint)) {
+        path.lineTo(point.x, point.y);
+        lastPoint = point;
       }
-      renderer.repaint();
-    } else if (!lineBuilder.isEmpty()) {
-      // Create a joint
-      lineBuilder.addPoint(lineBuilder.getLastPoint());
-      renderer.repaint();
-      return;
-    }
-    super.mousePressed(e);
-  }
-
-  @Override
-  public void mouseDragged(MouseEvent e) {
-    if (lineBuilder.isEmpty()) {
-      // We're not drawing, so use default behaviour.
-      super.mouseDragged(e);
-    }
-  }
-
-  @Override
-  public void mouseMoved(MouseEvent e) {
-    super.mouseMoved(e);
-    if (SwingUtilities.isRightMouseButton(e)) {
-      // A drag?
-      return;
     }
 
-    if (!lineBuilder.isEmpty()) {
-      lineBuilder.replaceLastPoint(getPoint(e));
-      renderer.repaint();
-    }
+    area.add(new Area(stroke.createStrokedShape(path)));
+
+    lineBuilder.clear();
+    return area;
   }
 }

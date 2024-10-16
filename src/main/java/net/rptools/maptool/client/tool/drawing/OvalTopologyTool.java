@@ -15,16 +15,13 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.Graphics2D;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
-import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.Oval;
 import net.rptools.maptool.util.GraphicsUtil;
 
-public class OvalTopologyTool extends AbstractTopologyDrawingTool implements MouseMotionListener {
+public class OvalTopologyTool extends AbstractTopologyDrawingTool {
 
   private static final long serialVersionUID = 3258413928311830321L;
 
@@ -36,6 +33,11 @@ public class OvalTopologyTool extends AbstractTopologyDrawingTool implements Mou
   @Override
   protected boolean isBackgroundFill() {
     return false;
+  }
+
+  @Override
+  protected boolean isInProgress() {
+    return oval != null;
   }
 
   @Override
@@ -54,55 +56,30 @@ public class OvalTopologyTool extends AbstractTopologyDrawingTool implements Mou
   }
 
   @Override
-  public void mousePressed(MouseEvent e) {
-    if (SwingUtilities.isLeftMouseButton(e)) {
-      ZonePoint zp = getPoint(e);
-
-      if (oval == null) {
-        oval = new Oval(zp.x, zp.y, zp.x, zp.y);
-        originPoint = zp;
-      } else {
-        oval.getEndPoint().x = zp.x;
-        oval.getEndPoint().y = zp.y;
-
-        Area area =
-            GraphicsUtil.createLineSegmentEllipse(
-                oval.getStartPoint().x,
-                oval.getStartPoint().y,
-                oval.getEndPoint().x,
-                oval.getEndPoint().y,
-                10);
-
-        submit(area);
-        oval = null;
-      }
-      setIsEraser(isEraser(e));
-    }
-    super.mousePressed(e);
+  protected void startNewAtPoint(ZonePoint point) {
+    originPoint = point;
+    oval = new Oval(originPoint.x, originPoint.y, originPoint.x, originPoint.y);
   }
 
   @Override
-  public void mouseDragged(MouseEvent e) {
-    if (oval == null) {
-      super.mouseDragged(e);
-    }
+  protected void updateLastPoint(ZonePoint point) {
+    oval.getEndPoint().x = point.x;
+    oval.getEndPoint().y = point.y;
+    oval.getStartPoint().x = originPoint.x - (point.x - originPoint.x);
+    oval.getStartPoint().y = originPoint.y - (point.y - originPoint.y);
   }
 
   @Override
-  public void mouseMoved(MouseEvent e) {
-    super.mouseMoved(e);
-
-    setIsEraser(isEraser(e));
-    if (oval != null) {
-      ZonePoint sp = getPoint(e);
-
-      oval.getEndPoint().x = sp.x;
-      oval.getEndPoint().y = sp.y;
-      oval.getStartPoint().x = originPoint.x - (sp.x - originPoint.x);
-      oval.getStartPoint().y = originPoint.y - (sp.y - originPoint.y);
-
-      renderer.repaint();
-    }
+  protected Area finish() {
+    Area area =
+        GraphicsUtil.createLineSegmentEllipse(
+            oval.getStartPoint().x,
+            oval.getStartPoint().y,
+            oval.getEndPoint().x,
+            oval.getEndPoint().y,
+            10);
+    oval = null;
+    return area;
   }
 
   /** Stop drawing a rectangle and repaint the zone. */

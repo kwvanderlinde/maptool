@@ -15,17 +15,13 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.Graphics2D;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
-import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.Oval;
 import net.rptools.maptool.util.GraphicsUtil;
 
-public class HollowOvalTopologyTool extends AbstractTopologyDrawingTool
-    implements MouseMotionListener {
+public class HollowOvalTopologyTool extends AbstractTopologyDrawingTool {
 
   private static final long serialVersionUID = 3258413928311830325L;
 
@@ -37,6 +33,11 @@ public class HollowOvalTopologyTool extends AbstractTopologyDrawingTool
   @Override
   protected boolean isBackgroundFill() {
     return false;
+  }
+
+  @Override
+  protected boolean isInProgress() {
+    return oval != null;
   }
 
   @Override
@@ -53,71 +54,45 @@ public class HollowOvalTopologyTool extends AbstractTopologyDrawingTool
     paintTopologyOverlay(g, oval);
   }
 
-  public void mousePressed(MouseEvent e) {
-
-    if (SwingUtilities.isLeftMouseButton(e)) {
-      ZonePoint zp = getPoint(e);
-
-      if (oval == null) {
-        oval = new Oval(zp.x, zp.y, zp.x, zp.y);
-        originPoint = zp;
-      } else {
-        oval.getEndPoint().x = zp.x;
-        oval.getEndPoint().y = zp.y;
-
-        Area area =
-            GraphicsUtil.createLineSegmentEllipse(
-                oval.getStartPoint().x,
-                oval.getStartPoint().y,
-                oval.getEndPoint().x,
-                oval.getEndPoint().y,
-                10);
-
-        // Still use the whole area if it's an erase action
-        if (!isEraser(e)) {
-          int x1 = Math.min(oval.getStartPoint().x, oval.getEndPoint().x) + 2;
-          int y1 = Math.min(oval.getStartPoint().y, oval.getEndPoint().y) + 2;
-
-          int x2 = Math.max(oval.getStartPoint().x, oval.getEndPoint().x) - 2;
-          int y2 = Math.max(oval.getStartPoint().y, oval.getEndPoint().y) - 2;
-
-          Area innerArea = GraphicsUtil.createLineSegmentEllipse(x1, y1, x2, y2, 10);
-          area.subtract(innerArea);
-        }
-
-        submit(area);
-        oval = null;
-      }
-
-      setIsEraser(isEraser(e));
-    }
-
-    super.mousePressed(e);
+  @Override
+  protected void startNewAtPoint(ZonePoint point) {
+    originPoint = point;
+    oval = new Oval(point.x, point.y, point.x, point.y);
   }
 
   @Override
-  public void mouseDragged(MouseEvent e) {
-
-    if (oval == null) {
-      super.mouseDragged(e);
-    }
+  protected void updateLastPoint(ZonePoint point) {
+    oval.getEndPoint().x = point.x;
+    oval.getEndPoint().y = point.y;
+    oval.getStartPoint().x = originPoint.x - (point.x - originPoint.x);
+    oval.getStartPoint().y = originPoint.y - (point.y - originPoint.y);
   }
 
-  public void mouseMoved(MouseEvent e) {
-    super.mouseMoved(e);
+  @Override
+  protected Area finish() {
+    Area area =
+        GraphicsUtil.createLineSegmentEllipse(
+            oval.getStartPoint().x,
+            oval.getStartPoint().y,
+            oval.getEndPoint().x,
+            oval.getEndPoint().y,
+            10);
 
-    setIsEraser(isEraser(e));
+    // Still use the whole area if it's an erase action
+    if (!isEraser()) {
+      int x1 = Math.min(oval.getStartPoint().x, oval.getEndPoint().x) + 2;
+      int y1 = Math.min(oval.getStartPoint().y, oval.getEndPoint().y) + 2;
 
-    if (oval != null) {
-      ZonePoint sp = getPoint(e);
+      int x2 = Math.max(oval.getStartPoint().x, oval.getEndPoint().x) - 2;
+      int y2 = Math.max(oval.getStartPoint().y, oval.getEndPoint().y) - 2;
 
-      oval.getEndPoint().x = sp.x;
-      oval.getEndPoint().y = sp.y;
-      oval.getStartPoint().x = originPoint.x - (sp.x - originPoint.x);
-      oval.getStartPoint().y = originPoint.y - (sp.y - originPoint.y);
-
-      renderer.repaint();
+      Area innerArea = GraphicsUtil.createLineSegmentEllipse(x1, y1, x2, y2, 10);
+      area.subtract(innerArea);
     }
+
+    oval = null;
+
+    return area;
   }
 
   /** Stop drawing a rectangle and repaint the zone. */
