@@ -34,6 +34,18 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
     return MapTool.getPlayer().isGM();
   }
 
+  protected void submit(Area area) {
+    if (isEraser()) {
+      getZone().removeTopology(area);
+      // TODO Surely the tool should be the place to keep track of the topology types.
+      MapTool.serverCommand().removeTopology(getZone().getId(), area, getZone().getTopologyTypes());
+    } else {
+      getZone().addTopology(area);
+      MapTool.serverCommand().addTopology(getZone().getId(), area, getZone().getTopologyTypes());
+    }
+    renderer.repaint();
+  }
+
   protected Area getTokenTopology(Zone.TopologyType topologyType) {
     List<Token> topologyTokens = getZone().getTokensWithTopology(topologyType);
 

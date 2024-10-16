@@ -19,7 +19,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
 import javax.swing.SwingUtilities;
-import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.Rectangle;
@@ -79,17 +78,8 @@ public class HollowRectangleTopologyTool extends AbstractTopologyDrawingTool
               new Area(new java.awt.Rectangle(x1 + 1, y1 + 1, x2 - x1 - 2, y2 - y1 - 2));
           area.subtract(innerArea);
         }
-        if (isEraser(e)) {
-          getZone().removeTopology(area);
-          MapTool.serverCommand()
-              .removeTopology(getZone().getId(), area, getZone().getTopologyTypes());
-        } else {
-          getZone().addTopology(area);
-          MapTool.serverCommand()
-              .addTopology(getZone().getId(), area, getZone().getTopologyTypes());
-        }
-        renderer.repaint();
-        // TODO: send this to the server
+
+        submit(area);
         rectangle = null;
       }
       setIsEraser(isEraser(e));

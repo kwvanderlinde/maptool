@@ -20,7 +20,6 @@ import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import javax.swing.SwingUtilities;
-import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.Cross;
@@ -82,17 +81,7 @@ public class CrossTopologyTool extends AbstractTopologyDrawingTool implements Mo
         area.add(
             GraphicsUtil.createLine(1, new Point2D.Double(x1, y2), new Point2D.Double(x2, y1)));
 
-        if (isEraser(e)) {
-          getZone().removeTopology(area);
-          MapTool.serverCommand()
-              .removeTopology(getZone().getId(), area, getZone().getTopologyTypes());
-        } else {
-          getZone().addTopology(area);
-          MapTool.serverCommand()
-              .addTopology(getZone().getId(), area, getZone().getTopologyTypes());
-        }
-        renderer.repaint();
-        // TODO: send this to the server
+        submit(area);
         cross = null;
       }
       setIsEraser(isEraser(e));

@@ -20,7 +20,6 @@ import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import javax.swing.*;
-import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.drawing.*;
 
@@ -68,14 +67,8 @@ public class PolyLineTopologyTool extends AbstractTopologyDrawingTool
     }
 
     area.add(new Area(stroke.createStrokedShape(path)));
-    if (isEraser()) {
-      getZone().removeTopology(area);
-      MapTool.serverCommand().removeTopology(getZone().getId(), area, getZone().getTopologyTypes());
-    } else {
-      getZone().addTopology(area);
-      MapTool.serverCommand().addTopology(getZone().getId(), area, getZone().getTopologyTypes());
-    }
-    renderer.repaint();
+
+    submit(area);
   }
 
   @Override

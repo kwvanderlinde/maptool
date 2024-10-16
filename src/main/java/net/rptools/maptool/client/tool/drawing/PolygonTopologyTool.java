@@ -19,7 +19,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
 import javax.swing.SwingUtilities;
-import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 
 // TODO These aren't freehand lines. Also it's not worth inheriting from LineTool.
@@ -47,19 +46,6 @@ public class PolygonTopologyTool extends AbstractTopologyDrawingTool
     return true;
   }
 
-  protected void complete(Polygon drawable) {
-    Area area = new Area(drawable);
-
-    if (isEraser()) {
-      getZone().removeTopology(area);
-      MapTool.serverCommand().removeTopology(getZone().getId(), area, getZone().getTopologyTypes());
-    } else {
-      getZone().addTopology(area);
-      MapTool.serverCommand().addTopology(getZone().getId(), area, getZone().getTopologyTypes());
-    }
-    renderer.repaint();
-  }
-
   @Override
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
     // TODO Why do we only render the lines and not the fill? I have arbitrarily decided otherwise
@@ -85,7 +71,7 @@ public class PolygonTopologyTool extends AbstractTopologyDrawingTool
         lineBuilder.trim();
 
         var polygon = lineBuilder.asPolygon();
-        complete(polygon);
+        submit(new Area(polygon));
 
         lineBuilder.clear();
         renderer.repaint();
