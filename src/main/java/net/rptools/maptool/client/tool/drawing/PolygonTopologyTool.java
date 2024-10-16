@@ -68,7 +68,7 @@ public class PolygonTopologyTool extends LineTool implements MouseMotionListener
   }
 
   @Override
-  protected boolean isBackgroundFill(MouseEvent e) {
+  protected boolean isBackgroundFill() {
     return true;
   }
 

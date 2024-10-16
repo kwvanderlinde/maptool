@@ -154,7 +154,7 @@ public abstract class AbstractDrawingTool extends DefaultTool implements ZoneOve
     return isEraser;
   }
 
-  protected boolean isBackgroundFill(MouseEvent e) {
+  protected boolean isBackgroundFill() {
     boolean defaultValue = MapTool.getFrame().getColorPicker().isFillBackgroundSelected();
     return defaultValue;
   }

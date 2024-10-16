@@ -16,7 +16,6 @@ package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.Point;
 import java.awt.Polygon;
-import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
@@ -40,7 +39,7 @@ public class PolyLineTopologyTool extends PolygonTopologyTool implements MouseMo
     return "tool.poly.instructions";
   }
 
-  protected boolean isBackgroundFill(MouseEvent e) {
+  protected boolean isBackgroundFill() {
     return false;
   }
 

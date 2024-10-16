@@ -14,7 +14,6 @@
  */
 package net.rptools.maptool.client.tool.drawing;
 
-import java.awt.event.MouseEvent;
 import java.awt.geom.Area;
 import java.util.Set;
 import net.rptools.maptool.client.MapTool;
@@ -49,7 +48,7 @@ public class DiamondExposeTool extends DiamondTool {
   }
 
   @Override
-  protected boolean isBackgroundFill(MouseEvent e) {
+  protected boolean isBackgroundFill() {
     // Expose tools are implied to be filled
     return false;
   }

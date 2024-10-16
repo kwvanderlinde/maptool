@@ -15,7 +15,6 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.Rectangle;
-import java.awt.event.MouseEvent;
 import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.util.Set;
@@ -46,7 +45,7 @@ public class OvalExposeTool extends OvalTool {
   }
 
   @Override
-  protected boolean isBackgroundFill(MouseEvent e) {
+  protected boolean isBackgroundFill() {
     // Expose tools are implied to be filled
     return false;
   }
