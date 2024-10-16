@@ -19,7 +19,6 @@ import java.awt.geom.Area;
 import java.util.List;
 import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.drawing.Drawable;
@@ -27,17 +26,7 @@ import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.model.drawing.ShapeDrawable;
 
-public abstract class AbstractTopologyDrawingTool extends AbstractDrawingTool {
-  // TODO Just don't inherit from AbstractDrawingTool when we aren't drawing!!!
-  @Override
-  // Override abstracttool to prevent color palette from
-  // showing up
-  protected void attachTo(ZoneRenderer renderer) {
-    super.attachTo(renderer);
-    // Hide the drawable color palette
-    MapTool.getFrame().removeControlPanel();
-  }
-
+public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeTool {
   protected abstract boolean isBackgroundFill();
 
   @Override
