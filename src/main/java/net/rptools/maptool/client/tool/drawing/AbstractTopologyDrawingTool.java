@@ -89,7 +89,7 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingTool {
 
     if (drawable != null) {
       Pen pen = new Pen();
-      pen.setEraser(getPen().isEraser());
+      pen.setEraser(isEraser());
       pen.setOpacity(AppStyle.topologyRemoveColor.getAlpha() / 255.0f);
       pen.setBackgroundMode(backgroundPenMode);
 
