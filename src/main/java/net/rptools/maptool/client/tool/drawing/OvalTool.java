@@ -21,6 +21,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Ellipse2D;
 import javax.swing.SwingUtilities;
+import net.rptools.lib.GeometryUtil;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.tool.Tool;
 import net.rptools.maptool.client.tool.ToolHelper;
@@ -85,9 +86,9 @@ public class OvalTool extends AbstractDrawingTool implements MouseMotionListener
 
       if (oval == null) {
         originPoint = zp;
-        oval = createRect(zp, zp);
+        oval = GeometryUtil.createRect(zp, zp);
       } else {
-        oval = createRect(originPoint, zp);
+        oval = GeometryUtil.createRect(originPoint, zp);
 
         // Draw from center if ALT is held down
         if (e.isAltDown()) {
@@ -132,7 +133,7 @@ public class OvalTool extends AbstractDrawingTool implements MouseMotionListener
 
       ZonePoint sp = getPoint(e);
 
-      oval = createRect(originPoint, sp);
+      oval = GeometryUtil.createRect(originPoint, sp);
 
       // Draw from center if ALT is held down
       if (e.isAltDown()) {

@@ -14,13 +14,18 @@
  */
 package net.rptools.lib;
 
+import java.awt.BasicStroke;
+import java.awt.Rectangle;
+import java.awt.Shape;
 import java.awt.geom.Area;
+import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import net.rptools.maptool.model.ZonePoint;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.locationtech.jts.awt.ShapeReader;
@@ -64,6 +69,59 @@ public class GeometryUtil {
       targetAngle += 360;
     }
     return targetAngle;
+  }
+
+  public static Shape createDiamond(ZonePoint originPoint, ZonePoint newPoint) {
+    int ox = originPoint.x;
+    int oy = originPoint.y;
+    int nx = newPoint.x;
+    int ny = newPoint.y;
+    int x1 = ox - (ny - oy) + ((nx - ox) / 2);
+    int y1 = ((oy + ny) / 2) - ((nx - ox) / 4);
+    int x2 = ox + (ny - oy) + ((nx - ox) / 2);
+    int y2 = ((oy + ny) / 2) + ((nx - ox) / 4);
+    int[] x = {originPoint.x, x1, nx, x2};
+    int[] y = {originPoint.y, y1, ny, y2};
+    return new java.awt.Polygon(x, y, 4);
+  }
+
+  public static Shape createHollowDiamond(
+      float thickness, ZonePoint originPoint, ZonePoint newPoint) {
+    int ox = originPoint.x;
+    int oy = originPoint.y;
+    int nx = newPoint.x;
+    int ny = newPoint.y;
+    int x1 = ox - (ny - oy) + ((nx - ox) / 2);
+    int y1 = ((oy + ny) / 2) - ((nx - ox) / 4);
+    int x2 = ox + (ny - oy) + ((nx - ox) / 2);
+    int y2 = ((oy + ny) / 2) + ((nx - ox) / 4);
+    int[] x = {originPoint.x, x1, nx, x2, originPoint.x};
+    int[] y = {originPoint.y, y1, ny, y2, originPoint.y};
+
+    BasicStroke stroke = new BasicStroke(thickness, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
+
+    Path2D path = new Path2D.Double();
+
+    for (int l = 0; l < 5; l++) {
+      if (path.getCurrentPoint() == null) {
+        path.moveTo(x[l], y[l]);
+      } else {
+        path.lineTo(x[l], y[l]);
+      }
+    }
+
+    Area area = new Area(stroke.createStrokedShape(path));
+    return area;
+  }
+
+  public static Rectangle createRect(ZonePoint originPoint, ZonePoint newPoint) {
+    int x = Math.min(originPoint.x, newPoint.x);
+    int y = Math.min(originPoint.y, newPoint.y);
+
+    int w = Math.max(originPoint.x, newPoint.x) - x;
+    int h = Math.max(originPoint.y, newPoint.y) - y;
+
+    return new Rectangle(x, y, w, h);
   }
 
   /**

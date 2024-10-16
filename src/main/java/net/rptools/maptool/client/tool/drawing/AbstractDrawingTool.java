@@ -16,9 +16,6 @@ package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.Cursor;
 import java.awt.Graphics2D;
-import java.awt.Polygon;
-import java.awt.Rectangle;
-import java.awt.Shape;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
@@ -50,30 +47,6 @@ public abstract class AbstractDrawingTool extends DefaultTool implements ZoneOve
   private boolean isEraser;
   private boolean isSnapToGridSelected;
   private boolean isEraseSelected;
-
-  protected Rectangle createRect(ZonePoint originPoint, ZonePoint newPoint) {
-    int x = Math.min(originPoint.x, newPoint.x);
-    int y = Math.min(originPoint.y, newPoint.y);
-
-    int w = Math.max(originPoint.x, newPoint.x) - x;
-    int h = Math.max(originPoint.y, newPoint.y) - y;
-
-    return new Rectangle(x, y, w, h);
-  }
-
-  protected Shape createDiamond(ZonePoint originPoint, ZonePoint newPoint) {
-    int ox = originPoint.x;
-    int oy = originPoint.y;
-    int nx = newPoint.x;
-    int ny = newPoint.y;
-    int x1 = ox - (ny - oy) + ((nx - ox) / 2);
-    int y1 = ((oy + ny) / 2) - ((nx - ox) / 4);
-    int x2 = ox + (ny - oy) + ((nx - ox) / 2);
-    int y2 = ((oy + ny) / 2) + ((nx - ox) / 4);
-    int x[] = {originPoint.x, x1, nx, x2};
-    int y[] = {originPoint.y, y1, ny, y2};
-    return new Polygon(x, y, 4);
-  }
 
   protected AffineTransform getPaintTransform(ZoneRenderer renderer) {
     AffineTransform transform = new AffineTransform();

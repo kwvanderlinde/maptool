@@ -18,8 +18,8 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
-import java.awt.geom.Path2D;
 import javax.swing.SwingUtilities;
+import net.rptools.lib.GeometryUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
@@ -61,9 +61,9 @@ public class HollowDiamondTopologyTool extends AbstractTopologyDrawingTool
     if (SwingUtilities.isLeftMouseButton(e)) {
       if (diamond == null) {
         originPoint = zp;
-        diamond = createHollowDiamond(originPoint, originPoint);
+        diamond = GeometryUtil.createHollowDiamond(thickness, originPoint, originPoint);
       } else {
-        diamond = createHollowDiamond(originPoint, zp);
+        diamond = GeometryUtil.createHollowDiamond(thickness, originPoint, zp);
         // diamond = createDiamond(originPoint, zp);
 
         if (diamond.getBounds().width == 0 || diamond.getBounds().height == 0) {
@@ -106,7 +106,7 @@ public class HollowDiamondTopologyTool extends AbstractTopologyDrawingTool
 
     ZonePoint zp = getPoint(e);
     if (diamond != null) {
-      diamond = createDiamond(originPoint, zp);
+      diamond = GeometryUtil.createDiamond(originPoint, zp);
       renderer.repaint();
     }
   }
@@ -120,33 +120,5 @@ public class HollowDiamondTopologyTool extends AbstractTopologyDrawingTool
     } else {
       super.resetTool();
     }
-  }
-
-  protected Shape createHollowDiamond(ZonePoint originPoint, ZonePoint newPoint) {
-    int ox = originPoint.x;
-    int oy = originPoint.y;
-    int nx = newPoint.x;
-    int ny = newPoint.y;
-    int x1 = ox - (ny - oy) + ((nx - ox) / 2);
-    int y1 = ((oy + ny) / 2) - ((nx - ox) / 4);
-    int x2 = ox + (ny - oy) + ((nx - ox) / 2);
-    int y2 = ((oy + ny) / 2) + ((nx - ox) / 4);
-    int[] x = {originPoint.x, x1, nx, x2, originPoint.x};
-    int[] y = {originPoint.y, y1, ny, y2, originPoint.y};
-
-    BasicStroke stroke = new BasicStroke(thickness, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
-
-    Path2D path = new Path2D.Double();
-
-    for (int l = 0; l < 5; l++) {
-      if (path.getCurrentPoint() == null) {
-        path.moveTo(x[l], y[l]);
-      } else {
-        path.lineTo(x[l], y[l]);
-      }
-    }
-
-    Area area = new Area(stroke.createStrokedShape(path));
-    return area;
   }
 }

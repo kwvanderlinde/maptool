@@ -20,6 +20,7 @@ import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import javax.swing.SwingUtilities;
+import net.rptools.lib.GeometryUtil;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.tool.ToolHelper;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
@@ -75,9 +76,9 @@ public class RectangleTool extends AbstractDrawingTool implements MouseMotionLis
     if (SwingUtilities.isLeftMouseButton(e)) {
       if (rectangle == null) {
         originPoint = zp;
-        rectangle = createRect(originPoint, originPoint);
+        rectangle = GeometryUtil.createRect(originPoint, originPoint);
       } else {
-        rectangle = createRect(originPoint, zp);
+        rectangle = GeometryUtil.createRect(originPoint, zp);
 
         if (rectangle.width == 0 || rectangle.height == 0) {
           rectangle = null;
@@ -115,7 +116,7 @@ public class RectangleTool extends AbstractDrawingTool implements MouseMotionLis
 
     if (rectangle != null) {
       ZonePoint p = getPoint(e);
-      rectangle = createRect(originPoint, p);
+      rectangle = GeometryUtil.createRect(originPoint, p);
 
       // Draw Rectangle with initial point as Center
       if (e.isAltDown()) {

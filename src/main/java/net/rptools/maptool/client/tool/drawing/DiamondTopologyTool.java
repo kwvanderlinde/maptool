@@ -20,6 +20,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
 import javax.swing.SwingUtilities;
+import net.rptools.lib.GeometryUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
@@ -61,9 +62,9 @@ public class DiamondTopologyTool extends AbstractTopologyDrawingTool
 
       if (diamond == null) {
         originPoint = zp;
-        diamond = createDiamond(originPoint, originPoint);
+        diamond = GeometryUtil.createDiamond(originPoint, originPoint);
       } else {
-        diamond = createDiamond(originPoint, zp);
+        diamond = GeometryUtil.createDiamond(originPoint, zp);
 
         if (diamond.getBounds().width == 0 || diamond.getBounds().height == 0) {
           diamond = null;
@@ -105,7 +106,7 @@ public class DiamondTopologyTool extends AbstractTopologyDrawingTool
 
     ZonePoint zp = getPoint(e);
     if (diamond != null) {
-      diamond = createDiamond(originPoint, zp);
+      diamond = GeometryUtil.createDiamond(originPoint, zp);
       renderer.repaint();
     }
   }
