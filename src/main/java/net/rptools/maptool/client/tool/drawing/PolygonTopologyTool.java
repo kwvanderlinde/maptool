@@ -19,11 +19,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
 import javax.swing.SwingUtilities;
-import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
-import net.rptools.maptool.model.drawing.DrawableColorPaint;
-import net.rptools.maptool.model.drawing.Pen;
 
 // TODO These aren't freehand lines. Also it's not worth inheriting from LineTool.
 /** Tool for drawing freehand lines. */
@@ -50,10 +47,10 @@ public class PolygonTopologyTool extends AbstractTopologyDrawingTool
     return true;
   }
 
-  protected void complete(Pen pen, Polygon drawable) {
+  protected void complete(Polygon drawable) {
     Area area = new Area(drawable);
 
-    if (pen.isEraser()) {
+    if (isEraser()) {
       getZone().removeTopology(area);
       MapTool.serverCommand().removeTopology(getZone().getId(), area, getZone().getTopologyTypes());
     } else {
@@ -61,20 +58,6 @@ public class PolygonTopologyTool extends AbstractTopologyDrawingTool
       MapTool.serverCommand().addTopology(getZone().getId(), area, getZone().getTopologyTypes());
     }
     renderer.repaint();
-  }
-
-  @Override
-  protected Pen getPen() {
-    Pen pen = new Pen(MapTool.getFrame().getPen());
-    pen.setEraser(isEraser());
-    pen.setForegroundMode(Pen.MODE_TRANSPARENT);
-    pen.setBackgroundMode(Pen.MODE_SOLID);
-    pen.setThickness(1.0f);
-    pen.setOpacity(AppStyle.topologyRemoveColor.getAlpha() / 255.0f);
-    pen.setPaint(
-        new DrawableColorPaint(
-            isEraser() ? AppStyle.topologyRemoveColor : AppStyle.topologyAddColor));
-    return pen;
   }
 
   @Override
@@ -102,7 +85,7 @@ public class PolygonTopologyTool extends AbstractTopologyDrawingTool
         lineBuilder.trim();
 
         var polygon = lineBuilder.asPolygon();
-        complete(getPen(), polygon);
+        complete(polygon);
 
         lineBuilder.clear();
         renderer.repaint();

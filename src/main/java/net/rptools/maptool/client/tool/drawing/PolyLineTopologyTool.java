@@ -20,7 +20,6 @@ import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import javax.swing.*;
-import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.drawing.*;
@@ -47,12 +46,12 @@ public class PolyLineTopologyTool extends AbstractTopologyDrawingTool
     return false;
   }
 
-  protected void complete(Pen pen, LineSegment line) {
+  protected void complete(LineSegment line) {
     // TODO Bleh. Just pass the path2d from the get-go.
     Area area = new Area();
 
     BasicStroke stroke =
-        new BasicStroke(pen.getThickness(), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
+        new BasicStroke(line.getWidth(), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
 
     Path2D path = new Path2D.Double();
     Point lastPoint = null;
@@ -67,7 +66,7 @@ public class PolyLineTopologyTool extends AbstractTopologyDrawingTool
     }
 
     area.add(new Area(stroke.createStrokedShape(path)));
-    if (pen.isEraser()) {
+    if (isEraser()) {
       getZone().removeTopology(area);
       MapTool.serverCommand().removeTopology(getZone().getId(), area, getZone().getTopologyTypes());
     } else {
@@ -77,25 +76,14 @@ public class PolyLineTopologyTool extends AbstractTopologyDrawingTool
     renderer.repaint();
   }
 
-  @Override
-  public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    var shape = lineBuilder.asLineSegment(getPen().getThickness(), getPen().getSquareCap());
-    paintTopologyOverlay(g, shape);
+  private float thickness() {
+    return 2.f;
   }
 
-  protected Pen getPen() {
-
-    Pen pen = new Pen(MapTool.getFrame().getPen());
-    pen.setEraser(isEraser());
-    pen.setForegroundMode(Pen.MODE_SOLID);
-    pen.setBackgroundMode(Pen.MODE_TRANSPARENT);
-    pen.setThickness(2.0f);
-    pen.setOpacity(AppStyle.topologyRemoveColor.getAlpha() / 255.0f);
-    pen.setPaint(
-        new DrawableColorPaint(
-            isEraser() ? AppStyle.topologyRemoveColor : AppStyle.topologyAddColor));
-
-    return pen;
+  @Override
+  public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
+    var shape = lineBuilder.asLineSegment(thickness(), true);
+    paintTopologyOverlay(g, shape);
   }
 
   ////
@@ -116,9 +104,8 @@ public class PolyLineTopologyTool extends AbstractTopologyDrawingTool
       } else {
         lineBuilder.trim();
 
-        // TODO The topology tools should not need to have configurable pens.
-        var drawable = lineBuilder.asLineSegment(getPen().getThickness(), getPen().getSquareCap());
-        complete(getPen(), drawable);
+        var drawable = lineBuilder.asLineSegment(thickness(), true);
+        complete(drawable);
 
         lineBuilder.clear();
         renderer.repaint();
