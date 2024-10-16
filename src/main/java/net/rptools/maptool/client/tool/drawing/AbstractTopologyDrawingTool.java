@@ -27,6 +27,10 @@ import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.model.drawing.ShapeDrawable;
 
 public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeTool {
+  /**
+   * @return {@code true} if the shapes produced by the tool are filled-in areas; {@code false} if
+   *     they are lines that need to be stroked.
+   */
   protected abstract boolean isBackgroundFill();
 
   @Override
