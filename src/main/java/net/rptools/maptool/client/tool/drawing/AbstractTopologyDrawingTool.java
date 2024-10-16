@@ -40,17 +40,17 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingTool {
     return MapTool.getPlayer().isGM();
   }
 
-  protected void paintTopologyOverlay(Graphics2D g, Shape shape, int backgroundPenMode) {
+  protected void paintTopologyOverlay(Graphics2D g, Shape shape) {
     ShapeDrawable drawable = null;
 
     if (shape != null) {
       drawable = new ShapeDrawable(shape, false);
     }
 
-    paintTopologyOverlay(g, drawable, backgroundPenMode);
+    paintTopologyOverlay(g, drawable);
   }
 
-  protected void paintTopologyOverlay(Graphics2D g, Drawable drawable, int backgroundPenMode) {
+  protected void paintTopologyOverlay(Graphics2D g, Drawable drawable) {
     if (MapTool.getPlayer().isGM()) {
       Zone zone = renderer.getZone();
 

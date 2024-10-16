@@ -22,7 +22,6 @@ import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
-import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.model.drawing.Rectangle;
 
 /**
@@ -53,7 +52,7 @@ public class HollowRectangleTopologyTool extends AbstractTopologyDrawingTool
 
   @Override
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    paintTopologyOverlay(g, rectangle, Pen.MODE_TRANSPARENT);
+    paintTopologyOverlay(g, rectangle);
   }
 
   @Override

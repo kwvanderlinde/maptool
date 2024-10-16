@@ -45,7 +45,7 @@ public class PolyLineTopologyTool extends PolygonTopologyTool implements MouseMo
   @Override
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
     var shape = lineBuilder.asLineSegment(getPen().getThickness(), getPen().getSquareCap());
-    paintTopologyOverlay(g, shape, Pen.MODE_TRANSPARENT);
+    paintTopologyOverlay(g, shape);
   }
 
   protected Pen getPen() {

@@ -114,7 +114,7 @@ public class PolygonTopologyTool extends AbstractTopologyDrawingTool
     // TODO Why do we only render the lines and not the fill? I have arbitrarily decided otherwise
     // now.
     var shape = lineBuilder.asPolygon();
-    paintTopologyOverlay(g, shape, Pen.MODE_SOLID);
+    paintTopologyOverlay(g, shape);
   }
 
   private void stopLine() {

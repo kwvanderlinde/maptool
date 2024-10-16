@@ -23,7 +23,6 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.Oval;
-import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.util.GraphicsUtil;
 
 public class OvalTopologyTool extends AbstractTopologyDrawingTool implements MouseMotionListener {
@@ -52,7 +51,7 @@ public class OvalTopologyTool extends AbstractTopologyDrawingTool implements Mou
 
   @Override
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    paintTopologyOverlay(g, oval, Pen.MODE_SOLID);
+    paintTopologyOverlay(g, oval);
   }
 
   @Override

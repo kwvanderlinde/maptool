@@ -23,7 +23,6 @@ import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
-import net.rptools.maptool.model.drawing.Pen;
 
 public class HollowDiamondTopologyTool extends AbstractTopologyDrawingTool
     implements MouseMotionListener {
@@ -50,7 +49,7 @@ public class HollowDiamondTopologyTool extends AbstractTopologyDrawingTool
 
   @Override
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    paintTopologyOverlay(g, diamond, Pen.MODE_TRANSPARENT);
+    paintTopologyOverlay(g, diamond);
   }
 
   @Override

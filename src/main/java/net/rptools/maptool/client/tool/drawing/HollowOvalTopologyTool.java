@@ -23,7 +23,6 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.Oval;
-import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.util.GraphicsUtil;
 
 public class HollowOvalTopologyTool extends AbstractTopologyDrawingTool
@@ -52,7 +51,7 @@ public class HollowOvalTopologyTool extends AbstractTopologyDrawingTool
   }
 
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    paintTopologyOverlay(g, oval, Pen.MODE_TRANSPARENT);
+    paintTopologyOverlay(g, oval);
   }
 
   public void mousePressed(MouseEvent e) {
