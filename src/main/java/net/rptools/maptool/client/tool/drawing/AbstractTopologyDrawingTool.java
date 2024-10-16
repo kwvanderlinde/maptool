@@ -82,7 +82,7 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
     return MapTool.getPlayer().isGM();
   }
 
-  protected void submit(Area area) {
+  private void submit(Area area) {
     if (isEraser()) {
       getZone().removeTopology(area);
       // TODO Surely the tool should be the place to keep track of the topology types.
@@ -91,7 +91,6 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
       getZone().addTopology(area);
       MapTool.serverCommand().addTopology(getZone().getId(), area, getZone().getTopologyTypes());
     }
-    renderer.repaint();
   }
 
   protected Area getTokenTopology(Zone.TopologyType topologyType) {
@@ -215,10 +214,12 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
         var area = finish();
         submit(area);
       }
+      renderer.repaint();
     }
     // TODO Shouldn't we make sure it's a right-click?
     else if (isInProgress()) {
       pushPoint();
+      renderer.repaint();
     }
 
     super.mousePressed(e);

@@ -17,10 +17,8 @@ package net.rptools.maptool.client.tool.drawing;
 import java.awt.*;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
-import javax.swing.*;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
-import net.rptools.maptool.model.drawing.*;
 
 /** Tool for drawing freehand lines. */
 public class PolyLineTopologyTool extends AbstractTopologyDrawingTool {
@@ -48,30 +46,6 @@ public class PolyLineTopologyTool extends AbstractTopologyDrawingTool {
   @Override
   protected boolean isInProgress() {
     return !lineBuilder.isEmpty();
-  }
-
-  protected void complete(LineSegment line) {
-    // TODO Bleh. Just pass the path2d from the get-go.
-    Area area = new Area();
-
-    BasicStroke stroke =
-        new BasicStroke(line.getWidth(), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
-
-    Path2D path = new Path2D.Double();
-    Point lastPoint = null;
-
-    for (Point point : line.getPoints()) {
-      if (path.getCurrentPoint() == null) {
-        path.moveTo(point.x, point.y);
-      } else if (!point.equals(lastPoint)) {
-        path.lineTo(point.x, point.y);
-        lastPoint = point;
-      }
-    }
-
-    area.add(new Area(stroke.createStrokedShape(path)));
-
-    submit(area);
   }
 
   @Override

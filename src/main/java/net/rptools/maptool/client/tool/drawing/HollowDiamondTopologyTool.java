@@ -70,7 +70,6 @@ public class HollowDiamondTopologyTool extends AbstractTopologyDrawingTool {
   protected Area finish() {
     if (diamond.getBounds().width == 0 || diamond.getBounds().height == 0) {
       diamond = null;
-      renderer.repaint();
       return new Area();
     }
 
