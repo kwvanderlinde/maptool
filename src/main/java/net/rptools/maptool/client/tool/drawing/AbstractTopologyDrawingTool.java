@@ -35,6 +35,8 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingTool {
     MapTool.getFrame().removeControlPanel();
   }
 
+  protected abstract boolean isBackgroundFill();
+
   @Override
   public boolean isAvailable() {
     return MapTool.getPlayer().isGM();

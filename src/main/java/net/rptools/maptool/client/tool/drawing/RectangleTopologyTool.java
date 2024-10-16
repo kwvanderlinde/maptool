@@ -46,6 +46,11 @@ public class RectangleTopologyTool extends AbstractTopologyDrawingTool
   }
 
   @Override
+  protected boolean isBackgroundFill() {
+    return true;
+  }
+
+  @Override
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
     paintTopologyOverlay(g, rectangle);
   }
