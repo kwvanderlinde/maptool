@@ -17,21 +17,12 @@ package net.rptools.maptool.client.tool.drawing;
 import java.awt.Cursor;
 import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Area;
-import java.util.List;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolUtil;
-import net.rptools.maptool.client.ScreenPoint;
-import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.swing.colorpicker.ColorPicker;
-import net.rptools.maptool.client.tool.DefaultTool;
 import net.rptools.maptool.client.ui.zone.ZoneOverlay;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
-import net.rptools.maptool.model.Token;
-import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.Zone.Layer;
-import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.Drawable;
 import net.rptools.maptool.model.drawing.Pen;
 
@@ -40,29 +31,15 @@ import net.rptools.maptool.model.drawing.Pen;
 //  topology, and FoW exposure. The latter two rightly have no concept of a pen, and templates are
 //  +grid-based. Btw, templates are completely busted on gridless maps.
 /** Tool for drawing freehand lines. */
-public abstract class AbstractDrawingTool extends DefaultTool implements ZoneOverlay {
+public abstract class AbstractDrawingTool extends AbstractDrawingLikeTool implements ZoneOverlay {
 
   private static final long serialVersionUID = 9121558405484986225L;
 
-  private boolean isEraser;
   private boolean isSnapToGridSelected;
   private boolean isEraseSelected;
 
-  protected AffineTransform getPaintTransform(ZoneRenderer renderer) {
-    AffineTransform transform = new AffineTransform();
-    transform.translate(renderer.getViewOffsetX(), renderer.getViewOffsetY());
-    transform.scale(renderer.getScale(), renderer.getScale());
-    return transform;
-  }
-
-  protected void paintTransformed(Graphics2D g, ZoneRenderer renderer, Drawable drawing, Pen pen) {
-    AffineTransform transform = getPaintTransform(renderer);
-    AffineTransform oldTransform = g.getTransform();
-    g.transform(transform);
-    drawing.draw(renderer.getZone(), g, pen);
-    g.setTransform(oldTransform);
-  }
-
+  // TODO Color picker + layer selection should be drawing tool-specific, not applied to expose /
+  // topology.
   @Override
   protected void attachTo(ZoneRenderer renderer) {
     super.attachTo(renderer);
@@ -89,48 +66,39 @@ public abstract class AbstractDrawingTool extends DefaultTool implements ZoneOve
     super.detachFrom(renderer);
   }
 
-  protected void setIsEraser(boolean eraser) {
-    isEraser = eraser;
-  }
-
-  protected boolean isEraser() {
-    return isEraser;
-  }
-
+  // TODO Even though drawing, expose, and topology tools all have this concept, they aren't really
+  //  related.
   protected boolean isBackgroundFill() {
     boolean defaultValue = MapTool.getFrame().getColorPicker().isFillBackgroundSelected();
     return defaultValue;
   }
 
+  // TODO Seems this method could be less used if we instead had a concept of start/stop where we
+  //  check it once.
   protected boolean isEraser(MouseEvent e) {
+    // Use the color picker as the default, but invert based on key state.
+    var inverted = super.isEraser(e);
     boolean defaultValue = MapTool.getFrame().getColorPicker().isEraseSelected();
-    if (SwingUtil.isShiftDown(e)) {
-      // Invert from the color panel
+    if (inverted) {
       defaultValue = !defaultValue;
     }
     return defaultValue;
   }
 
   protected boolean isSnapToGrid(MouseEvent e) {
+    // Use the color picker as the default, but invert based on key state.
+    var inverted = super.isSnapToGrid(e);
     boolean defaultValue = MapTool.getFrame().getColorPicker().isSnapSelected();
-    if (SwingUtil.isControlDown(e)) {
+    if (inverted) {
       // Invert from the color panel
       defaultValue = !defaultValue;
     }
     return defaultValue;
   }
 
-  protected boolean isSnapToCenter(MouseEvent e) {
-    boolean defaultValue = false;
-    if (e.isAltDown()) {
-      defaultValue = true;
-    }
-    return defaultValue;
-  }
-
   protected Pen getPen() {
     Pen pen = new Pen(MapTool.getFrame().getPen());
-    pen.setEraser(isEraser);
+    pen.setEraser(isEraser());
 
     ColorPicker picker = MapTool.getFrame().getColorPicker();
     if (picker.isFillForegroundSelected()) {
@@ -146,30 +114,6 @@ public abstract class AbstractDrawingTool extends DefaultTool implements ZoneOve
     pen.setSquareCap(picker.isSquareCapSelected());
     pen.setThickness(picker.getStrokeWidth());
     return pen;
-  }
-
-  protected ZonePoint getPoint(MouseEvent e) {
-    ScreenPoint sp = new ScreenPoint(e.getX(), e.getY());
-    ZonePoint zp = sp.convertToZoneRnd(renderer);
-    if (isSnapToCenter(e) && this instanceof AbstractLineTool) {
-      // Only line tools will snap to center as the Alt key for rectangle, diamond and oval
-      // is used for expand from center.
-      zp = renderer.getCellCenterAt(sp);
-    } else if (isSnapToGrid(e)) {
-      zp = renderer.getZone().getNearestVertex(zp);
-    }
-    return zp;
-  }
-
-  protected Area getTokenTopology(Zone.TopologyType topologyType) {
-    List<Token> topologyTokens = getZone().getTokensWithTopology(topologyType);
-
-    Area tokenTopology = new Area();
-    for (Token topologyToken : topologyTokens) {
-      tokenTopology.add(topologyToken.getTransformedTopology(topologyType));
-    }
-
-    return tokenTopology;
   }
 
   @Override
