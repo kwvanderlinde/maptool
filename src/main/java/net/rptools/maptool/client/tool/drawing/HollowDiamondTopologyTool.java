@@ -54,8 +54,10 @@ public class HollowDiamondTopologyTool extends AbstractTopologyDrawingTool
     if (SwingUtilities.isLeftMouseButton(e)) {
       if (diamond == null) {
         originPoint = zp;
+        // TODO Bug: getPen() uses the color picker thickness. We should not.
         diamond = createHollowDiamond(originPoint, originPoint, getPen());
       } else {
+        // TODO Bug: getPen() uses the color picker thickness. We should not.
         diamond = createHollowDiamond(originPoint, zp, getPen());
         // diamond = createDiamond(originPoint, zp);
 
