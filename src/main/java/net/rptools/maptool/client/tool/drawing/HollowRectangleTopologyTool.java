@@ -37,6 +37,11 @@ public class HollowRectangleTopologyTool extends AbstractTopologyDrawingTool
   public HollowRectangleTopologyTool() {}
 
   @Override
+  protected boolean isBackgroundFill() {
+    return false;
+  }
+
+  @Override
   public String getInstructions() {
     return "tool.recttopology.instructions";
   }

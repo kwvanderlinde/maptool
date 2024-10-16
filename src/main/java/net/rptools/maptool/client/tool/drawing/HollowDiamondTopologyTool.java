@@ -34,6 +34,11 @@ public class HollowDiamondTopologyTool extends AbstractTopologyDrawingTool
   public HollowDiamondTopologyTool() {}
 
   @Override
+  protected boolean isBackgroundFill() {
+    return false;
+  }
+
+  @Override
   public String getInstructions() {
     return "tool.isorectangletopology.instructions";
   }

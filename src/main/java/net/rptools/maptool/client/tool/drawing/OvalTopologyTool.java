@@ -36,6 +36,11 @@ public class OvalTopologyTool extends AbstractTopologyDrawingTool implements Mou
   public OvalTopologyTool() {}
 
   @Override
+  protected boolean isBackgroundFill() {
+    return false;
+  }
+
+  @Override
   public String getInstructions() {
     return "tool.ovaltopology.instructions";
   }

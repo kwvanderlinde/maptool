@@ -38,6 +38,11 @@ public class CrossTopologyTool extends AbstractTopologyDrawingTool implements Mo
   public CrossTopologyTool() {}
 
   @Override
+  protected boolean isBackgroundFill() {
+    return false;
+  }
+
+  @Override
   public String getInstructions() {
     return "tool.crosstopology.instructions";
   }

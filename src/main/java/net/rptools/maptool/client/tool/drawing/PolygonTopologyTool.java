@@ -22,7 +22,6 @@ import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import javax.swing.SwingUtilities;
-
 import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
@@ -34,11 +33,12 @@ import net.rptools.maptool.model.drawing.ShapeDrawable;
 
 // TODO These aren't freehand lines. Also it's not worth inheriting from LineTool.
 /** Tool for drawing freehand lines. */
-public class PolygonTopologyTool extends AbstractTopologyDrawingTool implements MouseMotionListener {
+public class PolygonTopologyTool extends AbstractTopologyDrawingTool
+    implements MouseMotionListener {
 
   private static final long serialVersionUID = 3258132466219627316L;
   // TODO Surely a Path2D would suffice?
-  private LineBuilder lineBuilder = new LineBuilder();
+  protected final LineBuilder lineBuilder = new LineBuilder();
 
   public PolygonTopologyTool() {}
 
@@ -111,8 +111,10 @@ public class PolygonTopologyTool extends AbstractTopologyDrawingTool implements 
 
   @Override
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    var shape = lineBuilder.asLineSegment(getPen().getThickness(), getPen().getSquareCap());
-    paintTopologyOverlay(g, shape, Pen.MODE_TRANSPARENT);
+    // TODO Why do we only render the lines and not the fill? I have arbitrarily decided otherwise
+    // now.
+    var shape = lineBuilder.asPolygon();
+    paintTopologyOverlay(g, shape, Pen.MODE_SOLID);
   }
 
   private void stopLine() {
@@ -126,8 +128,7 @@ public class PolygonTopologyTool extends AbstractTopologyDrawingTool implements 
     Drawable drawable;
     if (isBackgroundFill() && lineBuilder.size() > 2) {
       drawable = new ShapeDrawable(lineBuilder.asPolygon());
-    }
-    else {
+    } else {
       // TODO The topology tools should not need to have configurable pens.
       drawable = lineBuilder.asLineSegment(getPen().getThickness(), getPen().getSquareCap());
     }

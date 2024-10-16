@@ -37,6 +37,11 @@ public class HollowOvalTopologyTool extends AbstractTopologyDrawingTool
   public HollowOvalTopologyTool() {}
 
   @Override
+  protected boolean isBackgroundFill() {
+    return false;
+  }
+
+  @Override
   public String getInstructions() {
     return "tool.ovaltopology.instructions";
   }

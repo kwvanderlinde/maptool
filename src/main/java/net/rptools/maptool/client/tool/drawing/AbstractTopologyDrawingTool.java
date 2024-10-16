@@ -91,11 +91,12 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingTool {
       Pen pen = new Pen();
       pen.setEraser(isEraser());
       pen.setOpacity(AppStyle.topologyRemoveColor.getAlpha() / 255.0f);
-      pen.setBackgroundMode(backgroundPenMode);
 
-      if (backgroundPenMode == Pen.MODE_TRANSPARENT) {
-        // TODO Seems weird to tie this to the transparency. Surely this should be a common property.
+      if (isBackgroundFill()) {
+        pen.setBackgroundMode(Pen.MODE_SOLID);
+      } else {
         pen.setThickness(3.0f);
+        pen.setBackgroundMode(Pen.MODE_TRANSPARENT);
       }
 
       if (pen.isEraser()) {

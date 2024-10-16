@@ -36,6 +36,11 @@ public class DiamondTopologyTool extends AbstractTopologyDrawingTool
   public DiamondTopologyTool() {}
 
   @Override
+  protected boolean isBackgroundFill() {
+    return true;
+  }
+
+  @Override
   public String getInstructions() {
     return "tool.isorectangletopology.instructions";
   }

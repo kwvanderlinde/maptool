@@ -14,13 +14,12 @@
  */
 package net.rptools.maptool.client.tool.drawing;
 
-import java.awt.Point;
-import java.awt.Polygon;
+import java.awt.Graphics2D;
 import java.awt.event.MouseMotionListener;
 import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
-import net.rptools.maptool.model.drawing.LineSegment;
 import net.rptools.maptool.model.drawing.Pen;
 
 /** Tool for drawing freehand lines. */
@@ -41,6 +40,12 @@ public class PolyLineTopologyTool extends PolygonTopologyTool implements MouseMo
 
   protected boolean isBackgroundFill() {
     return false;
+  }
+
+  @Override
+  public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
+    var shape = lineBuilder.asLineSegment(getPen().getThickness(), getPen().getSquareCap());
+    paintTopologyOverlay(g, shape, Pen.MODE_TRANSPARENT);
   }
 
   protected Pen getPen() {
