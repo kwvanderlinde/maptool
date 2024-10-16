@@ -40,17 +40,17 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingTool {
     return MapTool.getPlayer().isGM();
   }
 
-  protected void paintTopologyOverlay(Graphics2D g, Shape shape, int penMode) {
+  protected void paintTopologyOverlay(Graphics2D g, Shape shape, int backgroundPenMode) {
     ShapeDrawable drawable = null;
 
     if (shape != null) {
       drawable = new ShapeDrawable(shape, false);
     }
 
-    paintTopologyOverlay(g, drawable, penMode);
+    paintTopologyOverlay(g, drawable, backgroundPenMode);
   }
 
-  protected void paintTopologyOverlay(Graphics2D g, Drawable drawable, int penMode) {
+  protected void paintTopologyOverlay(Graphics2D g, Drawable drawable, int backgroundPenMode) {
     if (MapTool.getPlayer().isGM()) {
       Zone zone = renderer.getZone();
 
@@ -91,9 +91,10 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingTool {
       Pen pen = new Pen();
       pen.setEraser(getPen().isEraser());
       pen.setOpacity(AppStyle.topologyRemoveColor.getAlpha() / 255.0f);
-      pen.setBackgroundMode(penMode);
+      pen.setBackgroundMode(backgroundPenMode);
 
-      if (penMode == Pen.MODE_TRANSPARENT) {
+      if (backgroundPenMode == Pen.MODE_TRANSPARENT) {
+        // TODO Seems weird to tie this to the transparency. Surely this should be a common property.
         pen.setThickness(3.0f);
       }
 
