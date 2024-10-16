@@ -28,6 +28,8 @@ import net.rptools.maptool.model.drawing.*;
 public class PolyLineTopologyTool extends AbstractTopologyDrawingTool
     implements MouseMotionListener {
   private static final long serialVersionUID = 3258132466219627316L;
+
+  private final float thickness = 2.f;
   private final LineBuilder lineBuilder = new LineBuilder();
 
   public PolyLineTopologyTool() {}
@@ -76,13 +78,9 @@ public class PolyLineTopologyTool extends AbstractTopologyDrawingTool
     renderer.repaint();
   }
 
-  private float thickness() {
-    return 2.f;
-  }
-
   @Override
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    var shape = lineBuilder.asLineSegment(thickness(), true);
+    var shape = lineBuilder.asLineSegment(thickness, true);
     paintTopologyOverlay(g, shape);
   }
 
@@ -104,7 +102,7 @@ public class PolyLineTopologyTool extends AbstractTopologyDrawingTool
       } else {
         lineBuilder.trim();
 
-        var drawable = lineBuilder.asLineSegment(thickness(), true);
+        var drawable = lineBuilder.asLineSegment(thickness, true);
         complete(drawable);
 
         lineBuilder.clear();
