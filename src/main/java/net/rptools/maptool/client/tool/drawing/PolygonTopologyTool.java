@@ -37,7 +37,6 @@ public class PolygonTopologyTool extends AbstractTopologyDrawingTool
     implements MouseMotionListener {
 
   private static final long serialVersionUID = 3258132466219627316L;
-  // TODO Surely a Path2D would suffice?
   protected final LineBuilder lineBuilder = new LineBuilder();
 
   public PolygonTopologyTool() {}
@@ -117,27 +116,6 @@ public class PolygonTopologyTool extends AbstractTopologyDrawingTool
     paintTopologyOverlay(g, shape);
   }
 
-  private void stopLine() {
-    if (lineBuilder.isEmpty()) {
-      // Not started, or was already cancelled.
-      return;
-    }
-
-    lineBuilder.trim();
-
-    Drawable drawable;
-    if (isBackgroundFill() && lineBuilder.size() > 2) {
-      drawable = new ShapeDrawable(lineBuilder.asPolygon());
-    } else {
-      // TODO The topology tools should not need to have configurable pens.
-      drawable = lineBuilder.asLineSegment(getPen().getThickness(), getPen().getSquareCap());
-    }
-    completeDrawable(getPen(), drawable);
-
-    lineBuilder.clear();
-    renderer.repaint();
-  }
-
   ////
   // MOUSE LISTENER
   @Override
@@ -152,7 +130,19 @@ public class PolygonTopologyTool extends AbstractTopologyDrawingTool
         lineBuilder.addPoint(getPoint(e));
         setIsEraser(isEraser(e));
       } else {
-        stopLine();
+        lineBuilder.trim();
+
+        Drawable drawable;
+        if (isBackgroundFill() && lineBuilder.size() > 2) {
+          drawable = new ShapeDrawable(lineBuilder.asPolygon());
+        } else {
+          // TODO The topology tools should not need to have configurable pens.
+          drawable = lineBuilder.asLineSegment(getPen().getThickness(), getPen().getSquareCap());
+        }
+        completeDrawable(getPen(), drawable);
+
+        lineBuilder.clear();
+        renderer.repaint();
       }
       renderer.repaint();
     } else if (!lineBuilder.isEmpty()) {
