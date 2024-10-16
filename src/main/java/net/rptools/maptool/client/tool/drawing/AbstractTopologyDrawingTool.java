@@ -124,8 +124,10 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
         pen.setEraser(false);
       }
       if (isEraser()) {
+        pen.setPaint(new DrawableColorPaint(AppStyle.topologyRemoveColor));
         pen.setBackgroundPaint(new DrawableColorPaint(AppStyle.topologyRemoveColor));
       } else {
+        pen.setPaint(new DrawableColorPaint(AppStyle.topologyAddColor));
         pen.setBackgroundPaint(new DrawableColorPaint(AppStyle.topologyAddColor));
       }
       paintTransformed(g, renderer, drawable, pen);
