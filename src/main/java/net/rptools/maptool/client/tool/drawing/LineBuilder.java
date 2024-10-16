@@ -79,7 +79,7 @@ public class LineBuilder {
    * Due to mouse movement, a user drawn line often has duplicated points, especially at the end. To
    * draw a clean line with miter joints these duplicates should be removed.
    *
-   * TODO JTS / GeometryUtil could help us out here.
+   * <p>TODO JTS / GeometryUtil could help us out here.
    */
   protected void trim() {
     ZonePoint lastPoint = null;
