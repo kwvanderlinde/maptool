@@ -14,22 +14,16 @@
  */
 package net.rptools.maptool.client.tool.drawing;
 
-import java.awt.BasicStroke;
-import java.awt.Graphics2D;
-import java.awt.Point;
+import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
-import java.awt.geom.Path2D;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
-import net.rptools.maptool.model.drawing.Drawable;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
-import net.rptools.maptool.model.drawing.LineSegment;
 import net.rptools.maptool.model.drawing.Pen;
-import net.rptools.maptool.model.drawing.ShapeDrawable;
 
 // TODO These aren't freehand lines. Also it's not worth inheriting from LineTool.
 /** Tool for drawing freehand lines. */
@@ -56,34 +50,9 @@ public class PolygonTopologyTool extends AbstractTopologyDrawingTool
     return true;
   }
 
-  @Override
-  protected void completeDrawable(Pen pen, Drawable drawable) {
-    // TODO Gross. We should avoid the nonsense of completeDrawable() for non-drawing tools.
-    //  Btw, we do so for other topology tools.
+  protected void complete(Pen pen, Polygon drawable) {
+    Area area = new Area(drawable);
 
-    Area area = new Area();
-
-    if (drawable instanceof LineSegment) {
-      LineSegment line = (LineSegment) drawable;
-      BasicStroke stroke =
-          new BasicStroke(pen.getThickness(), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
-
-      Path2D path = new Path2D.Double();
-      Point lastPoint = null;
-
-      for (Point point : line.getPoints()) {
-        if (path.getCurrentPoint() == null) {
-          path.moveTo(point.x, point.y);
-        } else if (!point.equals(lastPoint)) {
-          path.lineTo(point.x, point.y);
-          lastPoint = point;
-        }
-      }
-
-      area.add(new Area(stroke.createStrokedShape(path)));
-    } else {
-      area = new Area(((ShapeDrawable) drawable).getShape());
-    }
     if (pen.isEraser()) {
       getZone().removeTopology(area);
       MapTool.serverCommand().removeTopology(getZone().getId(), area, getZone().getTopologyTypes());
@@ -132,14 +101,8 @@ public class PolygonTopologyTool extends AbstractTopologyDrawingTool
       } else {
         lineBuilder.trim();
 
-        Drawable drawable;
-        if (isBackgroundFill() && lineBuilder.size() > 2) {
-          drawable = new ShapeDrawable(lineBuilder.asPolygon());
-        } else {
-          // TODO The topology tools should not need to have configurable pens.
-          drawable = lineBuilder.asLineSegment(getPen().getThickness(), getPen().getSquareCap());
-        }
-        completeDrawable(getPen(), drawable);
+        var polygon = lineBuilder.asPolygon();
+        complete(getPen(), polygon);
 
         lineBuilder.clear();
         renderer.repaint();

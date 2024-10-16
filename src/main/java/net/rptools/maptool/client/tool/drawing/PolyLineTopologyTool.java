@@ -47,34 +47,26 @@ public class PolyLineTopologyTool extends AbstractTopologyDrawingTool
     return false;
   }
 
-  @Override
-  protected void completeDrawable(Pen pen, Drawable drawable) {
-    // TODO Gross. We should avoid the nonsense of completeDrawable() for non-drawing tools.
-    //  Btw, we do so for other topology tools.
-
+  protected void complete(Pen pen, LineSegment line) {
+    // TODO Bleh. Just pass the path2d from the get-go.
     Area area = new Area();
 
-    if (drawable instanceof LineSegment) {
-      LineSegment line = (LineSegment) drawable;
-      BasicStroke stroke =
-          new BasicStroke(pen.getThickness(), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
+    BasicStroke stroke =
+        new BasicStroke(pen.getThickness(), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
 
-      Path2D path = new Path2D.Double();
-      Point lastPoint = null;
+    Path2D path = new Path2D.Double();
+    Point lastPoint = null;
 
-      for (Point point : line.getPoints()) {
-        if (path.getCurrentPoint() == null) {
-          path.moveTo(point.x, point.y);
-        } else if (!point.equals(lastPoint)) {
-          path.lineTo(point.x, point.y);
-          lastPoint = point;
-        }
+    for (Point point : line.getPoints()) {
+      if (path.getCurrentPoint() == null) {
+        path.moveTo(point.x, point.y);
+      } else if (!point.equals(lastPoint)) {
+        path.lineTo(point.x, point.y);
+        lastPoint = point;
       }
-
-      area.add(new Area(stroke.createStrokedShape(path)));
-    } else {
-      area = new Area(((ShapeDrawable) drawable).getShape());
     }
+
+    area.add(new Area(stroke.createStrokedShape(path)));
     if (pen.isEraser()) {
       getZone().removeTopology(area);
       MapTool.serverCommand().removeTopology(getZone().getId(), area, getZone().getTopologyTypes());
@@ -124,14 +116,9 @@ public class PolyLineTopologyTool extends AbstractTopologyDrawingTool
       } else {
         lineBuilder.trim();
 
-        Drawable drawable;
-        if (isBackgroundFill() && lineBuilder.size() > 2) {
-          drawable = new ShapeDrawable(lineBuilder.asPolygon());
-        } else {
-          // TODO The topology tools should not need to have configurable pens.
-          drawable = lineBuilder.asLineSegment(getPen().getThickness(), getPen().getSquareCap());
-        }
-        completeDrawable(getPen(), drawable);
+        // TODO The topology tools should not need to have configurable pens.
+        var drawable = lineBuilder.asLineSegment(getPen().getThickness(), getPen().getSquareCap());
+        complete(getPen(), drawable);
 
         lineBuilder.clear();
         renderer.repaint();
