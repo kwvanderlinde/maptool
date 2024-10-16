@@ -15,9 +15,12 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.*;
+import java.awt.geom.Area;
+import java.util.List;
 import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
+import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.drawing.Drawable;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
@@ -40,6 +43,17 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingTool {
   @Override
   public boolean isAvailable() {
     return MapTool.getPlayer().isGM();
+  }
+
+  protected Area getTokenTopology(Zone.TopologyType topologyType) {
+    List<Token> topologyTokens = getZone().getTokensWithTopology(topologyType);
+
+    Area tokenTopology = new Area();
+    for (Token topologyToken : topologyTokens) {
+      tokenTopology.add(topologyToken.getTransformedTopology(topologyType));
+    }
+
+    return tokenTopology;
   }
 
   protected void paintTopologyOverlay(Graphics2D g, Shape shape) {
