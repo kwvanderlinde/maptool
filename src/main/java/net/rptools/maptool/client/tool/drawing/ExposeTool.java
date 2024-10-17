@@ -153,6 +153,18 @@ public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
                     renderer, lineSegment.p2().getX(), lineSegment.p2().getY());
             ToolHelper.drawMeasurement(renderer, g, p1, p2);
           }
+          case Measurement.IsoRectangular isoRectangular -> {
+            var north =
+                ScreenPoint.fromZonePoint(
+                    renderer, isoRectangular.north().getX(), isoRectangular.north().getY());
+            var west =
+                ScreenPoint.fromZonePoint(
+                    renderer, isoRectangular.west().getX(), isoRectangular.west().getY());
+            var east =
+                ScreenPoint.fromZonePoint(
+                    renderer, isoRectangular.east().getX(), isoRectangular.east().getY());
+            ToolHelper.drawIsoRectangleMeasurement(renderer, g, north, west, east);
+          }
         }
       }
     }
