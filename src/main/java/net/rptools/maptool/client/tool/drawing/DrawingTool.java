@@ -41,8 +41,6 @@ import org.apache.logging.log4j.Logger;
 
 public final class DrawingTool<StateT> extends AbstractDrawingLikeTool {
   private static final Logger log = LogManager.getLogger(DrawingTool.class);
-  // TODO Need to draw measurements as well.
-
   private final String instructionKey;
   private final String tooltipKey;
   private final Strategy<StateT> strategy;
