@@ -18,7 +18,6 @@ import java.awt.Rectangle;
 import javax.annotation.Nullable;
 import net.rptools.maptool.model.ZonePoint;
 
-// TODO Make strategy generic on the resulting shape type?
 public interface Strategy<StateT> {
   /**
    * Check if the tool is a freehand tool.
