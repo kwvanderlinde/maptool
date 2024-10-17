@@ -21,6 +21,18 @@ import net.rptools.maptool.model.ZonePoint;
 
 public interface Strategy<StateT> {
   /**
+   * Check if the tool is a freehand tool.
+   *
+   * <p>Freehand tools have a different flow to other tools. Other tools are click-based, freehand
+   * tools are dragged-based.
+   *
+   * @return {@code true} if the strategy is for a freehand tool.
+   */
+  default boolean isFreehand() {
+    return false;
+  }
+
+  /**
    * Check if the tool is a linear tool.
    *
    * <p>Linear tools support snap-to-center, but not origin-as-center since they don't have a real

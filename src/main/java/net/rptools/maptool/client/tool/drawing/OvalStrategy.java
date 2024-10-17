@@ -15,11 +15,22 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.Shape;
+import java.awt.geom.Ellipse2D;
 import javax.annotation.Nullable;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.util.GraphicsUtil;
 
 public class OvalStrategy implements Strategy<ZonePoint> {
+  private int steps;
+
+  public OvalStrategy() {
+    this(0);
+  }
+
+  public OvalStrategy(int steps) {
+    this.steps = steps;
+  }
+
   @Override
   public ZonePoint startNewAtPoint(ZonePoint point) {
     return point;
@@ -32,7 +43,11 @@ public class OvalStrategy implements Strategy<ZonePoint> {
       return null;
     }
 
-    return GraphicsUtil.createLineSegmentEllipsePath(
-        bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height, 10);
+    if (steps <= 0) {
+      return new Ellipse2D.Double(bounds.x, bounds.y, bounds.width, bounds.height);
+    } else {
+      return GraphicsUtil.createLineSegmentEllipsePath(
+          bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height, steps);
+    }
   }
 }
