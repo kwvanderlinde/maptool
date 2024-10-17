@@ -161,15 +161,15 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
     g2.fill(zone.getTopology(Zone.TopologyType.COVER_VBL));
 
     if (state != null) {
-      var shape = strategy.getShape(state, currentPoint, centerOnOrigin, isFilled);
+      var result = strategy.getShape(state, currentPoint, centerOnOrigin, isFilled);
       // TODO Require non-null again.
-      if (shape != null) {
+      if (result != null) {
         var stroke = getLineStroke();
         var color = isEraser() ? AppStyle.topologyRemoveColor : AppStyle.topologyAddColor;
         g2.setColor(color);
 
         if (isFilled) {
-          g2.fill(shape);
+          g2.fill(result.shape());
 
           // Render the outline just to make it stand out more.
           g2.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 255));
@@ -177,10 +177,10 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
           g2.setStroke(
               new BasicStroke(
                   1 / (float) renderer.getScale(), stroke.getEndCap(), stroke.getLineJoin()));
-          g2.draw(shape);
+          g2.draw(result.shape());
         } else {
           g2.setStroke(stroke);
-          g2.draw(shape);
+          g2.draw(result.shape());
         }
       }
     }
@@ -221,10 +221,10 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
       if (state == null) {
         state = strategy.startNewAtPoint(currentPoint);
       } else {
-        var shape = strategy.getShape(state, currentPoint, centerOnOrigin, isFilled);
+        var result = strategy.getShape(state, currentPoint, centerOnOrigin, isFilled);
         state = null;
-        if (shape != null) {
-          submit(shape);
+        if (result != null) {
+          submit(result.shape());
         }
       }
       renderer.repaint();
