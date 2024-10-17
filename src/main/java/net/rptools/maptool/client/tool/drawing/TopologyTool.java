@@ -40,6 +40,8 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
   private @Nullable StateT state;
 
   private ZonePoint currentPoint = new ZonePoint(0, 0);
+  // Topology never supports center on origin right now, but it should in the future.
+  private boolean centerOnOrigin = false;
 
   public TopologyTool(
       String instructionKey, String tooltipKey, boolean isFilled, Strategy<StateT> strategy) {
@@ -159,7 +161,7 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
     g2.fill(zone.getTopology(Zone.TopologyType.COVER_VBL));
 
     if (state != null) {
-      var shape = strategy.getShape(state, currentPoint);
+      var shape = strategy.getShape(state, currentPoint, centerOnOrigin);
       // TODO Require non-null again.
       if (shape != null) {
         var stroke = getLineStroke();
@@ -219,7 +221,7 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
       if (state == null) {
         state = strategy.startNewAtPoint(currentPoint);
       } else {
-        var shape = strategy.getShape(state, currentPoint);
+        var shape = strategy.getShape(state, currentPoint, centerOnOrigin);
         state = null;
         if (shape != null) {
           submit(shape);

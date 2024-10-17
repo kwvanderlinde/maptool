@@ -25,11 +25,12 @@ public class RectangleStrategy implements Strategy<ZonePoint> {
   }
 
   @Override
-  public @Nullable Shape getShape(ZonePoint state, ZonePoint currentPoint) {
-    var result = Strategy.normalizedRectangle(state, currentPoint);
+  public @Nullable Shape getShape(ZonePoint state, ZonePoint currentPoint, boolean centerOnOrigin) {
+    var result = Strategy.normalizedRectangle(state, currentPoint, centerOnOrigin);
     if (result.isEmpty()) {
       return null;
     }
+
     return result;
   }
 }

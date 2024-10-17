@@ -53,9 +53,15 @@ public interface Strategy<StateT> {
    *     remove.
    */
   @Nullable
-  Shape getShape(StateT state, ZonePoint currentPoint);
+  Shape getShape(StateT state, ZonePoint currentPoint, boolean centerOnOrigin);
 
-  static Rectangle normalizedRectangle(ZonePoint p1, ZonePoint p2) {
+  static Rectangle normalizedRectangle(ZonePoint p1, ZonePoint p2, boolean p1IsCenter) {
+    if (p1IsCenter) {
+      var halfWidth = Math.abs(p2.x - p1.x);
+      var halfHeight = Math.abs(p2.y - p1.y);
+      return new Rectangle(p1.x - halfWidth, p1.y - halfHeight, 2 * halfWidth, 2 * halfHeight);
+    }
+
     // AWT doesn't like drawing rectangles with negative width or height. So normalize it first.
     int minX = Math.min(p1.x, p2.x);
     int maxX = Math.max(p1.x, p2.x);
