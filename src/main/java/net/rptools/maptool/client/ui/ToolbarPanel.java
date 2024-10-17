@@ -268,17 +268,12 @@ public class ToolbarPanel extends JToolBar {
     panel
         .addTool(
             new DrawingTool<>(
-                "tool.freehand.instructions", "tool.freehand.tooltip", new FreehandStrategy()))
+                "tool.freehand.instructions", "tool.freehand.tooltip", new PolyLineStrategy(true)))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_DRAW_FREEHAND));
     panel
         .addTool(
             new DrawingTool<>(
-                "tool.line.instructions",
-                "tool.line.tooltip",
-                // TODO LineTool is actually either polygon or polyline depending on back fill.
-                // TODO Even for other tools, we can merge Polygon and Polyline back on back fill
-                // needs.
-                new PolyLineStrategy()))
+                "tool.line.instructions", "tool.line.tooltip", new PolyLineStrategy(false)))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_DRAW_LINE));
     panel
         .addTool(
@@ -373,12 +368,14 @@ public class ToolbarPanel extends JToolBar {
     panel
         .addTool(
             new ExposeTool<>(
-                "tool.polyexpose.instructions", "tool.polyexpose.tooltip", new PolyLineStrategy()))
+                "tool.polyexpose.instructions",
+                "tool.polyexpose.tooltip",
+                new PolyLineStrategy(false)))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_FOG_EXPOSE_POLYGON));
     panel
         .addTool(
             new ExposeTool<>(
-                "tool.freehand.instructions", "tool.freehand.tooltip", new FreehandStrategy()))
+                "tool.freehand.instructions", "tool.freehand.tooltip", new PolyLineStrategy(true)))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_FOG_EXPOSE_FREEHAND));
     panel
         .addTool(
@@ -431,7 +428,10 @@ public class ToolbarPanel extends JToolBar {
     panel
         .addTool(
             new TopologyTool<>(
-                "tool.poly.instructions", "tool.polytopo.tooltip", true, new PolyLineStrategy()))
+                "tool.poly.instructions",
+                "tool.polytopo.tooltip",
+                true,
+                new PolyLineStrategy(false)))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_POLYGON));
     panel
         .addTool(
@@ -439,7 +439,7 @@ public class ToolbarPanel extends JToolBar {
                 "tool.poly.instructions",
                 "tool.polylinetopo.tooltip",
                 false,
-                new PolyLineStrategy()))
+                new PolyLineStrategy(false)))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_POLYLINE));
     panel
         .addTool(

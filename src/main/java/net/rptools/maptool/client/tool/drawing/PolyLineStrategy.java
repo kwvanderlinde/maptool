@@ -18,8 +18,18 @@ import java.awt.geom.Path2D;
 import javax.annotation.Nullable;
 import net.rptools.maptool.model.ZonePoint;
 
-/** Tool for drawing freehand lines. */
 public class PolyLineStrategy implements Strategy<Path2D> {
+  private final boolean isFreehand;
+
+  public PolyLineStrategy(boolean isFreehand) {
+    this.isFreehand = isFreehand;
+  }
+
+  @Override
+  public boolean isFreehand() {
+    return isFreehand;
+  }
+
   @Override
   public boolean isLinear() {
     return true;
