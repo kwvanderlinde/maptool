@@ -22,5 +22,7 @@ public sealed interface Measurement {
 
   record LineSegment(Point2D p1, Point2D p2) implements Measurement {}
 
+  record IsoRectangular(Point2D north, Point2D west, Point2D east) implements Measurement {}
+
   // TODO Iso rectangle.
 }
