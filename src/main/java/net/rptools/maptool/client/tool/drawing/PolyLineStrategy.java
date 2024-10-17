@@ -36,11 +36,6 @@ public class PolyLineStrategy implements Strategy<Path2D> {
     return true;
   }
 
-  public ZonePoint getLastPoint(Path2D path) {
-    var point = path.getCurrentPoint();
-    return new ZonePoint((int) point.getX(), (int) point.getY());
-  }
-
   @Override
   public Path2D startNewAtPoint(ZonePoint point) {
     var path = new Path2D.Double();
