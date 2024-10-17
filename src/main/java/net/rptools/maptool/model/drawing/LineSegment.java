@@ -35,6 +35,10 @@ import net.rptools.maptool.server.proto.drawing.LineSegmentDrawableDto;
  * @author drice
  */
 public class LineSegment extends AbstractDrawing {
+  // TODO LineSegment should not hold onto or require width and squareCap. These are properties of
+  //  the pen used to draw it, not the drawable itself.
+  //  Further, alarm bells should always go if when we're updating internal state in the draw
+  //  method!
   private final List<Point> points = new ArrayList<Point>();
   private @Nonnull Float width;
   private boolean squareCap;
