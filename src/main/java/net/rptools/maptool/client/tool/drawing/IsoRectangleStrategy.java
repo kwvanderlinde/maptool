@@ -26,7 +26,8 @@ public class IsoRectangleStrategy implements Strategy<ZonePoint> {
   }
 
   @Override
-  public @Nullable Shape getShape(ZonePoint state, ZonePoint currentPoint, boolean centerOnOrigin) {
+  public @Nullable Shape getShape(
+      ZonePoint state, ZonePoint currentPoint, boolean centerOnOrigin, boolean isFilled) {
     var isoRectangle = GeometryUtil.createIsoRectangle(state, currentPoint);
     return isoRectangle.getBounds().isEmpty() ? null : isoRectangle;
   }

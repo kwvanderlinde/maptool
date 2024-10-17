@@ -373,7 +373,7 @@ public class ToolbarPanel extends JToolBar {
     panel
         .addTool(
             new ExposeTool<>(
-                "tool.polyexpose.instructions", "tool.polyexpose.tooltip", new PolygonStrategy()))
+                "tool.polyexpose.instructions", "tool.polyexpose.tooltip", new PolyLineStrategy()))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_FOG_EXPOSE_POLYGON));
     panel
         .addTool(
@@ -431,7 +431,7 @@ public class ToolbarPanel extends JToolBar {
     panel
         .addTool(
             new TopologyTool<>(
-                "tool.poly.instructions", "tool.polytopo.tooltip", true, new PolygonStrategy()))
+                "tool.poly.instructions", "tool.polytopo.tooltip", true, new PolyLineStrategy()))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_POLYGON));
     panel
         .addTool(

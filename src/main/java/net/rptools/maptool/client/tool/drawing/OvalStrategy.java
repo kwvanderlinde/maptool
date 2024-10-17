@@ -37,7 +37,8 @@ public class OvalStrategy implements Strategy<ZonePoint> {
   }
 
   @Override
-  public @Nullable Shape getShape(ZonePoint state, ZonePoint currentPoint, boolean centerOnOrigin) {
+  public @Nullable Shape getShape(
+      ZonePoint state, ZonePoint currentPoint, boolean centerOnOrigin, boolean isFilled) {
     var bounds = Strategy.normalizedRectangle(state, currentPoint, centerOnOrigin);
     if (bounds.isEmpty()) {
       return null;

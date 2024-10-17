@@ -19,9 +19,15 @@ import javax.annotation.Nullable;
 import net.rptools.maptool.model.ZonePoint;
 
 /** Tool for drawing freehand lines. */
+// TODO Merge with PolyLineStrategy. Just needs a freehand indicator... or the tool does.
 public class FreehandStrategy implements Strategy<Path2D> {
   @Override
   public boolean isFreehand() {
+    return true;
+  }
+
+  @Override
+  public boolean isLinear() {
     return true;
   }
 
@@ -38,9 +44,13 @@ public class FreehandStrategy implements Strategy<Path2D> {
   }
 
   @Override
-  public @Nullable Path2D getShape(Path2D state, ZonePoint currentPoint, boolean centerOnOrigin) {
+  public @Nullable Path2D getShape(
+      Path2D state, ZonePoint currentPoint, boolean centerOnOrigin, boolean isFilled) {
     var newPath = new Path2D.Double(state);
     newPath.lineTo(currentPoint.x, currentPoint.y);
+    if (isFilled) {
+      newPath.closePath();
+    }
     return newPath;
   }
 }

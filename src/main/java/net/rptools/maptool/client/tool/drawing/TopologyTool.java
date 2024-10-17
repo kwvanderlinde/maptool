@@ -161,7 +161,7 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
     g2.fill(zone.getTopology(Zone.TopologyType.COVER_VBL));
 
     if (state != null) {
-      var shape = strategy.getShape(state, currentPoint, centerOnOrigin);
+      var shape = strategy.getShape(state, currentPoint, centerOnOrigin, isFilled);
       // TODO Require non-null again.
       if (shape != null) {
         var stroke = getLineStroke();
@@ -221,7 +221,7 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
       if (state == null) {
         state = strategy.startNewAtPoint(currentPoint);
       } else {
-        var shape = strategy.getShape(state, currentPoint, centerOnOrigin);
+        var shape = strategy.getShape(state, currentPoint, centerOnOrigin, isFilled);
         state = null;
         if (shape != null) {
           submit(shape);

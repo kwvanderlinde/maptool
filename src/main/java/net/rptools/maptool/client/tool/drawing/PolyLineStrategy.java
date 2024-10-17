@@ -38,9 +38,13 @@ public class PolyLineStrategy implements Strategy<Path2D> {
   }
 
   @Override
-  public @Nullable Path2D getShape(Path2D state, ZonePoint currentPoint, boolean centerOnOrigin) {
+  public @Nullable Path2D getShape(
+      Path2D state, ZonePoint currentPoint, boolean centerOnOrigin, boolean isFilled) {
     var newPath = new Path2D.Double(state);
     newPath.lineTo(currentPoint.x, currentPoint.y);
+    if (isFilled) {
+      newPath.closePath();
+    }
     return newPath;
   }
 }

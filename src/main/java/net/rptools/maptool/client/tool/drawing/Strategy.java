@@ -52,20 +52,26 @@ public interface Strategy<StateT> {
   StateT startNewAtPoint(ZonePoint point);
 
   /**
-   * If the tool supports it, commit the last point and create a new one in its place.
+   * For linear tools, add {@code point} to the {@code state}.
    *
-   * <p>This is only for tools such as line tools, where multiple points can be specified.
+   * <p>Non-linear tools ignore this.
    */
   default void pushPoint(StateT state, ZonePoint point) {}
 
   /**
    * Get the current shape of the tool.
    *
+   * @param state The current state of the tool.
+   * @param currentPoint The current position of the cursor.
+   * @param centerOnOrigin For tools that support it, {@code true} indicates that the shape should
+   *     be centered on the original point.
+   * @param isFilled For linear tools, {@code true} indicates that the shape should be closed, while
+   *     {@code false} indicates it should remain open.
    * @return The shape of the new topology, or {@code null} to indicate there is nothing to add or
    *     remove.
    */
   @Nullable
-  Shape getShape(StateT state, ZonePoint currentPoint, boolean centerOnOrigin);
+  Shape getShape(StateT state, ZonePoint currentPoint, boolean centerOnOrigin, boolean isFilled);
 
   static Rectangle normalizedRectangle(ZonePoint p1, ZonePoint p2, boolean p1IsCenter) {
     if (p1IsCenter) {

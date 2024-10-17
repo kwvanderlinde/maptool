@@ -116,7 +116,7 @@ public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
     g2.scale(renderer.getScale(), renderer.getScale());
 
     if (state != null) {
-      var shape = strategy.getShape(state, currentPoint, centerOnOrigin);
+      var shape = strategy.getShape(state, currentPoint, centerOnOrigin, true);
       // TODO Require non-null again.
       if (shape != null) {
         // TODO Fog-specific entries in AppStyle.
@@ -174,7 +174,7 @@ public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
       if (state == null) {
         state = strategy.startNewAtPoint(currentPoint);
       } else if (!strategy.isFreehand()) {
-        var shape = strategy.getShape(state, currentPoint, centerOnOrigin);
+        var shape = strategy.getShape(state, currentPoint, centerOnOrigin, true);
         state = null;
         if (shape != null) {
           submit(shape);
@@ -198,7 +198,7 @@ public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
     if (strategy.isFreehand() && SwingUtilities.isLeftMouseButton(e)) {
       currentPoint = getPoint(e);
       centerOnOrigin = e.isAltDown();
-      var shape = strategy.getShape(state, currentPoint, centerOnOrigin);
+      var shape = strategy.getShape(state, currentPoint, centerOnOrigin, true);
       state = null;
       if (shape != null) {
         submit(shape);
