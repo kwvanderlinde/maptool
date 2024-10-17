@@ -17,26 +17,22 @@ package net.rptools.maptool.client.tool.drawing;
 import java.awt.Shape;
 import javax.annotation.Nullable;
 import net.rptools.maptool.model.ZonePoint;
+import net.rptools.maptool.util.GraphicsUtil;
 
-/**
- * @author drice
- */
-public class RectangleTopologyTool extends AbstractTopologyDrawingTool<ZonePoint> {
-  public RectangleTopologyTool() {
-    super("tool.recttopology.instructions", "tool.recttopology.tooltip", true);
-  }
-
+public class OvalStrategy implements Strategy<ZonePoint> {
   @Override
-  protected ZonePoint startNewAtPoint(ZonePoint point) {
+  public ZonePoint startNewAtPoint(ZonePoint point) {
     return point;
   }
 
   @Override
-  protected @Nullable Shape getShape(ZonePoint state, ZonePoint currentPoint) {
-    var result = normalizedRectangle(state, currentPoint);
-    if (result.isEmpty()) {
+  public @Nullable Shape getShape(ZonePoint state, ZonePoint currentPoint) {
+    var bounds = Strategy.normalizedRectangle(state, currentPoint);
+    if (bounds.isEmpty()) {
       return null;
     }
-    return result;
+
+    return GraphicsUtil.createLineSegmentEllipsePath(
+        bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height, 10);
   }
 }

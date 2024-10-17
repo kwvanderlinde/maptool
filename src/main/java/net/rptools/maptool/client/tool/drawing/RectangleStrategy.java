@@ -16,23 +16,20 @@ package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.Shape;
 import javax.annotation.Nullable;
-import net.rptools.lib.GeometryUtil;
 import net.rptools.maptool.model.ZonePoint;
 
-public class HollowDiamondTopologyTool extends AbstractTopologyDrawingTool<ZonePoint> {
-  public HollowDiamondTopologyTool() {
-    super(
-        "tool.isorectangletopology.instructions", "tool.isorectangletopologyhollow.tooltip", false);
-  }
-
+public class RectangleStrategy implements Strategy<ZonePoint> {
   @Override
-  protected ZonePoint startNewAtPoint(ZonePoint point) {
+  public ZonePoint startNewAtPoint(ZonePoint point) {
     return point;
   }
 
   @Override
-  protected @Nullable Shape getShape(ZonePoint state, ZonePoint currentPoint) {
-    var diamond = GeometryUtil.createIsoRectangle(state, currentPoint);
-    return diamond.getBounds().isEmpty() ? null : diamond;
+  public @Nullable Shape getShape(ZonePoint state, ZonePoint currentPoint) {
+    var result = Strategy.normalizedRectangle(state, currentPoint);
+    if (result.isEmpty()) {
+      return null;
+    }
+    return result;
   }
 }

@@ -14,7 +14,10 @@
  */
 package net.rptools.maptool.client.tool.drawing;
 
-import java.awt.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Shape;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Area;
 import java.util.List;
@@ -27,77 +30,33 @@ import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
 
-public abstract class AbstractTopologyDrawingTool<StateT> extends AbstractDrawingLikeTool {
+public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
   private final String instructionKey;
   private final String tooltipKey;
   private final boolean isFilled;
+  private final Strategy<StateT> strategy;
 
+  /** The current state of the tool. If {@code null}, nothing is being drawn right now. */
   private @Nullable StateT state;
+
   private ZonePoint currentPoint = new ZonePoint(0, 0);
 
-  /**
-   * Initialize the topology tool.
-   *
-   * @param instructionKey The I18N key for the tool's instructions.
-   * @param tooltipKey The I18N key for the tool's tooltip.
-   * @param isFilled {@code true} if the shapes produced by the tool need to be filled in; {@code
-   *     false} if they need to be stroked to produce an area.
-   */
-  protected AbstractTopologyDrawingTool(
-      String instructionKey, String tooltipKey, boolean isFilled) {
+  public TopologyTool(
+      String instructionKey, String tooltipKey, boolean isFilled, Strategy<StateT> strategy) {
     this.instructionKey = instructionKey;
     this.tooltipKey = tooltipKey;
     this.isFilled = isFilled;
+    this.strategy = strategy;
   }
 
   @Override
-  public final String getInstructions() {
+  public String getInstructions() {
     return instructionKey;
   }
 
   @Override
-  public final String getTooltip() {
+  public String getTooltip() {
     return tooltipKey;
-  }
-
-  /**
-   * @return {@code true} if the tool is in the middle of making a new shape; {@code false} if no
-   *     drawing has started, or if one was cancelled.
-   */
-  private boolean isInProgress() {
-    return state != null;
-  }
-
-  private void reset() {
-    state = null;
-  }
-
-  /**
-   * Start a new drawing using {@code point} as the first point.
-   *
-   * <p>Immediately after this call completes, {@link #isInProgress()} must return {@code true}.
-   *
-   * @param point
-   */
-  protected abstract StateT startNewAtPoint(ZonePoint point);
-
-  /**
-   * If the tool supports it, commit the last point and create a new one in its place.
-   *
-   * <p>This is only for tools such as line tools, where multiple points can be specified.
-   */
-  protected void pushPoint(StateT state, ZonePoint point) {}
-
-  /**
-   * Get the current shape of the tool.
-   *
-   * @return The shape of the new topology, or {@code null} to indicate there is nothing to add or
-   *     remove.
-   */
-  protected abstract @Nullable Shape getShape(StateT state, ZonePoint currentPoint);
-
-  private BasicStroke getLineStroke() {
-    return new BasicStroke(2.f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
   }
 
   @Override
@@ -107,13 +66,17 @@ public abstract class AbstractTopologyDrawingTool<StateT> extends AbstractDrawin
 
   /** If currently drawing, stop and clear it. */
   @Override
-  protected final void resetTool() {
-    if (isInProgress()) {
-      reset();
+  protected void resetTool() {
+    if (state != null) {
+      state = null;
       renderer.repaint();
     } else {
       super.resetTool();
     }
+  }
+
+  private BasicStroke getLineStroke() {
+    return new BasicStroke(2.f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
   }
 
   private void submit(Shape shape) {
@@ -139,25 +102,7 @@ public abstract class AbstractTopologyDrawingTool<StateT> extends AbstractDrawin
     }
   }
 
-  protected final Rectangle normalizedRectangle(Rectangle rectangle) {
-    // AWT doesn't like drawing rectangles with negative width or height. So normalize it first.
-    int minX = Math.min(rectangle.x, rectangle.x + rectangle.width);
-    int minY = Math.min(rectangle.y, rectangle.y + rectangle.height);
-    int width = Math.abs(rectangle.width);
-    int height = Math.abs(rectangle.height);
-    return new Rectangle(minX, minY, width, height);
-  }
-
-  protected final Rectangle normalizedRectangle(ZonePoint p1, ZonePoint p2) {
-    // AWT doesn't like drawing rectangles with negative width or height. So normalize it first.
-    int minX = Math.min(p1.x, p2.x);
-    int maxX = Math.max(p1.x, p2.x);
-    int minY = Math.min(p1.y, p2.y);
-    int maxY = Math.max(p1.y, p2.y);
-    return new Rectangle(minX, minY, maxX - minX, maxY - minY);
-  }
-
-  protected Area getTokenTopology(Zone.TopologyType topologyType) {
+  private Area getTokenTopology(Zone.TopologyType topologyType) {
     List<Token> topologyTokens = getZone().getTokensWithTopology(topologyType);
 
     Area tokenTopology = new Area();
@@ -169,7 +114,7 @@ public abstract class AbstractTopologyDrawingTool<StateT> extends AbstractDrawin
   }
 
   @Override
-  public final void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
+  public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
     if (!MapTool.getPlayer().isGM()) {
       // Redundant check since the tool should not be available otherwise.
       return;
@@ -209,7 +154,7 @@ public abstract class AbstractTopologyDrawingTool<StateT> extends AbstractDrawin
     g2.fill(zone.getTopology(Zone.TopologyType.COVER_VBL));
 
     if (state != null) {
-      var shape = getShape(state, currentPoint);
+      var shape = strategy.getShape(state, currentPoint);
       // TODO Require non-null again.
       if (shape != null) {
         var stroke = getLineStroke();
@@ -237,17 +182,18 @@ public abstract class AbstractTopologyDrawingTool<StateT> extends AbstractDrawin
   }
 
   @Override
-  public final void mouseDragged(MouseEvent e) {
-    if (!isInProgress()) {
+  public void mouseDragged(MouseEvent e) {
+    if (state == null) {
+      // We're not doing anything, so delegate to default behaviour.
       super.mouseDragged(e);
     }
   }
 
   @Override
-  public final void mouseMoved(MouseEvent e) {
+  public void mouseMoved(MouseEvent e) {
     super.mouseMoved(e);
     setIsEraser(isEraser(e));
-    if (isInProgress()) {
+    if (state != null) {
       currentPoint = getPoint(e);
       renderer.repaint();
     }
@@ -259,17 +205,17 @@ public abstract class AbstractTopologyDrawingTool<StateT> extends AbstractDrawin
   }
 
   @Override
-  public final void mousePressed(MouseEvent e) {
+  public void mousePressed(MouseEvent e) {
     setIsEraser(isEraser(e));
 
     if (SwingUtilities.isLeftMouseButton(e)) {
       currentPoint = getPoint(e);
 
       if (state == null) {
-        state = startNewAtPoint(currentPoint);
+        state = strategy.startNewAtPoint(currentPoint);
       } else {
-        var shape = getShape(state, currentPoint);
-        reset();
+        var shape = strategy.getShape(state, currentPoint);
+        state = null;
         if (shape != null) {
           submit(shape);
         }
@@ -279,7 +225,7 @@ public abstract class AbstractTopologyDrawingTool<StateT> extends AbstractDrawin
     // TODO Shouldn't we make sure it's a right-click?
     else if (state != null) {
       currentPoint = getPoint(e);
-      pushPoint(state, currentPoint);
+      strategy.pushPoint(state, currentPoint);
       renderer.repaint();
     }
 

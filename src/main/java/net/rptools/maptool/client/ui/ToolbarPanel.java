@@ -344,31 +344,73 @@ public class ToolbarPanel extends JToolBar {
     OptionPanel panel = new OptionPanel();
 
     panel
-        .addTool(new RectangleTopologyTool())
+        .addTool(
+            new TopologyTool<>(
+                "tool.recttopology.instructions",
+                "tool.recttopology.tooltip",
+                true,
+                new RectangleStrategy()))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_BOX));
     panel
-        .addTool(new HollowRectangleTopologyTool())
+        .addTool(
+            new TopologyTool<>(
+                "tool.recttopology.instructions",
+                "tool.recttopologyhollow.tooltip",
+                false,
+                new RectangleStrategy()))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_BOX_HOLLOW));
     panel
-        .addTool(new OvalTopologyTool())
+        .addTool(
+            new TopologyTool<>(
+                "tool.ovaltopology.instructions",
+                "tool.ovaltopology.tooltip",
+                true,
+                new OvalStrategy()))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_OVAL));
     panel
-        .addTool(new HollowOvalTopologyTool())
+        .addTool(
+            new TopologyTool<>(
+                "tool.ovaltopology.instructions",
+                "tool.ovaltopologyhollow.tooltip",
+                false,
+                new OvalStrategy()))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_OVAL_HOLLOW));
     panel
-        .addTool(new PolygonTopologyTool())
+        .addTool(
+            new TopologyTool<>(
+                "tool.poly.instructions", "tool.polytopo.tooltip", true, new PolygonStrategy()))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_POLYGON));
     panel
-        .addTool(new PolyLineTopologyTool())
+        .addTool(
+            new TopologyTool<>(
+                "tool.poly.instructions",
+                "tool.polylinetopo.tooltip",
+                false,
+                new PolyLineStrategy()))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_POLYLINE));
     panel
-        .addTool(new CrossTopologyTool())
+        .addTool(
+            new TopologyTool<>(
+                "tool.crosstopology.instructions",
+                "tool.crosstopology.tooltip",
+                false,
+                new CrossStrategy()))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_CROSS));
     panel
-        .addTool(new DiamondTopologyTool())
+        .addTool(
+            new TopologyTool<>(
+                "tool.isorectangletopology.instructions",
+                "tool.isorectangletopology.tooltip",
+                true,
+                new IsoRectangleStrategy()))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_DIAMOND));
     panel
-        .addTool(new HollowDiamondTopologyTool())
+        .addTool(
+            new TopologyTool<>(
+                "tool.isorectangletopology.instructions",
+                "tool.isorectangletopologyhollow.tooltip",
+                false,
+                new IsoRectangleStrategy()))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_DIAMOND_HOLLOW));
 
     // Add with separator to separate mode button group from shape button group.

@@ -14,29 +14,28 @@
  */
 package net.rptools.maptool.client.tool.drawing;
 
-import java.awt.Shape;
+import java.awt.geom.Path2D;
 import javax.annotation.Nullable;
 import net.rptools.maptool.model.ZonePoint;
 
-/**
- * @author drice
- */
-public class HollowRectangleTopologyTool extends AbstractTopologyDrawingTool<ZonePoint> {
-  public HollowRectangleTopologyTool() {
-    super("tool.recttopology.instructions", "tool.recttopologyhollow.tooltip", false);
+/** Tool for drawing freehand lines. */
+public class PolyLineStrategy implements Strategy<Path2D> {
+  @Override
+  public Path2D startNewAtPoint(ZonePoint point) {
+    var path = new Path2D.Double();
+    path.moveTo(point.x, point.y);
+    return path;
   }
 
   @Override
-  protected ZonePoint startNewAtPoint(ZonePoint point) {
-    return point;
+  public void pushPoint(Path2D state, ZonePoint point) {
+    state.lineTo(point.x, point.y);
   }
 
   @Override
-  protected @Nullable Shape getShape(ZonePoint state, ZonePoint currentPoint) {
-    var result = normalizedRectangle(state, currentPoint);
-    if (result.isEmpty()) {
-      return null;
-    }
-    return result;
+  public @Nullable Path2D getShape(Path2D state, ZonePoint currentPoint) {
+    var newPath = new Path2D.Double(state);
+    newPath.lineTo(currentPoint.x, currentPoint.y);
+    return newPath;
   }
 }

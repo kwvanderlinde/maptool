@@ -14,32 +14,20 @@
  */
 package net.rptools.maptool.client.tool.drawing;
 
-import java.awt.geom.Path2D;
+import java.awt.Shape;
 import javax.annotation.Nullable;
+import net.rptools.lib.GeometryUtil;
 import net.rptools.maptool.model.ZonePoint;
 
-/** Tool for drawing freehand lines. */
-public class PolyLineTopologyTool extends AbstractTopologyDrawingTool<Path2D> {
-  public PolyLineTopologyTool() {
-    super("tool.poly.instructions", "tool.polylinetopo.tooltip", false);
+public class IsoRectangleStrategy implements Strategy<ZonePoint> {
+  @Override
+  public ZonePoint startNewAtPoint(ZonePoint point) {
+    return point;
   }
 
   @Override
-  protected Path2D startNewAtPoint(ZonePoint point) {
-    var path = new Path2D.Double();
-    path.moveTo(point.x, point.y);
-    return path;
-  }
-
-  @Override
-  protected void pushPoint(Path2D state, ZonePoint point) {
-    state.lineTo(point.x, point.y);
-  }
-
-  @Override
-  protected @Nullable Path2D getShape(Path2D state, ZonePoint currentPoint) {
-    var newPath = new Path2D.Double(state);
-    newPath.lineTo(currentPoint.x, currentPoint.y);
-    return newPath;
+  public @Nullable Shape getShape(ZonePoint state, ZonePoint currentPoint) {
+    var isoRectangle = GeometryUtil.createIsoRectangle(state, currentPoint);
+    return isoRectangle.getBounds().isEmpty() ? null : isoRectangle;
   }
 }

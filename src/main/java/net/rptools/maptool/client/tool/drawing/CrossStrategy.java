@@ -18,30 +18,24 @@ import java.awt.geom.Path2D;
 import javax.annotation.Nullable;
 import net.rptools.maptool.model.ZonePoint;
 
-// TODO These aren't freehand lines. Also it's not worth inheriting from LineTool.
-/** Tool for drawing freehand lines. */
-public class PolygonTopologyTool extends AbstractTopologyDrawingTool<Path2D> {
-  public PolygonTopologyTool() {
-    super("tool.poly.instructions", "tool.polytopo.tooltip", true);
+public class CrossStrategy implements Strategy<ZonePoint> {
+  @Override
+  public ZonePoint startNewAtPoint(ZonePoint point) {
+    return point;
   }
 
   @Override
-  protected Path2D startNewAtPoint(ZonePoint point) {
+  public @Nullable Path2D getShape(ZonePoint state, ZonePoint currentPoint) {
+    var bounds = Strategy.normalizedRectangle(state, currentPoint);
+    if (bounds.isEmpty()) {
+      return null;
+    }
+
     var path = new Path2D.Double();
-    path.moveTo(point.x, point.y);
+    path.moveTo(bounds.x, bounds.y);
+    path.lineTo(bounds.x + bounds.width, bounds.y + bounds.height);
+    path.moveTo(bounds.x, bounds.y + bounds.height);
+    path.lineTo(bounds.x + bounds.width, bounds.y);
     return path;
-  }
-
-  @Override
-  protected void pushPoint(Path2D state, ZonePoint point) {
-    state.lineTo(point.x, point.y);
-  }
-
-  @Override
-  protected @Nullable Path2D getShape(Path2D state, ZonePoint currentPoint) {
-    var newPath = new Path2D.Double(state);
-    newPath.lineTo(currentPoint.x, currentPoint.y);
-    newPath.closePath();
-    return newPath;
   }
 }
