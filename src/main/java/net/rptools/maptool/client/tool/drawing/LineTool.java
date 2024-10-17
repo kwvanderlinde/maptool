@@ -20,7 +20,7 @@ import java.awt.event.MouseMotionListener;
 import javax.swing.SwingUtilities;
 
 /** Tool for drawing freehand lines. */
-public class LineTool extends AbstractLineTool implements MouseMotionListener {
+public final class LineTool extends AbstractLineTool implements MouseMotionListener {
   private static final long serialVersionUID = 3258132466219627316L;
   private Point tempPoint;
 

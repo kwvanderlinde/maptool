@@ -34,7 +34,7 @@ import net.rptools.maptool.model.drawing.ShapeDrawable;
 /**
  * @author drice
  */
-public class OvalTool extends AbstractDrawingTool implements MouseMotionListener {
+public final class OvalTool extends AbstractDrawingTool implements MouseMotionListener {
   private static final long serialVersionUID = 3258413928311830323L;
 
   protected Rectangle oval;
