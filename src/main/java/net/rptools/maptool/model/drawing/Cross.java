@@ -27,6 +27,8 @@ import net.rptools.maptool.server.proto.drawing.CrossDrawableDto;
 import net.rptools.maptool.server.proto.drawing.DrawableDto;
 
 /** An Cross */
+// TODO Legacy class? I think it was only used for topology, so should never be serialized. But just
+//  in case, we should replace it with ShapeDrawable and an Path2D in readResolve() if we can.
 public class Cross extends AbstractDrawing {
   protected Point startPoint;
   protected Point endPoint;

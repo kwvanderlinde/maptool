@@ -27,6 +27,8 @@ import net.rptools.maptool.server.proto.drawing.DrawableDto;
 import net.rptools.maptool.server.proto.drawing.RectangleDrawableDto;
 
 /** An rectangle */
+// TODO Legacy class? I think it was only used for topology, so should never be serialized. But just
+//  in case, we should replace it with ShapeDrawable and an Rectangle2D in readResolve() if we can.
 public class Rectangle extends AbstractDrawing {
   protected Point startPoint;
   protected Point endPoint;

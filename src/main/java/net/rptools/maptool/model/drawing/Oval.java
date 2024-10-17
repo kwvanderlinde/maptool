@@ -26,6 +26,8 @@ import net.rptools.maptool.server.proto.drawing.DrawableDto;
 import net.rptools.maptool.server.proto.drawing.OvalDrawableDto;
 
 /** An oval. */
+// TODO Legacy class? I think it was only used for topology, so should never be serialized. But just
+//  in case, we should replace it with ShapeDrawable and an Ellipse2D in readResolve() if we can.
 public class Oval extends Rectangle {
   /**
    * @param startX the x offset

@@ -34,6 +34,8 @@ import net.rptools.maptool.server.proto.drawing.LineSegmentDrawableDto;
 /**
  * @author drice
  */
+// TODO This class is still used a lot, but ought to be legacy. It is a glorified Path2D, and so a
+//  ShapeDrawable should suffice.
 public class LineSegment extends AbstractDrawing {
   // TODO LineSegment should not hold onto or require width and squareCap. These are properties of
   //  the pen used to draw it, not the drawable itself.
