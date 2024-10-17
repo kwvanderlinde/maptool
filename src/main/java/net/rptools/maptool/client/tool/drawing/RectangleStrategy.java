@@ -14,7 +14,6 @@
  */
 package net.rptools.maptool.client.tool.drawing;
 
-import java.awt.Shape;
 import javax.annotation.Nullable;
 import net.rptools.maptool.model.ZonePoint;
 
@@ -25,13 +24,13 @@ public class RectangleStrategy implements Strategy<ZonePoint> {
   }
 
   @Override
-  public @Nullable Shape getShape(
+  public @Nullable DrawingResult getShape(
       ZonePoint state, ZonePoint currentPoint, boolean centerOnOrigin, boolean isFilled) {
-    var result = Strategy.normalizedRectangle(state, currentPoint, centerOnOrigin);
-    if (result.isEmpty()) {
+    var bounds = Strategy.normalizedRectangle(state, currentPoint, centerOnOrigin);
+    if (bounds.isEmpty()) {
       return null;
     }
 
-    return result;
+    return new DrawingResult(bounds, new Measurement.Rectangular(bounds));
   }
 }

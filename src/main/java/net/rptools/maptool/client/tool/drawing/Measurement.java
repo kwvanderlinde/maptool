@@ -14,20 +14,13 @@
  */
 package net.rptools.maptool.client.tool.drawing;
 
-import javax.annotation.Nullable;
-import net.rptools.lib.GeometryUtil;
-import net.rptools.maptool.model.ZonePoint;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 
-public class IsoRectangleStrategy implements Strategy<ZonePoint> {
-  @Override
-  public ZonePoint startNewAtPoint(ZonePoint point) {
-    return point;
-  }
+public sealed interface Measurement {
+  record Rectangular(Rectangle2D bounds) implements Measurement {}
 
-  @Override
-  public @Nullable DrawingResult getShape(
-      ZonePoint state, ZonePoint currentPoint, boolean centerOnOrigin, boolean isFilled) {
-    var isoRectangle = GeometryUtil.createIsoRectangle(state, currentPoint);
-    return isoRectangle.getBounds().isEmpty() ? null : new DrawingResult(isoRectangle, null);
-  }
+  record LineSegment(Point2D p1, Point2D p2) implements Measurement {}
+
+  // TODO Iso rectangle.
 }

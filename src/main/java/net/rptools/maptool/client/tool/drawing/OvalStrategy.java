@@ -21,7 +21,7 @@ import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.util.GraphicsUtil;
 
 public class OvalStrategy implements Strategy<ZonePoint> {
-  private int steps;
+  private final int steps;
 
   public OvalStrategy() {
     this(0);
@@ -37,18 +37,22 @@ public class OvalStrategy implements Strategy<ZonePoint> {
   }
 
   @Override
-  public @Nullable Shape getShape(
+  public @Nullable DrawingResult getShape(
       ZonePoint state, ZonePoint currentPoint, boolean centerOnOrigin, boolean isFilled) {
     var bounds = Strategy.normalizedRectangle(state, currentPoint, centerOnOrigin);
     if (bounds.isEmpty()) {
       return null;
     }
 
+    Shape shape;
     if (steps <= 0) {
-      return new Ellipse2D.Double(bounds.x, bounds.y, bounds.width, bounds.height);
+      shape = new Ellipse2D.Double(bounds.x, bounds.y, bounds.width, bounds.height);
     } else {
-      return GraphicsUtil.createLineSegmentEllipsePath(
-          bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height, steps);
+      shape =
+          GraphicsUtil.createLineSegmentEllipsePath(
+              bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height, steps);
     }
+
+    return new DrawingResult(shape, new Measurement.Rectangular(bounds));
   }
 }

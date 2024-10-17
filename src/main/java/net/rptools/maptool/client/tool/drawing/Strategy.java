@@ -15,10 +15,10 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.Rectangle;
-import java.awt.Shape;
 import javax.annotation.Nullable;
 import net.rptools.maptool.model.ZonePoint;
 
+// TODO Make strategy generic on the resulting shape type?
 public interface Strategy<StateT> {
   /**
    * Check if the tool is a freehand tool.
@@ -71,7 +71,8 @@ public interface Strategy<StateT> {
    *     remove.
    */
   @Nullable
-  Shape getShape(StateT state, ZonePoint currentPoint, boolean centerOnOrigin, boolean isFilled);
+  DrawingResult getShape(
+      StateT state, ZonePoint currentPoint, boolean centerOnOrigin, boolean isFilled);
 
   static Rectangle normalizedRectangle(ZonePoint p1, ZonePoint p2, boolean p1IsCenter) {
     if (p1IsCenter) {

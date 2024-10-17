@@ -25,7 +25,7 @@ public class CrossStrategy implements Strategy<ZonePoint> {
   }
 
   @Override
-  public @Nullable Path2D getShape(
+  public @Nullable DrawingResult getShape(
       ZonePoint state, ZonePoint currentPoint, boolean centerOnOrigin, boolean isFilled) {
     var bounds = Strategy.normalizedRectangle(state, currentPoint, false);
     if (bounds.isEmpty()) {
@@ -37,6 +37,6 @@ public class CrossStrategy implements Strategy<ZonePoint> {
     path.lineTo(bounds.x + bounds.width, bounds.y + bounds.height);
     path.moveTo(bounds.x, bounds.y + bounds.height);
     path.lineTo(bounds.x + bounds.width, bounds.y);
-    return path;
+    return new DrawingResult(path, null);
   }
 }

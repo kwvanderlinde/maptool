@@ -15,6 +15,7 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
 import javax.annotation.Nullable;
 import net.rptools.maptool.model.ZonePoint;
 
@@ -35,6 +36,11 @@ public class PolyLineStrategy implements Strategy<Path2D> {
     return true;
   }
 
+  public ZonePoint getLastPoint(Path2D path) {
+    var point = path.getCurrentPoint();
+    return new ZonePoint((int) point.getX(), (int) point.getY());
+  }
+
   @Override
   public Path2D startNewAtPoint(ZonePoint point) {
     var path = new Path2D.Double();
@@ -48,13 +54,22 @@ public class PolyLineStrategy implements Strategy<Path2D> {
   }
 
   @Override
-  public @Nullable Path2D getShape(
+  public @Nullable DrawingResult getShape(
       Path2D state, ZonePoint currentPoint, boolean centerOnOrigin, boolean isFilled) {
     var newPath = new Path2D.Double(state);
     newPath.lineTo(currentPoint.x, currentPoint.y);
     if (isFilled) {
       newPath.closePath();
     }
-    return newPath;
+
+    // TODO It's a bit jarring the moment we commit a point, the text jumps to 0 and the box moves.
+    Measurement measurement = null;
+    if (!isFreehand()) {
+      measurement =
+          new Measurement.LineSegment(
+              state.getCurrentPoint(), new Point2D.Double(currentPoint.x, currentPoint.y));
+    }
+
+    return new DrawingResult(newPath, measurement);
   }
 }

@@ -14,20 +14,7 @@
  */
 package net.rptools.maptool.client.tool.drawing;
 
+import java.awt.Shape;
 import javax.annotation.Nullable;
-import net.rptools.lib.GeometryUtil;
-import net.rptools.maptool.model.ZonePoint;
 
-public class IsoRectangleStrategy implements Strategy<ZonePoint> {
-  @Override
-  public ZonePoint startNewAtPoint(ZonePoint point) {
-    return point;
-  }
-
-  @Override
-  public @Nullable DrawingResult getShape(
-      ZonePoint state, ZonePoint currentPoint, boolean centerOnOrigin, boolean isFilled) {
-    var isoRectangle = GeometryUtil.createIsoRectangle(state, currentPoint);
-    return isoRectangle.getBounds().isEmpty() ? null : new DrawingResult(isoRectangle, null);
-  }
-}
+public record DrawingResult(Shape shape, @Nullable Measurement measurement) {}
