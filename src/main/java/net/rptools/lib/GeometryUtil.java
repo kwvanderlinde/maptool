@@ -99,6 +99,7 @@ public class GeometryUtil {
     return new java.awt.Polygon(x, y, 4);
   }
 
+  // TODO Slate for removal.
   public static Rectangle createRect(ZonePoint originPoint, ZonePoint newPoint) {
     int x = Math.min(originPoint.x, newPoint.x);
     int y = Math.min(originPoint.y, newPoint.y);
