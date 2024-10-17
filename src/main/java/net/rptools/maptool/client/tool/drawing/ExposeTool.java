@@ -32,7 +32,6 @@ import net.rptools.maptool.model.ZonePoint;
 
 public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
   // TODO Need to draw measurements as well.
-  // TODO For some tools, alt means center the origin.
 
   private final String instructionKey;
   private final String tooltipKey;
