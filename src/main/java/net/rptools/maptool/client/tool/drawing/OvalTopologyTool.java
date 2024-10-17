@@ -24,26 +24,13 @@ public class OvalTopologyTool extends AbstractTopologyDrawingTool {
   private Rectangle bounds;
   private ZonePoint originPoint;
 
-  public OvalTopologyTool() {}
-
-  @Override
-  protected boolean isBackgroundFill() {
-    return true;
+  public OvalTopologyTool() {
+    super("tool.ovaltopology.instructions", "tool.ovaltopology.tooltip", true);
   }
 
   @Override
   protected boolean isInProgress() {
     return bounds != null;
-  }
-
-  @Override
-  public String getInstructions() {
-    return "tool.ovaltopology.instructions";
-  }
-
-  @Override
-  public String getTooltip() {
-    return "tool.ovaltopology.tooltip";
   }
 
   @Override

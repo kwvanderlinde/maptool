@@ -28,11 +28,34 @@ import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
 
 public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeTool {
+  private final String instructionKey;
+  private final String tooltipKey;
+  private final boolean isFilled;
+
   /**
-   * @return {@code true} if the shapes produced by the tool are filled-in areas; {@code false} if
-   *     they are lines that need to be stroked.
+   * Initialize the topology tool.
+   *
+   * @param instructionKey The I18N key for the tool's instructions.
+   * @param tooltipKey The I18N key for the tool's tooltip.
+   * @param isFilled {@code true} if the shapes produced by the tool need to be filled in; {@code
+   *     false} if they need to be stroked to produce an area.
    */
-  protected abstract boolean isBackgroundFill();
+  protected AbstractTopologyDrawingTool(
+      String instructionKey, String tooltipKey, boolean isFilled) {
+    this.instructionKey = instructionKey;
+    this.tooltipKey = tooltipKey;
+    this.isFilled = isFilled;
+  }
+
+  @Override
+  public final String getInstructions() {
+    return instructionKey;
+  }
+
+  @Override
+  public final String getTooltip() {
+    return tooltipKey;
+  }
 
   /**
    * @return {@code true} if the tool is in the middle of making a new shape; {@code false} if no
@@ -105,7 +128,7 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
     Area area;
     if (shape instanceof Area tmpArea) {
       area = tmpArea;
-    } else if (isBackgroundFill()) {
+    } else if (isFilled) {
       // Fill the shape without stroking.
       area = new Area(shape);
     } else {
@@ -190,7 +213,7 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
       var color = isEraser() ? AppStyle.topologyRemoveColor : AppStyle.topologyAddColor;
       g2.setColor(color);
 
-      if (isBackgroundFill()) {
+      if (isFilled) {
         g2.fill(shape);
 
         // Render the outline just to make it stand out more.

@@ -23,20 +23,8 @@ import net.rptools.maptool.model.ZonePoint;
 public class PolyLineTopologyTool extends AbstractTopologyDrawingTool {
   private final LineBuilder lineBuilder = new LineBuilder();
 
-  public PolyLineTopologyTool() {}
-
-  @Override
-  public String getTooltip() {
-    return "tool.polylinetopo.tooltip";
-  }
-
-  @Override
-  public String getInstructions() {
-    return "tool.poly.instructions";
-  }
-
-  protected boolean isBackgroundFill() {
-    return false;
+  public PolyLineTopologyTool() {
+    super("tool.poly.instructions", "tool.polylinetopo.tooltip", false);
   }
 
   @Override

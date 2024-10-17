@@ -24,26 +24,13 @@ public class HollowOvalTopologyTool extends AbstractTopologyDrawingTool {
   private Rectangle bounds;
   private ZonePoint originPoint;
 
-  public HollowOvalTopologyTool() {}
-
-  @Override
-  protected boolean isBackgroundFill() {
-    return false;
+  public HollowOvalTopologyTool() {
+    super("tool.ovaltopology.instructions", "tool.ovaltopologyhollow.tooltip", false);
   }
 
   @Override
   protected boolean isInProgress() {
     return bounds != null;
-  }
-
-  @Override
-  public String getInstructions() {
-    return "tool.ovaltopology.instructions";
-  }
-
-  @Override
-  public String getTooltip() {
-    return "tool.ovaltopologyhollow.tooltip";
   }
 
   @Override

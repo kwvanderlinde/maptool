@@ -25,21 +25,8 @@ import net.rptools.maptool.model.ZonePoint;
 public class RectangleTopologyTool extends AbstractTopologyDrawingTool {
   private Rectangle rectangle;
 
-  public RectangleTopologyTool() {}
-
-  @Override
-  public String getInstructions() {
-    return "tool.recttopology.instructions";
-  }
-
-  @Override
-  public String getTooltip() {
-    return "tool.recttopology.tooltip";
-  }
-
-  @Override
-  protected boolean isBackgroundFill() {
-    return true;
+  public RectangleTopologyTool() {
+    super("tool.recttopology.instructions", "tool.recttopology.tooltip", true);
   }
 
   @Override

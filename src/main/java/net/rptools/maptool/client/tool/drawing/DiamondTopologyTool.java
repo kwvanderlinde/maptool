@@ -23,26 +23,13 @@ public class DiamondTopologyTool extends AbstractTopologyDrawingTool {
   protected Shape diamond;
   protected ZonePoint originPoint;
 
-  public DiamondTopologyTool() {}
-
-  @Override
-  protected boolean isBackgroundFill() {
-    return true;
+  public DiamondTopologyTool() {
+    super("tool.isorectangletopology.instructions", "tool.isorectangletopology.tooltip", true);
   }
 
   @Override
   protected boolean isInProgress() {
     return diamond != null;
-  }
-
-  @Override
-  public String getInstructions() {
-    return "tool.isorectangletopology.instructions";
-  }
-
-  @Override
-  public String getTooltip() {
-    return "tool.isorectangletopology.tooltip";
   }
 
   @Override

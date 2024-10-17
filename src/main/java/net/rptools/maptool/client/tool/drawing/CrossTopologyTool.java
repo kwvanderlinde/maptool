@@ -25,26 +25,13 @@ import net.rptools.maptool.model.ZonePoint;
 public class CrossTopologyTool extends AbstractTopologyDrawingTool {
   private Rectangle bounds;
 
-  public CrossTopologyTool() {}
-
-  @Override
-  protected boolean isBackgroundFill() {
-    return false;
+  public CrossTopologyTool() {
+    super("tool.crosstopology.instructions", "tool.crosstopology.tooltip", false);
   }
 
   @Override
   protected boolean isInProgress() {
     return bounds != null;
-  }
-
-  @Override
-  public String getInstructions() {
-    return "tool.crosstopology.instructions";
-  }
-
-  @Override
-  public String getTooltip() {
-    return "tool.crosstopology.tooltip";
   }
 
   @Override
