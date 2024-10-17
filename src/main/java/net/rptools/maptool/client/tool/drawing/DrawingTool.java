@@ -45,10 +45,6 @@ public final class DrawingTool<StateT> extends AbstractDrawingLikeTool {
   private final String tooltipKey;
   private final Strategy<StateT> strategy;
 
-  // Reflects state of the color picker. Not sure why we don't query it in real-time.
-  private boolean isSnapToGridSelected;
-  private boolean isEraseSelected;
-
   /** The current state of the tool. If {@code null}, nothing is being drawn right now. */
   private @Nullable StateT state;
 
@@ -91,18 +87,12 @@ public final class DrawingTool<StateT> extends AbstractDrawingLikeTool {
       MapTool.getFrame().showControlPanel(MapTool.getFrame().getColorPicker());
     }
     renderer.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
-
-    MapTool.getFrame().getColorPicker().setSnapSelected(isSnapToGridSelected);
-    MapTool.getFrame().getColorPicker().setEraseSelected(isEraseSelected);
   }
 
   @Override
   protected void detachFrom(ZoneRenderer renderer) {
     MapTool.getFrame().removeControlPanel();
     renderer.setCursor(Cursor.getDefaultCursor());
-
-    isSnapToGridSelected = MapTool.getFrame().getColorPicker().isSnapSelected();
-    isEraseSelected = MapTool.getFrame().getColorPicker().isEraseSelected();
 
     super.detachFrom(renderer);
   }
