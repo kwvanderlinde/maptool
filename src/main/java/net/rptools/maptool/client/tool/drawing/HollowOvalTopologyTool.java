@@ -14,53 +14,29 @@
  */
 package net.rptools.maptool.client.tool.drawing;
 
-import java.awt.Rectangle;
 import java.awt.Shape;
 import javax.annotation.Nullable;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.util.GraphicsUtil;
 
-public class HollowOvalTopologyTool extends AbstractTopologyDrawingTool {
-  private Rectangle bounds;
-  private ZonePoint originPoint;
-
+public class HollowOvalTopologyTool extends AbstractTopologyDrawingTool<ZonePoint> {
   public HollowOvalTopologyTool() {
     super("tool.ovaltopology.instructions", "tool.ovaltopologyhollow.tooltip", false);
   }
 
   @Override
-  protected boolean isInProgress() {
-    return bounds != null;
+  protected ZonePoint startNewAtPoint(ZonePoint point) {
+    return point;
   }
 
   @Override
-  protected void startNewAtPoint(ZonePoint point) {
-    originPoint = point;
-    bounds = new Rectangle(point.x, point.y, 0, 0);
-  }
-
-  @Override
-  protected void updateLastPoint(ZonePoint point) {
-    bounds.x = point.x;
-    bounds.y = point.y;
-    bounds.width = 2 * (originPoint.x - point.x);
-    bounds.height = 2 * (originPoint.y - point.y);
-  }
-
-  @Override
-  protected void reset() {
-    bounds = null;
-  }
-
-  @Override
-  protected @Nullable Shape getShape() {
-    if (bounds == null) {
+  protected @Nullable Shape getShape(ZonePoint state, ZonePoint currentPoint) {
+    var bounds = normalizedRectangle(state, currentPoint);
+    if (bounds.isEmpty()) {
       return null;
     }
 
-    var rect = normalizedRectangle(bounds);
-
     return GraphicsUtil.createLineSegmentEllipsePath(
-        rect.x, rect.y, rect.x + rect.width, rect.y + rect.height, 10);
+        bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height, 10);
   }
 }

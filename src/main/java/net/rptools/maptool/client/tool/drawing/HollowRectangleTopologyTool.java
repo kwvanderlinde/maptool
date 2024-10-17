@@ -14,7 +14,6 @@
  */
 package net.rptools.maptool.client.tool.drawing;
 
-import java.awt.Rectangle;
 import java.awt.Shape;
 import javax.annotation.Nullable;
 import net.rptools.maptool.model.ZonePoint;
@@ -22,38 +21,20 @@ import net.rptools.maptool.model.ZonePoint;
 /**
  * @author drice
  */
-public class HollowRectangleTopologyTool extends AbstractTopologyDrawingTool {
-  protected Rectangle rectangle;
-
+public class HollowRectangleTopologyTool extends AbstractTopologyDrawingTool<ZonePoint> {
   public HollowRectangleTopologyTool() {
     super("tool.recttopology.instructions", "tool.recttopologyhollow.tooltip", false);
   }
 
   @Override
-  protected boolean isInProgress() {
-    return rectangle != null;
+  protected ZonePoint startNewAtPoint(ZonePoint point) {
+    return point;
   }
 
   @Override
-  protected void startNewAtPoint(ZonePoint point) {
-    rectangle = new Rectangle(point.x, point.y, 0, 0);
-  }
-
-  @Override
-  protected void updateLastPoint(ZonePoint point) {
-    rectangle.width = point.x - rectangle.x;
-    rectangle.height = point.y - rectangle.y;
-  }
-
-  @Override
-  protected void reset() {
-    rectangle = null;
-  }
-
-  @Override
-  protected @Nullable Shape getShape() {
-    var result = rectangle == null ? null : normalizedRectangle(rectangle);
-    if (result != null && result.isEmpty()) {
+  protected @Nullable Shape getShape(ZonePoint state, ZonePoint currentPoint) {
+    var result = normalizedRectangle(state, currentPoint);
+    if (result.isEmpty()) {
       return null;
     }
     return result;

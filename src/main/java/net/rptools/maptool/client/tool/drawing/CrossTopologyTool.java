@@ -14,7 +14,6 @@
  */
 package net.rptools.maptool.client.tool.drawing;
 
-import java.awt.Rectangle;
 import java.awt.geom.Path2D;
 import javax.annotation.Nullable;
 import net.rptools.maptool.model.ZonePoint;
@@ -22,37 +21,20 @@ import net.rptools.maptool.model.ZonePoint;
 /**
  * @author CoveredInFish
  */
-public class CrossTopologyTool extends AbstractTopologyDrawingTool {
-  private Rectangle bounds;
-
+public class CrossTopologyTool extends AbstractTopologyDrawingTool<ZonePoint> {
   public CrossTopologyTool() {
     super("tool.crosstopology.instructions", "tool.crosstopology.tooltip", false);
   }
 
   @Override
-  protected boolean isInProgress() {
-    return bounds != null;
+  protected ZonePoint startNewAtPoint(ZonePoint point) {
+    return point;
   }
 
   @Override
-  protected void startNewAtPoint(ZonePoint point) {
-    bounds = new Rectangle(point.x, point.y, 0, 0);
-  }
-
-  @Override
-  protected void updateLastPoint(ZonePoint point) {
-    bounds.width = point.x - bounds.x;
-    bounds.height = point.y - bounds.y;
-  }
-
-  @Override
-  protected void reset() {
-    bounds = null;
-  }
-
-  @Override
-  protected @Nullable Path2D getShape() {
-    if (bounds == null) {
+  protected @Nullable Path2D getShape(ZonePoint state, ZonePoint currentPoint) {
+    var bounds = normalizedRectangle(state, currentPoint);
+    if (bounds.isEmpty()) {
       return null;
     }
 

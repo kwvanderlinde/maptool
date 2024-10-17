@@ -27,10 +27,13 @@ import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
 
-public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeTool {
+public abstract class AbstractTopologyDrawingTool<StateT> extends AbstractDrawingLikeTool {
   private final String instructionKey;
   private final String tooltipKey;
   private final boolean isFilled;
+
+  private @Nullable StateT state;
+  private ZonePoint currentPoint = new ZonePoint(0, 0);
 
   /**
    * Initialize the topology tool.
@@ -61,7 +64,13 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
    * @return {@code true} if the tool is in the middle of making a new shape; {@code false} if no
    *     drawing has started, or if one was cancelled.
    */
-  protected abstract boolean isInProgress();
+  private boolean isInProgress() {
+    return state != null;
+  }
+
+  private void reset() {
+    state = null;
+  }
 
   /**
    * Start a new drawing using {@code point} as the first point.
@@ -70,31 +79,14 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
    *
    * @param point
    */
-  protected abstract void startNewAtPoint(ZonePoint point);
-
-  /**
-   * Update the last uncommitted point in the drawing.
-   *
-   * <p>This will only ever be called if {@link #isInProgress()} returns {@code true}, and it must
-   * continue to return {@code true} after the call completes.
-   *
-   * @param point
-   */
-  protected abstract void updateLastPoint(ZonePoint point);
+  protected abstract StateT startNewAtPoint(ZonePoint point);
 
   /**
    * If the tool supports it, commit the last point and create a new one in its place.
    *
    * <p>This is only for tools such as line tools, where multiple points can be specified.
    */
-  protected void pushPoint() {}
-
-  /**
-   * Commit the drawing as topology.
-   *
-   * <p>Immediately after this call completes, {@link #isInProgress()} must return {@code false}.
-   */
-  protected abstract void reset();
+  protected void pushPoint(StateT state, ZonePoint point) {}
 
   /**
    * Get the current shape of the tool.
@@ -102,7 +94,7 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
    * @return The shape of the new topology, or {@code null} to indicate there is nothing to add or
    *     remove.
    */
-  protected abstract @Nullable Shape getShape();
+  protected abstract @Nullable Shape getShape(StateT state, ZonePoint currentPoint);
 
   private BasicStroke getLineStroke() {
     return new BasicStroke(2.f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
@@ -156,6 +148,15 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
     return new Rectangle(minX, minY, width, height);
   }
 
+  protected final Rectangle normalizedRectangle(ZonePoint p1, ZonePoint p2) {
+    // AWT doesn't like drawing rectangles with negative width or height. So normalize it first.
+    int minX = Math.min(p1.x, p2.x);
+    int maxX = Math.max(p1.x, p2.x);
+    int minY = Math.min(p1.y, p2.y);
+    int maxY = Math.max(p1.y, p2.y);
+    return new Rectangle(minX, minY, maxX - minX, maxY - minY);
+  }
+
   protected Area getTokenTopology(Zone.TopologyType topologyType) {
     List<Token> topologyTokens = getZone().getTokensWithTopology(topologyType);
 
@@ -207,25 +208,28 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
     g2.setColor(AppStyle.coverVblColor);
     g2.fill(zone.getTopology(Zone.TopologyType.COVER_VBL));
 
-    var shape = getShape();
-    if (shape != null) {
-      var stroke = getLineStroke();
-      var color = isEraser() ? AppStyle.topologyRemoveColor : AppStyle.topologyAddColor;
-      g2.setColor(color);
+    if (state != null) {
+      var shape = getShape(state, currentPoint);
+      // TODO Require non-null again.
+      if (shape != null) {
+        var stroke = getLineStroke();
+        var color = isEraser() ? AppStyle.topologyRemoveColor : AppStyle.topologyAddColor;
+        g2.setColor(color);
 
-      if (isFilled) {
-        g2.fill(shape);
+        if (isFilled) {
+          g2.fill(shape);
 
-        // Render the outline just to make it stand out more.
-        g2.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 255));
-        // This line is purely visual, so keep it a consistent thickness
-        g2.setStroke(
-            new BasicStroke(
-                1 / (float) renderer.getScale(), stroke.getEndCap(), stroke.getLineJoin()));
-        g2.draw(shape);
-      } else {
-        g2.setStroke(stroke);
-        g2.draw(shape);
+          // Render the outline just to make it stand out more.
+          g2.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 255));
+          // This line is purely visual, so keep it a consistent thickness
+          g2.setStroke(
+              new BasicStroke(
+                  1 / (float) renderer.getScale(), stroke.getEndCap(), stroke.getLineJoin()));
+          g2.draw(shape);
+        } else {
+          g2.setStroke(stroke);
+          g2.draw(shape);
+        }
       }
     }
 
@@ -244,8 +248,7 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
     super.mouseMoved(e);
     setIsEraser(isEraser(e));
     if (isInProgress()) {
-      ZonePoint point = getPoint(e);
-      updateLastPoint(point);
+      currentPoint = getPoint(e);
       renderer.repaint();
     }
 
@@ -260,13 +263,12 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
     setIsEraser(isEraser(e));
 
     if (SwingUtilities.isLeftMouseButton(e)) {
-      ZonePoint point = getPoint(e);
+      currentPoint = getPoint(e);
 
-      if (!isInProgress()) {
-        startNewAtPoint(point);
+      if (state == null) {
+        state = startNewAtPoint(currentPoint);
       } else {
-        updateLastPoint(point);
-        var shape = getShape();
+        var shape = getShape(state, currentPoint);
         reset();
         if (shape != null) {
           submit(shape);
@@ -275,8 +277,9 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
       renderer.repaint();
     }
     // TODO Shouldn't we make sure it's a right-click?
-    else if (isInProgress()) {
-      pushPoint();
+    else if (state != null) {
+      currentPoint = getPoint(e);
+      pushPoint(state, currentPoint);
       renderer.repaint();
     }
 

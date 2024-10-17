@@ -14,53 +14,32 @@
  */
 package net.rptools.maptool.client.tool.drawing;
 
-import java.awt.*;
 import java.awt.geom.Path2D;
 import javax.annotation.Nullable;
 import net.rptools.maptool.model.ZonePoint;
 
 /** Tool for drawing freehand lines. */
-public class PolyLineTopologyTool extends AbstractTopologyDrawingTool {
-  private final LineBuilder lineBuilder = new LineBuilder();
-
+public class PolyLineTopologyTool extends AbstractTopologyDrawingTool<Path2D> {
   public PolyLineTopologyTool() {
     super("tool.poly.instructions", "tool.polylinetopo.tooltip", false);
   }
 
   @Override
-  protected boolean isInProgress() {
-    return !lineBuilder.isEmpty();
+  protected Path2D startNewAtPoint(ZonePoint point) {
+    var path = new Path2D.Double();
+    path.moveTo(point.x, point.y);
+    return path;
   }
 
   @Override
-  protected void startNewAtPoint(ZonePoint point) {
-    // Yes, add the point twice. The first is to commit the first point, the second is as the
-    // temporary point that can be updated as we go.
-    lineBuilder.addPoint(point);
-    lineBuilder.addPoint(point);
+  protected void pushPoint(Path2D state, ZonePoint point) {
+    state.lineTo(point.x, point.y);
   }
 
   @Override
-  protected void updateLastPoint(ZonePoint point) {
-    lineBuilder.replaceLastPoint(point);
-  }
-
-  @Override
-  protected void pushPoint() {
-    // Create a joint
-    lineBuilder.addPoint(lineBuilder.getLastPoint());
-  }
-
-  @Override
-  protected void reset() {
-    lineBuilder.clear();
-  }
-
-  @Override
-  protected @Nullable Path2D getShape() {
-    // TODO Trim points. Current structure of lineBuilder does not distinguish the temporary point,
-    //  so it is not possible. On the other hand, maybe we shouldn't care? It only eliminates
-    //  identical points, we could do that in real-time as they are pushed.
-    return lineBuilder.asPath();
+  protected @Nullable Path2D getShape(Path2D state, ZonePoint currentPoint) {
+    var newPath = new Path2D.Double(state);
+    newPath.lineTo(currentPoint.x, currentPoint.y);
+    return newPath;
   }
 }

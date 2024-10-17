@@ -19,37 +19,19 @@ import javax.annotation.Nullable;
 import net.rptools.lib.GeometryUtil;
 import net.rptools.maptool.model.ZonePoint;
 
-public class DiamondTopologyTool extends AbstractTopologyDrawingTool {
-  protected Shape diamond;
-  protected ZonePoint originPoint;
-
+public class DiamondTopologyTool extends AbstractTopologyDrawingTool<ZonePoint> {
   public DiamondTopologyTool() {
     super("tool.isorectangletopology.instructions", "tool.isorectangletopology.tooltip", true);
   }
 
   @Override
-  protected boolean isInProgress() {
-    return diamond != null;
+  protected ZonePoint startNewAtPoint(ZonePoint point) {
+    return point;
   }
 
   @Override
-  protected void startNewAtPoint(ZonePoint point) {
-    originPoint = point;
-    diamond = GeometryUtil.createIsoRectangle(originPoint, originPoint);
-  }
-
-  @Override
-  protected void updateLastPoint(ZonePoint point) {
-    diamond = GeometryUtil.createIsoRectangle(originPoint, point);
-  }
-
-  @Override
-  protected void reset() {
-    diamond = null;
-  }
-
-  @Override
-  protected @Nullable Shape getShape() {
+  protected @Nullable Shape getShape(ZonePoint state, ZonePoint currentPoint) {
+    var diamond = GeometryUtil.createIsoRectangle(state, currentPoint);
     return diamond.getBounds().isEmpty() ? null : diamond;
   }
 }
