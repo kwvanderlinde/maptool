@@ -17,6 +17,7 @@ package net.rptools.maptool.client.tool.drawing;
 import java.awt.Cursor;
 import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolUtil;
 import net.rptools.maptool.client.swing.colorpicker.ColorPicker;
@@ -37,6 +38,13 @@ public abstract class AbstractDrawingTool extends AbstractDrawingLikeTool implem
 
   private boolean isSnapToGridSelected;
   private boolean isEraseSelected;
+
+  protected AffineTransform getPaintTransform(ZoneRenderer renderer) {
+    AffineTransform transform = new AffineTransform();
+    transform.translate(renderer.getViewOffsetX(), renderer.getViewOffsetY());
+    transform.scale(renderer.getScale(), renderer.getScale());
+    return transform;
+  }
 
   // TODO Color picker + layer selection should be drawing tool-specific, not applied to expose /
   // topology.
