@@ -25,6 +25,8 @@ import javax.annotation.Nullable;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.ScreenPoint;
+import net.rptools.maptool.client.tool.ToolHelper;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Zone;
@@ -116,13 +118,13 @@ public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
     g2.scale(renderer.getScale(), renderer.getScale());
 
     if (state != null) {
-      var shape = strategy.getShape(state, currentPoint, centerOnOrigin, true);
+      var result = strategy.getShape(state, currentPoint, centerOnOrigin, true);
       // TODO Require non-null again.
-      if (shape != null) {
+      if (result != null) {
         // TODO Fog-specific entries in AppStyle.
         var color = isEraser() ? AppStyle.topologyRemoveColor : AppStyle.topologyAddColor;
         g2.setColor(color);
-        g2.fill(shape);
+        g2.fill(result.shape());
 
         // Render the outline just to make it stand out more.
         g2.setColor(Color.black);
@@ -130,7 +132,30 @@ public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
         g2.setStroke(
             new BasicStroke(
                 1 / (float) renderer.getScale(), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
-        g2.draw(shape);
+        g2.draw(result.shape());
+
+        // Measurements
+        var measurement = result.measurement();
+        switch (measurement) {
+          case null -> {}
+          case Measurement.Rectangular rectangular -> {
+            var rectangle = rectangular.bounds();
+            ToolHelper.drawBoxedMeasurement(
+                renderer,
+                g,
+                ScreenPoint.fromZonePoint(renderer, rectangle.getX(), rectangle.getY()),
+                ScreenPoint.fromZonePoint(renderer, rectangle.getMaxX(), rectangle.getMaxY()));
+          }
+          case Measurement.LineSegment lineSegment -> {
+            var p1 =
+                ScreenPoint.fromZonePoint(
+                    renderer, lineSegment.p1().getX(), lineSegment.p1().getY());
+            var p2 =
+                ScreenPoint.fromZonePoint(
+                    renderer, lineSegment.p2().getX(), lineSegment.p2().getY());
+            ToolHelper.drawMeasurement(renderer, g, p1, p2);
+          }
+        }
       }
     }
 
@@ -174,10 +199,10 @@ public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
       if (state == null) {
         state = strategy.startNewAtPoint(currentPoint);
       } else if (!strategy.isFreehand()) {
-        var shape = strategy.getShape(state, currentPoint, centerOnOrigin, true);
+        var result = strategy.getShape(state, currentPoint, centerOnOrigin, true);
         state = null;
-        if (shape != null) {
-          submit(shape);
+        if (result != null) {
+          submit(result.shape());
         }
       }
       renderer.repaint();
@@ -198,10 +223,10 @@ public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
     if (strategy.isFreehand() && SwingUtilities.isLeftMouseButton(e)) {
       currentPoint = getPoint(e);
       centerOnOrigin = e.isAltDown();
-      var shape = strategy.getShape(state, currentPoint, centerOnOrigin, true);
+      var result = strategy.getShape(state, currentPoint, centerOnOrigin, true);
       state = null;
-      if (shape != null) {
-        submit(shape);
+      if (result != null) {
+        submit(result.shape());
       }
     }
   }
