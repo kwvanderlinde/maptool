@@ -42,6 +42,7 @@ public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
   private @Nullable StateT state;
 
   private ZonePoint currentPoint = new ZonePoint(0, 0);
+  private boolean centerOnOrigin = false;
 
   public ExposeTool(String instructionKey, String tooltipKey, Strategy<StateT> strategy) {
     this.instructionKey = instructionKey;
@@ -116,7 +117,7 @@ public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
     g2.scale(renderer.getScale(), renderer.getScale());
 
     if (state != null) {
-      var shape = strategy.getShape(state, currentPoint);
+      var shape = strategy.getShape(state, currentPoint, centerOnOrigin);
       // TODO Require non-null again.
       if (shape != null) {
         // TODO Fog-specific entries in AppStyle.
@@ -146,6 +147,7 @@ public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
       // Extend the line.
       setIsEraser(isEraser(e));
       currentPoint = getPoint(e);
+      centerOnOrigin = e.isAltDown(); // Pointless, but it doesn't hurt for consistency.
       strategy.pushPoint(state, currentPoint);
       renderer.repaint();
     }
@@ -157,6 +159,7 @@ public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
     setIsEraser(isEraser(e));
     if (state != null) {
       currentPoint = getPoint(e);
+      centerOnOrigin = e.isAltDown();
       renderer.repaint();
     }
   }
@@ -167,11 +170,12 @@ public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
 
     if (SwingUtilities.isLeftMouseButton(e)) {
       currentPoint = getPoint(e);
+      centerOnOrigin = e.isAltDown();
 
       if (state == null) {
         state = strategy.startNewAtPoint(currentPoint);
       } else if (!strategy.isFreehand()) {
-        var shape = strategy.getShape(state, currentPoint);
+        var shape = strategy.getShape(state, currentPoint, centerOnOrigin);
         state = null;
         if (shape != null) {
           submit(shape);
@@ -182,6 +186,7 @@ public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
     // TODO Shouldn't we make sure it's a right-click?
     else if (state != null && !strategy.isFreehand()) {
       currentPoint = getPoint(e);
+      centerOnOrigin = e.isAltDown();
       strategy.pushPoint(state, currentPoint);
       renderer.repaint();
     }
@@ -193,7 +198,8 @@ public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
   public void mouseReleased(MouseEvent e) {
     if (strategy.isFreehand() && SwingUtilities.isLeftMouseButton(e)) {
       currentPoint = getPoint(e);
-      var shape = strategy.getShape(state, currentPoint);
+      centerOnOrigin = e.isAltDown();
+      var shape = strategy.getShape(state, currentPoint, centerOnOrigin);
       state = null;
       if (shape != null) {
         submit(shape);

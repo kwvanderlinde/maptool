@@ -38,7 +38,7 @@ public class FreehandStrategy implements Strategy<Path2D> {
   }
 
   @Override
-  public @Nullable Path2D getShape(Path2D state, ZonePoint currentPoint) {
+  public @Nullable Path2D getShape(Path2D state, ZonePoint currentPoint, boolean centerOnOrigin) {
     var newPath = new Path2D.Double(state);
     newPath.lineTo(currentPoint.x, currentPoint.y);
     return newPath;
