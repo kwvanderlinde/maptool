@@ -238,4 +238,7 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
 
     super.mousePressed(e);
   }
+
+  // TODO Even though there is currently no freehand topology tool, add support for it. This will
+  //  naturally come when we refactor commonalities back to a base class.
 }
