@@ -22,6 +22,7 @@ import javax.annotation.Nullable;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
@@ -69,11 +70,16 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
    * Commit the drawing as topology.
    *
    * <p>Immediately after this call completes, {@link #isInProgress()} must return {@code false}.
-   *
-   * @return The topology to add to or erase from the zone's topology, or {@code null} if there is
-   *     nothing to add or remove.
    */
-  protected abstract @Nullable Shape finish();
+  protected abstract void reset();
+
+  /**
+   * Get the current shape of the tool.
+   *
+   * @return The shape of the new topology, or {@code null} to indicate there is nothing to add or
+   *     remove.
+   */
+  protected abstract @Nullable Shape getShape();
 
   private BasicStroke getLineStroke() {
     return new BasicStroke(2.f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
@@ -82,6 +88,17 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
   @Override
   public boolean isAvailable() {
     return MapTool.getPlayer().isGM();
+  }
+
+  /** If currently drawing, stop and clear it. */
+  @Override
+  protected final void resetTool() {
+    if (isInProgress()) {
+      reset();
+      renderer.repaint();
+    } else {
+      super.resetTool();
+    }
   }
 
   private void submit(Shape shape) {
@@ -127,64 +144,69 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
     return tokenTopology;
   }
 
-  protected void paintTopologyOverlay(Graphics2D g, Shape shape) {
-    if (MapTool.getPlayer().isGM()) {
-      Zone zone = renderer.getZone();
-
-      Graphics2D g2 = (Graphics2D) g.create();
-      // TODO Ensure SrcOver composite?
-      g2.translate(renderer.getViewOffsetX(), renderer.getViewOffsetY());
-      g2.scale(renderer.getScale(), renderer.getScale());
-
-      g2.setColor(AppStyle.tokenMblColor);
-      g2.fill(getTokenTopology(Zone.TopologyType.MBL));
-      g2.setColor(AppStyle.tokenTopologyColor);
-      g2.fill(getTokenTopology(Zone.TopologyType.WALL_VBL));
-      g2.setColor(AppStyle.tokenHillVblColor);
-      g2.fill(getTokenTopology(Zone.TopologyType.HILL_VBL));
-      g2.setColor(AppStyle.tokenPitVblColor);
-      g2.fill(getTokenTopology(Zone.TopologyType.PIT_VBL));
-      g2.setColor(AppStyle.tokenCoverVblColor);
-      g2.fill(getTokenTopology(Zone.TopologyType.COVER_VBL));
-
-      g2.setColor(AppStyle.topologyTerrainColor);
-      g2.fill(zone.getTopology(Zone.TopologyType.MBL));
-
-      g2.setColor(AppStyle.topologyColor);
-      g2.fill(zone.getTopology(Zone.TopologyType.WALL_VBL));
-
-      g2.setColor(AppStyle.hillVblColor);
-      g2.fill(zone.getTopology(Zone.TopologyType.HILL_VBL));
-
-      g2.setColor(AppStyle.pitVblColor);
-      g2.fill(zone.getTopology(Zone.TopologyType.PIT_VBL));
-
-      g2.setColor(AppStyle.coverVblColor);
-      g2.fill(zone.getTopology(Zone.TopologyType.COVER_VBL));
-
-      if (shape != null) {
-        var stroke = getLineStroke();
-        var color = isEraser() ? AppStyle.topologyRemoveColor : AppStyle.topologyAddColor;
-        g2.setColor(color);
-
-        if (isBackgroundFill()) {
-          g2.fill(shape);
-
-          // Render the outline just to make it stand out more.
-          g2.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 255));
-          // This line is purely visual, so keep it a consistent thickness
-          g2.setStroke(
-              new BasicStroke(
-                  1 / (float) renderer.getScale(), stroke.getEndCap(), stroke.getLineJoin()));
-          g2.draw(shape);
-        } else {
-          g2.setStroke(stroke);
-          g2.draw(shape);
-        }
-      }
-
-      g2.dispose();
+  @Override
+  public final void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
+    if (!MapTool.getPlayer().isGM()) {
+      // Redundant check since the tool should not be available otherwise.
+      return;
     }
+
+    Zone zone = renderer.getZone();
+
+    Graphics2D g2 = (Graphics2D) g.create();
+    // TODO Ensure SrcOver composite?
+    g2.translate(renderer.getViewOffsetX(), renderer.getViewOffsetY());
+    g2.scale(renderer.getScale(), renderer.getScale());
+
+    g2.setColor(AppStyle.tokenMblColor);
+    g2.fill(getTokenTopology(Zone.TopologyType.MBL));
+    g2.setColor(AppStyle.tokenTopologyColor);
+    g2.fill(getTokenTopology(Zone.TopologyType.WALL_VBL));
+    g2.setColor(AppStyle.tokenHillVblColor);
+    g2.fill(getTokenTopology(Zone.TopologyType.HILL_VBL));
+    g2.setColor(AppStyle.tokenPitVblColor);
+    g2.fill(getTokenTopology(Zone.TopologyType.PIT_VBL));
+    g2.setColor(AppStyle.tokenCoverVblColor);
+    g2.fill(getTokenTopology(Zone.TopologyType.COVER_VBL));
+
+    g2.setColor(AppStyle.topologyTerrainColor);
+    g2.fill(zone.getTopology(Zone.TopologyType.MBL));
+
+    g2.setColor(AppStyle.topologyColor);
+    g2.fill(zone.getTopology(Zone.TopologyType.WALL_VBL));
+
+    g2.setColor(AppStyle.hillVblColor);
+    g2.fill(zone.getTopology(Zone.TopologyType.HILL_VBL));
+
+    g2.setColor(AppStyle.pitVblColor);
+    g2.fill(zone.getTopology(Zone.TopologyType.PIT_VBL));
+
+    g2.setColor(AppStyle.coverVblColor);
+    g2.fill(zone.getTopology(Zone.TopologyType.COVER_VBL));
+
+    var shape = getShape();
+    if (shape != null) {
+      var stroke = getLineStroke();
+      var color = isEraser() ? AppStyle.topologyRemoveColor : AppStyle.topologyAddColor;
+      g2.setColor(color);
+
+      if (isBackgroundFill()) {
+        g2.fill(shape);
+
+        // Render the outline just to make it stand out more.
+        g2.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 255));
+        // This line is purely visual, so keep it a consistent thickness
+        g2.setStroke(
+            new BasicStroke(
+                1 / (float) renderer.getScale(), stroke.getEndCap(), stroke.getLineJoin()));
+        g2.draw(shape);
+      } else {
+        g2.setStroke(stroke);
+        g2.draw(shape);
+      }
+    }
+
+    g2.dispose();
   }
 
   @Override
@@ -221,7 +243,8 @@ public abstract class AbstractTopologyDrawingTool extends AbstractDrawingLikeToo
         startNewAtPoint(point);
       } else {
         updateLastPoint(point);
-        var shape = finish();
+        var shape = getShape();
+        reset();
         if (shape != null) {
           submit(shape);
         }

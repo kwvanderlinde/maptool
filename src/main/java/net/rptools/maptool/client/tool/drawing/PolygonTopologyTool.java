@@ -15,8 +15,8 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.*;
+import java.awt.geom.Path2D;
 import javax.annotation.Nullable;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
 
 // TODO These aren't freehand lines. Also it's not worth inheriting from LineTool.
@@ -49,16 +49,6 @@ public class PolygonTopologyTool extends AbstractTopologyDrawingTool {
   }
 
   @Override
-  public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    var path = lineBuilder.asPath();
-    if (path.getCurrentPoint() != null) {
-      // Can only close non-empty paths.
-      path.closePath();
-    }
-    paintTopologyOverlay(g, path);
-  }
-
-  @Override
   protected void startNewAtPoint(ZonePoint point) {
     // Yes, add the point twice. The first is to commit the first point, the second is as the
     // temporary point that can be updated as we go.
@@ -78,14 +68,21 @@ public class PolygonTopologyTool extends AbstractTopologyDrawingTool {
   }
 
   @Override
-  protected @Nullable Shape finish() {
-    lineBuilder.trim();
-    var path = lineBuilder.asPath();
-    if (path.getCurrentPoint() != null) {
-      // Can only close non-empty paths.
-      path.closePath();
-    }
+  protected void reset() {
     lineBuilder.clear();
+  }
+
+  @Override
+  protected @Nullable Path2D getShape() {
+    // TODO Trim points. Current structure of lineBuilder does not distinguish the temporary point,
+    //  so it is not possible. On the other hand, maybe we shouldn't care? It only eliminates
+    //  identical points, we could do that in real-time as they are pushed.
+    var path = lineBuilder.asPath();
+    if (path.getCurrentPoint() == null) {
+      return null;
+    }
+    // Can only close non-empty paths.
+    path.closePath();
     return path;
   }
 }

@@ -14,12 +14,9 @@
  */
 package net.rptools.maptool.client.tool.drawing;
 
-import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import java.awt.Shape;
 import java.awt.geom.Path2D;
 import javax.annotation.Nullable;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
 
 /**
@@ -52,24 +49,6 @@ public class CrossTopologyTool extends AbstractTopologyDrawingTool {
     return "tool.crosstopology.tooltip";
   }
 
-  private Path2D toPath() {
-    if (bounds == null) {
-      return null;
-    }
-
-    var path = new Path2D.Double();
-    path.moveTo(bounds.x, bounds.y);
-    path.lineTo(bounds.x + bounds.width, bounds.y + bounds.height);
-    path.moveTo(bounds.x, bounds.y + bounds.height);
-    path.lineTo(bounds.x + bounds.width, bounds.y);
-    return path;
-  }
-
-  @Override
-  public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    paintTopologyOverlay(g, toPath());
-  }
-
   @Override
   protected void startNewAtPoint(ZonePoint point) {
     bounds = new Rectangle(point.x, point.y, 0, 0);
@@ -82,20 +61,21 @@ public class CrossTopologyTool extends AbstractTopologyDrawingTool {
   }
 
   @Override
-  protected @Nullable Shape finish() {
-    var path = toPath();
+  protected void reset() {
     bounds = null;
-    return path;
   }
 
-  /** Stop drawing a cross and repaint the zone. */
   @Override
-  public void resetTool() {
-    if (bounds != null) {
-      bounds = null;
-      renderer.repaint();
-    } else {
-      super.resetTool();
+  protected @Nullable Path2D getShape() {
+    if (bounds == null) {
+      return null;
     }
+
+    var path = new Path2D.Double();
+    path.moveTo(bounds.x, bounds.y);
+    path.lineTo(bounds.x + bounds.width, bounds.y + bounds.height);
+    path.moveTo(bounds.x, bounds.y + bounds.height);
+    path.lineTo(bounds.x + bounds.width, bounds.y);
+    return path;
   }
 }

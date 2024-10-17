@@ -14,11 +14,9 @@
  */
 package net.rptools.maptool.client.tool.drawing;
 
-import java.awt.Graphics2D;
 import java.awt.Shape;
 import javax.annotation.Nullable;
 import net.rptools.lib.GeometryUtil;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
 
 public class DiamondTopologyTool extends AbstractTopologyDrawingTool {
@@ -50,11 +48,6 @@ public class DiamondTopologyTool extends AbstractTopologyDrawingTool {
   }
 
   @Override
-  public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    paintTopologyOverlay(g, diamond);
-  }
-
-  @Override
   protected void startNewAtPoint(ZonePoint point) {
     originPoint = point;
     diamond = GeometryUtil.createIsoRectangle(originPoint, originPoint);
@@ -66,20 +59,12 @@ public class DiamondTopologyTool extends AbstractTopologyDrawingTool {
   }
 
   @Override
-  protected @Nullable Shape finish() {
-    var result = diamond.getBounds().isEmpty() ? null : diamond;
+  protected void reset() {
     diamond = null;
-    return result;
   }
 
-  /** Stop drawing a rectangle and repaint the zone. */
   @Override
-  public void resetTool() {
-    if (diamond != null) {
-      diamond = null;
-      renderer.repaint();
-    } else {
-      super.resetTool();
-    }
+  protected @Nullable Shape getShape() {
+    return diamond.getBounds().isEmpty() ? null : diamond;
   }
 }

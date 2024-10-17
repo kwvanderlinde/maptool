@@ -14,11 +14,9 @@
  */
 package net.rptools.maptool.client.tool.drawing;
 
-import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import javax.annotation.Nullable;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.util.GraphicsUtil;
 
@@ -51,21 +49,6 @@ public class HollowOvalTopologyTool extends AbstractTopologyDrawingTool {
     return "tool.ovaltopologyhollow.tooltip";
   }
 
-  private Shape toShape() {
-    if (bounds == null) {
-      return null;
-    }
-
-    var rect = normalizedRectangle(bounds);
-
-    return GraphicsUtil.createLineSegmentEllipsePath(
-        rect.x, rect.y, rect.x + rect.width, rect.y + rect.height, 10);
-  }
-
-  public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    paintTopologyOverlay(g, toShape());
-  }
-
   @Override
   protected void startNewAtPoint(ZonePoint point) {
     originPoint = point;
@@ -81,19 +64,19 @@ public class HollowOvalTopologyTool extends AbstractTopologyDrawingTool {
   }
 
   @Override
-  protected @Nullable Shape finish() {
-    var result = toShape();
+  protected void reset() {
     bounds = null;
-    return result;
   }
 
-  /** Stop drawing a rectangle and repaint the zone. */
-  public void resetTool() {
-    if (bounds != null) {
-      bounds = null;
-      renderer.repaint();
-    } else {
-      super.resetTool();
+  @Override
+  protected @Nullable Shape getShape() {
+    if (bounds == null) {
+      return null;
     }
+
+    var rect = normalizedRectangle(bounds);
+
+    return GraphicsUtil.createLineSegmentEllipsePath(
+        rect.x, rect.y, rect.x + rect.width, rect.y + rect.height, 10);
   }
 }

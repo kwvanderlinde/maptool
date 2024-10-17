@@ -14,11 +14,9 @@
  */
 package net.rptools.maptool.client.tool.drawing;
 
-import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import javax.annotation.Nullable;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
 
 /**
@@ -52,11 +50,6 @@ public class HollowRectangleTopologyTool extends AbstractTopologyDrawingTool {
   }
 
   @Override
-  public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    paintTopologyOverlay(g, rectangle == null ? null : normalizedRectangle(rectangle));
-  }
-
-  @Override
   protected void startNewAtPoint(ZonePoint point) {
     rectangle = new Rectangle(point.x, point.y, 0, 0);
   }
@@ -68,23 +61,16 @@ public class HollowRectangleTopologyTool extends AbstractTopologyDrawingTool {
   }
 
   @Override
-  protected @Nullable Shape finish() {
-    var result = normalizedRectangle(rectangle);
-    if (result.isEmpty()) {
-      result = null;
-    }
+  protected void reset() {
     rectangle = null;
-    return result;
   }
 
-  /** Stop drawing a rectangle and repaint the zone. */
   @Override
-  public void resetTool() {
-    if (rectangle != null) {
-      rectangle = null;
-      renderer.repaint();
-    } else {
-      super.resetTool();
+  protected @Nullable Shape getShape() {
+    var result = rectangle == null ? null : normalizedRectangle(rectangle);
+    if (result != null && result.isEmpty()) {
+      return null;
     }
+    return result;
   }
 }
