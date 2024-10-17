@@ -21,6 +21,11 @@ import net.rptools.maptool.model.ZonePoint;
 /** Tool for drawing freehand lines. */
 public class PolyLineStrategy implements Strategy<Path2D> {
   @Override
+  public boolean isLinear() {
+    return true;
+  }
+
+  @Override
   public Path2D startNewAtPoint(ZonePoint point) {
     var path = new Path2D.Double();
     path.moveTo(point.x, point.y);

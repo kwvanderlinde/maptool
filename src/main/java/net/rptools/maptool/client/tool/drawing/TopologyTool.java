@@ -64,6 +64,11 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
     return MapTool.getPlayer().isGM();
   }
 
+  @Override
+  protected boolean isLinearTool() {
+    return strategy.isLinear();
+  }
+
   /** If currently drawing, stop and clear it. */
   @Override
   protected void resetTool() {

@@ -73,10 +73,14 @@ public abstract class AbstractDrawingLikeTool extends DefaultTool implements Zon
     return e.isAltDown();
   }
 
+  protected boolean isLinearTool() {
+    return this instanceof AbstractLineTool;
+  }
+
   protected ZonePoint getPoint(MouseEvent e) {
     ScreenPoint sp = new ScreenPoint(e.getX(), e.getY());
     ZonePoint zp = sp.convertToZoneRnd(renderer);
-    if (isSnapToCenter(e) && this instanceof AbstractLineTool) {
+    if (isSnapToCenter(e) && isLinearTool()) {
       // Only line tools will snap to center as the Alt key for rectangle, diamond and oval
       // is used for expand from center.
       zp = renderer.getCellCenterAt(sp);

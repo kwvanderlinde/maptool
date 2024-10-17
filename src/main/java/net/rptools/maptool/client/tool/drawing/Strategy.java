@@ -21,6 +21,18 @@ import net.rptools.maptool.model.ZonePoint;
 
 public interface Strategy<StateT> {
   /**
+   * Check if the tool is a linear tool.
+   *
+   * <p>Linear tools support snap-to-center, but not origin-as-center since they don't have a real
+   * center.
+   *
+   * @return {@code true} if the strategy is for a linear tool.
+   */
+  default boolean isLinear() {
+    return false;
+  }
+
+  /**
    * Start a new drawing using {@code point} as the first point.
    *
    * @param point

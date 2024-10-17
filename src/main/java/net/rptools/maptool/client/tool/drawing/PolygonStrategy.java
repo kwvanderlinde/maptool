@@ -20,6 +20,12 @@ import net.rptools.maptool.model.ZonePoint;
 
 public class PolygonStrategy implements Strategy<Path2D> {
   @Override
+  public boolean isLinear() {
+    // Even though this strategy produces solid areas, its function is like a line tool.
+    return true;
+  }
+
+  @Override
   public Path2D startNewAtPoint(ZonePoint point) {
     var path = new Path2D.Double();
     path.moveTo(point.x, point.y);
