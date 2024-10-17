@@ -33,8 +33,6 @@ import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
 
 public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
-  // TODO Need to draw measurements as well.
-
   private final String instructionKey;
   private final String tooltipKey;
   private final Strategy<StateT> strategy;
