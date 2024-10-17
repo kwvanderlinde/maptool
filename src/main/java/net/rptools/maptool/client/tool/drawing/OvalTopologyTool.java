@@ -21,9 +21,6 @@ import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.util.GraphicsUtil;
 
 public class OvalTopologyTool extends AbstractTopologyDrawingTool {
-
-  private static final long serialVersionUID = 3258413928311830321L;
-
   private Rectangle bounds;
   private ZonePoint originPoint;
 

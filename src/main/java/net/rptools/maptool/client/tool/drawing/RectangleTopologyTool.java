@@ -23,8 +23,6 @@ import net.rptools.maptool.model.ZonePoint;
  * @author drice
  */
 public class RectangleTopologyTool extends AbstractTopologyDrawingTool {
-  private static final long serialVersionUID = 3258413928311830323L;
-
   private Rectangle rectangle;
 
   public RectangleTopologyTool() {}

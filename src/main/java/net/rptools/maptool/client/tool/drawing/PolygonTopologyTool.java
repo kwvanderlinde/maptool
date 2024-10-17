@@ -22,8 +22,6 @@ import net.rptools.maptool.model.ZonePoint;
 // TODO These aren't freehand lines. Also it's not worth inheriting from LineTool.
 /** Tool for drawing freehand lines. */
 public class PolygonTopologyTool extends AbstractTopologyDrawingTool {
-
-  private static final long serialVersionUID = 3258132466219627316L;
   protected final LineBuilder lineBuilder = new LineBuilder();
 
   public PolygonTopologyTool() {}

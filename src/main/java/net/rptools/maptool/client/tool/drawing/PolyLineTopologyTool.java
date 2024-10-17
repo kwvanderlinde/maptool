@@ -21,8 +21,6 @@ import net.rptools.maptool.model.ZonePoint;
 
 /** Tool for drawing freehand lines. */
 public class PolyLineTopologyTool extends AbstractTopologyDrawingTool {
-  private static final long serialVersionUID = 3258132466219627316L;
-
   private final LineBuilder lineBuilder = new LineBuilder();
 
   public PolyLineTopologyTool() {}

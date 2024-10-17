@@ -20,8 +20,6 @@ import net.rptools.lib.GeometryUtil;
 import net.rptools.maptool.model.ZonePoint;
 
 public class DiamondTopologyTool extends AbstractTopologyDrawingTool {
-
-  private static final long serialVersionUID = -1497583181619555786L;
   protected Shape diamond;
   protected ZonePoint originPoint;
 
