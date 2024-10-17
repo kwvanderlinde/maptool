@@ -29,6 +29,7 @@ import net.rptools.maptool.server.proto.drawing.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+// TODO Avoid returning null in this class since protobuf doesn't like them.
 public class Mapper {
   /** Instance used for log messages. */
   private static final Logger log = LogManager.getLogger(Mapper.class);
