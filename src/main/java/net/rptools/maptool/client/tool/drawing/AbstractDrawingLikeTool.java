@@ -74,7 +74,7 @@ public abstract class AbstractDrawingLikeTool extends DefaultTool implements Zon
   }
 
   protected boolean isLinearTool() {
-    return this instanceof AbstractLineTool;
+    return false;
   }
 
   protected ZonePoint getPoint(MouseEvent e) {

@@ -291,17 +291,6 @@ public class ToolbarPanel extends JToolBar {
                 "tool.rect.instructions", "tool.isorectangle.tooltip", new IsoRectangleStrategy()))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_DRAW_DIAMOND));
 
-    if (false) {
-      panel
-          .add(FreehandTool.class)
-          .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_DRAW_FREEHAND));
-      panel.add(LineTool.class).setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_DRAW_LINE));
-      panel.add(RectangleTool.class).setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_DRAW_BOX));
-      panel.add(OvalTool.class).setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_DRAW_OVAL));
-      panel.add(TextTool.class).setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_DRAW_TEXT));
-      panel.add(DiamondTool.class).setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_DRAW_DIAMOND));
-    }
-
     return panel;
   }
 
