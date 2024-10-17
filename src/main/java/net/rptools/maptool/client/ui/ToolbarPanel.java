@@ -342,32 +342,33 @@ public class ToolbarPanel extends JToolBar {
 
   private OptionPanel createTopologyPanel() {
     OptionPanel panel = new OptionPanel();
+
     panel
-        .add(RectangleTopologyTool.class)
+        .addTool(new RectangleTopologyTool())
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_BOX));
     panel
-        .add(HollowRectangleTopologyTool.class)
+        .addTool(new HollowRectangleTopologyTool())
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_BOX_HOLLOW));
     panel
-        .add(OvalTopologyTool.class)
+        .addTool(new OvalTopologyTool())
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_OVAL));
     panel
-        .add(HollowOvalTopologyTool.class)
+        .addTool(new HollowOvalTopologyTool())
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_OVAL_HOLLOW));
     panel
-        .add(PolygonTopologyTool.class)
+        .addTool(new PolygonTopologyTool())
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_POLYGON));
     panel
-        .add(PolyLineTopologyTool.class)
+        .addTool(new PolyLineTopologyTool())
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_POLYLINE));
     panel
-        .add(CrossTopologyTool.class)
+        .addTool(new CrossTopologyTool())
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_CROSS));
     panel
-        .add(DiamondTopologyTool.class)
+        .addTool(new DiamondTopologyTool())
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_DIAMOND));
     panel
-        .add(HollowDiamondTopologyTool.class)
+        .addTool(new HollowDiamondTopologyTool())
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_DIAMOND_HOLLOW));
 
     // Add with separator to separate mode button group from shape button group.
