@@ -308,7 +308,7 @@ public class Zone {
     MBL;
   }
 
-  public static final class TopologyTypeSet implements Iterable<TopologyType> {
+  private static final class TopologyTypeSet implements Iterable<TopologyType> {
     private final Set<TopologyType> topologyTypes;
 
     public static TopologyTypeSet valueOf(String value) {
@@ -327,6 +327,10 @@ public class Zone {
       // I would prefer using an enum set, but Hessian can't handle it properly.
       topologyTypes = new HashSet<>();
       topologyTypes.addAll(Arrays.asList(types));
+    }
+
+    public Set<TopologyType> asSet() {
+      return topologyTypes;
     }
 
     public boolean contains(TopologyType type) {
@@ -1336,16 +1340,20 @@ public class Zone {
     this.aStarRounding = aStarRounding;
   }
 
-  public TopologyTypeSet getTopologyTypes() {
+  public Set<TopologyType> getTopologyTypes() {
     if (topologyTypes == null) {
-      topologyTypes = AppStatePersisted.getTopologyTypes();
+      setTopologyTypes(AppStatePersisted.getTopologyTypes());
     }
 
-    return topologyTypes;
+    var result = EnumSet.noneOf(TopologyType.class);
+    for (var type : topologyTypes) {
+      result.add(type);
+    }
+    return result;
   }
 
-  public void setTopologyTypes(TopologyTypeSet topologyTypes) {
-    this.topologyTypes = topologyTypes;
+  public void setTopologyTypes(Set<TopologyType> topologyTypes) {
+    this.topologyTypes = new TopologyTypeSet(topologyTypes.toArray(TopologyType[]::new));
   }
 
   public int getLargestZOrder() {

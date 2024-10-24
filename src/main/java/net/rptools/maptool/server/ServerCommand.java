@@ -43,7 +43,7 @@ public interface ServerCommand {
   void setFoW(GUID zoneGUID, Area area, Set<GUID> selectedToks);
 
   default void updateTopology(
-      Zone zone, Area area, boolean erase, Zone.TopologyTypeSet topologyTypes) {
+      Zone zone, Area area, boolean erase, Set<Zone.TopologyType> topologyTypes) {
     for (var topologyType : topologyTypes) {
       updateTopology(zone, area, erase, topologyType);
     }
