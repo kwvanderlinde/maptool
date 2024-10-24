@@ -329,6 +329,10 @@ public class Zone {
       topologyTypes.addAll(Arrays.asList(types));
     }
 
+    public Set<TopologyType> asSet() {
+      return topologyTypes;
+    }
+
     public boolean contains(TopologyType type) {
       return topologyTypes.contains(type);
     }
@@ -1336,16 +1340,17 @@ public class Zone {
     this.aStarRounding = aStarRounding;
   }
 
+  // TODO Remove topology types from Zone altogether.
   public TopologyTypeSet getTopologyTypes() {
     if (topologyTypes == null) {
-      topologyTypes = AppStatePersisted.getTopologyTypes();
+      setTopologyTypes(AppStatePersisted.getTopologyTypes());
     }
 
     return topologyTypes;
   }
 
-  public void setTopologyTypes(TopologyTypeSet topologyTypes) {
-    this.topologyTypes = topologyTypes;
+  public void setTopologyTypes(Set<TopologyType> topologyTypes) {
+    this.topologyTypes = new TopologyTypeSet(topologyTypes.toArray(TopologyType[]::new));
   }
 
   public int getLargestZOrder() {

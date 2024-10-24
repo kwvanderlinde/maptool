@@ -102,7 +102,7 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
     }
 
     MapTool.serverCommand()
-        .updateTopology(getZone(), area, isEraser(), getZone().getTopologyTypes());
+        .updateTopology(getZone(), area, isEraser(), getZone().getTopologyTypes().asSet());
   }
 
   private Area getTokenTopology(Zone.TopologyType topologyType) {

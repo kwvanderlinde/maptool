@@ -1626,7 +1626,8 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
 
       renderer.requestFocusInWindow();
       // Updates the VBL/MBL button. Fixes #1642.
-      TopologyModeSelectionPanel.getInstance().setMode(renderer.getZone().getTopologyTypes());
+      TopologyModeSelectionPanel.getInstance()
+          .setMode(renderer.getZone().getTopologyTypes().asSet());
     }
     AppActions.updateActions();
     repaint();

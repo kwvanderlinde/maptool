@@ -17,6 +17,7 @@ package net.rptools.maptool.client;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -167,24 +168,35 @@ public class AppStatePersisted {
     return mruCampaigns;
   }
 
-  public static Zone.TopologyTypeSet getTopologyTypes() {
+  public static Set<Zone.TopologyType> getTopologyTypes() {
+    var result = EnumSet.noneOf(Zone.TopologyType.class);
+
     try {
       String typeNames = prefs.get(KEY_TOPOLOGY_TYPES, "");
       if ("".equals(typeNames)) {
         // Fallback to the key used prior to the introduction of various VBL types.
         String oldDrawingMode = prefs.get(KEY_OLD_TOPOLOGY_DRAWING_MODE, DEFAULT_TOPOLOGY_TYPE);
-        return switch (oldDrawingMode) {
-          case "VBL" -> new Zone.TopologyTypeSet(Zone.TopologyType.WALL_VBL);
-          case "MBL" -> new Zone.TopologyTypeSet(Zone.TopologyType.MBL);
-          case "COMBINED" -> new Zone.TopologyTypeSet(
-              Zone.TopologyType.WALL_VBL, Zone.TopologyType.MBL);
-          default -> new Zone.TopologyTypeSet(Zone.TopologyType.WALL_VBL);
-        };
+        switch (oldDrawingMode) {
+          case "VBL" -> result.add(Zone.TopologyType.WALL_VBL);
+          case "MBL" -> result.add(Zone.TopologyType.MBL);
+          case "COMBINED" -> {
+            result.add(Zone.TopologyType.WALL_VBL);
+            result.add(Zone.TopologyType.MBL);
+          }
+          default -> result.add(Zone.TopologyType.WALL_VBL);
+        }
       } else {
-        return Zone.TopologyTypeSet.valueOf(typeNames);
+        for (var topologyType : Zone.TopologyType.values()) {
+          var topologyTypeName = topologyType.toString();
+          if (typeNames.contains(topologyTypeName)) {
+            result.add(topologyType);
+          }
+        }
       }
+
+      return result;
     } catch (Exception exc) {
-      return new Zone.TopologyTypeSet(Zone.TopologyType.WALL_VBL);
+      return EnumSet.of(Zone.TopologyType.WALL_VBL);
     }
   }
 
@@ -193,7 +205,7 @@ public class AppStatePersisted {
    *
    * @param types the topology types. A value of null resets to default.
    */
-  public static void setTopologyTypes(Zone.TopologyTypeSet types) {
+  public static void setTopologyTypes(Set<Zone.TopologyType> types) {
     if (types == null) {
       prefs.remove(KEY_TOPOLOGY_TYPES);
     } else {

@@ -16,6 +16,7 @@ package net.rptools.maptool.client.swing;
 
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Set;
 import javax.swing.Box;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
@@ -89,7 +90,7 @@ public class TopologyModeSelectionPanel extends JToolBar {
       final Icons icon,
       final Icons offIcon,
       String toolTipKey,
-      Zone.TopologyTypeSet initiallySelectedTypes) {
+      Set<Zone.TopologyType> initiallySelectedTypes) {
     final var button = new JToggleButton();
 
     button.setIcon(RessourceManager.getBigIcon(offIcon));
@@ -113,15 +114,17 @@ public class TopologyModeSelectionPanel extends JToolBar {
                 mode = mode.without(type);
               }
 
-              setMode(mode);
+              setMode(mode.asSet());
             }
           }
         });
   }
 
-  public void setMode(Zone.TopologyTypeSet topologyTypes) {
+  // TODO Why are we accepting null? Shouldn't the caller read the persisted types?
+  public void setMode(Set<Zone.TopologyType> topologyTypes) {
     AppStatePersisted.setTopologyTypes(topologyTypes);
     if (topologyTypes == null) {
+      // Read back a default if necessary.
       topologyTypes = AppStatePersisted.getTopologyTypes();
     }
 
