@@ -1362,28 +1362,18 @@ public class EditTokenDialog extends AbeillePanel<Token> {
     getTransferTopologyFromMap()
         .addActionListener(
             e -> {
+              var zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
+              var token = getTokenTopologyPanel().getToken();
               final boolean removeFromMap = getCopyOrMoveCheckbox().isSelected();
               for (final var type : getTokenTopologyPanel().getSelectedTopologyTypes()) {
-                Area mapTopology =
-                    TokenVBL.getMapTopology_transformed(
-                        MapTool.getFrame().getCurrentZoneRenderer(),
-                        getTokenTopologyPanel().getToken(),
-                        type);
+                Area mapTopology = TokenVBL.getTopology_underToken(zone, token, type);
+                Area newTokenTopology =
+                    TokenVBL.transformTopology_toToken(zone, token, mapTopology);
 
-                getTokenTopologyPanel().putCustomTopology(type, mapTopology);
+                getTokenTopologyPanel().putCustomTopology(type, newTokenTopology);
 
                 if (removeFromMap) {
-                  Area topologyToDelete =
-                      TokenVBL.getTopology_underToken(
-                          MapTool.getFrame().getCurrentZoneRenderer(),
-                          getTokenTopologyPanel().getToken(),
-                          type);
-                  MapTool.serverCommand()
-                      .updateTopology(
-                          MapTool.getFrame().getCurrentZoneRenderer().getZone(),
-                          topologyToDelete,
-                          true,
-                          type);
+                  MapTool.serverCommand().updateTopology(zone, mapTopology, true, type);
                 }
               }
 

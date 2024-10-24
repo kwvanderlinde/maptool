@@ -523,7 +523,6 @@ public class Topology_Functions extends AbstractFunction {
   private void childEvaluateTransferTopology(
       VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
-    ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
     Token token = null;
 
     Zone.TopologyType topologyType;
@@ -593,24 +592,23 @@ public class Topology_Functions extends AbstractFunction {
       }
     }
 
+    Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
     if (topologyFromToken) {
       var newMapTopology = token.getTransformedTopology(topologyType);
       if (newMapTopology != null) {
-        MapTool.serverCommand()
-            .updateTopology(renderer.getZone(), newMapTopology, false, topologyType);
+        MapTool.serverCommand().updateTopology(zone, newMapTopology, false, topologyType);
       }
       if (delete) {
         MapTool.serverCommand().setTokenTopology(token, null, topologyType);
       }
     } else {
-      Area topology = TokenVBL.getTopology_underToken(renderer, token, topologyType);
+      Area topology = TokenVBL.getTopology_underToken(zone, token, topologyType);
+
       MapTool.serverCommand()
           .setTokenTopology(
-              token,
-              TokenVBL.getMapTopology_transformed(renderer, token, topologyType),
-              topologyType);
+              token, TokenVBL.transformTopology_toToken(zone, token, topology), topologyType);
       if (delete) {
-        MapTool.serverCommand().updateTopology(renderer.getZone(), topology, true, topologyType);
+        MapTool.serverCommand().updateTopology(zone, topology, true, topologyType);
       }
     }
   }
