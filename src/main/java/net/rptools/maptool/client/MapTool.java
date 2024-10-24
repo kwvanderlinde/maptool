@@ -671,9 +671,6 @@ public class MapTool {
       zoneLoadedListener = new ZoneLoadedListener();
 
       Campaign cmpgn = CampaignFactory.createBasicCampaign();
-      // Set the Topology drawing mode to the last mode used for convenience
-      // Should only be one zone, but let's cover our bases.
-      cmpgn.getZones().forEach(zone -> zone.setTopologyTypes(AppStatePersisted.getTopologyTypes()));
 
       // Stop the pre-init client/server.
       disconnect();

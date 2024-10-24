@@ -380,13 +380,15 @@ public class ToolbarPanel extends JToolBar {
   private OptionPanel createTopologyPanel() {
     OptionPanel panel = new OptionPanel();
 
+    var topologyModeSelectionPanel = new TopologyModeSelectionPanel();
     panel
         .addTool(
             new TopologyTool<>(
                 "tool.recttopology.instructions",
                 "tool.recttopology.tooltip",
                 true,
-                new RectangleStrategy()))
+                new RectangleStrategy(),
+                topologyModeSelectionPanel))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_BOX));
     panel
         .addTool(
@@ -394,7 +396,8 @@ public class ToolbarPanel extends JToolBar {
                 "tool.recttopology.instructions",
                 "tool.recttopologyhollow.tooltip",
                 false,
-                new RectangleStrategy()))
+                new RectangleStrategy(),
+                topologyModeSelectionPanel))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_BOX_HOLLOW));
     panel
         .addTool(
@@ -403,7 +406,8 @@ public class ToolbarPanel extends JToolBar {
                 "tool.ovaltopology.tooltip",
                 true,
                 // 10 steps to keep number of topology vertices reasonable.
-                new OvalStrategy(10)))
+                new OvalStrategy(10),
+                topologyModeSelectionPanel))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_OVAL));
     panel
         .addTool(
@@ -412,7 +416,8 @@ public class ToolbarPanel extends JToolBar {
                 "tool.ovaltopologyhollow.tooltip",
                 false,
                 // 10 steps to keep number of topology vertices reasonable.
-                new OvalStrategy(10)))
+                new OvalStrategy(10),
+                topologyModeSelectionPanel))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_OVAL_HOLLOW));
     panel
         .addTool(
@@ -420,7 +425,8 @@ public class ToolbarPanel extends JToolBar {
                 "tool.poly.instructions",
                 "tool.polytopo.tooltip",
                 true,
-                new PolyLineStrategy(false)))
+                new PolyLineStrategy(false),
+                topologyModeSelectionPanel))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_POLYGON));
     panel
         .addTool(
@@ -428,7 +434,8 @@ public class ToolbarPanel extends JToolBar {
                 "tool.poly.instructions",
                 "tool.polylinetopo.tooltip",
                 false,
-                new PolyLineStrategy(false)))
+                new PolyLineStrategy(false),
+                topologyModeSelectionPanel))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_POLYLINE));
     panel
         .addTool(
@@ -436,7 +443,8 @@ public class ToolbarPanel extends JToolBar {
                 "tool.crosstopology.instructions",
                 "tool.crosstopology.tooltip",
                 false,
-                new CrossStrategy()))
+                new CrossStrategy(),
+                topologyModeSelectionPanel))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_CROSS));
     panel
         .addTool(
@@ -444,7 +452,8 @@ public class ToolbarPanel extends JToolBar {
                 "tool.isorectangletopology.instructions",
                 "tool.isorectangletopology.tooltip",
                 true,
-                new IsoRectangleStrategy()))
+                new IsoRectangleStrategy(),
+                topologyModeSelectionPanel))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_DIAMOND));
     panel
         .addTool(
@@ -452,13 +461,13 @@ public class ToolbarPanel extends JToolBar {
                 "tool.isorectangletopology.instructions",
                 "tool.isorectangletopologyhollow.tooltip",
                 false,
-                new IsoRectangleStrategy()))
+                new IsoRectangleStrategy(),
+                topologyModeSelectionPanel))
         .setIcon(RessourceManager.getBigIcon(Icons.TOOLBAR_TOPOLOGY_DIAMOND_HOLLOW));
 
     // Add with separator to separate mode button group from shape button group.
     addSeparator(panel, 11);
 
-    final var topologyModeSelectionPanel = new TopologyModeSelectionPanel();
     panel.add(topologyModeSelectionPanel);
 
     return panel;

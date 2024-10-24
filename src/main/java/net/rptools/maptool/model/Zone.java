@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import net.rptools.lib.MD5Key;
-import net.rptools.maptool.client.AppStatePersisted;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.tool.drawing.UndoPerZone;
@@ -1338,22 +1337,6 @@ public class Zone {
 
   public void setAStarRounding(AStarRoundingOptions aStarRounding) {
     this.aStarRounding = aStarRounding;
-  }
-
-  public Set<TopologyType> getTopologyTypes() {
-    if (topologyTypes == null) {
-      setTopologyTypes(AppStatePersisted.getTopologyTypes());
-    }
-
-    var result = EnumSet.noneOf(TopologyType.class);
-    for (var type : topologyTypes) {
-      result.add(type);
-    }
-    return result;
-  }
-
-  public void setTopologyTypes(Set<TopologyType> topologyTypes) {
-    this.topologyTypes = new TopologyTypeSet(topologyTypes.toArray(TopologyType[]::new));
   }
 
   public int getLargestZOrder() {
