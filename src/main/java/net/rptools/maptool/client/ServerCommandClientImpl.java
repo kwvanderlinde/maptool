@@ -619,6 +619,15 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   @Override
+  public void setTokenTopology(Token token, Area area, Zone.TopologyType topologyType) {
+    updateTokenProperty(
+        token,
+        Token.Update.setTopology,
+        TokenPropertyValueDto.newBuilder().setTopologyType(topologyType.name()).build(),
+        TokenPropertyValueDto.newBuilder().setArea(Mapper.map(area)).build());
+  }
+
+  @Override
   public void updateTokenProperty(Token token, Token.Update update, int value) {
     updateTokenProperty(
         token, update, TokenPropertyValueDto.newBuilder().setIntValue(value).build());
@@ -750,16 +759,6 @@ public class ServerCommandClientImpl implements ServerCommand {
         TokenPropertyValueDto.newBuilder().setBoolValue(value1).build(),
         TokenPropertyValueDto.newBuilder().setIntValue(value2).build(),
         TokenPropertyValueDto.newBuilder().setIntValue(value3).build());
-  }
-
-  @Override
-  public void updateTokenProperty(
-      Token token, Token.Update update, Zone.TopologyType topologyType, Area area) {
-    updateTokenProperty(
-        token,
-        update,
-        TokenPropertyValueDto.newBuilder().setTopologyType(topologyType.name()).build(),
-        TokenPropertyValueDto.newBuilder().setArea(Mapper.map(area)).build());
   }
 
   @Override

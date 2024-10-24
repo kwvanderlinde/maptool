@@ -18,6 +18,7 @@ import java.awt.geom.Area;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
+import javax.annotation.Nullable;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.Zone.VisionType;
@@ -182,6 +183,8 @@ public interface ServerCommand {
 
   void removeData(String type, String namespace, String name);
 
+  void setTokenTopology(Token token, @Nullable Area area, Zone.TopologyType topologyType);
+
   void updateTokenProperty(Token token, Token.Update update, int value);
 
   void updateTokenProperty(Token token, Token.Update update, String value1, String value2);
@@ -213,9 +216,6 @@ public interface ServerCommand {
 
   void updateTokenProperty(
       Token token, Token.Update update, boolean value1, int value2, int value3);
-
-  void updateTokenProperty(
-      Token token, Token.Update update, Zone.TopologyType topologyType, Area area);
 
   void updateTokenProperty(Token token, Token.Update update, String value1, boolean value2);
 

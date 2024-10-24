@@ -2651,6 +2651,7 @@ public class Token implements Cloneable {
     boolean lightChanged = false;
     boolean macroChanged = false;
     boolean panelLookChanged = false; // appearance of token in a panel changed
+    boolean topologyChanged = false;
     switch (update) {
       case setState:
         var state = parameters.get(0).getStringValue();
@@ -2817,10 +2818,7 @@ public class Token implements Cloneable {
         {
           final var topologyType = Zone.TopologyType.valueOf(parameters.get(0).getTopologyType());
           setTopology(topologyType, Mapper.map(parameters.get(1).getArea()));
-          if (!hasTopology(topologyType)) { // if topology removed
-            zone.tokenTopologyChanged(); // if token lost topology, TOKEN_CHANGED won't update
-            // topology
-          }
+          topologyChanged = true;
           break;
         }
       case setImageAsset:
@@ -2909,6 +2907,9 @@ public class Token implements Cloneable {
     }
     if (panelLookChanged) {
       zone.tokenPanelChanged(this);
+    }
+    if (topologyChanged) {
+      zone.tokenTopologyChanged();
     }
     zone.tokenChanged(this); // fire Event.TOKEN_CHANGED, which updates topology if token has VBL
   }

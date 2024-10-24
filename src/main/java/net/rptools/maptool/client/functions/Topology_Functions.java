@@ -515,8 +515,7 @@ public class Topology_Functions extends AbstractFunction {
       }
     }
     // Replace with new topology
-    MapTool.serverCommand()
-        .updateTokenProperty(token, Token.Update.setTopology, topologyType, tokenTopology);
+    MapTool.serverCommand().setTokenTopology(token, tokenTopology, topologyType);
 
     return results;
   }
@@ -599,12 +598,15 @@ public class Topology_Functions extends AbstractFunction {
           .updateTopology(
               renderer.getZone(), token.getTransformedTopology(topologyType), false, topologyType);
       if (delete) {
-        token.setTopology(topologyType, null);
+        MapTool.serverCommand().setTokenTopology(token, null, topologyType);
       }
     } else {
       Area topology = TokenVBL.getTopology_underToken(renderer, token, topologyType);
-      token.setTopology(
-          topologyType, TokenVBL.getMapTopology_transformed(renderer, token, topologyType));
+      MapTool.serverCommand()
+          .setTokenTopology(
+              token,
+              TokenVBL.getMapTopology_transformed(renderer, token, topologyType),
+              topologyType);
       if (delete) {
         MapTool.serverCommand().updateTopology(renderer.getZone(), topology, true, topologyType);
       }
