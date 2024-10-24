@@ -109,12 +109,11 @@ public class TopologyModeSelectionPanel extends JToolBar {
               var zone = zr.getZone();
               var mode = zone.getTopologyTypes();
               if (button.isSelected()) {
-                mode = mode.with(type);
+                mode.add(type);
               } else {
-                mode = mode.without(type);
+                mode.remove(type);
               }
-
-              setMode(mode.asSet());
+              setMode(mode);
             }
           }
         });

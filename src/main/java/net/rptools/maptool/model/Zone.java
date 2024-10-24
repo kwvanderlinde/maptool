@@ -308,7 +308,7 @@ public class Zone {
     MBL;
   }
 
-  public static final class TopologyTypeSet implements Iterable<TopologyType> {
+  private static final class TopologyTypeSet implements Iterable<TopologyType> {
     private final Set<TopologyType> topologyTypes;
 
     public static TopologyTypeSet valueOf(String value) {
@@ -1340,13 +1340,16 @@ public class Zone {
     this.aStarRounding = aStarRounding;
   }
 
-  // TODO Remove topology types from Zone altogether.
-  public TopologyTypeSet getTopologyTypes() {
+  public Set<TopologyType> getTopologyTypes() {
     if (topologyTypes == null) {
       setTopologyTypes(AppStatePersisted.getTopologyTypes());
     }
 
-    return topologyTypes;
+    var result = EnumSet.noneOf(TopologyType.class);
+    for (var type : topologyTypes) {
+      result.add(type);
+    }
+    return result;
   }
 
   public void setTopologyTypes(Set<TopologyType> topologyTypes) {

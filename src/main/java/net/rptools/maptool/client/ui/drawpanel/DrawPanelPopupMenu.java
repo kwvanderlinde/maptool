@@ -590,8 +590,7 @@ public class DrawPanelPopupMenu extends JPopupMenu {
     }
 
     MapTool.serverCommand()
-        .updateTopology(
-            renderer.getZone(), area, isEraser, renderer.getZone().getTopologyTypes().asSet());
+        .updateTopology(renderer.getZone(), area, isEraser, renderer.getZone().getTopologyTypes());
   }
 
   private Path2D getPath(Drawable drawable) {
