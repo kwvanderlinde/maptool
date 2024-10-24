@@ -1013,7 +1013,7 @@ public class Zone {
    * @param area the area
    * @param topologyType the type of the topology
    */
-  public void addTopology(Area area, TopologyType topologyType) {
+  public void updateTopology(Area area, boolean erase, TopologyType topologyType) {
     var topology =
         switch (topologyType) {
           case WALL_VBL -> this.topology;
@@ -1022,41 +1022,14 @@ public class Zone {
           case COVER_VBL -> coverVbl;
           case MBL -> topologyTerrain;
         };
-    topology.add(area);
+
+    if (erase) {
+      topology.subtract(area);
+    } else {
+      topology.add(area);
+    }
 
     new MapToolEventBus().getMainEventBus().post(new TopologyChanged(this));
-  }
-
-  public void addTopology(Area area) {
-    for (var topologyType : getTopologyTypes()) {
-      addTopology(area, topologyType);
-    }
-  }
-
-  /**
-   * Subtract the area from the topology, and fire the event TOPOLOGY_CHANGED
-   *
-   * @param area the area
-   * @param topologyType the type of the topology
-   */
-  public void removeTopology(Area area, TopologyType topologyType) {
-    var topology =
-        switch (topologyType) {
-          case WALL_VBL -> this.topology;
-          case HILL_VBL -> hillVbl;
-          case PIT_VBL -> pitVbl;
-          case COVER_VBL -> coverVbl;
-          case MBL -> topologyTerrain;
-        };
-    topology.subtract(area);
-
-    new MapToolEventBus().getMainEventBus().post(new TopologyChanged(this));
-  }
-
-  public void removeTopology(Area area) {
-    for (var topologyType : getTopologyTypes()) {
-      removeTopology(area, topologyType);
-    }
   }
 
   /** Fire the event TOPOLOGY_CHANGED. */
