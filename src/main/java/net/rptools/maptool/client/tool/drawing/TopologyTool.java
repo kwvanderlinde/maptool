@@ -25,6 +25,7 @@ import javax.annotation.Nullable;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.swing.TopologyModeSelectionPanel;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
@@ -35,6 +36,7 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
   private final String tooltipKey;
   private final boolean isFilled;
   private final Strategy<StateT> strategy;
+  private final TopologyModeSelectionPanel modeSelectionPanel;
 
   /** The current state of the tool. If {@code null}, nothing is being drawn right now. */
   private @Nullable StateT state;
@@ -44,11 +46,17 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
   private boolean centerOnOrigin;
 
   public TopologyTool(
-      String instructionKey, String tooltipKey, boolean isFilled, Strategy<StateT> strategy) {
+      String instructionKey,
+      String tooltipKey,
+      boolean isFilled,
+      Strategy<StateT> strategy,
+      TopologyModeSelectionPanel modeSelectionPanel) {
     this.instructionKey = instructionKey;
     this.tooltipKey = tooltipKey;
     this.isFilled = isFilled;
     this.strategy = strategy;
+    this.modeSelectionPanel = modeSelectionPanel;
+
     // Consistency with topology tools before refactoring. Can be updated as part of #5002.
     this.centerOnOrigin = this.strategy instanceof OvalStrategy;
   }
@@ -102,7 +110,7 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
     }
 
     MapTool.serverCommand()
-        .updateTopology(getZone(), area, isEraser(), getZone().getTopologyTypes());
+        .updateTopology(getZone(), area, isEraser(), modeSelectionPanel.getMode());
   }
 
   private Area getTokenTopology(Zone.TopologyType topologyType) {

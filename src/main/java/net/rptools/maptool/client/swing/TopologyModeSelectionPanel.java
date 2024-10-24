@@ -15,18 +15,15 @@
 package net.rptools.maptool.client.swing;
 
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import javax.swing.Box;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import net.rptools.maptool.client.AppStatePersisted;
-import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.theme.Icons;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Zone;
 
@@ -100,45 +97,17 @@ public class TopologyModeSelectionPanel extends JToolBar {
     button.setSelected(initiallySelectedTypes.contains(type));
     this.add(button);
     modeButtons.put(type, button);
-    button.addChangeListener(
-        new ChangeListener() {
-          @Override
-          public void stateChanged(ChangeEvent e) {
-            ZoneRenderer zr = MapTool.getFrame().getCurrentZoneRenderer();
-            if (zr != null) {
-              var zone = zr.getZone();
-              var mode = zone.getTopologyTypes();
-              if (button.isSelected()) {
-                mode.add(type);
-              } else {
-                mode.remove(type);
-              }
-              setMode(mode);
-            }
-          }
-        });
   }
 
-  // TODO Why are we accepting null? Shouldn't the caller read the persisted types?
-  public void setMode(Set<Zone.TopologyType> topologyTypes) {
-    AppStatePersisted.setTopologyTypes(topologyTypes);
-    if (topologyTypes == null) {
-      // Read back a default if necessary.
-      topologyTypes = AppStatePersisted.getTopologyTypes();
-    }
-
+  public Set<Zone.TopologyType> getMode() {
+    var result = EnumSet.noneOf(Zone.TopologyType.class);
     for (final var entry : modeButtons.entrySet()) {
       final var topologyType = entry.getKey();
       final var button = entry.getValue();
-
-      button.setSelected(topologyTypes.contains(topologyType));
+      if (button.isSelected()) {
+        result.add(topologyType);
+      }
     }
-
-    // Since setting selection also triggers change listeners, we need this work even early on.
-    ZoneRenderer zr = MapTool.getFrame().getCurrentZoneRenderer();
-    // Check if there is a map. Fix #1605
-    if (zr != null) {
-      zr.getZone().setTopologyTypes(topologyTypes);
-    }
+    return result;
   }
 }
