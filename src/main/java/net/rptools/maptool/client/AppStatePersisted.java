@@ -203,14 +203,10 @@ public class AppStatePersisted {
   /**
    * Sets the selected topology modes.
    *
-   * @param types the topology types. A value of null resets to default.
+   * @param types the topology types.
    */
   public static void setTopologyTypes(Set<Zone.TopologyType> types) {
-    if (types == null) {
-      prefs.remove(KEY_TOPOLOGY_TYPES);
-    } else {
-      prefs.put(KEY_TOPOLOGY_TYPES, types.toString());
-    }
+    prefs.put(KEY_TOPOLOGY_TYPES, types.toString());
   }
 
   public static void setSavedPaintTextures(List<File> savedTextures) {
