@@ -594,9 +594,11 @@ public class Topology_Functions extends AbstractFunction {
     }
 
     if (topologyFromToken) {
-      MapTool.serverCommand()
-          .updateTopology(
-              renderer.getZone(), token.getTransformedTopology(topologyType), false, topologyType);
+      var newMapTopology = token.getTransformedTopology(topologyType);
+      if (newMapTopology != null) {
+        MapTool.serverCommand()
+            .updateTopology(renderer.getZone(), newMapTopology, false, topologyType);
+      }
       if (delete) {
         MapTool.serverCommand().setTokenTopology(token, null, topologyType);
       }

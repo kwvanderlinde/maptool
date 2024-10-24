@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
@@ -254,7 +255,7 @@ public class TokenVBL {
     return newTokenTopology;
   }
 
-  public static Area getTopology_underToken(
+  public static @Nonnull Area getTopology_underToken(
       ZoneRenderer renderer, Token token, Zone.TopologyType topologyType) {
     Rectangle footprintBounds = token.getBounds(renderer.getZone());
     Area newTokenTopology = new Area(footprintBounds);

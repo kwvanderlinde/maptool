@@ -1399,6 +1399,10 @@ public class Token implements Cloneable {
    * @param topology the topology area to set.
    */
   public void setTopology(Zone.TopologyType topologyType, @Nullable Area topology) {
+    if (topology != null && topology.isEmpty()) {
+      topology = null;
+    }
+
     switch (topologyType) {
       case WALL_VBL -> vbl = topology;
       case HILL_VBL -> hillVbl = topology;

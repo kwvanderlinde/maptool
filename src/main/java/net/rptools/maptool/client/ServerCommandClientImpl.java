@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.functions.ExecFunction;
 import net.rptools.maptool.client.functions.MacroLinkFunction;
@@ -619,7 +620,12 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   @Override
-  public void setTokenTopology(Token token, Area area, Zone.TopologyType topologyType) {
+  public void setTokenTopology(Token token, @Nullable Area area, Zone.TopologyType topologyType) {
+    if (area == null) {
+      // Will be converted back to null on the other end.
+      area = new Area();
+    }
+
     updateTokenProperty(
         token,
         Token.Update.setTopology,
