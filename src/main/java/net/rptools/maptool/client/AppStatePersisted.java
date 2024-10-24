@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.prefs.Preferences;
+import java.util.stream.Collectors;
 import net.rptools.maptool.model.Zone;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -169,32 +170,26 @@ public class AppStatePersisted {
   }
 
   public static Set<Zone.TopologyType> getTopologyTypes() {
-    var result = EnumSet.noneOf(Zone.TopologyType.class);
-
     try {
       String typeNames = prefs.get(KEY_TOPOLOGY_TYPES, "");
       if ("".equals(typeNames)) {
         // Fallback to the key used prior to the introduction of various VBL types.
         String oldDrawingMode = prefs.get(KEY_OLD_TOPOLOGY_DRAWING_MODE, DEFAULT_TOPOLOGY_TYPE);
-        switch (oldDrawingMode) {
-          case "VBL" -> result.add(Zone.TopologyType.WALL_VBL);
-          case "MBL" -> result.add(Zone.TopologyType.MBL);
-          case "COMBINED" -> {
-            result.add(Zone.TopologyType.WALL_VBL);
-            result.add(Zone.TopologyType.MBL);
-          }
-          default -> result.add(Zone.TopologyType.WALL_VBL);
-        }
+        return switch (oldDrawingMode) {
+          case "VBL" -> EnumSet.of(Zone.TopologyType.WALL_VBL);
+          case "MBL" -> EnumSet.of(Zone.TopologyType.MBL);
+          case "COMBINED" -> EnumSet.of(Zone.TopologyType.WALL_VBL, Zone.TopologyType.MBL);
+          default -> EnumSet.of(Zone.TopologyType.WALL_VBL);
+        };
       } else {
+        var result = EnumSet.noneOf(Zone.TopologyType.class);
         for (var topologyType : Zone.TopologyType.values()) {
-          var topologyTypeName = topologyType.toString();
-          if (typeNames.contains(topologyTypeName)) {
+          if (typeNames.contains(topologyType.name())) {
             result.add(topologyType);
           }
         }
+        return result;
       }
-
-      return result;
     } catch (Exception exc) {
       return EnumSet.of(Zone.TopologyType.WALL_VBL);
     }
@@ -203,14 +198,11 @@ public class AppStatePersisted {
   /**
    * Sets the selected topology modes.
    *
-   * @param types the topology types. A value of null resets to default.
+   * @param types the topology types.
    */
   public static void setTopologyTypes(Set<Zone.TopologyType> types) {
-    if (types == null) {
-      prefs.remove(KEY_TOPOLOGY_TYPES);
-    } else {
-      prefs.put(KEY_TOPOLOGY_TYPES, types.toString());
-    }
+    String joined = types.stream().map(Enum::name).collect(Collectors.joining(",", "[", "]"));
+    prefs.put(KEY_TOPOLOGY_TYPES, joined);
   }
 
   public static void setSavedPaintTextures(List<File> savedTextures) {

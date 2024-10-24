@@ -21,6 +21,8 @@ import java.util.Set;
 import javax.swing.Box;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import net.rptools.maptool.client.AppStatePersisted;
 import net.rptools.maptool.client.ui.theme.Icons;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
@@ -97,6 +99,14 @@ public class TopologyModeSelectionPanel extends JToolBar {
     button.setSelected(initiallySelectedTypes.contains(type));
     this.add(button);
     modeButtons.put(type, button);
+    button.addChangeListener(
+        new ChangeListener() {
+          @Override
+          public void stateChanged(ChangeEvent e) {
+            // Remember the selection for the next time MT starts.
+            AppStatePersisted.setTopologyTypes(getMode());
+          }
+        });
   }
 
   public Set<Zone.TopologyType> getMode() {
