@@ -41,21 +41,14 @@ public interface ServerCommand {
 
   void setFoW(GUID zoneGUID, Area area, Set<GUID> selectedToks);
 
-  default void addTopology(GUID zoneGUID, Area area, Zone.TopologyTypeSet topologyTypes) {
+  default void updateTopology(
+      Zone zone, Area area, boolean erase, Zone.TopologyTypeSet topologyTypes) {
     for (var topologyType : topologyTypes) {
-      addTopology(zoneGUID, area, topologyType);
+      updateTopology(zone, area, erase, topologyType);
     }
   }
 
-  void addTopology(GUID zoneGUID, Area area, Zone.TopologyType topologyType);
-
-  default void removeTopology(GUID zoneGUID, Area area, Zone.TopologyTypeSet topologyTypes) {
-    for (var topologyType : topologyTypes) {
-      removeTopology(zoneGUID, area, topologyType);
-    }
-  }
-
-  void removeTopology(GUID zoneGUID, Area area, Zone.TopologyType topologyType);
+  void updateTopology(Zone zone, Area area, boolean erase, Zone.TopologyType topologyType);
 
   void enforceZoneView(GUID zoneGUID, int x, int y, double scale, int width, int height);
 

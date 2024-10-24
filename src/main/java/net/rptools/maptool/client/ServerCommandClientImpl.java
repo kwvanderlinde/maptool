@@ -392,23 +392,18 @@ public class ServerCommandClientImpl implements ServerCommand {
     makeServerCall(Message.newBuilder().setToggleTokenMoveWaypointMsg(msg).build());
   }
 
-  public void addTopology(GUID zoneGUID, Area area, Zone.TopologyType topologyType) {
+  @Override
+  public void updateTopology(Zone zone, Area area, boolean erase, Zone.TopologyType topologyType) {
     var msg =
-        AddTopologyMsg.newBuilder()
-            .setZoneGuid(zoneGUID.toString())
-            .setType(TopologyTypeDto.valueOf(topologyType.name()))
-            .setArea(Mapper.map(area));
-
-    makeServerCall(Message.newBuilder().setAddTopologyMsg(msg).build());
-  }
-
-  public void removeTopology(GUID zoneGUID, Area area, Zone.TopologyType topologyType) {
-    var msg =
-        RemoveTopologyMsg.newBuilder()
-            .setZoneGuid(zoneGUID.toString())
+        UpdateTopologyMsg.newBuilder()
+            .setZoneGuid(zone.getId().toString())
             .setArea(Mapper.map(area))
+            .setErase(erase)
             .setType(TopologyTypeDto.valueOf(topologyType.name()));
-    makeServerCall(Message.newBuilder().setRemoveTopologyMsg(msg).build());
+
+    // Update locally as well.
+    zone.updateTopology(area, erase, topologyType);
+    makeServerCall(Message.newBuilder().setUpdateTopologyMsg(msg).build());
   }
 
   public void exposePCArea(GUID zoneGUID) {

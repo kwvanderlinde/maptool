@@ -83,16 +83,8 @@ public class OvalTopologyTool extends AbstractDrawingTool implements MouseMotion
                 oval.getEndPoint().y,
                 10);
 
-        if (isEraser(e)) {
-          getZone().removeTopology(area);
-          MapTool.serverCommand()
-              .removeTopology(getZone().getId(), area, getZone().getTopologyTypes());
-        } else {
-          getZone().addTopology(area);
-          MapTool.serverCommand()
-              .addTopology(getZone().getId(), area, getZone().getTopologyTypes());
-        }
-        renderer.repaint();
+        MapTool.serverCommand()
+            .updateTopology(getZone(), area, isEraser(e), getZone().getTopologyTypes());
         oval = null;
       }
       setIsEraser(isEraser(e));

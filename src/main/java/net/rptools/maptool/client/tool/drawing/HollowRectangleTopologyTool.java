@@ -89,17 +89,8 @@ public class HollowRectangleTopologyTool extends AbstractDrawingTool
               new Area(new java.awt.Rectangle(x1 + 1, y1 + 1, x2 - x1 - 2, y2 - y1 - 2));
           area.subtract(innerArea);
         }
-        if (isEraser(e)) {
-          getZone().removeTopology(area);
-          MapTool.serverCommand()
-              .removeTopology(getZone().getId(), area, getZone().getTopologyTypes());
-        } else {
-          getZone().addTopology(area);
-          MapTool.serverCommand()
-              .addTopology(getZone().getId(), area, getZone().getTopologyTypes());
-        }
-        renderer.repaint();
-        // TODO: send this to the server
+        MapTool.serverCommand()
+            .updateTopology(getZone(), area, isEraser(e), getZone().getTopologyTypes());
         rectangle = null;
       }
       setIsEraser(isEraser(e));

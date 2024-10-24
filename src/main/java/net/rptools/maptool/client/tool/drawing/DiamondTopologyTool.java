@@ -79,18 +79,8 @@ public class DiamondTopologyTool extends AbstractDrawingTool implements MouseMot
           return;
         }
         Area area = new ShapeDrawable(diamond, false).getArea(getZone());
-        if (isEraser(e)) {
-          getZone().removeTopology(area);
-          MapTool.serverCommand()
-              .removeTopology(getZone().getId(), area, getZone().getTopologyTypes());
-        } else {
-          getZone().addTopology(area);
-          MapTool.serverCommand()
-              .addTopology(getZone().getId(), area, getZone().getTopologyTypes());
-        }
-        renderer.repaint();
-        // TODO: send this to the server
-
+        MapTool.serverCommand()
+            .updateTopology(getZone(), area, isEraser(e), getZone().getTopologyTypes());
         diamond = null;
       }
       setIsEraser(isEraser(e));

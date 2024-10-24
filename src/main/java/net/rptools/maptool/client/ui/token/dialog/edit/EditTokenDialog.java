@@ -1343,11 +1343,12 @@ public class EditTokenDialog extends AbeillePanel<Token> {
                 for (final var type : Zone.TopologyType.values()) {
                   final var topology = getTokenTopologyPanel().getTopology(type);
                   if (topology != null) {
-                    TokenVBL.renderTopology(
-                        MapTool.getFrame().getCurrentZoneRenderer(),
-                        getTokenTopologyPanel().getToken().getTransformedTopology(topology),
-                        false,
-                        type);
+                    MapTool.serverCommand()
+                        .updateTopology(
+                            MapTool.getFrame().getCurrentZoneRenderer().getZone(),
+                            getTokenTopologyPanel().getToken().getTransformedTopology(topology),
+                            false,
+                            type);
                   }
                 }
 
@@ -1377,8 +1378,12 @@ public class EditTokenDialog extends AbeillePanel<Token> {
                           MapTool.getFrame().getCurrentZoneRenderer(),
                           getTokenTopologyPanel().getToken(),
                           type);
-                  TokenVBL.renderTopology(
-                      MapTool.getFrame().getCurrentZoneRenderer(), topologyToDelete, true, type);
+                  MapTool.serverCommand()
+                      .updateTopology(
+                          MapTool.getFrame().getCurrentZoneRenderer().getZone(),
+                          topologyToDelete,
+                          true,
+                          type);
                 }
               }
 

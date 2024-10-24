@@ -290,7 +290,7 @@ public class Topology_Functions extends AbstractFunction {
             default -> null;
           };
       if (newArea != null) {
-        TokenVBL.renderTopology(renderer, newArea, erase, topologyType);
+        MapTool.serverCommand().updateTopology(renderer.getZone(), newArea, erase, topologyType);
       }
     }
   }
@@ -595,8 +595,9 @@ public class Topology_Functions extends AbstractFunction {
     }
 
     if (topologyFromToken) {
-      TokenVBL.renderTopology(
-          renderer, token.getTransformedTopology(topologyType), false, topologyType);
+      MapTool.serverCommand()
+          .updateTopology(
+              renderer.getZone(), token.getTransformedTopology(topologyType), false, topologyType);
       if (delete) {
         token.setTopology(topologyType, null);
       }
@@ -605,7 +606,7 @@ public class Topology_Functions extends AbstractFunction {
       token.setTopology(
           topologyType, TokenVBL.getMapTopology_transformed(renderer, token, topologyType));
       if (delete) {
-        TokenVBL.renderTopology(renderer, topology, true, topologyType);
+        MapTool.serverCommand().updateTopology(renderer.getZone(), topology, true, topologyType);
       }
     }
   }

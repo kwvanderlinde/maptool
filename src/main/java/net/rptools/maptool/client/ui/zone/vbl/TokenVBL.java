@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
@@ -175,28 +174,6 @@ public class TokenVBL {
     }
 
     return simplifiedArea;
-  }
-
-  /**
-   * This is a convenience method to send the topology Area to be rendered to the server
-   *
-   * @param renderer Reference to the ZoneRenderer
-   * @param area A valid Area containing topology polygons
-   * @param erase Set to true to erase the topology, otherwise draw it
-   * @param topologyType Determines which topology (Wall VBL, Hill VBL, Pit VBL, MBL) to modify.
-   */
-  public static void renderTopology(
-      ZoneRenderer renderer, Area area, boolean erase, Zone.TopologyType topologyType) {
-    if (erase) {
-      renderer.getZone().removeTopology(area, topologyType);
-      MapTool.serverCommand().removeTopology(renderer.getZone().getId(), area, topologyType);
-    } else {
-      renderer.getZone().addTopology(area, topologyType);
-      MapTool.serverCommand().addTopology(renderer.getZone().getId(), area, topologyType);
-    }
-
-    MapTool.getFrame().getCurrentZoneRenderer().getZone().tokenTopologyChanged();
-    renderer.repaint();
   }
 
   public static Area getMapTopology_transformed(
