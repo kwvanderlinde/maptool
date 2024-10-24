@@ -184,9 +184,8 @@ public class TokenVBL {
     final Area topologyUnderToken;
     if (token.getShape() == Token.TokenShape.TOP_DOWN && token.getFacingInDegrees() != 0) {
       // Get the center of the token bounds
-      // TODO Incorporate the anchor.
-      double rx = footprintBounds.getCenterX();
-      double ry = footprintBounds.getCenterY();
+      double rx = footprintBounds.getCenterX() - token.getAnchor().x;
+      double ry = footprintBounds.getCenterY() - token.getAnchor().y;
 
       // Rotate the area to match the token facing
       captureArea.rotate(Math.toRadians(token.getFacingInDegrees()), rx, ry);
@@ -230,9 +229,8 @@ public class TokenVBL {
 
     if (token.getShape() == Token.TokenShape.TOP_DOWN && token.getFacingInDegrees() != 0) {
       // Get the center of the token bounds
-      // TODO Incorporate the anchor.
-      double rx = footprintBounds.getCenterX();
-      double ry = footprintBounds.getCenterY();
+      double rx = footprintBounds.getCenterX() - token.getAnchor().x;
+      double ry = footprintBounds.getCenterY() - token.getAnchor().y;
 
       // Rotate the area to match the token facing
       atArea.rotate(-Math.toRadians(token.getFacingInDegrees()), rx, ry);
