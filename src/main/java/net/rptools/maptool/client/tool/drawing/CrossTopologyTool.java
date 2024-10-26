@@ -91,18 +91,9 @@ public class CrossTopologyTool extends AbstractDrawingTool implements MouseMotio
             GraphicsUtil.createLine(1, new Point2D.Double(x1, y1), new Point2D.Double(x2, y2));
         area.add(
             GraphicsUtil.createLine(1, new Point2D.Double(x1, y2), new Point2D.Double(x2, y1)));
+        MapTool.serverCommand()
+            .updateTopology(getZone(), area, isEraser(e), getZone().getTopologyTypes());
 
-        if (isEraser(e)) {
-          getZone().removeTopology(area);
-          MapTool.serverCommand()
-              .removeTopology(getZone().getId(), area, getZone().getTopologyTypes());
-        } else {
-          getZone().addTopology(area);
-          MapTool.serverCommand()
-              .addTopology(getZone().getId(), area, getZone().getTopologyTypes());
-        }
-        renderer.repaint();
-        // TODO: send this to the server
         cross = null;
       }
       setIsEraser(isEraser(e));

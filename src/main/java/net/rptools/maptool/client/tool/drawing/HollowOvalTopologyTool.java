@@ -95,17 +95,8 @@ public class HollowOvalTopologyTool extends AbstractDrawingTool implements Mouse
           area.subtract(innerArea);
         }
 
-        if (isEraser(e)) {
-          getZone().removeTopology(area);
-          MapTool.serverCommand()
-              .removeTopology(getZone().getId(), area, getZone().getTopologyTypes());
-        } else {
-          getZone().addTopology(area);
-          MapTool.serverCommand()
-              .addTopology(getZone().getId(), area, getZone().getTopologyTypes());
-        }
-        renderer.repaint();
-
+        MapTool.serverCommand()
+            .updateTopology(getZone(), area, isEraser(e), getZone().getTopologyTypes());
         oval = null;
       }
 
