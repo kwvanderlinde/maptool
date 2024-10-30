@@ -114,7 +114,7 @@ public class MapToolServer {
     this.router = new Router();
 
     // Make sure the server has a different copy than the client.
-    this.campaign = new Campaign(campaign);
+    this.campaign = campaign;
 
     assetProducerThread = new AssetProducerThread();
 
