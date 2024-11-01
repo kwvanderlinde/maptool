@@ -16,6 +16,7 @@ package net.rptools.maptool.client.ui.zone.renderer;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.annotation.Nonnull;
@@ -111,18 +112,31 @@ public class SelectionSet {
     return selectionSet.contains(token.getId());
   }
 
+  /** Aborts the movement for this selection. */
+  public void cancel() {
+    walker.close();
+
+    renderPathTask.cancel(true);
+  }
+
   // This is called when movement is committed/done. It'll let the last thread either finish or
   // timeout
   public void renderFinalPath() {
+    walker.close();
+
     if (renderer.zone.getGrid().getCapabilities().isPathingSupported()
         && token.isSnapToGrid()
         && renderPathTask != null) {
-      while (!renderPathTask.isDone()) {
-        log.trace("Waiting on Path Rendering... ");
+
+      log.trace("Waiting on Path Rendering... ");
+      while (true) {
         try {
-          Thread.sleep(10);
+          renderPathTask.get();
+          break;
         } catch (InterruptedException e) {
-          e.printStackTrace();
+        } catch (ExecutionException e) {
+          log.error("Error while waiting for task to finish", e);
+          break;
         }
       }
     }
@@ -149,16 +163,7 @@ public class SelectionSet {
 
       renderPathTask =
           new RenderPathWorker(
-              walker,
-              point,
-              restrictMovement,
-              terrainModifiersIgnored,
-              token.getTransformedMaskTopology(Zone.TopologyType.WALL_VBL),
-              token.getTransformedMaskTopology(Zone.TopologyType.HILL_VBL),
-              token.getTransformedMaskTopology(Zone.TopologyType.PIT_VBL),
-              token.getTransformedMaskTopology(Zone.TopologyType.COVER_VBL),
-              token.getTransformedMaskTopology(Zone.TopologyType.MBL),
-              renderer);
+              walker, point, restrictMovement, terrainModifiersIgnored, token, renderer);
       renderPathThreadPool.execute(renderPathTask);
     }
   }

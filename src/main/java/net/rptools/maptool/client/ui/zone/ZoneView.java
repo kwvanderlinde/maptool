@@ -150,8 +150,6 @@ public class ZoneView {
   /** Holds the auras from lightSourceMap after they have been combined. */
   private final Map<PlayerView, List<DrawableLight>> drawableAuras = new HashMap<>();
 
-  private final Map<Zone.TopologyType, Area> topologyAreas = new EnumMap<>(Zone.TopologyType.class);
-
   /**
    * Construct ZoneView from zone. Build lightSourceMap, and add ZoneView to Zone as listener.
    *
@@ -226,34 +224,6 @@ public class ZoneView {
    */
   public boolean isUsingVision() {
     return zone.getVisionType() != Zone.VisionType.OFF;
-  }
-
-  /**
-   * Get the map and token topology of the requested type.
-   *
-   * <p>The topology is cached and should only regenerate when not yet present, which should happen
-   * on flush calls.
-   *
-   * @param topologyType The type of topology to get.
-   * @return the area of the topology.
-   */
-  public synchronized Area getTopology(Zone.TopologyType topologyType) {
-    var topology = topologyAreas.get(topologyType);
-
-    if (topology == null) {
-      log.debug("ZoneView topology area for {} is null, generating...", topologyType.name());
-
-      topology = new Area(zone.getMaskTopology(topologyType));
-      List<Token> topologyTokens =
-          MapTool.getFrame().getCurrentZoneRenderer().getZone().getTokensWithTopology(topologyType);
-      for (Token topologyToken : topologyTokens) {
-        topology.add(topologyToken.getTransformedMaskTopology(topologyType));
-      }
-
-      topologyAreas.put(topologyType, topology);
-    }
-
-    return topology;
   }
 
   private IlluminationModel getIlluminationModel(IlluminationKey illuminationKey) {
@@ -818,7 +788,6 @@ public class ZoneView {
 
   private void onTopologyChanged() {
     flush();
-    topologyAreas.clear();
   }
 
   @Subscribe
@@ -887,7 +856,6 @@ public class ZoneView {
 
     if (event.tokens().stream().anyMatch(Token::hasAnyTopology)) {
       flush();
-      topologyAreas.clear();
     }
   }
 
@@ -917,7 +885,6 @@ public class ZoneView {
 
     if (tokens.stream().anyMatch(Token::hasAnyTopology)) {
       flush();
-      topologyAreas.clear();
     }
   }
 
