@@ -19,6 +19,7 @@ import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.Area;
+import java.awt.geom.Point2D;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -431,6 +432,71 @@ public class Zone {
     drawablesByLayer.put(Layer.GM, gmDrawables);
     drawablesByLayer.put(Layer.OBJECT, objectDrawables);
     drawablesByLayer.put(Layer.BACKGROUND, backgroundDrawables);
+
+    tmpInitTopology();
+  }
+
+  @Deprecated
+  private void tmpInitTopology() {
+    switch (0) {
+      case 0 -> {
+        /* No topology added */
+      }
+      case 1 -> {
+        walls.string(
+            new Point2D.Double(0, 0),
+            builder -> {
+              builder.push(new Point2D.Double(100, 0));
+              builder.push(new Point2D.Double(100, 100));
+              builder.push(new Point2D.Double(0, 100));
+              builder.push(new Point2D.Double(0, 0));
+            });
+      }
+      case 2 -> {
+        // X-shape for noding check. I'd like to end up with two three-node string, but who knows?
+        walls.string(
+            new Point2D.Double(0, 0),
+            builder -> {
+              builder.push(new Point2D.Double(100, 100));
+            });
+        walls.string(
+            new Point2D.Double(100, 0),
+            builder -> {
+              builder.push(new Point2D.Double(0, 100));
+            });
+      }
+      case 3 -> {
+        // Another, but where they bounce off each other. This one is already noded.
+        walls.string(
+            new Point2D.Double(0, 0),
+            builder -> {
+              builder.push(new Point2D.Double(50, 50));
+              builder.push(new Point2D.Double(100, 0));
+            });
+        walls.string(
+            new Point2D.Double(0, 100),
+            builder -> {
+              builder.push(new Point2D.Double(50, 50));
+              builder.push(new Point2D.Double(100, 100));
+            });
+      }
+      case 7 -> {
+        // Only walls
+        walls.string(
+            new Point2D.Double(850, 200),
+            builder -> {
+              builder.push(new Point2D.Double(950, 250));
+              builder.push(new Point2D.Double(950, 350));
+            });
+
+        walls.string(
+            new Point2D.Double(800, 300),
+            builder -> {
+              builder.push(new Point2D.Double(900, 350));
+              builder.push(new Point2D.Double(900, 450));
+            });
+      }
+    }
   }
 
   public Zone() {
