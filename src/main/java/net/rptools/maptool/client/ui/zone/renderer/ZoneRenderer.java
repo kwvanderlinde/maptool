@@ -377,6 +377,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     if (set == null) {
       return;
     }
+    set.cancel();
     repaintDebouncer.dispatch();
   }
 
@@ -387,16 +388,13 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    */
   public void commitMoveSelectionSet(GUID keyTokenId) {
     // TODO: Quick hack to handle updating server state
-    SelectionSet set = selectionSetMap.get(keyTokenId);
-
+    SelectionSet set = selectionSetMap.remove(keyTokenId);
     if (set == null) {
       return;
     }
-
     // Let the last thread finish rendering the path if A* Pathfinding is on
     set.renderFinalPath();
 
-    removeMoveSelectionSet(keyTokenId);
     MapTool.serverCommand().stopTokenMove(getZone().getId(), keyTokenId);
     Token keyToken = new Token(zone.getToken(keyTokenId), true);
 
