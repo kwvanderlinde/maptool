@@ -31,7 +31,6 @@ import net.rptools.maptool.client.ui.zone.Illumination.LumensLevel;
 import net.rptools.maptool.client.ui.zone.IlluminationModel.ContributedLight;
 import net.rptools.maptool.client.ui.zone.IlluminationModel.LightInfo;
 import net.rptools.maptool.client.ui.zone.Illuminator.LitArea;
-import net.rptools.maptool.client.ui.zone.vbl.AreaTree;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.player.Player;
@@ -153,9 +152,6 @@ public class ZoneView {
 
   private final Map<Zone.TopologyType, Area> topologyAreas = new EnumMap<>(Zone.TopologyType.class);
 
-  private final Map<Zone.TopologyType, AreaTree> topologyTrees =
-      new EnumMap<>(Zone.TopologyType.class);
-
   /**
    * Construct ZoneView from zone. Build lightSourceMap, and add ZoneView to Zone as listener.
    *
@@ -238,7 +234,7 @@ public class ZoneView {
    * <p>The topology is cached and should only regenerate when not yet present, which should happen
    * on flush calls.
    *
-   * @param topologyType The type of topology tree to get.
+   * @param topologyType The type of topology to get.
    * @return the area of the topology.
    */
   public synchronized Area getTopology(Zone.TopologyType topologyType) {
@@ -258,33 +254,6 @@ public class ZoneView {
     }
 
     return topology;
-  }
-
-  /**
-   * Get the topology tree of the requested type.
-   *
-   * <p>The topology tree is cached and should only regenerate when the tree is not present, which
-   * should happen on flush calls.
-   *
-   * <p>This method is equivalent to building an AreaTree from the results of getTopology(), but the
-   * results are cached.
-   *
-   * @param topologyType The type of topology tree to get.
-   * @return the AreaTree (topology tree).
-   */
-  private synchronized AreaTree getTopologyTree(Zone.TopologyType topologyType) {
-    var topologyTree = topologyTrees.get(topologyType);
-
-    if (topologyTree == null) {
-      log.debug("ZoneView topology tree for {} is null, generating...", topologyType.name());
-
-      var topology = getTopology(topologyType);
-
-      topologyTree = new AreaTree(topology);
-      topologyTrees.put(topologyType, topologyTree);
-    }
-
-    return topologyTree;
   }
 
   private IlluminationModel getIlluminationModel(IlluminationKey illuminationKey) {
@@ -348,13 +317,7 @@ public class ZoneView {
 
     if (!lightSource.isIgnoresVBL()) {
       lightSourceVisibleArea =
-          FogUtil.calculateVisibility(
-              p,
-              lightSourceArea,
-              getTopologyTree(Zone.TopologyType.WALL_VBL),
-              getTopologyTree(Zone.TopologyType.HILL_VBL),
-              getTopologyTree(Zone.TopologyType.PIT_VBL),
-              getTopologyTree(Zone.TopologyType.COVER_VBL));
+          FogUtil.calculateVisibility(p, lightSourceArea, zone.prepareNodedTopologies());
     }
     if (lightSourceVisibleArea.isEmpty()) {
       // Nothing illuminated for this source.
@@ -593,14 +556,7 @@ public class ZoneView {
       Point p = FogUtil.calculateVisionCenter(token, zone);
       Area visibleArea = sight.getVisionShape(token, zone);
       visibleArea.transform(AffineTransform.getTranslateInstance(p.x, p.y));
-      tokenVisibleArea =
-          FogUtil.calculateVisibility(
-              p,
-              visibleArea,
-              getTopologyTree(Zone.TopologyType.WALL_VBL),
-              getTopologyTree(Zone.TopologyType.HILL_VBL),
-              getTopologyTree(Zone.TopologyType.PIT_VBL),
-              getTopologyTree(Zone.TopologyType.COVER_VBL));
+      tokenVisibleArea = FogUtil.calculateVisibility(p, visibleArea, zone.prepareNodedTopologies());
       tokenVisibleAreaCache.put(token.getId(), tokenVisibleArea);
     }
 
@@ -687,12 +643,7 @@ public class ZoneView {
                   if (!lightSource.isIgnoresVBL()) {
                     visibleArea =
                         FogUtil.calculateVisibility(
-                            p,
-                            lightSourceArea,
-                            getTopologyTree(Zone.TopologyType.WALL_VBL),
-                            getTopologyTree(Zone.TopologyType.HILL_VBL),
-                            getTopologyTree(Zone.TopologyType.PIT_VBL),
-                            getTopologyTree(Zone.TopologyType.COVER_VBL));
+                            p, lightSourceArea, zone.prepareNodedTopologies());
                   }
 
                   // This needs to be cached somehow
@@ -868,7 +819,6 @@ public class ZoneView {
   private void onTopologyChanged() {
     flush();
     topologyAreas.clear();
-    topologyTrees.clear();
   }
 
   @Subscribe
@@ -938,7 +888,6 @@ public class ZoneView {
     if (event.tokens().stream().anyMatch(Token::hasAnyTopology)) {
       flush();
       topologyAreas.clear();
-      topologyTrees.clear();
     }
   }
 
@@ -969,7 +918,6 @@ public class ZoneView {
     if (tokens.stream().anyMatch(Token::hasAnyTopology)) {
       flush();
       topologyAreas.clear();
-      topologyTrees.clear();
     }
   }
 
