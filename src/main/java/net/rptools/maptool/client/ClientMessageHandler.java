@@ -101,7 +101,7 @@ public class ClientMessageHandler implements MessageHandler {
       log.debug("{} got: {}", id, msgType);
 
       switch (msgType) {
-        case UPDATE_TOPOLOGY_MSG -> handle(msg.getUpdateTopologyMsg());
+        case UPDATE_LEGACY_TOPOLOGY_MSG -> handle(msg.getUpdateLegacyTopologyMsg());
         case BOOT_PLAYER_MSG -> handle(msg.getBootPlayerMsg());
         case CHANGE_ZONE_DISPLAY_NAME_MSG -> handle(msg.getChangeZoneDisplayNameMsg());
         case CLEAR_ALL_DRAWINGS_MSG -> handle(msg.getClearAllDrawingsMsg());
@@ -1003,16 +1003,16 @@ public class ClientMessageHandler implements MessageHandler {
         });
   }
 
-  private void handle(UpdateTopologyMsg updateTopologyMsg) {
+  private void handle(UpdateLegacyTopologyMsg updateLegacyTopologyMsg) {
     EventQueue.invokeLater(
         () -> {
-          var zoneGUID = GUID.valueOf(updateTopologyMsg.getZoneGuid());
-          var area = Mapper.map(updateTopologyMsg.getArea());
-          var erase = updateTopologyMsg.getErase();
-          var topologyType = Zone.TopologyType.valueOf(updateTopologyMsg.getType().name());
+          var zoneGUID = GUID.valueOf(updateLegacyTopologyMsg.getZoneGuid());
+          var area = Mapper.map(updateLegacyTopologyMsg.getArea());
+          var erase = updateLegacyTopologyMsg.getErase();
+          var topologyType = Zone.TopologyType.valueOf(updateLegacyTopologyMsg.getType().name());
 
           var zone = client.getCampaign().getZone(zoneGUID);
-          zone.updateTopology(area, erase, topologyType);
+          zone.updateLegacyTopology(area, erase, topologyType);
         });
   }
 

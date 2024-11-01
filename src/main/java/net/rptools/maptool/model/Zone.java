@@ -55,11 +55,11 @@ import net.rptools.maptool.model.zones.InitiativeListChanged;
 import net.rptools.maptool.model.zones.LabelAdded;
 import net.rptools.maptool.model.zones.LabelChanged;
 import net.rptools.maptool.model.zones.LabelRemoved;
+import net.rptools.maptool.model.zones.LegacyTopologyChanged;
 import net.rptools.maptool.model.zones.TokenEdited;
 import net.rptools.maptool.model.zones.TokensAdded;
 import net.rptools.maptool.model.zones.TokensChanged;
 import net.rptools.maptool.model.zones.TokensRemoved;
-import net.rptools.maptool.model.zones.TopologyChanged;
 import net.rptools.maptool.model.zones.ZoneLightingChanged;
 import net.rptools.maptool.server.Mapper;
 import net.rptools.maptool.server.proto.DrawnElementListDto;
@@ -362,6 +362,8 @@ public class Zone {
   private DrawablePaint fogPaint;
   private transient UndoPerZone undo;
 
+  // region Legacy topology masks
+
   /**
    * The Wall VBL topology of the zone. Does not include token Wall VBL. Should really be called
    * wallVbl.
@@ -379,6 +381,8 @@ public class Zone {
 
   /** The MBL topology of the zone. Does not include token MBL. Should really be called mbl. */
   private Area topologyTerrain = new Area();
+
+  // endregion
 
   // The 'board' layer, at the very bottom of the layer stack.
   // Itself has two sub-layers:
@@ -662,11 +666,13 @@ public class Zone {
 
     boardPosition = (Point) zone.boardPosition.clone();
     exposedArea = (Area) zone.exposedArea.clone();
-    topology = (Area) zone.topology.clone();
-    hillVbl = (Area) zone.hillVbl.clone();
-    pitVbl = (Area) zone.pitVbl.clone();
-    coverVbl = (Area) zone.coverVbl.clone();
-    topologyTerrain = (Area) zone.topologyTerrain.clone();
+
+    topology = new Area(zone.topology);
+    hillVbl = new Area(zone.hillVbl);
+    pitVbl = new Area(zone.pitVbl);
+    coverVbl = new Area(zone.coverVbl);
+    topologyTerrain = new Area(zone.topologyTerrain);
+
     aStarRounding = zone.aStarRounding;
     isVisible = zone.isVisible;
     hasFog = zone.hasFog;
@@ -943,7 +949,7 @@ public class Zone {
     // return combined.intersects(tokenSize);
   }
 
-  public Area getTopology(TopologyType topologyType) {
+  public Area getLegacyTopology(TopologyType topologyType) {
     return switch (topologyType) {
       case WALL_VBL -> topology;
       case HILL_VBL -> hillVbl;
@@ -959,7 +965,7 @@ public class Zone {
    * @param area the area
    * @param topologyType the type of the topology
    */
-  public void updateTopology(Area area, boolean erase, TopologyType topologyType) {
+  public void updateLegacyTopology(Area area, boolean erase, TopologyType topologyType) {
     var topology =
         switch (topologyType) {
           case WALL_VBL -> this.topology;
@@ -975,13 +981,12 @@ public class Zone {
       topology.add(area);
     }
 
-    new MapToolEventBus().getMainEventBus().post(new TopologyChanged(this));
+    new MapToolEventBus().getMainEventBus().post(new LegacyTopologyChanged(this));
   }
 
-  /** Fire the event TOPOLOGY_CHANGED. */
-  // TODO Remove this in favour of firing from token as it own its topology.
-  public void tokenTopologyChanged() {
-    new MapToolEventBus().getMainEventBus().post(new TopologyChanged(this));
+  /** Fire the event {@link LegacyTopologyChanged}. */
+  public void tokenLegacyTopologyChanged() {
+    new MapToolEventBus().getMainEventBus().post(new LegacyTopologyChanged(this));
   }
 
   /**

@@ -886,7 +886,7 @@ public class EditTokenDialog extends AbeillePanel<Token> {
 
     // TOPOLOGY
     for (final var type : Zone.TopologyType.values()) {
-      token.setTopology(type, getTokenTopologyPanel().getTopology(type));
+      token.setLegacyTopology(type, getTokenTopologyPanel().getTopology(type));
     }
     token.setIsAlwaysVisible(getAlwaysVisibleButton().isSelected());
     token.setAlwaysVisibleTolerance((int) getVisibilityToleranceSpinner().getValue());
@@ -913,7 +913,7 @@ public class EditTokenDialog extends AbeillePanel<Token> {
     MapTool.getFrame().resetTokenPanels();
 
     // Jamz: TODO check if topology changed on token first
-    MapTool.getFrame().getCurrentZoneRenderer().getZone().tokenTopologyChanged();
+    MapTool.getFrame().getCurrentZoneRenderer().getZone().tokenLegacyTopologyChanged();
     return true;
   }
 
@@ -1344,9 +1344,11 @@ public class EditTokenDialog extends AbeillePanel<Token> {
                   final var topology = getTokenTopologyPanel().getTopology(type);
                   if (topology != null) {
                     MapTool.serverCommand()
-                        .updateTopology(
+                        .updateLegacyTopology(
                             MapTool.getFrame().getCurrentZoneRenderer().getZone(),
-                            getTokenTopologyPanel().getToken().getTransformedTopology(topology),
+                            getTokenTopologyPanel()
+                                .getToken()
+                                .getTransformedLegacyTopology(topology),
                             false,
                             type);
                   }
@@ -1373,7 +1375,7 @@ public class EditTokenDialog extends AbeillePanel<Token> {
                 getTokenTopologyPanel().putCustomTopology(type, newTokenTopology);
 
                 if (removeFromMap) {
-                  MapTool.serverCommand().updateTopology(zone, mapTopology, true, type);
+                  MapTool.serverCommand().updateLegacyTopology(zone, mapTopology, true, type);
                 }
               }
 

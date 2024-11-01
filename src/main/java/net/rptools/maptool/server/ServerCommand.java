@@ -42,14 +42,14 @@ public interface ServerCommand {
 
   void setFoW(GUID zoneGUID, Area area, Set<GUID> selectedToks);
 
-  default void updateTopology(
+  default void updateLegacyTopology(
       Zone zone, Area area, boolean erase, Set<Zone.TopologyType> topologyTypes) {
     for (var topologyType : topologyTypes) {
-      updateTopology(zone, area, erase, topologyType);
+      updateLegacyTopology(zone, area, erase, topologyType);
     }
   }
 
-  void updateTopology(Zone zone, Area area, boolean erase, Zone.TopologyType topologyType);
+  void updateLegacyTopology(Zone zone, Area area, boolean erase, Zone.TopologyType topologyType);
 
   void enforceZoneView(GUID zoneGUID, int x, int y, double scale, int width, int height);
 
@@ -183,7 +183,7 @@ public interface ServerCommand {
 
   void removeData(String type, String namespace, String name);
 
-  void setTokenTopology(Token token, @Nullable Area area, Zone.TopologyType topologyType);
+  void setTokenLegacyTopology(Token token, @Nullable Area area, Zone.TopologyType topologyType);
 
   void updateTokenProperty(Token token, Token.Update update, int value);
 

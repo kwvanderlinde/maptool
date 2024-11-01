@@ -103,7 +103,7 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
     }
 
     MapTool.serverCommand()
-        .updateTopology(getZone(), area, isEraser(), AppStatePersisted.getTopologyTypes());
+        .updateLegacyTopology(getZone(), area, isEraser(), AppStatePersisted.getTopologyTypes());
   }
 
   private Area getTokenTopology(Zone.TopologyType topologyType) {
@@ -111,7 +111,7 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
 
     Area tokenTopology = new Area();
     for (Token topologyToken : topologyTokens) {
-      tokenTopology.add(topologyToken.getTransformedTopology(topologyType));
+      tokenTopology.add(topologyToken.getTransformedLegacyTopology(topologyType));
     }
 
     return tokenTopology;
@@ -142,19 +142,19 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
     g2.fill(getTokenTopology(Zone.TopologyType.COVER_VBL));
 
     g2.setColor(AppStyle.topologyTerrainColor);
-    g2.fill(zone.getTopology(Zone.TopologyType.MBL));
+    g2.fill(zone.getLegacyTopology(Zone.TopologyType.MBL));
 
     g2.setColor(AppStyle.topologyColor);
-    g2.fill(zone.getTopology(Zone.TopologyType.WALL_VBL));
+    g2.fill(zone.getLegacyTopology(Zone.TopologyType.WALL_VBL));
 
     g2.setColor(AppStyle.hillVblColor);
-    g2.fill(zone.getTopology(Zone.TopologyType.HILL_VBL));
+    g2.fill(zone.getLegacyTopology(Zone.TopologyType.HILL_VBL));
 
     g2.setColor(AppStyle.pitVblColor);
-    g2.fill(zone.getTopology(Zone.TopologyType.PIT_VBL));
+    g2.fill(zone.getLegacyTopology(Zone.TopologyType.PIT_VBL));
 
     g2.setColor(AppStyle.coverVblColor);
-    g2.fill(zone.getTopology(Zone.TopologyType.COVER_VBL));
+    g2.fill(zone.getLegacyTopology(Zone.TopologyType.COVER_VBL));
 
     if (state != null) {
       var result = strategy.getShape(state, currentPoint, centerOnOrigin, false);

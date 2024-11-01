@@ -35,10 +35,10 @@ import net.rptools.maptool.client.ui.zone.vbl.AreaTree;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.player.Player;
+import net.rptools.maptool.model.zones.LegacyTopologyChanged;
 import net.rptools.maptool.model.zones.TokensAdded;
 import net.rptools.maptool.model.zones.TokensChanged;
 import net.rptools.maptool.model.zones.TokensRemoved;
-import net.rptools.maptool.model.zones.TopologyChanged;
 import net.rptools.maptool.model.zones.ZoneLightingChanged;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -246,11 +246,11 @@ public class ZoneView {
     if (topology == null) {
       log.debug("ZoneView topology area for {} is null, generating...", topologyType.name());
 
-      topology = new Area(zone.getTopology(topologyType));
+      topology = new Area(zone.getLegacyTopology(topologyType));
       List<Token> topologyTokens =
           MapTool.getFrame().getCurrentZoneRenderer().getZone().getTokensWithTopology(topologyType);
       for (Token topologyToken : topologyTokens) {
-        topology.add(topologyToken.getTransformedTopology(topologyType));
+        topology.add(topologyToken.getTransformedLegacyTopology(topologyType));
       }
 
       topologyAreas.put(topologyType, topology);
@@ -864,7 +864,7 @@ public class ZoneView {
   }
 
   @Subscribe
-  private void onTopologyChanged(TopologyChanged event) {
+  private void onTopologyChanged(LegacyTopologyChanged event) {
     if (event.zone() != this.zone) {
       return;
     }

@@ -206,7 +206,7 @@ public class Token implements Cloneable {
     setTerrainModifier,
     setTerrainModifierOperation,
     setTerrainModifiersIgnored,
-    setTopology,
+    setLegacyTopology,
     setImageAsset,
     setPortraitImage,
     setCharsheetImage,
@@ -265,11 +265,16 @@ public class Token implements Cloneable {
   private int alwaysVisibleTolerance = 2; // Default for # of regions (out of 9) that must be seen
   // before token is shown over FoW
   private boolean isAlwaysVisible = false; // Controls whether a Token is shown over VBL
+
+  // region Legacy topology masks
+
   private Area vbl;
   private Area hillVbl;
   private Area pitVbl;
   private Area coverVbl;
   private Area mbl;
+
+  // endregion
 
   private String name = "";
   private Set<String> ownerList = new HashSet<>();
@@ -1370,7 +1375,7 @@ public class Token implements Cloneable {
    * @param topologyType The type of topology to return.
    * @return the current topology of the token.
    */
-  public Area getTopology(Zone.TopologyType topologyType) {
+  public Area getLegacyTopology(Zone.TopologyType topologyType) {
     return switch (topologyType) {
       case WALL_VBL -> vbl;
       case HILL_VBL -> hillVbl;
@@ -1386,8 +1391,8 @@ public class Token implements Cloneable {
    * @param topologyType The type of topology to transform.
    * @return the transformed topology for the token
    */
-  public Area getTransformedTopology(Zone.TopologyType topologyType) {
-    return getTransformedTopology(getTopology(topologyType));
+  public Area getTransformedLegacyTopology(Zone.TopologyType topologyType) {
+    return getTransformedLegacyTopology(getLegacyTopology(topologyType));
   }
 
   /**
@@ -1398,7 +1403,7 @@ public class Token implements Cloneable {
    * @param topologyType The type of topology to set.
    * @param topology the topology area to set.
    */
-  public void setTopology(Zone.TopologyType topologyType, @Nullable Area topology) {
+  public void setLegacyTopology(Zone.TopologyType topologyType, @Nullable Area topology) {
     if (topology != null && topology.isEmpty()) {
       topology = null;
     }
@@ -1410,7 +1415,6 @@ public class Token implements Cloneable {
       case COVER_VBL -> coverVbl = topology;
       case MBL -> mbl = topology;
     }
-    ;
 
     if (!hasAnyTopology()) {
       vblColorSensitivity = -1;
@@ -1424,7 +1428,7 @@ public class Token implements Cloneable {
    * @return true if the token has the given type of topology.
    */
   public boolean hasTopology(Zone.TopologyType topologyType) {
-    return getTopology(topologyType) != null;
+    return getLegacyTopology(topologyType) != null;
   }
 
   /**
@@ -1434,7 +1438,7 @@ public class Token implements Cloneable {
    */
   public boolean hasAnyTopology() {
     return Arrays.stream(Zone.TopologyType.values())
-        .map(this::getTopology)
+        .map(this::getLegacyTopology)
         .anyMatch(Objects::nonNull);
   }
 
@@ -1447,7 +1451,7 @@ public class Token implements Cloneable {
    * @author Jamz
    * @since 1.4.1.5
    */
-  public Area getTransformedTopology(Area areaToTransform) {
+  public Area getTransformedLegacyTopology(Area areaToTransform) {
     if (areaToTransform == null) {
       return null;
     }
@@ -2818,10 +2822,10 @@ public class Token implements Cloneable {
                 .map(TerrainModifierOperation::valueOf)
                 .collect(Collectors.toSet()));
         break;
-      case setTopology:
+      case setLegacyTopology:
         {
           final var topologyType = Zone.TopologyType.valueOf(parameters.get(0).getTopologyType());
-          setTopology(topologyType, Mapper.map(parameters.get(1).getArea()));
+          setLegacyTopology(topologyType, Mapper.map(parameters.get(1).getArea()));
           topologyChanged = true;
           break;
         }
@@ -2913,7 +2917,7 @@ public class Token implements Cloneable {
       zone.tokenPanelChanged(this);
     }
     if (topologyChanged) {
-      zone.tokenTopologyChanged();
+      zone.tokenLegacyTopologyChanged();
     }
     zone.tokenChanged(this); // fire Event.TOKEN_CHANGED, which updates topology if token has VBL
   }

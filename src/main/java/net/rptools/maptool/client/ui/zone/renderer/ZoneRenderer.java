@@ -505,7 +505,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             moveTimer.stop("updateTokenTree");
 
             if (topologyTokenMoved) {
-              zone.tokenTopologyChanged();
+              zone.tokenLegacyTopologyChanged();
             }
           });
     } else {
@@ -3504,7 +3504,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   }
 
   @Subscribe
-  private void onTopologyChanged(TopologyChanged event) {
+  private void onTopologyChanged(LegacyTopologyChanged event) {
     if (event.zone() != this.zone) {
       return;
     }

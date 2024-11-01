@@ -290,7 +290,8 @@ public class Topology_Functions extends AbstractFunction {
             default -> null;
           };
       if (newArea != null) {
-        MapTool.serverCommand().updateTopology(renderer.getZone(), newArea, erase, topologyType);
+        MapTool.serverCommand()
+            .updateLegacyTopology(renderer.getZone(), newArea, erase, topologyType);
       }
     }
   }
@@ -349,7 +350,8 @@ public class Topology_Functions extends AbstractFunction {
     Area topologyArea = new Area();
     for (int i = 0; i < topologyArray.size(); i++) {
       JsonObject topologyObject = topologyArray.get(i).getAsJsonObject();
-      Area tempTopologyArea = getTopology(renderer, topologyObject, topologyType, functionName);
+      Area tempTopologyArea =
+          getLegacyTopology(renderer, topologyObject, topologyType, functionName);
       topologyArea.add(tempTopologyArea);
     }
 
@@ -405,7 +407,7 @@ public class Topology_Functions extends AbstractFunction {
     }
 
     JsonArray allShapes = new JsonArray();
-    Area topologyArea = token.getTopology(topologyType);
+    Area topologyArea = token.getLegacyTopology(topologyType);
     if (topologyArea != null) {
       var areaShape = getAreaShapeObject(topologyArea);
       if (areaShape != null) {
@@ -515,7 +517,7 @@ public class Topology_Functions extends AbstractFunction {
       }
     }
     // Replace with new topology
-    MapTool.serverCommand().setTokenTopology(token, tokenTopology, topologyType);
+    MapTool.serverCommand().setTokenLegacyTopology(token, tokenTopology, topologyType);
 
     return results;
   }
@@ -594,21 +596,21 @@ public class Topology_Functions extends AbstractFunction {
 
     Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
     if (topologyFromToken) {
-      var newMapTopology = token.getTransformedTopology(topologyType);
+      var newMapTopology = token.getTransformedLegacyTopology(topologyType);
       if (newMapTopology != null) {
-        MapTool.serverCommand().updateTopology(zone, newMapTopology, false, topologyType);
+        MapTool.serverCommand().updateLegacyTopology(zone, newMapTopology, false, topologyType);
       }
       if (delete) {
-        MapTool.serverCommand().setTokenTopology(token, null, topologyType);
+        MapTool.serverCommand().setTokenLegacyTopology(token, null, topologyType);
       }
     } else {
       Area topology = TokenVBL.getTopology_underToken(zone, token, topologyType);
 
       MapTool.serverCommand()
-          .setTokenTopology(
+          .setTokenLegacyTopology(
               token, TokenVBL.transformTopology_toToken(zone, token, topology), topologyType);
       if (delete) {
-        MapTool.serverCommand().updateTopology(zone, topology, true, topologyType);
+        MapTool.serverCommand().updateLegacyTopology(zone, topology, true, topologyType);
       }
     }
   }
@@ -1065,7 +1067,7 @@ public class Topology_Functions extends AbstractFunction {
    * @return the topology area.
    * @throws ParserException If the minimum required parameters are not present in the JSON.
    */
-  private Area getTopology(
+  private Area getLegacyTopology(
       ZoneRenderer renderer,
       JsonObject topologyObject,
       Zone.TopologyType topologyType,
@@ -1154,7 +1156,7 @@ public class Topology_Functions extends AbstractFunction {
 
     // Note: when multiple modes are requested, the overlap between each topology is returned.
     var zone = renderer.getZone();
-    var topology = zone.getTopology(topologyType);
+    var topology = zone.getLegacyTopology(topologyType);
     area.intersect(topology);
 
     return area;

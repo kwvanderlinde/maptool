@@ -153,11 +153,11 @@ public class SelectionSet {
               point,
               restrictMovement,
               terrainModifiersIgnored,
-              token.getTransformedTopology(Zone.TopologyType.WALL_VBL),
-              token.getTransformedTopology(Zone.TopologyType.HILL_VBL),
-              token.getTransformedTopology(Zone.TopologyType.PIT_VBL),
-              token.getTransformedTopology(Zone.TopologyType.COVER_VBL),
-              token.getTransformedTopology(Zone.TopologyType.MBL),
+              token.getTransformedLegacyTopology(Zone.TopologyType.WALL_VBL),
+              token.getTransformedLegacyTopology(Zone.TopologyType.HILL_VBL),
+              token.getTransformedLegacyTopology(Zone.TopologyType.PIT_VBL),
+              token.getTransformedLegacyTopology(Zone.TopologyType.COVER_VBL),
+              token.getTransformedLegacyTopology(Zone.TopologyType.MBL),
               renderer);
       renderPathThreadPool.execute(renderPathTask);
     }

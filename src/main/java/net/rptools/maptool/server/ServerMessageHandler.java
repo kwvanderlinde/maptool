@@ -78,8 +78,8 @@ public class ServerMessageHandler implements MessageHandler {
       }
 
       switch (msgType) {
-        case UPDATE_TOPOLOGY_MSG -> {
-          handle(msg.getUpdateTopologyMsg());
+        case UPDATE_LEGACY_TOPOLOGY_MSG -> {
+          handle(msg.getUpdateLegacyTopologyMsg());
           sendToClients(id, msg);
         }
         case BRING_TOKENS_TO_FRONT_MSG -> handle(msg.getBringTokensToFrontMsg());
@@ -662,7 +662,7 @@ public class ServerMessageHandler implements MessageHandler {
         });
   }
 
-  private void handle(UpdateTopologyMsg updateTopologyMsg) {
+  private void handle(UpdateLegacyTopologyMsg updateTopologyMsg) {
     EventQueue.invokeLater(
         () -> {
           var zoneGUID = GUID.valueOf(updateTopologyMsg.getZoneGuid());
@@ -670,7 +670,7 @@ public class ServerMessageHandler implements MessageHandler {
           var erase = updateTopologyMsg.getErase();
           var topologyType = Zone.TopologyType.valueOf(updateTopologyMsg.getType().name());
           Zone zone = server.getCampaign().getZone(zoneGUID);
-          zone.updateTopology(area, erase, topologyType);
+          zone.updateLegacyTopology(area, erase, topologyType);
         });
   }
 

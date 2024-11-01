@@ -640,7 +640,7 @@ enum TokenUpdateDto {
     setTerrainModifier = 38;
     setTerrainModifierOperation = 39;
     setTerrainModifiersIgnored = 40;
-    setTopology = 41;
+    setLegacyTopology = 41;
     setImageAsset = 42;
     setPortraitImage = 43;
     setCharsheetImage = 44;
