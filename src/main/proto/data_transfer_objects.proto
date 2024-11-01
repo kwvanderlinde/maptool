@@ -710,3 +710,22 @@ message TokenFootPrintDto {
   double scale = 5;
   bool localize_name = 6;
 }
+
+// region WallTopology graph
+
+message VertexDto {
+  string id = 1;
+  DoublePointDto position = 2;
+}
+
+message WallDto {
+  string from = 1;
+  string to = 2;
+}
+
+message WallTopologyDto {
+  repeated VertexDto vertices = 1;
+  repeated WallDto walls = 2;
+}
+
+// ednregion
