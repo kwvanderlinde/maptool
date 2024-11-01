@@ -935,10 +935,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     // Calculations
     timer.start("calcs-1");
-    AffineTransform af = new AffineTransform();
-    af.translate(zoneScale.getOffsetX(), zoneScale.getOffsetY());
-    af.scale(getScale(), getScale());
-
     if (visibleScreenArea == null) {
       timer.start("ZoneRenderer-getVisibleArea");
       Area a = zoneView.getVisibleArea(view);
@@ -946,6 +942,9 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
       timer.start("createTransformedArea");
       if (!a.isEmpty()) {
+        AffineTransform af = new AffineTransform();
+        af.translate(zoneScale.getOffsetX(), zoneScale.getOffsetY());
+        af.scale(getScale(), getScale());
         visibleScreenArea = a.createTransformedArea(af);
       }
       timer.stop("createTransformedArea");
