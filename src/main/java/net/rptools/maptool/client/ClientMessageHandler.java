@@ -101,7 +101,7 @@ public class ClientMessageHandler implements MessageHandler {
       log.debug("{} got: {}", id, msgType);
 
       switch (msgType) {
-        case UPDATE_TOPOLOGY_MSG -> handle(msg.getUpdateTopologyMsg());
+        case UPDATE_MASK_TOPOLOGY_MSG -> handle(msg.getUpdateMaskTopologyMsg());
         case BOOT_PLAYER_MSG -> handle(msg.getBootPlayerMsg());
         case CHANGE_ZONE_DISPLAY_NAME_MSG -> handle(msg.getChangeZoneDisplayNameMsg());
         case CLEAR_ALL_DRAWINGS_MSG -> handle(msg.getClearAllDrawingsMsg());
@@ -1015,16 +1015,16 @@ public class ClientMessageHandler implements MessageHandler {
         });
   }
 
-  private void handle(UpdateTopologyMsg updateTopologyMsg) {
+  private void handle(UpdateMaskTopologyMsg updateMaskTopologyMsg) {
     EventQueue.invokeLater(
         () -> {
-          var zoneGUID = GUID.valueOf(updateTopologyMsg.getZoneGuid());
-          var area = Mapper.map(updateTopologyMsg.getArea());
-          var erase = updateTopologyMsg.getErase();
-          var topologyType = Zone.TopologyType.valueOf(updateTopologyMsg.getType().name());
+          var zoneGUID = GUID.valueOf(updateMaskTopologyMsg.getZoneGuid());
+          var area = Mapper.map(updateMaskTopologyMsg.getArea());
+          var erase = updateMaskTopologyMsg.getErase();
+          var topologyType = Zone.TopologyType.valueOf(updateMaskTopologyMsg.getType().name());
 
           var zone = client.getCampaign().getZone(zoneGUID);
-          zone.updateTopology(area, erase, topologyType);
+          zone.updateMaskTopology(area, erase, topologyType);
         });
   }
 

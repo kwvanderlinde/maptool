@@ -415,17 +415,18 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   @Override
-  public void updateTopology(Zone zone, Area area, boolean erase, Zone.TopologyType topologyType) {
+  public void updateMaskTopology(
+      Zone zone, Area area, boolean erase, Zone.TopologyType topologyType) {
     var msg =
-        UpdateTopologyMsg.newBuilder()
+        UpdateMaskTopologyMsg.newBuilder()
             .setZoneGuid(zone.getId().toString())
             .setArea(Mapper.map(area))
             .setErase(erase)
             .setType(TopologyTypeDto.valueOf(topologyType.name()));
 
     // Update locally as well.
-    zone.updateTopology(area, erase, topologyType);
-    makeServerCall(Message.newBuilder().setUpdateTopologyMsg(msg).build());
+    zone.updateMaskTopology(area, erase, topologyType);
+    makeServerCall(Message.newBuilder().setUpdateMaskTopologyMsg(msg).build());
   }
 
   public void exposePCArea(GUID zoneGUID) {
@@ -652,8 +653,8 @@ public class ServerCommandClientImpl implements ServerCommand {
             .build());
   }
 
-  @Override
-  public void setTokenTopology(Token token, @Nullable Area area, Zone.TopologyType topologyType) {
+  public void setTokenMaskTopology(
+      Token token, @Nullable Area area, Zone.TopologyType topologyType) {
     if (area == null) {
       // Will be converted back to null on the other end.
       area = new Area();
@@ -661,7 +662,7 @@ public class ServerCommandClientImpl implements ServerCommand {
 
     updateTokenProperty(
         token,
-        Token.Update.setTopology,
+        Token.Update.setMaskTopology,
         TokenPropertyValueDto.newBuilder().setTopologyType(topologyType.name()).build(),
         TokenPropertyValueDto.newBuilder().setArea(Mapper.map(area)).build());
   }

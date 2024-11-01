@@ -16,7 +16,7 @@ import "data_transfer_objects.proto";
 import "drawing_dto.proto";
 import "gamedata.proto";
 
-message UpdateTopologyMsg {
+message UpdateMaskTopologyMsg {
   string zone_guid = 1;
   AreaDto area = 2;
   bool erase = 3;
