@@ -67,6 +67,9 @@ public class AppStatePersisted {
   /** Represents the key used to save the paint textures to the preferences. */
   private static final String KEY_SAVED_PAINT_TEXTURES = "savedTextures";
 
+  /** Will be null until read from preferences. */
+  private static EnumSet<Zone.TopologyType> topologyTypes = null;
+
   public static void clearAssetRoots() {
     prefs.put(KEY_ASSET_ROOTS, "");
   }
@@ -169,7 +172,7 @@ public class AppStatePersisted {
     return mruCampaigns;
   }
 
-  public static Set<Zone.TopologyType> getTopologyTypes() {
+  private static EnumSet<Zone.TopologyType> readTopologyTypes() {
     try {
       String typeNames = prefs.get(KEY_TOPOLOGY_TYPES, "");
       if ("".equals(typeNames)) {
@@ -195,14 +198,31 @@ public class AppStatePersisted {
     }
   }
 
+  private static void writeTopologyTypes(Set<Zone.TopologyType> types) {
+    String joined = types.stream().map(Enum::name).collect(Collectors.joining(",", "[", "]"));
+    prefs.put(KEY_TOPOLOGY_TYPES, joined);
+  }
+
+  public static Set<Zone.TopologyType> getTopologyTypes() {
+    if (topologyTypes == null) {
+      topologyTypes = readTopologyTypes();
+    }
+    return topologyTypes;
+  }
+
   /**
    * Sets the selected topology modes.
    *
    * @param types the topology types.
    */
   public static void setTopologyTypes(Set<Zone.TopologyType> types) {
-    String joined = types.stream().map(Enum::name).collect(Collectors.joining(",", "[", "]"));
-    prefs.put(KEY_TOPOLOGY_TYPES, joined);
+    if (topologyTypes == null) {
+      topologyTypes = EnumSet.noneOf(Zone.TopologyType.class);
+    }
+    topologyTypes.clear();
+    topologyTypes.addAll(types);
+
+    writeTopologyTypes(topologyTypes);
   }
 
   public static void setSavedPaintTextures(List<File> savedTextures) {
