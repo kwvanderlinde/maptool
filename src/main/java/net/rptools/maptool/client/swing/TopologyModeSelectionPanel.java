@@ -30,18 +30,9 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Zone;
 
 public class TopologyModeSelectionPanel extends JToolBar {
-  /** The instance. Used to update the button when the ZoneRenderer is changed. */
-  private static TopologyModeSelectionPanel instance;
-
-  public static TopologyModeSelectionPanel getInstance() {
-    return instance;
-  }
-
   private final Map<Zone.TopologyType, JToggleButton> modeButtons;
 
   public TopologyModeSelectionPanel() {
-    instance = this;
-
     setFloatable(false);
     setRollover(true);
     setBorder(null);

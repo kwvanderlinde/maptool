@@ -34,9 +34,9 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
+import net.rptools.maptool.client.AppStatePersisted;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.macro.MacroContext;
-import net.rptools.maptool.client.swing.TopologyModeSelectionPanel;
 import net.rptools.maptool.client.swing.colorpicker.ColorPicker;
 import net.rptools.maptool.client.ui.AssetPaint;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
@@ -591,8 +591,7 @@ public class DrawPanelPopupMenu extends JPopupMenu {
     }
 
     MapTool.serverCommand()
-        .updateTopology(
-            renderer.getZone(), area, isEraser, TopologyModeSelectionPanel.getInstance().getMode());
+        .updateTopology(renderer.getZone(), area, isEraser, AppStatePersisted.getTopologyTypes());
   }
 
   private Path2D getPath(Drawable drawable) {
