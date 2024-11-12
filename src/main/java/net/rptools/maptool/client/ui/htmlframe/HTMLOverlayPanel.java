@@ -245,7 +245,6 @@ public class HTMLOverlayPanel extends JFXPanel {
     setVisible(true);
     Platform.runLater(
         () -> {
-          boolean needsSorting = false;
           HTMLOverlayManager overlayManager = getOverlay(name);
           if (overlayManager != null) {
             if ("".equals(html)) {
@@ -257,7 +256,6 @@ public class HTMLOverlayPanel extends JFXPanel {
               overlays.remove(overlayManager);
               overlayManager.setZOrder(zOrder);
               overlays.add(overlayManager);
-              needsSorting = true;
             }
           } else {
             overlayManager = new HTMLOverlayManager(name, zOrder);
@@ -266,12 +264,9 @@ public class HTMLOverlayPanel extends JFXPanel {
             root.getChildren().add(overlayManager.getWebView());
             if (!HTMLFrameFactory.isInternalOnly(overlayManager.getName())) {
               AppMenuBar.addToOverlayMenu(overlayManager);
-              needsSorting = true;
             }
           }
-          if (needsSorting) {
-            sortOverlays();
-          }
+          sortOverlays();
           overlayManager.updateContents(html, true);
           if (frameValue != null) {
             overlayManager.setValue(frameValue);
