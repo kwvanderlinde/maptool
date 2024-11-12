@@ -691,7 +691,6 @@ public class MapTool {
     chatAutoSave = new ChatAutoSave();
     chatAutoSave.setTimeout(AppPreferences.chatAutoSaveTimeInMinutes.get());
     AppPreferences.chatAutoSaveTimeInMinutes.onChange(chatAutoSave::setTimeout);
-    MapTool.getFrame().getOverlayPanel().init();
 
     // TODO: make this more formal when we switch to mina
     new ServerHeartBeatThread().start();
@@ -926,7 +925,6 @@ public class MapTool {
     AssetManager.updateRepositoryList();
     MapTool.getFrame().getCampaignPanel().reset();
     MapTool.getFrame().getGmPanel().reset();
-    MapTool.getFrame().getOverlayPanel().init();
     UserDefinedMacroFunctions.getInstance().handleCampaignLoadMacroEvent();
   }
 
