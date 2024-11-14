@@ -536,7 +536,6 @@ message ZoneDto {
   int32 token_vision_distance = 7;
   double units_per_cell = 8;
   AStarRoundingOptionsDto a_star_rounding = 9;
-  repeated TopologyTypeDto topologyTypes = 10;
   map<string, DrawnElementListDto> drawables = 11;
   repeated LabelDto labels = 15;
   repeated TokenDto tokens = 16;

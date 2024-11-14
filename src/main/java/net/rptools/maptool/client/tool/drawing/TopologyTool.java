@@ -23,6 +23,7 @@ import java.awt.geom.Area;
 import java.util.List;
 import javax.annotation.Nullable;
 import javax.swing.SwingUtilities;
+import net.rptools.maptool.client.AppStatePersisted;
 import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
@@ -102,7 +103,7 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
     }
 
     MapTool.serverCommand()
-        .updateTopology(getZone(), area, isEraser(), getZone().getTopologyTypes());
+        .updateTopology(getZone(), area, isEraser(), AppStatePersisted.getTopologyTypes());
   }
 
   private Area getTokenTopology(Zone.TopologyType topologyType) {

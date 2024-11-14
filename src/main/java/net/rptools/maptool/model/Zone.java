@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import net.rptools.lib.MD5Key;
-import net.rptools.maptool.client.AppStatePersisted;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.tool.drawing.UndoPerZone;
@@ -64,7 +63,6 @@ import net.rptools.maptool.model.zones.TopologyChanged;
 import net.rptools.maptool.model.zones.ZoneLightingChanged;
 import net.rptools.maptool.server.Mapper;
 import net.rptools.maptool.server.proto.DrawnElementListDto;
-import net.rptools.maptool.server.proto.TopologyTypeDto;
 import net.rptools.maptool.server.proto.ZoneDto;
 import net.rptools.maptool.util.StringUtil;
 import org.apache.logging.log4j.LogManager;
@@ -308,56 +306,6 @@ public class Zone {
     MBL;
   }
 
-  public static final class TopologyTypeSet implements Iterable<TopologyType> {
-    private final Set<TopologyType> topologyTypes;
-
-    public static TopologyTypeSet valueOf(String value) {
-      List<TopologyType> topologyTypes = new ArrayList<>();
-      for (var topologyType : TopologyType.values()) {
-        var topologyTypeName = topologyType.toString();
-        if (value.contains(topologyTypeName)) {
-          topologyTypes.add(topologyType);
-        }
-      }
-
-      return new TopologyTypeSet(topologyTypes.toArray(TopologyType[]::new));
-    }
-
-    public TopologyTypeSet(TopologyType... types) {
-      // I would prefer using an enum set, but Hessian can't handle it properly.
-      topologyTypes = new HashSet<>();
-      topologyTypes.addAll(Arrays.asList(types));
-    }
-
-    public boolean contains(TopologyType type) {
-      return topologyTypes.contains(type);
-    }
-
-    public TopologyTypeSet with(TopologyType type) {
-      var newMode = new TopologyTypeSet();
-      newMode.topologyTypes.addAll(this.topologyTypes);
-      newMode.topologyTypes.add(type);
-      return newMode;
-    }
-
-    public TopologyTypeSet without(TopologyType type) {
-      var newMode = new TopologyTypeSet();
-      newMode.topologyTypes.addAll(this.topologyTypes);
-      newMode.topologyTypes.remove(type);
-      return newMode;
-    }
-
-    @Nonnull
-    @Override
-    public Iterator<TopologyType> iterator() {
-      return topologyTypes.iterator();
-    }
-
-    public String toString() {
-      return topologyTypes.toString();
-    }
-  }
-
   public static final int DEFAULT_TOKEN_VISION_DISTANCE = 250; // In units
   public static final int DEFAULT_PIXELS_CELL = 50;
   public static final int DEFAULT_UNITS_PER_CELL = 5;
@@ -377,7 +325,6 @@ public class Zone {
 
   private double unitsPerCell = DEFAULT_UNITS_PER_CELL;
   private AStarRoundingOptions aStarRounding = AStarRoundingOptions.NONE;
-  private TopologyTypeSet topologyTypes = null; // get default from AppPreferences
 
   // region Keeping these for serialization only. Otherwise, use {@link #drawablesByLayer} instead.
   @Deprecated private @Nonnull LinkedList<DrawnElement> drawables = new LinkedList<DrawnElement>();
@@ -721,7 +668,6 @@ public class Zone {
     coverVbl = (Area) zone.coverVbl.clone();
     topologyTerrain = (Area) zone.topologyTerrain.clone();
     aStarRounding = zone.aStarRounding;
-    topologyTypes = zone.topologyTypes;
     isVisible = zone.isVisible;
     hasFog = zone.hasFog;
   }
@@ -1334,18 +1280,6 @@ public class Zone {
 
   public void setAStarRounding(AStarRoundingOptions aStarRounding) {
     this.aStarRounding = aStarRounding;
-  }
-
-  public TopologyTypeSet getTopologyTypes() {
-    if (topologyTypes == null) {
-      topologyTypes = AppStatePersisted.getTopologyTypes();
-    }
-
-    return topologyTypes;
-  }
-
-  public void setTopologyTypes(TopologyTypeSet topologyTypes) {
-    this.topologyTypes = topologyTypes;
   }
 
   public int getLargestZOrder() {
@@ -2242,11 +2176,6 @@ public class Zone {
     zone.tokenVisionDistance = dto.getTokenVisionDistance();
     zone.unitsPerCell = dto.getUnitsPerCell();
     zone.aStarRounding = AStarRoundingOptions.valueOf(dto.getAStarRounding().name());
-    zone.topologyTypes = new TopologyTypeSet();
-    zone.topologyTypes.topologyTypes.addAll(
-        dto.getTopologyTypesList().stream()
-            .map(t -> TopologyType.valueOf(t.name()))
-            .collect(Collectors.toList()));
 
     dto.getDrawablesMap()
         .forEach(
@@ -2313,12 +2242,6 @@ public class Zone {
     dto.setTokenVisionDistance(tokenVisionDistance);
     dto.setUnitsPerCell(unitsPerCell);
     dto.setAStarRounding(ZoneDto.AStarRoundingOptionsDto.valueOf(aStarRounding.name()));
-    if (topologyTypes != null) {
-      dto.addAllTopologyTypes(
-          topologyTypes.topologyTypes.stream()
-              .map(t -> TopologyTypeDto.valueOf(t.name()))
-              .collect(Collectors.toList()));
-    }
 
     drawablesByLayer.forEach(
         (layer, drawables) ->
