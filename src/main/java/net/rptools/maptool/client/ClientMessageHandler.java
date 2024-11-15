@@ -64,6 +64,7 @@ import net.rptools.maptool.model.library.LibraryManager;
 import net.rptools.maptool.model.library.addon.AddOnLibraryImporter;
 import net.rptools.maptool.model.library.addon.TransferableAddOnLibrary;
 import net.rptools.maptool.model.player.Player;
+import net.rptools.maptool.model.topology.WallTopology;
 import net.rptools.maptool.model.zones.TokensAdded;
 import net.rptools.maptool.model.zones.TokensRemoved;
 import net.rptools.maptool.model.zones.ZoneAdded;
@@ -169,6 +170,7 @@ public class ClientMessageHandler implements MessageHandler {
         case UPDATE_EXPOSED_AREA_META_MSG -> handle(msg.getUpdateExposedAreaMetaMsg());
         case UPDATE_TOKEN_MOVE_MSG -> handle(msg.getUpdateTokenMoveMsg());
         case UPDATE_PLAYER_STATUS_MSG -> handle(msg.getUpdatePlayerStatusMsg());
+        case SET_WALL_TOPOLOGY_MSG -> handle(msg.getSetWallTopologyMsg());
         default -> log.warn(msgType + "not handled.");
       }
       log.debug(id + " handled: " + msgType);
@@ -1059,5 +1061,15 @@ public class ClientMessageHandler implements MessageHandler {
 
     final var eventBus = new MapToolEventBus().getMainEventBus();
     eventBus.post(new PlayerStatusChanged(player));
+  }
+
+  private void handle(SetWallTopologyMsg setWallTopologyMsg) {
+    EventQueue.invokeLater(
+        () -> {
+          var zoneId = new GUID(setWallTopologyMsg.getZoneGuid());
+          var zone = client.getCampaign().getZone(zoneId);
+          var topology = WallTopology.fromDto(setWallTopologyMsg.getTopology());
+          zone.replaceWalls(topology);
+        });
   }
 }

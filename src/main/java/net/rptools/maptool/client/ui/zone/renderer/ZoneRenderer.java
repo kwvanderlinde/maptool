@@ -3503,16 +3503,27 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     repaintDebouncer.dispatch();
   }
 
+  private void onTopologyChanged() {
+    flushFog();
+    flushLight();
+    MapTool.getFrame().updateTokenTree(); // for any event
+    repaintDebouncer.dispatch();
+  }
+
+  @Subscribe
+  private void onTopologyChanged(WallTopologyChanged event) {
+    if (event.zone() != this.zone) {
+      return;
+    }
+    onTopologyChanged();
+  }
+
   @Subscribe
   private void onTopologyChanged(MaskTopologyChanged event) {
     if (event.zone() != this.zone) {
       return;
     }
-
-    flushFog();
-    flushLight();
-    MapTool.getFrame().updateTokenTree(); // for any event
-    repaintDebouncer.dispatch();
+    onTopologyChanged();
   }
 
   private void markDrawableLayerDirty(Layer layer) {

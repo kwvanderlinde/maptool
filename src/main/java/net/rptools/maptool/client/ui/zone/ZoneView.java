@@ -39,6 +39,7 @@ import net.rptools.maptool.model.zones.MaskTopologyChanged;
 import net.rptools.maptool.model.zones.TokensAdded;
 import net.rptools.maptool.model.zones.TokensChanged;
 import net.rptools.maptool.model.zones.TokensRemoved;
+import net.rptools.maptool.model.zones.WallTopologyChanged;
 import net.rptools.maptool.model.zones.ZoneLightingChanged;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -864,15 +865,26 @@ public class ZoneView {
     }
   }
 
+  private void onTopologyChanged() {
+    flush();
+    topologyAreas.clear();
+    topologyTrees.clear();
+  }
+
+  @Subscribe
+  private void onTopologyChanged(WallTopologyChanged event) {
+    if (event.zone() != this.zone) {
+      return;
+    }
+    onTopologyChanged();
+  }
+
   @Subscribe
   private void onTopologyChanged(MaskTopologyChanged event) {
     if (event.zone() != this.zone) {
       return;
     }
-
-    flush();
-    topologyAreas.clear();
-    topologyTrees.clear();
+    onTopologyChanged();
   }
 
   @Subscribe

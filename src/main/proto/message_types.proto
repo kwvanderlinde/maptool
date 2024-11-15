@@ -23,6 +23,11 @@ message UpdateMaskTopologyMsg {
   TopologyTypeDto type = 4;
 }
 
+message SetWallTopologyMsg {
+  string zone_guid = 1;
+  WallTopologyDto topology = 2;
+}
+
 message BootPlayerMsg {
   string player_name = 1;
 }
