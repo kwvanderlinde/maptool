@@ -1301,10 +1301,6 @@ public class Zone {
     return creationTime;
   }
 
-  public ZonePoint getNearestVertex(ZonePoint point) {
-    return grid.getNearestVertex(point);
-  }
-
   /**
    * Returns the Area of the exposed fog for the current tokens (as determined by view.getTokens()).
    * This means if no tokens are current, the return value is the zone's global exposed fog area. If
