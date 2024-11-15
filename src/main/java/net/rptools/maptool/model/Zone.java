@@ -32,6 +32,7 @@ import net.rptools.maptool.client.ui.MapToolFrame;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.ZoneView;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
+import net.rptools.maptool.client.ui.zone.vbl.NodedTopology;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.InitiativeList.TokenInitiative;
@@ -389,6 +390,8 @@ public class Zone {
 
   // The new take on topology.
   private WallTopology walls = new WallTopology();
+
+  private transient @Nullable NodedTopology nodedTopology;
 
   // The 'board' layer, at the very bottom of the layer stack.
   // Itself has two sub-layers:
@@ -989,7 +992,23 @@ public class Zone {
 
   public void replaceWalls(WallTopology walls) {
     this.walls = walls;
+    this.nodedTopology = null;
     new MapToolEventBus().getMainEventBus().post(new TopologyChanged(this));
+  }
+
+  /**
+   * Packages legacy topology, including token topology, together with wall topology, adding nodes
+   * at any intersection points.
+   *
+   * @return
+   */
+  public NodedTopology prepareNodedTopologies() {
+    if (nodedTopology == null) {
+      var legacyMasks = getMasks(EnumSet.allOf(TopologyType.class), null);
+      nodedTopology = NodedTopology.prepare(walls, legacyMasks);
+    }
+
+    return nodedTopology;
   }
 
   public Area getLegacyTopology(TopologyType topologyType) {
@@ -1024,6 +1043,7 @@ public class Zone {
       topology.add(area);
     }
 
+    nodedTopology = null;
     new MapToolEventBus().getMainEventBus().post(new LegacyTopologyChanged(this));
   }
 
@@ -1044,6 +1064,7 @@ public class Zone {
 
   /** Fire the event {@link LegacyTopologyChanged}. */
   public void tokenLegacyTopologyChanged() {
+    nodedTopology = null;
     new MapToolEventBus().getMainEventBus().post(new LegacyTopologyChanged(this));
   }
 
