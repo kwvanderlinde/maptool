@@ -549,6 +549,7 @@ message ZoneDto {
   AreaDto pit_vbl = 24;
   AreaDto cover_vbl = 39;
   AreaDto topology_terrain = 25;
+  WallTopologyDto walls = 12;
   DrawablePaintDto background_paint = 26;
   google.protobuf.StringValue map_asset = 27;
   IntPointDto boardPosition = 28;

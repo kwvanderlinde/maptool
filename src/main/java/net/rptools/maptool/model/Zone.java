@@ -46,6 +46,8 @@ import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.tokens.TokenMacroChanged;
 import net.rptools.maptool.model.tokens.TokenPanelChanged;
+import net.rptools.maptool.model.topology.MaskTopology;
+import net.rptools.maptool.model.topology.WallTopology;
 import net.rptools.maptool.model.zones.BoardChanged;
 import net.rptools.maptool.model.zones.DrawableAdded;
 import net.rptools.maptool.model.zones.DrawableRemoved;
@@ -60,6 +62,7 @@ import net.rptools.maptool.model.zones.TokenEdited;
 import net.rptools.maptool.model.zones.TokensAdded;
 import net.rptools.maptool.model.zones.TokensChanged;
 import net.rptools.maptool.model.zones.TokensRemoved;
+import net.rptools.maptool.model.zones.TopologyChanged;
 import net.rptools.maptool.model.zones.ZoneLightingChanged;
 import net.rptools.maptool.server.Mapper;
 import net.rptools.maptool.server.proto.DrawnElementListDto;
@@ -384,6 +387,9 @@ public class Zone {
 
   // endregion
 
+  // The new take on topology.
+  private WallTopology walls = new WallTopology();
+
   // The 'board' layer, at the very bottom of the layer stack.
   // Itself has two sub-layers:
   // The top one is an optional texture, typically a pre-drawn map.
@@ -672,6 +678,7 @@ public class Zone {
     pitVbl = new Area(zone.pitVbl);
     coverVbl = new Area(zone.coverVbl);
     topologyTerrain = new Area(zone.topologyTerrain);
+    walls = new WallTopology(zone.walls);
 
     aStarRounding = zone.aStarRounding;
     isVisible = zone.isVisible;
@@ -949,6 +956,42 @@ public class Zone {
     // return combined.intersects(tokenSize);
   }
 
+  public WallTopology getWalls() {
+    return walls;
+  }
+
+  /**
+   * Get all masks.
+   *
+   * <p>This is particularly used for the sake of pathfinding. The provided types will be usually
+   * include just {@link TopologyType#MBL}, but based on preferences may also include all VBL types.
+   * The {@code exclude} parameter exists so a moving token will not be blocked by its own topology.
+   * All other tokens' topology will be included.
+   *
+   * @param types The type of masks to get.
+   * @param excluding
+   * @return
+   */
+  public List<MaskTopology> getMasks(Set<TopologyType> types, @Nullable GUID excluding) {
+    var masks = new ArrayList<MaskTopology>();
+
+    for (var type : types) {
+      var mapArea = getLegacyTopology(type);
+      var tokenArea = getLegacyTokenTopology(type, excluding);
+      if (mapArea != null) {
+        tokenArea.add(mapArea);
+      }
+      masks.addAll(MaskTopology.createFromLegacy(type, tokenArea));
+    }
+
+    return masks;
+  }
+
+  public void replaceWalls(WallTopology walls) {
+    this.walls = walls;
+    new MapToolEventBus().getMainEventBus().post(new TopologyChanged(this));
+  }
+
   public Area getLegacyTopology(TopologyType topologyType) {
     return switch (topologyType) {
       case WALL_VBL -> topology;
@@ -982,6 +1025,21 @@ public class Zone {
     }
 
     new MapToolEventBus().getMainEventBus().post(new LegacyTopologyChanged(this));
+  }
+
+  public Area getLegacyTokenTopology(TopologyType type, @Nullable GUID excluding) {
+    var result = new Area();
+    for (var token : getAllTokens()) {
+      if (excluding != null && excluding.equals(token.getId())) {
+        continue;
+      }
+
+      var tokenArea = token.getTransformedLegacyTopology(type);
+      if (tokenArea != null) {
+        result.add(tokenArea);
+      }
+    }
+    return result;
   }
 
   /** Fire the event {@link LegacyTopologyChanged}. */
@@ -2108,6 +2166,10 @@ public class Zone {
     drawablesByLayer.put(Layer.OBJECT, objectDrawables);
     drawablesByLayer.put(Layer.BACKGROUND, backgroundDrawables);
 
+    if (walls == null) {
+      walls = new WallTopology();
+    }
+
     return this;
   }
 
@@ -2214,6 +2276,7 @@ public class Zone {
     zone.pitVbl = Mapper.map(dto.getPitVbl());
     zone.coverVbl = Mapper.map(dto.getCoverVbl());
     zone.topologyTerrain = Mapper.map(dto.getTopologyTerrain());
+    zone.walls = WallTopology.fromDto(dto.getWalls());
     zone.backgroundPaint = DrawablePaint.fromDto(dto.getBackgroundPaint());
     zone.mapAsset = dto.hasMapAsset() ? new MD5Key(dto.getMapAsset().getValue()) : null;
     zone.boardPosition.x = dto.getBoardPosition().getX();
@@ -2278,6 +2341,7 @@ public class Zone {
     dto.setPitVbl(Mapper.map(pitVbl));
     dto.setCoverVbl(Mapper.map(coverVbl));
     dto.setTopologyTerrain(Mapper.map(topologyTerrain));
+    dto.setWalls(walls.toDto());
     dto.setBackgroundPaint(backgroundPaint.toDto());
     if (mapAsset != null) {
       dto.setMapAsset(StringValue.of(mapAsset.toString()));

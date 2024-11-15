@@ -37,6 +37,7 @@ import net.rptools.maptool.model.Zone.VisionType;
 import net.rptools.maptool.model.drawing.Drawable;
 import net.rptools.maptool.model.drawing.DrawnElement;
 import net.rptools.maptool.model.drawing.Pen;
+import net.rptools.maptool.model.topology.WallTopology;
 import net.rptools.maptool.model.zones.TokensAdded;
 import net.rptools.maptool.model.zones.TokensRemoved;
 import net.rptools.maptool.model.zones.ZoneAdded;
@@ -250,6 +251,10 @@ public class ServerMessageHandler implements MessageHandler {
         }
         case UPDATE_PLAYER_STATUS_MSG -> {
           handle(id, msg.getUpdatePlayerStatusMsg());
+          sendToClients(id, msg);
+        }
+        case SET_WALL_TOPOLOGY_MSG -> {
+          handle(msg.getSetWallTopologyMsg());
           sendToClients(id, msg);
         }
 
@@ -687,6 +692,16 @@ public class ServerMessageHandler implements MessageHandler {
             : GUID.valueOf(updatePlayerStatusMsg.getZoneGuid());
     var loaded = updatePlayerStatusMsg.getLoaded();
     server.updatePlayerStatus(playerName, zoneId, loaded);
+  }
+
+  private void handle(SetWallTopologyMsg setWallTopologyMsg) {
+    EventQueue.invokeLater(
+        () -> {
+          var zoneId = new GUID(setWallTopologyMsg.getZoneGuid());
+          var zone = server.getCampaign().getZone(zoneId);
+          var topology = WallTopology.fromDto(setWallTopologyMsg.getTopology());
+          zone.replaceWalls(topology);
+        });
   }
 
   private void sendToClients(String excludedId, Message message) {
