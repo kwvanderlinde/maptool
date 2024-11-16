@@ -344,25 +344,6 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
         shape.moveTo(from.getX(), from.getY());
         shape.lineTo(to.getX(), to.getY());
 
-        if (from.distance(to) > 4 * handleRadius) {
-          // Draw a fun little arrow indicating the wall direection.
-          // theta increases clockwise.
-          var theta = Math.atan2(to.getY() - from.getY(), to.getX() - from.getX());
-          var arrowSize = handleRadius;
-          var vertex =
-              new Point2D.Double(
-                  to.getX() - 4 * handleRadius * Math.cos(theta),
-                  to.getY() - 4 * handleRadius * Math.sin(theta));
-          shape.moveTo(vertex.getX(), vertex.getY());
-          shape.lineTo(
-              vertex.getX() - arrowSize * Math.cos(theta - Math.PI / 4),
-              vertex.getY() - arrowSize * Math.sin(theta - Math.PI / 4));
-          shape.moveTo(vertex.getX(), vertex.getY());
-          shape.lineTo(
-              vertex.getX() - arrowSize * Math.cos(theta + Math.PI / 4),
-              vertex.getY() - arrowSize * Math.sin(theta + Math.PI / 4));
-        }
-
         g2.setStroke(wallOutlineStroke);
         g2.setPaint(wallOutlineColor);
         g2.draw(shape);
