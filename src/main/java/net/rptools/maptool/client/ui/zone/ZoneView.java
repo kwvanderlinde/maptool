@@ -762,10 +762,10 @@ public class ZoneView {
                         final var lumensStrength = Math.abs(laud.litArea().lumens());
                         final var lumensLevel =
                             switch (lightingStyle) {
-                              case ENVIRONMENTAL -> illumination.getObscuredLumensLevel(
-                                  lumensStrength);
-                              case OVERTOP -> illumination.getDisjointObscuredLumensLevel(
-                                  lumensStrength);
+                              case ENVIRONMENTAL ->
+                                  illumination.getObscuredLumensLevel(lumensStrength);
+                              case OVERTOP ->
+                                  illumination.getDisjointObscuredLumensLevel(lumensStrength);
                             };
                         // Should always be present based on construction, but just in case...
                         if (lumensLevel.isEmpty()) {
