@@ -432,7 +432,11 @@ public class AppMenuBar extends JMenuBar {
     JCheckBoxMenuItem menuItem =
         new RPCheckBoxMenuItem(new AppActions.ToggleOverlayAction(overlayManager), overlayMenu);
     menuItem.setText(overlayManager.getName());
-    overlayMenu.add(menuItem);
+    if (overlayManager.getLocked()) {
+      overlayMenu.add(menuItem).setEnabled(false);
+    } else {
+      overlayMenu.add(menuItem);
+    }
     overlayMenu.setEnabled(true);
     overlayItems.put(overlayManager.getName(), menuItem);
   }

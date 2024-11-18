@@ -60,6 +60,7 @@ public class StatSheet {
                   .showOverlay(
                       AppConstants.INTERNAL_MAP_UNDER_POINTER_HTML_OVERLAY_NAME,
                       Integer.MAX_VALUE,
+                      Boolean.TRUE,
                       output,
                       null);
             }

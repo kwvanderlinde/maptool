@@ -238,9 +238,10 @@ public class HTMLOverlayPanel extends JFXPanel {
    *
    * @param name the name of the overlay
    * @param zOrder the zOrder of the overlay
+   * @param locked the locked state of the overlay
    * @param html the HTML of the overlay
    */
-  public void showOverlay(String name, int zOrder, String html, Object frameValue) {
+  public void showOverlay(String name, int zOrder, boolean locked, String html, Object frameValue) {
     getDropTarget().setActive(false); // disables drop on overlay, drop goes to map
     setVisible(true);
     Platform.runLater(
@@ -258,7 +259,7 @@ public class HTMLOverlayPanel extends JFXPanel {
               overlays.add(overlayManager);
             }
           } else {
-            overlayManager = new HTMLOverlayManager(name, zOrder);
+            overlayManager = new HTMLOverlayManager(name, zOrder, locked);
             overlayManager.setupWebView(new WebView());
             overlays.add(overlayManager);
             root.getChildren().add(overlayManager.getWebView());
