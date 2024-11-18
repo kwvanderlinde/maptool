@@ -819,10 +819,6 @@ public class ServerCommandClientImpl implements ServerCommand {
     private final long delay;
     private Message msg;
 
-    // TODO Remove the semaphore. The thread only runs once, so it has no reason to synchronize with
-    // itself.
-    final Object sleepSemaphore = new Object();
-
     public TimedEventQueue(long millidelay) {
       setName("ServerCommandClientImpl.TimedEventQueue");
       delay = millidelay;
@@ -853,12 +849,10 @@ public class ServerCommandClientImpl implements ServerCommand {
     public void run() {
       while (!done.get()) {
         flush();
-        synchronized (sleepSemaphore) {
-          try {
-            Thread.sleep(delay);
-          } catch (InterruptedException ie) {
-            // nothing to do
-          }
+        try {
+          Thread.sleep(delay);
+        } catch (InterruptedException ie) {
+          // nothing to do
         }
       }
     }
