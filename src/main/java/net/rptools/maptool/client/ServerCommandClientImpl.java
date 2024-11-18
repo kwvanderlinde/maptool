@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import net.rptools.lib.MD5Key;
@@ -58,7 +59,18 @@ public class ServerCommandClientImpl implements ServerCommand {
 
   public ServerCommandClientImpl(MapToolClient client) {
     this.client = client;
-    movementUpdateQueue.start();
+  }
+
+  public void start() {
+    try {
+      movementUpdateQueue.start();
+    } catch (IllegalThreadStateException e) {
+      log.error("ServerCommand was already started", e);
+    }
+  }
+
+  public void stop() {
+    movementUpdateQueue.stopRunning();
   }
 
   public void heartbeat(String data) {
@@ -803,10 +815,12 @@ public class ServerCommandClientImpl implements ServerCommand {
    * this way, only the most current version of the event is released.
    */
   private class TimedEventQueue extends Thread {
+    private final AtomicBoolean done = new AtomicBoolean(false);
+    private final long delay;
+    private Message msg;
 
-    Message msg;
-    long delay;
-
+    // TODO Remove the semaphore. The thread only runs once, so it has no reason to synchronize with
+    // itself.
     final Object sleepSemaphore = new Object();
 
     public TimedEventQueue(long millidelay) {
@@ -814,12 +828,21 @@ public class ServerCommandClientImpl implements ServerCommand {
       delay = millidelay;
     }
 
+    public void stopRunning() {
+      done.set(true);
+      try {
+        interrupt();
+        join();
+      } catch (InterruptedException e) {
+        log.error("Interrupted thread join. Thread may not be done running.", e);
+      }
+    }
+
     public void enqueue(Message message) {
       msg = message;
     }
 
     public synchronized void flush() {
-
       if (msg != null) {
         makeServerCall(msg);
         msg = null;
@@ -828,9 +851,7 @@ public class ServerCommandClientImpl implements ServerCommand {
 
     @Override
     public void run() {
-
-      while (true) {
-
+      while (!done.get()) {
         flush();
         synchronized (sleepSemaphore) {
           try {
