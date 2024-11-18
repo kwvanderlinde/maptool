@@ -818,7 +818,7 @@ public class ZoneView {
   private boolean flushExistingTokens(List<Token> tokens) {
     boolean tokenChangedTopology = false;
     for (Token token : tokens) {
-      if (token.hasAnyTopology()) tokenChangedTopology = true;
+      if (token.hasAnyMaskTopology()) tokenChangedTopology = true;
       flush(token);
     }
     // Ug, stupid hack here, can't find a bug where if a NPC token is moved before lights are
@@ -854,7 +854,7 @@ public class ZoneView {
       flushLights();
     }
 
-    if (event.tokens().stream().anyMatch(Token::hasAnyTopology)) {
+    if (event.tokens().stream().anyMatch(Token::hasAnyMaskTopology)) {
       flush();
     }
   }
@@ -883,7 +883,7 @@ public class ZoneView {
       visibleAreaMap.clear();
     }
 
-    if (tokens.stream().anyMatch(Token::hasAnyTopology)) {
+    if (tokens.stream().anyMatch(Token::hasAnyMaskTopology)) {
       flush();
     }
   }

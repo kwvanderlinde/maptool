@@ -1043,13 +1043,21 @@ public class Zone {
       topology.add(area);
     }
 
-    nodedTopology = null;
+    // MBL doesn't affect vision, so no need to invalidate the noding.
+    if (topologyType != TopologyType.MBL) {
+      nodedTopology = null;
+    }
     new MapToolEventBus().getMainEventBus().post(new MaskTopologyChanged(this));
   }
 
   /** Fire the event {@link MaskTopologyChanged}. */
-  public void tokenMaskTopologyChanged() {
-    nodedTopology = null;
+  public void tokenMaskTopologyChanged(Collection<TopologyType> types) {
+    if (types.contains(TopologyType.WALL_VBL)
+        || types.contains(TopologyType.HILL_VBL)
+        || types.contains(TopologyType.PIT_VBL)
+        || types.contains(TopologyType.COVER_VBL)) {
+      nodedTopology = null;
+    }
     new MapToolEventBus().getMainEventBus().post(new MaskTopologyChanged(this));
   }
 
@@ -1777,10 +1785,6 @@ public class Zone {
 
   public List<Token> getTokensAlwaysVisible() {
     return getTokensFiltered(Token::isAlwaysVisible);
-  }
-
-  public List<Token> getTokensWithTopology(TopologyType topologyType) {
-    return getTokensFiltered(token -> token.hasTopology(topologyType));
   }
 
   public List<Token> getTokensWithTerrainModifiers() {

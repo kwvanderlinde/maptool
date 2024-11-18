@@ -1439,19 +1439,18 @@ public class Token implements Cloneable {
       case MBL -> mbl = topology;
     }
 
-    if (!hasAnyTopology()) {
+    if (!hasAnyMaskTopology()) {
       vblColorSensitivity = -1;
     }
   }
 
   /**
-   * Return the existence of the requested type of topology.
-   *
-   * @param topologyType The type of topology to check for.
-   * @return true if the token has the given type of topology.
+   * @return All types of mask topology attached to the token.
    */
-  public boolean hasTopology(Zone.TopologyType topologyType) {
-    return getMaskTopology(topologyType) != null;
+  public Collection<Zone.TopologyType> getMaskTopologyTypes() {
+    var result = EnumSet.allOf(Zone.TopologyType.class);
+    result.removeIf(type -> getMaskTopology(type) == null);
+    return result;
   }
 
   /**
@@ -1459,7 +1458,7 @@ public class Token implements Cloneable {
    *
    * @return true if the token has any kind of topology.
    */
-  public boolean hasAnyTopology() {
+  public boolean hasAnyMaskTopology() {
     return Arrays.stream(Zone.TopologyType.values())
         .map(this::getMaskTopology)
         .anyMatch(Objects::nonNull);
@@ -2688,7 +2687,7 @@ public class Token implements Cloneable {
     boolean lightChanged = false;
     boolean macroChanged = false;
     boolean panelLookChanged = false; // appearance of token in a panel changed
-    boolean topologyChanged = false;
+    Zone.TopologyType topologyChangeType = null;
     switch (update) {
       case setState:
         var state = parameters.get(0).getStringValue();
@@ -2855,7 +2854,7 @@ public class Token implements Cloneable {
         {
           final var topologyType = Zone.TopologyType.valueOf(parameters.get(0).getTopologyType());
           setMaskTopology(topologyType, Mapper.map(parameters.get(1).getArea()));
-          topologyChanged = true;
+          topologyChangeType = topologyType;
           break;
         }
       case setImageAsset:
@@ -2945,8 +2944,8 @@ public class Token implements Cloneable {
     if (panelLookChanged) {
       zone.tokenPanelChanged(this);
     }
-    if (topologyChanged) {
-      zone.tokenMaskTopologyChanged();
+    if (topologyChangeType != null) {
+      zone.tokenMaskTopologyChanged(EnumSet.of(topologyChangeType));
     }
     zone.tokenChanged(this); // fire Event.TOKEN_CHANGED, which updates topology if token has VBL
   }

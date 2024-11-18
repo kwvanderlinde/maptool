@@ -421,7 +421,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
             moveTimer.start("setup");
 
-            boolean topologyTokenMoved = false; // If any token has topology we need to reset FoW
+            var changedMaskTopologyTypes = EnumSet.noneOf(Zone.TopologyType.class);
 
             Path<? extends AbstractPoint> path =
                 set.getWalker() != null ? set.getWalker().getPath() : set.getGridlessPath();
@@ -461,9 +461,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
                 filteredTokens.add(tokenGUID);
               }
 
-              if (token.hasAnyTopology()) {
-                topologyTokenMoved = true;
-              }
+              changedMaskTopologyTypes.addAll(token.getMaskTopologyTypes());
             }
             moveTimer.stop("eachtoken");
 
@@ -502,8 +500,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             MapTool.getFrame().updateTokenTree();
             moveTimer.stop("updateTokenTree");
 
-            if (topologyTokenMoved) {
-              zone.tokenMaskTopologyChanged();
+            if (!changedMaskTopologyTypes.isEmpty()) {
+              zone.tokenMaskTopologyChanged(changedMaskTopologyTypes);
             }
           });
     } else {

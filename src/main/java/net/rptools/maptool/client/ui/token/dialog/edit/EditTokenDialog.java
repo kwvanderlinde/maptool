@@ -940,7 +940,10 @@ public class EditTokenDialog extends AbeillePanel<Token> {
     MapTool.getFrame().resetTokenPanels();
 
     // Jamz: TODO check if topology changed on token first
-    MapTool.getFrame().getCurrentZoneRenderer().getZone().tokenMaskTopologyChanged();
+    MapTool.getFrame()
+        .getCurrentZoneRenderer()
+        .getZone()
+        .tokenMaskTopologyChanged(token.getMaskTopologyTypes());
     return true;
   }
 
