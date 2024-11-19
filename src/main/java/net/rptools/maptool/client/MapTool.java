@@ -664,7 +664,7 @@ public class MapTool {
 
     // Make sure the user sees something right away so that they aren't staring at a black screen.
     // Technically this call does too much, but since it is a blank campaign it's okay.
-    setCampaign(client.getCampaign());
+    setCampaign(client.getCampaign(), null);
 
     try {
       playerZoneListener = new PlayerZoneListener();
@@ -883,11 +883,7 @@ public class MapTool {
     return parser;
   }
 
-  public static void setCampaign(Campaign campaign) {
-    setCampaign(campaign, null);
-  }
-
-  public static void setCampaign(Campaign campaign, GUID defaultRendererId) {
+  public static void setCampaign(Campaign campaign, @Nullable GUID defaultZoneId) {
     campaign = Objects.requireNonNullElseGet(campaign, Campaign::new);
 
     // Load up the new

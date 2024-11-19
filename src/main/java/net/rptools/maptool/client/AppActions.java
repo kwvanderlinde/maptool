@@ -1977,7 +1977,7 @@ public class AppActions {
 
           Campaign campaign = CampaignFactory.createBasicCampaign();
           AppState.setCampaignFile(null);
-          MapTool.setCampaign(campaign);
+          MapTool.setCampaign(campaign, null);
           MapTool.serverCommand().setCampaign(campaign);
 
           ImageManager.flush();
@@ -2338,7 +2338,7 @@ public class AppActions {
           // Install a temporary gimped campaign until we get the one from the
           // server
           final Campaign oldCampaign = MapTool.getCampaign();
-          MapTool.setCampaign(new Campaign());
+          MapTool.setCampaign(new Campaign(), null);
 
           // connecting
           MapTool.getFrame()
