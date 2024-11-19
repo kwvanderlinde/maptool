@@ -189,6 +189,10 @@ public class ServerMessageHandler implements MessageHandler {
           handle(msg.getSetCampaignNameMsg());
           sendToClients(id, msg);
         }
+        case SET_CAMPAIGN_LANDING_MAP_MSG -> {
+          handle(msg.getSetCampaignLandingMapMsg());
+          sendToClients(id, msg);
+        }
         case SET_FOW_MSG -> {
           handle(msg.getSetFowMsg());
           sendToAllClients(msg);
@@ -443,6 +447,17 @@ public class ServerMessageHandler implements MessageHandler {
     EventQueue.invokeLater(
         () -> {
           server.getCampaign().setName(msg.getName());
+        });
+  }
+
+  private void handle(SetCampaignLandingMapMsg msg) {
+    EventQueue.invokeLater(
+        () -> {
+          if (msg.hasLandingMapId()) {
+            server.getCampaign().setLandingMapId(GUID.valueOf(msg.getLandingMapId()));
+          } else {
+            server.getCampaign().setLandingMapId(null);
+          }
         });
   }
 

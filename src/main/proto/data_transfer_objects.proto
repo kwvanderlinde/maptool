@@ -45,6 +45,7 @@ message CampaignDto {
   repeated MacroButtonPropertiesDto macro_button_properties = 9;
   repeated ZoneDto zones = 10;
   repeated MacroButtonPropertiesDto gm_macro_button_properties = 11;
+  optional string landing_map_id = 12;
 }
 
 message LookupTableDto {

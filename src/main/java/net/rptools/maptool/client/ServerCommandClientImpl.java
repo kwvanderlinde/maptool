@@ -94,6 +94,15 @@ public class ServerCommandClientImpl implements ServerCommand {
     makeServerCall(Message.newBuilder().setSetCampaignNameMsg(msg).build());
   }
 
+  public void setLandingMap(@Nullable GUID landingMapId) {
+    client.getCampaign().setLandingMapId(landingMapId);
+    var msg = SetCampaignLandingMapMsg.newBuilder();
+    if (landingMapId != null) {
+      msg.setLandingMapId(landingMapId.toString());
+    }
+    makeServerCall(Message.newBuilder().setSetCampaignLandingMapMsg(msg).build());
+  }
+
   public void setVisionType(GUID zoneGUID, VisionType visionType) {
     var msg =
         SetVisionTypeMsg.newBuilder()
