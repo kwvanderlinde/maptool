@@ -90,14 +90,6 @@ public class Campaign {
   // private Map<GUID, LightSource> lightSourceMap;
 
   /**
-   * Record to hold the arguments for rename token type functionality.
-   *
-   * @param from the name to rename from.
-   * @param to the name to rename to.
-   */
-  public record RenamePropertyType(@Nonnull String from, @Nonnull String to) {}
-
-  /**
    * This flag indicates whether the manual fog tools have been used in this campaign while a server
    * is not running. See {@link ToolbarPanel} for details.
    *
@@ -787,42 +779,6 @@ public class Campaign {
               .collect(Collectors.toList()));
     }
     return dto.build();
-  }
-
-  /**
-   * Perform a series of rename operations on the token types.
-   *
-   * @param rename List of rename operations to perform in order.
-   */
-  public void renameTokenTypes(@Nonnull List<RenamePropertyType> rename) {
-    var working = new ArrayList<>(rename);
-    rename.forEach(
-        r -> {
-          compressRenames(r, working);
-        });
-    rename.forEach(
-        r -> {
-          renameTokenTypes(r.from, r.to);
-        });
-  }
-
-  /**
-   * This method ensures that only a single rename occurs, e.g. if we have the renames A -> B B -> C
-   *
-   * <p>We transform this into A -> C B -> C
-   *
-   * @param rename the renaming operation to apply.
-   * @param working the queued renaming operations.
-   */
-  private void compressRenames(RenamePropertyType rename, ArrayList<RenamePropertyType> working) {
-    for (int i = 0; i < working.size(); i++) {
-      var w = working.get(i);
-      if (w.to.equals(rename.from)) {
-        working.set(i, new RenamePropertyType(w.from, rename.to));
-      }
-    }
-    // Finally, add the rename operation to the end of the list
-    working.add(rename);
   }
 
   /**
