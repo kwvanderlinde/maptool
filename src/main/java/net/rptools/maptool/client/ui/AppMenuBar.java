@@ -379,18 +379,21 @@ public class AppMenuBar extends JMenuBar {
       for (String key : helpArray) {
         OpenUrlAction temp = new AppActions.OpenUrlAction(key);
         switch (key) {
-          case "action.helpurl.01" -> temp.putValue(
-              Action.SMALL_ICON, RessourceManager.getSmallIcon(Icons.MENU_DOCUMENTATION));
-          case "action.helpurl.02" -> temp.putValue(
-              Action.SMALL_ICON, RessourceManager.getSmallIcon(Icons.MENU_TUTORIALS));
-          case "action.helpurl.03" -> temp.putValue(
-              Action.SMALL_ICON, RessourceManager.getSmallIcon(Icons.MENU_FORUMS));
-          case "action.helpurl.04" -> temp.putValue(
-              Action.SMALL_ICON, RessourceManager.getSmallIcon(Icons.MENU_NETWORK_SETUP));
-          case "action.helpurl.05" -> temp.putValue(
-              Action.SMALL_ICON, RessourceManager.getSmallIcon(Icons.MENU_SCRIPTING));
-          case "action.helpurl.06" -> temp.putValue(
-              Action.SMALL_ICON, RessourceManager.getSmallIcon(Icons.MENU_FRAMEWORKS));
+          case "action.helpurl.01" ->
+              temp.putValue(
+                  Action.SMALL_ICON, RessourceManager.getSmallIcon(Icons.MENU_DOCUMENTATION));
+          case "action.helpurl.02" ->
+              temp.putValue(Action.SMALL_ICON, RessourceManager.getSmallIcon(Icons.MENU_TUTORIALS));
+          case "action.helpurl.03" ->
+              temp.putValue(Action.SMALL_ICON, RessourceManager.getSmallIcon(Icons.MENU_FORUMS));
+          case "action.helpurl.04" ->
+              temp.putValue(
+                  Action.SMALL_ICON, RessourceManager.getSmallIcon(Icons.MENU_NETWORK_SETUP));
+          case "action.helpurl.05" ->
+              temp.putValue(Action.SMALL_ICON, RessourceManager.getSmallIcon(Icons.MENU_SCRIPTING));
+          case "action.helpurl.06" ->
+              temp.putValue(
+                  Action.SMALL_ICON, RessourceManager.getSmallIcon(Icons.MENU_FRAMEWORKS));
         }
         menu.add(new JMenuItem(temp));
       }
