@@ -18,6 +18,7 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.issue }}
           labels-to-include: |
+            yeah
             bug
             build-configuration
             breaking-change
