@@ -888,24 +888,55 @@ public class MapTool {
 
     // Load up the new
     client.setCampaign(campaign);
-    ZoneRenderer currRenderer = null;
 
     clientFrame.clearZoneRendererList();
     clientFrame.getInitiativePanel().setZone(null);
     clientFrame.clearTokenTree();
 
+    // Find the map to place the player on first. If `defaultZoneId` was provided and is a
+    // visible map, use it. Otherwise fall back to the campaign's configured landing map. If that is
+    // not set or not visible, find the first visible map if there is one.
+    var defaultZone = defaultZoneId == null ? null : campaign.getZone(defaultZoneId);
+    if (defaultZone != null && !defaultZone.isVisible() && !getPlayer().isGM()) {
+      // Disallow maps not visible to the player.
+      defaultZone = null;
+    }
+    if (defaultZone == null) {
+      var landingMapId = campaign.getLandingMapId();
+      if (landingMapId != null) {
+        defaultZone = campaign.getZone(landingMapId);
+      }
+    }
+    if (defaultZone != null && !defaultZone.isVisible() && !getPlayer().isGM()) {
+      // Disallow maps not visible to the player.
+      defaultZone = null;
+    }
+    if (defaultZone == null) {
+      // Just use the first map that is acceptable.
+      for (Zone zone : campaign.getZones()) {
+        if (!zone.isVisible() && !getPlayer().isGM()) {
+          // Disallow maps not visible to the player.
+          continue;
+        }
+
+        defaultZone = zone;
+        break;
+      }
+    }
+
     // Install new campaign
+    ZoneRenderer currRenderer = null;
     for (Zone zone : campaign.getZones()) {
       ZoneRenderer renderer = ZoneRendererFactory.newRenderer(zone);
       clientFrame.addZoneRenderer(renderer);
-      if ((currRenderer == null || zone.getId().equals(defaultRendererId))
-          && (getPlayer().isGM() || zone.isVisible())) {
+      if (defaultZone != null && defaultZone.getId().equals(zone.getId())) {
         currRenderer = renderer;
       }
       new MapToolEventBus().getMainEventBus().post(new ZoneAdded(zone));
       // Now we have fire off adding the tokens in the zone
       new MapToolEventBus().getMainEventBus().post(new TokensAdded(zone, zone.getAllTokens()));
     }
+
     clientFrame.setCurrentZoneRenderer(currRenderer);
     clientFrame.getInitiativePanel().setOwnerPermissions(campaign.isInitiativeOwnerPermissions());
     clientFrame.getInitiativePanel().setMovementLock(campaign.isInitiativeMovementLock());

@@ -124,6 +124,8 @@ public class AppMenuBar extends JMenuBar {
     menu.add(new JMenuItem(AppActions.IMPORT_DUNGEON_DRAFT_MAP));
     menu.addSeparator();
 
+    menu.add(new RPCheckBoxMenuItem(AppActions.TOGGLE_LANDING_MAP, menu));
+
     // MAP TOGGLES
     // Lee: modifying due to the waypoint exposure toggle's dependency to this.
     menu.add(new RPCheckBoxMenuItem(AppActions.TOGGLE_CURRENT_ZONE_VISIBILITY, menu));

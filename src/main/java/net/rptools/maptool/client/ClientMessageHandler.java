@@ -134,6 +134,7 @@ public class ClientMessageHandler implements MessageHandler {
         case SET_BOARD_MSG -> handle(msg.getSetBoardMsg());
         case SET_CAMPAIGN_MSG -> handle(msg.getSetCampaignMsg());
         case SET_CAMPAIGN_NAME_MSG -> handle(msg.getSetCampaignNameMsg());
+        case SET_CAMPAIGN_LANDING_MAP_MSG -> handle(msg.getSetCampaignLandingMapMsg());
         case SET_FOW_MSG -> handle(msg.getSetFowMsg());
         case SET_LIVE_TYPING_LABEL_MSG -> handle(msg.getSetLiveTypingLabelMsg());
         case SET_TOKEN_LOCATION_MSG -> handle(msg.getSetTokenLocationMsg());
@@ -635,6 +636,17 @@ public class ClientMessageHandler implements MessageHandler {
         () -> {
           client.getCampaign().setName(msg.getName());
           MapTool.getFrame().setTitle();
+        });
+  }
+
+  private void handle(SetCampaignLandingMapMsg msg) {
+    EventQueue.invokeLater(
+        () -> {
+          if (msg.hasLandingMapId()) {
+            client.getCampaign().setLandingMapId(GUID.valueOf(msg.getLandingMapId()));
+          } else {
+            client.getCampaign().setLandingMapId(null);
+          }
         });
   }
 

@@ -59,6 +59,8 @@ public interface ServerCommand {
 
   void setCampaignName(String name);
 
+  void setLandingMap(@Nullable GUID landingMapId);
+
   void getZone(GUID zoneGUID);
 
   void putZone(Zone zone);
