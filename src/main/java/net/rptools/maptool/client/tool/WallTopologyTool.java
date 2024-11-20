@@ -52,22 +52,34 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
   private final TopologyTool.MaskOverlay maskOverlay = new TopologyTool.MaskOverlay();
 
   private double getHandleRadius() {
-    return 4.f;
+    var radius = 4.;
+
+    var scale = renderer.getScale();
+    if (scale < 1) {
+      radius /= scale;
+    }
+
+    return radius;
+  }
+
+  private double getWallHalfWidth() {
+    var width = 1.5;
+
+    var scale = renderer.getScale();
+    if (scale < 1) {
+      width /= scale;
+    }
+
+    return width;
   }
 
   private double getHandleSelectDistance() {
-    var handleSelectDistance = getHandleRadius();
-    var scale = renderer.getScale();
-    if (scale < 1) {
-      return handleSelectDistance / renderer.getScale();
-    }
-    return handleSelectDistance;
+    // Include a bit of leniency for the user.
+    return getHandleRadius() * 1.125; // Perhaps 1.125 to match outline stroke?
   }
 
   private double getWallSelectDistance() {
-    // Wall select distance doesn't have to be identical to the handle select distance. We can tweak
-    // this for better UX if it helps.
-    return getHandleSelectDistance();
+    return getWallHalfWidth() * 1.5;
   }
 
   @Override
@@ -89,7 +101,7 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
   protected void attachTo(ZoneRenderer renderer) {
     super.attachTo(renderer);
     currentPosition = new Point2D.Double(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
-    var rig = new WallTopologyRig(getHandleSelectDistance(), getWallSelectDistance());
+    var rig = new WallTopologyRig(this::getHandleSelectDistance, this::getWallSelectDistance);
     rig.setWalls(getZone().getWalls());
     changeToolMode(new BasicToolMode(this, rig));
 
@@ -110,10 +122,10 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
     maskOverlay.paintOverlay(renderer, g);
 
     Graphics2D g2 = (Graphics2D) g.create();
-    SwingUtil.useAntiAliasing(g2);
-    g2.setComposite(AlphaComposite.SrcAtop);
     g2.translate(renderer.getViewOffsetX(), renderer.getViewOffsetY());
     g2.scale(renderer.getScale(), renderer.getScale());
+    SwingUtil.useAntiAliasing(g2);
+    g2.setComposite(AlphaComposite.SrcOver);
 
     mode.paint(g2);
   }
@@ -179,7 +191,7 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
 
   @Subscribe
   private void onTopologyChanged(WallTopologyChanged event) {
-    var rig = new WallTopologyRig(getHandleSelectDistance(), getWallSelectDistance());
+    var rig = new WallTopologyRig(this::getHandleSelectDistance, this::getWallSelectDistance);
     rig.setWalls(getZone().getWalls());
     changeToolMode(new BasicToolMode(this, rig));
   }
@@ -287,17 +299,15 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
       return Color.white;
     }
 
-    protected BasicStroke getHandleStroke() {
-      return new BasicStroke(1f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
-    }
-
     protected Paint getWallFill(Movable<WallTopology.Wall> wall) {
       return AppStyle.wallTopologyColor;
     }
 
     protected void paintHandle(Graphics2D g2, Point2D point, Paint fill) {
       var handleRadius = tool.getHandleRadius();
-      var handleOutlineStroke = getHandleStroke();
+      var handleOutlineStroke =
+          new BasicStroke(
+              (float) (handleRadius / 4.), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
       var handleOutlineColor = Color.black;
 
       var shape =
@@ -328,11 +338,15 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
           bounds.getWidth() + 2 * padding,
           bounds.getHeight() + 2 * padding);
 
-      var wallStroke = new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
+      var wallStroke =
+          new BasicStroke(
+              (float) (2 * tool.getWallHalfWidth()), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
       var wallOutlineColor = AppStyle.wallTopologyOutlineColor;
       var wallOutlineStroke =
           new BasicStroke(
-              wallStroke.getLineWidth() + 2f, wallStroke.getEndCap(), wallStroke.getLineJoin());
+              (float) (wallStroke.getLineWidth() * 1.5),
+              wallStroke.getEndCap(),
+              wallStroke.getLineJoin());
       var walls = rig.getWallsWithin(bounds);
       for (var wall : walls) {
         var wallFill = getWallFill(wall);
@@ -340,6 +354,12 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
         // `Stroke.createStokedShape()` when there are many walls.
         var from = wall.getSource().from().getPosition();
         var to = wall.getSource().to().getPosition();
+
+        if (from.distanceSq(to) <= handleRadius * handleRadius) {
+          // No point rendering something so small. Could even be laxer, but this will suffice.
+          continue;
+        }
+
         var shape = new Path2D.Double();
         shape.moveTo(from.getX(), from.getY());
         shape.lineTo(to.getX(), to.getY());

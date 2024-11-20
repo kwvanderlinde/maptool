@@ -21,6 +21,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import net.rptools.lib.GeometryUtil;
 import net.rptools.maptool.model.topology.WallTopology;
 import net.rptools.maptool.model.topology.WallTopology.Vertex;
@@ -33,13 +34,14 @@ public final class WallTopologyRig implements Rig<WallTopologyRig.Element<?>> {
       permits WallTopologyRig.MovableVertex, WallTopologyRig.MovableWall {}
 
   private WallTopology walls;
-  private final double vertexSelectDistance;
-  private final double wallSelectDistance;
+  private final Supplier<Double> vertexSelectDistanceSupplier;
+  private final Supplier<Double> wallSelectDistanceSupplier;
 
-  public WallTopologyRig(double vertexSelectDistance, double wallSelectDistance) {
+  public WallTopologyRig(
+      Supplier<Double> vertexSelectDistanceSupplier, Supplier<Double> wallSelectDistanceSupplier) {
     this.walls = new WallTopology();
-    this.vertexSelectDistance = vertexSelectDistance;
-    this.wallSelectDistance = wallSelectDistance;
+    this.vertexSelectDistanceSupplier = vertexSelectDistanceSupplier;
+    this.wallSelectDistanceSupplier = wallSelectDistanceSupplier;
     updateShape();
   }
 
@@ -111,7 +113,7 @@ public final class WallTopologyRig implements Rig<WallTopologyRig.Element<?>> {
   @Override
   public Optional<WallTopologyRig.MovableVertex> getNearbyHandle(
       Point2D point, double extraSpace, Predicate<Element<?>> filter) {
-    var selectDistance = vertexSelectDistance + extraSpace;
+    var selectDistance = vertexSelectDistanceSupplier.get() + extraSpace;
     var candidatesVertices =
         getHandlesWithin(
             new Rectangle2D.Double(
@@ -134,7 +136,7 @@ public final class WallTopologyRig implements Rig<WallTopologyRig.Element<?>> {
       Point2D point, double extraSpace, Predicate<Element<?>> filter) {
     var coordinate = GeometryUtil.point2DToCoordinate(point);
 
-    var selectDistance = wallSelectDistance + extraSpace;
+    var selectDistance = wallSelectDistanceSupplier.get() + extraSpace;
     var bounds =
         new Rectangle2D.Double(
             point.getX() - selectDistance,
