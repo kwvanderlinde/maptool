@@ -551,6 +551,13 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
     }
 
     @Override
+    public void activate() {
+      var source = this.movable.getSource();
+      source.from().bringToFront();
+      source.to().bringToFront();
+    }
+
+    @Override
     public boolean shouldAllowMapDrag(MouseEvent e) {
       return true;
     }
@@ -594,6 +601,11 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
       this.offsetY = handle.getPosition().getY() - originalMousePoint.getY();
 
       this.nonTrivialChange = !cancelIfTrivial;
+    }
+
+    @Override
+    public void activate() {
+      this.movable.getSource().bringToFront();
     }
 
     private void findConnectToHandle(MouseEvent event) {

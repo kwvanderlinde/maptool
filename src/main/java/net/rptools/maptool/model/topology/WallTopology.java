@@ -96,6 +96,10 @@ public final class WallTopology implements Topology {
     public void setPosition(Point2D position) {
       setPosition(position.getX(), position.getY());
     }
+
+    public void bringToFront() {
+      internal.zIndex(++nextZIndex);
+    }
   }
 
   /**
@@ -187,6 +191,10 @@ public final class WallTopology implements Topology {
 
     public int zIndex() {
       return zIndex;
+    }
+
+    public void zIndex(int zIndex) {
+      this.zIndex = zIndex;
     }
   }
 
@@ -322,7 +330,7 @@ public final class WallTopology implements Topology {
     // order. We also include a z-index so that other components can put vertices in other data
     // structures and sort them again by z-order.
     var data = new VertexInternal(id, new Point2D.Double());
-    data.zIndex = ++nextZIndex;
+    data.zIndex(++nextZIndex);
     var previous = vertexInternalById.put(id, data);
     assert previous == null : "Invariant not held";
 
