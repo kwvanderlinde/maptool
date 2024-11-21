@@ -347,6 +347,7 @@
             </constraints>
             <properties>
               <text resource-bundle="net/rptools/maptool/language/i18n" key="MapPropertiesDialog.label.landingMap"/>
+              <toolTipText resource-bundle="net/rptools/maptool/language/i18n" key="MapPropertiesDialog.label.landingMap.tooltip"/>
             </properties>
           </component>
           <component id="f6573" class="javax.swing.JCheckBox" default-binding="true">
