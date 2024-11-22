@@ -347,6 +347,7 @@ message TokenDto {
   bool is_flipped_iso = 47;
   google.protobuf.StringValue charsheet_image = 48;
   google.protobuf.StringValue portrait_image = 49;
+  repeated LightSourceDto unique_light_sources = 72;
   repeated AttachedLightSourceDto light_sources = 50;
   google.protobuf.StringValue sight_type = 51;
   bool has_sight = 52;

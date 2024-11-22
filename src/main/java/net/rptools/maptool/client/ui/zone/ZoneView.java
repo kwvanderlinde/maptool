@@ -78,7 +78,7 @@ public class ZoneView {
 
   private void addLightSourceToken(Token token, Set<Player.Role> roles) {
     for (AttachedLightSource als : token.getLightSources()) {
-      LightSource lightSource = als.resolve(MapTool.getCampaign());
+      LightSource lightSource = als.resolve(token, MapTool.getCampaign());
       if (lightSource == null) {
         continue;
       }
@@ -316,7 +316,8 @@ public class ZoneView {
     final var result = new ArrayList<ContributedLight>();
 
     for (final var attachedLightSource : lightSourceToken.getLightSources()) {
-      LightSource lightSource = attachedLightSource.resolve(MapTool.getCampaign());
+      LightSource lightSource =
+          attachedLightSource.resolve(lightSourceToken, MapTool.getCampaign());
       if (lightSource == null) {
         continue;
       }
@@ -669,7 +670,7 @@ public class ZoneView {
                 Point p = FogUtil.calculateVisionCenter(token, zone);
 
                 for (AttachedLightSource als : token.getLightSources()) {
-                  LightSource lightSource = als.resolve(MapTool.getCampaign());
+                  LightSource lightSource = als.resolve(token, MapTool.getCampaign());
                   if (lightSource == null) {
                     continue;
                   }
