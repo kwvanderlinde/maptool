@@ -147,12 +147,11 @@ public class TokenLightFunctions extends AbstractFunction {
           I18N.getText("macro.function.tokenLight.unknownLightType", "setLights", category));
     }
 
-    final var updateAction =
-        BigDecimal.ZERO.equals(val) ? Token.Update.removeLightSource : Token.Update.addLightSource;
+    final var add = !BigDecimal.ZERO.equals(val);
     for (LightSource ls : sources) {
       if (name.equals(ls.getName())) {
         found = true;
-        MapTool.serverCommand().updateTokenProperty(token, updateAction, ls);
+        MapTool.serverCommand().toggleLightSourceOnToken(token, add, ls);
       }
     }
 

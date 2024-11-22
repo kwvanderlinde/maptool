@@ -185,6 +185,16 @@ public interface ServerCommand {
 
   void removeData(String type, String namespace, String name);
 
+  /**
+   * Adds or removes a light source on {@code token}.
+   *
+   * @param token The token to modify
+   * @param toggleOn If {@code true}, the light source is turned on for the token. Otherwise, it is
+   *     turned off.
+   * @param lightSource The light source to add.
+   */
+  void toggleLightSourceOnToken(Token token, boolean toggleOn, LightSource lightSource);
+
   void setTokenTopology(Token token, @Nullable Area area, Zone.TopologyType topologyType);
 
   void updateTokenProperty(Token token, Token.Update update, int value);
@@ -199,8 +209,6 @@ public interface ServerCommand {
   void updateTokenProperty(Token token, Token.Update update, MacroButtonProperties value);
 
   void updateTokenProperty(Token token, Token.Update update, String value);
-
-  void updateTokenProperty(Token token, Token.Update update, LightSource value);
 
   void updateTokenProperty(Token token, Token.Update update, int value1, int value2);
 
