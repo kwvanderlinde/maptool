@@ -67,7 +67,7 @@ public class MapToolRegistry {
     return instance;
   }
 
-  public static class SeverConnectionDetails {
+  public static class ServerConnectionDetails {
     public String address;
     public int port;
     public boolean webrtc;
@@ -81,7 +81,7 @@ public class MapToolRegistry {
 
   private MapToolRegistry() {}
 
-  public SeverConnectionDetails findInstance(String id) {
+  public ServerConnectionDetails findInstance(String id) {
     OkHttpClient client = new OkHttpClient();
 
     String requestUrl;
@@ -95,7 +95,7 @@ public class MapToolRegistry {
     } catch (Exception e) {
       log.error("Error building request url", e);
       MapTool.showError("msg.error.fetchingRegistryInformation", e);
-      return new SeverConnectionDetails();
+      return new ServerConnectionDetails();
     }
 
     Request request = new Request.Builder().url(requestUrl).build();
@@ -107,11 +107,11 @@ public class MapToolRegistry {
       var responseString = response.body().string();
       if (responseString.isEmpty()) {
         MapTool.showError("msg.error.fetchingRegistryInformation");
-        return new SeverConnectionDetails();
+        return new ServerConnectionDetails();
       }
 
       JsonObject json = JsonParser.parseString(responseString).getAsJsonObject();
-      SeverConnectionDetails details = new SeverConnectionDetails();
+      ServerConnectionDetails details = new ServerConnectionDetails();
 
       details.address = json.getAsJsonPrimitive("address").getAsString();
       details.port = json.getAsJsonPrimitive("port").getAsInt();
@@ -131,7 +131,7 @@ public class MapToolRegistry {
     } catch (Exception e) {
       log.error("Error fetching instance from server registry", e);
       MapTool.showError("msg.error.fetchingRegistryInformation", e);
-      return new SeverConnectionDetails();
+      return new ServerConnectionDetails();
     }
   }
 

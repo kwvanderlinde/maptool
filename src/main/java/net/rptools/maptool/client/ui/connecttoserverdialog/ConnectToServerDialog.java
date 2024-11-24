@@ -39,7 +39,7 @@ import javax.swing.table.TableColumn;
 import net.rptools.maptool.client.AppConstants;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolRegistry;
-import net.rptools.maptool.client.MapToolRegistry.SeverConnectionDetails;
+import net.rptools.maptool.client.MapToolRegistry.ServerConnectionDetails;
 import net.rptools.maptool.client.swing.AbeillePanel;
 import net.rptools.maptool.client.swing.GenericDialog;
 import net.rptools.maptool.client.swing.SwingUtil;
@@ -61,7 +61,7 @@ public class ConnectToServerDialog extends AbeillePanel<ConnectToServerDialogPre
 
   private boolean accepted;
   private GenericDialog dialog;
-  private SeverConnectionDetails connectionDetails = new SeverConnectionDetails();
+  private ServerConnectionDetails connectionDetails = new ServerConnectionDetails();
 
   /** This is the default constructor */
   public ConnectToServerDialog() {
@@ -340,7 +340,7 @@ public class ConnectToServerDialog extends AbeillePanel<ConnectToServerDialogPre
       getServerNameTextField().setText(serverName);
 
       // Do the lookup
-      SeverConnectionDetails serverInfo = MapToolRegistry.getInstance().findInstance(serverName);
+      ServerConnectionDetails serverInfo = MapToolRegistry.getInstance().findInstance(serverName);
       if (serverInfo == null || serverInfo.address == null || serverInfo.address.length() == 0) {
         MapTool.showError(I18N.getText("ServerDialog.error.serverNotFound", serverName));
         return;
