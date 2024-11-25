@@ -24,6 +24,7 @@ import net.rptools.clientserver.simple.server.Server;
 import net.rptools.clientserver.simple.server.SocketServer;
 import net.rptools.clientserver.simple.server.WebRTCServer;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.RemoteServerConfig;
 import net.rptools.maptool.server.ServerConfig;
 
 public class ConnectionFactory {
@@ -33,7 +34,7 @@ public class ConnectionFactory {
     return instance;
   }
 
-  public Connection createConnection(String id, ServerConfig config) {
+  public Connection createConnection(String id, RemoteServerConfig config) {
     if (!config.getUseWebRTC()) {
       return new SocketConnection(id, config.getHostName(), config.getPort());
     }

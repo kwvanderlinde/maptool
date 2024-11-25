@@ -2376,8 +2376,7 @@ public class AppActions {
 
     boolean failed = false;
     try {
-      ServerConfig config =
-          new ServerConfig(username, "", "", port, serverName, address, false, useWebRtc);
+      RemoteServerConfig config = new RemoteServerConfig(port, serverName, address, useWebRtc);
 
       MapTool.connectToRemoteServer(
           config,

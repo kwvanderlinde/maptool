@@ -1174,7 +1174,7 @@ public class MapTool {
   }
 
   public static void connectToRemoteServer(
-      ServerConfig config, LocalPlayer player, HandshakeCompletionObserver onCompleted)
+      RemoteServerConfig config, LocalPlayer player, HandshakeCompletionObserver onCompleted)
       throws IOException {
     if (server != null && server.getState() == MapToolServer.State.Started) {
       log.error("A local server is still running.", new Exception());
