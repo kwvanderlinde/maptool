@@ -2355,8 +2355,7 @@ public class AppActions {
       String serverName,
       String address,
       boolean useWebRtc,
-      String password,
-      Player.Role role) {
+      String password) {
     LOAD_MAP.setSeenWarning(false);
 
     MapTool.disconnect();
@@ -2382,7 +2381,7 @@ public class AppActions {
 
       MapTool.connectToRemoteServer(
           config,
-          new LocalPlayer(username, role, password),
+          new LocalPlayer(username, Player.Role.PLAYER, password),
           (success) -> {
             EventQueue.invokeLater(
                 () -> {
@@ -2447,11 +2446,10 @@ public class AppActions {
           var useWebRtc = dialog.getUseWebRTC();
           var password =
               prefs.getUsePublicKey() ? new PasswordGenerator().getPassword() : prefs.getPassword();
-          var role = prefs.getRole();
 
           runBackground(
               () -> {
-                connectToServer(username, port, serverName, address, useWebRtc, password, role);
+                connectToServer(username, port, serverName, address, useWebRtc, password);
               });
         }
       };

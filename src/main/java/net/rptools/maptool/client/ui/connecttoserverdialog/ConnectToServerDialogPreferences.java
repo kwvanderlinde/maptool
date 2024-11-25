@@ -16,7 +16,6 @@ package net.rptools.maptool.client.ui.connecttoserverdialog;
 
 import java.util.prefs.Preferences;
 import net.rptools.maptool.client.AppConstants;
-import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.server.ServerConfig;
 
 public class ConnectToServerDialogPreferences {
@@ -25,7 +24,6 @@ public class ConnectToServerDialogPreferences {
       Preferences.userRoot().node(AppConstants.APP_NAME + "/prefs/connect");
 
   private static final String KEY_USERNAME = "name";
-  private static final String KEY_ROLE = "playerRole";
   private static final String KEY_HOST = "host";
   private static final String KEY_PORT = "port";
   private static final String KEY_PASSWORD = "password";
@@ -40,14 +38,6 @@ public class ConnectToServerDialogPreferences {
 
   public void setUsername(String name) {
     prefs.put(KEY_USERNAME, name);
-  }
-
-  public Player.Role getRole() {
-    return Player.Role.valueOf(prefs.get(KEY_ROLE, Player.Role.PLAYER.name()));
-  }
-
-  public void setRole(Player.Role role) {
-    prefs.put(KEY_ROLE, role.name());
   }
 
   public void setHost(String host) {
