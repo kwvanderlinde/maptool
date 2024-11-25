@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import javax.annotation.Nonnull;
 import javax.crypto.NoSuchPaddingException;
 import javax.swing.*;
 import javax.swing.text.BadLocationException;
@@ -2350,12 +2351,7 @@ public class AppActions {
       };
 
   public static void connectToServer(
-      String username,
-      int port,
-      String serverName,
-      String address,
-      boolean useWebRtc,
-      String password) {
+      @Nonnull String username, @Nonnull String password, @Nonnull RemoteServerConfig config) {
     LOAD_MAP.setSeenWarning(false);
 
     MapTool.disconnect();
@@ -2376,11 +2372,6 @@ public class AppActions {
 
     boolean failed = false;
     try {
-      RemoteServerConfig config =
-          useWebRtc
-              ? new RemoteServerConfig.WebRTC(serverName)
-              : new RemoteServerConfig.Socket(address, port);
-
       MapTool.connectToRemoteServer(
           config,
           new LocalPlayer(username, password),
@@ -2442,17 +2433,14 @@ public class AppActions {
           ConnectToServerDialogPreferences prefs = new ConnectToServerDialogPreferences();
 
           var username = prefs.getUsername();
-          var port = dialog.getPort();
-          var serverName = prefs.getServerName();
-          var address = dialog.getServer();
-          var useWebRtc = dialog.getUseWebRTC();
           var password =
               prefs.getUsePublicKey() ? new PasswordGenerator().getPassword() : prefs.getPassword();
+          var config =
+              dialog.getUseWebRTC()
+                  ? new RemoteServerConfig.WebRTC(prefs.getServerName())
+                  : new RemoteServerConfig.Socket(dialog.getServer(), dialog.getPort());
 
-          runBackground(
-              () -> {
-                connectToServer(username, port, serverName, address, useWebRtc, password);
-              });
+          runBackground(() -> connectToServer(username, password, config));
         }
       };
 
