@@ -14,32 +14,10 @@
  */
 package net.rptools.maptool.client;
 
-public class RemoteServerConfig {
-  private final int port;
-  private final String serverName;
-  private final String hostName;
-  private final boolean useWebRTC;
+import javax.annotation.Nonnull;
 
-  public RemoteServerConfig(int port, String serverName, String hostName, boolean useWebRTC) {
-    this.port = port;
-    this.serverName = serverName;
-    this.hostName = hostName;
-    this.useWebRTC = useWebRTC;
-  }
+public sealed interface RemoteServerConfig {
+  record Socket(@Nonnull String hostName, int port) implements RemoteServerConfig {}
 
-  public String getServerName() {
-    return serverName;
-  }
-
-  public int getPort() {
-    return port;
-  }
-
-  public String getHostName() {
-    return hostName;
-  }
-
-  public boolean getUseWebRTC() {
-    return useWebRTC;
-  }
+  record WebRTC(@Nonnull String serverName) implements RemoteServerConfig {}
 }

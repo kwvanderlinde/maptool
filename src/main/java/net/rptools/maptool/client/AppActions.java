@@ -2376,7 +2376,10 @@ public class AppActions {
 
     boolean failed = false;
     try {
-      RemoteServerConfig config = new RemoteServerConfig(port, serverName, address, useWebRtc);
+      RemoteServerConfig config =
+          useWebRtc
+              ? new RemoteServerConfig.WebRTC(serverName)
+              : new RemoteServerConfig.Socket(address, port);
 
       MapTool.connectToRemoteServer(
           config,
