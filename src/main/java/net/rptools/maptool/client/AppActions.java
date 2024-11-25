@@ -2381,7 +2381,7 @@ public class AppActions {
 
       MapTool.connectToRemoteServer(
           config,
-          new LocalPlayer(username, Player.Role.PLAYER, password),
+          new LocalPlayer(username, password),
           (success) -> {
             EventQueue.invokeLater(
                 () -> {
