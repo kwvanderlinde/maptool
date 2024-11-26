@@ -39,6 +39,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -70,6 +71,7 @@ import net.rptools.maptool.client.ui.AppMenuBar;
 import net.rptools.maptool.client.ui.ConnectionStatusPanel;
 import net.rptools.maptool.client.ui.MapToolFrame;
 import net.rptools.maptool.client.ui.OSXAdapter;
+import net.rptools.maptool.client.ui.connecttoserverdialog.ConnectToServerDialogPreferences;
 import net.rptools.maptool.client.ui.logger.LogConsoleFrame;
 import net.rptools.maptool.client.ui.sheet.stats.StatSheetListener;
 import net.rptools.maptool.client.ui.theme.Icons;
@@ -177,6 +179,7 @@ public class MapTool {
   private static int windowX = -1;
   private static int windowY = -1;
   private static String loadCampaignOnStartPath = "";
+  @Nullable private static RemoteServerConfig remoteServerConfig = null;
 
   static {
     try {
@@ -1353,6 +1356,11 @@ public class MapTool {
 
       showWarning(message.toString());
     }
+
+    if (remoteServerConfig != null) {
+      var prefs = new ConnectToServerDialogPreferences();
+      AppActions.connectToServer(prefs.getUsername(), prefs.getPassword(), remoteServerConfig);
+    }
   }
 
   /**
@@ -1530,6 +1538,22 @@ public class MapTool {
     Platform.setImplicitExit(false); // necessary to use JavaFX later
   }
 
+  private static void parsePositionalArg(@Nonnull String arg) {
+    ServerAddress serverAddress;
+    try {
+      serverAddress = ServerAddress.parse(arg);
+    } catch (URISyntaxException | IllegalArgumentException e) {
+      log.info("Overriding -F option with extra argument");
+      loadCampaignOnStartPath = arg;
+      return;
+    }
+
+    remoteServerConfig = serverAddress.findServer();
+    if (remoteServerConfig == null) {
+      MapTool.showError(I18N.getText("ServerDialog.error.serverNotFound", arg));
+    }
+  }
+
   public static void main(String[] args) {
     log.info("********************************************************************************");
     log.info("**                                                                            **");
@@ -1638,8 +1662,11 @@ public class MapTool {
     log.info("MapTool vendor: " + vendor);
 
     if (cmd.getArgs().length != 0) {
-      log.info("Overriding -F option with extra argument");
-      loadCampaignOnStartPath = cmd.getArgs()[0];
+      try {
+        parsePositionalArg(cmd.getArgs()[0]);
+      } catch (Error e) {
+        MapTool.showWarning("Error parsing the command line", e);
+      }
     }
     if (!loadCampaignOnStartPath.isEmpty()) {
       log.info("Loading initial campaign: " + loadCampaignOnStartPath);
