@@ -641,6 +641,18 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   @Override
+  public void toggleLightSourceOnToken(Token token, boolean toggleOn, LightSource lightSource) {
+    var update = toggleOn ? Token.Update.addLightSource : Token.Update.removeLightSource;
+    // We only need to send the ID of the light source.
+    updateTokenProperty(
+        token,
+        update,
+        TokenPropertyValueDto.newBuilder()
+            .setLightSourceId(lightSource.getId().toString())
+            .build());
+  }
+
+  @Override
   public void setTokenTopology(Token token, @Nullable Area area, Zone.TopologyType topologyType) {
     if (area == null) {
       // Will be converted back to null on the other end.
@@ -706,14 +718,6 @@ public class ServerCommandClientImpl implements ServerCommand {
   public void updateTokenProperty(Token token, Token.Update update, String value) {
     updateTokenProperty(
         token, update, TokenPropertyValueDto.newBuilder().setStringValue(value).build());
-  }
-
-  @Override
-  public void updateTokenProperty(Token token, Token.Update update, LightSource value) {
-    updateTokenProperty(
-        token,
-        update,
-        TokenPropertyValueDto.newBuilder().setLightSourceId(value.getId().toString()).build());
   }
 
   @Override
