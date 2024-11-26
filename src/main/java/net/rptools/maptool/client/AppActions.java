@@ -2427,7 +2427,8 @@ public class AppActions {
 
           final ConnectToServerDialog dialog = new ConnectToServerDialog();
           dialog.showDialog();
-          if (!dialog.accepted()) {
+          var config = dialog.getResult();
+          if (config == null) {
             return;
           }
           ConnectToServerDialogPreferences prefs = new ConnectToServerDialogPreferences();
@@ -2435,10 +2436,6 @@ public class AppActions {
           var username = prefs.getUsername();
           var password =
               prefs.getUsePublicKey() ? new PasswordGenerator().getPassword() : prefs.getPassword();
-          var config =
-              dialog.getUseWebRTC()
-                  ? new RemoteServerConfig.WebRTC(prefs.getServerName())
-                  : new RemoteServerConfig.Socket(dialog.getServer(), dialog.getPort());
 
           runBackground(() -> connectToServer(username, password, config));
         }

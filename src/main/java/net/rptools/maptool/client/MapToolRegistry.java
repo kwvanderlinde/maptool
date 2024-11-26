@@ -34,6 +34,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import net.rptools.maptool.server.MapToolServer;
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -67,12 +69,6 @@ public class MapToolRegistry {
     return instance;
   }
 
-  public static class ServerConnectionDetails {
-    public String address;
-    public int port;
-    public boolean webrtc;
-  }
-
   public enum RegisterResponse {
     OK,
     ERROR,
@@ -81,7 +77,8 @@ public class MapToolRegistry {
 
   private MapToolRegistry() {}
 
-  public ServerConnectionDetails findInstance(String id) {
+  @Nullable
+  public RemoteServerConfig findInstance(@Nonnull String id) {
     OkHttpClient client = new OkHttpClient();
 
     String requestUrl;
@@ -95,7 +92,7 @@ public class MapToolRegistry {
     } catch (Exception e) {
       log.error("Error building request url", e);
       MapTool.showError("msg.error.fetchingRegistryInformation", e);
-      return new ServerConnectionDetails();
+      return null;
     }
 
     Request request = new Request.Builder().url(requestUrl).build();
@@ -107,31 +104,30 @@ public class MapToolRegistry {
       var responseString = response.body().string();
       if (responseString.isEmpty()) {
         MapTool.showError("msg.error.fetchingRegistryInformation");
-        return new ServerConnectionDetails();
+        return null;
       }
 
       JsonObject json = JsonParser.parseString(responseString).getAsJsonObject();
-      ServerConnectionDetails details = new ServerConnectionDetails();
-
-      details.address = json.getAsJsonPrimitive("address").getAsString();
-      details.port = json.getAsJsonPrimitive("port").getAsInt();
-
       // currently the webrtc property is sent as int. In the future this will
       // change to boolean. So we check what the type is. Can be removed when
       // we get it as boolean.
       var webrtcProperty = json.getAsJsonPrimitive("webrtc");
-      if (webrtcProperty.isBoolean()) {
-        details.webrtc = webrtcProperty.getAsBoolean();
-      } else {
-        details.webrtc = webrtcProperty.getAsInt() > 0;
+      boolean hasWebrtc =
+          webrtcProperty.isBoolean()
+              ? webrtcProperty.getAsBoolean()
+              : webrtcProperty.getAsInt() > 0;
+      if (hasWebrtc) {
+        return new RemoteServerConfig.WebRTC(id);
       }
 
-      return details;
+      return new RemoteServerConfig.Socket(
+          json.getAsJsonPrimitive("address").getAsString(),
+          json.getAsJsonPrimitive("port").getAsInt());
 
     } catch (Exception e) {
       log.error("Error fetching instance from server registry", e);
       MapTool.showError("msg.error.fetchingRegistryInformation", e);
-      return new ServerConnectionDetails();
+      return null;
     }
   }
 
