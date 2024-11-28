@@ -30,6 +30,7 @@ import net.rptools.maptool.model.gamedata.proto.GameDataDto;
 import net.rptools.maptool.model.gamedata.proto.GameDataValueDto;
 import net.rptools.maptool.model.library.addon.TransferableAddOnLibrary;
 import net.rptools.maptool.model.player.Player;
+import net.rptools.maptool.model.topology.WallTopology;
 
 public interface ServerCommand {
   void bootPlayer(String player);
@@ -42,14 +43,16 @@ public interface ServerCommand {
 
   void setFoW(GUID zoneGUID, Area area, Set<GUID> selectedToks);
 
-  default void updateTopology(
+  void replaceWalls(Zone zone, WallTopology walls);
+
+  default void updateMaskTopology(
       Zone zone, Area area, boolean erase, Set<Zone.TopologyType> topologyTypes) {
     for (var topologyType : topologyTypes) {
-      updateTopology(zone, area, erase, topologyType);
+      updateMaskTopology(zone, area, erase, topologyType);
     }
   }
 
-  void updateTopology(Zone zone, Area area, boolean erase, Zone.TopologyType topologyType);
+  void updateMaskTopology(Zone zone, Area area, boolean erase, Zone.TopologyType topologyType);
 
   void enforceZoneView(GUID zoneGUID, int x, int y, double scale, int width, int height);
 
@@ -195,7 +198,7 @@ public interface ServerCommand {
    */
   void toggleLightSourceOnToken(Token token, boolean toggleOn, LightSource lightSource);
 
-  void setTokenTopology(Token token, @Nullable Area area, Zone.TopologyType topologyType);
+  void setTokenMaskTopology(Token token, @Nullable Area area, Zone.TopologyType topologyType);
 
   void updateTokenProperty(Token token, Token.Update update, int value);
 

@@ -206,7 +206,7 @@ public class Token implements Cloneable {
     setTerrainModifier,
     setTerrainModifierOperation,
     setTerrainModifiersIgnored,
-    setTopology,
+    setMaskTopology,
     setImageAsset,
     setPortraitImage,
     setCharsheetImage,
@@ -265,11 +265,16 @@ public class Token implements Cloneable {
   private int alwaysVisibleTolerance = 2; // Default for # of regions (out of 9) that must be seen
   // before token is shown over FoW
   private boolean isAlwaysVisible = false; // Controls whether a Token is shown over VBL
+
+  // region Topology masks
+
   private Area vbl;
   private Area hillVbl;
   private Area pitVbl;
   private Area coverVbl;
   private Area mbl;
+
+  // endregion
 
   private String name = "";
   private Set<String> ownerList = new HashSet<>();
@@ -1393,7 +1398,7 @@ public class Token implements Cloneable {
    * @param topologyType The type of topology to return.
    * @return the current topology of the token.
    */
-  public Area getTopology(Zone.TopologyType topologyType) {
+  public Area getMaskTopology(Zone.TopologyType topologyType) {
     return switch (topologyType) {
       case WALL_VBL -> vbl;
       case HILL_VBL -> hillVbl;
@@ -1409,8 +1414,8 @@ public class Token implements Cloneable {
    * @param topologyType The type of topology to transform.
    * @return the transformed topology for the token
    */
-  public Area getTransformedTopology(Zone.TopologyType topologyType) {
-    return getTransformedTopology(getTopology(topologyType));
+  public Area getTransformedMaskTopology(Zone.TopologyType topologyType) {
+    return getTransformedMaskTopology(getMaskTopology(topologyType));
   }
 
   /**
@@ -1421,7 +1426,7 @@ public class Token implements Cloneable {
    * @param topologyType The type of topology to set.
    * @param topology the topology area to set.
    */
-  public void setTopology(Zone.TopologyType topologyType, @Nullable Area topology) {
+  public void setMaskTopology(Zone.TopologyType topologyType, @Nullable Area topology) {
     if (topology != null && topology.isEmpty()) {
       topology = null;
     }
@@ -1433,21 +1438,19 @@ public class Token implements Cloneable {
       case COVER_VBL -> coverVbl = topology;
       case MBL -> mbl = topology;
     }
-    ;
 
-    if (!hasAnyTopology()) {
+    if (!hasAnyMaskTopology()) {
       vblColorSensitivity = -1;
     }
   }
 
   /**
-   * Return the existence of the requested type of topology.
-   *
-   * @param topologyType The type of topology to check for.
-   * @return true if the token has the given type of topology.
+   * @return All types of mask topology attached to the token.
    */
-  public boolean hasTopology(Zone.TopologyType topologyType) {
-    return getTopology(topologyType) != null;
+  public Collection<Zone.TopologyType> getMaskTopologyTypes() {
+    var result = EnumSet.allOf(Zone.TopologyType.class);
+    result.removeIf(type -> getMaskTopology(type) == null);
+    return result;
   }
 
   /**
@@ -1455,9 +1458,9 @@ public class Token implements Cloneable {
    *
    * @return true if the token has any kind of topology.
    */
-  public boolean hasAnyTopology() {
+  public boolean hasAnyMaskTopology() {
     return Arrays.stream(Zone.TopologyType.values())
-        .map(this::getTopology)
+        .map(this::getMaskTopology)
         .anyMatch(Objects::nonNull);
   }
 
@@ -1470,7 +1473,7 @@ public class Token implements Cloneable {
    * @author Jamz
    * @since 1.4.1.5
    */
-  public Area getTransformedTopology(Area areaToTransform) {
+  public Area getTransformedMaskTopology(Area areaToTransform) {
     if (areaToTransform == null) {
       return null;
     }
@@ -2684,7 +2687,7 @@ public class Token implements Cloneable {
     boolean lightChanged = false;
     boolean macroChanged = false;
     boolean panelLookChanged = false; // appearance of token in a panel changed
-    boolean topologyChanged = false;
+    Zone.TopologyType topologyChangeType = null;
     switch (update) {
       case setState:
         var state = parameters.get(0).getStringValue();
@@ -2847,11 +2850,11 @@ public class Token implements Cloneable {
                 .map(TerrainModifierOperation::valueOf)
                 .collect(Collectors.toSet()));
         break;
-      case setTopology:
+      case setMaskTopology:
         {
           final var topologyType = Zone.TopologyType.valueOf(parameters.get(0).getTopologyType());
-          setTopology(topologyType, Mapper.map(parameters.get(1).getArea()));
-          topologyChanged = true;
+          setMaskTopology(topologyType, Mapper.map(parameters.get(1).getArea()));
+          topologyChangeType = topologyType;
           break;
         }
       case setImageAsset:
@@ -2941,8 +2944,8 @@ public class Token implements Cloneable {
     if (panelLookChanged) {
       zone.tokenPanelChanged(this);
     }
-    if (topologyChanged) {
-      zone.tokenTopologyChanged();
+    if (topologyChangeType != null) {
+      zone.tokenMaskTopologyChanged(EnumSet.of(topologyChangeType));
     }
     zone.tokenChanged(this); // fire Event.TOKEN_CHANGED, which updates topology if token has VBL
   }

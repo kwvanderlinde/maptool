@@ -212,8 +212,8 @@ public class DungeonDraftImporter {
                     WALL_VBL_STROKE.createStrokedShape(
                         getVBLPath(v.getAsJsonArray(), pixelsPerCell)));
             if (finalDo_transform) vblArea.transform(at);
-            zone.updateTopology(vblArea, false, Zone.TopologyType.WALL_VBL);
-            zone.updateTopology(vblArea, false, Zone.TopologyType.MBL);
+            zone.updateMaskTopology(vblArea, false, Zone.TopologyType.WALL_VBL);
+            zone.updateMaskTopology(vblArea, false, Zone.TopologyType.MBL);
           });
     }
 
@@ -224,8 +224,8 @@ public class DungeonDraftImporter {
           v -> {
             Area vblArea = new Area(getVBLPath(v.getAsJsonArray(), pixelsPerCell));
             if (finalDo_transform) vblArea.transform(at);
-            zone.updateTopology(vblArea, false, Zone.TopologyType.HILL_VBL);
-            zone.updateTopology(vblArea, false, Zone.TopologyType.PIT_VBL);
+            zone.updateMaskTopology(vblArea, false, Zone.TopologyType.HILL_VBL);
+            zone.updateMaskTopology(vblArea, false, Zone.TopologyType.PIT_VBL);
           });
     }
 
@@ -248,8 +248,8 @@ public class DungeonDraftImporter {
               Area vblArea =
                   new Area(DOOR_VBL_STROKE.createStrokedShape(getVBLPath(bounds, pixelsPerCell)));
               if (finalDo_transform) vblArea.transform(at);
-              zone.updateTopology(vblArea, false, Zone.TopologyType.WALL_VBL);
-              zone.updateTopology(vblArea, false, Zone.TopologyType.MBL);
+              zone.updateMaskTopology(vblArea, false, Zone.TopologyType.WALL_VBL);
+              zone.updateMaskTopology(vblArea, false, Zone.TopologyType.MBL);
             }
           });
     }
