@@ -480,11 +480,15 @@ public class MapTool {
    * be called from any uncontrolled macros as there are both security and denial-of-service attacks
    * possible.
    *
+   * <p>This should not be called from any uncontrolled macros as there are both security and
+   * denial-of-service attacks possible.
+   *
+   * <p>This must be called on the AWT thread.
+   *
    * @param url the URL to pass to the browser.
    */
   public static void showDocument(String url) {
-    if (Desktop.isDesktopSupported()) {
-      String lowerCaseUrl = url.toLowerCase();
+    if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
       String urlToBrowse = url;
       Desktop desktop = Desktop.getDesktop();
       URI uri = null;
@@ -492,8 +496,8 @@ public class MapTool {
         uri = new URI(urlToBrowse);
         if (uri.getScheme() == null) {
           urlToBrowse = "https://" + urlToBrowse;
+          uri = new URI(urlToBrowse);
         }
-        uri = new URI(urlToBrowse);
         desktop.browse(uri);
       } catch (Exception e) {
         MapTool.showError(I18N.getText("msg.error.browser.cannotStart", uri), e);
