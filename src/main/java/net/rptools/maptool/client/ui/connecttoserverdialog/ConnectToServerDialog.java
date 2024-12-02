@@ -38,28 +38,22 @@ import javax.swing.SwingWorker;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
-import net.rptools.maptool.client.AppConstants;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolRegistry;
+import net.rptools.maptool.client.MapToolServiceFinder;
 import net.rptools.maptool.client.RemoteServerConfig;
 import net.rptools.maptool.client.swing.AbeillePanel;
 import net.rptools.maptool.client.swing.GenericDialog;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.language.I18N;
-import net.tsc.servicediscovery.AnnouncementListener;
-import net.tsc.servicediscovery.ServiceFinder;
 import yasb.Binder;
 
 /**
  * @author trevor
  */
 public class ConnectToServerDialog extends AbeillePanel<ConnectToServerDialogPreferences>
-    implements AnnouncementListener {
-  private static ServiceFinder finder;
-
-  static {
-    finder = new ServiceFinder(AppConstants.SERVICE_GROUP);
-  }
+    implements MapToolServiceFinder.MapToolAnnouncementListener {
+  private static MapToolServiceFinder finder = MapToolServiceFinder.getInstance();
 
   private GenericDialog dialog;
   private RemoteServerConfig connectionDetails = null;
@@ -124,7 +118,6 @@ public class ConnectToServerDialog extends AbeillePanel<ConnectToServerDialogPre
   public void unbind() {
     // Shutting down
     finder.removeAnnouncementListener(this);
-    finder.dispose();
 
     super.unbind();
   }
@@ -414,12 +407,8 @@ public class ConnectToServerDialog extends AbeillePanel<ConnectToServerDialogPre
   }
 
   // ANNOUNCEMENT LISTENER
-  public void serviceAnnouncement(
-      @Nonnull String type, @Nonnull InetAddress address, int port, @Nonnull byte[] data) {
-    ((DefaultListModel) getLocalServerList().getModel())
-        .addElement(
-            new ServerInfo(
-                new String(data), new RemoteServerConfig.Socket(address.getHostAddress(), port)));
+  public void serviceAnnouncement(@Nonnull String id, @Nonnull RemoteServerConfig.Socket config) {
+    ((DefaultListModel) getLocalServerList().getModel()).addElement(new ServerInfo(id, config));
   }
 
   private static class ServerInfo {
