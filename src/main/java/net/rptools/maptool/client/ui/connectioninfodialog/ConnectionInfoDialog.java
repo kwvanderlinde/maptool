@@ -24,11 +24,6 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.Objects;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -36,17 +31,15 @@ import javax.swing.JDialog;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.MapToolRegistry;
 import net.rptools.maptool.client.swing.AbeillePanel;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.server.MapToolServer;
+import net.rptools.maptool.util.NetUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class ConnectionInfoDialog extends JDialog {
-  private static String externalAddress =
-      "Unknown"; // Used to be "Discovering ..." -- note that this is a UX change
   private static JTextField externalAddressLabel;
 
   private static final Logger log = LogManager.getLogger(ConnectionInfoDialog.class);
@@ -140,7 +133,15 @@ public class ConnectionInfoDialog extends JDialog {
     ((JComponent) getContentPane()).setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     add(panel);
 
-    (new Thread(new ExternalAddressFinder(externalAddressLabel))).start();
+    NetUtil.getInstance()
+        .getExternalAddress()
+        .thenAccept(
+            address -> {
+              if (address != null) {
+                SwingUtilities.invokeLater(
+                    () -> externalAddressLabel.setText(NetUtil.formatAddress(address)));
+              }
+            });
   }
 
   @Override
@@ -151,26 +152,6 @@ public class ConnectionInfoDialog extends JDialog {
     super.setVisible(b);
   }
 
-  private static FutureTask<String> getExternalAddressFinderResult() {
-    ExternalAddressFinder finder = new ExternalAddressFinder(externalAddressLabel);
-    FutureTask<String> future = new FutureTask<>(finder);
-    Executor executor = Executors.newSingleThreadExecutor();
-    executor.execute(future);
-    return future;
-  }
-
-  public static String getExternalAddress() {
-    if (externalAddress.equals("Unknown")) {
-      FutureTask<String> future = getExternalAddressFinderResult();
-      try {
-        externalAddress = future.get();
-      } catch (Exception e) {
-        // if there's an exception, we just keep the string 'Unknown'
-      }
-    }
-    return externalAddress;
-  }
-
   /**
    * This method initializes okButton
    *
@@ -178,24 +159,5 @@ public class ConnectionInfoDialog extends JDialog {
    */
   private void bindOKButtonActions(JButton okButton) {
     okButton.addActionListener(e -> setVisible(false));
-  }
-
-  private static class ExternalAddressFinder implements Callable<String>, Runnable {
-    private final JTextField myLabel;
-
-    public ExternalAddressFinder(JTextField label) {
-      myLabel = label;
-    }
-
-    @Override
-    public String call() {
-      return Objects.toString(MapToolRegistry.getInstance().getAddress(), "Unknown");
-    }
-
-    @Override
-    public void run() {
-      String result = call();
-      SwingUtilities.invokeLater(() -> myLabel.setText(result));
-    }
   }
 }
