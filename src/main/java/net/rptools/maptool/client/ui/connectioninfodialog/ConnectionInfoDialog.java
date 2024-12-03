@@ -16,6 +16,7 @@ package net.rptools.maptool.client.ui.connectioninfodialog;
 
 import java.awt.GridLayout;
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -76,7 +77,7 @@ public class ConnectionInfoDialog extends JDialog {
             return inetAddress.getHostAddress();
           }
 
-          if (!v6 && inetAddress instanceof InetAddress) {
+          if (!v6 && inetAddress instanceof Inet4Address) {
             return inetAddress.getHostAddress();
           }
         }
