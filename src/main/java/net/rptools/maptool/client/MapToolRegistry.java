@@ -36,7 +36,6 @@ import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -285,7 +284,7 @@ public class MapToolRegistry {
    * @return A future that resolves to the external IP address.
    */
   @Nonnull
-  public Future<String> getAddressAsync() {
+  public CompletableFuture<InetAddress> getAddressAsync() {
     List<String> ipCheckURLs;
     try (InputStream ipCheckList =
         getClass().getResourceAsStream("/net/rptools/maptool/client/network/ip-check.txt")) {
