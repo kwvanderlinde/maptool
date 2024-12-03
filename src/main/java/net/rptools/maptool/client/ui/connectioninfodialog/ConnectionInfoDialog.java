@@ -24,6 +24,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -188,11 +189,7 @@ public class ConnectionInfoDialog extends JDialog {
 
     @Override
     public String call() {
-      String address = MapToolRegistry.getInstance().getAddress();
-      if (address == null || address.length() == 0) {
-        address = "Unknown";
-      }
-      return address;
+      return Objects.toString(MapToolRegistry.getInstance().getAddress(), "Unknown");
     }
 
     @Override

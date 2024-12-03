@@ -272,12 +272,9 @@ public class ConnectToServerDialog extends AbeillePanel<ConnectToServerDialogPre
     }
     getUsernameTextField().setText(username);
 
-    String externalAddress = "Unknown";
+    InetAddress externalAddress = null;
     try {
       externalAddress = MapToolRegistry.getInstance().getAddress();
-      if (externalAddress == null || externalAddress.length() == 0) {
-        externalAddress = "Unknown";
-      }
     } catch (Exception e) {
       // Oh well, might not be connected
     }
@@ -335,10 +332,9 @@ public class ConnectToServerDialog extends AbeillePanel<ConnectToServerDialogPre
       throw new AssertionError("Expected rptools, LAN or direct panel to be selected");
     }
     try {
-      InetAddress extAddress = InetAddress.getByName(externalAddress);
-      if (extAddress != null
+      if (externalAddress != null
           && connectionDetails instanceof RemoteServerConfig.Socket(String hostName, int port)
-          && extAddress.equals(InetAddress.getByName(hostName))) {
+          && externalAddress.equals(InetAddress.getByName(hostName))) {
         boolean yes =
             MapTool.confirm(
                 "ConnectToServerDialog.warning.doNotUseExternalAddress",
