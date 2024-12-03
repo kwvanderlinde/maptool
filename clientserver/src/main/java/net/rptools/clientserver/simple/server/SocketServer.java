@@ -25,7 +25,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * @author drice
  */
-public class SocketServer extends AbstractServer {
+public final class SocketServer extends AbstractServer implements Server {
 
   private static final Logger log = LogManager.getLogger(SocketServer.class);
   private final int port;
