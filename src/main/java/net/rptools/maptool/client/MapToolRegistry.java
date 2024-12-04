@@ -33,9 +33,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -281,7 +282,7 @@ public class MapToolRegistry {
   /**
    * Asynchronously get the external IP address of this MapTool instance.
    *
-   * @return A future that resolves to the external IP address.
+   * @return A future that resolves to the external IP address or null if none could be determined.
    */
   @Nonnull
   public CompletableFuture<InetAddress> getAddressAsync() {
@@ -297,31 +298,30 @@ public class MapToolRegistry {
     } catch (IOException e) {
       throw new AssertionError("Unable to read ip-check list.", e); // Shouldn't happen
     }
-
-    final CompletableFuture<InetAddress> externalIpFuture = new CompletableFuture<>();
-    final ExecutorService executor = Executors.newCachedThreadPool();
+    var ipCheckTasks = new ArrayList<Callable<InetAddress>>();
     for (String urlString : ipCheckURLs) {
-      executor.execute(
+      ipCheckTasks.add(
           () -> {
-            try {
-              URL url = new URL(urlString);
+            URL url = new URL(urlString);
 
-              try (BufferedReader reader =
-                  new BufferedReader(new InputStreamReader(url.openStream()))) {
-                String ip = reader.readLine();
-                if (ip != null && !ip.isEmpty()) {
-                  externalIpFuture.complete(InetAddress.getByName(ip));
-                  // A result has been found. No need to continue running tasks.
-                  executor.shutdownNow();
-                }
-              }
-            } catch (Exception t) {
-              // Ignore. Hopefully another request succeeds.
+            try (BufferedReader reader =
+                new BufferedReader(new InputStreamReader(url.openStream()))) {
+              String ip = reader.readLine();
+              // null or invalid ip deliberately unhandled so this task fails
+              // and invokeAny only returns the first valid ip
+              return InetAddress.getByName(ip);
             }
           });
     }
 
-    return externalIpFuture;
+    return CompletableFuture.supplyAsync(
+        () -> {
+          try {
+            return ForkJoinPool.commonPool().invokeAny(ipCheckTasks);
+          } catch (ExecutionException | InterruptedException ignore) {
+            return null;
+          }
+        });
   }
 
   /** Get a link to the registry server that will redirect to the given MapTool URI. */
