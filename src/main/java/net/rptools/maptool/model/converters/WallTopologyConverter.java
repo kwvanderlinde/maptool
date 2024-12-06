@@ -117,6 +117,9 @@ public class WallTopologyConverter extends AbstractCollectionConverter {
             e);
       }
     }
+
+    walls.removeDanglingVertices();
+
     return walls;
   }
 

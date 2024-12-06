@@ -568,7 +568,14 @@ public final class WallTopology implements Topology {
 
   // endregion
 
-  private void removeDanglingVertices() {
+  /**
+   * Ensures that any vertices with no walls are removed from the graph.
+   *
+   * <p>This is usually called automatically when needed, so don't call this method without reason.
+   * Deserializing is an exception where improper XML could result in vertices being added without
+   * associated walls.
+   */
+  public void removeDanglingVertices() {
     var verticesToRemove = new ArrayList<GUID>();
     for (var vertex : graph.vertexSet()) {
       if (graph.edgesOf(vertex).isEmpty()) {
