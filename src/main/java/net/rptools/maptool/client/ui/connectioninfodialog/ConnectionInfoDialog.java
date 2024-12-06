@@ -16,10 +16,10 @@ package net.rptools.maptool.client.ui.connectioninfodialog;
 
 import java.awt.GridLayout;
 import java.io.IOException;
-import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Collections;
@@ -50,31 +50,50 @@ public class ConnectionInfoDialog extends JDialog {
    * @param v6 Should the IPv6 Address be returnes (true) or the IPv4 Address (false)
    */
   private static String getIPAddress(boolean v6) throws SocketException {
+    // Get the appropriate IPv4/6 address for future reachability checks
+    InetAddress rptools = null;
+    try {
+      for (InetAddress addr : InetAddress.getAllByName("www.rptools.net")) {
+        if (v6 == (addr instanceof Inet6Address)) {
+          rptools = addr;
+          break;
+        }
+      }
+    } catch (UnknownHostException ignore) {
+    }
+    // We might find we didn't resolve an address for our address family
+    // but we can fall back to skipping the reachability check
+    // since rptools.net not having an address doesn't imply we're unreachable.
+
     Enumeration<NetworkInterface> netInts = NetworkInterface.getNetworkInterfaces();
     for (NetworkInterface netInt : Collections.list(netInts)) {
-      if (netInt.isUp() && !netInt.isLoopback()) {
-        for (InetAddress inetAddress : Collections.list(netInt.getInetAddresses())) {
+      if (!netInt.isUp() || netInt.isLoopback()) {
+        continue;
+      }
 
-          if (inetAddress.isLoopbackAddress()
-              || inetAddress.isLinkLocalAddress()
-              || inetAddress.isMulticastAddress()) {
+      for (InetAddress inetAddress : Collections.list(netInt.getInetAddresses())) {
+
+        if (inetAddress.isLoopbackAddress()
+            || inetAddress.isLinkLocalAddress()
+            || inetAddress.isMulticastAddress()) {
+          continue;
+        }
+
+        if (v6 != (inetAddress instanceof Inet6Address)) {
+          continue;
+        }
+
+        // Check that rptools is reachable from this address
+        // as a proxy that this address is reachable by others
+        // by connecting to rptools' SSL port from this local address.
+        if (rptools != null) {
+          try (var s = new Socket(rptools, 443, inetAddress, 0)) {
+          } catch (IOException | SecurityException | IllegalArgumentException e) {
             continue;
-          }
-
-          try {
-            InetAddress rptools = InetAddress.getByName("www.rptools.net");
-          } catch (UnknownHostException e) {
-            continue;
-          }
-
-          if (v6 && inetAddress instanceof Inet6Address) {
-            return inetAddress.getHostAddress();
-          }
-
-          if (!v6 && inetAddress instanceof Inet4Address) {
-            return inetAddress.getHostAddress();
           }
         }
+
+        return inetAddress.getHostAddress();
       }
     }
     return null;
