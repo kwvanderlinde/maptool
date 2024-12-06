@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.RenderPathWorker;
 import net.rptools.maptool.client.walker.ZoneWalker;
@@ -36,7 +37,7 @@ public class SelectionSet {
   private final Set<GUID> selectionSet = new HashSet<GUID>();
   private final GUID keyToken;
   private final String playerId;
-  private ZoneWalker walker;
+  private @Nullable ZoneWalker walker;
   private final Token token;
 
   private Path<ZonePoint> gridlessPath;
@@ -114,29 +115,32 @@ public class SelectionSet {
 
   /** Aborts the movement for this selection. */
   public void cancel() {
-    walker.close();
+    if (walker != null) {
+      walker.close();
 
-    renderPathTask.cancel(true);
+      if (renderPathTask != null) {
+        renderPathTask.cancel(true);
+      }
+    }
   }
 
   // This is called when movement is committed/done. It'll let the last thread either finish or
   // timeout
   public void renderFinalPath() {
-    walker.close();
+    if (walker != null) {
+      walker.close();
 
-    if (renderer.zone.getGrid().getCapabilities().isPathingSupported()
-        && token.isSnapToGrid()
-        && renderPathTask != null) {
-
-      log.trace("Waiting on Path Rendering... ");
-      while (true) {
-        try {
-          renderPathTask.get();
-          break;
-        } catch (InterruptedException e) {
-        } catch (ExecutionException e) {
-          log.error("Error while waiting for task to finish", e);
-          break;
+      if (renderPathTask != null) {
+        log.trace("Waiting on Path Rendering... ");
+        while (true) {
+          try {
+            renderPathTask.get();
+            break;
+          } catch (InterruptedException e) {
+          } catch (ExecutionException e) {
+            log.error("Error while waiting for task to finish", e);
+            break;
+          }
         }
       }
     }
@@ -146,7 +150,7 @@ public class SelectionSet {
     currentPoint.x = newAnchorPosition.x;
     currentPoint.y = newAnchorPosition.y;
 
-    if (renderer.zone.getGrid().getCapabilities().isPathingSupported() && token.isSnapToGrid()) {
+    if (walker != null) {
       CellPoint point = renderer.zone.getGrid().convert(currentPoint);
       // walker.replaceLastWaypoint(point, restrictMovement); // OLD WAY
 
@@ -174,7 +178,7 @@ public class SelectionSet {
    * @param location The point where the waypoint is toggled.
    */
   public void toggleWaypoint(ZonePoint location) {
-    if (walker != null && token.isSnapToGrid() && renderer.getZone().getGrid() != null) {
+    if (walker != null) {
       walker.toggleWaypoint(renderer.getZone().getGrid().convert(location));
     } else {
       gridlessPath.appendWaypoint(location);
@@ -189,14 +193,11 @@ public class SelectionSet {
    */
   public ZonePoint getLastWaypoint() {
     ZonePoint zp;
-    if (walker != null && token.isSnapToGrid() && renderer.getZone().getGrid() != null) {
+    if (walker != null) {
       CellPoint cp = walker.getLastPoint();
 
       if (cp == null) {
-        // log.info("cellpoint is null! FIXME! You have Walker class updating outside of
-        // thread..."); // Why not save last waypoint to this class?
         cp = renderer.zone.getGrid().convert(token.getDragAnchor(renderer.zone));
-        // log.info("So I set it to: " + cp);
       }
 
       zp = renderer.getZone().getGrid().convert(cp);
