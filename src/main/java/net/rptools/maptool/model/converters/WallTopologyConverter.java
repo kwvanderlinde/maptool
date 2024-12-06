@@ -15,14 +15,13 @@
 package net.rptools.maptool.model.converters;
 
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.annotations.XStreamAliasType;
 import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
-import com.thoughtworks.xstream.annotations.XStreamImplicit;
 import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.converters.collections.AbstractCollectionConverter;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -81,12 +80,12 @@ public class WallTopologyConverter extends AbstractCollectionConverter {
             vertex ->
                 new VertexRepresentation(
                     vertex.id(), vertex.getPosition().getX(), vertex.getPosition().getY()))
-        .forEach(representation.vertices.list::add);
+        .forEach(representation.vertices::add);
     walls
         .getWalls()
         .sorted(Comparator.comparingInt(WallTopology.Wall::getZIndex))
         .map(wall -> new WallRepresentation(wall.from().id(), wall.to().id()))
-        .forEach(representation.walls.list::add);
+        .forEach(representation.walls::add);
 
     context.convertAnother(representation);
   }
@@ -96,7 +95,7 @@ public class WallTopologyConverter extends AbstractCollectionConverter {
     var walls = new WallTopology();
     var representation =
         (GraphRepresentation) context.convertAnother(walls, GraphRepresentation.class);
-    for (var vertexRepresentation : representation.vertices.list) {
+    for (var vertexRepresentation : representation.vertices) {
       try {
         var vertex = walls.createVertex(new GUID(vertexRepresentation.id));
         vertex.setPosition(vertexRepresentation.x, vertexRepresentation.y);
@@ -107,7 +106,7 @@ public class WallTopologyConverter extends AbstractCollectionConverter {
             e);
       }
     }
-    for (var wallRepresentation : representation.walls.list) {
+    for (var wallRepresentation : representation.walls) {
       try {
         walls.createWall(new GUID(wallRepresentation.from), new GUID(wallRepresentation.to));
       } catch (WallTopology.GraphException e) {
@@ -124,20 +123,11 @@ public class WallTopologyConverter extends AbstractCollectionConverter {
   // region Intermediate representation that contains only the essence of the wall graph.
 
   private static final class GraphRepresentation {
-    public final VerticesRepresentation vertices = new VerticesRepresentation();
-    public final WallsRepresentation walls = new WallsRepresentation();
+    public final List<VertexRepresentation> vertices = new ArrayList<>();
+    public final List<WallRepresentation> walls = new ArrayList<>();
   }
 
-  private static final class VerticesRepresentation {
-    @XStreamImplicit(itemFieldName = "vertex")
-    public final List<VertexRepresentation> list = new ArrayList<>();
-  }
-
-  private static final class WallsRepresentation {
-    @XStreamImplicit(itemFieldName = "wall")
-    public final List<WallRepresentation> list = new ArrayList<>();
-  }
-
+  @XStreamAliasType("vertex")
   private static final class VertexRepresentation {
     @XStreamAsAttribute public final String id;
     @XStreamAsAttribute public final double x;
@@ -150,6 +140,7 @@ public class WallTopologyConverter extends AbstractCollectionConverter {
     }
   }
 
+  @XStreamAliasType("wall")
   private static final class WallRepresentation {
     @XStreamAsAttribute public final String from;
     @XStreamAsAttribute public final String to;
@@ -157,16 +148,6 @@ public class WallTopologyConverter extends AbstractCollectionConverter {
     public WallRepresentation(GUID from, GUID to) {
       this.from = from.toString();
       this.to = to.toString();
-    }
-  }
-
-  private static final class PointRepresentation {
-    @XStreamAsAttribute public final double x;
-    @XStreamAsAttribute public final double y;
-
-    public PointRepresentation(Point2D position) {
-      this.x = position.getX();
-      this.y = position.getY();
     }
   }
 
