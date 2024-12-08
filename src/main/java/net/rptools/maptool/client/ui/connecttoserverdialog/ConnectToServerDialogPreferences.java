@@ -15,6 +15,7 @@
 package net.rptools.maptool.client.ui.connecttoserverdialog;
 
 import java.util.prefs.Preferences;
+import javax.annotation.Nonnull;
 import net.rptools.maptool.client.AppConstants;
 import net.rptools.maptool.server.ServerConfig;
 
@@ -32,6 +33,7 @@ public class ConnectToServerDialogPreferences {
   private static final String USE_PUBLIC_KEY = "usePublicKey";
   private static final String USE_WEB_RTC = "useWebRTC";
 
+  @Nonnull
   public String getUsername() {
     return prefs.get(KEY_USERNAME, "");
   }
@@ -44,6 +46,7 @@ public class ConnectToServerDialogPreferences {
     prefs.put(KEY_HOST, host);
   }
 
+  @Nonnull
   public String getHost() {
     return prefs.get(KEY_HOST, "");
   }
@@ -60,6 +63,7 @@ public class ConnectToServerDialogPreferences {
     prefs.put(KEY_PASSWORD, password);
   }
 
+  @Nonnull
   public String getPassword() {
     return prefs.get(KEY_PASSWORD, "");
   }
@@ -76,6 +80,7 @@ public class ConnectToServerDialogPreferences {
     prefs.put(KEY_SERVER_NAME, host);
   }
 
+  @Nonnull
   public String getServerName() {
     return prefs.get(KEY_SERVER_NAME, "");
   }

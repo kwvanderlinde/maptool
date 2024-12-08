@@ -157,7 +157,7 @@ public class MapTool {
   private static MapToolFrame clientFrame;
   private static NoteFrame profilingNoteFrame;
   private static LogConsoleFrame logConsoleFrame;
-  private static MapToolServer server;
+  @Nullable private static MapToolServer server;
   private static MapToolClient client;
 
   private static BackupManager backupManager;
@@ -1158,7 +1158,7 @@ public class MapTool {
         player);
   }
 
-  private static void setUpClient(MapToolClient client) {
+  private static void setUpClient(@Nonnull MapToolClient client) {
     MapTool.getFrame().getCommandPanel().clearAllIdentities();
 
     MapToolConnection clientConn = client.getConnection();
