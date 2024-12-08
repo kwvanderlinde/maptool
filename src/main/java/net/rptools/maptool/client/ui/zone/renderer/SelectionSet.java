@@ -32,6 +32,7 @@ import org.apache.logging.log4j.Logger;
 public class SelectionSet {
 
   private final ZoneRenderer renderer;
+  private final Grid grid;
   private final Logger log = LogManager.getLogger(SelectionSet.class);
 
   private final Set<GUID> selectionSet = new HashSet<GUID>();
@@ -70,12 +71,13 @@ public class SelectionSet {
     startPoint = new ZonePoint(anchorPoint);
     currentPoint = new ZonePoint(anchorPoint);
 
-    if (token.isSnapToGrid() && renderer.zone.getGrid().getCapabilities().isSnapToGridSupported()) {
-      if (renderer.zone.getGrid().getCapabilities().isPathingSupported()) {
-        CellPoint tokenPoint = renderer.zone.getGrid().convert(currentPoint);
+    grid = renderer.getZone().getGrid();
+    if (token.isSnapToGrid() && grid.getCapabilities().isSnapToGridSupported()) {
+      if (grid.getCapabilities().isPathingSupported()) {
+        CellPoint tokenPoint = grid.convert(currentPoint);
 
-        walker = renderer.zone.getGrid().createZoneWalker();
-        walker.setFootprint(token.getFootprint(renderer.zone.getGrid()));
+        walker = grid.createZoneWalker();
+        walker.setFootprint(token.getFootprint(grid));
         walker.setWaypoints(tokenPoint, tokenPoint);
       }
     } else {
@@ -151,7 +153,7 @@ public class SelectionSet {
     currentPoint.y = newAnchorPosition.y;
 
     if (walker != null) {
-      CellPoint point = renderer.zone.getGrid().convert(currentPoint);
+      CellPoint point = grid.convert(currentPoint);
       // walker.replaceLastWaypoint(point, restrictMovement); // OLD WAY
 
       // New way threaded, off the swing UI thread...
@@ -179,7 +181,7 @@ public class SelectionSet {
    */
   public void toggleWaypoint(ZonePoint location) {
     if (walker != null) {
-      walker.toggleWaypoint(renderer.getZone().getGrid().convert(location));
+      walker.toggleWaypoint(grid.convert(location));
     } else {
       gridlessPath.appendWaypoint(location);
     }
@@ -197,10 +199,10 @@ public class SelectionSet {
       CellPoint cp = walker.getLastPoint();
 
       if (cp == null) {
-        cp = renderer.zone.getGrid().convert(token.getDragAnchor(renderer.zone));
+        cp = grid.convert(token.getDragAnchor(renderer.zone));
       }
 
-      zp = renderer.getZone().getGrid().convert(cp);
+      zp = grid.convert(cp);
     } else {
       // Gridless path will never be empty if set.
       zp = gridlessPath.getWayPointList().getLast();
