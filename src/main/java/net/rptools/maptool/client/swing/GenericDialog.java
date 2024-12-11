@@ -43,6 +43,14 @@ public class GenericDialog extends JDialog {
     setLayout(new GridLayout());
     JScrollPane scrollPane = new JScrollPane(this.panel);
     add(scrollPane);
+
+    addWindowListener(
+        new WindowAdapter() {
+          @Override
+          public void windowClosing(WindowEvent e) {
+            closeDialog();
+          }
+        });
     addComponentListener(
         new ComponentAdapter() {
           private void placeButtons() {
