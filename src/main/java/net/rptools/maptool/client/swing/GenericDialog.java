@@ -45,8 +45,8 @@ public class GenericDialog extends JDialog {
     add(scrollPane);
     addComponentListener(
         new ComponentAdapter() {
-          private void placeButtons(){
-            if(getSize().width == 0){
+          private void placeButtons() {
+            if (getSize().width == 0) {
               return;
             }
             if (maximiseBtn == null || restoreBtn == null) {
@@ -54,6 +54,7 @@ public class GenericDialog extends JDialog {
             }
             positionResizeButtons();
           }
+
           @Override
           public void componentResized(ComponentEvent e) {
             super.componentResized(e);
