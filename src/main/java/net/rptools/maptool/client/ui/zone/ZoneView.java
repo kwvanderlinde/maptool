@@ -34,6 +34,7 @@ import net.rptools.maptool.client.ui.zone.Illuminator.LitArea;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.player.Player;
+import net.rptools.maptool.model.topology.DirectionModifierType;
 import net.rptools.maptool.model.zones.MaskTopologyChanged;
 import net.rptools.maptool.model.zones.TokensAdded;
 import net.rptools.maptool.model.zones.TokensChanged;
@@ -287,7 +288,8 @@ public class ZoneView {
 
     if (!lightSource.isIgnoresVBL()) {
       lightSourceVisibleArea =
-          FogUtil.calculateVisibility(p, lightSourceArea, zone.prepareNodedTopologies());
+          FogUtil.calculateVisibility(
+              DirectionModifierType.Light, p, lightSourceArea, zone.prepareNodedTopologies());
     }
     if (lightSourceVisibleArea.isEmpty()) {
       // Nothing illuminated for this source.
@@ -526,7 +528,9 @@ public class ZoneView {
       Point p = FogUtil.calculateVisionCenter(token, zone);
       Area visibleArea = sight.getVisionShape(token, zone);
       visibleArea.transform(AffineTransform.getTranslateInstance(p.x, p.y));
-      tokenVisibleArea = FogUtil.calculateVisibility(p, visibleArea, zone.prepareNodedTopologies());
+      tokenVisibleArea =
+          FogUtil.calculateVisibility(
+              DirectionModifierType.Sight, p, visibleArea, zone.prepareNodedTopologies());
       tokenVisibleAreaCache.put(token.getId(), tokenVisibleArea);
     }
 
@@ -613,7 +617,10 @@ public class ZoneView {
                   if (!lightSource.isIgnoresVBL()) {
                     visibleArea =
                         FogUtil.calculateVisibility(
-                            p, lightSourceArea, zone.prepareNodedTopologies());
+                            DirectionModifierType.Aura,
+                            p,
+                            lightSourceArea,
+                            zone.prepareNodedTopologies());
                   }
 
                   // This needs to be cached somehow

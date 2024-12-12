@@ -424,6 +424,14 @@ public class ServerCommandClientImpl implements ServerCommand {
     makeServerCall(Message.newBuilder().setSetWallTopologyMsg(msg).build());
   }
 
+  public void updateWall(Zone zone, WallTopology.Wall wall) {
+    var msg =
+        UpdateWallDataMsg.newBuilder().setZoneGuid(zone.getId().toString()).setWall(wall.toDto());
+
+    zone.updateWall(wall.from().id(), wall.to().id(), new WallTopology.WallData(wall.data()));
+    makeServerCall(Message.newBuilder().setUpdateWallDataMsg(msg).build());
+  }
+
   @Override
   public void updateMaskTopology(
       Zone zone, Area area, boolean erase, Zone.TopologyType topologyType) {

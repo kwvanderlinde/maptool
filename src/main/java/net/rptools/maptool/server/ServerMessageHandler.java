@@ -262,6 +262,10 @@ public class ServerMessageHandler implements MessageHandler {
           handle(msg.getSetWallTopologyMsg());
           sendToClients(id, msg);
         }
+        case UPDATE_WALL_DATA_MSG -> {
+          handle(msg.getUpdateWallDataMsg());
+          sendToClients(id, msg);
+        }
 
         default -> log.warn(msgType + " not handled.");
       }
@@ -715,8 +719,30 @@ public class ServerMessageHandler implements MessageHandler {
         () -> {
           var zoneId = new GUID(setWallTopologyMsg.getZoneGuid());
           var zone = server.getCampaign().getZone(zoneId);
+          if (zone == null) {
+            log.warn("Failed to find zone with id {}", zoneId);
+            return;
+          }
+
           var topology = WallTopology.fromDto(setWallTopologyMsg.getTopology());
           zone.replaceWalls(topology);
+        });
+  }
+
+  private void handle(UpdateWallDataMsg updateWallDataMsg) {
+    EventQueue.invokeLater(
+        () -> {
+          var zoneId = new GUID(updateWallDataMsg.getZoneGuid());
+          var zone = server.getCampaign().getZone(zoneId);
+          if (zone == null) {
+            log.warn("Failed to find zone with id {}", zoneId);
+            return;
+          }
+
+          var from = new GUID(updateWallDataMsg.getWall().getFrom());
+          var to = new GUID(updateWallDataMsg.getWall().getTo());
+          var data = WallTopology.WallData.fromDto(updateWallDataMsg.getWall().getData());
+          zone.updateWall(from, to, data);
         });
   }
 

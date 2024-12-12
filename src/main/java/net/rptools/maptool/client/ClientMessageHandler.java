@@ -171,6 +171,7 @@ public class ClientMessageHandler implements MessageHandler {
         case UPDATE_TOKEN_MOVE_MSG -> handle(msg.getUpdateTokenMoveMsg());
         case UPDATE_PLAYER_STATUS_MSG -> handle(msg.getUpdatePlayerStatusMsg());
         case SET_WALL_TOPOLOGY_MSG -> handle(msg.getSetWallTopologyMsg());
+        case UPDATE_WALL_DATA_MSG -> handle(msg.getUpdateWallDataMsg());
         default -> log.warn(msgType + "not handled.");
       }
       log.debug(id + " handled: " + msgType);
@@ -1070,6 +1071,23 @@ public class ClientMessageHandler implements MessageHandler {
           var zone = client.getCampaign().getZone(zoneId);
           var topology = WallTopology.fromDto(setWallTopologyMsg.getTopology());
           zone.replaceWalls(topology);
+        });
+  }
+
+  private void handle(UpdateWallDataMsg updateWallDataMsg) {
+    EventQueue.invokeLater(
+        () -> {
+          var zoneId = new GUID(updateWallDataMsg.getZoneGuid());
+          var zone = client.getCampaign().getZone(zoneId);
+          if (zone == null) {
+            log.warn("Failed to find zone with id {}", zoneId);
+            return;
+          }
+
+          var from = new GUID(updateWallDataMsg.getWall().getFrom());
+          var to = new GUID(updateWallDataMsg.getWall().getTo());
+          var data = WallTopology.WallData.fromDto(updateWallDataMsg.getWall().getData());
+          zone.updateWall(from, to, data);
         });
   }
 }

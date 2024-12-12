@@ -50,6 +50,15 @@ public final class WallTopologyRig implements Rig<WallTopologyRig.Element<?>> {
     updateShape();
   }
 
+  public void bringToFront(Vertex vertex) {
+    this.walls.bringToFront(vertex);
+  }
+
+  public void bringToFront(Wall wall) {
+    this.walls.bringToFront(wall.from());
+    this.walls.bringToFront(wall.to());
+  }
+
   @Override
   public List<WallTopologyRig.MovableVertex> getHandlesWithin(Rectangle2D bounds) {
     var envelope =
@@ -168,21 +177,29 @@ public final class WallTopologyRig implements Rig<WallTopologyRig.Element<?>> {
     return Optional.empty();
   }
 
-  public WallTopologyRig.MovableVertex addDegenerateWall(Point2D point) {
+  public WallTopologyRig.MovableWall addDegenerateWall(Point2D point) {
     var newWall = walls.brandNewWall();
     newWall.from().setPosition(point);
     newWall.to().setPosition(point);
 
     updateShape();
 
-    return new WallTopologyRig.MovableVertex(this, walls, newWall.to());
+    return new WallTopologyRig.MovableWall(this, walls, newWall);
   }
 
-  public WallTopologyRig.MovableVertex addControlPoint(Vertex connectTo, Point2D point) {
+  /**
+   * Creates a new wall connected to an existing vertex.
+   *
+   * @param connectTo The vertex to connect the new wall to.
+   * @param point The position of the new vertex to create.
+   * @return The newly created wall. The starting point of the wall will be {@code connectTo} and
+   *     the ending point will be a new vertex with its position set to {@code point}.
+   */
+  public WallTopologyRig.MovableWall addConnectedWall(Vertex connectTo, Point2D point) {
     var newWall = walls.newWallStartingAt(connectTo);
     newWall.to().setPosition(point);
     updateShape();
-    return new WallTopologyRig.MovableVertex(this, walls, newWall.to());
+    return new WallTopologyRig.MovableWall(this, walls, newWall);
   }
 
   /**
@@ -237,7 +254,7 @@ public final class WallTopologyRig implements Rig<WallTopologyRig.Element<?>> {
    * @param reference A point close to the wall.
    * @return The new handle created as part of the split.
    */
-  public Handle<Vertex> splitAt(Movable<Wall> wall, Point2D reference) {
+  public MovableVertex splitAt(Movable<Wall> wall, Point2D reference) {
     var projection = getSplitPoint(wall, reference);
     var newVertex = walls.splitWall(wall.getSource());
     newVertex.setPosition(projection);

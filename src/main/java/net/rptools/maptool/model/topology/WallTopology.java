@@ -19,15 +19,19 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import net.rptools.lib.GeometryUtil;
+import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.server.proto.VertexDto;
+import net.rptools.maptool.server.proto.WallDataDto;
 import net.rptools.maptool.server.proto.WallDto;
 import net.rptools.maptool.server.proto.WallTopologyDto;
 import net.rptools.maptool.server.proto.drawing.DoublePointDto;
+import net.rptools.maptool.util.CollectionUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.builder.GraphTypeBuilder;
+import org.locationtech.jts.algorithm.Orientation;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.LineSegment;
@@ -46,23 +50,72 @@ public final class WallTopology implements Topology {
     }
   }
 
+  public enum WallDirection {
+    Both,
+    Left,
+    Right;
+
+    public WallDirection reversed() {
+      return switch (this) {
+        case Both -> Both;
+        case Left -> Right;
+        case Right -> Left;
+      };
+    }
+
+    @Override
+    public String toString() {
+      var key =
+          switch (this) {
+            case Both -> "WallDirection.Both";
+            case Left -> "WallDirection.Left";
+            case Right -> "WallDirection.Right";
+          };
+      return I18N.getText(key);
+    }
+
+    public net.rptools.maptool.server.proto.WallDirection toDto() {
+      return switch (this) {
+        case Both -> net.rptools.maptool.server.proto.WallDirection.Both;
+        case Left -> net.rptools.maptool.server.proto.WallDirection.Left;
+        case Right -> net.rptools.maptool.server.proto.WallDirection.Right;
+      };
+    }
+
+    public static WallDirection fromDto(net.rptools.maptool.server.proto.WallDirection direction) {
+      return switch (direction) {
+        case Both -> Both;
+        case Left -> Left;
+        case Right -> Right;
+        case UNRECOGNIZED -> {
+          log.error("Unrecognized wall direction. Setting to default");
+          yield Both;
+        }
+      };
+    }
+  }
+
   /**
    * Represents the end of one or more walls.
    *
    * <p>Multiple {@code Vertex} instances may be created for a single vertex. All such instances can
    * be used interchangeably and with compare equal.
    */
-  public final class Vertex {
+  public static final class Vertex {
     private final GUID id;
     private final VertexInternal internal;
+
+    public Vertex() {
+      this(new GUID());
+    }
+
+    private Vertex(GUID id) {
+      this(id, new VertexInternal(id, new Point2D.Double(0, 0)));
+    }
 
     private Vertex(GUID id, VertexInternal internal) {
       this.id = id;
       this.internal = internal;
-    }
-
-    private WallTopology getOriginator() {
-      return WallTopology.this;
     }
 
     @Override
@@ -96,9 +149,174 @@ public final class WallTopology implements Topology {
     public void setPosition(Point2D position) {
       setPosition(position.getX(), position.getY());
     }
+  }
 
-    public void bringToFront() {
-      internal.zIndex(++nextZIndex);
+  public static final class WallData {
+    private WallDirection direction;
+    private MovementDirectionModifier movementModifier;
+    private final EnumMap<DirectionModifierType, DirectionModifier> modifiers;
+
+    public WallData() {
+      this(WallDirection.Both, MovementDirectionModifier.ForceBoth, Map.of());
+    }
+
+    public WallData(WallData other) {
+      this(other.direction, other.movementModifier, other.modifiers);
+    }
+
+    public WallData(
+        WallDirection direction,
+        MovementDirectionModifier movementModifier,
+        Map<DirectionModifierType, DirectionModifier> modifiers) {
+      this.direction = direction;
+      this.movementModifier = movementModifier;
+      this.modifiers =
+          CollectionUtil.newFilledEnumMap(
+              DirectionModifierType.class, type -> DirectionModifier.SameDirection);
+      this.modifiers.putAll(modifiers);
+    }
+
+    public WallDirection direction() {
+      return direction;
+    }
+
+    public void direction(WallDirection direction) {
+      this.direction = direction;
+    }
+
+    public MovementDirectionModifier movementModifier() {
+      return movementModifier;
+    }
+
+    public void movementModifier(MovementDirectionModifier modifier) {
+      this.movementModifier = modifier;
+    }
+
+    public DirectionModifier directionModifier(DirectionModifierType type) {
+      return modifiers.getOrDefault(type, DirectionModifier.SameDirection);
+    }
+
+    public void directionModifier(DirectionModifierType type, DirectionModifier modifier) {
+      modifiers.put(type, modifier);
+    }
+
+    public void set(WallData other) {
+      if (this == other) {
+        return;
+      }
+
+      this.direction = other.direction;
+      this.movementModifier = other.movementModifier;
+      this.modifiers.clear();
+      this.modifiers.putAll(other.modifiers);
+    }
+
+    /**
+     * A convenience method that makes sure the wall is pointing Left or Both.
+     *
+     * <p>This helps with merges by cutting down the possible casework.
+     */
+    private void normalizeTo(WallDirection direction) {
+      if (direction == WallDirection.Both
+          || this.direction == WallDirection.Both
+          || direction == this.direction) {
+        // Nothing to do.
+        return;
+      }
+
+      this.direction = this.direction.reversed();
+      // Nothing for movement direction right now.
+      for (var type : DirectionModifierType.values()) {
+        var modifier = this.directionModifier(type);
+        var newModifier =
+            switch (modifier) {
+              case SameDirection -> DirectionModifier.ReverseDirection;
+              case ReverseDirection -> DirectionModifier.SameDirection;
+              case ForceBoth -> DirectionModifier.ForceBoth;
+              case Disabled -> DirectionModifier.Disabled;
+            };
+        this.directionModifier(type, newModifier);
+      }
+    }
+
+    public WallData merge(WallData other, boolean reversed) {
+      var otherDirection = reversed ? other.direction.reversed() : other.direction;
+
+      var result = new WallData();
+      if (this.direction == otherDirection) {
+        // Both walls agree on the direction.
+        result.direction(this.direction);
+      } else if (this.direction == WallDirection.Both || otherDirection == WallDirection.Both) {
+        // All directions are blocked by one of the inputs.
+        result.direction(WallDirection.Both);
+      } else {
+        // Inputs point in different directions. They combine to block both directions.
+        result.direction(WallDirection.Both);
+      }
+
+      // Normalized copy so we know that both walls are pointing in the same direction,
+      // (assuming neither are set to `Both`; otherwise it doesn't matter).
+      var normalizedOther = new WallData(other);
+      normalizedOther.direction(otherDirection);
+      normalizedOther.normalizeTo(this.direction);
+
+      if (this.movementModifier == MovementDirectionModifier.ForceBoth
+          || normalizedOther.movementModifier == MovementDirectionModifier.ForceBoth) {
+        this.movementModifier = MovementDirectionModifier.ForceBoth;
+      } else {
+        this.movementModifier = MovementDirectionModifier.Disabled;
+      }
+
+      for (var type : DirectionModifierType.values()) {
+        var thisMod = this.directionModifier(type);
+        var otherMod = normalizedOther.directionModifier(type);
+
+        // Block in every direction that the inputs block.
+        if (thisMod == otherMod) {
+          result.directionModifier(type, thisMod);
+        } else if (thisMod == DirectionModifier.ForceBoth
+            || otherMod == DirectionModifier.ForceBoth) {
+          result.directionModifier(type, DirectionModifier.ForceBoth);
+        } else if (thisMod == DirectionModifier.Disabled) {
+          result.directionModifier(type, otherMod);
+        } else if (otherMod == DirectionModifier.Disabled) {
+          result.directionModifier(type, thisMod);
+        }
+        // One mod is SameDirection and the other is ReverseDirection. If the wall is not
+        // directional, we can set to SameDirection. Otherwise, it must ForceBoth.
+        else if (result.direction() == WallDirection.Both) {
+          result.directionModifier(type, DirectionModifier.SameDirection);
+        } else {
+          result.directionModifier(type, DirectionModifier.ForceBoth);
+        }
+      }
+
+      return result;
+    }
+
+    public WallDataDto toDto() {
+      return WallDataDto.newBuilder()
+          .setDirection(direction.toDto())
+          .setMovementDirectionModifier(movementModifier.toDto())
+          .setSightDirectionModifier(directionModifier(DirectionModifierType.Sight).toDto())
+          .setLightDirectionModifier(directionModifier(DirectionModifierType.Light).toDto())
+          .setAuraDirectionModifier(directionModifier(DirectionModifierType.Aura).toDto())
+          .build();
+    }
+
+    public static WallData fromDto(WallDataDto dto) {
+      var direction = WallDirection.fromDto(dto.getDirection());
+      var movementModifier = MovementDirectionModifier.fromDto(dto.getMovementDirectionModifier());
+      var modifiers =
+          Map.of(
+              DirectionModifierType.Sight,
+                  DirectionModifier.fromDto(dto.getSightDirectionModifier()),
+              DirectionModifierType.Light,
+                  DirectionModifier.fromDto(dto.getLightDirectionModifier()),
+              DirectionModifierType.Aura,
+                  DirectionModifier.fromDto(dto.getAuraDirectionModifier()));
+
+      return new WallData(direction, movementModifier, modifiers);
     }
   }
 
@@ -108,17 +326,23 @@ public final class WallTopology implements Topology {
    * <p>Multiple {@code Wall} instances may be created for a single wall. All such instances can be
    * used interchangeably and will compare equal.
    */
-  public final class Wall {
+  public static final class Wall {
     private final Vertex from;
     private final Vertex to;
+    private final WallInternal internal;
 
-    private Wall(Vertex from, Vertex to) {
-      this.from = from;
-      this.to = to;
+    public Wall() {
+      this(new Vertex(), new Vertex());
     }
 
-    private WallTopology getOriginator() {
-      return WallTopology.this;
+    private Wall(Vertex from, Vertex to) {
+      this(from, to, new WallInternal(from.id(), to.id(), new WallData()));
+    }
+
+    private Wall(Vertex from, Vertex to, WallInternal internal) {
+      this.from = from;
+      this.to = to;
+      this.internal = internal;
     }
 
     @Override
@@ -141,6 +365,10 @@ public final class WallTopology implements Topology {
       return to;
     }
 
+    public WallData data() {
+      return internal.data();
+    }
+
     public int getZIndex() {
       return Math.max(from.getZIndex(), to.getZIndex());
     }
@@ -158,6 +386,10 @@ public final class WallTopology implements Topology {
       return new LineSegment(
           GeometryUtil.point2DToCoordinate(from.getPosition()),
           GeometryUtil.point2DToCoordinate(to.getPosition()));
+    }
+
+    public WallDto toDto() {
+      return internal.toDto();
     }
   }
 
@@ -207,11 +439,35 @@ public final class WallTopology implements Topology {
    *
    * <p>Uses of {@link WallTopology} will consume {@link Wall} instead of {@code WallInternal}. That
    * representation has all IDs already resolved to {@link Vertex}.
-   *
-   * @param from The ID of the source vertex.
-   * @param to The ID of the target vertex.
    */
-  private record WallInternal(GUID from, GUID to) {
+  private static final class WallInternal {
+    private final GUID from;
+    private final GUID to;
+    private final WallData data;
+
+    /**
+     * @param from The ID of the source vertex.
+     * @param to The ID of the target vertex.
+     * @param data The payload of the wall.
+     */
+    public WallInternal(GUID from, GUID to, WallData data) {
+      this.from = from;
+      this.to = to;
+      this.data = new WallData(data);
+    }
+
+    public GUID from() {
+      return from;
+    }
+
+    public GUID to() {
+      return to;
+    }
+
+    public WallData data() {
+      return data;
+    }
+
     @Override
     public boolean equals(Object obj) {
       return this == obj;
@@ -221,6 +477,19 @@ public final class WallTopology implements Topology {
     public int hashCode() {
       return System.identityHashCode(this);
     }
+
+    public WallDto toDto() {
+      return WallDto.newBuilder()
+          .setFrom(from.toString())
+          .setTo(to.toString())
+          .setData(data.toDto())
+          .build();
+    }
+
+    public static WallInternal fromDto(WallDto dto) {
+      return new WallInternal(
+          new GUID(dto.getFrom()), new GUID(dto.getTo()), WallData.fromDto(dto.getData()));
+    }
   }
 
   /**
@@ -228,21 +497,28 @@ public final class WallTopology implements Topology {
    * fashion.
    */
   public final class StringBuilder {
+    private record Piece(Point2D position, WallData data) {}
+
     // These vertices and walls are not added to the graph until build() is called.
     private final Point2D firstVertexPosition;
-    private final ArrayList<Point2D> vertexPositions = new ArrayList<>();
+    private final ArrayList<Piece> pieces = new ArrayList<>();
 
     private StringBuilder(Point2D startingPoint) {
       this.firstVertexPosition = new Point2D.Double(startingPoint.getX(), startingPoint.getY());
     }
 
     public void push(Point2D nextPoint) {
-      this.vertexPositions.add(new Point2D.Double(nextPoint.getX(), nextPoint.getY()));
+      push(nextPoint, new WallData());
+    }
+
+    public void push(Point2D nextPoint, WallData data) {
+      this.pieces.add(
+          new Piece(new Point2D.Double(nextPoint.getX(), nextPoint.getY()), new WallData(data)));
     }
 
     /** Finish the string and return the last vertex. */
     public void build() {
-      if (vertexPositions.isEmpty()) {
+      if (pieces.isEmpty()) {
         // Insufficient points to add to the graph, otherwise vertices would dangle.
         return;
       }
@@ -250,14 +526,12 @@ public final class WallTopology implements Topology {
       var previousVertex = createVertex();
       previousVertex.setPosition(firstVertexPosition);
 
-      for (int i = 0; i < vertexPositions.size(); ++i) {
-        var currentPosition = vertexPositions.get(i);
-
+      for (var currentPiece : pieces) {
         var currentVertex = createVertex();
-        currentVertex.setPosition(currentPosition);
+        currentVertex.setPosition(currentPiece.position());
 
         try {
-          createWallImpl(previousVertex.id(), currentVertex.id());
+          createWallImpl(previousVertex.id(), currentVertex.id(), currentPiece.data());
         } catch (GraphException e) {
           throw new RuntimeException(
               "Unexpected scenario: wall already exists despite vertex being new", e);
@@ -309,7 +583,7 @@ public final class WallTopology implements Topology {
         .forEach(
             wall -> {
               try {
-                createWallImpl(wall.from().id(), wall.to().id());
+                createWallImpl(wall.from().id(), wall.to().id(), wall.data());
               } catch (GraphException e) {
                 log.error(
                     "Unexpected scenario: topology has duplicate wall ({}, {}). Skipping.",
@@ -337,8 +611,8 @@ public final class WallTopology implements Topology {
     return data;
   }
 
-  private WallInternal createWallImpl(GUID fromId, GUID toId) throws GraphException {
-    var wall = new WallInternal(fromId, toId);
+  private WallInternal createWallImpl(GUID fromId, GUID toId, WallData data) throws GraphException {
+    var wall = new WallInternal(fromId, toId, data);
 
     boolean added;
     try {
@@ -366,8 +640,14 @@ public final class WallTopology implements Topology {
     return new Vertex(id, vertexInternal);
   }
 
-  public void createWall(GUID fromId, GUID toId) throws GraphException {
-    createWallImpl(fromId, toId);
+  public void createWall(
+      GUID fromId,
+      GUID toId,
+      WallDirection direction,
+      MovementDirectionModifier movementModifier,
+      Map<DirectionModifierType, DirectionModifier> directionModifiers)
+      throws GraphException {
+    createWallImpl(fromId, toId, new WallData(direction, movementModifier, directionModifiers));
   }
 
   // endregion
@@ -412,28 +692,37 @@ public final class WallTopology implements Topology {
               var toId = wall.to();
               var fromInternal = vertexInternalById.get(fromId);
               var toInternal = vertexInternalById.get(toId);
-              return new Wall(new Vertex(fromId, fromInternal), new Vertex(toId, toInternal));
+              return new Wall(new Vertex(fromId, fromInternal), new Vertex(toId, toInternal), wall);
             });
   }
 
+  public Optional<Wall> getWall(GUID fromId, GUID toId) {
+    var internal = this.graph.getEdge(fromId, toId);
+    if (internal == null) {
+      return Optional.empty();
+    }
+
+    return Optional.of(
+        new Wall(
+            new Vertex(fromId, vertexInternalById.get(fromId)),
+            new Vertex(toId, vertexInternalById.get(toId)),
+            internal));
+  }
+
   public void removeVertex(Vertex vertex) {
-    if (this != vertex.getOriginator()) {
+    var removed = graph.removeVertex(vertex.id());
+    if (!removed) {
       throw new RuntimeException("Foreign vertex");
     }
 
-    graph.removeVertex(vertex.id());
     vertexInternalById.remove(vertex.id());
-
     removeDanglingVertices();
   }
 
   public void removeWall(Wall wall) {
-    if (this != wall.getOriginator()) {
-      throw new RuntimeException("Wall is not part of this topology");
-    }
-
     var removedWall = graph.removeEdge(wall.from().id(), wall.to().id());
     if (removedWall != null) {
+      // TODO More efficient would be to just check the specific vertices of the edge.
       removeDanglingVertices();
     }
   }
@@ -444,17 +733,18 @@ public final class WallTopology implements Topology {
 
     WallInternal newWall;
     try {
-      newWall = createWallImpl(from.id(), to.id());
+      newWall = createWallImpl(from.id(), to.id(), new WallData());
     } catch (GraphException e) {
       throw new RuntimeException(
           "Unexpected scenario: wall already exists despite both vertices being new", e);
     }
 
-    return new Wall(from, to);
+    return new Wall(from, to, newWall);
   }
 
   public Wall newWallStartingAt(Vertex from) {
-    if (this != from.getOriginator()) {
+    var isForeign = !this.graph.containsVertex(from.id());
+    if (isForeign) {
       throw new RuntimeException("Vertex is not part of this topology");
     }
 
@@ -462,20 +752,16 @@ public final class WallTopology implements Topology {
 
     WallInternal newWall;
     try {
-      newWall = createWallImpl(from.id(), newVertex.id());
+      newWall = createWallImpl(from.id(), newVertex.id(), new WallData());
     } catch (GraphException e) {
       throw new RuntimeException(
           "Unexpected scenario: wall already exists despite the one vertex being new", e);
     }
 
-    return new Wall(from, newVertex);
+    return new Wall(from, newVertex, newWall);
   }
 
   public Vertex splitWall(Wall wall) {
-    if (this != wall.getOriginator()) {
-      throw new RuntimeException("Wall is not part of this topology");
-    }
-
     // Remove wall and replace with two new walls connected through a new vertex.
 
     var removed = graph.removeEdge(wall.from().id(), wall.to().id());
@@ -487,8 +773,8 @@ public final class WallTopology implements Topology {
     var newVertex = createVertex();
 
     try {
-      createWallImpl(removed.from(), newVertex.id());
-      createWallImpl(newVertex.id(), removed.to());
+      createWallImpl(removed.from(), newVertex.id(), wall.data());
+      createWallImpl(newVertex.id(), removed.to(), wall.data());
     } catch (GraphException e) {
       throw new RuntimeException("Unexpected scenario: wall already exists for new vertex", e);
     }
@@ -508,21 +794,18 @@ public final class WallTopology implements Topology {
    * @return The merged vertex.
    */
   public Vertex merge(Vertex first, Vertex second) {
-    if (this != first.getOriginator()) {
-      throw new RuntimeException("Foreign vertex");
-    }
-    if (this != second.getOriginator()) {
-      throw new RuntimeException("Foreign vertex");
-    }
-
     // Current implementation is to remove `first` and keep `second.
 
     // A copy is essential since graph.edgesOf() returns a live set.
     var incidentWalls = new ArrayList<>(graph.edgesOf(first.id()));
 
+    var secondIsForeign = !graph.containsVertex(second.id());
+    if (secondIsForeign) {
+      throw new RuntimeException("Unable unable merge vertex that does not exist!");
+    }
+
     var wasRemoved = graph.removeVertex(first.id());
     if (!wasRemoved) {
-      // Psych! The vertex does not exist.
       throw new RuntimeException("Unable unable merge vertex that does not exist!");
     }
 
@@ -547,23 +830,27 @@ public final class WallTopology implements Topology {
         try {
           var from = firstIsSource ? second.id() : neighbour;
           var to = firstIsSource ? neighbour : second.id();
-          createWallImpl(from, to);
+          createWallImpl(from, to, oldWall.data());
         } catch (GraphException e) {
           throw new RuntimeException(
               "Unexpected scenario: wall already exists despite not existing", e);
         }
       } else {
-        // TODO When walls have data to merge, do it here, accounting for whether the walls point
-        //  in the same or opposite direction.
         // Merge obsolete wall into the kept wall.
         var secondIsSource = existingWall.from().equals(second.id());
         var reversed = firstIsSource != secondIsSource;
+        var newData = existingWall.data().merge(oldWall.data(), reversed);
+        existingWall.data().set(newData);
       }
     }
 
     removeDanglingVertices();
 
     return second;
+  }
+
+  public void bringToFront(Vertex vertex) {
+    vertex.internal.zIndex(++nextZIndex);
   }
 
   // endregion
@@ -590,15 +877,41 @@ public final class WallTopology implements Topology {
   }
 
   @Override
-  public VisionResult addSegments(Coordinate origin, Envelope bounds, Consumer<Coordinate[]> sink) {
+  public VisionResult addSegments(
+      DirectionModifierType type, Coordinate origin, Envelope bounds, Consumer<Coordinate[]> sink) {
     getWalls()
         .forEach(
             wall -> {
               var segment = wall.asSegment();
               // Very rough bounds check so we don't include everything.
-              if (bounds.intersects(segment.p0, segment.p1)) {
-                sink.accept(new Coordinate[] {segment.p0, segment.p1});
+              if (!bounds.intersects(segment.p0, segment.p1)) {
+                return;
               }
+
+              // For directional walls, ensure the origin is on the correct side.
+              var direction =
+                  switch (wall.data().directionModifier(type)) {
+                    case SameDirection -> wall.data().direction();
+                    case ReverseDirection -> wall.data().direction.reversed();
+                    case ForceBoth -> WallDirection.Both;
+                    case Disabled -> null;
+                  };
+              if (direction == null) {
+                // Segment is not active for this type.
+                return;
+              }
+
+              boolean correctOrientation =
+                  switch (direction) {
+                    case Both -> true;
+                    case Left -> Orientation.RIGHT == segment.orientationIndex(origin);
+                    case Right -> Orientation.LEFT == segment.orientationIndex(origin);
+                  };
+              if (!correctOrientation) {
+                return;
+              }
+
+              sink.accept(new Coordinate[] {segment.p0, segment.p1});
             });
     return VisionResult.Possible;
   }
@@ -615,9 +928,7 @@ public final class WallTopology implements Topology {
                       .setY(vertex.position().getY())));
     }
     for (var wall : this.graph.edgeSet()) {
-      // No wall data to send yet.
-      builder.addWalls(
-          WallDto.newBuilder().setFrom(wall.from().toString()).setTo(wall.to().toString()));
+      builder.addWalls(wall.toDto());
     }
     return builder.build();
   }
@@ -638,7 +949,8 @@ public final class WallTopology implements Topology {
     }
     for (var wallDto : dto.getWallsList()) {
       try {
-        topology.createWall(new GUID(wallDto.getFrom()), new GUID(wallDto.getTo()));
+        var internal = WallInternal.fromDto(wallDto);
+        topology.createWallImpl(internal.from(), internal.to(), internal.data());
       } catch (GraphException e) {
         log.error("Unexpected error while adding wall to topology", e);
       }

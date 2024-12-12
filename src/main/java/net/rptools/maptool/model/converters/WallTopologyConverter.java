@@ -25,7 +25,12 @@ import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import net.rptools.maptool.model.GUID;
+import net.rptools.maptool.model.topology.DirectionModifier;
+import net.rptools.maptool.model.topology.DirectionModifierType;
+import net.rptools.maptool.model.topology.MovementDirectionModifier;
 import net.rptools.maptool.model.topology.WallTopology;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -49,8 +54,16 @@ import org.apache.logging.log4j.Logger;
  *   </vertex>
  * </vertices>
  * <walls>
- *   <wall from="8A647D10EE1B4AFA8BEF4B93AEFB624D" to="E3A964F13221428582E491AB3D3D3764"/>
- *   <wall from="E3A964F13221428582E491AB3D3D3764" to="C510571E42C74080AF34EC00D47FCF97"/>
+ *   <wall from="8A647D10EE1B4AFA8BEF4B93AEFB624D" to="E3A964F13221428582E491AB3D3D3764">
+ *     <direction>Left</direction>
+ *     <sightDirection>Same</sightDirection>
+ *     <lightDirection>Reverse</lightDirection>
+ *     <auraDirection>Ignore</auraDirection>
+ *     <movementDirection>Disable</movementDirection>
+ *   </wall>
+ *   <wall from="E3A964F13221428582E491AB3D3D3764" to="C510571E42C74080AF34EC00D47FCF97">
+ *     ..
+ *   </wall>
  * </walls>
  * ...
  * }</pre>
@@ -84,7 +97,7 @@ public class WallTopologyConverter extends AbstractCollectionConverter {
     walls
         .getWalls()
         .sorted(Comparator.comparingInt(WallTopology.Wall::getZIndex))
-        .map(wall -> new WallRepresentation(wall.from().id(), wall.to().id()))
+        .map(wall -> new WallRepresentation(wall.from().id(), wall.to().id(), wall.data()))
         .forEach(representation.walls::add);
 
     context.convertAnother(representation);
@@ -108,7 +121,28 @@ public class WallTopologyConverter extends AbstractCollectionConverter {
     }
     for (var wallRepresentation : representation.walls) {
       try {
-        walls.createWall(new GUID(wallRepresentation.from), new GUID(wallRepresentation.to));
+        var fromId = new GUID(wallRepresentation.from);
+        var toId = new GUID(wallRepresentation.to);
+        // Direction and modifiers weren't available originally.
+        var direction =
+            Objects.requireNonNullElse(
+                wallRepresentation.direction, WallTopology.WallDirection.Both);
+        var movementModifier =
+            Objects.requireNonNullElse(
+                wallRepresentation.movementDirection, MovementDirectionModifier.ForceBoth);
+        var directionModifiers =
+            Map.of(
+                DirectionModifierType.Sight,
+                Objects.requireNonNullElse(
+                    wallRepresentation.sightDirection, DirectionModifier.SameDirection),
+                DirectionModifierType.Light,
+                Objects.requireNonNullElse(
+                    wallRepresentation.lightDirection, DirectionModifier.SameDirection),
+                DirectionModifierType.Aura,
+                Objects.requireNonNullElse(
+                    wallRepresentation.auraDirection, DirectionModifier.SameDirection));
+
+        walls.createWall(fromId, toId, direction, movementModifier, directionModifiers);
       } catch (WallTopology.GraphException e) {
         log.error(
             "A wall with vertices ({}, {}) is already defined; skipping this one",
@@ -147,10 +181,20 @@ public class WallTopologyConverter extends AbstractCollectionConverter {
   private static final class WallRepresentation {
     @XStreamAsAttribute public final String from;
     @XStreamAsAttribute public final String to;
+    public final WallTopology.WallDirection direction;
+    public final MovementDirectionModifier movementDirection;
+    public final DirectionModifier sightDirection;
+    public final DirectionModifier lightDirection;
+    public final DirectionModifier auraDirection;
 
-    public WallRepresentation(GUID from, GUID to) {
+    public WallRepresentation(GUID from, GUID to, WallTopology.WallData data) {
       this.from = from.toString();
       this.to = to.toString();
+      this.direction = data.direction();
+      this.movementDirection = data.movementModifier();
+      this.sightDirection = data.directionModifier(DirectionModifierType.Sight);
+      this.lightDirection = data.directionModifier(DirectionModifierType.Light);
+      this.auraDirection = data.directionModifier(DirectionModifierType.Aura);
     }
   }
 

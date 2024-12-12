@@ -45,6 +45,8 @@ public interface ServerCommand {
 
   void replaceWalls(Zone zone, WallTopology walls);
 
+  void updateWall(Zone zone, WallTopology.Wall wall);
+
   default void updateMaskTopology(
       Zone zone, Area area, boolean erase, Set<Zone.TopologyType> topologyTypes) {
     for (var topologyType : topologyTypes) {

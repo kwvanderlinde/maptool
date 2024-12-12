@@ -996,6 +996,22 @@ public class Zone {
     new MapToolEventBus().getMainEventBus().post(new WallTopologyChanged(this));
   }
 
+  public void updateWall(GUID from, GUID to, WallTopology.WallData data) {
+    var existingWall = this.walls.getWall(from, to);
+
+    existingWall.ifPresentOrElse(
+        existing -> {
+          existing.data().set(data);
+
+          this.nodedTopology = null;
+          // TODO More nuanced topology changed event. Maybe we can attach extra info to this event?
+          new MapToolEventBus().getMainEventBus().post(new WallTopologyChanged(this));
+        },
+        () -> {
+          log.warn("Could not find wall [{}, {}] for updating", from, to);
+        });
+  }
+
   /**
    * Packages legacy topology, including token topology, together with wall topology, adding nodes
    * at any intersection points.
