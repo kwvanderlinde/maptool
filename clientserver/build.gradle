@@ -30,7 +30,7 @@ dependencies {
         implementation 'dev.onvoid.webrtc:webrtc-java:0.8.0:linux-x86_64'
 
     // compression of messages between client and server
-    implementation 'org.apache.commons:commons-compress:1.26.0'
+    implementation 'org.apache.commons:commons-compress:1.27.1'
     implementation 'com.github.luben:zstd-jni:1.5.5-11'
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
