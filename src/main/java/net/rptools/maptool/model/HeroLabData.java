@@ -138,7 +138,6 @@ public class HeroLabData {
     XML xmlObj = new XMLDocument(getStatBlock_xml());
     results = String.join(delim, xmlObj.xpath(xPathExpression));
 
-
     return results;
   }
 
@@ -164,7 +163,6 @@ public class HeroLabData {
 
     return results;
   }
-
 
   public boolean refresh() {
     return lastModified != getPortfolioLastModified();
@@ -299,7 +297,7 @@ public class HeroLabData {
   }
 
   public String getPortfolioPath() {
-    if (portfolioPath == null)  {
+    if (portfolioPath == null) {
       setPortfolioPath("");
     }
 
@@ -316,10 +314,9 @@ public class HeroLabData {
     if (portfolioPath == null || portfolioPath.isEmpty() || fileSyncPath.isEmpty()) {
       return portfolioFile;
     } else {
-      if (portfolioPath.startsWith(fileSyncPath))  {
+      if (portfolioPath.startsWith(fileSyncPath)) {
         return new File(portfolioPath);
-      }
-      else {
+      } else {
         return new File(fileSyncPath, portfolioPath);
       }
     }
@@ -336,7 +333,8 @@ public class HeroLabData {
                 .relativize(portfolioFile.toPath())
                 .toString();
       } catch (IllegalArgumentException e) {
-        log.error("Unable to relativize paths for: [{}] [{}]",
+        log.error(
+            "Unable to relativize paths for: [{}] [{}]",
             portfolioFile,
             AppPreferences.fileSyncPath.get());
         portfolioPath = "";
