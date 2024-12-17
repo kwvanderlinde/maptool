@@ -17,47 +17,45 @@ package net.rptools.maptool.client.swing.walls;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
 import javax.swing.JPanel;
-import net.rptools.maptool.model.topology.DirectionModifier;
-import net.rptools.maptool.model.topology.MovementDirectionModifier;
-import net.rptools.maptool.model.topology.WallTopology.WallDirection;
+import net.rptools.maptool.model.topology.Wall;
 
 public class WallConfigurationView {
   private JPanel mainPanel;
-  private JComboBox<WallDirection> direction;
-  private JComboBox<DirectionModifier> sightModifier;
-  private JComboBox<DirectionModifier> lightModifier;
-  private JComboBox<DirectionModifier> auraModifier;
-  private JComboBox<MovementDirectionModifier> movementModifier;
+  private JComboBox<Wall.Direction> direction;
+  private JComboBox<Wall.DirectionModifier> sightModifier;
+  private JComboBox<Wall.DirectionModifier> lightModifier;
+  private JComboBox<Wall.DirectionModifier> auraModifier;
+  private JComboBox<Wall.MovementDirectionModifier> movementModifier;
 
   public WallConfigurationView() {
-    direction.setModel(new DefaultComboBoxModel<>(WallDirection.values()));
-    sightModifier.setModel(new DefaultComboBoxModel<>(DirectionModifier.values()));
-    lightModifier.setModel(new DefaultComboBoxModel<>(DirectionModifier.values()));
-    auraModifier.setModel(new DefaultComboBoxModel<>(DirectionModifier.values()));
-    movementModifier.setModel(new DefaultComboBoxModel<>(MovementDirectionModifier.values()));
+    direction.setModel(new DefaultComboBoxModel<>(Wall.Direction.values()));
+    sightModifier.setModel(new DefaultComboBoxModel<>(Wall.DirectionModifier.values()));
+    lightModifier.setModel(new DefaultComboBoxModel<>(Wall.DirectionModifier.values()));
+    auraModifier.setModel(new DefaultComboBoxModel<>(Wall.DirectionModifier.values()));
+    movementModifier.setModel(new DefaultComboBoxModel<>(Wall.MovementDirectionModifier.values()));
   }
 
   public JPanel getRootComponent() {
     return mainPanel;
   }
 
-  public JComboBox<WallDirection> getDirectionSelect() {
+  public JComboBox<Wall.Direction> getDirectionSelect() {
     return direction;
   }
 
-  public JComboBox<DirectionModifier> getSightModifier() {
+  public JComboBox<Wall.DirectionModifier> getSightModifier() {
     return sightModifier;
   }
 
-  public JComboBox<DirectionModifier> getLightModifier() {
+  public JComboBox<Wall.DirectionModifier> getLightModifier() {
     return lightModifier;
   }
 
-  public JComboBox<DirectionModifier> getAuraModifier() {
+  public JComboBox<Wall.DirectionModifier> getAuraModifier() {
     return auraModifier;
   }
 
-  public JComboBox<MovementDirectionModifier> getMovementModifier() {
+  public JComboBox<Wall.MovementDirectionModifier> getMovementModifier() {
     return movementModifier;
   }
 }

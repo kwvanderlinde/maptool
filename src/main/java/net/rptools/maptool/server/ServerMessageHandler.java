@@ -37,6 +37,7 @@ import net.rptools.maptool.model.Zone.VisionType;
 import net.rptools.maptool.model.drawing.Drawable;
 import net.rptools.maptool.model.drawing.DrawnElement;
 import net.rptools.maptool.model.drawing.Pen;
+import net.rptools.maptool.model.topology.Wall;
 import net.rptools.maptool.model.topology.WallTopology;
 import net.rptools.maptool.model.zones.TokensAdded;
 import net.rptools.maptool.model.zones.TokensRemoved;
@@ -738,11 +739,9 @@ public class ServerMessageHandler implements MessageHandler {
             log.warn("Failed to find zone with id {}", zoneId);
             return;
           }
+          var wall = Wall.fromDto(updateWallDataMsg.getWall());
 
-          var from = new GUID(updateWallDataMsg.getWall().getFrom());
-          var to = new GUID(updateWallDataMsg.getWall().getTo());
-          var data = WallTopology.WallData.fromDto(updateWallDataMsg.getWall().getData());
-          zone.updateWall(from, to, data);
+          zone.updateWall(wall);
         });
   }
 

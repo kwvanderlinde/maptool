@@ -25,6 +25,7 @@ import net.rptools.maptool.model.topology.DirectionModifierType;
 import net.rptools.maptool.model.topology.MaskTopology;
 import net.rptools.maptool.model.topology.Topology;
 import net.rptools.maptool.model.topology.VisionResult;
+import net.rptools.maptool.model.topology.Wall;
 import net.rptools.maptool.model.topology.WallTopology;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Envelope;
@@ -112,7 +113,7 @@ public class NodedTopology {
             var preparedWalls = new WallTopology();
             for (var wallString : tempWalls.walls) {
               // String length will be at least 2.
-              var originalWall = (WallTopology.Wall) wallString.getData();
+              var originalWall = (Wall) wallString.getData();
               timer.start("get noded coordinates");
               var coordinates = wallString.getNodedCoordinates();
               timer.stop("get noded coordinates");
@@ -126,6 +127,7 @@ public class NodedTopology {
                   GeometryUtil.coordinateToPoint2D(coordinates[0]),
                   builder -> {
                     for (var i = 1; i < coordinates.length; ++i) {
+                      // TODO How can we represent this while encapsulating WallData?
                       builder.push(
                           GeometryUtil.coordinateToPoint2D(coordinates[i]), originalWall.data());
                     }
@@ -162,7 +164,7 @@ public class NodedTopology {
           .getWalls()
           .forEach(
               wall -> {
-                var segment = wall.asSegment();
+                var segment = walls.asLineSegment(wall);
                 var string =
                     new NodedSegmentString(new Coordinate[] {segment.p0, segment.p1}, wall);
                 this.walls.add(string);

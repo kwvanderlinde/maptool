@@ -39,7 +39,8 @@ import net.rptools.maptool.client.tool.rig.WallTopologyRig;
 import net.rptools.maptool.client.ui.zone.ZoneOverlay;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.events.MapToolEventBus;
-import net.rptools.maptool.model.topology.WallTopology;
+import net.rptools.maptool.model.topology.Vertex;
+import net.rptools.maptool.model.topology.Wall;
 import net.rptools.maptool.model.zones.WallTopologyChanged;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -179,12 +180,12 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
     renderer.repaint();
   }
 
-  private void setWallPropertiesFromConfigPanel(WallTopology.Wall wall) {
+  private void setWallPropertiesFromConfigPanel(Wall wall) {
     var current = MapTool.getFrame().getWallConfigurationController().getModel();
-    wall.data().set(current.data());
+    wall.copyDataFrom(current);
   }
 
-  private void setSelectedWall(@Nullable WallTopology.Wall wall) {
+  private void setSelectedWall(@Nullable Wall wall) {
     var configPanel = MapTool.getFrame().getWallConfigurationController();
     if (wall == null) {
       configPanel.unbind();
@@ -193,12 +194,12 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
     }
   }
 
-  private boolean isSelectedWall(WallTopology.Wall wall) {
+  private boolean isSelectedWall(Wall wall) {
     var selected = getSelectedWall();
     return wall.equals(selected);
   }
 
-  private WallTopology.Wall getSelectedWall() {
+  private Wall getSelectedWall() {
     return MapTool.getFrame().getWallConfigurationController().getModel();
   }
 
@@ -232,7 +233,7 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
     changeToolMode(new BasicToolMode(this, rig));
 
     // If the selected wall still exists, rebind it.
-    var optionalWall = getZone().getWalls().getWall(selected.from().id(), selected.to().id());
+    var optionalWall = getZone().getWalls().getWall(selected.from(), selected.to());
 
     optionalWall.ifPresentOrElse(wall -> setSelectedWall(wall), () -> setSelectedWall(null));
   }
@@ -343,11 +344,11 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
      * @param handle The handle to get the fill paint for.
      * @return The paint for the handle.
      */
-    protected Paint getHandleFill(Handle<WallTopology.Vertex> handle) {
+    protected Paint getHandleFill(Handle<Vertex> handle) {
       return Color.white;
     }
 
-    protected Paint getWallFill(Movable<WallTopology.Wall> wall) {
+    protected Paint getWallFill(Movable<Wall> wall) {
       return AppStyle.wallTopologyColor;
     }
 
@@ -413,8 +414,8 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
         var wallFill = getWallFill(wall);
         // Draw it twice to get a black border effect. It's proven itself to be cheaper than using
         // `Stroke.createStokedShape()` when there are many walls.
-        var from = wall.getSource().from().getPosition();
-        var to = wall.getSource().to().getPosition();
+        var from = wall.getFrom().getPosition();
+        var to = wall.getTo().getPosition();
 
         var shape = new Path2D.Double();
         shape.moveTo(from.getX(), from.getY());
@@ -428,7 +429,7 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
         g2.setPaint(wallFill);
         g2.draw(shape);
 
-        if (wall.getSource().data().direction() != WallTopology.WallDirection.Both) {
+        if (wall.getSource().direction() != Wall.Direction.Both) {
           // Draw an arrow through the midpoint of the wall to indicate its direction.
           var preTransform = g2.getTransform();
           var midpoint =
@@ -436,7 +437,7 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
           var angle = Math.atan2(to.getY() - from.getY(), to.getX() - from.getX());
           g2.translate(midpoint.getX(), midpoint.getY());
           g2.rotate(angle);
-          if (wall.getSource().data().direction() == WallTopology.WallDirection.Left) {
+          if (wall.getSource().direction() == Wall.Direction.Left) {
             g2.scale(-1, -1);
           }
           g2.setStroke(arrowStroke);
@@ -523,7 +524,7 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
     }
 
     @Override
-    public Paint getHandleFill(Handle<WallTopology.Vertex> handle) {
+    public Paint getHandleFill(Handle<Vertex> handle) {
       // TODO Blue if alt is down.
       if (currentElement != null && currentElement.isForSameElement(handle)) {
         return Color.green;
@@ -532,7 +533,7 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
     }
 
     @Override
-    protected Paint getWallFill(Movable<WallTopology.Wall> wall) {
+    protected Paint getWallFill(Movable<Wall> wall) {
       if (currentElement != null && currentElement.isForSameElement(wall)) {
         return AppStyle.highlightedWallTopologyColor;
       }
@@ -595,7 +596,7 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
     }
 
     @Override
-    public Paint getHandleFill(Handle<WallTopology.Vertex> handle) {
+    public Paint getHandleFill(Handle<Vertex> handle) {
       if (this.movable.isForSameElement(handle)) {
         return Color.green;
       }
@@ -651,7 +652,7 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
     protected void beforeCommit() {}
 
     @Override
-    protected Paint getWallFill(Movable<WallTopology.Wall> wall) {
+    protected Paint getWallFill(Movable<Wall> wall) {
       if (wall.isForSameElement(this.movable)) {
         return AppStyle.highlightedWallTopologyColor;
       }
@@ -766,7 +767,7 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
     }
 
     @Override
-    protected Paint getWallFill(Movable<WallTopology.Wall> wall) {
+    protected Paint getWallFill(Movable<Wall> wall) {
       if (connectTo != null && connectTo.isForSameElement(wall)) {
         return AppStyle.highlightedWallTopologyColor;
       }
@@ -774,7 +775,7 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
     }
 
     @Override
-    public Paint getHandleFill(Handle<WallTopology.Vertex> handle) {
+    public Paint getHandleFill(Handle<Vertex> handle) {
       if (connectTo != null) {
         // Both the connecting handle and current handle should show as connecting, i.e., blue.
         if (movable.isForSameElement(handle) || connectTo.isForSameElement(handle)) {

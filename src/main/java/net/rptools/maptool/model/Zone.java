@@ -48,6 +48,7 @@ import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.tokens.TokenMacroChanged;
 import net.rptools.maptool.model.tokens.TokenPanelChanged;
 import net.rptools.maptool.model.topology.MaskTopology;
+import net.rptools.maptool.model.topology.Wall;
 import net.rptools.maptool.model.topology.WallTopology;
 import net.rptools.maptool.model.zones.BoardChanged;
 import net.rptools.maptool.model.zones.DrawableAdded;
@@ -996,19 +997,19 @@ public class Zone {
     new MapToolEventBus().getMainEventBus().post(new WallTopologyChanged(this));
   }
 
-  public void updateWall(GUID from, GUID to, WallTopology.WallData data) {
-    var existingWall = this.walls.getWall(from, to);
+  public void updateWall(Wall wall) {
+    var existingWall = this.walls.getWall(wall.from(), wall.to());
 
     existingWall.ifPresentOrElse(
         existing -> {
-          existing.data().set(data);
+          existing.copyDataFrom(wall);
 
           this.nodedTopology = null;
           // TODO More nuanced topology changed event. Maybe we can attach extra info to this event?
           new MapToolEventBus().getMainEventBus().post(new WallTopologyChanged(this));
         },
         () -> {
-          log.warn("Could not find wall [{}, {}] for updating", from, to);
+          log.warn("Could not find wall [{}, {}] for updating", wall.from(), wall.to());
         });
   }
 

@@ -66,11 +66,11 @@ public class MovementBlockingTopology {
             .getWalls()
             .filter(
                 wall ->
-                    switch (wall.data().movementModifier()) {
+                    switch (wall.movementModifier()) {
                       case ForceBoth -> true;
                       case Disabled -> false;
                     })
-            .map(wall -> wall.asSegment().toGeometry(factory))
+            .map(wall -> walls.asLineSegment(wall).toGeometry(factory))
             .toList();
     var wallUnion = new UnaryUnionOp(wallGeometries, factory).union();
     // wallUnion should be Lineal, which works well with prepared geometry.

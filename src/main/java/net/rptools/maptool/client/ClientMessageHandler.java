@@ -64,6 +64,7 @@ import net.rptools.maptool.model.library.LibraryManager;
 import net.rptools.maptool.model.library.addon.AddOnLibraryImporter;
 import net.rptools.maptool.model.library.addon.TransferableAddOnLibrary;
 import net.rptools.maptool.model.player.Player;
+import net.rptools.maptool.model.topology.Wall;
 import net.rptools.maptool.model.topology.WallTopology;
 import net.rptools.maptool.model.zones.TokensAdded;
 import net.rptools.maptool.model.zones.TokensRemoved;
@@ -1069,7 +1070,12 @@ public class ClientMessageHandler implements MessageHandler {
         () -> {
           var zoneId = new GUID(setWallTopologyMsg.getZoneGuid());
           var zone = client.getCampaign().getZone(zoneId);
+          if (zone == null) {
+            log.warn("Failed to find zone with id {}", zoneId);
+            return;
+          }
           var topology = WallTopology.fromDto(setWallTopologyMsg.getTopology());
+
           zone.replaceWalls(topology);
         });
   }
@@ -1083,11 +1089,9 @@ public class ClientMessageHandler implements MessageHandler {
             log.warn("Failed to find zone with id {}", zoneId);
             return;
           }
+          var wall = Wall.fromDto(updateWallDataMsg.getWall());
 
-          var from = new GUID(updateWallDataMsg.getWall().getFrom());
-          var to = new GUID(updateWallDataMsg.getWall().getTo());
-          var data = WallTopology.WallData.fromDto(updateWallDataMsg.getWall().getData());
-          zone.updateWall(from, to, data);
+          zone.updateWall(wall);
         });
   }
 }

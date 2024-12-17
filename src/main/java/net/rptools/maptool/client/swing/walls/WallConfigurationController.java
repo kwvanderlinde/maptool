@@ -19,9 +19,8 @@ import javax.annotation.Nullable;
 import javax.swing.JComboBox;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.model.Zone;
-import net.rptools.maptool.model.topology.DirectionModifier;
 import net.rptools.maptool.model.topology.DirectionModifierType;
-import net.rptools.maptool.model.topology.WallTopology.Wall;
+import net.rptools.maptool.model.topology.Wall;
 
 public class WallConfigurationController {
   private final WallConfigurationView view;
@@ -38,8 +37,8 @@ public class WallConfigurationController {
     directionSelect.addActionListener(
         e -> {
           var direction = directionSelect.getItemAt(directionSelect.getSelectedIndex());
-          if (direction != null && !direction.equals(this.model.data().direction())) {
-            this.model.data().direction(direction);
+          if (direction != null && !direction.equals(this.model.direction())) {
+            this.model.direction(direction);
             wallUpdated();
           }
         });
@@ -49,8 +48,8 @@ public class WallConfigurationController {
         e -> {
           var modifier =
               movementModifierSelect.getItemAt(movementModifierSelect.getSelectedIndex());
-          if (modifier != null && !modifier.equals(this.model.data().movementModifier())) {
-            this.model.data().movementModifier(modifier);
+          if (modifier != null && !modifier.equals(this.model.movementModifier())) {
+            this.model.movementModifier(modifier);
             wallUpdated();
           }
         });
@@ -60,8 +59,8 @@ public class WallConfigurationController {
       input.addActionListener(
           e -> {
             var modifier = input.getItemAt(input.getSelectedIndex());
-            if (modifier != null && !modifier.equals(this.model.data().directionModifier(type))) {
-              this.model.data().directionModifier(type, modifier);
+            if (modifier != null && !modifier.equals(this.model.directionModifier(type))) {
+              this.model.directionModifier(type, modifier);
               wallUpdated();
             }
           });
@@ -72,7 +71,7 @@ public class WallConfigurationController {
     return view;
   }
 
-  private JComboBox<DirectionModifier> getModifierInput(DirectionModifierType type) {
+  private JComboBox<Wall.DirectionModifier> getModifierInput(DirectionModifierType type) {
     return switch (type) {
       case Sight -> view.getSightModifier();
       case Light -> view.getLightModifier();
@@ -89,7 +88,7 @@ public class WallConfigurationController {
   public void unbind() {
     // Preserve the current settings in a new prototype wall.
     var prototype = new Wall();
-    prototype.data().set(model.data());
+    prototype.copyDataFrom(model);
     bind(null, prototype);
   }
 
@@ -98,10 +97,10 @@ public class WallConfigurationController {
     this.modelZone = null;
     this.model = new Wall();
 
-    this.view.getDirectionSelect().setSelectedItem(model.data().direction());
-    this.view.getMovementModifier().setSelectedItem(model.data().movementModifier());
+    this.view.getDirectionSelect().setSelectedItem(model.direction());
+    this.view.getMovementModifier().setSelectedItem(model.movementModifier());
     for (var type : DirectionModifierType.values()) {
-      getModifierInput(type).setSelectedItem(model.data().directionModifier(type));
+      getModifierInput(type).setSelectedItem(model.directionModifier(type));
     }
 
     // Now that the state is set, remember which wall we're bound to.
