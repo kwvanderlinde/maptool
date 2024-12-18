@@ -86,6 +86,18 @@ public final class Wall {
     return to;
   }
 
+  /**
+   * Swap the heading of the wall.
+   *
+   * <p>The source and target vertices in the result are swapped around. To make the direction be
+   * equivalent, it is also reversed.
+   *
+   * @return An equivalent but reversed wall.
+   */
+  public Wall reversed() {
+    return new Wall(to, from, direction().reversed(), data.movementModifier, data.modifiers);
+  }
+
   public Direction direction() {
     return data.direction;
   }
@@ -118,8 +130,8 @@ public final class Wall {
     data.set(other.data);
   }
 
-  public void mergeDataFrom(Wall other, boolean reversed) {
-    var newData = data.merge(other.data, reversed);
+  public void mergeDataFrom(Wall other) {
+    var newData = data.merge(other.data);
     data.set(newData);
   }
 
@@ -363,14 +375,12 @@ public final class Wall {
       }
     }
 
-    private Data merge(Data other, boolean reversed) {
-      var otherDirection = reversed ? other.direction.reversed() : other.direction;
-
+    private Data merge(Data other) {
       var result = new Data();
-      if (this.direction == otherDirection) {
+      if (this.direction == other.direction) {
         // Both walls agree on the direction.
         result.direction = this.direction;
-      } else if (this.direction == Direction.Both || otherDirection == Direction.Both) {
+      } else if (this.direction == Direction.Both || other.direction == Direction.Both) {
         // All directions are blocked by one of the inputs.
         result.direction = Direction.Both;
       } else {
@@ -381,7 +391,6 @@ public final class Wall {
       // Normalized copy so we know that both walls are pointing in the same direction,
       // (assuming neither are set to `Both`; otherwise it doesn't matter).
       var normalizedOther = new Data(other);
-      normalizedOther.direction = otherDirection;
       normalizedOther.normalizeTo(this.direction);
 
       if (this.movementModifier == MovementDirectionModifier.ForceBoth

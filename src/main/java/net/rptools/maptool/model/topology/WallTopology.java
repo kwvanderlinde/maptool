@@ -418,8 +418,14 @@ public final class WallTopology implements Topology {
       } else {
         // Merge obsolete wall into the kept wall.
         var secondIsSource = existingWall.from().equals(second.id());
-        var reversed = firstIsSource != secondIsSource;
-        existingWall.mergeDataFrom(oldWall, reversed);
+
+        var wallToMerge = oldWall;
+        if (firstIsSource != secondIsSource) {
+          // The walls are point in opposite directions. Flip the one being merged in so they agree
+          // on things like direction.
+          wallToMerge = wallToMerge.reversed();
+        }
+        existingWall.mergeDataFrom(wallToMerge);
       }
     }
 
