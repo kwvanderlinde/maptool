@@ -28,8 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import net.rptools.maptool.model.GUID;
-import net.rptools.maptool.model.topology.DirectionModifierType;
 import net.rptools.maptool.model.topology.Vertex;
+import net.rptools.maptool.model.topology.VisibilityType;
 import net.rptools.maptool.model.topology.Wall;
 import net.rptools.maptool.model.topology.WallTopology;
 import org.apache.logging.log4j.LogManager;
@@ -128,13 +128,13 @@ public class WallTopologyConverter extends AbstractCollectionConverter {
                 wallRepresentation.movementDirection, Wall.MovementDirectionModifier.ForceBoth);
         var directionModifiers =
             Map.of(
-                DirectionModifierType.Sight,
+                VisibilityType.Sight,
                 Objects.requireNonNullElse(
                     wallRepresentation.sightDirection, Wall.DirectionModifier.SameDirection),
-                DirectionModifierType.Light,
+                VisibilityType.Light,
                 Objects.requireNonNullElse(
                     wallRepresentation.lightDirection, Wall.DirectionModifier.SameDirection),
-                DirectionModifierType.Aura,
+                VisibilityType.Aura,
                 Objects.requireNonNullElse(
                     wallRepresentation.auraDirection, Wall.DirectionModifier.SameDirection));
 
@@ -189,9 +189,9 @@ public class WallTopologyConverter extends AbstractCollectionConverter {
       this.to = wall.to().toString();
       this.direction = wall.direction();
       this.movementDirection = wall.movementModifier();
-      this.sightDirection = wall.directionModifier(DirectionModifierType.Sight);
-      this.lightDirection = wall.directionModifier(DirectionModifierType.Light);
-      this.auraDirection = wall.directionModifier(DirectionModifierType.Aura);
+      this.sightDirection = wall.directionModifier(VisibilityType.Sight);
+      this.lightDirection = wall.directionModifier(VisibilityType.Light);
+      this.auraDirection = wall.directionModifier(VisibilityType.Aura);
     }
   }
 

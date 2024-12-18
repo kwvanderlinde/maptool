@@ -84,7 +84,10 @@ public final class MaskTopology implements Topology {
 
   @Override
   public VisionResult addSegments(
-      DirectionModifierType type, Coordinate origin, Envelope bounds, Consumer<Coordinate[]> sink) {
+      VisibilityType visibilityType,
+      Coordinate origin,
+      Envelope bounds,
+      Consumer<Coordinate[]> sink) {
     // Convenience for adding rings to the result.
     BiConsumer<LinearRing, Facing> add =
         (ring, facing) ->

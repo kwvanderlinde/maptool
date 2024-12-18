@@ -457,7 +457,10 @@ public final class WallTopology implements Topology {
 
   @Override
   public VisionResult addSegments(
-      DirectionModifierType type, Coordinate origin, Envelope bounds, Consumer<Coordinate[]> sink) {
+      VisibilityType visibilityType,
+      Coordinate origin,
+      Envelope bounds,
+      Consumer<Coordinate[]> sink) {
     getWalls()
         .forEach(
             wall -> {
@@ -469,7 +472,7 @@ public final class WallTopology implements Topology {
 
               // For directional walls, ensure the origin is on the correct side.
               var direction =
-                  switch (wall.directionModifier(type)) {
+                  switch (wall.directionModifier(visibilityType)) {
                     case SameDirection -> wall.direction();
                     case ReverseDirection -> wall.direction().reversed();
                     case ForceBoth -> Wall.Direction.Both;

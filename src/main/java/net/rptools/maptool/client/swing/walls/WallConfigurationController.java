@@ -19,7 +19,7 @@ import javax.annotation.Nullable;
 import javax.swing.JComboBox;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.model.Zone;
-import net.rptools.maptool.model.topology.DirectionModifierType;
+import net.rptools.maptool.model.topology.VisibilityType;
 import net.rptools.maptool.model.topology.Wall;
 
 public class WallConfigurationController {
@@ -54,13 +54,14 @@ public class WallConfigurationController {
           }
         });
 
-    for (var type : DirectionModifierType.values()) {
-      final var input = getModifierInput(type);
+    for (var visibilityType : VisibilityType.values()) {
+      final var input = getModifierInput(visibilityType);
       input.addActionListener(
           e -> {
             var modifier = input.getItemAt(input.getSelectedIndex());
-            if (modifier != null && !modifier.equals(this.model.directionModifier(type))) {
-              this.model.directionModifier(type, modifier);
+            if (modifier != null
+                && !modifier.equals(this.model.directionModifier(visibilityType))) {
+              this.model.directionModifier(visibilityType, modifier);
               wallUpdated();
             }
           });
@@ -71,8 +72,8 @@ public class WallConfigurationController {
     return view;
   }
 
-  private JComboBox<Wall.DirectionModifier> getModifierInput(DirectionModifierType type) {
-    return switch (type) {
+  private JComboBox<Wall.DirectionModifier> getModifierInput(VisibilityType visibilityType) {
+    return switch (visibilityType) {
       case Sight -> view.getSightModifier();
       case Light -> view.getLightModifier();
       case Aura -> view.getAuraModifier();
@@ -99,8 +100,8 @@ public class WallConfigurationController {
 
     this.view.getDirectionSelect().setSelectedItem(model.direction());
     this.view.getMovementModifier().setSelectedItem(model.movementModifier());
-    for (var type : DirectionModifierType.values()) {
-      getModifierInput(type).setSelectedItem(model.directionModifier(type));
+    for (var visibilityType : VisibilityType.values()) {
+      getModifierInput(visibilityType).setSelectedItem(model.directionModifier(visibilityType));
     }
 
     // Now that the state is set, remember which wall we're bound to.

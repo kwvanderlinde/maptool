@@ -74,7 +74,7 @@ public final class Wall {
       GUID to,
       Direction direction,
       MovementDirectionModifier movementModifier,
-      Map<DirectionModifierType, DirectionModifier> modifiers) {
+      Map<VisibilityType, DirectionModifier> modifiers) {
     this(from, to, new Data(direction, movementModifier, modifiers));
   }
 
@@ -102,12 +102,12 @@ public final class Wall {
     data.movementModifier = modifier;
   }
 
-  public DirectionModifier directionModifier(DirectionModifierType type) {
-    return data.modifiers.getOrDefault(type, defaultModifier);
+  public DirectionModifier directionModifier(VisibilityType visibilityType) {
+    return data.modifiers.getOrDefault(visibilityType, defaultModifier);
   }
 
-  public void directionModifier(DirectionModifierType type, DirectionModifier modifier) {
-    data.modifiers.put(type, modifier);
+  public void directionModifier(VisibilityType visibilityType, DirectionModifier modifier) {
+    data.modifiers.put(visibilityType, modifier);
   }
 
   public void setData(Data otherData) {
@@ -301,7 +301,7 @@ public final class Wall {
   public static final class Data {
     private Direction direction;
     private MovementDirectionModifier movementModifier;
-    private final EnumMap<DirectionModifierType, DirectionModifier> modifiers;
+    private final EnumMap<VisibilityType, DirectionModifier> modifiers;
 
     private Data() {
       this(Direction.Both, MovementDirectionModifier.ForceBoth, Map.of());
@@ -314,12 +314,12 @@ public final class Wall {
     private Data(
         Direction direction,
         MovementDirectionModifier movementModifier,
-        Map<DirectionModifierType, DirectionModifier> modifiers) {
+        Map<VisibilityType, DirectionModifier> modifiers) {
       this.direction = direction;
       this.movementModifier = movementModifier;
       this.modifiers =
           CollectionUtil.newFilledEnumMap(
-              DirectionModifierType.class, type -> DirectionModifier.SameDirection);
+              VisibilityType.class, type -> DirectionModifier.SameDirection);
       this.modifiers.putAll(modifiers);
     }
 
@@ -350,8 +350,8 @@ public final class Wall {
 
       this.direction = this.direction.reversed();
       // Nothing for movement direction right now.
-      for (var type : DirectionModifierType.values()) {
-        var modifier = this.modifiers.getOrDefault(type, defaultModifier);
+      for (var visibilityType : VisibilityType.values()) {
+        var modifier = this.modifiers.getOrDefault(visibilityType, defaultModifier);
         var newModifier =
             switch (modifier) {
               case SameDirection -> DirectionModifier.ReverseDirection;
@@ -359,7 +359,7 @@ public final class Wall {
               case ForceBoth -> DirectionModifier.ForceBoth;
               case Disabled -> DirectionModifier.Disabled;
             };
-        this.modifiers.put(type, newModifier);
+        this.modifiers.put(visibilityType, newModifier);
       }
     }
 
@@ -391,27 +391,27 @@ public final class Wall {
         this.movementModifier = MovementDirectionModifier.Disabled;
       }
 
-      for (var type : DirectionModifierType.values()) {
-        var thisMod = this.modifiers.getOrDefault(type, defaultModifier);
-        var otherMod = normalizedOther.modifiers.getOrDefault(type, defaultModifier);
+      for (var visibilityType : VisibilityType.values()) {
+        var thisMod = this.modifiers.getOrDefault(visibilityType, defaultModifier);
+        var otherMod = normalizedOther.modifiers.getOrDefault(visibilityType, defaultModifier);
 
         // Block in every direction that the inputs block.
         if (thisMod == otherMod) {
-          result.modifiers.put(type, thisMod);
+          result.modifiers.put(visibilityType, thisMod);
         } else if (thisMod == DirectionModifier.ForceBoth
             || otherMod == DirectionModifier.ForceBoth) {
-          result.modifiers.put(type, DirectionModifier.ForceBoth);
+          result.modifiers.put(visibilityType, DirectionModifier.ForceBoth);
         } else if (thisMod == DirectionModifier.Disabled) {
-          result.modifiers.put(type, otherMod);
+          result.modifiers.put(visibilityType, otherMod);
         } else if (otherMod == DirectionModifier.Disabled) {
-          result.modifiers.put(type, thisMod);
+          result.modifiers.put(visibilityType, thisMod);
         }
         // One mod is SameDirection and the other is ReverseDirection. If the wall is not
         // directional, we can set to SameDirection. Otherwise, it must ForceBoth.
         else if (result.direction == Direction.Both) {
-          result.modifiers.put(type, DirectionModifier.SameDirection);
+          result.modifiers.put(visibilityType, DirectionModifier.SameDirection);
         } else {
-          result.modifiers.put(type, DirectionModifier.ForceBoth);
+          result.modifiers.put(visibilityType, DirectionModifier.ForceBoth);
         }
       }
 
@@ -423,11 +423,11 @@ public final class Wall {
           .setDirection(direction.toDto())
           .setMovementDirectionModifier(movementModifier.toDto())
           .setSightDirectionModifier(
-              modifiers.getOrDefault(DirectionModifierType.Sight, defaultModifier).toDto())
+              modifiers.getOrDefault(VisibilityType.Sight, defaultModifier).toDto())
           .setLightDirectionModifier(
-              modifiers.getOrDefault(DirectionModifierType.Light, defaultModifier).toDto())
+              modifiers.getOrDefault(VisibilityType.Light, defaultModifier).toDto())
           .setAuraDirectionModifier(
-              modifiers.getOrDefault(DirectionModifierType.Aura, defaultModifier).toDto())
+              modifiers.getOrDefault(VisibilityType.Aura, defaultModifier).toDto())
           .build();
     }
 
@@ -436,11 +436,11 @@ public final class Wall {
       var movementModifier = MovementDirectionModifier.fromDto(dto.getMovementDirectionModifier());
       var modifiers =
           Map.of(
-              DirectionModifierType.Sight,
+              VisibilityType.Sight,
               DirectionModifier.fromDto(dto.getSightDirectionModifier()),
-              DirectionModifierType.Light,
+              VisibilityType.Light,
               DirectionModifier.fromDto(dto.getLightDirectionModifier()),
-              DirectionModifierType.Aura,
+              VisibilityType.Aura,
               DirectionModifier.fromDto(dto.getAuraDirectionModifier()));
 
       return new Data(direction, movementModifier, modifiers);

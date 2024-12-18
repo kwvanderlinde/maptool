@@ -14,7 +14,7 @@
  */
 package net.rptools.maptool.model.topology;
 
-public enum DirectionModifierType {
+public enum VisibilityType {
   Sight,
   Light,
   Aura

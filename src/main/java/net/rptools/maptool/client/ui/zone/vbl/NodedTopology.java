@@ -21,9 +21,9 @@ import java.util.function.Consumer;
 import net.rptools.lib.CodeTimer;
 import net.rptools.lib.GeometryUtil;
 import net.rptools.maptool.model.Zone;
-import net.rptools.maptool.model.topology.DirectionModifierType;
 import net.rptools.maptool.model.topology.MaskTopology;
 import net.rptools.maptool.model.topology.Topology;
+import net.rptools.maptool.model.topology.VisibilityType;
 import net.rptools.maptool.model.topology.VisionResult;
 import net.rptools.maptool.model.topology.Wall;
 import net.rptools.maptool.model.topology.WallTopology;
@@ -47,9 +47,12 @@ public class NodedTopology {
   }
 
   public VisionResult getSegments(
-      DirectionModifierType type, Coordinate origin, Envelope bounds, Consumer<Coordinate[]> sink) {
+      VisibilityType visibilityType,
+      Coordinate origin,
+      Envelope bounds,
+      Consumer<Coordinate[]> sink) {
     for (var preparedPart : preparedParts) {
-      var maskResult = preparedPart.addSegments(type, origin, bounds, sink);
+      var maskResult = preparedPart.addSegments(visibilityType, origin, bounds, sink);
       if (maskResult == VisionResult.CompletelyObscured) {
         return maskResult;
       }

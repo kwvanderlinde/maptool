@@ -44,7 +44,7 @@ import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.player.Player.Role;
-import net.rptools.maptool.model.topology.DirectionModifierType;
+import net.rptools.maptool.model.topology.VisibilityType;
 import net.rptools.maptool.model.topology.VisionResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -69,7 +69,7 @@ public class FogUtil {
    *     {@code null} is returned to indicate no restriction on vision.
    */
   public static @Nullable LinearRing doVisionSweep(
-      DirectionModifierType type,
+      VisibilityType visibilityType,
       Coordinate origin,
       Envelope visionBounds,
       NodedTopology topology) {
@@ -80,7 +80,7 @@ public class FogUtil {
     timer.stop("create solver");
 
     timer.start("accumulate blocking walls");
-    var visionResult = topology.getSegments(type, origin, visionBounds, problem::add);
+    var visionResult = topology.getSegments(visibilityType, origin, visionBounds, problem::add);
     if (visionResult == VisionResult.CompletelyObscured) {
       // No vision possible.
       return geometryFactory.createLinearRing();
@@ -115,7 +115,7 @@ public class FogUtil {
    *     vision is not possible.
    */
   public static @Nonnull Area calculateVisibility(
-      DirectionModifierType type, Point2D origin, Area vision, NodedTopology topology) {
+      VisibilityType visibilityType, Point2D origin, Area vision, NodedTopology topology) {
     var timer = CodeTimer.get();
     timer.start("FogUtil::calculateVisibility");
     try {
@@ -136,7 +136,7 @@ public class FogUtil {
       LinearRing visibilityPolygon;
       try {
         timer.start("doVisionSweep()");
-        visibilityPolygon = doVisionSweep(type, cOrigin, visionBounds, topology);
+        visibilityPolygon = doVisionSweep(visibilityType, cOrigin, visionBounds, topology);
       } finally {
         timer.stop("doVisionSweep()");
       }

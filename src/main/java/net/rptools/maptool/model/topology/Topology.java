@@ -20,5 +20,8 @@ import org.locationtech.jts.geom.Envelope;
 
 public interface Topology {
   VisionResult addSegments(
-      DirectionModifierType type, Coordinate origin, Envelope bounds, Consumer<Coordinate[]> sink);
+      VisibilityType visibilityType,
+      Coordinate origin,
+      Envelope bounds,
+      Consumer<Coordinate[]> sink);
 }
