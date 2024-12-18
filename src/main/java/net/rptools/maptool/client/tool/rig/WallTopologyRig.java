@@ -208,8 +208,7 @@ public final class WallTopologyRig implements Rig<WallTopologyRig.Element<?>> {
    * Called whenever the source is changed in any way.
    *
    * <p>Although empty right now, if we ever add acceleration structures this would be the place to
-   * update them. Actually, when that time comes, we should have separate invalidate()/validate
-   * methods.
+   * update them.
    */
   private void updateShape() {}
 

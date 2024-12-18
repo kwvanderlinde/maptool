@@ -1005,7 +1005,6 @@ public class Zone {
           existing.copyDataFrom(wall);
 
           this.nodedTopology = null;
-          // TODO More nuanced topology changed event. Maybe we can attach extra info to this event?
           new MapToolEventBus().getMainEventBus().post(new WallTopologyChanged(this));
         },
         () -> {

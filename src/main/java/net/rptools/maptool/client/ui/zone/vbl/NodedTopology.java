@@ -127,7 +127,6 @@ public class NodedTopology {
                   GeometryUtil.coordinateToPoint2D(coordinates[0]),
                   builder -> {
                     for (var i = 1; i < coordinates.length; ++i) {
-                      // TODO How can we represent this while encapsulating WallData?
                       builder.push(
                           GeometryUtil.coordinateToPoint2D(coordinates[i]), originalWall.data());
                     }

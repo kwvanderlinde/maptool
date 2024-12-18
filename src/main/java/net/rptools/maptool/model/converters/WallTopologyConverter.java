@@ -56,10 +56,10 @@ import org.apache.logging.log4j.Logger;
  * <walls>
  *   <wall from="8A647D10EE1B4AFA8BEF4B93AEFB624D" to="E3A964F13221428582E491AB3D3D3764">
  *     <direction>Left</direction>
+ *     <movementDirection>Disable</movementDirection>
  *     <sightDirection>Same</sightDirection>
  *     <lightDirection>Reverse</lightDirection>
  *     <auraDirection>Ignore</auraDirection>
- *     <movementDirection>Disable</movementDirection>
  *   </wall>
  *   <wall from="E3A964F13221428582E491AB3D3D3764" to="C510571E42C74080AF34EC00D47FCF97">
  *     ..

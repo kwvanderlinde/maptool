@@ -234,7 +234,6 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
 
     // If the selected wall still exists, rebind it.
     var optionalWall = getZone().getWalls().getWall(selected.from(), selected.to());
-
     optionalWall.ifPresentOrElse(wall -> setSelectedWall(wall), () -> setSelectedWall(null));
   }
 
@@ -405,7 +404,9 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
       var wallOutlineColor = AppStyle.wallTopologyOutlineColor;
       var wallOutlineStroke =
           new BasicStroke(
-              wallStroke.getLineWidth() * 1.5f, wallStroke.getEndCap(), wallStroke.getLineJoin());
+              (float) (wallStroke.getLineWidth() * 1.5),
+              wallStroke.getEndCap(),
+              wallStroke.getLineJoin());
       var arrowStroke =
           new BasicStroke(
               wallStroke.getLineWidth() * 0.5f, wallStroke.getEndCap(), wallStroke.getLineJoin());
