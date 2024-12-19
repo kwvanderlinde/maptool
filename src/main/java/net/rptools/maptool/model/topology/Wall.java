@@ -14,6 +14,8 @@
  */
 package net.rptools.maptool.model.topology;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;
@@ -23,7 +25,6 @@ import net.rptools.maptool.server.proto.TopologyDirectionModifier;
 import net.rptools.maptool.server.proto.TopologyMovementDirectionModifier;
 import net.rptools.maptool.server.proto.WallDataDto;
 import net.rptools.maptool.server.proto.WallDto;
-import net.rptools.maptool.util.CollectionUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -36,11 +37,10 @@ import org.apache.logging.log4j.Logger;
  */
 public final class Wall {
   private static final Logger log = LogManager.getLogger(Wall.class);
-  private static final DirectionModifier defaultModifier = DirectionModifier.SameDirection;
 
   private final GUID from;
   private final GUID to;
-  private final Data data;
+  private Data data;
 
   public Wall() {
     this(new GUID(), new GUID(), new Data());
@@ -66,7 +66,7 @@ public final class Wall {
   public Wall(GUID from, GUID to, Data data) {
     this.from = from;
     this.to = to;
-    this.data = new Data(data);
+    this.data = data;
   }
 
   public Wall(
@@ -95,59 +95,59 @@ public final class Wall {
    * @return An equivalent but reversed wall.
    */
   public Wall reversed() {
-    return new Wall(to, from, direction().reversed(), data.movementModifier, data.modifiers);
+    return new Wall(to, from, direction().reversed(), data.movementModifier(), data.modifiers());
   }
 
   public Direction direction() {
-    return data.direction;
+    return data.direction();
   }
 
   public void direction(Direction direction) {
-    data.direction = direction;
+    data = new Data(direction, data.movementModifier(), data.modifiers());
   }
 
   public MovementDirectionModifier movementModifier() {
-    return data.movementModifier;
+    return data.movementModifier();
   }
 
   public void movementModifier(MovementDirectionModifier modifier) {
-    data.movementModifier = modifier;
+    data = new Data(data.direction(), modifier, data.modifiers());
   }
 
   public DirectionModifier directionModifier(VisibilityType visibilityType) {
-    return data.modifiers.getOrDefault(visibilityType, defaultModifier);
+    return data.directionModifier(visibilityType);
   }
 
   public void directionModifier(VisibilityType visibilityType, DirectionModifier modifier) {
-    data.modifiers.put(visibilityType, modifier);
+    var newModifiers = new EnumMap<VisibilityType, DirectionModifier>(VisibilityType.class);
+    newModifiers.putAll(data.modifiers());
+    newModifiers.put(visibilityType, modifier);
+    data = new Data(data.direction(), data.movementModifier(), newModifiers);
   }
 
   public void setData(Data otherData) {
-    data.set(otherData);
+    this.data = otherData;
   }
 
   public void copyDataFrom(Wall other) {
-    data.set(other.data);
+    setData(other.data);
   }
 
   public void mergeDataFrom(Wall other) {
     var newData = data.merge(other.data);
-    data.set(newData);
+    setData(newData);
   }
 
   /**
-   * Gets an copy of the wall's data.
+   * Gets the wall's data.
    *
    * <p>This is useful for stashing the data somewhere. If the data needs to be manipulated, use
    * methods on {@link Wall} itself.
    *
-   * <p>This method returns a copy of the data, so any changes to the wall will not be reflected in
-   * the returned data.
-   *
-   * @return An opaque handle to the wall's data.
+   * @return The wall's data.
    */
   public Data data() {
-    return new Data(data);
+    return data;
   }
 
   @Override
@@ -187,6 +187,18 @@ public final class Wall {
       };
     }
 
+    public Direction merged(Direction other) {
+      if (this == other) {
+        // The directions agree.
+        return this;
+      }
+
+      // Either:
+      // 1. One of the directions is Both, and therefore as strict as possible; or
+      // 2. The directions are opposite to each other, thus meaning both ways should be blocked.
+      return Both;
+    }
+
     @Override
     public String toString() {
       var key =
@@ -224,6 +236,21 @@ public final class Wall {
     ReverseDirection,
     ForceBoth,
     Disabled;
+
+    public DirectionModifier merged(DirectionModifier other) {
+      if (this == other) {
+        return this;
+      } else if (this == ForceBoth || other == ForceBoth) {
+        return DirectionModifier.ForceBoth;
+      } else if (this == DirectionModifier.Disabled) {
+        return other;
+      } else if (other == DirectionModifier.Disabled) {
+        return this;
+      } else {
+        // One is SameDirection and the other is ReverseDirection.
+        return DirectionModifier.ForceBoth;
+      }
+    }
 
     @Override
     public String toString() {
@@ -276,6 +303,14 @@ public final class Wall {
 
     private static final Logger log = LogManager.getLogger(MovementDirectionModifier.class);
 
+    public MovementDirectionModifier merged(MovementDirectionModifier other) {
+      if (this == ForceBoth || other == ForceBoth) {
+        return ForceBoth;
+      } else {
+        return Disabled;
+      }
+    }
+
     @Override
     public String toString() {
       var key =
@@ -306,141 +341,97 @@ public final class Wall {
   }
 
   /**
-   * An opaque handle to a wall's configuration.
+   * Contains a wall's configuration.
    *
-   * <p>If the data needs to be changed, use methods on {@link Wall} to achieve it.
+   * <p>This type is immutable. If the data needs to be changed, use methods on {@link Wall} to
+   * achieve it.
    */
-  public static final class Data {
-    private Direction direction;
-    private MovementDirectionModifier movementModifier;
-    private final EnumMap<VisibilityType, DirectionModifier> modifiers;
-
-    private Data() {
+  public record Data(
+      Direction direction,
+      MovementDirectionModifier movementModifier,
+      ImmutableMap<VisibilityType, DirectionModifier> modifiers) {
+    public Data() {
       this(Direction.Both, MovementDirectionModifier.ForceBoth, Map.of());
     }
 
-    private Data(Data other) {
-      this(other.direction, other.movementModifier, other.modifiers);
-    }
-
-    private Data(
+    public Data(
         Direction direction,
         MovementDirectionModifier movementModifier,
         Map<VisibilityType, DirectionModifier> modifiers) {
-      this.direction = direction;
-      this.movementModifier = movementModifier;
-      this.modifiers =
-          CollectionUtil.newFilledEnumMap(
-              VisibilityType.class, type -> DirectionModifier.SameDirection);
-      this.modifiers.putAll(modifiers);
+      this(direction, movementModifier, Maps.immutableEnumMap(modifiers));
     }
 
-    private void set(Data other) {
-      if (this == other) {
-        return;
-      }
-
-      this.direction = other.direction;
-      this.movementModifier = other.movementModifier;
-      this.modifiers.clear();
-      this.modifiers.putAll(other.modifiers);
+    public DirectionModifier directionModifier(VisibilityType visibilityType) {
+      return Objects.requireNonNullElse(
+          modifiers.get(visibilityType), DirectionModifier.SameDirection);
     }
 
     /**
-     * Force the wall to point the given direction.
+     * Produces equivalent wall data that points in the given direction.
      *
-     * <p>The various modifiers are updated so that the wall is functionally the same. Normalizing
-     * the direction of the wall makes some casework easier when merging walls.
+     * <p>If the wall is bidirectional or already points in the given direction, this method does
+     * nothing. Otherwise, it flips the direction and replaces all modifiers to point in the
+     * opposite direction.
+     *
+     * <p>Normalizing the wall direction like this makes some casework easier when merging walls.
      */
-    private void normalizeTo(Direction direction) {
+    private Data normalizedTo(Direction direction) {
       if (direction == Direction.Both
           || this.direction == Direction.Both
           || direction == this.direction) {
         // Nothing to do.
-        return;
+        return this;
       }
 
-      this.direction = this.direction.reversed();
       // Nothing for movement direction right now.
+      var newMovementModifier = this.movementModifier;
+      var newModifiers = new EnumMap<VisibilityType, DirectionModifier>(VisibilityType.class);
       for (var visibilityType : VisibilityType.values()) {
-        var modifier = this.modifiers.getOrDefault(visibilityType, defaultModifier);
         var newModifier =
-            switch (modifier) {
+            switch (directionModifier(visibilityType)) {
               case SameDirection -> DirectionModifier.ReverseDirection;
               case ReverseDirection -> DirectionModifier.SameDirection;
               case ForceBoth -> DirectionModifier.ForceBoth;
               case Disabled -> DirectionModifier.Disabled;
             };
-        this.modifiers.put(visibilityType, newModifier);
+        newModifiers.put(visibilityType, newModifier);
       }
+      return new Data(direction, newMovementModifier, newModifiers);
     }
 
-    private Data merge(Data other) {
-      var result = new Data();
-      if (this.direction == other.direction) {
-        // Both walls agree on the direction.
-        result.direction = this.direction;
-      } else if (this.direction == Direction.Both || other.direction == Direction.Both) {
-        // All directions are blocked by one of the inputs.
-        result.direction = Direction.Both;
-      } else {
-        // Inputs point in different directions. They combine to block both directions.
-        result.direction = Direction.Both;
-      }
+    public Data merge(Data other) {
+      var resultDirection = this.direction.merged(other.direction);
 
       // Normalized copy so we know that both walls are pointing in the same direction,
       // (assuming neither are set to `Both`; otherwise it doesn't matter).
-      var normalizedOther = new Data(other);
-      normalizedOther.normalizeTo(this.direction);
+      var normalizedOther = other.normalizedTo(this.direction);
 
-      if (this.movementModifier == MovementDirectionModifier.ForceBoth
-          || normalizedOther.movementModifier == MovementDirectionModifier.ForceBoth) {
-        this.movementModifier = MovementDirectionModifier.ForceBoth;
-      } else {
-        this.movementModifier = MovementDirectionModifier.Disabled;
-      }
+      var resultMovementModifier = this.movementModifier.merged(normalizedOther.movementModifier);
 
+      var resultModifiers = new EnumMap<VisibilityType, DirectionModifier>(VisibilityType.class);
       for (var visibilityType : VisibilityType.values()) {
-        var thisMod = this.modifiers.getOrDefault(visibilityType, defaultModifier);
-        var otherMod = normalizedOther.modifiers.getOrDefault(visibilityType, defaultModifier);
+        var thisMod = this.directionModifier(visibilityType);
+        var otherMod = normalizedOther.directionModifier(visibilityType);
 
         // Block in every direction that the inputs block.
-        if (thisMod == otherMod) {
-          result.modifiers.put(visibilityType, thisMod);
-        } else if (thisMod == DirectionModifier.ForceBoth
-            || otherMod == DirectionModifier.ForceBoth) {
-          result.modifiers.put(visibilityType, DirectionModifier.ForceBoth);
-        } else if (thisMod == DirectionModifier.Disabled) {
-          result.modifiers.put(visibilityType, otherMod);
-        } else if (otherMod == DirectionModifier.Disabled) {
-          result.modifiers.put(visibilityType, thisMod);
-        }
-        // One mod is SameDirection and the other is ReverseDirection. If the wall is not
-        // directional, we can set to SameDirection. Otherwise, it must ForceBoth.
-        else if (result.direction == Direction.Both) {
-          result.modifiers.put(visibilityType, DirectionModifier.SameDirection);
-        } else {
-          result.modifiers.put(visibilityType, DirectionModifier.ForceBoth);
-        }
+        var newModifier = thisMod.merged(otherMod);
+        resultModifiers.put(visibilityType, newModifier);
       }
 
-      return result;
+      return new Data(resultDirection, resultMovementModifier, resultModifiers);
     }
 
-    private WallDataDto toDto() {
+    public WallDataDto toDto() {
       return WallDataDto.newBuilder()
           .setDirection(direction.toDto())
           .setMovementDirectionModifier(movementModifier.toDto())
-          .setSightDirectionModifier(
-              modifiers.getOrDefault(VisibilityType.Sight, defaultModifier).toDto())
-          .setLightDirectionModifier(
-              modifiers.getOrDefault(VisibilityType.Light, defaultModifier).toDto())
-          .setAuraDirectionModifier(
-              modifiers.getOrDefault(VisibilityType.Aura, defaultModifier).toDto())
+          .setSightDirectionModifier(directionModifier(VisibilityType.Sight).toDto())
+          .setLightDirectionModifier(directionModifier(VisibilityType.Light).toDto())
+          .setAuraDirectionModifier(directionModifier(VisibilityType.Aura).toDto())
           .build();
     }
 
-    private static Data fromDto(WallDataDto dto) {
+    public static Data fromDto(WallDataDto dto) {
       var direction = Direction.fromDto(dto.getDirection());
       var movementModifier = MovementDirectionModifier.fromDto(dto.getMovementDirectionModifier());
       var modifiers =

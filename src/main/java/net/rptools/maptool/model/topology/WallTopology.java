@@ -62,26 +62,19 @@ public final class WallTopology implements Topology {
       allVertices.add(lastVertex);
     }
 
-    private Wall pushInternal(Point2D nextPoint) {
+    public void push(Point2D nextPoint) {
+      push(nextPoint, new Wall.Data());
+    }
+
+    public void push(Point2D nextPoint, Wall.Data data) {
       var from = lastVertex;
       var to = new Vertex();
       to.position(nextPoint);
-      var wall = new Wall(from.id(), to.id());
+      var wall = new Wall(from.id(), to.id(), data);
 
       lastVertex = to;
       allVertices.add(lastVertex);
       allWalls.add(wall);
-
-      return wall;
-    }
-
-    public void push(Point2D nextPoint) {
-      pushInternal(nextPoint);
-    }
-
-    public void push(Point2D nextPoint, Wall.Data data) {
-      var wall = pushInternal(nextPoint);
-      wall.setData(data);
     }
 
     /** Finish the string and return the last vertex. */
@@ -419,12 +412,9 @@ public final class WallTopology implements Topology {
         // Merge obsolete wall into the kept wall.
         var secondIsSource = existingWall.from().equals(second.id());
 
-        var wallToMerge = oldWall;
-        if (firstIsSource != secondIsSource) {
-          // The walls are point in opposite directions. Flip the one being merged in so they agree
-          // on things like direction.
-          wallToMerge = wallToMerge.reversed();
-        }
+        // If the walls point in opposite directions, flip the one being merged so that they agree
+        // on things like direction.
+        var wallToMerge = (firstIsSource == secondIsSource) ? oldWall : oldWall.reversed();
         existingWall.mergeDataFrom(wallToMerge);
       }
     }
