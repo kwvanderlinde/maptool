@@ -348,21 +348,6 @@ public class MapToolServer {
       return;
     }
 
-    server.close();
-    for (var connection : router.removeAll()) {
-      connection.removeDisconnectHandler(onConnectionDisconnected);
-      connection.close();
-    }
-
-    assetManagerMap.clear();
-
-    if (heartbeatThread != null) {
-      heartbeatThread.shutdown();
-    }
-    if (assetProducerThread != null) {
-      assetProducerThread.shutdown();
-    }
-
     if (announcer != null) {
       announcer.stop();
       announcer = null;
@@ -381,6 +366,21 @@ public class MapToolServer {
     if (useUPnP && config != null) {
       int port = config.getPort();
       UPnPUtil.closePort(port);
+    }
+
+    server.close();
+    for (var connection : router.removeAll()) {
+      connection.removeDisconnectHandler(onConnectionDisconnected);
+      connection.close();
+    }
+
+    assetManagerMap.clear();
+
+    if (heartbeatThread != null) {
+      heartbeatThread.shutdown();
+    }
+    if (assetProducerThread != null) {
+      assetProducerThread.shutdown();
     }
   }
 
