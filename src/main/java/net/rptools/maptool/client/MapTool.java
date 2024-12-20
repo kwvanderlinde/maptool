@@ -185,7 +185,7 @@ public class MapTool {
       var campaign = CampaignFactory.createBasicCampaign();
       var policy = new ServerPolicy();
 
-      server = new MapToolServer("", new Campaign(campaign), null, false, policy, playerDB);
+      server = new MapToolServer(null, new Campaign(campaign), null, false, policy, playerDB);
       client = new MapToolClient(server, campaign, playerDB.getPlayer(), connections.clientSide());
     } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
       throw new RuntimeException("Unable to create default personal server", e);
