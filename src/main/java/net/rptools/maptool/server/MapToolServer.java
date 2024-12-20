@@ -28,9 +28,12 @@ import net.rptools.clientserver.ConnectionFactory;
 import net.rptools.clientserver.simple.DisconnectHandler;
 import net.rptools.clientserver.simple.MessageHandler;
 import net.rptools.clientserver.simple.connection.Connection;
+import net.rptools.clientserver.simple.server.NilServer;
 import net.rptools.clientserver.simple.server.Router;
 import net.rptools.clientserver.simple.server.Server;
 import net.rptools.clientserver.simple.server.ServerObserver;
+import net.rptools.clientserver.simple.server.SocketServer;
+import net.rptools.clientserver.simple.server.WebRTCServer;
 import net.rptools.maptool.client.AppConstants;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolRegistry;
@@ -69,7 +72,7 @@ public class MapToolServer {
   }
 
   @Nonnull private final String serviceIdentifier;
-  private final Server server;
+  @Nonnull private final Server server;
   private final MessageHandler messageHandler;
   private final Router router;
   private final ServerConfig config;
@@ -199,7 +202,11 @@ public class MapToolServer {
   }
 
   public int getPort() {
-    return config == null ? -1 : config.getPort();
+    return switch (server) {
+      case NilServer s -> -1;
+      case SocketServer s -> s.getPort();
+      case WebRTCServer s -> -1;
+    };
   }
 
   /**
@@ -363,8 +370,8 @@ public class MapToolServer {
     }
 
     // Close UPnP port mapping if used
-    if (useUPnP && config != null) {
-      int port = config.getPort();
+    int port;
+    if (useUPnP && (port = getPort()) != -1) {
       UPnPUtil.closePort(port);
     }
 
@@ -401,12 +408,13 @@ public class MapToolServer {
     }
 
     // Use UPnP to open port in router
-    if (useUPnP && config != null) {
+    int port = getPort();
+    if (useUPnP && port != -1) {
       MapTool.getFrame()
           .showFilledGlassPane(
               new StaticMessageDialog(I18N.getText("msg.info.server.upnp.discovering")));
       try {
-        UPnPUtil.openPort(config.getPort());
+        UPnPUtil.openPort(port);
       } finally {
         MapTool.getFrame().hideGlassPane();
       }
@@ -417,11 +425,11 @@ public class MapToolServer {
       try {
         MapToolRegistry.RegisterResponse result =
             MapToolRegistry.getInstance()
-                .registerInstance(config.getServerName(), config.getPort(), config.getUseWebRTC());
+                .registerInstance(config.getServerName(), port, config.getUseWebRTC());
         if (result == MapToolRegistry.RegisterResponse.NAME_EXISTS) {
           MapTool.showError("msg.error.alreadyRegistered");
         } else {
-          heartbeatThread = new HeartbeatThread(config.getPort());
+          heartbeatThread = new HeartbeatThread(port);
           heartbeatThread.start();
         }
         // TODO: I don't like this
@@ -430,8 +438,8 @@ public class MapToolServer {
       }
     }
 
-    if (serviceIdentifier != null && config != null) {
-      announcer = new ServiceAnnouncer(serviceIdentifier, config.getPort(), AppConstants.SERVICE_GROUP);
+    if (serviceIdentifier != null && port != -1) {
+      announcer = new ServiceAnnouncer(serviceIdentifier, port, AppConstants.SERVICE_GROUP);
       announcer.start();
     }
 
