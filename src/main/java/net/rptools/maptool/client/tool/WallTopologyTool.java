@@ -20,6 +20,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Paint;
+import java.awt.Shape;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Path2D;
@@ -44,6 +45,7 @@ import net.rptools.maptool.model.topology.Wall;
 import net.rptools.maptool.model.zones.WallTopologyChanged;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.locationtech.jts.math.Vector2D;
 
 public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
   private static final Logger log = LogManager.getLogger(WallTopologyTool.class);
@@ -79,7 +81,7 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
 
   private double getHandleSelectDistance() {
     // Include a bit of leniency for the user.
-    return getHandleRadius() * 1.125; // Perhaps 1.125 to match outline stroke?
+    return getHandleRadius() * 1.125;
   }
 
   private double getWallSelectDistance() {
@@ -386,17 +388,13 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
           bounds.getWidth() + 2 * padding,
           bounds.getHeight() + 2 * padding);
 
-      var directionalArrow = new Path2D.Double();
-      {
-        var arrowLength = 8 * tool.getWallHalfWidth();
-        var arrowTip = new Point2D.Double(0, arrowLength * 1.5);
-        directionalArrow.moveTo(arrowTip.getX(), arrowTip.getY());
-        directionalArrow.lineTo(0, -arrowLength * 0.5);
-        directionalArrow.moveTo(arrowTip.getX(), arrowTip.getY());
-        directionalArrow.lineTo(-arrowLength * 0.25, arrowTip.getY() - arrowLength * 0.5);
-        directionalArrow.moveTo(arrowTip.getX(), arrowTip.getY());
-        directionalArrow.lineTo(arrowLength * 0.25, arrowTip.getY() - arrowLength * 0.5);
-      }
+      // region Wall decorations.
+      // These are mere prototypes that sit at (0, 0). They will be instanced wherever they are
+      // needed during painting.
+      var directionalArrow = buildDirectionalArrowDecoration();
+      var sourceDecoration = buildWallSourceDecoration();
+      var targetDecoration = buildWallTargetDecoration();
+      // endregion
 
       var wallStroke =
           new BasicStroke(
@@ -407,43 +405,79 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
               (float) (wallStroke.getLineWidth() * 1.5),
               wallStroke.getEndCap(),
               wallStroke.getLineJoin());
-      var arrowStroke =
-          new BasicStroke(
-              wallStroke.getLineWidth() * 0.5f, wallStroke.getEndCap(), wallStroke.getLineJoin());
+      var decorationStroke =
+          new BasicStroke(1.5f, wallStroke.getEndCap(), wallStroke.getLineJoin());
       var walls = rig.getWallsWithin(bounds);
       for (var wall : walls) {
-        var wallFill = getWallFill(wall);
-        // Draw it twice to get a black border effect. It's proven itself to be cheaper than using
-        // `Stroke.createStokedShape()` when there are many walls.
-        var from = wall.getFrom().getPosition();
-        var to = wall.getTo().getPosition();
+        var asSegment = wall.asLineSegment();
+        var asVector = Vector2D.create(asSegment.p0, asSegment.p1);
 
-        var shape = new Path2D.Double();
-        shape.moveTo(from.getX(), from.getY());
-        shape.lineTo(to.getX(), to.getY());
+        var lengthSquared = asVector.lengthSquared();
+        if (lengthSquared <= 4 * handleRadius * handleRadius) {
+          // The wall is so small it isn't worth drawing the wall or its decorations.
+          continue;
+        }
 
-        g2.setStroke(wallOutlineStroke);
-        g2.setPaint(getWallStrokePaint(wall));
-        g2.draw(shape);
+        var angle = asVector.angle();
+        var normVector = asVector.normalize();
 
-        g2.setStroke(wallStroke);
-        g2.setPaint(wallFill);
-        g2.draw(shape);
+        {
+          // Draw the wall itself.
+          var shape = new Path2D.Double();
+          shape.moveTo(asSegment.p0.getX(), asSegment.p0.getY());
+          shape.lineTo(asSegment.p1.getX(), asSegment.p1.getY());
 
+          // Draw it twice to get a black border effects without having to stroke the path.
+          g2.setStroke(wallOutlineStroke);
+          g2.setPaint(getWallStrokePaint(wall));
+          g2.draw(shape);
+
+          g2.setStroke(wallStroke);
+          g2.setPaint(getWallFill(wall));
+          g2.draw(shape);
+        }
+
+        // Next up: decorations
+        g2.setStroke(decorationStroke);
+        g2.setPaint(wallOutlineColor);
+        {
+          // Draw a tiny arrow head to indicate the target end of the wall.
+          var preTransform = g2.getTransform();
+
+          var point = normVector.multiply(-0.75 * handleRadius).translate(asSegment.p1);
+          g2.translate(point.getX(), point.getY());
+          g2.rotate(angle);
+
+          g2.draw(targetDecoration);
+          g2.fill(targetDecoration);
+
+          g2.setTransform(preTransform);
+        }
         if (wall.getSource().direction() != Wall.Direction.Both) {
           // Draw an arrow through the midpoint of the wall to indicate its direction.
           var preTransform = g2.getTransform();
-          var midpoint =
-              new Point2D.Double((from.getX() + to.getX()) / 2, (from.getY() + to.getY()) / 2.);
-          var angle = Math.atan2(to.getY() - from.getY(), to.getX() - from.getX());
-          g2.translate(midpoint.getX(), midpoint.getY());
+          var wallMidpoint = asSegment.midPoint();
+          g2.translate(wallMidpoint.getX(), wallMidpoint.getY());
           g2.rotate(angle);
           if (wall.getSource().direction() == Wall.Direction.Left) {
             g2.scale(-1, -1);
           }
-          g2.setStroke(arrowStroke);
-          g2.setPaint(wallOutlineColor);
+
           g2.draw(directionalArrow);
+
+          g2.setTransform(preTransform);
+        }
+
+        if (lengthSquared > 12 * handleRadius * handleRadius) {
+          // Draw a bar to indicate the source end of the wall.
+          // This is optional if the wall is on the small side.
+          var preTransform = g2.getTransform();
+          var barCenter = normVector.multiply(1.5 * handleRadius).translate(asSegment.p0);
+          g2.translate(barCenter.getX(), barCenter.getY());
+          g2.rotate(angle);
+
+          g2.draw(sourceDecoration);
+
           g2.setTransform(preTransform);
         }
       }
@@ -452,6 +486,48 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
       for (var handle : vertices) {
         paintHandle(g2, handle.getPosition(), getHandleFill(handle));
       }
+    }
+
+    /**
+     * Builds a shape indicating the directionality of a wall.
+     *
+     * @return An arrow through (0, 0) pointing toward the positive y-axis.
+     */
+    protected Shape buildDirectionalArrowDecoration() {
+      var result = new Path2D.Double();
+      var arrowLength = 8 * tool.getWallHalfWidth();
+      var arrowTip = new Point2D.Double(0, arrowLength * 1.5);
+      result.moveTo(arrowTip.getX(), arrowTip.getY());
+      result.lineTo(0, -arrowLength * 0.5);
+      result.moveTo(arrowTip.getX(), arrowTip.getY());
+      result.lineTo(-arrowLength * 0.25, arrowTip.getY() - arrowLength * 0.5);
+      result.moveTo(arrowTip.getX(), arrowTip.getY());
+      result.lineTo(arrowLength * 0.25, arrowTip.getY() - arrowLength * 0.5);
+      return result;
+    }
+
+    protected Shape buildWallSourceDecoration() {
+      var result = new Path2D.Double();
+      var halfHeight = 4 * tool.getWallHalfWidth();
+      result.moveTo(0, -halfHeight);
+      result.lineTo(0, halfHeight);
+      return result;
+    }
+
+    protected Shape buildWallTargetDecoration() {
+      var result = new Path2D.Double();
+      var halfHeight = 4 * tool.getWallHalfWidth();
+      result.moveTo(0, 0);
+      result.lineTo(-halfHeight, halfHeight);
+      result.quadTo(-0.75 * halfHeight, 0, -halfHeight, -halfHeight);
+      result.closePath();
+
+      //      result.moveTo(-halfHeight, -halfHeight);
+      //      result.lineTo(0, 0);
+      //      result.lineTo(-halfHeight, halfHeight);
+      //      result.lineTo(-0.75 * halfHeight, 0);
+      //      result.closePath();
+      return result;
     }
   }
 

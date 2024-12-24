@@ -286,6 +286,10 @@ public final class WallTopologyRig implements Rig<WallTopologyRig.Element<?>> {
       return source;
     }
 
+    public LineSegment asLineSegment() {
+      return this.walls.asLineSegment(source);
+    }
+
     public MovableVertex getFrom() {
       return new MovableVertex(parentRig, walls, walls.getFrom(source));
     }
