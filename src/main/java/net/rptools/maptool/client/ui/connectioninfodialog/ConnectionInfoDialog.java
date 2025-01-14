@@ -14,7 +14,17 @@
  */
 package net.rptools.maptool.client.ui.connectioninfodialog;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
+
 import java.awt.GridLayout;
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
+import java.net.URI;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -22,6 +32,7 @@ import javax.swing.JDialog;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.ServerAddress;
 import net.rptools.maptool.client.swing.AbeillePanel;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.language.I18N;
@@ -48,6 +59,7 @@ public class ConnectionInfoDialog extends JDialog {
     AbeillePanel panel = new AbeillePanel(new ConnectionInfoDialogView().getRootComponent());
 
     JTextField nameLabel = panel.getTextField("name");
+    JTextField serviceIdentifierLabel = panel.getTextField("serviceIdentifier");
     JTextField localv4AddressLabel = panel.getTextField("localv4Address");
     JTextField localv6AddressLabel = panel.getTextField("localv6Address");
     JTextField portLabel = panel.getTextField("port");
@@ -57,11 +69,13 @@ public class ConnectionInfoDialog extends JDialog {
     if (name == null || name.isEmpty()) {
       name = "---";
     }
+    String serviceIdentifier = Objects.toString(server.getServiceIdentifier(), "---");
 
     int port = server.getPort();
     String portString = port < 0 ? "---" : Integer.toString(port);
 
     nameLabel.setText(name);
+    serviceIdentifierLabel.setText(serviceIdentifier);
     localv4AddressLabel.setText("Unknown");
     localv6AddressLabel.setText("Unknown");
     externalAddressLabel.setText(I18N.getText("ConnectionInfoDialog.discovering"));
@@ -79,8 +93,60 @@ public class ConnectionInfoDialog extends JDialog {
               }
             });
 
-    JButton okButton = (JButton) panel.getButton("okButton");
-    bindOKButtonActions(okButton);
+    Supplier<CompletableFuture<ServerAddress.Registry>> getServerName =
+        () -> completedFuture(new ServerAddress.Registry(server.getName()));
+    Supplier<CompletableFuture<ServerAddress.Lan>> getServiceIdentifier =
+        () -> completedFuture(new ServerAddress.Lan(server.getServiceIdentifier()));
+    Supplier<CompletableFuture<ServerAddress.Tcp>> getLocalV4 =
+        () ->
+            NetUtil.getInstance()
+                .getLocalAddresses()
+                .thenApply(
+                    localAddresses -> {
+                      if (localAddresses.ipv4().isEmpty()) {
+                        return null;
+                      }
+                      return new ServerAddress.Tcp(
+                          NetUtil.formatAddress(localAddresses.ipv4().get(0)), server.getPort());
+                    });
+    Supplier<CompletableFuture<ServerAddress.Tcp>> getLocalV6 =
+        () ->
+            NetUtil.getInstance()
+                .getLocalAddresses()
+                .thenApply(
+                    localAddresses -> {
+                      if (localAddresses.ipv6().isEmpty()) {
+                        return null;
+                      }
+                      return new ServerAddress.Tcp(
+                          NetUtil.formatAddress(localAddresses.ipv6().get(0)), server.getPort());
+                    });
+    Supplier<CompletableFuture<ServerAddress.Tcp>> getExternal =
+        () ->
+            NetUtil.getInstance()
+                .getExternalAddress()
+                .thenApply(
+                    address -> {
+                      if (address == null) {
+                        return null;
+                      }
+                      return new ServerAddress.Tcp(
+                          NetUtil.formatAddress(address), server.getPort());
+                    });
+    registerCopyButton(panel, "registryUriCopyButton", getServerName, ServerAddress::toUri);
+    registerCopyButton(panel, "registryHttpUrlCopyButton", getServerName, ServerAddress::toHttpUrl);
+    registerCopyButton(panel, "lanUriCopyButton", getServiceIdentifier, ServerAddress::toUri);
+    registerCopyButton(
+        panel, "lanHttpUrlCopyButton", getServiceIdentifier, ServerAddress::toHttpUrl);
+    registerCopyButton(panel, "localIpv4UriCopyButton", getLocalV4, ServerAddress::toUri);
+    registerCopyButton(panel, "localIpv4HttpUrlCopyButton", getLocalV4, ServerAddress::toHttpUrl);
+    registerCopyButton(panel, "localIpv6UriCopyButton", getLocalV6, ServerAddress::toUri);
+    registerCopyButton(panel, "localIpv6HttpUrlCopyButton", getLocalV6, ServerAddress::toHttpUrl);
+    registerCopyButton(panel, "externalUriCopyButton", getExternal, ServerAddress::toUri);
+    registerCopyButton(panel, "externalHttpUrlCopyButton", getExternal, ServerAddress::toHttpUrl);
+    if (panel.getButton("okButton") instanceof JButton okButton) {
+      okButton.addActionListener(e -> setVisible(false));
+    }
 
     setLayout(new GridLayout());
     ((JComponent) getContentPane()).setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -97,20 +163,32 @@ public class ConnectionInfoDialog extends JDialog {
             });
   }
 
+  private <T extends ServerAddress> void registerCopyButton(
+      @Nonnull AbeillePanel panel,
+      @Nonnull String buttonId,
+      @Nonnull Supplier<CompletableFuture<T>> connectionSupplier,
+      @Nonnull Function<T, URI> specToUri) {
+    if (!(panel.getButton(buttonId) instanceof JButton button)) {
+      return;
+    }
+    button.addActionListener(
+        e -> {
+          var future = connectionSupplier.get();
+          future.thenAccept(
+              connectionSpec -> {
+                var url = specToUri.apply(connectionSpec).toString();
+                Toolkit.getDefaultToolkit()
+                    .getSystemClipboard()
+                    .setContents(new StringSelection(url), null);
+              });
+        });
+  }
+
   @Override
   public void setVisible(boolean b) {
     if (b) {
       SwingUtil.centerOver(this, MapTool.getFrame());
     }
     super.setVisible(b);
-  }
-
-  /**
-   * This method initializes okButton
-   *
-   * @return javax.swing.JButton
-   */
-  private void bindOKButtonActions(JButton okButton) {
-    okButton.addActionListener(e -> setVisible(false));
   }
 }
