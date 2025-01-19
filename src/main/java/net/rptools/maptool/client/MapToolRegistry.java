@@ -22,7 +22,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,6 +58,7 @@ public class MapToolRegistry {
   private static final String SERVICE_URL = "https://services-mt.rptools.net";
   private static final String REGISTER_SERVER = SERVICE_URL + "/register-server";
   private static final String ACTIVE_SERVERS = SERVICE_URL + "/active-servers";
+  private static final String CLICK_REDIRECT = SERVICE_URL + "/click.html";
   private static final String SERVER_HEARTBEAT = SERVICE_URL + "/server-heartbeat";
   private static final String SERVER_DISCONNECT = SERVICE_URL + "/server-disconnect";
   private static final String SERVER_DETAILS = SERVICE_URL + "/server-details";
@@ -313,5 +319,24 @@ public class MapToolRegistry {
     }
 
     return externalIpFuture;
+  }
+
+  /** Get a link to the registry server that will redirect to the given MapTool URI. */
+  @Nonnull
+  public URI getRedirectURL(@Nonnull URI uri) {
+    String queryString;
+    try {
+      queryString = "?uri=" + URLEncoder.encode(uri.toString(), "UTF-8");
+    } catch (UnsupportedEncodingException e) {
+      throw new AssertionError("UTF-8 should be a supported encoding", e);
+    }
+
+    try {
+      return new URI(MapToolRegistry.CLICK_REDIRECT + queryString);
+    } catch (URISyntaxException e) {
+      throw new AssertionError(
+          "Scheme and path are given and the path is absolute and the authority is parseable as a server-based authority so this should be infallible",
+          e);
+    }
   }
 }
