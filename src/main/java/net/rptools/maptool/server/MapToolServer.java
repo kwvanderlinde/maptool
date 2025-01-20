@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -35,7 +36,6 @@ import net.rptools.maptool.client.AppConstants;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolRegistry;
 import net.rptools.maptool.client.ui.StaticMessageDialog;
-import net.rptools.maptool.client.ui.connectioninfodialog.ConnectionInfoDialog;
 import net.rptools.maptool.common.MapToolConstants;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Campaign;
@@ -50,6 +50,7 @@ import net.rptools.maptool.server.proto.SetCampaignMsg;
 import net.rptools.maptool.server.proto.UpdateAssetTransferMsg;
 import net.rptools.maptool.transfer.AssetProducer;
 import net.rptools.maptool.transfer.AssetTransferManager;
+import net.rptools.maptool.util.NetUtil;
 import net.rptools.maptool.util.UPnPUtil;
 import net.tsc.servicediscovery.ServiceAnnouncer;
 import org.apache.logging.log4j.LogManager;
@@ -484,7 +485,12 @@ public class MapToolServer {
     public void run() {
       int WARNING_TIME = 2; // number of heartbeats before popup warning
       int errors = 0;
-      String IP_addr = ConnectionInfoDialog.getExternalAddress();
+      String IP_addr;
+      try {
+        IP_addr = NetUtil.formatAddress(NetUtil.getInstance().getExternalAddress().get());
+      } catch (ExecutionException | InterruptedException | NullPointerException e) {
+        IP_addr = "Unknown";
+      }
 
       while (!stop) {
         try {

@@ -193,6 +193,26 @@ classes.configure {
     dependsOn instrumentForms
 }
 
+
+if (osdetector.os.is('linux')) {
+    def generateDesktop = tasks.register('generateDesktop', Copy) {
+        from 'package/linux/launcher.desktop'
+        into 'package/linux/'
+        expand(
+            description: project.description,
+            projectName: project.name,
+            developerRelease: developerRelease
+        )
+        filteringCharset = 'UTF-8'
+        rename { fileName ->
+            project.name + developerRelease + '.desktop'
+        }
+    }
+
+    tasks.jpackageImage.dependsOn generateDesktop
+    tasks.spotlessMisc.dependsOn generateDesktop
+}
+
 // Workaround the runtime plugin's hardcoded dependencies on the shadow plugin. It sneakily
 // (dynamically) adds dependencies when shadow is detected, but we don't want it to do that since we
 // only use shadow for a completely separate build artifact.
