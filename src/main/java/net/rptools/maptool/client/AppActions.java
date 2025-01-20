@@ -2210,7 +2210,7 @@ public class AppActions {
                 StartServerDialogPreferences serverProps =
                     new StartServerDialogPreferences(); // data retrieved from
                 // Preferences.userRoot()
-                if (serverProps.getPort() == 0 || serverProps.getPort() > 65535) {
+                if (serverProps.getPort() > 65535) {
                   MapTool.showError("ServerDialog.error.port.outOfRange");
                   return;
                 }
