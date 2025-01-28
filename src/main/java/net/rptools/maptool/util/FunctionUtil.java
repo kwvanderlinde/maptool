@@ -18,6 +18,11 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Set;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolUtil;
@@ -36,12 +41,6 @@ import net.rptools.maptool.model.drawing.DrawableTexturePaint;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
 import net.rptools.parser.function.Function;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Provides static methods to help handle macro functions.
@@ -357,6 +356,7 @@ public class FunctionUtil {
           I18N.getText(KEY_NOT_NUMBER, functionName, index + 1, parameter.toString()));
     }
   }
+
   /**
    * Return the jsonObject value of a parameter supplied as a JSON Object or StringPropList.<br>
    * Throws a <code>ParserException</code> if the parameter can't be converted to a json.
@@ -367,47 +367,51 @@ public class FunctionUtil {
    * @return the parameter as a jsonObject
    * @throws ParserException if the parameter can't be converted to jsonObject or jsonArray
    */
-  public static JsonObject paramFromStrPropOrJsonAsJsonObject(String functionName, List<Object> parameters, int index)
-          throws ParserException {
+  public static JsonObject paramFromStrPropOrJsonAsJsonObject(
+      String functionName, List<Object> parameters, int index) throws ParserException {
     JsonObject json;
     try { // try for json object
       json = paramAsJsonObject(functionName, parameters, index);
     } catch (ParserException pe) {
       try { // try for strProp
-        json = JSONMacroFunctions.getInstance()
-                        .getJsonObjectFunctions()
-                        .fromStrProp(
-                                paramAsString(functionName, parameters, index, true),
-                                ";");
+        json =
+            JSONMacroFunctions.getInstance()
+                .getJsonObjectFunctions()
+                .fromStrProp(paramAsString(functionName, parameters, index, true), ";");
       } catch (ParserException pe2) {
         throw new ParserException(
-                I18N.getText(
-                        "macro.function.input.illegalArgumentType", "unknown", "JSON Object/StringProp"));
+            I18N.getText(
+                "macro.function.input.illegalArgumentType", "unknown", "JSON Object/StringProp"));
       }
     }
     return json;
   }
-  public static void validateJsonKeys(JsonObject jsonObject, Set<String> requiredKeys, int index, String functionName) throws ParserException{
-    if(jsonObject.keySet().size() < requiredKeys.size()){
-      throw new ParserException(I18N.getText("macro.function.general.wrongNumFields",index, functionName, requiredKeys.size()));
+
+  public static void validateJsonKeys(
+      JsonObject jsonObject, Set<String> requiredKeys, int index, String functionName)
+      throws ParserException {
+    if (jsonObject.keySet().size() < requiredKeys.size()) {
+      throw new ParserException(
+          I18N.getText(
+              "macro.function.general.wrongNumFields", index, functionName, requiredKeys.size()));
     }
     Set<String> keySet = jsonObject.keySet();
-    for(String key : requiredKeys){
-      if(!keySet.contains(key)){
-        throw new ParserException(
-                I18N.getText("macro.function.general.missingKey", key)
-        );
+    for (String key : requiredKeys) {
+      if (!keySet.contains(key)) {
+        throw new ParserException(I18N.getText("macro.function.general.missingKey", key));
       }
     }
   }
-  public static JsonObject jsonWithLowerCaseKeys(JsonObject jsonObject){
+
+  public static JsonObject jsonWithLowerCaseKeys(JsonObject jsonObject) {
     JsonObject jObj = new JsonObject();
     Set<String> keys = jsonObject.keySet();
-    for(String key : keys){
+    for (String key : keys) {
       jObj.add(key.toLowerCase(), jsonObject.get(key));
     }
     return jObj;
   }
+
   /**
    * Return the jsonObject or jsonArray value of a parameter. Throws a <code>ParserException</code>
    * if the parameter can't be converted to a json.
