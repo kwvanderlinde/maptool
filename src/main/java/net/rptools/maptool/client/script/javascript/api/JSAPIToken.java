@@ -159,6 +159,17 @@ public class JSAPIToken implements MapToolJSAPIInterface {
   }
 
   @HostAccess.Export
+  public String getPropertyDefault(String name) {
+    boolean trusted = JSScriptEngine.inTrustedContext();
+    String playerId = MapTool.getPlayer().getName();
+    if (!trusted && !token.isOwner(playerId)) {
+      return null;
+    }
+
+    return this.token.getPropertyDefault(name);
+  }
+
+  @HostAccess.Export
   public String getEvaluatedProperty(String name) {
     boolean trusted = JSScriptEngine.inTrustedContext();
     String playerId = MapTool.getPlayer().getName();
@@ -170,6 +181,22 @@ public class JSAPIToken implements MapToolJSAPIInterface {
   }
 
   @HostAccess.Export
+  public String getEvaluatedPropertyDefault(String name) {
+    boolean trusted = JSScriptEngine.inTrustedContext();
+    String playerId = MapTool.getPlayer().getName();
+    if (!trusted && !token.isOwner(playerId)) {
+      return null;
+    }
+
+    var res = this.token.getPropertyDefault(name);
+    if (res == null) {
+      return null;
+    }
+
+    return "" + this.token.evaluateProperty(null, name, res);
+  }
+
+  @HostAccess.Export
   public void setProperty(String name, Object value) {
     boolean trusted = JSScriptEngine.inTrustedContext();
     String playerId = MapTool.getPlayer().getName();
@@ -178,6 +205,19 @@ public class JSAPIToken implements MapToolJSAPIInterface {
       MapTool.serverCommand()
           .updateTokenProperty(token, Token.Update.setProperty, name, value.toString());
     }
+  }
+
+  @HostAccess.Export
+  public boolean resetProperty(String name) {
+    boolean trusted = JSScriptEngine.inTrustedContext();
+    String playerId = MapTool.getPlayer().getName();
+    if (!trusted && !token.isOwner(playerId)) {
+      return false;
+    }
+
+    this.token.resetProperty(name);
+    MapTool.serverCommand().updateTokenProperty(token, Token.Update.resetProperty, name);
+    return true;
   }
 
   @HostAccess.Export
