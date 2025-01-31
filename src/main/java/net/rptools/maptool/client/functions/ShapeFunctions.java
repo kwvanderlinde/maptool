@@ -18,6 +18,10 @@ import com.google.common.primitives.Floats;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
+import net.rptools.maptool.client.swing.MapToolEventQueue;
+import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Zone;
@@ -42,7 +46,20 @@ import java.util.List;
 import java.util.*;
 import java.util.function.BiFunction;
 
+/**
+ * These functions are for creating shapes and performing a few operations on them. "arc",
+ * "cubiccurve", "ellipse", "line", "polygon", "quadcurve", "rectangle", "roundrectangle" are the
+ * basic Java shapes. "Path" and "SVGPath" use the ExtendedGeneralPath from JavaFX. "SVGPath" is
+ * parsed from SVG to EGP with Batik.
+ *
+ * <p>The shapes are cached as a ShapeDrawable so they are assigned a GUID, name, and anti-alilasing
+ * flag. Until they are drawn they do not exist outside the cache. Once drawn they can be
+ * manipulated with existing drawing functions.
+ *
+ * <p>The cache can be cleared by calling shape.clearAll()
+ */
 public class ShapeFunctions extends AbstractFunction {
+  protected static final @Nonnull Map<String, ShapeDrawable> CACHED_SHAPES;
   private static final ShapeFunctions instance = new ShapeFunctions();
   private static final AWTPathProducer AWT_PATH_PRODUCER = new AWTPathProducer();
   private static final PathParser PATH_PARSER = new PathParser();
@@ -54,7 +71,6 @@ public class ShapeFunctions extends AbstractFunction {
   private static final String UNSUPPORTED_OPERATION = "macro.function.general.unsupportedOperation";
   private static final String WRONG_NUMBER_OF_ARGUMENTS_FOR_OPERATION =
       "macro.function.general.wrongNumberArgumentsForOperation";
-  protected static final @Nonnull Map<String, ShapeDrawable> CACHED_SHAPES;
 
   static {
     PATH_PARSER.setPathHandler(AWT_PATH_PRODUCER);
@@ -66,9 +82,12 @@ public class ShapeFunctions extends AbstractFunction {
         0,
         UNLIMITED_PARAMETERS,
         "shape.areaAdd",
+        "shape.areaExclusiveOr",
+        "shape.areaIntersect",
         "shape.areaSubtract",
         "shape.clearAll",
         "shape.combinePaths",
+        "shape.copy",
         "shape.create",
         "shape.delete",
         "shape.draw",
@@ -86,14 +105,20 @@ public class ShapeFunctions extends AbstractFunction {
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
     if (functionName.equalsIgnoreCase("shape.areaAdd")) {
-      return areaBoolean(true, parser, resolver, functionName, parameters);
+      return areaBoolean("add", parser, resolver, functionName, parameters);
+    } else if (functionName.equalsIgnoreCase("shape.areaExclusiveOr")) {
+      return areaBoolean("exclusiveOr", parser, resolver, functionName, parameters);
+    } else if (functionName.equalsIgnoreCase("shape.areaIntersect")) {
+      return areaBoolean("intersect", parser, resolver, functionName, parameters);
     } else if (functionName.equalsIgnoreCase("shape.areaSubtract")) {
-      return areaBoolean(false, parser, resolver, functionName, parameters);
+      return areaBoolean("subtract", parser, resolver, functionName, parameters);
     } else if (functionName.equalsIgnoreCase("shape.clearAll")) {
       CACHED_SHAPES.clear();
       return true;
     } else if (functionName.equalsIgnoreCase("shape.combinePaths")) {
       return combinePaths(parser, resolver, functionName, parameters);
+    } else if (functionName.equalsIgnoreCase("shape.copy")) {
+      return copyShape(parser, resolver, functionName, parameters);
     } else if (functionName.equalsIgnoreCase("shape.create")) {
       return createShape(parser, resolver, functionName, parameters);
     } else if (functionName.equalsIgnoreCase("shape.delete")) {
@@ -112,171 +137,51 @@ public class ShapeFunctions extends AbstractFunction {
     }
   }
 
-  private Object[] getLeadParameters(String functionName, List<Object> parameters)
+  private Object areaBoolean(
+      String operation,
+      Parser parser,
+      VariableResolver resolver,
+      String functionName,
+      List<Object> parameters)
       throws ParserException {
-    Object[] results = new Object[4];
-    results[0] = new GUID();
-
-    if (parameters.getFirst().toString().isEmpty()) {
-      results[1] = results[0].toString();
-    } else {
-      results[1] = FunctionUtil.paramAsString(functionName, parameters, 0, false);
-    }
-    String layerName = "";
-    if (!parameters.get(1).toString().isEmpty()) {
-      layerName = FunctionUtil.paramAsString(functionName, parameters, 1, false);
-    }
-    Zone.Layer layer = null;
-    if (!layerName.isEmpty()) {
-      try {
-        layer = Zone.Layer.valueOf(layerName.toUpperCase());
-      } catch (IllegalArgumentException iae) {
-        throw new ParserException(I18N.getText(UNKNOWN_LAYER, layerName, functionName));
-      }
-    }
-    results[2] = layer;
-    boolean aa = true;
-    // TODO: Preference check
-
-    if (!parameters.get(2).toString().isEmpty()) {
-      aa = FunctionUtil.paramAsString(functionName, parameters, 2, true).equals("1");
-    }
-    results[3] = aa;
-    return results;
-  }
-
-  private Object getProperties(
-      Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
-      throws ParserException {
+    FunctionUtil.checkNumberParam(functionName, parameters, 5, -1);
     /*
-    name, delimiter
+    name, layer, anti-aliasing, shape names...
     */
-    String name = FunctionUtil.paramAsString(functionName, parameters, 0, false);
-    String delimiter =
-        parameters.size() < 2 ? ";" : FunctionUtil.paramAsString(functionName, parameters, 1, false);
-    if (!CACHED_SHAPES.containsKey(name)) {
-      return false;
-    }
-    ShapeDrawable sd = CACHED_SHAPES.get(name);
-    Shape shape = sd.getShape();
-    List<String> segments = new ArrayList<>();
-    PathIterator pi = shape.getPathIterator(null);
-    double[] coords = new double[6];
-    while (!pi.isDone()) {
-      int seg = pi.currentSegment(coords);
-      segments.add(
-          String.format(
-              "%d,%f,%f,%f,%f,%f,%f",
-              seg, coords[0], coords[1], coords[2], coords[3], coords[4], coords[5]));
-      pi.next();
-    }
-    String joinedSegments;
-
-    if (delimiter.equalsIgnoreCase("json")) {
-      JsonObject jo = new JsonObject();
-      jo.addProperty("name", name);
-      jo.addProperty("shapeType", sd.getShapeTypeName());
-      jo.addProperty("layer", sd.getLayer().toString());
-      jo.addProperty("id", sd.getId().toString());
-      jo.addProperty("antiAliasing", sd.getUseAntiAliasing());
-      JsonObject bounds = new JsonObject();
-      bounds.addProperty("width", sd.getBounds().width);
-      bounds.addProperty("height", sd.getBounds().height);
-      jo.add("bounds", bounds);
-      JsonArray segArray = new JsonArray(segments.size());
-      for(String seg: segments){
-        JsonArray segContents = new JsonArray();
-        Arrays.stream(seg.split(",")).toList().forEach(segContents::add);
-        segArray.add(segContents);
-      }
-      jo.add("segments", segArray);
-      return jo;
-    } else {
-      StringBuilder sb = new StringBuilder();
-      sb.append(String.format("%s=%s%s", "name", name, delimiter));
-      sb.append(String.format("%s=%s%s", "shapeType", sd.getShapeTypeName(), delimiter));
-      sb.append(String.format("%s=%s%s", "layer", sd.getLayer(), delimiter));
-      sb.append(String.format("%s=%s%s", "id", sd.getId().toString(), delimiter));
-      sb.append(String.format("%s=%s%s", "antiAliasing", sd.getUseAntiAliasing(), delimiter));
-      sb.append(
-          String.format(
-              "%s=\"width=%d%sheight=%d\"%s",
-              "bounds", sd.getBounds().width, delimiter, sd.getBounds().height, delimiter));
-      joinedSegments = "\"" + String.join("\",\"", segments) + "\"";
-      sb.append(String.format("%s=%s,", "segments", joinedSegments));
-      return sb.toString();
-    }
-  }
-
-  private Object drawShape(
-      Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
-      throws ParserException {
-    /*
-    name, map name
-    */
-    String shapeName = FunctionUtil.paramAsString(functionName, parameters, 0, false);
-    String mapName = FunctionUtil.paramAsString(functionName, parameters, 1, true);
-    if (!CACHED_SHAPES.containsKey(shapeName)) {
-      throw new ParserException(I18N.getText(OBJECT_NOT_FOUND, functionName, shapeName));
-    }
-    DrawnElement drawnElement = new DrawnElement(CACHED_SHAPES.get(shapeName), Pen.DEFAULT);
-    FunctionUtil.getZoneRenderer(functionName, mapName).getZone().addDrawable(drawnElement);
-    return drawnElement.getDrawable().getId();
-  }
-
-  private Object createShape(
-      Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
-      throws ParserException {
-    /*
-    name, layer, anti-aliasing, type, shape arguments, transforms
-    */
-    FunctionUtil.checkNumberParam(functionName, parameters, 5, 6);
     Object[] leadParams = getLeadParameters(functionName, parameters);
     GUID guid = (GUID) leadParams[0];
     String name = leadParams[1].toString();
     Zone.Layer layer = (Zone.Layer) leadParams[2];
     boolean aa = (boolean) leadParams[3];
 
-    String shapeType = FunctionUtil.paramAsString(functionName, parameters, 3, true).toLowerCase();
-    Shape shape =
-        switch (shapeType) {
-          case "arc" -> arc(functionName, parameters);
-          case "cubiccurve" -> cubicCurve(functionName, parameters);
-          case "ellipse" -> ellipse(functionName, parameters);
-          case "line" -> line(functionName, parameters);
-          case "path" -> path(functionName, parameters);
-          case "polygon" -> polygon(functionName, parameters);
-          case "quadcurve" -> quadCurve(functionName, parameters);
-          case "rectangle" -> rectangle(functionName, parameters);
-          case "roundrectangle" -> roundRectangle(functionName, parameters);
-          case "svgpath" -> svgPath(functionName, parameters);
-          default ->
-              throw new ParserException(
-                  I18N.getText(UNSUPPORTED_OPERATION, functionName, 3, shapeType));
-        };
-
-    if (parameters.size() > 5) {
-      shape = transform(shape, functionName, parameters, 4);
+    List<Area> areas = new ArrayList<>(parameters.size() - 3);
+    for (int i = 3; i < parameters.size(); i++) {
+      String shapeName = FunctionUtil.paramAsString(functionName, parameters, i, false);
+      if (CACHED_SHAPES.containsKey(shapeName)) {
+        areas.add(new Area(CACHED_SHAPES.get(shapeName).getShape()));
+      } else {
+        throw new ParserException(I18N.getText(OBJECT_NOT_FOUND, functionName, shapeName));
+      }
     }
-    ShapeDrawable sd = new ShapeDrawable(guid, shape, aa);
+
+    Area area = areas.getFirst();
+    for (int i = 1; i < areas.size(); i++) {
+      switch (operation) {
+        case "add" -> area.add(areas.get(i));
+        case "subtract" -> area.subtract(areas.get(i));
+        case "intersect" -> area.intersect(areas.get(i));
+        case "exclusiveOr" -> area.exclusiveOr(areas.get(i));
+        default -> throw new ParserException("#");
+      }
+    }
+
+    ShapeDrawable sd = new ShapeDrawable(guid, area, aa);
     sd.setName(name);
     if (layer != null) {
       sd.setLayer(layer);
     }
     CACHED_SHAPES.put(name, sd);
-
     return name;
-  }
-
-  private Object deleteShape(
-      Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
-      throws ParserException {
-    String name = FunctionUtil.paramAsString(functionName, parameters, 0, false);
-    if (CACHED_SHAPES.containsKey(name)) {
-      CACHED_SHAPES.remove(name);
-      return true;
-    }
-    return false;
   }
 
   private Object combinePaths(
@@ -317,49 +222,207 @@ public class ShapeFunctions extends AbstractFunction {
     return name;
   }
 
-  private Object areaBoolean(
-      boolean add,
-      Parser parser,
-      VariableResolver resolver,
-      String functionName,
-      List<Object> parameters)
+  private Object copyShape(
+      Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
-    FunctionUtil.checkNumberParam(functionName, parameters, 5, -1);
     /*
-    name, layer, anti-aliasing, shape names...
+    copy name, shape name
     */
+    FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
+    String shapeName = FunctionUtil.paramAsString(functionName, parameters, 1, false);
+    if (!CACHED_SHAPES.containsKey(shapeName)) {
+      throw new ParserException(I18N.getText(OBJECT_NOT_FOUND, functionName, shapeName));
+    }
+    String copyName = FunctionUtil.paramAsString(functionName, parameters, 0, false);
+    ShapeDrawable shapeDrawable = new ShapeDrawable(CACHED_SHAPES.get(shapeName));
+    shapeDrawable.setId(new GUID());
+    if (!copyName.equalsIgnoreCase("")) {
+      shapeDrawable.setName(copyName);
+    } else {
+      shapeDrawable.setName(shapeDrawable.getId().toString());
+    }
+    CACHED_SHAPES.put(shapeDrawable.getName(), shapeDrawable);
+    return shapeDrawable.getName();
+  }
+
+  private Object createShape(
+      Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
+      throws ParserException {
+    /*
+    name, layer, anti-aliasing, type, shape arguments, transforms
+    */
+    FunctionUtil.checkNumberParam(functionName, parameters, 5, 6);
     Object[] leadParams = getLeadParameters(functionName, parameters);
     GUID guid = (GUID) leadParams[0];
     String name = leadParams[1].toString();
     Zone.Layer layer = (Zone.Layer) leadParams[2];
     boolean aa = (boolean) leadParams[3];
 
-    List<Shape> shapes = new ArrayList<>(parameters.size() - 3);
-    for (int i = 4; i < parameters.size(); i++) {
-      String shapeName = FunctionUtil.paramAsString(functionName, parameters, i, false);
-      if (CACHED_SHAPES.containsKey(shapeName)) {
-        shapes.add(CACHED_SHAPES.get(shapeName).getShape());
-      } else {
-        throw new ParserException(I18N.getText(OBJECT_NOT_FOUND, functionName, shapeName));
-      }
-    }
+    String shapeType = FunctionUtil.paramAsString(functionName, parameters, 3, true).toLowerCase();
+    Shape shape =
+        switch (shapeType) {
+          case "arc" -> arc(functionName, parameters);
+          case "cubiccurve" -> cubicCurve(functionName, parameters);
+          case "ellipse" -> ellipse(functionName, parameters);
+          case "line" -> line(functionName, parameters);
+          case "path" -> path(functionName, parameters);
+          case "polygon" -> polygon(functionName, parameters);
+          case "quadcurve" -> quadCurve(functionName, parameters);
+          case "rectangle" -> rectangle(functionName, parameters);
+          case "roundrectangle" -> roundRectangle(functionName, parameters);
+          case "svgpath" -> svgPath(functionName, parameters);
+          default ->
+              throw new ParserException(
+                  I18N.getText(UNSUPPORTED_OPERATION, functionName, 3, shapeType));
+        };
 
-    Area area = new Area(shapes.getFirst());
-    for (int i = 1; i < shapes.size(); i++) {
-      if (add) {
-        area.add(new Area(shapes.get(i)));
-      } else {
-        area.subtract(new Area(shapes.get(i)));
-      }
+    if (parameters.size() > 5) {
+      shape = transform(shape, functionName, parameters, 5);
     }
-
-    ShapeDrawable sd = new ShapeDrawable(guid, area, aa);
+    ShapeDrawable sd = new ShapeDrawable(guid, shape, aa);
     sd.setName(name);
     if (layer != null) {
       sd.setLayer(layer);
     }
     CACHED_SHAPES.put(name, sd);
+
     return name;
+  }
+
+  private boolean deleteShape(
+      Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
+      throws ParserException {
+    String name = FunctionUtil.paramAsString(functionName, parameters, 0, false);
+    if (CACHED_SHAPES.containsKey(name)) {
+      CACHED_SHAPES.remove(name);
+      return true;
+    }
+    return false;
+  }
+
+  private Object drawShape(
+      Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
+      throws ParserException {
+    /*
+    name, map name
+    */
+    FunctionUtil.checkNumberParam(functionName, parameters, 2, 3);
+    String shapeName = FunctionUtil.paramAsString(functionName, parameters, 0, false);
+    String mapName = FunctionUtil.paramAsString(functionName, parameters, 1, true);
+    if (!CACHED_SHAPES.containsKey(shapeName)) {
+      throw new ParserException(I18N.getText(OBJECT_NOT_FOUND, functionName, shapeName));
+    }
+    ShapeDrawable shapeDrawable = CACHED_SHAPES.get(shapeName);
+    Rectangle bounds = shapeDrawable.getBounds();
+    if (bounds.width > 0
+        && bounds.height > 0
+        && bounds.width < 10000
+        && bounds.height < 10000
+        && (double) Math.min(bounds.width, bounds.height) / Math.max(bounds.width, bounds.height)
+            > 0.005) {
+      Pen pen = new Pen(Pen.DEFAULT);
+      if (parameters.size() > 2) {
+        JsonObject penObject =
+            FunctionUtil.jsonWithLowerCaseKeys(
+                FunctionUtil.paramFromStrPropOrJsonAsJsonObject(functionName, parameters, 2));
+
+        if (penObject.keySet().contains("foreground")) {
+          String fg = penObject.get("foreground").getAsString();
+          if (fg.equalsIgnoreCase("transparent") || fg.equalsIgnoreCase("")) {
+            pen.setForegroundMode(Pen.MODE_TRANSPARENT);
+          } else {
+            pen.setForegroundMode(Pen.MODE_SOLID);
+            pen.setPaint(FunctionUtil.getPaintFromString(fg));
+          }
+        }
+        if (penObject.keySet().contains("background")) {
+          String bg = penObject.get("background").getAsString();
+          if (bg.equalsIgnoreCase("transparent") || bg.equalsIgnoreCase("")) {
+            pen.setBackgroundMode(Pen.MODE_TRANSPARENT);
+          } else {
+            pen.setBackgroundMode(Pen.MODE_SOLID);
+            pen.setBackgroundPaint(FunctionUtil.getPaintFromString(bg));
+          }
+        }
+        if (penObject.keySet().contains("width")) {
+          pen.setThickness(penObject.get("width").getAsFloat());
+        }
+        if (penObject.keySet().contains("squarecap")) {
+          pen.setSquareCap(penObject.get("squarecap").getAsBoolean());
+        }
+        if (penObject.keySet().contains("opacity")) {
+          float opacity = penObject.get("opacity").getAsFloat();
+          if (opacity <= 1f) {
+            pen.setOpacity(opacity);
+          } else if (opacity <= 255f) {
+            pen.setOpacity(opacity / 255f);
+          }
+        }
+        if (penObject.keySet().contains("eraser")) {
+          pen.setEraser(penObject.get("eraser").getAsBoolean());
+        }
+      }
+      DrawnElement drawnElement = new DrawnElement(CACHED_SHAPES.get(shapeName), pen);
+      drawnElement.setPen(pen);
+      ZoneRenderer zoneRenderer = FunctionUtil.getZoneRenderer(functionName, mapName);
+      MapToolEventQueue.invokeLater(
+          () -> {
+            zoneRenderer.getZone().addDrawable(drawnElement);
+            MapTool.getFrame().updateDrawTree();
+            MapTool.getFrame().refresh();
+          });
+
+      return drawnElement.getDrawable().getId();
+    } else {
+      return false;
+    }
+  }
+
+  private Object getProperties(
+      Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
+      throws ParserException {
+    /*
+    name, delimiter
+    */
+    String name = FunctionUtil.paramAsString(functionName, parameters, 0, false);
+    String delimiter =
+        parameters.size() < 2
+            ? ";"
+            : FunctionUtil.paramAsString(functionName, parameters, 1, false);
+    if (!CACHED_SHAPES.containsKey(name)) {
+      return false;
+    }
+    ShapeDrawable sd = CACHED_SHAPES.get(name);
+    Shape shape = sd.getShape();
+    List<String> segments = new ArrayList<>();
+    PathIterator pi = shape.getPathIterator(null);
+    double[] coords = new double[7];
+    while (!pi.isDone()) {
+      int seg = pi.currentSegment(coords);
+      segments.add(
+          String.format(
+              "%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f",
+              seg, coords[0], coords[1], coords[2], coords[3], coords[4], coords[5], coords[6]));
+      pi.next();
+    }
+    StringBuilder stringBuilder = new StringBuilder(sd.toString());
+    stringBuilder.append("segments=").append(String.join(",", segments)).append(";");
+
+    if (delimiter.equalsIgnoreCase("json")) {
+      JsonObject jsonObject =
+          JSONMacroFunctions.getInstance()
+              .getJsonObjectFunctions()
+              .fromStrProp(stringBuilder.toString(), ";");
+      jsonObject.add(
+          "segments",
+          JSONMacroFunctions.getInstance()
+              .getJsonArrayFunctions()
+              .fromStringList(String.join("##", segments), "##"));
+      return jsonObject;
+    } else {
+      stringBuilder.append("segments=\"").append(String.join("\",\"", segments)).append("\";");
+      return stringBuilder.toString();
+    }
   }
 
   private Object shapeList(
@@ -397,71 +460,37 @@ public class ShapeFunctions extends AbstractFunction {
     return name;
   }
 
-  private Shape transform(
-      Shape shape, String functionName, List<Object> parameters, int indexOfTransforms)
+  private Object[] getLeadParameters(String functionName, List<Object> parameters)
       throws ParserException {
-    JsonArray transforms =
-        (JsonArray) FunctionUtil.paramConvertedToJson(functionName, parameters, indexOfTransforms);
-    BiFunction<JsonArray, Integer, Integer> nextStringIndex =
-        ((jsonElements, integer) -> {
-          int i;
-          for (i = integer; i < jsonElements.size(); i++) {
-            try {
-              jsonElements.get(integer).getAsDouble();
-            } catch (NumberFormatException nfe) {
-              break;
-            }
-          }
-          return i;
-        });
+    Object[] results = new Object[4];
+    results[0] = new GUID();
 
-    int i = 0;
-    while (i < transforms.size()) {
-      String type = transforms.get(i).getAsString();
-      List<Double> args = new ArrayList<>();
-      i++;
-      while (i < nextStringIndex.apply(transforms, i)) {
-        args.add(transforms.get(i).getAsDouble());
-        i++;
-      }
-      AffineTransform at = new AffineTransform();
-      try {
-        switch (type) {
-          case "matrix" ->
-              at.setTransform(
-                  args.get(0), args.get(1), args.get(2), args.get(3), args.get(4), args.get(5));
-          case "rotate" -> {
-            if (args.size() == 1) {
-              at.setToRotation(args.getFirst());
-            } else {
-              at.setToRotation(args.get(0), args.get(1), args.get(2));
-            }
-          }
-          case "scale" -> at.setToScale(args.get(0), args.get(1));
-          case "shear" -> at.setToShear(args.get(0), args.get(1));
-          case "translate" -> at.setToTranslation(args.get(0), args.get(1));
-          default ->
-              throw new ParserException(I18N.getText(UNSUPPORTED_OPERATION, functionName, 5, type));
-        }
-      } catch (IndexOutOfBoundsException oob) {
-        throw new ParserException(
-            I18N.getText(
-                WRONG_NUMBER_OF_ARGUMENTS_FOR_OPERATION,
-                functionName,
-                5,
-                type,
-                switch (type) {
-                  case "matrix" -> 6;
-                  case "rotate" -> "1 or 3";
-                  case "scale", "shear", "translate" -> 2;
-                  default ->
-                      throw new ParserException(
-                          I18N.getText(UNSUPPORTED_OPERATION, functionName, 5, type));
-                }));
-      }
-      shape = at.createTransformedShape(shape);
+    if (parameters.getFirst().toString().isEmpty()) {
+      results[1] = results[0].toString();
+    } else {
+      results[1] = FunctionUtil.paramAsString(functionName, parameters, 0, false);
     }
-    return shape;
+    String layerName = "";
+    if (!parameters.get(1).toString().isEmpty()) {
+      layerName = FunctionUtil.paramAsString(functionName, parameters, 1, false);
+    }
+    Zone.Layer layer = null;
+    if (!layerName.isEmpty()) {
+      try {
+        layer = Zone.Layer.valueOf(layerName.toUpperCase());
+      } catch (IllegalArgumentException iae) {
+        throw new ParserException(I18N.getText(UNKNOWN_LAYER, layerName, functionName));
+      }
+    }
+    results[2] = layer;
+    boolean aa = true;
+    // TODO: Preference check
+
+    if (!parameters.get(2).toString().isEmpty()) {
+      aa = FunctionUtil.paramAsString(functionName, parameters, 2, true).equals("1");
+    }
+    results[3] = aa;
+    return results;
   }
 
   private Shape arc(String functionName, List<Object> parameters) throws ParserException {
@@ -542,17 +571,17 @@ public class ShapeFunctions extends AbstractFunction {
         switch (segment.get(0).getAsString()) {
           case "wind", "w", "-1" -> path.setWindingRule(segment.get(1).getAsInt());
           case "close", "z", "4" -> path.closePath();
-          case "move", "m", "0" ->
+          case "moveto", "moveTo", "move", "m", "0" ->
               path.moveTo(segment.get(1).getAsFloat(), segment.get(2).getAsFloat());
-          case "line", "l", "1" ->
+          case "line", "lineto", "lineTo", "l", "1" ->
               path.lineTo(segment.get(1).getAsFloat(), segment.get(2).getAsFloat());
-          case "quad", "q", "2" ->
+          case "quad", "quadto", "quadTo", "q", "2" ->
               path.quadTo(
                   segment.get(1).getAsFloat(),
                   segment.get(2).getAsFloat(),
                   segment.get(3).getAsFloat(),
                   segment.get(4).getAsFloat());
-          case "cubic", "c", "3" ->
+          case "cubic", "cubicto", "cubicTo", "c", "3" ->
               path.curveTo(
                   segment.get(1).getAsFloat(),
                   segment.get(2).getAsFloat(),
@@ -560,7 +589,7 @@ public class ShapeFunctions extends AbstractFunction {
                   segment.get(4).getAsFloat(),
                   segment.get(5).getAsFloat(),
                   segment.get(6).getAsFloat());
-          case "arc", "a", "4321" ->
+          case "arc", "arcto", "arcTo", "a", "4321" ->
               path.arcTo(
                   segment.get(1).getAsFloat(),
                   segment.get(2).getAsFloat(),
@@ -650,11 +679,89 @@ public class ShapeFunctions extends AbstractFunction {
     String pathString = FunctionUtil.paramAsString(functionName, parameters, 4, false);
     try {
       PATH_PARSER.parse(pathString);
-      final Path2D path = new Path2D.Float(AWT_PATH_PRODUCER.getShape());
+      final Path2D path = new Path2D.Double(AWT_PATH_PRODUCER.getShape());
       path.trimToSize();
       return path;
     } catch (ParseException pe) {
       throw new ParserException(I18N.getText(UNABLE_TO_PARSE, functionName, 5));
     }
+  }
+
+  private Shape transform(
+      Shape shape, String functionName, List<Object> parameters, int transformIndex)
+      throws ParserException {
+    JsonArray transforms = new JsonArray();
+    String transformsString =
+        FunctionUtil.paramAsString(functionName, parameters, transformIndex, true)
+            .replaceAll("\\s", "");
+    if (transformsString.contains("[")) {
+      transforms =
+          (JsonArray) FunctionUtil.paramConvertedToJson(functionName, parameters, transformIndex);
+    } else {
+      for (String s : transformsString.split(",")) {
+        transforms.add(s);
+      }
+    }
+
+    BiFunction<JsonArray, Integer, Integer> nextStringIndex =
+        ((jsonElements, integer) -> {
+          int i;
+          for (i = integer; i < jsonElements.size(); i++) {
+            try {
+              jsonElements.get(integer).getAsDouble();
+            } catch (NumberFormatException nfe) {
+              break;
+            }
+          }
+          return i;
+        });
+
+    int i = 0;
+    while (i < transforms.size()) {
+      String type = transforms.get(i).getAsString().toLowerCase();
+      List<Double> args = new ArrayList<>();
+      i++;
+      while (i < nextStringIndex.apply(transforms, i)) {
+        args.add(transforms.get(i).getAsDouble());
+        i++;
+      }
+      AffineTransform at = new AffineTransform();
+      try {
+        switch (type) {
+          case "matrix" ->
+              at.setTransform(
+                  args.get(0), args.get(1), args.get(2), args.get(3), args.get(4), args.get(5));
+          case "rotate" -> {
+            if (args.size() == 1) {
+              at.setToRotation(args.getFirst());
+            } else {
+              at.setToRotation(args.get(0), args.get(1), args.get(2));
+            }
+          }
+          case "scale" -> at.setToScale(args.get(0), args.get(1));
+          case "shear" -> at.setToShear(args.get(0), args.get(1));
+          case "translate" -> at.setToTranslation(args.get(0), args.get(1));
+          default ->
+              throw new ParserException(I18N.getText(UNSUPPORTED_OPERATION, functionName, 5, type));
+        }
+      } catch (IndexOutOfBoundsException oob) {
+        throw new ParserException(
+            I18N.getText(
+                WRONG_NUMBER_OF_ARGUMENTS_FOR_OPERATION,
+                functionName,
+                5,
+                type,
+                switch (type) {
+                  case "matrix" -> 6;
+                  case "rotate" -> "1 or 3";
+                  case "scale", "shear", "translate" -> 2;
+                  default ->
+                      throw new ParserException(
+                          I18N.getText(UNSUPPORTED_OPERATION, functionName, 5, type));
+                }));
+      }
+      shape = at.createTransformedShape(shape);
+    }
+    return shape;
   }
 }
