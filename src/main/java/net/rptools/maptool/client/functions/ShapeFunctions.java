@@ -47,18 +47,7 @@ import java.util.*;
 import java.util.function.BiFunction;
 
 public class ShapeFunctions extends AbstractFunction {
-  /*
-   * These functions are for creating shapes and performing a few operations on them. "arc",
-   * "cubiccurve", "ellipse", "line", "polygon", "quadcurve", "rectangle", "roundrectangle" are the
-   * basic Java shapes. "Path" and "SVGPath" use the ExtendedGeneralPath from JavaFX. "SVGPath" is
-   * parsed from SVG to EGP with Batik.
-   *
-   * <p>The shapes are cached as a ShapeDrawable so they are assigned a GUID, name, and anti-alilasing
-   * flag. Until they are drawn they do not exist outside the cache. Once drawn they can be
-   * manipulated with existing drawing functions.
-   *
-   * <p>The cache can be cleared by calling shape.clearAll()
-   */
+
   protected static final @Nonnull Map<String, ShapeDrawable> CACHED_SHAPES;
   private static final ShapeFunctions instance = new ShapeFunctions();
   private static final AWTPathProducer AWT_PATH_PRODUCER = new AWTPathProducer();
