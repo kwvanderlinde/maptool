@@ -14,14 +14,13 @@
  */
 package net.rptools.maptool.client.ui.drawpanel;
 
+import java.awt.*;
+import javax.swing.*;
+import javax.swing.tree.DefaultTreeCellRenderer;
 import net.rptools.maptool.client.ui.theme.Icons;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.drawing.*;
-
-import javax.swing.*;
-import javax.swing.tree.DefaultTreeCellRenderer;
-import java.awt.*;
 
 public class DrawPanelTreeCellRenderer extends DefaultTreeCellRenderer {
 

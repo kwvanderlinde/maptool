@@ -15,6 +15,10 @@
 package net.rptools.maptool.model.drawing;
 
 import com.google.protobuf.StringValue;
+import java.awt.*;
+import java.awt.Rectangle;
+import java.awt.geom.*;
+import javax.annotation.Nonnull;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.server.Mapper;
@@ -22,11 +26,6 @@ import net.rptools.maptool.server.proto.drawing.DrawableDto;
 import net.rptools.maptool.server.proto.drawing.ShapeDrawableDto;
 import org.apache.batik.ext.awt.geom.ExtendedGeneralPath;
 import org.apache.batik.ext.awt.geom.Polygon2D;
-
-import javax.annotation.Nonnull;
-import java.awt.Rectangle;
-import java.awt.*;
-import java.awt.geom.*;
 
 /** An rectangle */
 public class ShapeDrawable extends AbstractDrawing {

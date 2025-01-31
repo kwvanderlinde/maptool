@@ -15,13 +15,12 @@
 package net.rptools.maptool.model.drawing;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.awt.*;
+import java.awt.image.ImageObserver;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Zone;
-
-import java.awt.*;
-import java.awt.image.ImageObserver;
 
 /**
  * Abstract drawing. This class takes care of setting up the Pen since that will be the same for all
