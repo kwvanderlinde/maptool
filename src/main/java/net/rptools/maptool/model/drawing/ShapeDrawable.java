@@ -60,9 +60,9 @@ public class ShapeDrawable extends AbstractDrawing {
                   cc.getCtrlY2(),
                   cc.getX2(),
                   cc.getY2());
-          case ExtendedGeneralPath egp -> new ExtendedGeneralPath(egp);
+          case ExtendedGeneralPath egp -> new ExtendedGeneralPath_Double(egp);
           case Line2D ln -> new Line2D.Double(ln.getX1(), ln.getY1(), ln.getX2(), ln.getY2());
-          case Path2D path -> new ExtendedGeneralPath(path);
+          case Path2D path -> new ExtendedGeneralPath_Double(path);
           case Polygon p -> new Polygon(p.xpoints, p.ypoints, p.npoints);
           case Polygon2D p -> new Polygon2D(p.xpoints, p.ypoints, p.npoints);
           case RectangularShape r ->
