@@ -66,11 +66,11 @@ public class ShapeFunctions extends AbstractFunction {
   private static final String UNKNOWN_LAYER = "macro.function.tokenProperty.unknownLayer";
   private static final String OBJECT_NOT_FOUND = "macro.function.general.objectNotFound";
   private static final String INDEX_OUT_OF_BOUNDS =
-      "macro.function.general.indexOutOfBoundsVerbose";
+          "macro.function.general.indexOutOfBoundsVerbose";
   private static final String UNABLE_TO_PARSE = "macro.function.general.unableToParse";
   private static final String UNSUPPORTED_OPERATION = "macro.function.general.unsupportedOperation";
   private static final String WRONG_NUMBER_OF_ARGUMENTS_FOR_OPERATION =
-      "macro.function.general.wrongNumberArgumentsForOperation";
+          "macro.function.general.wrongNumberArgumentsForOperation";
 
   static {
     PATH_PARSER.setPathHandler(AWT_PATH_PRODUCER);
@@ -79,21 +79,21 @@ public class ShapeFunctions extends AbstractFunction {
 
   private ShapeFunctions() {
     super(
-        0,
-        UNLIMITED_PARAMETERS,
-        "shape.areaAdd",
-        "shape.areaExclusiveOr",
-        "shape.areaIntersect",
-        "shape.areaSubtract",
-        "shape.clearAll",
-        "shape.combinePaths",
-        "shape.copy",
-        "shape.create",
-        "shape.delete",
-        "shape.draw",
-        "shape.getProperties",
-        "shape.list",
-        "shape.transform");
+            0,
+            UNLIMITED_PARAMETERS,
+            "shape.areaAdd",
+            "shape.areaExclusiveOr",
+            "shape.areaIntersect",
+            "shape.areaSubtract",
+            "shape.clearAll",
+            "shape.combinePaths",
+            "shape.copy",
+            "shape.create",
+            "shape.delete",
+            "shape.draw",
+            "shape.getProperties",
+            "shape.list",
+            "shape.transform");
   }
 
   public static ShapeFunctions getInstance() {
@@ -102,8 +102,8 @@ public class ShapeFunctions extends AbstractFunction {
 
   @Override
   public Object childEvaluate(
-      Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
-      throws ParserException {
+          Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
+          throws ParserException {
     if (functionName.equalsIgnoreCase("shape.areaAdd")) {
       return areaBoolean("add", parser, resolver, functionName, parameters);
     } else if (functionName.equalsIgnoreCase("shape.areaExclusiveOr")) {
@@ -133,17 +133,17 @@ public class ShapeFunctions extends AbstractFunction {
       return transformShape(parser, resolver, functionName, parameters);
     } else {
       throw new ParserException(
-          I18N.getText("macro.function.general.unknownFunction", functionName));
+              I18N.getText("macro.function.general.unknownFunction", functionName));
     }
   }
 
   private Object areaBoolean(
-      String operation,
-      Parser parser,
-      VariableResolver resolver,
-      String functionName,
-      List<Object> parameters)
-      throws ParserException {
+          String operation,
+          Parser parser,
+          VariableResolver resolver,
+          String functionName,
+          List<Object> parameters)
+          throws ParserException {
     FunctionUtil.checkNumberParam(functionName, parameters, 5, -1);
     /*
     name, layer, anti-aliasing, shape names...
@@ -185,8 +185,8 @@ public class ShapeFunctions extends AbstractFunction {
   }
 
   private Object combinePaths(
-      Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
-      throws ParserException {
+          Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
+          throws ParserException {
     FunctionUtil.checkNumberParam(functionName, parameters, 5, -1);
     /*
     name, layer, anti-aliasing, connect, shape names...
@@ -223,8 +223,8 @@ public class ShapeFunctions extends AbstractFunction {
   }
 
   private Object copyShape(
-      Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
-      throws ParserException {
+          Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
+          throws ParserException {
     /*
     copy name, shape name
     */
@@ -246,8 +246,8 @@ public class ShapeFunctions extends AbstractFunction {
   }
 
   private Object createShape(
-      Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
-      throws ParserException {
+          Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
+          throws ParserException {
     /*
     name, layer, anti-aliasing, type, shape arguments, transforms
     */
@@ -260,21 +260,20 @@ public class ShapeFunctions extends AbstractFunction {
 
     String shapeType = FunctionUtil.paramAsString(functionName, parameters, 3, true).toLowerCase();
     Shape shape =
-        switch (shapeType) {
-          case "arc" -> arc(functionName, parameters);
-          case "cubiccurve" -> cubicCurve(functionName, parameters);
-          case "ellipse" -> ellipse(functionName, parameters);
-          case "line" -> line(functionName, parameters);
-          case "path" -> path(functionName, parameters);
-          case "polygon" -> polygon(functionName, parameters);
-          case "quadcurve" -> quadCurve(functionName, parameters);
-          case "rectangle" -> rectangle(functionName, parameters);
-          case "roundrectangle" -> roundRectangle(functionName, parameters);
-          case "svgpath" -> svgPath(functionName, parameters);
-          default ->
-              throw new ParserException(
-                  I18N.getText(UNSUPPORTED_OPERATION, functionName, 3, shapeType));
-        };
+            switch (shapeType) {
+              case "arc" -> arc(functionName, parameters);
+              case "cubiccurve" -> cubicCurve(functionName, parameters);
+              case "ellipse" -> ellipse(functionName, parameters);
+              case "line" -> line(functionName, parameters);
+              case "path" -> path(functionName, parameters);
+              case "polygon" -> polygon(functionName, parameters);
+              case "quadcurve" -> quadCurve(functionName, parameters);
+              case "rectangle" -> rectangle(functionName, parameters);
+              case "roundrectangle" -> roundRectangle(functionName, parameters);
+              case "svgpath" -> svgPath(functionName, parameters);
+              default -> throw new ParserException(
+                      I18N.getText(UNSUPPORTED_OPERATION, functionName, 3, shapeType));
+            };
 
     if (parameters.size() > 5) {
       shape = transform(shape, functionName, parameters, 5);
@@ -290,8 +289,8 @@ public class ShapeFunctions extends AbstractFunction {
   }
 
   private boolean deleteShape(
-      Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
-      throws ParserException {
+          Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
+          throws ParserException {
     String name = FunctionUtil.paramAsString(functionName, parameters, 0, false);
     if (CACHED_SHAPES.containsKey(name)) {
       CACHED_SHAPES.remove(name);
@@ -301,8 +300,8 @@ public class ShapeFunctions extends AbstractFunction {
   }
 
   private Object drawShape(
-      Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
-      throws ParserException {
+          Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
+          throws ParserException {
     /*
     name, map name
     */
@@ -315,16 +314,16 @@ public class ShapeFunctions extends AbstractFunction {
     ShapeDrawable shapeDrawable = CACHED_SHAPES.get(shapeName);
     Rectangle bounds = shapeDrawable.getBounds();
     if (bounds.width > 0
-        && bounds.height > 0
-        && bounds.width < 10000
-        && bounds.height < 10000
-        && (double) Math.min(bounds.width, bounds.height) / Math.max(bounds.width, bounds.height)
+            && bounds.height > 0
+            && bounds.width < 10000
+            && bounds.height < 10000
+            && (double) Math.min(bounds.width, bounds.height) / Math.max(bounds.width, bounds.height)
             > 0.005) {
       Pen pen = new Pen(Pen.DEFAULT);
       if (parameters.size() > 2) {
         JsonObject penObject =
-            FunctionUtil.jsonWithLowerCaseKeys(
-                FunctionUtil.paramFromStrPropOrJsonAsJsonObject(functionName, parameters, 2));
+                FunctionUtil.jsonWithLowerCaseKeys(
+                        FunctionUtil.paramFromStrPropOrJsonAsJsonObject(functionName, parameters, 2));
 
         if (penObject.keySet().contains("foreground")) {
           String fg = penObject.get("foreground").getAsString();
@@ -366,11 +365,11 @@ public class ShapeFunctions extends AbstractFunction {
       drawnElement.setPen(pen);
       ZoneRenderer zoneRenderer = FunctionUtil.getZoneRenderer(functionName, mapName);
       MapToolEventQueue.invokeLater(
-          () -> {
-            zoneRenderer.getZone().addDrawable(drawnElement);
-            MapTool.getFrame().updateDrawTree();
-            MapTool.getFrame().refresh();
-          });
+              () -> {
+                zoneRenderer.getZone().addDrawable(drawnElement);
+                MapTool.getFrame().updateDrawTree();
+                MapTool.getFrame().refresh();
+              });
 
       return drawnElement.getDrawable().getId();
     } else {
@@ -379,16 +378,16 @@ public class ShapeFunctions extends AbstractFunction {
   }
 
   private Object getProperties(
-      Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
-      throws ParserException {
+          Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
+          throws ParserException {
     /*
     name, delimiter
     */
     String name = FunctionUtil.paramAsString(functionName, parameters, 0, false);
     String delimiter =
-        parameters.size() < 2
-            ? ";"
-            : FunctionUtil.paramAsString(functionName, parameters, 1, false);
+            parameters.size() < 2
+                    ? ";"
+                    : FunctionUtil.paramAsString(functionName, parameters, 1, false);
     if (!CACHED_SHAPES.containsKey(name)) {
       return false;
     }
@@ -400,9 +399,9 @@ public class ShapeFunctions extends AbstractFunction {
     while (!pi.isDone()) {
       int seg = pi.currentSegment(coords);
       segments.add(
-          String.format(
-              "%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f",
-              seg, coords[0], coords[1], coords[2], coords[3], coords[4], coords[5], coords[6]));
+              String.format(
+                      "%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f",
+                      seg, coords[0], coords[1], coords[2], coords[3], coords[4], coords[5], coords[6]));
       pi.next();
     }
     StringBuilder stringBuilder = new StringBuilder(sd.toString());
@@ -410,14 +409,14 @@ public class ShapeFunctions extends AbstractFunction {
 
     if (delimiter.equalsIgnoreCase("json")) {
       JsonObject jsonObject =
-          JSONMacroFunctions.getInstance()
-              .getJsonObjectFunctions()
-              .fromStrProp(stringBuilder.toString(), ";");
+              JSONMacroFunctions.getInstance()
+                      .getJsonObjectFunctions()
+                      .fromStrProp(stringBuilder.toString(), ";");
       jsonObject.add(
-          "segments",
-          JSONMacroFunctions.getInstance()
-              .getJsonArrayFunctions()
-              .fromStringList(String.join("##", segments), "##"));
+              "segments",
+              JSONMacroFunctions.getInstance()
+                      .getJsonArrayFunctions()
+                      .fromStringList(String.join("##", segments), "##"));
       return jsonObject;
     } else {
       stringBuilder.append("segments=\"").append(String.join("\",\"", segments)).append("\";");
@@ -426,16 +425,16 @@ public class ShapeFunctions extends AbstractFunction {
   }
 
   private Object shapeList(
-      Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
-      throws ParserException {
+          Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
+          throws ParserException {
     String delim =
-        parameters.isEmpty() ? "," : FunctionUtil.paramAsString(functionName, parameters, 0, false);
+            parameters.isEmpty() ? "," : FunctionUtil.paramAsString(functionName, parameters, 0, false);
     return FunctionUtil.delimitedResult(delim, new ArrayList<>(CACHED_SHAPES.keySet()));
   }
 
   private Object transformShape(
-      Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
-      throws ParserException {
+          Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
+          throws ParserException {
     FunctionUtil.checkNumberParam(functionName, parameters, 5, 5);
     /*
     name, layer, anti-aliasing, shape name to transform, transforms
@@ -461,7 +460,7 @@ public class ShapeFunctions extends AbstractFunction {
   }
 
   private Object[] getLeadParameters(String functionName, List<Object> parameters)
-      throws ParserException {
+          throws ParserException {
     Object[] results = new Object[4];
     results[0] = new GUID();
 
@@ -495,74 +494,74 @@ public class ShapeFunctions extends AbstractFunction {
 
   private Shape arc(String functionName, List<Object> parameters) throws ParserException {
     JsonObject jsonObject =
-        FunctionUtil.jsonWithLowerCaseKeys(
-            FunctionUtil.paramFromStrPropOrJsonAsJsonObject(functionName, parameters, 4));
+            FunctionUtil.jsonWithLowerCaseKeys(
+                    FunctionUtil.paramFromStrPropOrJsonAsJsonObject(functionName, parameters, 4));
     FunctionUtil.validateJsonKeys(
-        jsonObject, Set.of("x", "y", "w", "h", "start", "extent", "type"), 4, functionName);
+            jsonObject, Set.of("x", "y", "w", "h", "start", "extent", "type"), 4, functionName);
     return new Arc2D.Float(
-        jsonObject.get("x").getAsFloat(),
-        jsonObject.get("y").getAsFloat(),
-        jsonObject.get("w").getAsFloat(),
-        jsonObject.get("h").getAsFloat(),
-        jsonObject.get("start").getAsFloat(),
-        jsonObject.get("extent").getAsFloat(),
-        switch (jsonObject.get("type").getAsString().toLowerCase()) {
-          case "chord", "1" -> Arc2D.CHORD;
-          case "pie", "2" -> Arc2D.PIE;
-          default -> Arc2D.OPEN;
-        });
+            jsonObject.get("x").getAsFloat(),
+            jsonObject.get("y").getAsFloat(),
+            jsonObject.get("w").getAsFloat(),
+            jsonObject.get("h").getAsFloat(),
+            jsonObject.get("start").getAsFloat(),
+            jsonObject.get("extent").getAsFloat(),
+            switch (jsonObject.get("type").getAsString().toLowerCase()) {
+              case "chord", "1" -> Arc2D.CHORD;
+              case "pie", "2" -> Arc2D.PIE;
+              default -> Arc2D.OPEN;
+            });
   }
 
   private Shape cubicCurve(String functionName, List<Object> parameters) throws ParserException {
     JsonObject jsonObject =
-        FunctionUtil.jsonWithLowerCaseKeys(
-            FunctionUtil.paramFromStrPropOrJsonAsJsonObject(functionName, parameters, 4));
+            FunctionUtil.jsonWithLowerCaseKeys(
+                    FunctionUtil.paramFromStrPropOrJsonAsJsonObject(functionName, parameters, 4));
     FunctionUtil.validateJsonKeys(
-        jsonObject,
-        Set.of("x1", "y1", "ctrlx1", "ctrly1", "ctrlx2", "ctrly2", "x2", "y2"),
-        4,
-        functionName);
+            jsonObject,
+            Set.of("x1", "y1", "ctrlx1", "ctrly1", "ctrlx2", "ctrly2", "x2", "y2"),
+            4,
+            functionName);
 
     return new CubicCurve2D.Float(
-        jsonObject.get("x1").getAsFloat(),
-        jsonObject.get("y1").getAsFloat(),
-        jsonObject.get("ctrlx1").getAsFloat(),
-        jsonObject.get("ctrly1").getAsFloat(),
-        jsonObject.get("ctrlx2").getAsFloat(),
-        jsonObject.get("ctrly2").getAsFloat(),
-        jsonObject.get("x2").getAsFloat(),
-        jsonObject.get("y2").getAsFloat());
+            jsonObject.get("x1").getAsFloat(),
+            jsonObject.get("y1").getAsFloat(),
+            jsonObject.get("ctrlx1").getAsFloat(),
+            jsonObject.get("ctrly1").getAsFloat(),
+            jsonObject.get("ctrlx2").getAsFloat(),
+            jsonObject.get("ctrly2").getAsFloat(),
+            jsonObject.get("x2").getAsFloat(),
+            jsonObject.get("y2").getAsFloat());
   }
 
   private Shape ellipse(String functionName, List<Object> parameters) throws ParserException {
     JsonObject jsonObject =
-        FunctionUtil.jsonWithLowerCaseKeys(
-            FunctionUtil.paramFromStrPropOrJsonAsJsonObject(functionName, parameters, 4));
+            FunctionUtil.jsonWithLowerCaseKeys(
+                    FunctionUtil.paramFromStrPropOrJsonAsJsonObject(functionName, parameters, 4));
     FunctionUtil.validateJsonKeys(jsonObject, Set.of("x", "y", "w", "h"), 4, functionName);
 
     return new Ellipse2D.Float(
-        jsonObject.get("x").getAsFloat(),
-        jsonObject.get("y").getAsFloat(),
-        jsonObject.get("w").getAsFloat(),
-        jsonObject.get("h").getAsFloat());
+            jsonObject.get("x").getAsFloat(),
+            jsonObject.get("y").getAsFloat(),
+            jsonObject.get("w").getAsFloat(),
+            jsonObject.get("h").getAsFloat());
   }
 
   private Shape line(String functionName, List<Object> parameters) throws ParserException {
     JsonObject jsonObject =
-        FunctionUtil.jsonWithLowerCaseKeys(
-            FunctionUtil.paramFromStrPropOrJsonAsJsonObject(functionName, parameters, 4));
+            FunctionUtil.jsonWithLowerCaseKeys(
+                    FunctionUtil.paramFromStrPropOrJsonAsJsonObject(functionName, parameters, 4));
     FunctionUtil.validateJsonKeys(jsonObject, Set.of("x1", "y1", "x2", "y2"), 4, functionName);
 
     return new Line2D.Float(
-        jsonObject.get("x1").getAsFloat(),
-        jsonObject.get("y1").getAsFloat(),
-        jsonObject.get("x2").getAsFloat(),
-        jsonObject.get("y2").getAsFloat());
+            jsonObject.get("x1").getAsFloat(),
+            jsonObject.get("y1").getAsFloat(),
+            jsonObject.get("x2").getAsFloat(),
+            jsonObject.get("y2").getAsFloat());
   }
 
   private Shape path(String functionName, List<Object> parameters) throws ParserException {
     JsonArray jsonArray =
-        FunctionUtil.paramConvertedToJson(functionName, parameters, 4).getAsJsonArray();
+            FunctionUtil.paramConvertedToJson(functionName, parameters, 4).getAsJsonArray();
     ExtendedGeneralPath path = new ExtendedGeneralPath();
     for (JsonElement jsonElement : jsonArray) {
       JsonArray segment = null;
@@ -572,25 +571,22 @@ public class ShapeFunctions extends AbstractFunction {
           case "wind", "w", "-1" -> path.setWindingRule(segment.get(1).getAsInt());
           case "close", "z", "4" -> path.closePath();
           case "moveto", "moveTo", "move", "m", "0" ->
-              path.moveTo(segment.get(1).getAsFloat(), segment.get(2).getAsFloat());
+                  path.moveTo(segment.get(1).getAsFloat(), segment.get(2).getAsFloat());
           case "line", "lineto", "lineTo", "l", "1" ->
-              path.lineTo(segment.get(1).getAsFloat(), segment.get(2).getAsFloat());
-          case "quad", "quadto", "quadTo", "q", "2" ->
-              path.quadTo(
+                  path.lineTo(segment.get(1).getAsFloat(), segment.get(2).getAsFloat());
+          case "quad", "quadto", "quadTo", "q", "2" -> path.quadTo(
                   segment.get(1).getAsFloat(),
                   segment.get(2).getAsFloat(),
                   segment.get(3).getAsFloat(),
                   segment.get(4).getAsFloat());
-          case "cubic", "cubicto", "cubicTo", "c", "3" ->
-              path.curveTo(
+          case "cubic", "cubicto", "cubicTo", "c", "3" -> path.curveTo(
                   segment.get(1).getAsFloat(),
                   segment.get(2).getAsFloat(),
                   segment.get(3).getAsFloat(),
                   segment.get(4).getAsFloat(),
                   segment.get(5).getAsFloat(),
                   segment.get(6).getAsFloat());
-          case "arc", "arcto", "arcTo", "a", "4321" ->
-              path.arcTo(
+          case "arc", "arcto", "arcTo", "a", "4321" -> path.arcTo(
                   segment.get(1).getAsFloat(),
                   segment.get(2).getAsFloat(),
                   segment.get(3).getAsFloat(),
@@ -598,14 +594,13 @@ public class ShapeFunctions extends AbstractFunction {
                   segment.get(5).getAsBoolean(),
                   segment.get(6).getAsFloat(),
                   segment.get(7).getAsFloat());
-          default ->
-              throw new ParserException(
+          default -> throw new ParserException(
                   I18N.getText("ILLEGAL_ARGUMENT", functionName, 5, segment.getAsString()));
         }
       } catch (IndexOutOfBoundsException iobe) {
         assert segment != null;
         throw new ParserException(
-            I18N.getText(INDEX_OUT_OF_BOUNDS, functionName, 5, segment.getAsString()));
+                I18N.getText(INDEX_OUT_OF_BOUNDS, functionName, 5, segment.getAsString()));
       }
     }
     return path;
@@ -613,66 +608,66 @@ public class ShapeFunctions extends AbstractFunction {
 
   private Shape polygon(String functionName, List<Object> parameters) throws ParserException {
     JsonObject jsonObject =
-        FunctionUtil.jsonWithLowerCaseKeys(
-            FunctionUtil.paramFromStrPropOrJsonAsJsonObject(functionName, parameters, 4));
+            FunctionUtil.jsonWithLowerCaseKeys(
+                    FunctionUtil.paramFromStrPropOrJsonAsJsonObject(functionName, parameters, 4));
     FunctionUtil.validateJsonKeys(
-        jsonObject, Set.of("xpoints", "ypoints", "numpoints"), 4, functionName);
+            jsonObject, Set.of("xpoints", "ypoints", "numpoints"), 4, functionName);
     float[] xpts =
-        Floats.toArray(
-            jsonObject.get("xpoints").getAsJsonArray().asList().stream()
-                .map(JsonElement::getAsDouble)
-                .toList());
+            Floats.toArray(
+                    jsonObject.get("xpoints").getAsJsonArray().asList().stream()
+                            .map(JsonElement::getAsDouble)
+                            .toList());
     float[] ypts =
-        Floats.toArray(
-            jsonObject.get("ypoints").getAsJsonArray().asList().stream()
-                .map(JsonElement::getAsDouble)
-                .toList());
+            Floats.toArray(
+                    jsonObject.get("ypoints").getAsJsonArray().asList().stream()
+                            .map(JsonElement::getAsDouble)
+                            .toList());
     return new Polygon2D(xpts, ypts, jsonObject.get("numpoints").getAsInt());
   }
 
   private Shape quadCurve(String functionName, List<Object> parameters) throws ParserException {
     JsonObject jsonObject =
-        FunctionUtil.jsonWithLowerCaseKeys(
-            FunctionUtil.paramFromStrPropOrJsonAsJsonObject(functionName, parameters, 4));
+            FunctionUtil.jsonWithLowerCaseKeys(
+                    FunctionUtil.paramFromStrPropOrJsonAsJsonObject(functionName, parameters, 4));
     FunctionUtil.validateJsonKeys(
-        jsonObject, Set.of("x1", "y1", "ctrlx", "ctrly", "x2", "y2"), 4, functionName);
+            jsonObject, Set.of("x1", "y1", "ctrlx", "ctrly", "x2", "y2"), 4, functionName);
     return new QuadCurve2D.Float(
-        jsonObject.get("x1").getAsFloat(),
-        jsonObject.get("y1").getAsFloat(),
-        jsonObject.get("ctrlx").getAsFloat(),
-        jsonObject.get("ctrly").getAsFloat(),
-        jsonObject.get("x2").getAsFloat(),
-        jsonObject.get("y2").getAsFloat());
+            jsonObject.get("x1").getAsFloat(),
+            jsonObject.get("y1").getAsFloat(),
+            jsonObject.get("ctrlx").getAsFloat(),
+            jsonObject.get("ctrly").getAsFloat(),
+            jsonObject.get("x2").getAsFloat(),
+            jsonObject.get("y2").getAsFloat());
   }
 
   private Shape rectangle(String functionName, List<Object> parameters) throws ParserException {
     JsonObject jsonObject =
-        FunctionUtil.jsonWithLowerCaseKeys(
-            FunctionUtil.paramFromStrPropOrJsonAsJsonObject(functionName, parameters, 4));
+            FunctionUtil.jsonWithLowerCaseKeys(
+                    FunctionUtil.paramFromStrPropOrJsonAsJsonObject(functionName, parameters, 4));
     FunctionUtil.validateJsonKeys(jsonObject, Set.of("x", "y", "w", "h"), 4, functionName);
 
     return new Rectangle2D.Float(
-        jsonObject.get("x").getAsFloat(),
-        jsonObject.get("y").getAsFloat(),
-        jsonObject.get("w").getAsFloat(),
-        jsonObject.get("h").getAsFloat());
+            jsonObject.get("x").getAsFloat(),
+            jsonObject.get("y").getAsFloat(),
+            jsonObject.get("w").getAsFloat(),
+            jsonObject.get("h").getAsFloat());
   }
 
   private Shape roundRectangle(String functionName, List<Object> parameters)
-      throws ParserException {
+          throws ParserException {
     JsonObject jsonObject =
-        FunctionUtil.jsonWithLowerCaseKeys(
-            FunctionUtil.paramFromStrPropOrJsonAsJsonObject(functionName, parameters, 4));
+            FunctionUtil.jsonWithLowerCaseKeys(
+                    FunctionUtil.paramFromStrPropOrJsonAsJsonObject(functionName, parameters, 4));
     FunctionUtil.validateJsonKeys(
-        jsonObject, Set.of("x", "y", "w", "h", "arcw", "arch"), 4, functionName);
+            jsonObject, Set.of("x", "y", "w", "h", "arcw", "arch"), 4, functionName);
 
     return new RoundRectangle2D.Float(
-        jsonObject.get("x").getAsFloat(),
-        jsonObject.get("y").getAsFloat(),
-        jsonObject.get("w").getAsFloat(),
-        jsonObject.get("h").getAsFloat(),
-        jsonObject.get("arcw").getAsFloat(),
-        jsonObject.get("arch").getAsFloat());
+            jsonObject.get("x").getAsFloat(),
+            jsonObject.get("y").getAsFloat(),
+            jsonObject.get("w").getAsFloat(),
+            jsonObject.get("h").getAsFloat(),
+            jsonObject.get("arcw").getAsFloat(),
+            jsonObject.get("arch").getAsFloat());
   }
 
   private Shape svgPath(String functionName, List<Object> parameters) throws ParserException {
@@ -688,15 +683,15 @@ public class ShapeFunctions extends AbstractFunction {
   }
 
   private Shape transform(
-      Shape shape, String functionName, List<Object> parameters, int transformIndex)
-      throws ParserException {
+          Shape shape, String functionName, List<Object> parameters, int transformIndex)
+          throws ParserException {
     JsonArray transforms = new JsonArray();
     String transformsString =
-        FunctionUtil.paramAsString(functionName, parameters, transformIndex, true)
-            .replaceAll("\\s", "");
+            FunctionUtil.paramAsString(functionName, parameters, transformIndex, true)
+                    .replaceAll("\\s", "");
     if (transformsString.contains("[")) {
       transforms =
-          (JsonArray) FunctionUtil.paramConvertedToJson(functionName, parameters, transformIndex);
+              (JsonArray) FunctionUtil.paramConvertedToJson(functionName, parameters, transformIndex);
     } else {
       for (String s : transformsString.split(",")) {
         transforms.add(s);
@@ -704,17 +699,17 @@ public class ShapeFunctions extends AbstractFunction {
     }
 
     BiFunction<JsonArray, Integer, Integer> nextStringIndex =
-        ((jsonElements, integer) -> {
-          int i;
-          for (i = integer; i < jsonElements.size(); i++) {
-            try {
-              jsonElements.get(integer).getAsDouble();
-            } catch (NumberFormatException nfe) {
-              break;
-            }
-          }
-          return i;
-        });
+            ((jsonElements, integer) -> {
+              int i;
+              for (i = integer; i < jsonElements.size(); i++) {
+                try {
+                  jsonElements.get(integer).getAsDouble();
+                } catch (NumberFormatException nfe) {
+                  break;
+                }
+              }
+              return i;
+            });
 
     int i = 0;
     while (i < transforms.size()) {
@@ -728,8 +723,7 @@ public class ShapeFunctions extends AbstractFunction {
       AffineTransform at = new AffineTransform();
       try {
         switch (type) {
-          case "matrix" ->
-              at.setTransform(
+          case "matrix" -> at.setTransform(
                   args.get(0), args.get(1), args.get(2), args.get(3), args.get(4), args.get(5));
           case "rotate" -> {
             if (args.size() == 1) {
@@ -741,24 +735,22 @@ public class ShapeFunctions extends AbstractFunction {
           case "scale" -> at.setToScale(args.get(0), args.get(1));
           case "shear" -> at.setToShear(args.get(0), args.get(1));
           case "translate" -> at.setToTranslation(args.get(0), args.get(1));
-          default ->
-              throw new ParserException(I18N.getText(UNSUPPORTED_OPERATION, functionName, 5, type));
+          default -> throw new ParserException(I18N.getText(UNSUPPORTED_OPERATION, functionName, 5, type));
         }
       } catch (IndexOutOfBoundsException oob) {
         throw new ParserException(
-            I18N.getText(
-                WRONG_NUMBER_OF_ARGUMENTS_FOR_OPERATION,
-                functionName,
-                5,
-                type,
-                switch (type) {
-                  case "matrix" -> 6;
-                  case "rotate" -> "1 or 3";
-                  case "scale", "shear", "translate" -> 2;
-                  default ->
-                      throw new ParserException(
-                          I18N.getText(UNSUPPORTED_OPERATION, functionName, 5, type));
-                }));
+                I18N.getText(
+                        WRONG_NUMBER_OF_ARGUMENTS_FOR_OPERATION,
+                        functionName,
+                        5,
+                        type,
+                        switch (type) {
+                          case "matrix" -> 6;
+                          case "rotate" -> "1 or 3";
+                          case "scale", "shear", "translate" -> 2;
+                          default -> throw new ParserException(
+                                  I18N.getText(UNSUPPORTED_OPERATION, functionName, 5, type));
+                        }));
       }
       shape = at.createTransformedShape(shape);
     }
