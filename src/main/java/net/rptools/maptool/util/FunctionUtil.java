@@ -18,11 +18,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Set;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolUtil;
@@ -41,6 +36,13 @@ import net.rptools.maptool.model.drawing.DrawableTexturePaint;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
 import net.rptools.parser.function.Function;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Provides static methods to help handle macro functions.
@@ -158,34 +160,6 @@ public class FunctionUtil {
   }
 
   /**
-   * Gets the ZoneRender with the given name, throwing a ParserException if it does not exist.
-   *
-   * @param functionName the function name (used for generating exception messages).
-   * @param map the name or ID of the map
-   * @return the ZoneRenderer.
-   * @throws ParserException if the map cannot be found
-   */
-  public static @Nonnull ZoneRenderer getZoneRenderer(String functionName, String map)
-      throws ParserException {
-    if (!GUID.isNotGUID(map)) {
-      try {
-        final var zr = MapTool.getFrame().getZoneRenderer(GUID.valueOf(map));
-        if (zr != null) {
-          return zr;
-        }
-      } catch (InvalidGUIDException ignored) {
-        // Wasn't a GUID after all. Fall back to looking up by name.
-      }
-    }
-
-    ZoneRenderer zoneRenderer = MapTool.getFrame().getZoneRenderer(map);
-    if (zoneRenderer == null) {
-      throw new ParserException(I18N.getText(KEY_UNKNOWN_MAP, functionName, map));
-    }
-    return zoneRenderer;
-  }
-
-  /**
    * Gets the ZoneRender from the specified index or returns the current ZoneRender. This method
    * will check the list size before trying to retrieve the token so it is safe to use for functions
    * that have the map as a optional argument.
@@ -215,6 +189,34 @@ public class FunctionUtil {
   }
 
   /**
+   * Gets the ZoneRender with the given name, throwing a ParserException if it does not exist.
+   *
+   * @param functionName the function name (used for generating exception messages).
+   * @param map the name or ID of the map
+   * @return the ZoneRenderer.
+   * @throws ParserException if the map cannot be found
+   */
+  public static @Nonnull ZoneRenderer getZoneRenderer(String functionName, String map)
+          throws ParserException {
+    if (!GUID.isNotGUID(map)) {
+      try {
+        final var zr = MapTool.getFrame().getZoneRenderer(GUID.valueOf(map));
+        if (zr != null) {
+          return zr;
+        }
+      } catch (InvalidGUIDException ignored) {
+        // Wasn't a GUID after all. Fall back to looking up by name.
+      }
+    }
+
+    ZoneRenderer zoneRenderer = MapTool.getFrame().getZoneRenderer(map);
+    if (zoneRenderer == null) {
+      throw new ParserException(I18N.getText(KEY_UNKNOWN_MAP, functionName, map));
+    }
+    return zoneRenderer;
+  }
+
+  /**
    * Return the BigDecimal value of a parameter. Throws a <code>ParserException</code> if the
    * parameter can't be converted to BigDecimal.
    *
@@ -237,26 +239,6 @@ public class FunctionUtil {
       throw new ParserException(
           I18N.getText(KEY_NOT_NUMBER, functionName, index + 1, parameter.toString()));
     }
-  }
-
-  /**
-   * Return the String value of a parameter.
-   *
-   * @param functionName this is used in the exception message
-   * @param parameters the list of parameters
-   * @param index the index of the parameter to return as String
-   * @param allowNumber should numbers be allowed?
-   * @return the parameter as a string
-   * @throws ParserException if the parameter is disallowed number
-   */
-  public static String paramAsString(
-      String functionName, List<Object> parameters, int index, boolean allowNumber)
-      throws ParserException {
-    Object parameter = parameters.get(index);
-    if (!allowNumber && !(parameter instanceof String)) {
-      throw new ParserException(I18N.getText(KEY_NOT_STRING, functionName, parameter.toString()));
-    }
-    return parameter.toString();
   }
 
   /**
@@ -364,52 +346,89 @@ public class FunctionUtil {
    * @param functionName this is used in the exception message
    * @param parameters the list of parameters
    * @param index the index of the parameter to return as Json
+   * @param delimiter the delimiter if known
    * @return the parameter as a jsonObject
    * @throws ParserException if the parameter can't be converted to jsonObject or jsonArray
    */
   public static JsonObject paramFromStrPropOrJsonAsJsonObject(
-      String functionName, List<Object> parameters, int index) throws ParserException {
-    JsonObject json;
-    try { // try for json object
-      json = paramAsJsonObject(functionName, parameters, index);
+          String functionName, List<Object> parameters, int index, String delimiter)
+          throws ParserException {
+    try {
+      JsonObject json = new JsonObject();
+      if (delimiter.equalsIgnoreCase("json")) {
+        json = paramAsJsonObject(functionName, parameters, index);
+      } else if (parameters.get(index) instanceof JsonObject) {
+        json = paramAsJsonObject(functionName, parameters, index);
+      } else if (!delimiter.equalsIgnoreCase(";")) {
+        List<String> entries =
+                Arrays.stream(paramAsString(functionName, parameters, index, true).split(delimiter))
+                        .toList();
+        String[] keyValue;
+        for (String entry : entries) {
+          keyValue = entry.split("=");
+          try {
+            json.add(keyValue[0].trim(), new JsonPrimitive(new BigDecimal(keyValue[1])));
+          } catch (NumberFormatException nfe) {
+            json.add(keyValue[0].trim(), new JsonPrimitive(keyValue[1].trim()));
+          }
+        }
+      } else {
+        // guessing time
+        if (((String) parameters.get(index)).contains("{")) {
+          json = paramAsJsonObject(functionName, parameters, index);
+        } else if (((String) parameters.get(index)).contains(";")) {
+          json =
+                  JSONMacroFunctions.getInstance()
+                          .getJsonObjectFunctions()
+                          .fromStrProp(paramAsString(functionName, parameters, index, true), ";");
+        }
+      }
+      return json;
     } catch (ParserException pe) {
-      try { // try for strProp
-        json =
-            JSONMacroFunctions.getInstance()
-                .getJsonObjectFunctions()
-                .fromStrProp(paramAsString(functionName, parameters, index, true), ";");
-      } catch (ParserException pe2) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.input.illegalArgumentType", "unknown", "JSON Object/StringProp"));
-      }
-    }
-    return json;
-  }
-
-  public static void validateJsonKeys(
-      JsonObject jsonObject, Set<String> requiredKeys, int index, String functionName)
-      throws ParserException {
-    if (jsonObject.keySet().size() < requiredKeys.size()) {
       throw new ParserException(
-          I18N.getText(
-              "macro.function.general.wrongNumFields", index, functionName, requiredKeys.size()));
-    }
-    Set<String> keySet = jsonObject.keySet();
-    for (String key : requiredKeys) {
-      if (!keySet.contains(key)) {
-        throw new ParserException(I18N.getText("macro.function.general.missingKey", key));
-      }
+              I18N.getText(
+                      "macro.function.input.illegalArgumentType", "unknown", "JSON Object/StringProp"));
     }
   }
 
-  public static JsonObject jsonWithLowerCaseKeys(JsonObject jsonObject) {
-    JsonObject jObj = new JsonObject();
-    Set<String> keys = jsonObject.keySet();
-    for (String key : keys) {
-      jObj.add(key.toLowerCase(), jsonObject.get(key));
+  /**
+   * Return the jsonObject value of a parameter. Throws a <code>ParserException</code> if the
+   * parameter can't be converted to a jsonObject.
+   *
+   * @param functionName this is used in the exception message
+   * @param parameters the list of parameters
+   * @param index the index of the parameter to return as jsonObject
+   * @return the parameter as a jsonObject
+   * @throws ParserException if the parameter can't be converted to jsonObject
+   */
+  public static JsonObject paramAsJsonObject(
+          String functionName, List<Object> parameters, int index) throws ParserException {
+    JsonElement jsonElement = paramAsJson(functionName, parameters, index);
+    if (!jsonElement.isJsonObject()) {
+      throw new ParserException(I18N.getText(KEY_NOT_JSON_OBJECT, functionName, index + 1));
     }
-    return jObj;
+
+    return jsonElement.getAsJsonObject();
+  }
+
+  /**
+   * Return the String value of a parameter.
+   *
+   * @param functionName this is used in the exception message
+   * @param parameters the list of parameters
+   * @param index the index of the parameter to return as String
+   * @param allowNumber should numbers be allowed?
+   * @return the parameter as a string
+   * @throws ParserException if the parameter is disallowed number
+   */
+  public static String paramAsString(
+          String functionName, List<Object> parameters, int index, boolean allowNumber)
+          throws ParserException {
+    Object parameter = parameters.get(index);
+    if (!allowNumber && !(parameter instanceof String)) {
+      throw new ParserException(I18N.getText(KEY_NOT_STRING, functionName, parameter.toString()));
+    }
+    return parameter.toString();
   }
 
   /**
@@ -431,24 +450,48 @@ public class FunctionUtil {
     return jsonElement;
   }
 
-  /**
-   * Return the jsonObject value of a parameter. Throws a <code>ParserException</code> if the
-   * parameter can't be converted to a jsonObject.
-   *
-   * @param functionName this is used in the exception message
-   * @param parameters the list of parameters
-   * @param index the index of the parameter to return as jsonObject
-   * @return the parameter as a jsonObject
-   * @throws ParserException if the parameter can't be converted to jsonObject
-   */
-  public static JsonObject paramAsJsonObject(
-      String functionName, List<Object> parameters, int index) throws ParserException {
-    JsonElement jsonElement = paramAsJson(functionName, parameters, index);
-    if (!jsonElement.isJsonObject()) {
-      throw new ParserException(I18N.getText(KEY_NOT_JSON_OBJECT, functionName, index + 1));
+  public static void validateKeyNames(
+          Object paramObject,
+          Set<String> requiredKeys,
+          int index,
+          String functionName,
+          String delimiter)
+          throws ParserException {
+    JsonObject jsonObject;
+    if (paramObject.getClass().isAssignableFrom(JsonObject.class)) {
+      jsonObject = (JsonObject) paramObject;
+    } else {
+      jsonObject =
+              JSONMacroFunctions.getInstance()
+                      .getJsonObjectFunctions()
+                      .fromStrProp((String) paramObject, delimiter);
     }
+    if (jsonObject.keySet().size() < requiredKeys.size()) {
+      throw new ParserException(
+          I18N.getText(
+              "macro.function.general.wrongNumFields", index, functionName, requiredKeys.size()));
+    }
+    Set<String> keySet = jsonObject.keySet();
+    for (String key : requiredKeys) {
+      if (!keySet.contains(key)) {
+        throw new ParserException(
+                I18N.getText(
+                        "macro.function.general.missingKey",
+                        functionName,
+                        index,
+                        key,
+                        String.join(", ", requiredKeys)));
+      }
+    }
+  }
 
-    return jsonElement.getAsJsonObject();
+  public static JsonObject jsonWithLowerCaseKeys(JsonObject jsonObject) {
+    JsonObject jObj = new JsonObject();
+    Set<String> keys = jsonObject.keySet();
+    for (String key : keys) {
+      jObj.add(key.toLowerCase(), jsonObject.get(key));
+    }
+    return jObj;
   }
 
   /**
@@ -469,6 +512,27 @@ public class FunctionUtil {
     }
 
     return jsonElement.getAsJsonArray();
+  }
+
+  /**
+   * Return the jsonObject or jsonArray value of a parameter. if the parameter can't be converted to
+   * a json. Then an empty json array will be returned if its an empty string, otherwise a a
+   * JsonArray containing the argument will be returned.
+   *
+   * @param functionName this is used in the exception message
+   * @param parameters the list of parameters
+   * @param index the index of the parameter to return as Json
+   * @return the parameter as a jsonObject or jsonArray
+   * @throws ParserException if the parameter can't be converted to jsonObject or jsonArray
+   */
+  public static JsonArray paramConvertedToJsonArray(
+          String functionName, List<Object> parameters, int index) throws ParserException {
+    JsonElement json = paramConvertedToJson(functionName, parameters, index);
+    if (!json.isJsonArray()) {
+      throw new ParserException(I18N.getText(KEY_NOT_JSON_ARRAY, functionName, index + 1));
+    } else {
+      return json.getAsJsonArray();
+    }
   }
 
   /**
@@ -496,27 +560,6 @@ public class FunctionUtil {
       }
 
       return json;
-    }
-  }
-
-  /**
-   * Return the jsonObject or jsonArray value of a parameter. if the parameter can't be converted to
-   * a json. Then an empty json array will be returned if its an empty string, otherwise a a
-   * JsonArray containing the argument will be returned.
-   *
-   * @param functionName this is used in the exception message
-   * @param parameters the list of parameters
-   * @param index the index of the parameter to return as Json
-   * @return the parameter as a jsonObject or jsonArray
-   * @throws ParserException if the parameter can't be converted to jsonObject or jsonArray
-   */
-  public static JsonArray paramConvertedToJsonArray(
-      String functionName, List<Object> parameters, int index) throws ParserException {
-    JsonElement json = paramConvertedToJson(functionName, parameters, index);
-    if (!json.isJsonArray()) {
-      throw new ParserException(I18N.getText(KEY_NOT_JSON_ARRAY, functionName, index + 1));
-    } else {
-      return json.getAsJsonArray();
     }
   }
 
