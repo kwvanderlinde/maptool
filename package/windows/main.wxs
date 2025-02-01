@@ -76,6 +76,7 @@
       <ComponentGroupRef Id="Shortcuts"/>
       <ComponentGroupRef Id="Files"/>
       <ComponentGroupRef Id="FileAssociations"/>
+      <ComponentRef Id="RegistryComponent"/>
     </Feature>
 
     <CustomAction Id="JpSetARPINSTALLLOCATION" Property="ARPINSTALLLOCATION" Value="[INSTALLDIR]" />
@@ -130,6 +131,50 @@
     <InstallUISequence>
       <Custom Action="JpFindRelatedProducts" After="FindRelatedProducts"/>
     </InstallUISequence>
+
+    <Component Id="RegistryComponent" Guid="{91f493d5-78a8-4d52-b0f1-c0c03a29788d}" Directory="INSTALLDIR">
+      <?ifdef JpIsSystemWide ?>
+        <RegistryKey Root="HKCR"
+         Key="rptools-maptool+registry"
+         ForceCreateOnInstall="yes"
+         ForceDeleteOnUninstall="yes">
+          <RegistryValue Type="string" Name="URL Protocol" Value=""/>
+          <RegistryValue Type="string" Value="URL:MapTool registry connect"/>
+          <RegistryKey Key="DefaultIcon">
+            <RegistryValue Type="string" Value="[INSTALLDIR]$(var.JpAppName).exe" />
+          </RegistryKey>
+          <RegistryKey Key="shell\open\command">
+            <RegistryValue Type="string" Value="&quot;[INSTALLDIR]$(var.JpAppName).exe&quot; &quot;%1&quot;" />
+          </RegistryKey>
+        </RegistryKey>
+        <RegistryKey Root="HKCR"
+         Key="rptools-maptool+lan"
+         ForceCreateOnInstall="yes"
+         ForceDeleteOnUninstall="yes">
+          <RegistryValue Type="string" Name="URL Protocol" Value=""/>
+          <RegistryValue Type="string" Value="URL:MapTool LAN connect"/>
+          <RegistryKey Key="DefaultIcon">
+            <RegistryValue Type="string" Value="[INSTALLDIR]$(var.JpAppName).exe" />
+          </RegistryKey>
+          <RegistryKey Key="shell\open\command">
+            <RegistryValue Type="string" Value="&quot;[INSTALLDIR]$(var.JpAppName).exe&quot; &quot;%1&quot;" />
+          </RegistryKey>
+        </RegistryKey>
+        <RegistryKey Root="HKCR"
+         Key="rptools-maptool+tcp"
+         ForceCreateOnInstall="yes"
+         ForceDeleteOnUninstall="yes">
+          <RegistryValue Type="string" Name="URL Protocol" Value=""/>
+          <RegistryValue Type="string" Value="URL:MapTool TCP connect"/>
+          <RegistryKey Key="DefaultIcon">
+            <RegistryValue Type="string" Value="[INSTALLDIR]$(var.JpAppName).exe" />
+          </RegistryKey>
+          <RegistryKey Key="shell\open\command">
+            <RegistryValue Type="string" Value="&quot;[INSTALLDIR]$(var.JpAppName).exe&quot; &quot;%1&quot;" />
+          </RegistryKey>
+        </RegistryKey>
+      <?endif?>
+    </Component>
 
   </Product>
 </Wix>
