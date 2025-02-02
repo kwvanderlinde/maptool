@@ -18,7 +18,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
@@ -197,7 +196,7 @@ public class FunctionUtil {
    * @throws ParserException if the map cannot be found
    */
   public static @Nonnull ZoneRenderer getZoneRenderer(String functionName, String map)
-          throws ParserException {
+      throws ParserException {
     if (!GUID.isNotGUID(map)) {
       try {
         final var zr = MapTool.getFrame().getZoneRenderer(GUID.valueOf(map));
@@ -351,8 +350,8 @@ public class FunctionUtil {
    * @throws ParserException if the parameter can't be converted to jsonObject or jsonArray
    */
   public static JsonObject paramFromStrPropOrJsonAsJsonObject(
-          String functionName, List<Object> parameters, int index, String delimiter)
-          throws ParserException {
+      String functionName, List<Object> parameters, int index, String delimiter)
+      throws ParserException {
     try {
       JsonObject json = new JsonObject();
       if (delimiter.equalsIgnoreCase("json")) {
@@ -361,8 +360,8 @@ public class FunctionUtil {
         json = paramAsJsonObject(functionName, parameters, index);
       } else if (!delimiter.equalsIgnoreCase(";")) {
         List<String> entries =
-                Arrays.stream(paramAsString(functionName, parameters, index, true).split(delimiter))
-                        .toList();
+            Arrays.stream(paramAsString(functionName, parameters, index, true).split(delimiter))
+                .toList();
         String[] keyValue;
         for (String entry : entries) {
           keyValue = entry.split("=");
@@ -378,16 +377,16 @@ public class FunctionUtil {
           json = paramAsJsonObject(functionName, parameters, index);
         } else if (((String) parameters.get(index)).contains(";")) {
           json =
-                  JSONMacroFunctions.getInstance()
-                          .getJsonObjectFunctions()
-                          .fromStrProp(paramAsString(functionName, parameters, index, true), ";");
+              JSONMacroFunctions.getInstance()
+                  .getJsonObjectFunctions()
+                  .fromStrProp(paramAsString(functionName, parameters, index, true), ";");
         }
       }
       return json;
     } catch (ParserException pe) {
       throw new ParserException(
-              I18N.getText(
-                      "macro.function.input.illegalArgumentType", "unknown", "JSON Object/StringProp"));
+          I18N.getText(
+              "macro.function.input.illegalArgumentType", "unknown", "JSON Object/StringProp"));
     }
   }
 
@@ -402,7 +401,7 @@ public class FunctionUtil {
    * @throws ParserException if the parameter can't be converted to jsonObject
    */
   public static JsonObject paramAsJsonObject(
-          String functionName, List<Object> parameters, int index) throws ParserException {
+      String functionName, List<Object> parameters, int index) throws ParserException {
     JsonElement jsonElement = paramAsJson(functionName, parameters, index);
     if (!jsonElement.isJsonObject()) {
       throw new ParserException(I18N.getText(KEY_NOT_JSON_OBJECT, functionName, index + 1));
@@ -422,8 +421,8 @@ public class FunctionUtil {
    * @throws ParserException if the parameter is disallowed number
    */
   public static String paramAsString(
-          String functionName, List<Object> parameters, int index, boolean allowNumber)
-          throws ParserException {
+      String functionName, List<Object> parameters, int index, boolean allowNumber)
+      throws ParserException {
     Object parameter = parameters.get(index);
     if (!allowNumber && !(parameter instanceof String)) {
       throw new ParserException(I18N.getText(KEY_NOT_STRING, functionName, parameter.toString()));
@@ -451,20 +450,20 @@ public class FunctionUtil {
   }
 
   public static void validateKeyNames(
-          Object paramObject,
-          Set<String> requiredKeys,
-          int index,
-          String functionName,
-          String delimiter)
-          throws ParserException {
+      Object paramObject,
+      Set<String> requiredKeys,
+      int index,
+      String functionName,
+      String delimiter)
+      throws ParserException {
     JsonObject jsonObject;
     if (paramObject.getClass().isAssignableFrom(JsonObject.class)) {
       jsonObject = (JsonObject) paramObject;
     } else {
       jsonObject =
-              JSONMacroFunctions.getInstance()
-                      .getJsonObjectFunctions()
-                      .fromStrProp((String) paramObject, delimiter);
+          JSONMacroFunctions.getInstance()
+              .getJsonObjectFunctions()
+              .fromStrProp((String) paramObject, delimiter);
     }
     if (jsonObject.keySet().size() < requiredKeys.size()) {
       throw new ParserException(
@@ -475,12 +474,12 @@ public class FunctionUtil {
     for (String key : requiredKeys) {
       if (!keySet.contains(key)) {
         throw new ParserException(
-                I18N.getText(
-                        "macro.function.general.missingKey",
-                        functionName,
-                        index,
-                        key,
-                        String.join(", ", requiredKeys)));
+            I18N.getText(
+                "macro.function.general.missingKey",
+                functionName,
+                index,
+                key,
+                String.join(", ", requiredKeys)));
       }
     }
   }
@@ -526,7 +525,7 @@ public class FunctionUtil {
    * @throws ParserException if the parameter can't be converted to jsonObject or jsonArray
    */
   public static JsonArray paramConvertedToJsonArray(
-          String functionName, List<Object> parameters, int index) throws ParserException {
+      String functionName, List<Object> parameters, int index) throws ParserException {
     JsonElement json = paramConvertedToJson(functionName, parameters, index);
     if (!json.isJsonArray()) {
       throw new ParserException(I18N.getText(KEY_NOT_JSON_ARRAY, functionName, index + 1));
