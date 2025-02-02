@@ -547,7 +547,7 @@ public class ShapeFunctions extends AbstractFunction {
       }
     }
 
-    if(!MapTool.getClient().getPlayer().isGM()){
+    if (!MapTool.getClient().getPlayer().isGM()) {
       results[2] = Zone.Layer.TOKEN;
     } else {
       results[2] = layer;
