@@ -786,6 +786,7 @@ public class ShapeFunctions extends AbstractFunction {
           default -> throw new ParserException(I18N.getText(UNSUPPORTED_OPERATION, functionName, 5, type));
         }
       } catch (IndexOutOfBoundsException oob) {
+
         throw new ParserException(
                 I18N.getText(
                         WRONG_NUMBER_OF_ARGUMENTS_FOR_OPERATION,
