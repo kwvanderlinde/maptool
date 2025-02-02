@@ -18,11 +18,6 @@ import com.google.common.primitives.Floats;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import java.awt.*;
-import java.awt.geom.*;
-import java.util.*;
-import java.util.List;
-import java.util.function.BiFunction;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
 import net.rptools.maptool.language.I18N;
@@ -41,6 +36,12 @@ import org.apache.batik.ext.awt.geom.Polygon2D;
 import org.apache.batik.parser.AWTPathProducer;
 import org.apache.batik.parser.ParseException;
 import org.apache.batik.parser.PathParser;
+
+import java.awt.*;
+import java.awt.geom.*;
+import java.util.List;
+import java.util.*;
+import java.util.function.BiFunction;
 
 public class ShapeFunctions extends AbstractFunction {
   public static final Map<String, ShapeDrawable> CACHED_SHAPES;
@@ -792,7 +793,6 @@ public class ShapeFunctions extends AbstractFunction {
               throw new ParserException(I18N.getText(UNSUPPORTED_OPERATION, functionName, 5, type));
         }
       } catch (IndexOutOfBoundsException oob) {
-
         throw new ParserException(
             I18N.getText(
                 WRONG_NUMBER_OF_ARGUMENTS_FOR_OPERATION,
