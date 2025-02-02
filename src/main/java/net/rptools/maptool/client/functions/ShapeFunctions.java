@@ -184,7 +184,7 @@ public class ShapeFunctions extends AbstractFunction {
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
     FunctionUtil.checkNumberParam(functionName, parameters, 5, -1);
-    /*    name, layer, anti-aliasing, connect, shape names...    */
+    /*    name, layer, antialiasing, connect, shape names...    */
     Object[] leadParams = getLeadParameters(functionName, parameters);
     GUID guid = (GUID) leadParams[0];
     String name = leadParams[1].toString();
@@ -497,7 +497,7 @@ public class ShapeFunctions extends AbstractFunction {
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
     FunctionUtil.checkNumberParam(functionName, parameters, 4, 6);
-    /*  name, layer, anti-aliasing, shape name to transform, transforms, delimiter */
+    /*  name, layer, antialiasing, shape name to transform, transforms, delimiter */
     Object[] leadParams = getLeadParameters(functionName, parameters);
     GUID guid = (GUID) leadParams[0];
     String name = leadParams[1].toString();
