@@ -37,7 +37,6 @@ import org.apache.batik.parser.AWTPathProducer;
 import org.apache.batik.parser.ParseException;
 import org.apache.batik.parser.PathParser;
 
-import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.geom.*;
 import java.util.List;
@@ -46,7 +45,7 @@ import java.util.function.BiFunction;
 
 public class ShapeFunctions extends AbstractFunction {
 
-  protected static final @Nonnull Map<String, ShapeDrawable> CACHED_SHAPES;
+  protected static final Map<String, ShapeDrawable> CACHED_SHAPES;
   private static final ShapeFunctions instance = new ShapeFunctions();
   private static final AWTPathProducer AWT_PATH_PRODUCER = new AWTPathProducer();
   private static final PathParser PATH_PARSER = new PathParser();
