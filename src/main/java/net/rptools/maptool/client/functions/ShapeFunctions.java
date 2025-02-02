@@ -132,9 +132,7 @@ public class ShapeFunctions extends AbstractFunction {
           List<Object> parameters)
           throws ParserException {
     FunctionUtil.checkNumberParam(functionName, parameters, 5, -1);
-    /*
-    name, layer, anti-aliasing, shape names...
-    */
+    /*    name, layer, anti-aliasing, shape names...    */
     Object[] leadParams = getLeadParameters(functionName, parameters);
     GUID guid = (GUID) leadParams[0];
     String name = leadParams[1].toString();
@@ -175,9 +173,7 @@ public class ShapeFunctions extends AbstractFunction {
           Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
           throws ParserException {
     FunctionUtil.checkNumberParam(functionName, parameters, 5, -1);
-    /*
-    name, layer, anti-aliasing, connect, shape names...
-    */
+    /*    name, layer, anti-aliasing, connect, shape names...    */
     Object[] leadParams = getLeadParameters(functionName, parameters);
     GUID guid = (GUID) leadParams[0];
     String name = leadParams[1].toString();
@@ -212,7 +208,7 @@ public class ShapeFunctions extends AbstractFunction {
   private Object copyShape(
           Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
           throws ParserException {
-    // copy name, shape name
+    /* copy name, shape name */
 
     FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
     String shapeName = FunctionUtil.paramAsString(functionName, parameters, 1, false);
@@ -241,7 +237,7 @@ public class ShapeFunctions extends AbstractFunction {
     if (numParam == 8) {
       transformIndex = 6;
     } else if (numParam == 7) {
-      // one arg is a delimiter
+      /* one arg is a delimiter */
       if (parameters.get(5) instanceof JsonElement) {
         transformIndex = 5;
       } else if (parameters.get(6) instanceof JsonElement) {
@@ -256,12 +252,12 @@ public class ShapeFunctions extends AbstractFunction {
         transformIndex = 6;
       }
     } else if (numParam == 6) {
-      // arg index 5 MAY be a delimiter
+      /* arg index 5 MAY be a delimiter */
       if (parameters.get(5) instanceof JsonElement) {
+        /* it is not */
         transformIndex = 5;
-      } else if (((String) parameters.get(5)).equalsIgnoreCase("json")) { // is a delimiter
-        // no change
-      } else if (((String) parameters.get(5)).length() > 6) { // too long for a delimiter
+      } else if (((String) parameters.get(5)).length() > 6) {
+        /* seems too long for a delimiter */
         transformIndex = 5;
       }
     }
@@ -275,8 +271,7 @@ public class ShapeFunctions extends AbstractFunction {
           List<Object> parameters,
           int transformIndex)
           throws ParserException {
-    // 0. name, 1. layer, 2. anti-aliasing, 3. type, 4. shape arguments, [5. delimiter1], [6.
-    // transforms], [7. delimiter2]
+    /* 0. name, 1. layer, 2. anti-aliasing, 3. type, 4. shape arguments, [5. delim], [6. transforms], [7. delim] */
 
     Object[] leadParams = getLeadParameters(functionName, parameters);
     GUID guid = (GUID) leadParams[0];
@@ -359,7 +354,7 @@ public class ShapeFunctions extends AbstractFunction {
   private Object drawShape(
           Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
           throws ParserException {
-    // name, map name, pen, delimiter
+    /* name, map name, pen, delimiter */
 
     FunctionUtil.checkNumberParam(functionName, parameters, 2, 4);
     String shapeName = FunctionUtil.paramAsString(functionName, parameters, 0, false);
@@ -370,7 +365,7 @@ public class ShapeFunctions extends AbstractFunction {
     ShapeDrawable shapeDrawable = CACHED_SHAPES.get(shapeName);
     Rectangle bounds = shapeDrawable.getBounds();
 
-    // Sanity checks
+    /* Sanity checks */
     if ((bounds.width == 0 && bounds.height == 0)
             || bounds.width > 50000
             || bounds.height > 50000) {
@@ -436,7 +431,7 @@ public class ShapeFunctions extends AbstractFunction {
   private Object getProperties(
           Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
           throws ParserException {
-    // name, delimiter
+    /* name, delimiter */
     String name = FunctionUtil.paramAsString(functionName, parameters, 0, false);
     String delimiter =
             parameters.size() < 2
@@ -490,9 +485,7 @@ public class ShapeFunctions extends AbstractFunction {
           Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
           throws ParserException {
     FunctionUtil.checkNumberParam(functionName, parameters, 4, 6);
-    /*
-    name, layer, anti-aliasing, shape name to transform, transforms, delimiter
-     */
+    /*  name, layer, anti-aliasing, shape name to transform, transforms, delimiter */
     Object[] leadParams = getLeadParameters(functionName, parameters);
     GUID guid = (GUID) leadParams[0];
     String name = leadParams[1].toString();
@@ -542,7 +535,6 @@ public class ShapeFunctions extends AbstractFunction {
     }
     results[2] = layer;
     boolean aa = true;
-    // TODO: Preference check
 
     if (!parameters.get(2).toString().isEmpty()) {
       aa = FunctionUtil.paramAsString(functionName, parameters, 2, true).equals("1");
