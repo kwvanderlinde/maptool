@@ -18,12 +18,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolUtil;
@@ -31,6 +25,7 @@ import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.functions.FindTokenFunctions;
 import net.rptools.maptool.client.functions.StringFunctions;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
+import net.rptools.maptool.client.ui.theme.ThemeSupport;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.GUID;
@@ -39,9 +34,21 @@ import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.drawing.DrawablePaint;
 import net.rptools.maptool.model.drawing.DrawableTexturePaint;
+import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
 import net.rptools.parser.function.Function;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.swing.*;
+import java.math.BigDecimal;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Provides static methods to help handle macro functions.
@@ -67,6 +74,43 @@ public class FunctionUtil {
   private static final String KEY_UNKNOWN_TOKEN = "macro.function.general.unknownToken";
   private static final String KEY_UNKNOWN_TOKEN_ON_MAP = "macro.function.general.unknownTokenOnMap";
   private static final String KEY_NO_IMPERSONATED = "macro.function.general.noImpersonated";
+  private static final String KEY_EXPERIMENTAL = "macro.function.general.experimentalWarning";
+  private static final List<String> EXPERIMENTAL_WARNINGS = new ArrayList<>();
+
+  public static void experimentalWarning(
+      Parser parser, VariableResolver resolver, String functionName) {
+    if (!EXPERIMENTAL_WARNINGS.contains(functionName)) {
+      EXPERIMENTAL_WARNINGS.add(functionName);
+      String messageText = I18N.getText(KEY_EXPERIMENTAL, functionName);
+      String white =
+          String.format("#%06X", UIManager.getColor("Panel.background").getRGB() & 0x00FFFFFF);
+      String textColour =
+          String.format("#%06X", UIManager.getColor("Panel.foreground").getRGB() & 0x00FFFFFF);
+      String red = ThemeSupport.getThemeColorHexString(ThemeSupport.ThemeColor.RED);
+      String imageText;
+      try {
+        imageText =
+            String.format(
+                "<img vspace=2 hspace=4 src=\"%s\" height=\"40\" width=\"40\"/>",
+                FunctionUtil.class
+                    .getResource("/net/rptools/maptool/client/image/warning.svg")
+                    .toURI()
+                    .toURL());
+      } catch (MalformedURLException | URISyntaxException ignored) {
+        imageText = String.format("<font size=7 color=\"%s\">&#9888;</font>", red);
+      }
+      String html =
+          String.format(
+              """
+  <table border=0 width=100%% cellspacing=3 cellpadding=0 style="background:%s;"><tr><td>
+  <table style="background: %s; color: %s"><tr valign=middle><td height="44px" width="48px">%s</td>
+  <td>%s</td></tr></table>
+  </td></tr></table>
+  """,
+              red, white, textColour, imageText, messageText);
+      MapTool.addGlobalMessage(html, List.of("self"));
+    }
+  }
 
   /**
    * Collects results into a string list or JSON array.

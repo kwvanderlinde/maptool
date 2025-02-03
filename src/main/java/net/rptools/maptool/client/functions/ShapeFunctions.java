@@ -367,7 +367,7 @@ public class ShapeFunctions extends AbstractFunction {
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
     /* name, map name, pen, delimiter */
-
+    FunctionUtil.experimentalWarning(parser, resolver, functionName);
     FunctionUtil.checkNumberParam(functionName, parameters, 2, 4);
     String shapeName = FunctionUtil.paramAsString(functionName, parameters, 0, false);
     String mapName = FunctionUtil.paramAsString(functionName, parameters, 1, true);
