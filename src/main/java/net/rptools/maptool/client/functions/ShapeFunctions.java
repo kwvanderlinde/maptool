@@ -433,8 +433,12 @@ public class ShapeFunctions extends AbstractFunction {
     }
     DrawnElement drawnElement = new DrawnElement(CACHED_SHAPES.get(shapeName), pen);
     drawnElement.setPen(pen);
-    FunctionUtil.getZoneRenderer(functionName, mapName).getZone().addDrawable(drawnElement);
-    MapTool.getFrame().updateDrawTree();
+
+    MapTool.serverCommand()
+        .draw(
+            FunctionUtil.getZoneRenderer(functionName, mapName).getZone().getId(),
+            drawnElement.getPen(),
+            drawnElement.getDrawable());
     MapTool.getFrame().refresh();
 
     return drawnElement.getDrawable().getId();
