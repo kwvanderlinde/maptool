@@ -13,12 +13,18 @@
  * text at <http://www.gnu.org/licenses/agpl.html>.
  */
 package net.rptools.maptool.client.functions;
-// formatter:off
+
+// @formatter:off
 
 import com.google.common.primitives.Floats;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import java.awt.*;
+import java.awt.geom.*;
+import java.util.*;
+import java.util.List;
+import java.util.function.BiFunction;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
 import net.rptools.maptool.language.I18N;
@@ -38,13 +44,7 @@ import org.apache.batik.parser.AWTPathProducer;
 import org.apache.batik.parser.ParseException;
 import org.apache.batik.parser.PathParser;
 
-
-import java.awt.*;
-import java.awt.geom.*;
-import java.util.*;
-import java.util.List;
-import java.util.function.BiFunction;
-// formatter:on
+// @formatter:on
 public class ShapeFunctions extends AbstractFunction {
   public static final Map<String, ShapeDrawable> CACHED_SHAPES;
   private static final ShapeFunctions instance = new ShapeFunctions();
