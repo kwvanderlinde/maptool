@@ -32,7 +32,6 @@ import net.rptools.maptool.client.ui.MapToolFrame;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.ZoneView;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
-import net.rptools.maptool.client.ui.zone.vbl.NodedTopology;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.InitiativeList.TokenInitiative;
@@ -390,8 +389,6 @@ public class Zone {
 
   // The new take on topology.
   private WallTopology walls = new WallTopology();
-
-  private transient @Nullable NodedTopology nodedTopology;
 
   // The 'board' layer, at the very bottom of the layer stack.
   // Itself has two sub-layers:
@@ -992,23 +989,7 @@ public class Zone {
 
   public void replaceWalls(WallTopology walls) {
     this.walls = walls;
-    this.nodedTopology = null;
     new MapToolEventBus().getMainEventBus().post(new WallTopologyChanged(this));
-  }
-
-  /**
-   * Packages legacy topology, including token topology, together with wall topology, adding nodes
-   * at any intersection points.
-   *
-   * @return
-   */
-  public NodedTopology prepareNodedTopologies() {
-    if (nodedTopology == null) {
-      var legacyMasks = getMasks(EnumSet.allOf(TopologyType.class), null);
-      nodedTopology = NodedTopology.prepare(walls, legacyMasks);
-    }
-
-    return nodedTopology;
   }
 
   public Area getMaskTopology(TopologyType topologyType) {
@@ -1043,21 +1024,11 @@ public class Zone {
       topology.add(area);
     }
 
-    // MBL doesn't affect vision, so no need to invalidate the noding.
-    if (topologyType != TopologyType.MBL) {
-      nodedTopology = null;
-    }
     new MapToolEventBus().getMainEventBus().post(new MaskTopologyChanged(this));
   }
 
   /** Fire the event {@link MaskTopologyChanged}. */
   public void tokenMaskTopologyChanged(Collection<TopologyType> types) {
-    if (types.contains(TopologyType.WALL_VBL)
-        || types.contains(TopologyType.HILL_VBL)
-        || types.contains(TopologyType.PIT_VBL)
-        || types.contains(TopologyType.COVER_VBL)) {
-      nodedTopology = null;
-    }
     new MapToolEventBus().getMainEventBus().post(new MaskTopologyChanged(this));
   }
 
