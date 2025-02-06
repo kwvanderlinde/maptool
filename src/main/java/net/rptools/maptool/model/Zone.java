@@ -47,6 +47,7 @@ import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.tokens.TokenMacroChanged;
 import net.rptools.maptool.model.tokens.TokenPanelChanged;
 import net.rptools.maptool.model.topology.MaskTopology;
+import net.rptools.maptool.model.topology.Wall;
 import net.rptools.maptool.model.topology.WallTopology;
 import net.rptools.maptool.model.zones.BoardChanged;
 import net.rptools.maptool.model.zones.DrawableAdded;
@@ -990,6 +991,20 @@ public class Zone {
   public void replaceWalls(WallTopology walls) {
     this.walls = walls;
     new MapToolEventBus().getMainEventBus().post(new WallTopologyChanged(this));
+  }
+
+  public void updateWall(Wall wall) {
+    var existingWall = this.walls.getWall(wall.from(), wall.to());
+
+    existingWall.ifPresentOrElse(
+        existing -> {
+          existing.copyDataFrom(wall);
+
+          new MapToolEventBus().getMainEventBus().post(new WallTopologyChanged(this));
+        },
+        () -> {
+          log.warn("Could not find wall [{}, {}] for updating", wall.from(), wall.to());
+        });
   }
 
   public Area getMaskTopology(TopologyType topologyType) {
