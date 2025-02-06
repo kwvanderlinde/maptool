@@ -284,7 +284,6 @@ runtime {
             imageOptions += ['--icon', 'package/windows/' + project.name + developerRelease + '.ico']
             installerOptions += [
                     '--win-dir-chooser',
-                    '--win-per-user-install',
                     '--win-shortcut',
                     '--win-menu',
                     '--win-menu-group', vendor,
