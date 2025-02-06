@@ -417,7 +417,7 @@ public class CampaignPropertiesDialog extends JDialog {
               copyUIToCampaign();
               // END HACK
 
-              JFileChooser chooser = MapTool.getFrame().getSavePropsFileChooser();
+              JFileChooser chooser = MapTool.getFrame().getSaveCampaignPropsFileChooser();
 
               boolean tryAgain = true;
               while (tryAgain) {
@@ -456,6 +456,7 @@ public class CampaignPropertiesDialog extends JDialog {
                       MapTool.getCampaign().getCampaignProperties().toDto();
                   FileOutputStream fos = new FileOutputStream(chooser.getSelectedFile());
                   fos.write(JsonFormat.printer().print(campaignPropertiesDto).getBytes());
+                  fos.close();
                 }
 
               } catch (IOException ioe) {
