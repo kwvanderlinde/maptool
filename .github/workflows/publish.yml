@@ -121,7 +121,7 @@ jobs:
         mkdir releases/renamed/
         cp releases/maptool*.x86_64.rpm releases/renamed/maptool-${{ github.event.release.tag_name }}.x86_64.rpm
         cp releases/maptool*_amd64.deb releases/renamed/maptool_${{ github.event.release.tag_name }}_amd64.deb
-        cp package/archlinux/maptool/maptool-*-x86_64.pkg.tar.zst releases/renamed/maptool-${{ github.event.release.tag_name }}-x86_64.pkg.tar.zst
+        find package/archlinux/maptool/ -maxdepth 1 -type f -name 'maptool-*-x86_64.pkg.tar.zst' -not -name '*debug*' -exec cp {} releases/renamed/maptool-${{ github.event.release.tag_name }}-x86_64.pkg.tar.zst \;
       continue-on-error: true
     - name: Upload Linux RPM Release Asset
       id: upload-release-asset-rpm
