@@ -953,7 +953,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
               String fileName = file.getName();
               boolean isAcceptAll = savePropsFileChooser.getAcceptAllFileFilter().equals(filter);
               if (!isAcceptAll && filter.accept(file)) {
-                // extension matches filter and not "accept all"
+                // file name extension matches filter and is not "accept all"
                 return;
               } else {
                 // clean the file name of extensions

@@ -392,7 +392,7 @@ public class SwingUtil {
   }
 
   /**
-   * Recursively searches a container for JTextFields. Useful for extracting text fields from
+   * Recursively search a container for JTextFields. Useful for extracting text fields from
    * components like JFileChooser where it is not readily available.
    *
    * @param cont Container
