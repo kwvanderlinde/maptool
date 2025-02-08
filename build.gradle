@@ -55,7 +55,6 @@ application {
     }
 }
 def appSemVer = ""
-def winUpgradeUUID = UUID.randomUUID().toString();
 
 configurations {
     forms.extendsFrom implementation
@@ -279,6 +278,7 @@ runtime {
         ]
 
         if (osdetector.os.is('windows')) {
+            def winUpgradeUUID = "74d934b9-5fb5-433e-aca4-c6f14bd9aa6b"
             println "Setting Windows installer options with upgrade uuid = " + winUpgradeUUID
             resourceDir = file('package/windows')
             imageOptions += ['--icon', 'package/windows/' + project.name + developerRelease + '.ico']
