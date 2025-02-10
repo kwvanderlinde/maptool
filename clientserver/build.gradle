@@ -36,7 +36,7 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
-    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.10.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.11.4'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
     // For mocking features during unit tests
     testImplementation group: 'org.mockito', name: 'mockito-core', version: '5.15.2'
