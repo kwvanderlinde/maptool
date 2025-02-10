@@ -523,6 +523,7 @@ public class ServerHandshake implements Handshake<Player>, MessageHandler {
       } else {
         sendErrorResponseAndNotify(HandshakeResponseCodeMsg.INVALID_PUBLIC_KEY);
       }
+      return;
     }
     CipherUtil.Key publicKey = playerDatabase.getPublicKey(player, playerPublicKeyMD5).get();
     String password = new PasswordGenerator().getPassword();
