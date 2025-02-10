@@ -21,13 +21,13 @@ dependencies {
     // webrtc
     implementation group: 'org.java-websocket', name: 'Java-WebSocket', version: '1.5.7'
     // Needs to be API since WebRTCConnection implements PeerConnectionObserver and RTCDataChannelObserver.
-    implementation 'dev.onvoid.webrtc:webrtc-java:0.8.0'
+    implementation 'dev.onvoid.webrtc:webrtc-java:0.9.0'
     if (osdetector.os.is('windows'))
-        implementation 'dev.onvoid.webrtc:webrtc-java:0.8.0:windows-x86_64'
+        implementation 'dev.onvoid.webrtc:webrtc-java:0.9.0:windows-x86_64'
     else if (osdetector.os.is('osx'))
-        implementation 'dev.onvoid.webrtc:webrtc-java:0.8.0:macos-x86_64'
+        implementation 'dev.onvoid.webrtc:webrtc-java:0.9.0:macos-x86_64'
     else if (osdetector.os.is('linux'))
-        implementation 'dev.onvoid.webrtc:webrtc-java:0.8.0:linux-x86_64'
+        implementation 'dev.onvoid.webrtc:webrtc-java:0.9.0:linux-x86_64'
 
     // compression of messages between client and server
     implementation 'org.apache.commons:commons-compress:1.27.1'
