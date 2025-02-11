@@ -15,18 +15,22 @@
 package net.rptools.maptool.model;
 
 import com.google.common.base.Stopwatch;
+import com.thoughtworks.xstream.XStream;
 import java.awt.*;
 import java.awt.geom.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.swing.Action;
 import javax.swing.KeyStroke;
-import net.rptools.lib.FileUtil;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.DeveloperOptions;
 import net.rptools.maptool.client.MapTool;
@@ -39,6 +43,7 @@ import net.rptools.maptool.model.TokenFootprint.OffsetTranslator;
 import net.rptools.maptool.model.zones.GridChanged;
 import net.rptools.maptool.server.proto.GridDto;
 import net.rptools.maptool.util.GraphicsUtil;
+import net.rptools.maptool.util.PersistenceUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -246,7 +251,12 @@ public abstract class Grid implements Cloneable {
 
   protected List<TokenFootprint> loadFootprints(String path, OffsetTranslator... translators)
       throws IOException {
-    Object obj = FileUtil.objFromResource(path);
+    Object obj;
+    XStream xs = PersistenceUtil.getConfiguredXStream();
+    try (InputStream is = Grid.class.getClassLoader().getResourceAsStream(path)) {
+      obj = xs.fromXML(new InputStreamReader(is, StandardCharsets.UTF_8));
+    }
+
     @SuppressWarnings("unchecked")
     List<TokenFootprint> footprintList = (List<TokenFootprint>) obj;
     for (TokenFootprint footprint : footprintList) {

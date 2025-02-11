@@ -16,10 +16,14 @@ package net.rptools.maptool.model;
 
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.StringValue;
+import com.thoughtworks.xstream.XStream;
 import java.awt.geom.Area;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Serial;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,6 +35,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import net.rptools.lib.FileUtil;
 import net.rptools.maptool.server.proto.LightSourceDto;
+import net.rptools.maptool.util.PersistenceUtil;
 import org.apache.commons.lang3.math.NumberUtils;
 
 /**
@@ -281,8 +286,14 @@ public final class LightSource implements Comparable<LightSource>, Serializable 
   @SuppressWarnings("unchecked")
   public static @Nonnull Map<String, List<LightSource>> getDefaultLightSources()
       throws IOException {
-    Object defaultLights =
-        FileUtil.objFromResource("net/rptools/maptool/model/defaultLightSourcesMap.xml");
+    Object defaultLights;
+    XStream xs = PersistenceUtil.getConfiguredXStream();
+    try (InputStream is =
+        FileUtil.class
+            .getClassLoader()
+            .getResourceAsStream("net/rptools/maptool/model/defaultLightSourcesMap.xml")) {
+      defaultLights = xs.fromXML(new InputStreamReader(is, StandardCharsets.UTF_8));
+    }
     return (Map<String, List<LightSource>>) defaultLights;
   }
 
