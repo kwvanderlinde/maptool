@@ -29,8 +29,8 @@ import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
 import net.rptools.parser.function.AbstractFunction;
-import org.apache.commons.lang.WordUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.text.WordUtils;
 
 public class StringFunctions extends AbstractFunction {
   private int matchNo = 0;
