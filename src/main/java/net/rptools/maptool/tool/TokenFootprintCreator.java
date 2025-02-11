@@ -18,13 +18,13 @@ import com.thoughtworks.xstream.XStream;
 import java.awt.Point;
 import java.util.Arrays;
 import java.util.List;
-import net.rptools.lib.FileUtil;
 import net.rptools.maptool.model.TokenFootprint;
+import net.rptools.maptool.util.PersistenceUtil;
 
 public class TokenFootprintCreator {
   public static void main(String[] args) {
     List<TokenFootprint> footprintList = makeVertHex();
-    XStream xstream = FileUtil.getConfiguredXStream();
+    XStream xstream = PersistenceUtil.getConfiguredXStream();
     System.out.println(xstream.toXML(footprintList));
   }
 
