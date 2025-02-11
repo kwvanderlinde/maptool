@@ -117,7 +117,7 @@ public class JSONMacroFunctionsTest {
             {
               "x": 1,
               "y": "2",
-              "z":   [
+              "z": [
                 false,
                 "1",
                 2
