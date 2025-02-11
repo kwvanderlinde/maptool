@@ -182,7 +182,7 @@ public class MapTool {
     try {
       var connections = DirectConnection.create("local");
       var playerDB = new PersonalServerPlayerDatabase(new LocalPlayer());
-      var campaign = CampaignFactory.createBasicCampaign();
+      var campaign = CampaignFactory.createEmptyCampaign();
       var policy = new ServerPolicy();
 
       server = new MapToolServer("", new Campaign(campaign), null, false, policy, playerDB);
