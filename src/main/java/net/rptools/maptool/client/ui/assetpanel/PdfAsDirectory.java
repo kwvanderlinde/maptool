@@ -128,9 +128,8 @@ public class PdfAsDirectory extends Directory {
         if (imageFile.getName().toLowerCase().endsWith(Token.FILE_EXTENSION)) {
           thumbnail = PersistenceUtil.getTokenThumbnail(imageFile);
         } else if (imageFile.getName().toLowerCase().endsWith(".pdf")) {
-          // Jamz: Added to mark all PDF assets with proper image, TODO: Move image asset to proper
-          // location
-          System.out.println("PDF Thumb: " + imageFile.getAbsolutePath());
+          // Jamz: Added to mark all PDF assets with proper image,
+          // TODO: Move image asset to proper location
           thumbnail = MapTool.getThumbnailManager().getThumbnail(imageFile);
         } else {
           thumbnail = MapTool.getThumbnailManager().getThumbnail(imageFile);

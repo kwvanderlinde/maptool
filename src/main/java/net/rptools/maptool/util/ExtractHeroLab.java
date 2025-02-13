@@ -112,8 +112,6 @@ public final class ExtractHeroLab {
       int returnVal = fileChooser.showOpenDialog(null);
 
       if (returnVal == JFileChooser.APPROVE_OPTION) {
-        System.out.println(
-            "New portfolio picked: " + fileChooser.getSelectedFile().getAbsolutePath());
         return fileChooser.getSelectedFile();
       }
     }

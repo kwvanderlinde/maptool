@@ -70,7 +70,6 @@ public class AbeillePanel<T> extends JPanel {
               return null;
             }
 
-            // System.out.println("Name:" + name);
             name = name.substring(1).trim(); // cut the "@"
             int point = name.indexOf('.');
             if (point >= 0) name = name.substring(0, point).trim();
@@ -299,7 +298,6 @@ public class AbeillePanel<T> extends JPanel {
     @SuppressWarnings("unchecked")
     @Override
     public void bind(Property property, Component view, UpdateTime updateTime) {
-      // System.out.println("bind:" + view.getName() + " - " + view);
       if (view instanceof JRadioButton) {
         button = (JRadioButton) view;
         super.bind(property, view, updateTime);

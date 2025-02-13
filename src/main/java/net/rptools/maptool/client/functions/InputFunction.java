@@ -493,12 +493,6 @@ public class InputFunction extends AbstractFunction {
 
     /** Sets the focus to the control that last had it. */
     public void restoreFocus() {
-      // // debugging
-      // String s = (onShowFocus instanceof JTextField) ?
-      // " (" + ((JTextField)onShowFocus).getText() + ")" : "";
-      // String c = (onShowFocus == null) ? "null" : onShowFocus.getClass().getName();
-      // System.out.println(" Shown: onShowFocus is " + c + s);
-
       if (onShowFocus != null) {
         onShowFocus.requestFocusInWindow();
       } else {
@@ -519,10 +513,6 @@ public class InputFunction extends AbstractFunction {
               JComponent src = (JComponent) fe.getSource();
               lastFocus = src;
               if (src instanceof JTextField) ((JTextField) src).selectAll();
-              // // debugging
-              // String s = (src instanceof JTextField) ?
-              // " (" + ((JTextField)src).getText() + ")" : "";
-              // System.out.println(" Got focus " + src.getClass().getName() + s);
             }
 
             public void focusLost(FocusEvent arg0) {}
@@ -962,13 +952,6 @@ public class InputFunction extends AbstractFunction {
               int newTabIndex = tabPane.getSelectedIndex();
               ColumnPanel cp = columnPanels.get(newTabIndex);
               cp.onShowFocus = cp.lastFocus;
-
-              // // debugging
-              // JComponent foc = cp.onShowFocus;
-              // String s = (foc instanceof JTextField) ?
-              // " (" + ((JTextField)foc).getText() + ")" : "";
-              // String c = (foc!=null) ? foc.getClass().getName() : "";
-              // System.out.println("tabpane foc = " + c + s);
             });
       }
     }
@@ -1290,13 +1273,6 @@ public class InputFunction extends AbstractFunction {
 
     public void setMacroLink(String link) {
       macroLink = link;
-      this.addMouseListener(
-          new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-              // System.out.println(macroLink);
-            }
-          });
     }
   }
 

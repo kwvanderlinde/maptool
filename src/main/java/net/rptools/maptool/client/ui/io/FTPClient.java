@@ -229,7 +229,6 @@ public class FTPClient {
         is = (ByteArrayInputStream) data.local;
       } else if (data.local instanceof InputStream) {
         is = (InputStream) data.local;
-        // System.err.println("is.available() = " + is.available());
       } else if (data.local instanceof String) {
         File file = new File((String) data.local);
         try {

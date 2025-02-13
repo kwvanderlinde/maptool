@@ -553,11 +553,9 @@ public abstract class AbstractTokenPopupMenu extends JPopupMenu {
                   && showSaveDialog) {
                 if (chooser.getFileFilter() != tokenFilter) {
                   File newFileName = new File(chooser.getCurrentDirectory(), tokenNameGM);
-                  System.out.println("newFileName 1: " + newFileName);
                   chooser.setSelectedFile(newFileName);
                 } else {
                   File newFileName = new File(chooser.getCurrentDirectory(), tokenName);
-                  System.out.println("newFileName 1: " + newFileName);
                   chooser.setSelectedFile(newFileName);
                 }
               }

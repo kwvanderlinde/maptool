@@ -92,7 +92,6 @@ public class ButtonGroup extends AbstractButtonGroup {
   }
 
   public void drop(DropTargetDropEvent event) {
-    // System.out.println("BG: drop!");
     String panelClass = getPanelClass();
 
     try {
@@ -217,7 +216,6 @@ public class ButtonGroup extends AbstractButtonGroup {
           // if this happens, it's a bug
           MapTool.showError(I18N.getText("msg.error.macro.buttonGroupDnDFail"));
         }
-        // System.out.println("drop accepted");
         event.dropComplete(true);
       }
     } catch (Exception e) {
@@ -257,20 +255,6 @@ public class ButtonGroup extends AbstractButtonGroup {
     Dimension prefSize = new Dimension(availableWidth, height);
     return prefSize;
   }
-
-  /*
-   * The following version of getPreferredSize allows multiple small groups to flow on one row. However it has some glitches in calculating sizes, and makes it harder to find a spot to
-   * right-click/drop things on since it doesn't extend the full width of the panel. Not using until the kinks are worked out.
-   *
-   * @Override public Dimension getPreferredSize() { FlowLayout layout = (FlowLayout) getLayout(); Insets insets = getInsets(); int availableWidth = getPanel().getAvailableWidth() - insets.left -
-   * insets.right; // This isn't exact, but hopefully it's close enough int height = insets.top + insets.bottom + layout.getVgap(); int width = 0; int rowHeight = 0; int rowWidth = insets.left +
-   * layout.getHgap() + insets.right; int maxRowWidth = 0; for (Component c : getComponents()) { Dimension cSize = c.getPreferredSize(); if (rowWidth + cSize.width + layout.getHgap() + 15 >
-   * availableWidth && rowWidth > 0) { maxRowWidth = Math.max(maxRowWidth, rowWidth); height += rowHeight + layout.getVgap(); System.out.println("***** "+getPanelClass()+":"+getGroupClass()+":"+
-   * getGroupLabel()+" New Row, Size: "+maxRowWidth+", "+height); rowHeight = 0; rowWidth = insets.left + layout.getHgap() + insets.right; } rowWidth += cSize.width + layout.getHgap(); rowHeight =
-   * Math.max(cSize.height, rowHeight); } height += rowHeight; maxRowWidth = Math.max(maxRowWidth, rowWidth); System.out.println("***** "+getPanelClass()+":"+getGroupClass()+":"+
-   * getGroupLabel()+" New Row, Size: "+maxRowWidth+", "+height); width = maxRowWidth; // always use the full width for the general area Dimension prefSize = new Dimension(width, height);
-   * System.out.println("***** "+getPanelClass()+":"+getGroupClass()+":"+ getGroupLabel()+" PREFERRED SIZE: "+width+", "+height); return prefSize; }
-   */
 
   public List<MacroButton> getButtons() {
     List<MacroButton> myButtons = new ArrayList<MacroButton>();

@@ -498,8 +498,6 @@ public class TransferableHelper extends TransferHandler {
                 "TransferableHelper.warning.tokensAddedAndExcluded",
                 tokens.size(), // $NON-NLS-1$
                 missingTokens);
-        // if (EventQueue.isDispatchThread())
-        // System.out.println("Yes, we are on the EDT already.");
         SwingUtilities.invokeLater(() -> MapTool.showWarning(message));
       } // endif
     } catch (IOException e) {
@@ -558,30 +556,22 @@ public class TransferableHelper extends TransferHandler {
   private static List<DataFlavor> whichOnesWork(Transferable t) {
     List<DataFlavor> worked = new ArrayList<DataFlavor>();
 
-    // On OSX Java6, any data flavor that uses java.nio.ByteBuffer or an array of bytes
-    // appears to output the object to the console (via System.out?). Geez, can't
-    // Apple even run a frakkin' grep against their code before releasing it?!
-    // PrintStream old = null;
-    // if (MapTool.MAC_OS_X) {
-    // old = System.out;
-    // setOnOff(null);
-    // }
     for (DataFlavor flavor : t.getTransferDataFlavors()) {
       Object result = null;
       try {
         result = t.getTransferData(flavor);
       } catch (UnsupportedFlavorException ufe) {
-        log.debug("Failed (UFE):  {}", flavor.toString()); // $NON-NLS-1$
+        log.debug("Failed (UFE):  {}", flavor.toString(), ufe);
       } catch (IOException ioe) {
-        log.debug("Failed (IOE):  {}", flavor.toString()); // $NON-NLS-1$
+        log.debug("Failed (IOE):  {}", flavor.toString(), ioe);
       } catch (Exception e) {
-        // System.err.println(e);
+        log.error("Unable to get transfer data", e);
       }
       if (result != null) {
         for (Class<?> type : validTypes) {
           if (type.equals(result.getClass())) {
             worked.add(flavor);
-            log.info("Possible: {} ({})", flavor, result); // $NON-NLS-1$
+            log.info("Possible: {} ({})", flavor, result);
             break;
           }
         }

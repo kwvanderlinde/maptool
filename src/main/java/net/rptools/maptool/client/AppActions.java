@@ -3465,7 +3465,6 @@ public class AppActions {
     @Override
     public final void actionPerformed(ActionEvent e) {
       execute(e);
-      // System.out.println(getValue(Action.NAME));
       updateActions();
     }
 
