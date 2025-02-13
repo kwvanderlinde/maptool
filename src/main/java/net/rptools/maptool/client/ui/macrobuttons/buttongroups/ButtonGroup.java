@@ -38,9 +38,13 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.MacroButtonProperties;
 import net.rptools.maptool.model.Token;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @SuppressWarnings("serial")
 public class ButtonGroup extends AbstractButtonGroup {
+
+  private static final Logger log = LogManager.getLogger(ButtonGroup.class);
 
   // constructor for creating a normal button group
   public ButtonGroup(
@@ -219,7 +223,7 @@ public class ButtonGroup extends AbstractButtonGroup {
         event.dropComplete(true);
       }
     } catch (Exception e) {
-      e.printStackTrace();
+      log.error("Error while processing macro button drop", e);
       event.dropComplete(false);
     }
   }

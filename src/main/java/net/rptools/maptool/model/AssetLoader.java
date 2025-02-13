@@ -307,11 +307,10 @@ public class AssetLoader {
           completeRequest(id);
           return;
         } catch (IOException ioe) {
-          // Well, try a different repo
-          // ioe.printStackTrace();
+          log.error("Error while reading bytes", ioe);
           continue;
         } catch (Throwable t) {
-          t.printStackTrace();
+          log.error("Unexpected error while reading bytes", t);
         }
       }
 

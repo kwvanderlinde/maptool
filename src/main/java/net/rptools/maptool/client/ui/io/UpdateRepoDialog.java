@@ -80,7 +80,7 @@ public class UpdateRepoDialog extends JDialog {
                 url = new URL(o.toString());
                 hostname.setText(url.getHost());
               } catch (MalformedURLException e1) {
-                e1.printStackTrace();
+                log.error("Error while parsing URL", e1);
               }
             }
           }

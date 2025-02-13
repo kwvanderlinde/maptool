@@ -192,7 +192,7 @@ public class AbeillePanel<T> extends JPanel {
       try {
         Binder.viewToModel(model, panel);
       } catch (AdapterException e) {
-        e.printStackTrace();
+        log.error("Error while commit view state", e);
         return false;
       }
     }

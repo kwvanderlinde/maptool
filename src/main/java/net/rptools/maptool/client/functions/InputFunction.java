@@ -46,6 +46,8 @@ import net.rptools.parser.VariableResolver;
 import net.rptools.parser.function.AbstractFunction;
 import net.rptools.parser.function.ParameterException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 // @formatter:off
 // Jamz: Had to remove <pre> tags and add formatter:off due to Spotless 3.x error, still not fixed
@@ -97,6 +99,8 @@ public class InputFunction extends AbstractFunction {
 
   /** The singleton instance. */
   private static final InputFunction instance = new InputFunction();
+
+  private static final Logger log = LogManager.getLogger(InputFunction.class);
 
   private InputFunction() {
     super(1, -1, "input");
@@ -766,7 +770,7 @@ public class InputFunction extends AbstractFunction {
           subvs = new VarSpec(name, value, prompt, it, options);
         } catch (OptionException e) {
           // Should never happen
-          e.printStackTrace();
+          log.error("Unexpected error while creating var-specs", e);
           subvs = null;
         }
         varSpecs.add(subvs);

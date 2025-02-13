@@ -1309,8 +1309,7 @@ public class PersistenceUtil {
       ImageIO.write(image, "png", tokenSaveFile);
       image.flush();
     } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      log.error("Error while saving token image", e);
     }
   }
 }
