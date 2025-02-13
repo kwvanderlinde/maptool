@@ -5,10 +5,6 @@ plugins {
 
 apply from: rootProject.file('buildSrc/shared.gradle')
 
-configurations {
-    mockitoAgent
-}
-
 // In this section you declare the dependencies for your production and test code
 dependencies {
     implementation(libs.findbugs.jsr305)
@@ -32,17 +28,4 @@ dependencies {
     // compression of messages between client and server
     implementation(libs.apache.commons.compress)
     implementation(libs.zstd)
-
-    testRuntimeOnly(libs.junit.platform.launcher)
-    testRuntimeOnly(libs.junit.engine)
-    testImplementation(libs.bundles.junit)
-    testImplementation(libs.mockito.core)
-    mockitoAgent(libs.mockito.core) {
-        transitive = false
-    }
-}
-
-test {
-    useJUnitPlatform()
-    jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
 }
