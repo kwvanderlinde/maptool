@@ -7,9 +7,6 @@ buildscript {
     repositories {
         mavenCentral()
     }
-    dependencies {
-        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.9.4'
-    }
 }
 
 // Access Git info from build script
@@ -134,7 +131,9 @@ javafx {
 }
 
 protobuf {
-    protoc { artifact = "com.google.protobuf:protoc:4.29.1" }
+    protoc {
+        artifact = libs.protobuf.protoc.get()
+    }
 }
 
 // Inform IDEs like IntelliJ IDEA, Eclipse or NetBeans about the generated code.
@@ -366,7 +365,7 @@ dependencies {
     implementation(libs.upnplib)
     implementation(libs.okhttp)
     implementation(libs.protobuf.grpc)
-    implementation(libs.protobuf.java.util)
+    implementation(libs.protobuf.java)
 
     implementation(libs.bundles.imageio)
     implementation(libs.batik)
