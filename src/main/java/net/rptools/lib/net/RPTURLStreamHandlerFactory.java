@@ -52,7 +52,6 @@ public class RPTURLStreamHandlerFactory implements URLStreamHandlerFactory {
     @Override
     protected URLConnection openConnection(URL u) {
 
-      // TODO: This should really figure out the exact type
       return new ImageURLConnection(u);
     }
   }
@@ -72,7 +71,7 @@ public class RPTURLStreamHandlerFactory implements URLStreamHandlerFactory {
           imageMap.put(path, data);
         } catch (IOException ioe) {
           log.error("Error trying to read resource {}", path);
-          data = new byte[] {};
+          data = new byte[]{};
         }
       }
     }

@@ -76,7 +76,9 @@ public class Token implements Cloneable {
 
   private static final Logger log = LogManager.getLogger(Token.class);
 
-  /** The unique GUID of the token. */
+  /**
+   * The unique GUID of the token.
+   */
   private GUID id = new GUID();
 
   public static final String FILE_EXTENSION = "rptok";
@@ -98,10 +100,15 @@ public class Token implements Cloneable {
   private boolean beingImpersonated = false;
   private GUID exposedAreaGUID = new GUID();
 
-  /** The stat sheet properties for the token. */
-  @Nullable private StatSheetProperties statSheet;
+  /**
+   * The stat sheet properties for the token.
+   */
+  @Nullable
+  private StatSheetProperties statSheet;
 
-  /** the only way to make Gson apply strict evaluation to JsonObjects, apparently. see #2396 */
+  /**
+   * the only way to make Gson apply strict evaluation to JsonObjects, apparently. see #2396
+   */
   private static final TypeAdapter<JsonObject> strictGsonObjectAdapter =
       new Gson().getAdapter(JsonObject.class);
 
@@ -146,7 +153,9 @@ public class Token implements Cloneable {
     }
   }
 
-  /** Type of character: PC or NPC. */
+  /**
+   * Type of character: PC or NPC.
+   */
   public enum Type {
     PC(),
     NPC();
@@ -163,7 +172,9 @@ public class Token implements Cloneable {
     }
   }
 
-  /** Type of update for the token. */
+  /**
+   * Type of update for the token.
+   */
   public enum Update {
     setState,
     setAllStates,
@@ -305,7 +316,9 @@ public class Token implements Cloneable {
 
   private String speechName = "";
 
-  /** Terrain Modifier Operations */
+  /**
+   * Terrain Modifier Operations
+   */
   public enum TerrainModifierOperation {
     NONE(), // Default, no terrain modifications to pathfinding cost
     MULTIPLY(), // All tokens with this type are added together and multiplied against the Cell cost
@@ -354,7 +367,9 @@ public class Token implements Cloneable {
 
   private String label;
 
-  /** The notes that are displayed for this token. */
+  /**
+   * The notes that are displayed for this token.
+   */
   private String notes;
 
   private String notesType = SyntaxConstants.SYNTAX_STYLE_NONE;
@@ -370,7 +385,9 @@ public class Token implements Cloneable {
    */
   private final Map<String, Object> state = new HashMap<>();
 
-  /** Properties */
+  /**
+   * Properties
+   */
   // I screwed up. propertyMap was HashMap<String,Object> in pre-1.3b70 (?)
   // and became a CaseInsensitiveHashMap<Object> thereafter. So in order to
   // be able to load old tokens, we need to read in the original data type and
@@ -393,7 +410,7 @@ public class Token implements Cloneable {
   /**
    * Constructor from another token, with the option to keep the token id
    *
-   * @param token the token to copy
+   * @param token  the token to copy
    * @param keepId should the Id be kept
    */
   public Token(Token token, boolean keepId) {
@@ -415,12 +432,6 @@ public class Token implements Cloneable {
     x = token.x;
     y = token.y;
     z = token.z;
-
-    // These properties shouldn't be transferred, they are more transient and relate to token
-    // history, not to new tokens
-    // lastX = token.lastX;
-    // lastY = token.lastY;
-    // lastPath = token.lastPath;
 
     snapToScale = token.snapToScale;
     width = token.width;
@@ -517,7 +528,8 @@ public class Token implements Cloneable {
     statSheet = token.statSheet;
   }
 
-  public Token() {}
+  public Token() {
+  }
 
   public Token(String name, MD5Key assetId) {
     this.name = name;
@@ -552,10 +564,7 @@ public class Token implements Cloneable {
     lastX = lastY = 0;
     // lightSourceList?
     macroMap = null;
-    // macroPropertiesMap = null;
     ownerList.clear();
-    // propertyMapCI = null;
-    // propertyType = "Basic";
     /**
      * Lee: why shouldn't propertyType be set to what the framework uses? In case of multiple
      * propertyType, give a choice; or incorporate in the Campaign Properties window a marker for
@@ -877,7 +886,7 @@ public class Token implements Cloneable {
    * @return null or angle in degrees
    */
   public int getFacing() {
-    // -90° is natural alignment. TODO This should really be a per grid setting
+    // -90° is natural alignment.
     return facing == null ? -90 : facing;
   }
 
@@ -1020,7 +1029,9 @@ public class Token implements Cloneable {
     lightSourceList.removeIf(als -> als.matches(lightSourceId));
   }
 
-  /** Clear the lightSourceList */
+  /**
+   * Clear the lightSourceList
+   */
   public void clearLightSources() {
     lightSourceList.clear();
   }
@@ -1197,7 +1208,7 @@ public class Token implements Cloneable {
   /**
    * Store the token image, and set the native Width and Height.
    *
-   * @param name the name of the image.
+   * @param name    the name of the image.
    * @param assetId the asset MD5Key.
    */
   public void setImageAsset(String name, MD5Key assetId) {
@@ -1409,7 +1420,8 @@ public class Token implements Cloneable {
   }
 
   /**
-   * Transform the token's topology according to the token's scale, position, rotation and flipping.
+   * Transform the token's topology according to the token's scale, position, rotation and
+   * flipping.
    *
    * @param topologyType The type of topology to transform.
    * @return the transformed topology for the token
@@ -1424,7 +1436,7 @@ public class Token implements Cloneable {
    * <p>If no topology remains on the token, set {@link #vblColorSensitivity} to -1.
    *
    * @param topologyType The type of topology to set.
-   * @param topology the topology area to set.
+   * @param topology     the topology area to set.
    */
   public void setMaskTopology(Zone.TopologyType topologyType, @Nullable Area topology) {
     if (topology != null && topology.isEmpty()) {
@@ -1584,9 +1596,6 @@ public class Token implements Cloneable {
         // Center it on the footprint
         footprintBounds.x -= (w - footprintBounds.width) / 2;
         footprintBounds.y -= (h - footprintBounds.height) / 2;
-      } else {
-        // footprintBounds.x -= zone.getGrid().getSize()/2;
-        // footprintBounds.y -= zone.getGrid().getSize()/2;
       }
     }
     footprintBounds.width = (int) w; // perhaps make this a double
@@ -1633,7 +1642,7 @@ public class Token implements Cloneable {
   /**
    * Updates the token's position so its anchor is located at {@code newDragAnchorPosition}.
    *
-   * @param zone The zone in which the token is moving.
+   * @param zone                  The zone in which the token is moving.
    * @param newDragAnchorPosition The new position that the anchor should be located at.
    */
   public void moveDragAnchorTo(Zone zone, ZonePoint newDragAnchorPosition) {
@@ -1648,7 +1657,7 @@ public class Token implements Cloneable {
   /**
    * Like {@link #getDragAnchor(Zone)}, but assume the token is in cell {@code cellPoint}.
    *
-   * @param zone The zone that the token lives in.
+   * @param zone      The zone that the token lives in.
    * @param cellPoint The cell in which the token should pretend to be located.
    * @return The drag anchor the token would have if located at {@code cellPoint}.
    */
@@ -1852,16 +1861,6 @@ public class Token implements Cloneable {
   }
 
   public Object getProperty(String key) {
-
-    // // Short name ?
-    // if (value == null) {
-    // for (EditTokenProperty property :
-    // MapTool.getCampaign().getCampaignProperties().getTokenPropertyList(getPropertyType())) {
-    // if (property.getShortName().equals(key)) {
-    // value = getPropertyMap().get(property.getShortName().toUpperCase());
-    // }
-    // }
-    // }
     return getPropertyMap().get(key);
   }
 
@@ -1893,8 +1892,8 @@ public class Token implements Cloneable {
    * Evaluate the provided expression with the resolver
    *
    * @param resolver the variable resolver to parse code inside the property
-   * @param key the key of the value
-   * @param val An expression to evaluate
+   * @param key      the key of the value
+   * @param val      An expression to evaluate
    * @return The evaluated value
    */
   @Nonnull
@@ -1963,7 +1962,7 @@ public class Token implements Cloneable {
    * Returns the evaluated property corresponding to the key.
    *
    * @param resolver the variable resolver to parse code inside the property
-   * @param key the key of the value
+   * @param key      the key of the value
    * @return the value
    */
   @Nonnull
@@ -2077,7 +2076,7 @@ public class Token implements Cloneable {
    * Add a list of macros to the token.
    *
    * @param newMacroList the macro list to add
-   * @param clearOld whether the old macros at other indexes should be removed
+   * @param clearOld     whether the old macros at other indexes should be removed
    */
   public void saveMacroList(List<MacroButtonProperties> newMacroList, boolean clearOld) {
     if (clearOld) {
@@ -2416,8 +2415,8 @@ public class Token implements Cloneable {
   /**
    * Get an integer value from the map or return the default value
    *
-   * @param map Get the value from this map
-   * @param propName The name of the property being read.
+   * @param map          Get the value from this map
+   * @param propName     The name of the property being read.
    * @param defaultValue The value for the property if it is not set in the map.
    * @return The value for the passed property
    */
@@ -2432,8 +2431,8 @@ public class Token implements Cloneable {
   /**
    * Get a boolean value from the map or return the default value
    *
-   * @param map Get the value from this map
-   * @param propName The name of the property being read.
+   * @param map          Get the value from this map
+   * @param propName     The name of the property being read.
    * @param defaultValue The value for the property if it is not set in the map.
    * @return The value for the passed property
    */
@@ -2710,8 +2709,8 @@ public class Token implements Cloneable {
    * Call the relevant setter from methodName with an array of parameters Called by
    * ClientMethodHandler to deal with sent change to token
    *
-   * @param zone The zone where the token is
-   * @param update The method to be used
+   * @param zone       The zone where the token is
+   * @param update     The method to be used
    * @param parameters An array of parameters
    */
   public void updateProperty(Zone zone, Update update, List<TokenPropertyValueDto> parameters) {
@@ -2723,13 +2722,19 @@ public class Token implements Cloneable {
       case setState:
         var state = parameters.get(0).getStringValue();
         var stateValue = parameters.get(1);
-        if (stateValue.hasBoolValue()) setState(state, stateValue.getBoolValue());
-        else setState(state, BigDecimal.valueOf(stateValue.getDoubleValue()));
+        if (stateValue.hasBoolValue()) {
+          setState(state, stateValue.getBoolValue());
+        } else {
+          setState(state, BigDecimal.valueOf(stateValue.getDoubleValue()));
+        }
         break;
       case setAllStates:
         stateValue = parameters.get(0);
-        if (stateValue.hasBoolValue()) setAllStates(stateValue.getBoolValue());
-        else setAllStates(BigDecimal.valueOf(stateValue.getDoubleValue()));
+        if (stateValue.hasBoolValue()) {
+          setAllStates(stateValue.getBoolValue());
+        } else {
+          setAllStates(BigDecimal.valueOf(stateValue.getDoubleValue()));
+        }
         break;
       case setPropertyType:
         setPropertyType(parameters.get(0).getStringValue());
@@ -2881,13 +2886,12 @@ public class Token implements Cloneable {
                 .map(TerrainModifierOperation::valueOf)
                 .collect(Collectors.toSet()));
         break;
-      case setMaskTopology:
-        {
-          final var topologyType = Zone.TopologyType.valueOf(parameters.get(0).getTopologyType());
-          setMaskTopology(topologyType, Mapper.map(parameters.get(1).getArea()));
-          topologyChangeType = topologyType;
-          break;
-        }
+      case setMaskTopology: {
+        final var topologyType = Zone.TopologyType.valueOf(parameters.get(0).getTopologyType());
+        setMaskTopology(topologyType, Mapper.map(parameters.get(1).getArea()));
+        topologyChangeType = topologyType;
+        break;
+      }
       case setImageAsset:
         setImageAsset(
             parameters.get(0).hasStringValue() ? parameters.get(0).getStringValue() : null,
@@ -3261,7 +3265,9 @@ public class Token implements Cloneable {
     return statSheet == null;
   }
 
-  /** Use the default stat sheet for the tokens token type. */
+  /**
+   * Use the default stat sheet for the tokens token type.
+   */
   public void useDefaultStatSheet() {
     setStatSheet(null);
   }

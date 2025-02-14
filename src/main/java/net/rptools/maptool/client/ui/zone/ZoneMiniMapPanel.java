@@ -80,13 +80,9 @@ public class ZoneMiniMapPanel extends JPanel {
 
       backBuffer = new BufferedImage(mySize.width, mySize.height, Transparency.OPAQUE);
 
-      // TODO: This is a naive solution. In the future, actually render the zone
       BufferedImage img = renderer.getMiniImage(SIZE_WIDTH);
       if (img == null || img == ImageManager.TRANSFERING_IMAGE) {
         img = ImageManager.TRANSFERING_IMAGE;
-
-        // Let's wake up when the image arrives
-        // ImageManager.addObservers(renderer.getZone().getBackgroundAssetId(), this);
       }
 
       ImageBorder border = AppStyle.miniMapBorder;
@@ -135,9 +131,6 @@ public class ZoneMiniMapPanel extends JPanel {
     BufferedImage img = renderer.getMiniImage(SIZE_WIDTH);
     if (img == null || img == ImageManager.TRANSFERING_IMAGE) {
       img = ImageManager.TRANSFERING_IMAGE;
-
-      // Let's wake up when the image arrives
-      // ImageManager.addObservers(renderer.getZone().getBackgroundAssetId(), this);
     }
 
     ImageBorder border = AppStyle.miniMapBorder;
@@ -166,7 +159,6 @@ public class ZoneMiniMapPanel extends JPanel {
     flush();
     resize();
 
-    // getParent().doLayout();
     repaint();
   }
 
@@ -198,19 +190,6 @@ public class ZoneMiniMapPanel extends JPanel {
   private static class MouseHandler extends MouseAdapter {
     @Override
     public void mouseClicked(MouseEvent e) {
-
-      if (SwingUtilities.isLeftMouseButton(e)) {
-
-        // Minimap interaction
-        // TODO: Make this work for unbounded
-        // int miniX = e.getX() - bounds.x;
-        // int miniY = e.getY() - bounds.y;
-        //
-        // int mapX = (int)(renderer.getZone().getWidth() * (miniX / (double)bounds.width));
-        // int mapY = (int)(renderer.getZone().getHeight() * (miniY / (double)bounds.height));
-        //
-        // renderer.centerOn(new ZonePoint(mapX, mapY));
-      }
     }
   }
 }

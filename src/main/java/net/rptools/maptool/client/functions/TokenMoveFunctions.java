@@ -82,7 +82,6 @@ public class TokenMoveFunctions extends AbstractFunction {
   }
 
   public static TokenMoveFunctions getInstance() {
-    // log.setLevel(Level.INFO);
     return instance;
   }
 
@@ -345,8 +344,6 @@ public class TokenMoveFunctions extends AbstractFunction {
         previousPoint = currentPoint;
         ctr += 1;
       }
-      // Lee: commenting this out
-      // originalArea = tokenInContext.getBounds(zone);
     }
     return returnPoints;
   }
@@ -520,7 +517,6 @@ public class TokenMoveFunctions extends AbstractFunction {
           return new BigDecimal(bar).stripTrailingZeros().toPlainString();
         }
 
-        // return Integer.toString(walker.getDistance());
       }
     } else {
       double c = 0;

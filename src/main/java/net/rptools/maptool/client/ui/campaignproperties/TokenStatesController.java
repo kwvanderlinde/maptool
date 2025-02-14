@@ -262,7 +262,7 @@ public class TokenStatesController
     panel.getSpinner(OPACITY).setModel(new SpinnerNumberModel(100, 1, 100, 5));
     panel
         .getSpinner(INDEX)
-        .setModel(new SpinnerNumberModel(0, 0, 10000, 1)); // FIXME set proper upper limit?
+        .setModel(new SpinnerNumberModel(0, 0, 10000, 1));
     panel.getSpinner(INDEX).addChangeListener(this);
     panel.getList(STATES).setCellRenderer(new StateListRenderer());
     panel.getList(STATES).addListSelectionListener(this);

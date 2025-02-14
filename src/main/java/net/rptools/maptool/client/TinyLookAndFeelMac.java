@@ -22,6 +22,7 @@ import javax.swing.text.DefaultEditorKit;
 // Called by AppUtil through setLookAndFeel.
 @SuppressWarnings("unused")
 public class TinyLookAndFeelMac extends TinyLookAndFeel {
+
   private static final long serialVersionUID = 1L;
 
   @Override
@@ -30,8 +31,8 @@ public class TinyLookAndFeelMac extends TinyLookAndFeel {
 
     Object fieldInputMap =
         new UIDefaults.LazyInputMap(
-            new Object[] {
-              // @formatter:off
+            new Object[]{
+                // @formatter:off
               "meta C", DefaultEditorKit.copyAction,
               "meta V", DefaultEditorKit.pasteAction,
               "meta X", DefaultEditorKit.cutAction,
@@ -54,9 +55,9 @@ public class TinyLookAndFeelMac extends TinyLookAndFeel {
               "HOME", DefaultEditorKit.beginLineAction,
               "END", DefaultEditorKit.endLineAction,
               "shift HOME", DefaultEditorKit.selectionBeginLineAction,
-              "meta shift LEFT", DefaultEditorKit.selectionBeginLineAction, // FJE
+              "meta shift LEFT", DefaultEditorKit.selectionBeginLineAction,
               "shift END", DefaultEditorKit.selectionEndLineAction,
-              "meta shift RIGHT", DefaultEditorKit.selectionEndLineAction, // FJE
+              "meta shift RIGHT", DefaultEditorKit.selectionEndLineAction,
               "BACK_SPACE", DefaultEditorKit.deletePrevCharAction,
               "ctrl H", DefaultEditorKit.deletePrevCharAction,
               "DELETE", DefaultEditorKit.deleteNextCharAction,
@@ -65,22 +66,18 @@ public class TinyLookAndFeelMac extends TinyLookAndFeel {
               "KP_RIGHT", DefaultEditorKit.forwardAction,
               "KP_LEFT", DefaultEditorKit.backwardAction,
               "ENTER", JTextField.notifyAction,
-              "ctrl BACK_SLASH", "unselect", // DefaultEditorKit.unselectAction
-              // "control shift O", "toggle-componentOrientation", //
-              // DefaultEditorKit.toggleComponentOrientation
-              // FJE: {
+              "ctrl BACK_SLASH", "unselect",
               "meta LEFT", DefaultEditorKit.beginLineAction,
               "meta KP_LEFT", DefaultEditorKit.beginLineAction,
               "meta RIGHT", DefaultEditorKit.endLineAction,
               "meta KP_RIGHT", DefaultEditorKit.endLineAction,
-              // }
               // @formatter:on
             });
 
     Object passwordInputMap =
         new UIDefaults.LazyInputMap(
-            new Object[] {
-              // @formatter:off
+            new Object[]{
+                // @formatter:off
               "meta C", DefaultEditorKit.copyAction,
               "meta V", DefaultEditorKit.pasteAction,
               "meta X", DefaultEditorKit.cutAction,
@@ -103,9 +100,9 @@ public class TinyLookAndFeelMac extends TinyLookAndFeel {
               "HOME", DefaultEditorKit.beginLineAction,
               "END", DefaultEditorKit.endLineAction,
               "shift HOME", DefaultEditorKit.selectionBeginLineAction,
-              "meta shift LEFT", DefaultEditorKit.selectionBeginLineAction, // FJE
+              "meta shift LEFT", DefaultEditorKit.selectionBeginLineAction,
               "shift END", DefaultEditorKit.selectionEndLineAction,
-              "meta shift RIGHT", DefaultEditorKit.selectionEndLineAction, // FJE
+              "meta shift RIGHT", DefaultEditorKit.selectionEndLineAction,
               "BACK_SPACE", DefaultEditorKit.deletePrevCharAction,
               "ctrl H", DefaultEditorKit.deletePrevCharAction,
               "DELETE", DefaultEditorKit.deleteNextCharAction,
@@ -114,24 +111,18 @@ public class TinyLookAndFeelMac extends TinyLookAndFeel {
               "KP_RIGHT", DefaultEditorKit.forwardAction,
               "KP_LEFT", DefaultEditorKit.backwardAction,
               "ENTER", JTextField.notifyAction,
-              "ctrl BACK_SLASH", "unselect" /*
-												 * DefaultEditorKit. unselectAction
-												 */,
-              // "control shift O",
-              // "toggle-componentOrientation"/*DefaultEditorKit.toggleComponentOrientation*/
-              // FJE: {
+              "ctrl BACK_SLASH", "unselect",
               "meta LEFT", DefaultEditorKit.beginLineAction,
               "meta KP_LEFT", DefaultEditorKit.beginLineAction,
               "meta RIGHT", DefaultEditorKit.endLineAction,
               "meta KP_RIGHT", DefaultEditorKit.endLineAction,
-              // }
               // @formatter:on
             });
 
     Object multilineInputMap =
         new UIDefaults.LazyInputMap(
-            new Object[] {
-              // @formatter:off
+            new Object[]{
+                // @formatter:off
               "meta C", DefaultEditorKit.copyAction,
               "meta V", DefaultEditorKit.pasteAction,
               "meta X", DefaultEditorKit.cutAction,
@@ -154,9 +145,9 @@ public class TinyLookAndFeelMac extends TinyLookAndFeel {
               "HOME", DefaultEditorKit.beginLineAction,
               "END", DefaultEditorKit.endLineAction,
               "shift HOME", DefaultEditorKit.selectionBeginLineAction,
-              "meta shift LEFT", DefaultEditorKit.selectionBeginLineAction, // FJE
+              "meta shift LEFT", DefaultEditorKit.selectionBeginLineAction,
               "shift END", DefaultEditorKit.selectionEndLineAction,
-              "meta shift RIGHT", DefaultEditorKit.selectionEndLineAction, // FJE
+              "meta shift RIGHT", DefaultEditorKit.selectionEndLineAction,
               "UP", DefaultEditorKit.upAction,
               "KP_UP", DefaultEditorKit.upAction,
               "DOWN", DefaultEditorKit.downAction,
@@ -188,21 +179,17 @@ public class TinyLookAndFeelMac extends TinyLookAndFeel {
               "ctrl T", "next-link-action",
               "ctrl shift T", "previous-link-action",
               "ctrl SPACE", "activate-link-action",
-              // "control shift O", "toggle-componentOrientation", //
-              // DefaultEditorKit.toggleComponentOrientation
-              // FJE: {
               "meta LEFT", DefaultEditorKit.beginLineAction,
               "meta KP_LEFT", DefaultEditorKit.beginLineAction,
               "meta RIGHT", DefaultEditorKit.endLineAction,
               "meta KP_RIGHT", DefaultEditorKit.endLineAction,
-              "meta HOME", DefaultEditorKit.beginAction, // added 1.5.0
-              "meta END", DefaultEditorKit.endAction, // added 1.5.0
-              // }
+              "meta HOME", DefaultEditorKit.beginAction,
+              "meta END", DefaultEditorKit.endAction,
               // @formatter:on
             });
 
     Object[] defaults = {
-      // @formatter:off
+        // @formatter:off
       "TextField.focusInputMap",
       fieldInputMap,
       "PasswordField.focusInputMap",
@@ -238,9 +225,9 @@ public class TinyLookAndFeelMac extends TinyLookAndFeel {
             "HOME", DefaultEditorKit.beginLineAction,
             "END", DefaultEditorKit.endLineAction,
             "shift HOME", DefaultEditorKit.selectionBeginLineAction,
-            "meta shift LEFT", DefaultEditorKit.selectionBeginLineAction, // FJE
+            "meta shift LEFT", DefaultEditorKit.selectionBeginLineAction,
             "shift END", DefaultEditorKit.selectionEndLineAction,
-            "meta shift RIGHT", DefaultEditorKit.selectionEndLineAction, // FJE
+            "meta shift RIGHT", DefaultEditorKit.selectionEndLineAction,
             "BACK_SPACE", DefaultEditorKit.deletePrevCharAction,
             "ctrl H", DefaultEditorKit.deletePrevCharAction,
             "DELETE", DefaultEditorKit.deleteNextCharAction,
@@ -250,18 +237,15 @@ public class TinyLookAndFeelMac extends TinyLookAndFeel {
             "KP_LEFT", DefaultEditorKit.backwardAction,
             "ENTER", JTextField.notifyAction,
             "ctrl BACK_SLASH", "unselect",
-            // "ctrl shift O", "toggle-componentOrientation",
             "ESCAPE", "reset-field-edit",
             "UP", "increment",
             "KP_UP", "increment",
             "DOWN", "decrement",
             "KP_DOWN", "decrement",
-            // FJE: {
-            "meta LEFT", DefaultEditorKit.beginLineAction,
+
             "meta KP_LEFT", DefaultEditorKit.beginLineAction,
             "meta RIGHT", DefaultEditorKit.endLineAction,
             "meta KP_RIGHT", DefaultEditorKit.endLineAction,
-            // }
           }),
       "Button.focusInputMap",
       new UIDefaults.LazyInputMap(
@@ -312,9 +296,9 @@ public class TinyLookAndFeelMac extends TinyLookAndFeel {
             "PAGE_UP", "positiveBlockIncrement",
             "ctrl PAGE_UP", "positiveBlockIncrement",
             "HOME", "minScroll",
-            "meta LEFT", "minScroll", // FJE
+            "meta LEFT", "minScroll",
             "END", "maxScroll",
-            "meta RIGHT", "maxScroll" // FJE
+            "meta RIGHT", "maxScroll"
           }),
       "ComboBox.ancestorInputMap",
       new UIDefaults.LazyInputMap(
@@ -361,7 +345,7 @@ public class TinyLookAndFeelMac extends TinyLookAndFeel {
             "ESCAPE", "escape",
             "ctrl F9", "minimize",
             "ctrl F10", "maximize",
-            "ctrl F6", "selectNextFrame", // FJE Should be (meta ~)?
+            "ctrl F6", "selectNextFrame",
             "ctrl TAB", "selectNextFrame",
             "meta Alt F6", "selectNextFrame",
             "shift meta Alt F6", "selectPreviousFrame",
@@ -447,9 +431,9 @@ public class TinyLookAndFeelMac extends TinyLookAndFeel {
             "KP_UP", "negativeUnitIncrement",
             "PAGE_UP", "negativeBlockIncrement",
             "HOME", "minScroll",
-            "meta LEFT", "minScroll", // FJE
+            "meta LEFT", "minScroll",
             "END", "maxScroll",
-            "meta RIGHT", "maxScroll" // FJE
+            "meta RIGHT", "maxScroll"
           }),
       "ScrollPane.ancestorInputMap",
       new UIDefaults.LazyInputMap(
@@ -467,8 +451,8 @@ public class TinyLookAndFeelMac extends TinyLookAndFeel {
             "ctrl PAGE_UP", "scrollLeft",
             "ctrl PAGE_DOWN", "scrollRight",
             "ctrl HOME", "scrollHome",
-            "meta ctrl LEFT", "scrollHome", // FJE
-            "meta ctrl RIGHT", "scrollEnd", // FJE
+            "meta ctrl LEFT", "scrollHome",
+            "meta ctrl RIGHT", "scrollEnd",
             "ctrl END", "scrollEnd"
           }),
       "TabbedPane.focusInputMap",

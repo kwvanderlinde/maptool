@@ -31,16 +31,18 @@ import net.rptools.maptool.client.ui.theme.RessourceManager;
 @SuppressWarnings("serial")
 public class ImagePanel extends JComponent
     implements Scrollable,
-        DragGestureListener,
-        DragSourceListener,
-        MouseListener,
-        DragSourceMotionListener {
+    DragGestureListener,
+    DragSourceListener,
+    MouseListener,
+    DragSourceMotionListener {
 
   public enum SelectionMode {
     SINGLE,
     MULTIPLE,
     NONE
-  };
+  }
+
+  ;
 
   private ImagePanelModel model;
 
@@ -78,7 +80,7 @@ public class ImagePanel extends JComponent
    * paint loop.
    *
    * @param g The graphics context from which to obtain font metrics. If this is null, the method
-   *     will create and dispose its own graphics context.
+   *          will create and dispose its own graphics context.
    */
   private void ensureFontHeight(Graphics2D g) {
     if (fontHeight == -1) {
@@ -282,7 +284,6 @@ public class ImagePanel extends JComponent
             }
             // Selected
             if (selectedIDList.contains(model.getID(i))) {
-              // TODO: Let the user pick the border
               RessourceManager.getBorder(Borders.RED)
                   .paintAround(g, bounds.x, bounds.y, bounds.width, bounds.height);
             }
@@ -499,8 +500,6 @@ public class ImagePanel extends JComponent
     if (transferable == null) {
       return;
     }
-    // dge.startDrag(Toolkit.getDefaultToolkit().createCustomCursor(model.getImage(index), new
-    // Point(0, 0), "Thumbnail"), transferable, this);
     dge.startDrag(getDragCursor(), transferable, this);
     DragSource.getDefaultDragSource().addDragSourceMotionListener(this);
   }
@@ -516,30 +515,38 @@ public class ImagePanel extends JComponent
   }
 
   @Override
-  public void dragEnter(DragSourceDragEvent dsde) {}
+  public void dragEnter(DragSourceDragEvent dsde) {
+  }
 
   @Override
-  public void dragExit(DragSourceEvent dse) {}
+  public void dragExit(DragSourceEvent dse) {
+  }
 
   @Override
-  public void dragOver(DragSourceDragEvent dsde) {}
+  public void dragOver(DragSourceDragEvent dsde) {
+  }
 
   @Override
-  public void dropActionChanged(DragSourceDragEvent dsde) {}
+  public void dropActionChanged(DragSourceDragEvent dsde) {
+  }
 
   // DRAG SOURCE MOTION LISTENER
   @Override
-  public void dragMouseMoved(DragSourceDragEvent dsde) {}
+  public void dragMouseMoved(DragSourceDragEvent dsde) {
+  }
 
   // MOUSE LISTENER
   @Override
-  public void mouseClicked(MouseEvent e) {}
+  public void mouseClicked(MouseEvent e) {
+  }
 
   @Override
-  public void mouseEntered(MouseEvent e) {}
+  public void mouseEntered(MouseEvent e) {
+  }
 
   @Override
-  public void mouseExited(MouseEvent e) {}
+  public void mouseExited(MouseEvent e) {
+  }
 
   @Override
   public void mousePressed(MouseEvent e) {
@@ -548,7 +555,6 @@ public class ImagePanel extends JComponent
     }
     Object imageID = getImageIDAt(e.getX(), e.getY());
 
-    // TODO: Handle shift too
     if (!SwingUtil.isControlDown(e) || selectionMode == SelectionMode.SINGLE) {
       selectedIDList.clear();
     }
@@ -560,5 +566,6 @@ public class ImagePanel extends JComponent
   }
 
   @Override
-  public void mouseReleased(MouseEvent e) {}
+  public void mouseReleased(MouseEvent e) {
+  }
 }

@@ -53,12 +53,15 @@ import yasb.Binder;
  */
 public class ConnectToServerDialog extends AbeillePanel<ConnectToServerDialogPreferences>
     implements MapToolServiceFinder.MapToolAnnouncementListener {
+
   private static MapToolServiceFinder finder = MapToolServiceFinder.getInstance();
 
   private GenericDialog dialog;
   private RemoteServerConfig connectionDetails = null;
 
-  /** This is the default constructor */
+  /**
+   * This is the default constructor
+   */
   public ConnectToServerDialog() {
     super(new ConnectToServerDialogView().getRootComponent());
     setPreferredSize(new Dimension(600, 500));
@@ -74,7 +77,7 @@ public class ConnectToServerDialog extends AbeillePanel<ConnectToServerDialogPre
    * Get the result from this dialog
    *
    * @return null if cancelled, otherwise the server address with other parameters stored in
-   *     preferences
+   * preferences
    */
   @Nullable
   public RemoteServerConfig getResult() {
@@ -201,7 +204,9 @@ public class ConnectToServerDialog extends AbeillePanel<ConnectToServerDialogPre
                   JTable rem = getRemoteServerTable();
                   getServerNameTextField()
                       .setText(rem.getModel().getValueAt(rem.getSelectedRow(), 0).toString());
-                  if (e.getClickCount() == 2) handleOK();
+                  if (e.getClickCount() == 2) {
+                    handleOK();
+                  }
                 }
               }
             });
@@ -290,7 +295,6 @@ public class ConnectToServerDialog extends AbeillePanel<ConnectToServerDialogPre
       ServerInfo info = (ServerInfo) getLocalServerList().getSelectedValue();
       connectionDetails = info.config;
     } else if (SwingUtil.hasComponent(selectedPanel, "directPanel")) {
-      // TODO: put these into a validation method
       if (getPortTextField().getText().length() == 0) {
         MapTool.showError("ServerDialog.error.port");
         return;
@@ -339,7 +343,9 @@ public class ConnectToServerDialog extends AbeillePanel<ConnectToServerDialogPre
                 "ConnectToServerDialog.warning.doNotUseExternalAddress",
                 I18N.getString("menu.file"),
                 I18N.getString("action.showConnectionInfo"));
-        if (!yes) return;
+        if (!yes) {
+          return;
+        }
       }
     } catch (UnknownHostException e) {
       // If an exception occurs, don't bother doing the comparison. But otherwise it's not an error.
@@ -360,6 +366,7 @@ public class ConnectToServerDialog extends AbeillePanel<ConnectToServerDialogPre
   }
 
   private static class RemoteServerTableModel extends AbstractTableModel {
+
     private final List<String[]> data;
 
     public RemoteServerTableModel(List<String> encodedData) {
@@ -370,7 +377,7 @@ public class ConnectToServerDialog extends AbeillePanel<ConnectToServerDialogPre
       for (String line : encodedData) {
         String[] row = line.split(":");
         if (row.length == 1) {
-          row = new String[] {row[0], "Unknown"};
+          row = new String[]{row[0], "Unknown"};
         }
         data.add(row);
       }
@@ -407,8 +414,11 @@ public class ConnectToServerDialog extends AbeillePanel<ConnectToServerDialogPre
   }
 
   private static class ServerInfo {
-    @Nonnull String id;
-    @Nonnull RemoteServerConfig.Socket config;
+
+    @Nonnull
+    String id;
+    @Nonnull
+    RemoteServerConfig.Socket config;
 
     public ServerInfo(@Nonnull String id, @Nonnull RemoteServerConfig.Socket config) {
       this.id = id.trim();

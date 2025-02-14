@@ -63,6 +63,7 @@ import org.apache.logging.log4j.Logger;
  * @author drice
  */
 public class MapToolServer {
+
   private static final Logger log = LogManager.getLogger(MapToolServer.class);
   private static final int ASSET_CHUNK_SIZE = 5 * 1024;
 
@@ -72,14 +73,18 @@ public class MapToolServer {
     Stopped
   }
 
-  @Nonnull private final String serviceIdentifier;
-  @Nonnull private final Server server;
+  @Nonnull
+  private final String serviceIdentifier;
+  @Nonnull
+  private final Server server;
   private final MessageHandler messageHandler;
   private final Router router;
   private final ServerConfig config;
   private final ServerSidePlayerDatabase playerDatabase;
 
-  /** Maps connection IDs to their associated player */
+  /**
+   * Maps connection IDs to their associated player
+   */
   private final Map<String, Player> playerMap = Collections.synchronizedMap(new HashMap<>());
 
   private final Map<String, AssetTransferManager> assetManagerMap =
@@ -87,7 +92,8 @@ public class MapToolServer {
   private final AssetProducerThread assetProducerThread;
 
   private final boolean useUPnP;
-  @Nullable private ServiceAnnouncer announcer;
+  @Nullable
+  private ServiceAnnouncer announcer;
   private Campaign campaign;
   private ServerPolicy policy;
   private HeartbeatThread heartbeatThread;
@@ -144,7 +150,7 @@ public class MapToolServer {
    * Transition from {@code expectedState} to {@code newState}.
    *
    * @param expectedState The state to transition from
-   * @param newState The new state to set.
+   * @param newState      The new state to set.
    */
   private boolean transitionToState(State expectedState, State newState) {
     if (currentState != expectedState) {
@@ -309,7 +315,7 @@ public class MapToolServer {
       var msg =
           PlayerDisconnectedMsg.newBuilder().setPlayer(player.getTransferablePlayer().toDto());
       broadcastMessage(
-          new String[] {connection.getId()},
+          new String[]{connection.getId()},
           Message.newBuilder().setPlayerDisconnectedMsg(msg).build());
     }
   }
@@ -433,7 +439,6 @@ public class MapToolServer {
           heartbeatThread = new HeartbeatThread(port);
           heartbeatThread.start();
         }
-        // TODO: I don't like this
       } catch (Exception e) {
         MapTool.showError("msg.error.failedCannotRegisterServer", e);
       }
@@ -473,6 +478,7 @@ public class MapToolServer {
   }
 
   private class HeartbeatThread extends Thread {
+
     private static final Random random = new Random();
 
     private final int port;
@@ -561,9 +567,10 @@ public class MapToolServer {
     }
   }
 
-  ////
+  /// /
   // CLASSES
   private class AssetProducerThread extends Thread {
+
     private final AtomicBoolean stop = new AtomicBoolean(false);
 
     public AssetProducerThread() {

@@ -15,21 +15,24 @@
 package net.rptools.clientserver;
 
 /**
- * @author drice
- *     <p>TODO To change the template for this generated type comment go to Window - Preferences -
- *     Java - Code Style - Code Templates
+ * @author drice Interface for handling activity from connections
  */
 public interface ActivityListener {
+
   public static enum Direction {
     Inbound,
     Outbound
-  };
+  }
+
+  ;
 
   public static enum State {
     Start,
     Progress,
     Complete
-  };
+  }
+
+  ;
 
   public static final int CHUNK_SIZE = 4 * 1024;
 

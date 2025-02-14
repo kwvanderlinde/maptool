@@ -29,6 +29,5 @@ public class SyrinscapeConnection extends URLConnection {
 
   @Override
   public void connect() {
-    // TODO Auto-generated method stub
   }
 }

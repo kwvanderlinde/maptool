@@ -20,6 +20,7 @@ import net.rptools.dicelib.expression.RunData;
 import net.rptools.parser.function.*;
 
 public class DiceHelper {
+
   public static int rollDice(int times, int sides) {
     int result = 0;
 
@@ -40,7 +41,9 @@ public class DiceHelper {
     for (int i = 0; i < times; i++) {
       int currentRoll = explodeDice(1, sides, limit);
       rolls += currentRoll + ", ";
-      if (currentRoll >= target) successes++;
+      if (currentRoll >= target) {
+        successes++;
+      }
     }
     return rolls + "Successes: " + successes;
   }
@@ -57,7 +60,9 @@ public class DiceHelper {
     for (int i = 0; i < times; i++) {
       int currentRoll = explodeDice(1, sides, limit);
       rolls += currentRoll + ", ";
-      if (currentRoll > max) max = currentRoll;
+      if (currentRoll > max) {
+        max = currentRoll;
+      }
     }
     return rolls + "Maximum: " + max;
   }
@@ -75,17 +80,23 @@ public class DiceHelper {
   }
 
   public static int keepDice(int times, int sides, int keep) throws EvaluationException {
-    if (keep > times) throw new EvaluationException("You cannot keep more dice than you roll");
+    if (keep > times) {
+      throw new EvaluationException("You cannot keep more dice than you roll");
+    }
     return dropDice(times, sides, times - keep);
   }
 
   public static int keepLowestDice(int times, int sides, int keep) throws EvaluationException {
-    if (keep > times) throw new EvaluationException("You cannot keep more dice than you roll");
+    if (keep > times) {
+      throw new EvaluationException("You cannot keep more dice than you roll");
+    }
     return dropDiceHighest(times, sides, times - keep);
   }
 
   public static int dropDice(int times, int sides, int drop) throws EvaluationException {
-    if (times - drop <= 0) throw new EvaluationException("You cannot drop more dice than you roll");
+    if (times - drop <= 0) {
+      throw new EvaluationException("You cannot drop more dice than you roll");
+    }
 
     RunData runData = RunData.getCurrent();
 
@@ -102,7 +113,9 @@ public class DiceHelper {
   }
 
   public static int dropDiceHighest(int times, int sides, int drop) throws EvaluationException {
-    if (times - drop <= 0) throw new EvaluationException("You cannot drop more dice than you roll");
+    if (times - drop <= 0) {
+      throw new EvaluationException("You cannot drop more dice than you roll");
+    }
 
     RunData runData = RunData.getCurrent();
 
@@ -126,9 +139,10 @@ public class DiceHelper {
   public static int rerollDice(int times, int sides, int lowerBound) throws EvaluationException {
     RunData runData = RunData.getCurrent();
 
-    if (lowerBound > sides)
+    if (lowerBound > sides) {
       throw new EvaluationException(
           "When rerolling, the lowerbound must be smaller than the number of sides on the rolling dice.");
+    }
 
     int[] values = new int[times];
 
@@ -156,10 +170,10 @@ public class DiceHelper {
    * <p>Differs from {@link #rerollDice(int, int, int)} in that the new results are allowed to fall
    * beneath the given lowerBound, instead of being re-rolled again.
    *
-   * @param times the number of dice
-   * @param sides the number of sides
-   * @param lowerBound the number below which dice will be re-rolled. Must be strictly lower than
-   *     the number of sides.
+   * @param times        the number of dice
+   * @param sides        the number of sides
+   * @param lowerBound   the number below which dice will be re-rolled. Must be strictly lower than
+   *                     the number of sides.
    * @param chooseHigher whether the original result may be preserved if it was the higher value
    * @return the total of the rolled and re-rolled dice
    * @throws EvaluationException if an invalid lowerBound is provided
@@ -168,9 +182,10 @@ public class DiceHelper {
       throws EvaluationException {
     RunData runData = RunData.getCurrent();
 
-    if (lowerBound > sides)
+    if (lowerBound > sides) {
       throw new EvaluationException(
           "When rerolling, the lowerbound must be smaller than the number of sides on the rolling dice.");
+    }
 
     int[] values = new int[times];
 
@@ -199,7 +214,9 @@ public class DiceHelper {
     int result = 0;
     boolean infiniteExplode = limit <= 0;
 
-    if (sides == 0 || sides == 1) throw new EvaluationException("Number of sides must be > 1");
+    if (sides == 0 || sides == 1) {
+      throw new EvaluationException("Number of sides must be > 1");
+    }
 
     RunData runData = RunData.getCurrent();
 
@@ -228,7 +245,9 @@ public class DiceHelper {
 
     int result = 0;
     for (int value : runData.randomInts(times, sides)) {
-      if (value >= success) result++;
+      if (value >= success) {
+        result++;
+      }
     }
 
     return result;
@@ -253,17 +272,22 @@ public class DiceHelper {
     for (int i = 0; i < times; i++) {
       int value = runData.randomInt(sides);
 
-      if (value >= success) hitCount++;
+      if (value >= success) {
+        hitCount++;
+      }
 
-      if (value == 1) oneCount++;
+      if (value == 1) {
+        oneCount++;
+      }
 
-      if (value == 6 && explode) times++;
+      if (value == 6 && explode) {
+        times++;
+      }
 
       actual.append(value).append(" ");
     }
 
     // Check for Glitchs
-    // TODO check, if there already was a bug here concerning glitches on exploding dice in SR4
     // in SR5, Exploding dice are re-rolled and do not increase the pool size tested here
     boolean normalGlitch =
         edition == ShadowrunEdition.EDITION_4

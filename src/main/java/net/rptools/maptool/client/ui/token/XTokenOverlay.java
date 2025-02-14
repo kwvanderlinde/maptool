@@ -30,18 +30,22 @@ import net.rptools.maptool.server.proto.BooleanTokenOverlayDto;
  * Draw an X over a token.
  *
  * @author jgorrell
- * @version $Revision: 5945 $ $Date: 2013-06-03 04:35:50 +0930 (Mon, 03 Jun 2013) $ $Author:
- *     azhrei_fje $
  */
 public class XTokenOverlay extends BooleanTokenOverlay {
 
-  /** Color for the X */
+  /**
+   * Color for the X
+   */
   private Color color;
 
-  /** Stroke used to draw the line */
+  /**
+   * Stroke used to draw the line
+   */
   private BasicStroke stroke;
 
-  /** Default constructor needed for XML encoding/decoding */
+  /**
+   * Default constructor needed for XML encoding/decoding
+   */
   public XTokenOverlay() {
     this(BooleanTokenOverlay.DEFAULT_STATE_NAME, Color.RED, 5);
   }
@@ -49,21 +53,25 @@ public class XTokenOverlay extends BooleanTokenOverlay {
   /**
    * Create a X token overlay with the given name.
    *
-   * @param aName Name of this token overlay.
+   * @param aName  Name of this token overlay.
    * @param aColor The color of this token overlay.
    * @param aWidth The width of the lines in this token overlay.
    */
   public XTokenOverlay(String aName, Color aColor, int aWidth) {
     super(aName);
-    if (aColor == null) aColor = Color.RED;
+    if (aColor == null) {
+      aColor = Color.RED;
+    }
     color = aColor;
-    if (aWidth <= 0) aWidth = 3;
+    if (aWidth <= 0) {
+      aWidth = 3;
+    }
     stroke = new BasicStroke(aWidth, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
   }
 
   /**
    * @see BooleanTokenOverlay#paintOverlay(java.awt.Graphics2D, net.rptools.maptool.model.Token,
-   *     Rectangle)
+   * Rectangle)
    */
   @Override
   public void paintOverlay(Graphics2D g, Token aToken, Rectangle bounds) {
@@ -72,9 +80,10 @@ public class XTokenOverlay extends BooleanTokenOverlay {
     Stroke tempStroke = g.getStroke();
     g.setStroke(stroke);
     Composite tempComposite = g.getComposite();
-    if (getOpacity() != 100)
+    if (getOpacity() != 100) {
       g.setComposite(
           AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) getOpacity() / 100));
+    }
     g.draw(new Line2D.Double(0, 0, bounds.width, bounds.height));
     g.draw(new Line2D.Double(0, bounds.height, bounds.width, 0));
     g.setColor(tempColor);
@@ -140,7 +149,9 @@ public class XTokenOverlay extends BooleanTokenOverlay {
    * @param aWidth The width to set.
    */
   public void setWidth(int aWidth) {
-    if (aWidth <= 0) aWidth = 3;
+    if (aWidth <= 0) {
+      aWidth = 3;
+    }
     stroke = new BasicStroke(aWidth, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
   }
 

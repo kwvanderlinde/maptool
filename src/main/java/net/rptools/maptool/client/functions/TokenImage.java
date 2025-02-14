@@ -43,7 +43,9 @@ import net.rptools.parser.function.AbstractFunction;
 
 public class TokenImage extends AbstractFunction {
 
-  /** Singleton instance. */
+  /**
+   * Singleton instance.
+   */
   private static final TokenImage instance = new TokenImage();
 
   enum imageType {
@@ -60,7 +62,9 @@ public class TokenImage extends AbstractFunction {
     final int getValue() {
       return value;
     }
-  };
+  }
+
+  ;
 
   public static final String SET_IMAGE = "setImage";
   public static final String SET_PORTRAIT = "setTokenPortrait";
@@ -102,8 +106,9 @@ public class TokenImage extends AbstractFunction {
     Token token;
 
     if (functionName.equalsIgnoreCase("setTokenOpacity")) {
-      if (!MapTool.getParser().isMacroTrusted())
+      if (!MapTool.getParser().isMacroTrusted()) {
         throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
+      }
 
       FunctionUtil.checkNumberParam(functionName, args, 1, 3);
       String strOpacity = args.get(0).toString();
@@ -115,8 +120,9 @@ public class TokenImage extends AbstractFunction {
     }
 
     if (functionName.equalsIgnoreCase("getTokenOpacity")) {
-      if (!MapTool.getParser().isMacroTrusted())
+      if (!MapTool.getParser().isMacroTrusted()) {
         throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
+      }
 
       FunctionUtil.checkNumberParam(functionName, args, 0, 2);
       token = FunctionUtil.getTokenFromParam(resolver, functionName, args, 0, 1);
@@ -195,8 +201,8 @@ public class TokenImage extends AbstractFunction {
         Asset asset;
         if (imageString.toLowerCase().startsWith("https://")
             && (imageString.toLowerCase().endsWith(".jpg")
-                || imageString.toLowerCase().endsWith(".png")
-                || imageString.toLowerCase().endsWith(".webp"))) {
+            || imageString.toLowerCase().endsWith(".png")
+            || imageString.toLowerCase().endsWith(".webp"))) {
           try {
             URI uri = new URI(imageString);
             URL url = uri.toURL();
@@ -241,7 +247,9 @@ public class TokenImage extends AbstractFunction {
       token = findImageToken(args.get(0).toString(), "getImage");
 
       // Lee: people want a blank instead of an error
-      if (token == null) return "";
+      if (token == null) {
+        return "";
+      }
 
       if (args.size() > 1) {
         indexSize = 1;
@@ -304,15 +312,10 @@ public class TokenImage extends AbstractFunction {
     return assetId.toString();
   }
 
-  private String typeOf(Object ob) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
   /**
    * Get the MD5Key corresponding to an asset.
    *
-   * @param assetName either an assetId or the name of an image token.
+   * @param assetName    either an assetId or the name of an image token.
    * @param functionName the name of the function, to display the exception message.
    * @return the MD5Key associated with the asset.
    * @throws ParserException if assetName not found or assetName doesn't
@@ -367,14 +370,9 @@ public class TokenImage extends AbstractFunction {
           // If we are not the GM and the token is not visible to players then we don't
           // let them get functions from it.
           if (!MapTool.getPlayer().isGM() && !token.isVisible()) {
-            // Lee: as requested, handling this as "" instead of an error
-            // throw new ParserException(I18N.getText("macro.function.general.unknownToken",
-            // functionName, name));
             return null;
           }
           if (imageToken != null) {
-            // Lee: returning first found instead.
-            // throw new ParserException("Duplicate " + name + " tokens");
             return imageToken;
           }
           imageToken = token;
@@ -385,7 +383,5 @@ public class TokenImage extends AbstractFunction {
 
     // Lee: for the final "" return
     return null;
-    // throw new ParserException(I18N.getText("macro.function.general.unknownToken", functionName,
-    // name));
   }
 }
