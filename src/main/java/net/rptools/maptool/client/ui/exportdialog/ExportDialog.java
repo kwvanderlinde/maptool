@@ -77,19 +77,13 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
 
   private static final ExportDialog instance = new ExportDialog();
 
-  /**
-   * the modal panel the user uses to select the screenshot options
-   */
+  /** the modal panel the user uses to select the screenshot options */
   private static AbeillePanel interactPanel;
 
-  /**
-   * The modal panel showing screenshot progress
-   */
+  /** The modal panel showing screenshot progress */
   private static JLabel progressLabel;
 
-  /**
-   * The place the image will be sent to (file/FTP)
-   */
+  /** The place the image will be sent to (file/FTP) */
   private Location exportLocation;
 
   // These are convenience variables, which should be set
@@ -113,23 +107,17 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
   private static Rectangle origBounds;
   private static Scale origScale;
 
-  /**
-   * set by preScreenshot, cleared by postScreenshot
-   */
+  /** set by preScreenshot, cleared by postScreenshot */
   private boolean waitingForPostScreenshot = false;
 
-  /**
-   * Only doing this because I don't expect more than one instance of this modal dialog
-   */
+  /** Only doing this because I don't expect more than one instance of this modal dialog */
   private static int instanceCount = 0;
 
   //
   // Vars for background rendering of the screenshot
   //
 
-  /**
-   * 0-100: percentage of pixels written to destination
-   */
+  /** 0-100: percentage of pixels written to destination */
   private int renderPercent;
 
   // 1. We shouldn't have to synchronize the names of variables manually
@@ -330,9 +318,7 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
       form.getButton(this.toString()).setEnabled(enabled);
     }
 
-    /**
-     * Sets the layer-selection checkboxes to replicate the "current view".
-     */
+    /** Sets the layer-selection checkboxes to replicate the "current view". */
     public void setToDefault() {
       final Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
       if (this == ExportLayers.LAYER_FOG) {
@@ -766,9 +752,7 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
     }
   }
 
-  /**
-   * This restores the layer settings on the Zone object. It should follow setupZoneLayers().
-   */
+  /** This restores the layer settings on the Zone object. It should follow setupZoneLayers(). */
   private static void restoreZoneLayers() {
     zone.setHasFog(savedFog);
     zone.setVisionType(savedVision);
@@ -999,11 +983,9 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
   // Panel related functions
   //
 
-  private void switchToWaitPanel() {
-  }
+  private void switchToWaitPanel() {}
 
-  private void switchToInteractPanel() {
-  }
+  private void switchToInteractPanel() {}
 
   private void createWaitPanel() {
     progressLabel = new JLabel();
@@ -1014,18 +996,14 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
   // IIOWriteProgressListener Interface
   //
 
-  /**
-   * Setup the progress meter.
-   */
+  /** Setup the progress meter. */
   public void imageStarted(ImageWriter source, int imageIndex) {
     renderPercent = 0;
     progressLabel.setText(I18N.getText("exportDialog.msg.renderingWait" + renderPercent + "%"));
     repaint();
   }
 
-  /**
-   * Update the progress meter.
-   */
+  /** Update the progress meter. */
   public void imageProgress(ImageWriter source, float percentageDone) {
     int oldPercent = renderPercent;
     renderPercent = (int) (percentageDone * 100);
@@ -1035,23 +1013,17 @@ public class ExportDialog extends JDialog implements IIOWriteProgressListener {
     }
   }
 
-  /**
-   * Close this dialog box upon completion of background thread renderer.
-   */
+  /** Close this dialog box upon completion of background thread renderer. */
   public void imageComplete(ImageWriter source) {
     postScreenshot();
     dispose();
   }
 
-  public void thumbnailStarted(ImageWriter source, int imageIndex, int thumbnailIndex) {
-  }
+  public void thumbnailStarted(ImageWriter source, int imageIndex, int thumbnailIndex) {}
 
-  public void thumbnailProgress(ImageWriter source, float percentageDone) {
-  }
+  public void thumbnailProgress(ImageWriter source, float percentageDone) {}
 
-  public void thumbnailComplete(ImageWriter source) {
-  }
+  public void thumbnailComplete(ImageWriter source) {}
 
-  public void writeAborted(ImageWriter source) {
-  }
+  public void writeAborted(ImageWriter source) {}
 }

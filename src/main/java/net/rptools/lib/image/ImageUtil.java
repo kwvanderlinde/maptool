@@ -125,11 +125,11 @@ public class ImageUtil {
    * Create a copy of the image that is compatible with the current graphics context and scaled to
    * the supplied size
    *
-   * @param img    the image to copy
-   * @param width  width of the created image
+   * @param img the image to copy
+   * @param width width of the created image
    * @param height height of the created image
-   * @param hints  a {@link Map} that may contain the key HINT_TRANSPARENCY to define a the
-   *               transparency color
+   * @param hints a {@link Map} that may contain the key HINT_TRANSPARENCY to define a the
+   *     transparency color
    * @return a {@link BufferedImage} with a copy of img
    */
   public static BufferedImage createCompatibleImage(
@@ -260,7 +260,7 @@ public class ImageUtil {
   /**
    * Convert a BufferedImage to byte[] in an given format.
    *
-   * @param image  the buffered image.
+   * @param image the buffered image.
    * @param format a String containing the informal name of the format.
    * @return the byte[] of the image.
    * @throws IOException if the image cannot be written to the output stream.
@@ -278,7 +278,7 @@ public class ImageUtil {
    * Converts a byte array into an {@link Image} instance.
    *
    * @param imageBytes bytes to convert
-   * @param imageName  name of image
+   * @param imageName name of image
    * @return the image
    * @throws IOException if image could not be loaded
    */
@@ -328,15 +328,15 @@ public class ImageUtil {
   }
 
   private static final int[][] outlineNeighborMap = {
-      {0, -1, 100}, // N
-      {1, 0, 100}, // E
-      {0, 1, 100}, // S
-      {-1, 0, 100} // W
-      ,
-      {-1, -1}, // NW
-      {1, -1}, // NE
-      {-1, 1}, // SW
-      {1, 1}, // SE
+    {0, -1, 100}, // N
+    {1, 0, 100}, // E
+    {0, 1, 100}, // S
+    {-1, 0, 100} // W
+    ,
+    {-1, -1}, // NW
+    {1, -1}, // NE
+    {-1, 1}, // SW
+    {1, 1}, // SE
   };
 
   public static BufferedImage createOutline(BufferedImage sourceImage, Color color) {
@@ -384,7 +384,7 @@ public class ImageUtil {
   /**
    * Flip the image and return a new image
    *
-   * @param image     the image to flip
+   * @param image the image to flip
    * @param direction 0-nothing, 1-horizontal, 2-vertical, 3-both
    * @return flipped BufferedImage
    */
@@ -427,8 +427,8 @@ public class ImageUtil {
   /**
    * Scales a BufferedImage to a desired width and height and returns the result.
    *
-   * @param image  The BufferedImage to be scaled
-   * @param width  Desired width in px
+   * @param image The BufferedImage to be scaled
+   * @param width Desired width in px
    * @param height Desired height in px
    * @return The scaled BufferedImage
    */

@@ -170,10 +170,10 @@ public class DiceHelper {
    * <p>Differs from {@link #rerollDice(int, int, int)} in that the new results are allowed to fall
    * beneath the given lowerBound, instead of being re-rolled again.
    *
-   * @param times        the number of dice
-   * @param sides        the number of sides
-   * @param lowerBound   the number below which dice will be re-rolled. Must be strictly lower than
-   *                     the number of sides.
+   * @param times the number of dice
+   * @param sides the number of sides
+   * @param lowerBound the number below which dice will be re-rolled. Must be strictly lower than
+   *     the number of sides.
    * @param chooseHigher whether the original result may be preserved if it was the higher value
    * @return the total of the rolled and re-rolled dice
    * @throws EvaluationException if an invalid lowerBound is provided

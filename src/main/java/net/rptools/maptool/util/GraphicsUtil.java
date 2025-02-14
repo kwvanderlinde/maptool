@@ -45,9 +45,7 @@ import net.rptools.maptool.client.ui.theme.Images;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 
-/**
- *
- */
+/** */
 public class GraphicsUtil {
 
   public static final int BOX_PADDINGX = 10;
@@ -63,12 +61,12 @@ public class GraphicsUtil {
   /**
    * A multiline text wrapping popup.
    *
-   * @param g             The graphics to draw into
-   * @param string        - the string to display in he popup
-   * @param x             the x position of the popup
-   * @param y             the y position of the popup
+   * @param g The graphics to draw into
+   * @param string - the string to display in he popup
+   * @param x the x position of the popup
+   * @param y the y position of the popup
    * @param justification justification of the text
-   * @param maxWidth      - the max width in pixels before wrapping the text
+   * @param maxWidth - the max width in pixels before wrapping the text
    * @return the surrounding rectangle for the popup
    */
   public static Rectangle drawPopup(
@@ -224,7 +222,7 @@ public class GraphicsUtil {
   /**
    * @param c the color to lighten up
    * @return a lighten color, as opposed to a brighter color as in Color.brighter(). This prevents
-   * light colors from getting bleached out.
+   *     light colors from getting bleached out.
    */
   public static Color lighten(Color c) {
     if (c == null) {
@@ -422,8 +420,8 @@ public class GraphicsUtil {
 
   public static void main(String[] args) {
     final Point2D[] points =
-        new Point2D[]{
-            new Point(20, 20), new Point(50, 50), new Point(80, 20), new Point(100, 100)
+        new Point2D[] {
+          new Point(20, 20), new Point(50, 50), new Point(80, 20), new Point(100, 100)
         };
     final Area line = createLine(10, points);
 

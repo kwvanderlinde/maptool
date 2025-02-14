@@ -337,7 +337,6 @@ public class MacroEditorDialog extends JDialog implements SearchListener {
   private void installOKButton() {
     JButton button = (JButton) panel.getButton("okButton");
     button.addActionListener(e -> save(true));
-
   }
 
   private void installCancelButton() {

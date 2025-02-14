@@ -32,18 +32,14 @@ public class TwoToneTextField extends JTextField {
    * Instance Variables
    *-------------------------------------------------------------------------------------------*/
 
-  /**
-   * The second color drawn behind the foreground color
-   */
+  /** The second color drawn behind the foreground color */
   private Color twoToneColor = Color.DARK_GRAY;
 
   /*---------------------------------------------------------------------------------------------
    * Class Variables
    *-------------------------------------------------------------------------------------------*/
 
-  /**
-   * The ui class id.
-   */
+  /** The ui class id. */
   private static final String UI_CLASS_ID = "TwoToneTextFieldUI";
 
   /*---------------------------------------------------------------------------------------------
@@ -55,9 +51,7 @@ public class TwoToneTextField extends JTextField {
     UIManager.put(UI_CLASS_ID, TwoToneTextFieldUI.class.getName());
   }
 
-  /**
-   * Default constructor
-   */
+  /** Default constructor */
   public TwoToneTextField() {
     super();
   }
@@ -83,7 +77,7 @@ public class TwoToneTextField extends JTextField {
   /**
    * Create a field with the passed text and number of columns
    *
-   * @param aText    The text for the new field.
+   * @param aText The text for the new field.
    * @param aColumns The number of columns for the new field.
    */
   public TwoToneTextField(String aText, int aColumns) {
@@ -93,8 +87,8 @@ public class TwoToneTextField extends JTextField {
   /**
    * Create a field with the given document, text, and column count.
    *
-   * @param aDoc     The document for the new field.
-   * @param aText    The text for the new field.
+   * @param aDoc The document for the new field.
+   * @param aText The text for the new field.
    * @param aColumns The number of columns for the new field.
    */
   public TwoToneTextField(Document aDoc, String aText, int aColumns) {

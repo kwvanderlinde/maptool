@@ -45,36 +45,28 @@ import net.rptools.maptool.model.zones.ZoneLightingChanged;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-/**
- * Responsible for calculating lights and vision.
- */
+/** Responsible for calculating lights and vision. */
 public class ZoneView {
 
   /**
    * Represents the important aspects of a sight for the purposes of calculating illumination.
    *
-   * @param role       Whether the illumination is valid for GM or player views, since they disagree
-   *                   which lights exist.
+   * @param role Whether the illumination is valid for GM or player views, since they disagree which
+   *     lights exist.
    * @param multiplier The sight multiplier to apply to lit areas.
    */
-  private record IlluminationKey(Player.Role role, double multiplier) {
-
-  }
+  private record IlluminationKey(Player.Role role, double multiplier) {}
 
   private static final Logger log = LogManager.getLogger(ZoneView.class);
 
-  /**
-   * The zone of the ZoneView.
-   */
+  /** The zone of the ZoneView. */
   private final Zone zone;
 
   // VISION
 
   // region These fields track light sources and their illuminated areas.
 
-  private record LightSourceMapKey(Player.Role role, LightSource.Type type) {
-
-  }
+  private record LightSourceMapKey(Player.Role role, LightSource.Type type) {}
 
   /**
    * Map light source type to all tokens with that type. Will always have entries for each light
@@ -118,8 +110,7 @@ public class ZoneView {
   /**
    * Map each token to the area they can see by themselves.
    *
-   * <p>This vision only accounts for topology, and does not include any other limits on the
-   * token's
+   * <p>This vision only accounts for topology, and does not include any other limits on the token's
    * vision. The results can be intersected with lighting results to produce the area that can
    * actually be seen by a token in a given view.
    */
@@ -138,9 +129,7 @@ public class ZoneView {
   //        be flushed when something external changes that can affect vision (e.g., VBL, map vision
   //        settings, light definitions).
 
-  /**
-   * Map each token to their current vision, depending on other lights.
-   */
+  /** Map each token to their current vision, depending on other lights. */
   private final Map<PlayerView, Map<GUID, Area>> tokenVisionCachePerView = new HashMap<>();
 
   /**
@@ -150,31 +139,21 @@ public class ZoneView {
    */
   private final Map<PlayerView, Illumination> illuminationsPerView = new HashMap<>();
 
-  /**
-   * Map the PlayerView to its exposed area.
-   */
+  /** Map the PlayerView to its exposed area. */
   private final Map<PlayerView, Area> exposedAreaMap = new HashMap<>();
 
-  /**
-   * Map the PlayerView to its visible area.
-   */
+  /** Map the PlayerView to its visible area. */
   private final Map<PlayerView, Area> visibleAreaMap = new HashMap<>();
 
   // endregion
 
-  /**
-   * Caches the lights to be drawn for a each view.
-   */
+  /** Caches the lights to be drawn for a each view. */
   private final Map<PlayerView, List<DrawableLight>> drawableLights = new HashMap<>();
 
-  /**
-   * Holds the auras from lightSourceMap after they have been combined.
-   */
+  /** Holds the auras from lightSourceMap after they have been combined. */
   private final Map<PlayerView, List<DrawableLight>> drawableAuras = new HashMap<>();
 
-  /**
-   * Cached version of the zone's topology which is fully noded.
-   */
+  /** Cached version of the zone's topology which is fully noded. */
   private NodedTopology nodedTopology = null;
 
   /**
@@ -432,13 +411,13 @@ public class ZoneView {
         view.getRole(),
         view.isUsingTokenView()
             ? view.getTokens().stream()
-            .filter(Token::getHasSight)
-            .map(Token::getSightType)
-            .map(sightName -> MapTool.getCampaign().getSightType(sightName))
-            .filter(Objects::nonNull)
-            .map(SightType::getMultiplier)
-            .max(Double::compare)
-            .orElse(1.0)
+                .filter(Token::getHasSight)
+                .map(Token::getSightType)
+                .map(sightName -> MapTool.getCampaign().getSightType(sightName))
+                .filter(Objects::nonNull)
+                .map(SightType::getMultiplier)
+                .max(Double::compare)
+                .orElse(1.0)
             : 1.0);
   }
 
@@ -532,7 +511,7 @@ public class ZoneView {
    *
    * @param view
    * @return The various lumens levels, with any stronger lumens areas being subtracted from weaker
-   * lumens areas and ordered from strong to weak lumens.
+   *     lumens areas and ordered from strong to weak lumens.
    */
   public List<LumensLevel> getDisjointObscuredLumensLevels(PlayerView view) {
     final var illumination = getIllumination(view);
@@ -776,8 +755,8 @@ public class ZoneView {
 
   /**
    * Flush the ZoneView cache of the token. Remove token from {@link #tokenVisionCachePerView}, and
-   * {@link #illuminationModels}. Can clear {@link #tokenVisionCachePerView},
-   * {@link #visibleAreaMap}, and {@link #exposedAreaMap} depending on the token.
+   * {@link #illuminationModels}. Can clear {@link #tokenVisionCachePerView}, {@link
+   * #visibleAreaMap}, and {@link #exposedAreaMap} depending on the token.
    *
    * @param token the token to flush.
    */
@@ -903,8 +882,8 @@ public class ZoneView {
   }
 
   /**
-   * Update {@link #lightSourceMap} with the light sources of the tokens, and clear
-   * {@link #visibleAreaMap} and {@link #exposedAreaMap} if one of the tokens has sight.
+   * Update {@link #lightSourceMap} with the light sources of the tokens, and clear {@link
+   * #visibleAreaMap} and {@link #exposedAreaMap} if one of the tokens has sight.
    *
    * @param tokens the list of tokens
    */

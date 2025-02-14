@@ -33,19 +33,13 @@ import net.rptools.maptool.server.proto.BooleanTokenOverlayDto;
  */
 public class XTokenOverlay extends BooleanTokenOverlay {
 
-  /**
-   * Color for the X
-   */
+  /** Color for the X */
   private Color color;
 
-  /**
-   * Stroke used to draw the line
-   */
+  /** Stroke used to draw the line */
   private BasicStroke stroke;
 
-  /**
-   * Default constructor needed for XML encoding/decoding
-   */
+  /** Default constructor needed for XML encoding/decoding */
   public XTokenOverlay() {
     this(BooleanTokenOverlay.DEFAULT_STATE_NAME, Color.RED, 5);
   }
@@ -53,7 +47,7 @@ public class XTokenOverlay extends BooleanTokenOverlay {
   /**
    * Create a X token overlay with the given name.
    *
-   * @param aName  Name of this token overlay.
+   * @param aName Name of this token overlay.
    * @param aColor The color of this token overlay.
    * @param aWidth The width of the lines in this token overlay.
    */
@@ -71,7 +65,7 @@ public class XTokenOverlay extends BooleanTokenOverlay {
 
   /**
    * @see BooleanTokenOverlay#paintOverlay(java.awt.Graphics2D, net.rptools.maptool.model.Token,
-   * Rectangle)
+   *     Rectangle)
    */
   @Override
   public void paintOverlay(Graphics2D g, Token aToken, Rectangle bounds) {

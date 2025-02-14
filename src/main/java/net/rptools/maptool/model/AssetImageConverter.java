@@ -24,7 +24,6 @@ public class AssetImageConverter extends EncodedByteArrayConverter {
     // Ignore the image when creating 1.3.b65+ campaigns with assets...
   }
 
-
   @SuppressWarnings("rawtypes")
   @Override
   public boolean canConvert(Class type) {

@@ -1181,7 +1181,6 @@ public class InputFunction extends AbstractFunction {
     }
 
     return BigDecimal.ONE; // success
-
   }
 
   /**

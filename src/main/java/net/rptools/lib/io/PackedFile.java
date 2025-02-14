@@ -158,8 +158,8 @@ public class PackedFile implements AutoCloseable {
   }
 
   /**
-   * Returns a list of all keys in the campaign's property map. See also
-   * {@link #getProperty(String)}.
+   * Returns a list of all keys in the campaign's property map. See also {@link
+   * #getProperty(String)}.
    *
    * @return list of all keys
    * @throws IOException when the property file is missing
@@ -171,7 +171,7 @@ public class PackedFile implements AutoCloseable {
   /**
    * Stores a new key/value pair into the property map. Existing keys are overwritten.
    *
-   * @param key   the key for vaule
+   * @param key the key for vaule
    * @param value any POJO; will be serialized into XML upon writing
    * @return the previous value for the given key
    * @throws IOException when the property file is missing
@@ -223,7 +223,7 @@ public class PackedFile implements AutoCloseable {
    * versionManager</code>, is specified as a parameter.
    *
    * @param versionManager which set of transforms to apply to older file versions
-   * @param fileVersion    such as "1.3.70"
+   * @param fileVersion such as "1.3.70"
    * @return the results of the deserialization
    * @throws IOException when the property file is missing
    */
@@ -458,7 +458,7 @@ public class PackedFile implements AutoCloseable {
    * binary there is no charset conversion.
    *
    * @param path location within the ZIP file
-   * @param is   the binary data to be written in the form of an InputStream
+   * @param is the binary data to be written in the form of an InputStream
    * @throws IOException If an I/O error occurs
    */
   public void putFile(String path, InputStream is) throws IOException {
@@ -474,7 +474,7 @@ public class PackedFile implements AutoCloseable {
    * (temporary) file.
    *
    * @param path location within the ZIP file
-   * @param obj  the object to be written
+   * @param obj the object to be written
    * @throws IOException If an I/O error occurs
    */
   public void putFile(String path, Object obj) throws IOException {
@@ -493,7 +493,7 @@ public class PackedFile implements AutoCloseable {
    * there is no {@link Charset} conversion.
    *
    * @param path location within the ZIP file
-   * @param url  the url of the binary data to be written
+   * @param url the url of the binary data to be written
    * @throws IOException If an I/O error occurs
    */
   public void putFile(String path, URL url) throws IOException {
@@ -542,10 +542,9 @@ public class PackedFile implements AutoCloseable {
   public Object getFileObject(String path) throws IOException {
     LineNumberReader r = getFileAsReader(path);
     try (r) {
-      xstream
-          .ignoreUnknownElements();
+      xstream.ignoreUnknownElements();
       xstream.addPermission(
-          new ExplicitTypePermission(new Class[]{ExtendedGeneralPath.class, Polygon2D.class}));
+          new ExplicitTypePermission(new Class[] {ExtendedGeneralPath.class, Polygon2D.class}));
 
       // added.
       var obj = xstream.fromXML(r);
@@ -758,8 +757,9 @@ public class PackedFile implements AutoCloseable {
    * Get all of the path names for this packed file.
    *
    * @return All the path names. Changing this set does not affect the packed file. Changes to the
-   * file made after this method is called are not reflected in the path and do not cause a
-   * ConcurrentModificationException. Directories in the packed file are also included in the set.
+   *     file made after this method is called are not reflected in the path and do not cause a
+   *     ConcurrentModificationException. Directories in the packed file are also included in the
+   *     set.
    * @throws IOException Problem with the zip file.
    */
   public Set<String> getPaths() throws IOException {

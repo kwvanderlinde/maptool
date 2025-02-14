@@ -532,7 +532,6 @@ public class TransferableHelper extends TransferHandler {
     return worked;
   }
 
-
   private static final Class<?> validTypes[] = {
     java.lang.String.class, java.net.URL.class, java.util.List.class, java.awt.Image.class,
   };

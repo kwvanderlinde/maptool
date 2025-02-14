@@ -30,9 +30,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configurator;
 
-/**
- * Log functions to dynamically set log levels, log configurations, and log messages from macros
- */
+/** Log functions to dynamically set log levels, log configurations, and log messages from macros */
 public class LogFunctions extends AbstractFunction {
 
   private static final Logger log = LogManager.getLogger(LogFunctions.class);
@@ -86,7 +84,7 @@ public class LogFunctions extends AbstractFunction {
    * Returns all currently configured loggers from Log4J2 Log Manager
    *
    * @param functionName the function name
-   * @param parameters   the list of parameters
+   * @param parameters the list of parameters
    * @return JSON Array of logger name and logger level
    * @throws ParserException
    */
@@ -110,7 +108,7 @@ public class LogFunctions extends AbstractFunction {
    * Dynamically set the log level for macros
    *
    * @param functionName the function name
-   * @param parameters   the parameters of the function
+   * @param parameters the parameters of the function
    * @return new log level if level is valid, else BigDecimal.ZERO if invalid level is passed
    * @throws ParserException
    */
@@ -157,7 +155,7 @@ public class LogFunctions extends AbstractFunction {
 
   /**
    * @param functionName the function name
-   * @param parameters   a list with the log pattern as the first element
+   * @param parameters a list with the log pattern as the first element
    * @return BigDecimal.ONE if successfully set, otherwise BigDecimal.ZERO
    * @throws ParserException
    */
@@ -170,9 +168,9 @@ public class LogFunctions extends AbstractFunction {
 
   /**
    * @param functionName the name of the function
-   * @param parameters   passed into the function call
-   * @param min          number of parameters required
-   * @param max          number of parameters required
+   * @param parameters passed into the function call
+   * @param min number of parameters required
+   * @param max number of parameters required
    * @throws ParserException
    */
   private void checkParameters(String functionName, List<Object> parameters, int min, int max)

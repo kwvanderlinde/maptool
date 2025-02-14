@@ -339,7 +339,6 @@ public class MapPropertiesDialog extends JDialog {
       // This zone was the landing map but got toggled off.
       campaign.setLandingMapId(null);
     }
-
   }
 
   private void initIsometricRadio() {

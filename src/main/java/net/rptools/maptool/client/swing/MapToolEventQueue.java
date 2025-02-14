@@ -135,8 +135,7 @@ public class MapToolEventQueue extends EventQueue {
     if (player != null) {
       user.setUsername(player.getName());
       user.setId(MapTool.getClientId());
-      user.setEmail(
-          player.getName().replaceAll(" ", "_") + "@rptools.net");
+      user.setEmail(player.getName().replaceAll(" ", "_") + "@rptools.net");
     } else {
       user.setUsername("Unknown");
       user.setId("Unknown");

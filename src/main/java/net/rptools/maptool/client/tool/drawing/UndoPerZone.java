@@ -41,9 +41,7 @@ public class UndoPerZone {
 
   private static final Logger log = LogManager.getLogger(UndoPerZone.class);
 
-  /**
-   * Swing's undo/redo support
-   */
+  /** Swing's undo/redo support */
   private final UndoManager manager;
 
   private Zone zone = null;
@@ -82,7 +80,7 @@ public class UndoPerZone {
   /**
    * Add a drawable to the undo set.
    *
-   * @param pen      The pen used to draw.
+   * @param pen The pen used to draw.
    * @param drawable The drawable just drawn.
    */
   public void addDrawable(Pen pen, Drawable drawable) {
@@ -101,9 +99,7 @@ public class UndoPerZone {
     return manager.canRedo();
   }
 
-  /**
-   * Undo the last edit if one exists.
-   */
+  /** Undo the last edit if one exists. */
   public void undo() {
     checkZone();
     if (!canUndo()) {
@@ -114,9 +110,7 @@ public class UndoPerZone {
     manager.undo();
   }
 
-  /**
-   * Redo the last undo if one exists.
-   */
+  /** Redo the last undo if one exists. */
   public void redo() {
     checkZone();
     if (!canRedo()) {
@@ -156,20 +150,16 @@ public class UndoPerZone {
 
     private static final long serialVersionUID = -1373046215655231284L;
 
-    /**
-     * The pen used to modify the zone.
-     */
+    /** The pen used to modify the zone. */
     private final Pen pen;
 
-    /**
-     * What has been drawn.
-     */
+    /** What has been drawn. */
     private final Drawable drawable;
 
     /**
      * Create the undoable edit.
      *
-     * @param aPen      The pen for drawing.
+     * @param aPen The pen for drawing.
      * @param aDrawable The drawable rendered.
      */
     public DrawableUndoableEdit(Pen aPen, Drawable aDrawable) {

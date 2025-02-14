@@ -196,8 +196,7 @@ public class PersistenceUtil {
     // V V
     campaignVersionManager.registerTransformation("1.3.51", new PCVisionTransform());
     campaignVersionManager.registerTransformation("1.3.75", new ExportInfoTransform());
-    campaignVersionManager.registerTransformation(
-        "1.3.78", new TokenPropertyMapTransform());
+    campaignVersionManager.registerTransformation("1.3.78", new TokenPropertyMapTransform());
     // Label background color and font
     campaignVersionManager.registerTransformation("1.15.0", new LabelFontAndBGTransform());
 
@@ -214,8 +213,7 @@ public class PersistenceUtil {
     // This version manager is only for loading and saving tokens. Note that many (all?) of its
     // contents will
     // be used by the campaign version manager since campaigns contain tokens...
-    tokenVersionManager.registerTransformation(
-        "1.3.78", new TokenPropertyMapTransform());
+    tokenVersionManager.registerTransformation("1.3.78", new TokenPropertyMapTransform());
   }
 
   /**

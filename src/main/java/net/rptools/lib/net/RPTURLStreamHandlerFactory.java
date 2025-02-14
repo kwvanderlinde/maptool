@@ -71,7 +71,7 @@ public class RPTURLStreamHandlerFactory implements URLStreamHandlerFactory {
           imageMap.put(path, data);
         } catch (IOException ioe) {
           log.error("Error trying to read resource {}", path);
-          data = new byte[]{};
+          data = new byte[] {};
         }
       }
     }

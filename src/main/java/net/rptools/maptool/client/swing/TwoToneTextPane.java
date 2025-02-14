@@ -61,14 +61,10 @@ public class TwoToneTextPane extends JTextPane {
    * Class Variables
    *-------------------------------------------------------------------------------------------*/
 
-  /**
-   * The constant used as the attribute name for two tone colors.
-   */
+  /** The constant used as the attribute name for two tone colors. */
   public static final Object TwoToneColor = new ColorConstants("two-tone-color");
 
-  /**
-   * Pattern used to parse text strings for a style
-   */
+  /** Pattern used to parse text strings for a style */
   private static final Pattern TEXT_PATTERN = Pattern.compile("\\$\\{\\s*(\\w*)\\s*\\}");
 
   private static final Logger log = LogManager.getLogger(TwoToneTextPane.class);
@@ -77,9 +73,7 @@ public class TwoToneTextPane extends JTextPane {
    * Constructors
    *-------------------------------------------------------------------------------------------*/
 
-  /**
-   * Default constructor
-   */
+  /** Default constructor */
   public TwoToneTextPane() {
     super();
     setEditorKit(new TwoToneStyledEditorKit());
@@ -113,7 +107,7 @@ public class TwoToneTextPane extends JTextPane {
   /**
    * Sets the background color.
    *
-   * @param a  the attribute set
+   * @param a the attribute set
    * @param fg the color
    */
   public static void setTwoToneColor(MutableAttributeSet a, Color fg) {
@@ -125,7 +119,7 @@ public class TwoToneTextPane extends JTextPane {
    * a single font.
    *
    * @param style Style being modified
-   * @param font  Font to add to the style.
+   * @param font Font to add to the style.
    */
   public static void setFont(Style style, Font font) {
     StyleConstants.setFontFamily(style, font.getFamily());
@@ -206,9 +200,7 @@ public class TwoToneTextPane extends JTextPane {
    */
   class TwoToneStyledEditorKit extends StyledEditorKit {
 
-    /**
-     * The view factory used by the editor kit
-     */
+    /** The view factory used by the editor kit */
     private ViewFactory defaultViewFactory = new TwoToneStyledViewFactory();
 
     /**
@@ -265,9 +257,7 @@ public class TwoToneTextPane extends JTextPane {
    */
   public class TwoToneLabelView extends LabelView {
 
-    /**
-     * Painter used for two tone text.
-     */
+    /** Painter used for two tone text. */
     private GlyphView.GlyphPainter painter = new TwoToneGlyphPainter();
 
     /**
@@ -299,23 +289,17 @@ public class TwoToneTextPane extends JTextPane {
      * Instance Variables
      *-------------------------------------------------------------------------------------------*/
 
-    /**
-     * The metrics for the font.
-     */
+    /** The metrics for the font. */
     FontMetrics metrics;
 
     /*---------------------------------------------------------------------------------------------
      * Class Variables
      *-------------------------------------------------------------------------------------------*/
 
-    /**
-     * The amount that the text is offset horizontally
-     */
+    /** The amount that the text is offset horizontally */
     private static final int HORIZONTAL_OFFSET = 1;
 
-    /**
-     * The amount that the text is offset vertially
-     */
+    /** The amount that the text is offset vertially */
     private static final int VERTICAL_OFFSET = 0;
 
     /*---------------------------------------------------------------------------------------------
@@ -326,7 +310,7 @@ public class TwoToneTextPane extends JTextPane {
      * Fetch a reference to the text that occupies the given range. This is normally used by the
      * GlyphPainter to determine what characters it should render glyphs for.
      *
-     * @param v  Read the text from this glyph view's document.
+     * @param v Read the text from this glyph view's document.
      * @param p0 the starting document offset &gt;= 0
      * @param p1 the ending document offset &gt;= p0
      * @return the <code>Segment</code> containing the text
@@ -350,7 +334,7 @@ public class TwoToneTextPane extends JTextPane {
      * Determine the span the glyphs given a start location (for tab expansion).
      *
      * @see javax.swing.text.GlyphView.GlyphPainter#getSpan(javax.swing.text.GlyphView, int, int,
-     * javax.swing.text.TabExpander, float)
+     *     javax.swing.text.TabExpander, float)
      */
     public float getSpan(GlyphView v, int p0, int p1, TabExpander e, float x) {
       sync(v);
@@ -392,7 +376,7 @@ public class TwoToneTextPane extends JTextPane {
 
     /**
      * @see javax.swing.text.GlyphView.GlyphPainter#modelToView(javax.swing.text.GlyphView, int,
-     * javax.swing.text.Position.Bias, java.awt.Shape)
+     *     javax.swing.text.Position.Bias, java.awt.Shape)
      */
     public Shape modelToView(GlyphView v, int pos, Position.Bias bias, Shape a)
         throws BadLocationException {
@@ -426,7 +410,7 @@ public class TwoToneTextPane extends JTextPane {
      *
      * @see View#viewToModel(float, float, java.awt.Shape, javax.swing.text.Position.Bias[])
      * @see javax.swing.text.GlyphView.GlyphPainter#viewToModel(javax.swing.text.GlyphView, float,
-     * float, java.awt.Shape, javax.swing.text.Position.Bias[])
+     *     float, java.awt.Shape, javax.swing.text.Position.Bias[])
      */
     public int viewToModel(GlyphView v, float x, float y, Shape a, Position.Bias[] biasReturn) {
 
@@ -455,7 +439,7 @@ public class TwoToneTextPane extends JTextPane {
      *
      * @see View#breakView
      * @see javax.swing.text.GlyphView.GlyphPainter#getBoundedPosition(javax.swing.text.GlyphView,
-     * int, float, float)
+     *     int, float, float)
      */
     public int getBoundedPosition(GlyphView v, int p0, float x, float len) {
       sync(v);
@@ -492,7 +476,7 @@ public class TwoToneTextPane extends JTextPane {
      * Much of this code is copied from GlyphPainter1's implementation.
      *
      * @see javax.swing.text.GlyphView.GlyphPainter#paint(javax.swing.text.GlyphView,
-     * java.awt.Graphics, java.awt.Shape, int, int)
+     *     java.awt.Graphics, java.awt.Shape, int, int)
      */
     public void paint(GlyphView v, Graphics g, Shape a, int p0, int p1) {
       sync(v);
@@ -534,15 +518,11 @@ public class TwoToneTextPane extends JTextPane {
    * ColorConstants Inner Class
    *-------------------------------------------------------------------------------------------*/
 
-  /**
-   * A attribute name class that implements the proper interfaces
-   */
+  /** A attribute name class that implements the proper interfaces */
   public static class ColorConstants
       implements AttributeSet.ColorAttribute, AttributeSet.CharacterAttribute {
 
-    /**
-     * Name of the constant
-     */
+    /** Name of the constant */
     String name;
 
     /**

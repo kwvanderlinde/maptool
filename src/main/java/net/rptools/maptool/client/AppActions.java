@@ -98,8 +98,7 @@ import org.apache.logging.log4j.Logger;
  * as the accelerator, mnemonic, and short description strings. (See the {@link I18N} class for more
  * details on how the key is used.
  *
- * <p>In addition, each object should override {@link ClientAction#isAvailable()} and return true
- * if
+ * <p>In addition, each object should override {@link ClientAction#isAvailable()} and return true if
  * the application is in a state where the Action should be enabled. (The default is <code>true
  * </code>.)
  *
@@ -136,9 +135,7 @@ public class AppActions {
     return key;
   }
 
-  /**
-   * This action will rotate through the PC tokens owned by the player.
-   */
+  /** This action will rotate through the PC tokens owned by the player. */
   public static final Action NEXT_TOKEN =
       new ZoneClientAction() {
         {
@@ -488,9 +485,7 @@ public class AppActions {
         }
       };
 
-  /**
-   * This is the menu option that forces clients to display the GM's current map.
-   */
+  /** This is the menu option that forces clients to display the GM's current map. */
   public static final Action ENFORCE_ZONE =
       new ZoneAdminClientAction() {
 
@@ -716,8 +711,7 @@ public class AppActions {
           Zone z = MapTool.getFrame().getCurrentZoneRenderer().getZone();
           z.undoDrawable();
           isAvailable();
-          REDO_PER_MAP
-              .isAvailable();
+          REDO_PER_MAP.isAvailable();
         }
 
         @Override
@@ -810,7 +804,7 @@ public class AppActions {
    *
    * <p>If any tokens<i>are</i> deleted, then the selection set for the zone is cleared.
    *
-   * @param zone     the {@link Zone} the tokens belong to.
+   * @param zone the {@link Zone} the tokens belong to.
    * @param tokenSet a {code Set} containing ght ID's of the tokens to cut.
    */
   public static void cutTokens(Zone zone, Set<GUID> tokenSet) {
@@ -826,7 +820,7 @@ public class AppActions {
    *
    * <p>If any tokens <i>are</i> deleted, then the selection set for the zone is cleared.
    *
-   * @param zone     the {@link Zone} the tokens belong to.
+   * @param zone the {@link Zone} the tokens belong to.
    * @param tokenSet a {code Set} containing ght ID's of the tokens to cut.
    */
   public static void deleteTokens(Zone zone, Set<GUID> tokenSet) {
@@ -842,8 +836,8 @@ public class AppActions {
    *
    * <p>If any tokens <i>are</i> deleted, then the selection set for the zone is cleared.
    *
-   * @param copy     whether the tokens should be copied and deleted (cut) or just deleted
-   * @param zone     the {@link Zone} the tokens belong to.
+   * @param copy whether the tokens should be copied and deleted (cut) or just deleted
+   * @param zone the {@link Zone} the tokens belong to.
    * @param tokenSet a {code Set} containing ght ID's of the tokens to cut.
    */
   public static void cutOrDeleteTokens(Boolean copy, Zone zone, Set<GUID> tokenSet) {
@@ -894,8 +888,8 @@ public class AppActions {
    * be pasted back in again later. This is the highest level function in that it determines token
    * ownership (only owners can copy/cut tokens).
    *
-   * @param tokenSet the set of tokens to copy; if empty, plays the
-   *                 {@link MapTool#SND_INVALID_OPERATION} sound.
+   * @param tokenSet the set of tokens to copy; if empty, plays the {@link
+   *     MapTool#SND_INVALID_OPERATION} sound.
    */
   public static void copyTokens(Set<GUID> tokenSet) {
     List<Token> tokenList = null;
@@ -971,8 +965,8 @@ public class AppActions {
    *       </ul>
    * </ol>
    *
-   * @param tokenList the list of tokens to copy; if empty, plays the
-   *                  {@link MapTool#SND_INVALID_OPERATION} sound.
+   * @param tokenList the list of tokens to copy; if empty, plays the {@link
+   *     MapTool#SND_INVALID_OPERATION} sound.
    */
   public static void copyTokens(List<Token> tokenList) {
     // Only cut if some tokens are selected. Don't want to accidentally
@@ -1052,8 +1046,8 @@ public class AppActions {
    * with respect to grid type on the source and destination zones.
    *
    * @param destination ZonePoint specifying where to paste; normally this is unchanged from the
-   *                    MouseEvent
-   * @param layer       the Zone.Layer that specifies which layer to paste onto
+   *     MouseEvent
+   * @param layer the Zone.Layer that specifies which layer to paste onto
    */
   private static void pasteTokens(ZonePoint destination, Layer layer) {
     Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
@@ -1302,9 +1296,7 @@ public class AppActions {
         }
       };
 
-  /**
-   * This is the menu option that forces the player view to continuously track the GM view.
-   */
+  /** This is the menu option that forces the player view to continuously track the GM view. */
   public static final Action TOGGLE_LINK_PLAYER_VIEW =
       new AdminClientAction() {
         {
@@ -1490,9 +1482,7 @@ public class AppActions {
         }
       };
 
-  /**
-   * This is the menu option that warps all clients views to the current GM's view.
-   */
+  /** This is the menu option that warps all clients views to the current GM's view. */
   public static final Action ENFORCE_ZONE_VIEW =
       new ZoneAdminClientAction() {
         {
@@ -1509,9 +1499,7 @@ public class AppActions {
         }
       };
 
-  /**
-   * This is the menu option turns the lumens overlay on and off.
-   */
+  /** This is the menu option turns the lumens overlay on and off. */
   public static final Action TOGGLE_LUMENS_OVERLAY =
       new ZoneClientAction() {
         {
@@ -1530,9 +1518,7 @@ public class AppActions {
         }
       };
 
-  /**
-   * This is the menu option turns the lumens overlay on and off.
-   */
+  /** This is the menu option turns the lumens overlay on and off. */
   public static final Action TOGGLE_SHOW_LIGHTS =
       new ZoneClientAction() {
         {
@@ -1551,9 +1537,7 @@ public class AppActions {
         }
       };
 
-  /**
-   * Start entering text into the chat field
-   */
+  /** Start entering text into the chat field */
   public static final String CHAT_COMMAND_ID = "action.sendChat";
 
   public static final Action CHAT_COMMAND =
@@ -1577,9 +1561,7 @@ public class AppActions {
 
   public static final String COMMAND_DOWN_ID = "action.commandDown";
 
-  /**
-   * Start entering text into the chat field
-   */
+  /** Start entering text into the chat field */
   public static final String ENTER_COMMAND_ID = "action.runMacro";
 
   public static final Action ENTER_COMMAND =
@@ -1594,9 +1576,7 @@ public class AppActions {
         }
       };
 
-  /**
-   * Action tied to the chat field to commit the command.
-   */
+  /** Action tied to the chat field to commit the command. */
   public static final String COMMIT_COMMAND_ID = "action.commitCommand";
 
   public static final Action COMMIT_COMMAND =
@@ -1611,9 +1591,7 @@ public class AppActions {
         }
       };
 
-  /**
-   * Action tied to the chat field to commit the command.
-   */
+  /** Action tied to the chat field to commit the command. */
   public static final String CANCEL_COMMAND_ID = "action.cancelCommand";
 
   public static final Action CANCEL_COMMAND =
@@ -1628,9 +1606,7 @@ public class AppActions {
         }
       };
 
-  /**
-   * Action to insert a newline into the chat input field
-   */
+  /** Action to insert a newline into the chat input field */
   public static final String NEWLINE_COMMAND_ID = "action.newlineCommand";
 
   public static final Action NEWLINE_COMMAND =
@@ -2000,8 +1976,7 @@ public class AppActions {
           String msg = I18N.getText("msg.confirm.newCampaign");
           log.debug(msg);
           Object[] options = {
-              I18N.getText("msg.title.messageDialog.yes"),
-              I18N.getText("msg.title.messageDialog.no")
+            I18N.getText("msg.title.messageDialog.yes"), I18N.getText("msg.title.messageDialog.no")
           };
           String title = I18N.getText("msg.title.messageDialogConfirm");
           int val =
@@ -2040,8 +2015,8 @@ public class AppActions {
       };
 
   /**
-   * Note that the ZOOM actions are defined as DefaultClientAction types. This allows the
-   * {@link ClientAction#getKeyStroke()} method to be invoked where otherwise it couldn't be.
+   * Note that the ZOOM actions are defined as DefaultClientAction types. This allows the {@link
+   * ClientAction#getKeyStroke()} method to be invoked where otherwise it couldn't be.
    *
    * <p>(Well, it <i>could be</i> if we cast this object to the right type everywhere else but
    * that's just tedious. And what is tedious is error-prone. :))
@@ -2166,9 +2141,7 @@ public class AppActions {
         }
       };
 
-  /**
-   * Toggle to enable / disable player use of the token editor.
-   */
+  /** Toggle to enable / disable player use of the token editor. */
   public static final Action TOGGLE_TOKEN_EDITOR_LOCK =
       new AdminClientAction() {
         {
@@ -2336,10 +2309,10 @@ public class AppActions {
                   MapTool.showError("msg.error.failedConnect", ioe);
                   failed = true;
                 } catch (NoSuchAlgorithmException
-                         | InvalidAlgorithmParameterException
-                         | InvalidKeySpecException
-                         | NoSuchPaddingException
-                         | InvalidKeyException e) {
+                    | InvalidAlgorithmParameterException
+                    | InvalidKeySpecException
+                    | NoSuchPaddingException
+                    | InvalidKeyException e) {
                   MapTool.showError("msg.error.initializeCrypto", e);
                   failed = true;
                 } catch (PasswordDatabaseException pwde) {
@@ -2474,8 +2447,7 @@ public class AppActions {
   /**
    * Disconnects the client and starts a personal server.
    *
-   * <p>If we are hosting the server, the personal server will have the same campaign as the
-   * server.
+   * <p>If we are hosting the server, the personal server will have the same campaign as the server.
    * Otherwise a new basic campaign will be created.
    */
   public static void disconnectFromServer() {
@@ -2863,7 +2835,7 @@ public class AppActions {
         public boolean isAvailable() {
           return MapTool.getFrame().getCurrentZoneRenderer() != null
               && (MapTool.isHostingServer()
-              || (MapTool.getPlayer() != null && MapTool.getPlayer().isGM()));
+                  || (MapTool.getPlayer() != null && MapTool.getPlayer().isGM()));
         }
 
         @Override
@@ -3025,7 +2997,7 @@ public class AppActions {
         AppPreferences.loadDirectory.set(mapFile.getParentFile());
         if ((map.zone.getExposedArea() != null && !map.zone.getExposedArea().isEmpty())
             || (map.zone.getExposedAreaMetaData() != null
-            && !map.zone.getExposedAreaMetaData().isEmpty())) {
+                && !map.zone.getExposedAreaMetaData().isEmpty())) {
           boolean ok =
               MapTool.confirm(
                   "<html>Map contains exposed areas of fog.<br>Do you want to reset all of the fog?");
@@ -3131,8 +3103,7 @@ public class AppActions {
         }
 
         @Override
-        protected void done() {
-        }
+        protected void done() {}
       }.execute();
     }
   }
@@ -3298,9 +3269,7 @@ public class AppActions {
         }
       };
 
-  /**
-   * Toggle the drawing of measurements.
-   */
+  /** Toggle the drawing of measurements. */
   public static final Action TOGGLE_DRAW_MEASUREMENTS =
       new DefaultClientAction() {
         {
@@ -3319,9 +3288,7 @@ public class AppActions {
         }
       };
 
-  /**
-   * Toggle drawing straight lines at double width on the line tool.
-   */
+  /** Toggle drawing straight lines at double width on the line tool. */
   public static final Action TOGGLE_DOUBLE_WIDE =
       new DefaultClientAction() {
         {
@@ -3342,9 +3309,7 @@ public class AppActions {
         }
       };
 
-  /**
-   * Class representing the turn on / turn off action of an overlay.
-   */
+  /** Class representing the turn on / turn off action of an overlay. */
   public static class ToggleOverlayAction extends ClientAction {
 
     private final HTMLOverlayManager overlayManager;
@@ -3422,9 +3387,7 @@ public class AppActions {
 
   public abstract static class ClientAction extends AbstractAction {
 
-    /**
-     * Does the code need to guard against bug https://bugs.openjdk.java.net/browse/JDK-8208712.
-     */
+    /** Does the code need to guard against bug https://bugs.openjdk.java.net/browse/JDK-8208712. */
     private static final boolean NEEDS_GUARD;
 
     static {
@@ -3492,11 +3455,11 @@ public class AppActions {
 
     public void runBackground(final Runnable r) {
       new Thread(
-          () -> {
-            r.run();
+              () -> {
+                r.run();
 
-            updateActions();
-          })
+                updateActions();
+              })
           .start();
     }
   }
@@ -3549,9 +3512,7 @@ public class AppActions {
     }
   }
 
-  /**
-   * This class provides an action that displays a url from I18N
-   */
+  /** This class provides an action that displays a url from I18N */
   public static class OpenUrlAction extends DefaultClientAction {
 
     public OpenUrlAction(String key) {

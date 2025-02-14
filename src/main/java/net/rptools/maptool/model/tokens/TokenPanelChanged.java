@@ -16,6 +16,4 @@ package net.rptools.maptool.model.tokens;
 
 import net.rptools.maptool.model.Token;
 
-public record TokenPanelChanged(Token token) {
-
-}
+public record TokenPanelChanged(Token token) {}

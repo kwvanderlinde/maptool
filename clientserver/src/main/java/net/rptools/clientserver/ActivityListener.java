@@ -22,17 +22,13 @@ public interface ActivityListener {
   public static enum Direction {
     Inbound,
     Outbound
-  }
-
-  ;
+  };
 
   public static enum State {
     Start,
     Progress,
     Complete
-  }
-
-  ;
+  };
 
   public static final int CHUNK_SIZE = 4 * 1024;
 

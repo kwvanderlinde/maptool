@@ -48,9 +48,7 @@ public class AliasMacro implements Macro {
     // Split into components
     String name = macro;
     String value = null;
-    int split =
-        macro.indexOf(
-            ' ');
+    int split = macro.indexOf(' ');
     // macro
     if (split > 0) {
       name = macro.substring(0, split);

@@ -27,7 +27,6 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.events.ZoneActivated;
@@ -189,7 +188,6 @@ public class ZoneMiniMapPanel extends JPanel {
   // MOUSE HANDLER
   private static class MouseHandler extends MouseAdapter {
     @Override
-    public void mouseClicked(MouseEvent e) {
-    }
+    public void mouseClicked(MouseEvent e) {}
   }
 }

@@ -75,14 +75,10 @@ public class TwoToneTextFieldUI extends BasicTextFieldUI {
      * Class Variables
      *-------------------------------------------------------------------------------------------*/
 
-    /**
-     * The amount that the text is offset horizontally
-     */
+    /** The amount that the text is offset horizontally */
     private static final int HORIZONTAL_OFFSET = 1;
 
-    /**
-     * The amount that the text is offset vertially
-     */
+    /** The amount that the text is offset vertially */
     private static final int VERTICAL_OFFSET = 0;
 
     /*---------------------------------------------------------------------------------------------

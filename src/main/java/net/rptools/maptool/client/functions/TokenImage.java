@@ -43,9 +43,7 @@ import net.rptools.parser.function.AbstractFunction;
 
 public class TokenImage extends AbstractFunction {
 
-  /**
-   * Singleton instance.
-   */
+  /** Singleton instance. */
   private static final TokenImage instance = new TokenImage();
 
   enum imageType {
@@ -62,9 +60,7 @@ public class TokenImage extends AbstractFunction {
     final int getValue() {
       return value;
     }
-  }
-
-  ;
+  };
 
   public static final String SET_IMAGE = "setImage";
   public static final String SET_PORTRAIT = "setTokenPortrait";
@@ -201,8 +197,8 @@ public class TokenImage extends AbstractFunction {
         Asset asset;
         if (imageString.toLowerCase().startsWith("https://")
             && (imageString.toLowerCase().endsWith(".jpg")
-            || imageString.toLowerCase().endsWith(".png")
-            || imageString.toLowerCase().endsWith(".webp"))) {
+                || imageString.toLowerCase().endsWith(".png")
+                || imageString.toLowerCase().endsWith(".webp"))) {
           try {
             URI uri = new URI(imageString);
             URL url = uri.toURL();
@@ -315,7 +311,7 @@ public class TokenImage extends AbstractFunction {
   /**
    * Get the MD5Key corresponding to an asset.
    *
-   * @param assetName    either an assetId or the name of an image token.
+   * @param assetName either an assetId or the name of an image token.
    * @param functionName the name of the function, to display the exception message.
    * @return the MD5Key associated with the asset.
    * @throws ParserException if assetName not found or assetName doesn't

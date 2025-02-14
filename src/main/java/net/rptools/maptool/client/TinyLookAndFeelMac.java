@@ -31,8 +31,8 @@ public class TinyLookAndFeelMac extends TinyLookAndFeel {
 
     Object fieldInputMap =
         new UIDefaults.LazyInputMap(
-            new Object[]{
-                // @formatter:off
+            new Object[] {
+              // @formatter:off
               "meta C", DefaultEditorKit.copyAction,
               "meta V", DefaultEditorKit.pasteAction,
               "meta X", DefaultEditorKit.cutAction,
@@ -76,8 +76,8 @@ public class TinyLookAndFeelMac extends TinyLookAndFeel {
 
     Object passwordInputMap =
         new UIDefaults.LazyInputMap(
-            new Object[]{
-                // @formatter:off
+            new Object[] {
+              // @formatter:off
               "meta C", DefaultEditorKit.copyAction,
               "meta V", DefaultEditorKit.pasteAction,
               "meta X", DefaultEditorKit.cutAction,
@@ -121,8 +121,8 @@ public class TinyLookAndFeelMac extends TinyLookAndFeel {
 
     Object multilineInputMap =
         new UIDefaults.LazyInputMap(
-            new Object[]{
-                // @formatter:off
+            new Object[] {
+              // @formatter:off
               "meta C", DefaultEditorKit.copyAction,
               "meta V", DefaultEditorKit.pasteAction,
               "meta X", DefaultEditorKit.cutAction,
@@ -189,7 +189,7 @@ public class TinyLookAndFeelMac extends TinyLookAndFeel {
             });
 
     Object[] defaults = {
-        // @formatter:off
+      // @formatter:off
       "TextField.focusInputMap",
       fieldInputMap,
       "PasswordField.focusInputMap",
@@ -242,7 +242,6 @@ public class TinyLookAndFeelMac extends TinyLookAndFeel {
             "KP_UP", "increment",
             "DOWN", "decrement",
             "KP_DOWN", "decrement",
-
             "meta KP_LEFT", DefaultEditorKit.beginLineAction,
             "meta RIGHT", DefaultEditorKit.endLineAction,
             "meta KP_RIGHT", DefaultEditorKit.endLineAction,

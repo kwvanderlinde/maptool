@@ -162,8 +162,8 @@ public class PointerTool extends DefaultTool {
    * the six-sided shapes intelligently depending on whether the grid is a vertical or horizontal
    * grid. This also moves us one step closer to defining the keys in an external file...
    *
-   * <p>Boy, this is ugly. As I pin down fixes for code leading up to MT1.4 I find myself
-   * performing criminal acts on the code base. :(
+   * <p>Boy, this is ugly. As I pin down fixes for code leading up to MT1.4 I find myself performing
+   * criminal acts on the code base. :(
    */
   @Override
   protected void addGridBasedKeys(Grid grid, boolean enable) {
@@ -211,7 +211,7 @@ public class PointerTool extends DefaultTool {
       Token keyToken, Set<GUID> tokens, ZonePoint dragStart, boolean isMovingWithKeys) {
     if (!MapTool.getPlayer().isGM()
         && (MapTool.getServerPolicy().isMovementLocked()
-        || MapTool.getFrame().getInitiativePanel().isMovementLocked(keyToken))) {
+            || MapTool.getFrame().getInitiativePanel().isMovementLocked(keyToken))) {
       // Not allowed
       return;
     }
@@ -225,9 +225,7 @@ public class PointerTool extends DefaultTool {
     tokenDragOp = new TokenDragOp(renderer, keyToken, dragStart, isMovingWithKeys);
   }
 
-  /**
-   * Complete the drag of the token, and expose FOW
-   */
+  /** Complete the drag of the token, and expose FOW */
   public void stopTokenDrag() {
     if (tokenDragOp != null) {
       tokenDragOp.finish();
@@ -265,8 +263,7 @@ public class PointerTool extends DefaultTool {
           gridSize + PADDING * 2 + fm.getHeight() + 10);
     }
 
-    public void handleMouseReleased(MouseEvent event) {
-    }
+    public void handleMouseReleased(MouseEvent event) {}
 
     /**
      * Handles right click (popup menu) and double left click (token editor).
@@ -778,7 +775,7 @@ public class PointerTool extends DefaultTool {
 
   /**
    * @note These keystrokes are currently hard-coded and should be exported to a property file in a
-   * perfect universe. :)
+   *     perfect universe. :)
    *     <table>
    * <caption>Keystrokes</caption>
    * <tr>
@@ -1394,14 +1391,14 @@ public class PointerTool extends DefaultTool {
     if (tokenUnderMouse != null
         && tokenDragOp == null
         && AppUtil.tokenIsVisible(
-        renderer.getZone(), tokenUnderMouse, new PlayerView(MapTool.getPlayer().getRole()))) {
+            renderer.getZone(), tokenUnderMouse, new PlayerView(MapTool.getPlayer().getRole()))) {
       if (AppPreferences.portraitSize.get() > 0
           && (SwingUtil.isShiftDown(keysDown)
-          == AppPreferences.showStatSheetRequiresModifierKey.get())
+              == AppPreferences.showStatSheetRequiresModifierKey.get())
           && new StatSheetManager().isLegacyStatSheet(tokenUnderMouse.getStatSheet())
           && (tokenOnStatSheet == null
-          || !tokenOnStatSheet.equals(tokenUnderMouse)
-          || statSheet == null)) {
+              || !tokenOnStatSheet.equals(tokenUnderMouse)
+              || statSheet == null)) {
         tokenOnStatSheet = tokenUnderMouse;
 
         BufferedImage image = null;
@@ -1915,7 +1912,7 @@ public class PointerTool extends DefaultTool {
       boolean isValid =
           (renderer.getZone().getGrid().getSize() >= 9)
               ? validateMove(
-              tokenBeingDragged, renderer.getSelectedTokenSet(), newAnchorPoint, dirx, diry)
+                  tokenBeingDragged, renderer.getSelectedTokenSet(), newAnchorPoint, dirx, diry)
               : validateMove_legacy(
                   tokenBeingDragged, renderer.getSelectedTokenSet(), newAnchorPoint);
       if (!isValid) {

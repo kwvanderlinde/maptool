@@ -152,7 +152,6 @@ public abstract class DefaultTool extends Tool
     actionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.SHIFT_DOWN_MASK),
         new FlipTokenVerticalActionListener());
-
   }
 
   ////

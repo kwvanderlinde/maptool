@@ -516,7 +516,6 @@ public class TokenMoveFunctions extends AbstractFunction {
         } else {
           return new BigDecimal(bar).stripTrailingZeros().toPlainString();
         }
-
       }
     } else {
       double c = 0;

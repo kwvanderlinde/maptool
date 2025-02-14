@@ -28,9 +28,7 @@ import net.rptools.parser.ParserException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-/**
- * The OptionInfo class - holds extracted name and parameters for a roll options.
- */
+/** The OptionInfo class - holds extracted name and parameters for a roll options. */
 class OptionInfo {
 
   // Logger for this class.
@@ -42,11 +40,8 @@ class OptionInfo {
   private static final Object nullParam = null;
   private static final Pattern PATTERN_COMMA = Pattern.compile("^\\s*,\\s*(?!$)");
 
-  /**
-   * The OptionType enum contains the option type that has been specified for the roll
-   */
+  /** The OptionType enum contains the option type that has been specified for the roll */
   enum OptionType {
-
     NO_OPTION("", 0, 0),
     // output formats
     EXPANDED("e|expanded", 0, 0),
@@ -85,34 +80,26 @@ class OptionInfo {
     // Run for another token
     TOKEN("token", 1, 1);
 
-    /**
-     * The name pattern for the roll option.
-     */
+    /** The name pattern for the roll option. */
     private final Pattern namePattern;
 
-    /**
-     * The minimum number of parameters for the roll option.
-     */
+    /** The minimum number of parameters for the roll option. */
     private final int minParams;
 
-    /**
-     * The maximum number of parameters for the roll option, this will be -1 for unlimited
-     */
+    /** The maximum number of parameters for the roll option, this will be -1 for unlimited */
     private final int maxParams;
 
-    /**
-     * The default parameters for the roll option.
-     */
+    /** The default parameters for the roll option. */
     private final Object[] defaultParams;
 
     /**
      * Creates a new OptionType enum value.
      *
-     * @param nameRegex     The regular expression for the option.
-     * @param minParams     The minimum number of parameters for the option.
-     * @param maxParams     The maximum number of parameters for the action, or -1 for unlimited.
+     * @param nameRegex The regular expression for the option.
+     * @param minParams The minimum number of parameters for the option.
+     * @param maxParams The maximum number of parameters for the action, or -1 for unlimited.
      * @param defaultParams The default parameters for the roll option (either String of
-     *                      BigDecimal).
+     *     BigDecimal).
      */
     OptionType(String nameRegex, int minParams, int maxParams, Object... defaultParams) {
       this.namePattern = Pattern.compile("^\\s*" + nameRegex + "\\s*$", Pattern.CASE_INSENSITIVE);
@@ -137,9 +124,7 @@ class OptionInfo {
       }
     }
 
-    /**
-     * Obtain one of the enum values, or null if <code>strName</code> doesn't match any of them.
-     */
+    /** Obtain one of the enum values, or null if <code>strName</code> doesn't match any of them. */
     private static OptionType optionTypeFromName(String strName) {
       for (OptionType rot : OptionType.values()) {
         if (rot.getNamePattern().matcher(strName).matches()) {
@@ -149,9 +134,7 @@ class OptionInfo {
       return null;
     }
 
-    /**
-     * Returns the regex that matches all valid names for this option.
-     */
+    /** Returns the regex that matches all valid names for this option. */
     public Pattern getNamePattern() {
       return namePattern;
     }
@@ -164,9 +147,7 @@ class OptionInfo {
       return maxParams;
     }
 
-    /**
-     * Returns a copy of the default params array for this option type.
-     */
+    /** Returns a copy of the default params array for this option type. */
     public Object[] getDefaultParams() {
       if (maxParams == -1) {
         return null;
@@ -203,9 +184,7 @@ class OptionInfo {
     }
   }
 
-  /**
-   * Thrown when a roll option can't be parsed.
-   */
+  /** Thrown when a roll option can't be parsed. */
   @SuppressWarnings("serial")
   public static class RollOptionException extends Exception {
 
@@ -241,7 +220,7 @@ class OptionInfo {
    *
    * @param optionString A string containing a comma-delimited list of roll options.
    * @throws RollOptionException if any of the options are unknown or don't match the template for
-   *                             that option type.
+   *     that option type.
    */
   static List<OptionInfo> getRollOptionList(String optionString) throws RollOptionException {
 
@@ -296,11 +275,11 @@ class OptionInfo {
           "^(?:((?:[^()\"',]|\"[^\"]*\"|'[^']*'|\\((?:[^()\"']|\"[^\"]*\"|'[^']*')*\\))+)(,|\\))){1}?");
 
   /**
-   * Parses a roll option and sets the RollOptionType and parameters. <br> Missing optional
-   * parameters are set to the default for the type.
+   * Parses a roll option and sets the RollOptionType and parameters. <br>
+   * Missing optional parameters are set to the default for the type.
    *
    * @param optionString The string containing the option
-   * @param start        Where in the string to begin parsing from
+   * @param start Where in the string to begin parsing from
    * @throws RollOptionException if the option string can't be parsed.
    */
   private void parseOptionString(String optionString, int start) throws RollOptionException {
@@ -381,9 +360,7 @@ class OptionInfo {
     optionEnd = start;
   }
 
-  /**
-   * Converts a String to a BigDecimal if possible, otherwise returns original String.
-   */
+  /** Converts a String to a BigDecimal if possible, otherwise returns original String. */
   private Object toNumIfPossible(String s) {
     Object retval = s;
     try {
@@ -408,9 +385,7 @@ class OptionInfo {
     return optionEnd;
   }
 
-  /**
-   * Returns the number of options passed in
-   */
+  /** Returns the number of options passed in */
   public int getParamCount() {
     return params.length;
   }
@@ -419,16 +394,12 @@ class OptionInfo {
     return optionType;
   }
 
-  /**
-   * Gets a parameter (Object type).
-   */
+  /** Gets a parameter (Object type). */
   public Object getObjectParam(int index) {
     return params[index];
   }
 
-  /**
-   * Gets the text of a parameter.
-   */
+  /** Gets the text of a parameter. */
   public String getStringParam(int index) {
     Object o = params[index];
     return (o == null) ? null : o.toString();
@@ -447,24 +418,18 @@ class OptionInfo {
     return s;
   }
 
-  /**
-   * Gets a parameter, casting it to BigDecimal.
-   */
+  /** Gets a parameter, casting it to BigDecimal. */
   public BigDecimal getNumericParam(int index) {
     return (BigDecimal) params[index];
   }
 
-  /**
-   * Gets the integer value of a parameter.
-   */
+  /** Gets the integer value of a parameter. */
   @SuppressWarnings("unused")
   public int getIntParam(int index) {
     return getNumericParam(index).intValue();
   }
 
-  /**
-   * Returns a param, parsing it as an expression if it is a string.
-   */
+  /** Returns a param, parsing it as an expression if it is a string. */
   public Object getParsedParam(
       int index, MapToolVariableResolver res, Token tokenInContext, MapToolLineParser parser)
       throws ParserException {
@@ -477,9 +442,7 @@ class OptionInfo {
     return retval;
   }
 
-  /**
-   * Returns a param as int, parsing it as an expression if it is a string.
-   */
+  /** Returns a param as int, parsing it as an expression if it is a string. */
   public int getParsedIntParam(
       int index, MapToolVariableResolver res, Token tokenInContext, MapToolLineParser parser)
       throws ParserException {

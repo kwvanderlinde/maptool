@@ -59,9 +59,7 @@ public class ConnectToServerDialog extends AbeillePanel<ConnectToServerDialogPre
   private GenericDialog dialog;
   private RemoteServerConfig connectionDetails = null;
 
-  /**
-   * This is the default constructor
-   */
+  /** This is the default constructor */
   public ConnectToServerDialog() {
     super(new ConnectToServerDialogView().getRootComponent());
     setPreferredSize(new Dimension(600, 500));
@@ -77,7 +75,7 @@ public class ConnectToServerDialog extends AbeillePanel<ConnectToServerDialogPre
    * Get the result from this dialog
    *
    * @return null if cancelled, otherwise the server address with other parameters stored in
-   * preferences
+   *     preferences
    */
   @Nullable
   public RemoteServerConfig getResult() {
@@ -377,7 +375,7 @@ public class ConnectToServerDialog extends AbeillePanel<ConnectToServerDialogPre
       for (String line : encodedData) {
         String[] row = line.split(":");
         if (row.length == 1) {
-          row = new String[]{row[0], "Unknown"};
+          row = new String[] {row[0], "Unknown"};
         }
         data.add(row);
       }
@@ -415,10 +413,8 @@ public class ConnectToServerDialog extends AbeillePanel<ConnectToServerDialogPre
 
   private static class ServerInfo {
 
-    @Nonnull
-    String id;
-    @Nonnull
-    RemoteServerConfig.Socket config;
+    @Nonnull String id;
+    @Nonnull RemoteServerConfig.Socket config;
 
     public ServerInfo(@Nonnull String id, @Nonnull RemoteServerConfig.Socket config) {
       this.id = id.trim();

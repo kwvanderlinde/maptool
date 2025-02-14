@@ -30,9 +30,7 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Token;
 
-/**
- *
- */
+/** */
 public class FacingTool extends DefaultTool {
 
   private static final long serialVersionUID = -2807604658989763950L;

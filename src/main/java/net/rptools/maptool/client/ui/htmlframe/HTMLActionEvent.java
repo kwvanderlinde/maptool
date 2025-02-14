@@ -16,14 +16,10 @@ package net.rptools.maptool.client.ui.htmlframe;
 
 import java.awt.event.ActionEvent;
 
-/**
- * Class holding nested classes for ActionEvent related to HTML.
- */
+/** Class holding nested classes for ActionEvent related to HTML. */
 public class HTMLActionEvent {
 
-  /**
-   * Action event for changing title of the container.
-   */
+  /** Action event for changing title of the container. */
   public static class ChangeTitleActionEvent extends ActionEvent {
 
     private final String newTitle;
@@ -71,9 +67,7 @@ public class HTMLActionEvent {
     }
   }
 
-  /**
-   * Action event for registering a macro
-   */
+  /** Action event for registering a macro */
   public static class RegisterMacroActionEvent extends ActionEvent {
 
     private final String type;
@@ -104,9 +98,7 @@ public class HTMLActionEvent {
     }
   }
 
-  /**
-   * Class that listens for form events.
-   */
+  /** Class that listens for form events. */
   public static class FormActionEvent extends ActionEvent {
 
     private final String method;
