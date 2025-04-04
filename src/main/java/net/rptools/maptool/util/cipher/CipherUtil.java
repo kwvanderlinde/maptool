@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
@@ -32,7 +33,9 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.PSource;
 import javax.crypto.spec.SecretKeySpec;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.language.I18N;
@@ -71,6 +74,11 @@ public class CipherUtil {
 
   /** Asynchronous Key Algorithm */
   private static final String ASYNC_KEY_ALGORITHM = "RSA";
+
+  // private static final String ASYMMETRIC_CIPHER_ALGORITHM = "RSA";
+  // private static final String ASYMMETRIC_CIPHER_ALGORITHM =
+  // "RSA/ECB/OAEPWithSHA-1AndMGF1Padding";
+  private static final String ASYMMETRIC_CIPHER_ALGORITHM = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
 
   private static final String PUBLIC_KEY_FIRST_LINE = "====== Begin Public Key ======";
   private static final String PUBLIC_KEY_LAST_LINE = "====== End Public Key ======";
@@ -237,6 +245,7 @@ public class CipherUtil {
     if (!key.asymmetric()) {
       throw new AssertionError("Expected asymmetric key, got symmetric");
     }
+
     if (!key.publicKey.getAlgorithm().equals(ASYNC_KEY_ALGORITHM)) {
       throw new AssertionError(
           "Expected Algorithm " + ASYNC_KEY_ALGORITHM + " got " + key.publicKey.getAlgorithm());
@@ -261,9 +270,12 @@ public class CipherUtil {
           InvalidKeyException,
           InvalidAlgorithmParameterException {
     if (key.asymmetric()) {
-      Cipher cipher = Cipher.getInstance(ASYNC_KEY_ALGORITHM);
+      Cipher cipher = Cipher.getInstance(ASYMMETRIC_CIPHER_ALGORITHM);
       cipher.init(
-          encryptMode, encryptMode == Cipher.ENCRYPT_MODE ? key.publicKey() : key.privateKey());
+          encryptMode,
+          encryptMode == Cipher.ENCRYPT_MODE ? key.publicKey() : key.privateKey(),
+          new OAEPParameterSpec(
+              "SHA-256", "MGF1", new MGF1ParameterSpec("SHA-256"), PSource.PSpecified.DEFAULT));
       return cipher;
     } else {
       Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
