@@ -101,6 +101,7 @@ public class BufferedImagePool {
     if (available.isEmpty()) {
       final var newInstance =
           this.configuration.createCompatibleImage(width, height, Transparency.TRANSLUCENT);
+      newInstance.setAccelerationPriority(1);
 
       // If there is still space available in the pool, start tracking the newly created image.
       // Otherwise, we can just return it and forget about it.
