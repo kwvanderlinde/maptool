@@ -32,12 +32,23 @@ import net.rptools.maptool.client.ui.zone.BufferedImagePool;
  * <p>Also optionally renders onto an intermediate buffer.
  */
 public class RenderHelper {
+  private final String context;
   private final ZoneRenderer renderer;
   private final BufferedImagePool tempBufferPool;
 
-  public RenderHelper(ZoneRenderer renderer, BufferedImagePool tempBufferPool) {
+  private RenderHelper(String context, ZoneRenderer renderer, BufferedImagePool tempBufferPool) {
+    this.context = context;
     this.renderer = renderer;
     this.tempBufferPool = tempBufferPool;
+  }
+
+  public RenderHelper(ZoneRenderer renderer, BufferedImagePool tempBufferPool) {
+    this("  ", renderer, tempBufferPool);
+  }
+
+  public RenderHelper derive(String context) {
+    return new RenderHelper(
+        this.context.isEmpty() ? context : this.context + "." + context, renderer, tempBufferPool);
   }
 
   private void doRender(Graphics2D g, Consumer<Graphics2D> render) {
@@ -53,9 +64,9 @@ public class RenderHelper {
     af.scale(scale.getScale(), scale.getScale());
     g.setTransform(af);
 
-    timer.start("bufferRender-render");
+    timer.start("%s:bufferRender-render", context);
     render.accept(g);
-    timer.stop("bufferRender-render");
+    timer.stop("%s:bufferRender-render", context);
   }
 
   public void render(Graphics2D g, Consumer<Graphics2D> render) {
@@ -73,10 +84,10 @@ public class RenderHelper {
     // We only render one image onto another without scaling, so antialiasing won't help at all.
     g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
-    timer.start("bufferRender-acquireBuffer");
+    timer.start("%s:bufferRender-acquireBuffer", context);
     try (final var entry = tempBufferPool.acquire()) {
       final var buffer = entry.get();
-      timer.stop("bufferRender-acquireBuffer");
+      timer.stop("%s:bufferRender-acquireBuffer", context);
 
       Graphics2D buffG = (Graphics2D) buffer.getGraphics();
       try {
@@ -85,10 +96,10 @@ public class RenderHelper {
         buffG.dispose();
       }
 
-      timer.start("bufferRender-blit");
+      timer.start("%s:bufferRender-blit", context);
       g.setComposite(blitComposite);
       g.drawImage(buffer, 0, 0, renderer);
-      timer.stop("bufferRender-blit");
+      timer.stop("%s:bufferRender-blit", context);
     } finally {
       g.dispose();
     }

@@ -33,7 +33,7 @@ public class LumensRenderer {
   private final ZoneView zoneView;
 
   public LumensRenderer(RenderHelper renderHelper, Zone zone, ZoneView zoneView) {
-    this.renderHelper = renderHelper;
+    this.renderHelper = renderHelper.derive("renderLumensOverlay");
     this.zone = zone;
     this.zoneView = zoneView;
   }
