@@ -78,7 +78,7 @@ public class LumensRenderer {
       timer.stop("renderLumensOverlay:setClip");
     }
 
-    worldG.setComposite(AlphaComposite.SrcOver.derive(overlayOpacity));
+    worldG.setComposite(AlphaComposite.Src);
 
     timer.start("renderLumensOverlay:drawLumens");
     for (final var lumensLevel : disjointLumensLevels) {
@@ -102,10 +102,9 @@ public class LumensRenderer {
       }
 
       timer.start("renderLumensOverlay:drawLumens:fillArea");
-      worldG.setPaint(new Color(lightShade, lightShade, lightShade, lightOpacity));
+      worldG.setPaint(new Color(lightShade, lightShade, lightShade, lightOpacity * overlayOpacity));
       worldG.fill(lumensLevel.lightArea());
-
-      worldG.setPaint(new Color(0.f, 0.f, 0.f, 1.f));
+      worldG.setPaint(new Color(0.f, 0.f, 0.f, overlayOpacity));
       worldG.fill(lumensLevel.darknessArea());
       timer.stop("renderLumensOverlay:drawLumens:fillArea");
     }
