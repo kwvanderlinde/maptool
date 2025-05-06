@@ -62,6 +62,10 @@ public class LumensRenderer {
     final var disjointLumensLevels =
         zoneView.getIllumination(view).getDisjointObscuredLumensLevels();
 
+    // TODO Only render those areas whose bounds coincide with the viewport. Otherwise we get this
+    //  weird situation where all lights are offscreen, blits are fast (all transparent), yet the
+    //  area fills still take a bunch of time.
+
     var originalClip = worldG.getClip();
     var bounds = originalClip.getBounds();
     // At night, show any uncovered areas as dark. In daylight, show them as light (clear).
