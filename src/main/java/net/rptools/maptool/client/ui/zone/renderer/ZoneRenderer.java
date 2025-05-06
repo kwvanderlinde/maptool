@@ -780,7 +780,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
           try (final var bufferHandle = tempBufferPool.acquire()) {
             final var buffer = bufferHandle.get();
-            final var bufferG2d = buffer.createGraphics();
+            final var bufferG2d = (Graphics2D) buffer.getGraphics();
             // Keep the clip so we don't render more than we have to.
             bufferG2d.setClip(g2d.getClip());
 
@@ -811,7 +811,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             timer.start("paintComponent:renderBuffer");
             bufferG2d.dispose();
             if (!skipDrawing) {
-              g2d.drawImage(buffer, null, 0, 0);
+              g2d.drawImage(buffer, 0, 0, null);
             }
             timer.stop("paintComponent:renderBuffer");
           }

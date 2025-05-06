@@ -16,8 +16,8 @@ package net.rptools.maptool.client.ui.zone;
 
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
+import java.awt.Image;
 import java.awt.Transparency;
-import java.awt.image.BufferedImage;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
@@ -36,13 +36,13 @@ public class BufferedImagePool {
   private static final Logger log = LogManager.getLogger(BufferedImagePool.class);
 
   public final class Handle implements AutoCloseable {
-    private final BufferedImage image;
+    private final Image image;
 
-    private Handle(BufferedImage image) {
+    private Handle(Image image) {
       this.image = image;
     }
 
-    public BufferedImage get() {
+    public Image get() {
       return image;
     }
 
@@ -57,8 +57,8 @@ public class BufferedImagePool {
   private @Nonnull GraphicsConfiguration configuration;
 
   private final int maxSize;
-  private final Deque<BufferedImage> available = new ArrayDeque<>();
-  private final Set<BufferedImage> checkedOut = Collections.newSetFromMap(new IdentityHashMap<>());
+  private final Deque<Image> available = new ArrayDeque<>();
+  private final Set<Image> checkedOut = Collections.newSetFromMap(new IdentityHashMap<>());
 
   public BufferedImagePool(int maxSize) {
     this.maxSize = maxSize;
@@ -120,7 +120,7 @@ public class BufferedImagePool {
     return new Handle(instance);
   }
 
-  private void release(BufferedImage image) {
+  private void release(Image image) {
     final var wasCheckedOut = checkedOut.remove(image);
     if (wasCheckedOut) {
       available.addLast(image);

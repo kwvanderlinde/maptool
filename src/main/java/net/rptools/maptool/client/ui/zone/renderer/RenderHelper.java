@@ -78,7 +78,7 @@ public class RenderHelper {
       final var buffer = entry.get();
       timer.stop("bufferRender-acquireBuffer");
 
-      Graphics2D buffG = buffer.createGraphics();
+      Graphics2D buffG = (Graphics2D) buffer.getGraphics();
       try {
         doRender(buffG, render);
       } finally {
