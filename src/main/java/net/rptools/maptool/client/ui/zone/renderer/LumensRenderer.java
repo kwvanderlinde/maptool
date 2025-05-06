@@ -26,12 +26,7 @@ import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.ZoneView;
 import net.rptools.maptool.model.Zone;
 
-/**
- * Draws a solid black overlay wherever a non-GM player should see darkness.
- *
- * <p>If the current view is a GM view, this renders nothing since darkness is rendered as a light
- * source for GMs.
- */
+/** Draws shaded ares that indicate the lumens strength for a given player view. */
 public class LumensRenderer {
   private final RenderHelper renderHelper;
   private final Zone zone;
