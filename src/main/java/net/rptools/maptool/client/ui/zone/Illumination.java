@@ -148,7 +148,7 @@ public final class Illumination {
         .findFirst();
   }
 
-  private @Nonnull List<LumensLevel> getObscuredLumensLevels() {
+  public @Nonnull List<LumensLevel> getObscuredLumensLevels() {
     if (obscuredLumensLevels == null) {
       final var obscuredLumensLevels = new ArrayList<LumensLevel>();
       final var strongerDarkness = new Area();
