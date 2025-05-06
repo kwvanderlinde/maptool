@@ -101,13 +101,13 @@ public class LumensRenderer {
         lightOpacity = 1.f;
       }
 
-      timer.start("renderLumensOverlay:drawLights:fillArea");
+      timer.start("renderLumensOverlay:drawLumens:fillArea");
       worldG.setPaint(new Color(lightShade, lightShade, lightShade, lightOpacity));
       worldG.fill(lumensLevel.lightArea());
 
       worldG.setPaint(new Color(0.f, 0.f, 0.f, 1.f));
       worldG.fill(lumensLevel.darknessArea());
-      timer.stop("renderLumensOverlay:drawLights:fillArea");
+      timer.stop("renderLumensOverlay:drawLumens:fillArea");
     }
 
     // Now draw borders around each region if configured.
