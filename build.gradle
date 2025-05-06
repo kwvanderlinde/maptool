@@ -34,7 +34,7 @@ apply from: rootProject.file('buildSrc/shared.gradle')
 defaultTasks 'clean', 'build'
 
 def javaArgs = [
-        "-Dsun.java2d.opengl=True",
+        //"-Dsun.java2d.opengl=True",
         "-Xss8M", "-Dsun.java2d.d3d=false", "-Dsentry.environment=Production", "-Dfile.encoding=UTF-8",
         "-Dpolyglot.engine.WarnInterpreterOnly=false",
         "-Djava.util.Arrays.useLegacyMergeSort=true",
