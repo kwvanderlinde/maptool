@@ -57,7 +57,8 @@ public class LumensRenderer {
     var overlayOpacity = AppPreferences.lumensOverlayOpacity.get() / 255.0f;
 
     var visibleArea = zoneView.getVisibleArea(view);
-    final var disjointLumensLevels = zoneView.getIllumination(view).getObscuredLumensLevels().reversed();
+    final var disjointLumensLevels =
+        zoneView.getIllumination(view).getObscuredLumensLevels().reversed();
 
     var originalClip = worldG.getClip();
     var bounds = originalClip.getBounds();
@@ -77,6 +78,10 @@ public class LumensRenderer {
       worldG.setClip(clip);
       timer.stop("renderLumensOverlay:setClip");
     }
+
+    final var borderThickness = AppPreferences.lumensOverlayBorderThickness.get();
+    final var borderStroke =
+        new BasicStroke((float) borderThickness, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
 
     worldG.setComposite(AlphaComposite.Src);
 
@@ -106,24 +111,19 @@ public class LumensRenderer {
       worldG.fill(lumensLevel.lightArea());
       worldG.setPaint(new Color(0.f, 0.f, 0.f, overlayOpacity));
       worldG.fill(lumensLevel.darknessArea());
-      timer.stop("renderLumensOverlay:drawLumens:fillArea");
-    }
 
-    // Now draw borders around each region if configured.
-    final var borderThickness = AppPreferences.lumensOverlayBorderThickness.get();
-    if (borderThickness > 0) {
-      worldG.setStroke(
-          new BasicStroke((float) borderThickness, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-      worldG.setComposite(AlphaComposite.SrcOver);
-      worldG.setPaint(new Color(0.f, 0.f, 0.f, 1.f));
-      for (final var lumensLevel : disjointLumensLevels) {
+      if (borderThickness > 0) {
+        worldG.setStroke(borderStroke);
+        worldG.setPaint(new Color(0.f, 0.f, 0.f, 1.f));
+
         timer.start("renderLumensOverlay:drawLights:drawArea");
         worldG.draw(lumensLevel.lightArea());
         worldG.draw(lumensLevel.darknessArea());
         timer.stop("renderLumensOverlay:drawLights:drawArea");
       }
-    }
 
+      timer.stop("renderLumensOverlay:drawLumens:fillArea");
+    }
     timer.stop("renderLumensOverlay:drawLumens");
   }
 }
