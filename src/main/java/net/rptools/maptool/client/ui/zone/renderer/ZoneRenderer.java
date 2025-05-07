@@ -765,7 +765,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     CodeTimer.using(
         "ZoneRenderer.renderZone",
         timer -> {
-          timer.setThreshold(10);
+          timer.setThreshold(0);
 
           timer.start("paintComponent");
           skipDrawing = MapTool.getFrame().getGdxPanel().isVisible();
