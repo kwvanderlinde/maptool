@@ -18,6 +18,7 @@ import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.util.function.Consumer;
@@ -70,6 +71,9 @@ public class RenderHelper {
   public void bufferedRender(Graphics2D g, Composite blitComposite, Consumer<Graphics2D> render) {
     var timer = CodeTimer.get();
     g = (Graphics2D) g.create();
+    // We only render one image onto another without scaling, so antialiasing won't help at all.
+    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+
     timer.start("bufferRender-acquireBuffer");
     try (final var entry = tempBufferPool.acquire()) {
       final var buffer = entry.get();
