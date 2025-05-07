@@ -60,7 +60,7 @@ public class LumensRenderer {
 
     var visibleArea = zoneView.getVisibleArea(view);
     final var disjointLumensLevels =
-        zoneView.getIllumination(view).getObscuredLumensLevels().reversed();
+        zoneView.getIllumination(view).getDisjointObscuredLumensLevels();
 
     var originalClip = worldG.getClip();
     var bounds = originalClip.getBounds();
@@ -111,18 +111,21 @@ public class LumensRenderer {
       worldG.setPaint(new Color(0.f, 0.f, 0.f, overlayOpacity));
       worldG.fill(lumensLevel.darknessArea());
 
-      if (borderThickness > 0) {
-        worldG.setStroke(borderStroke);
-        worldG.setPaint(new Color(0.f, 0.f, 0.f, 1.f));
+      timer.stop("renderLumensOverlay:drawLumens:fillArea");
+    }
 
+    if (borderThickness > 0) {
+      worldG.setStroke(borderStroke);
+      worldG.setPaint(new Color(0.f, 0.f, 0.f, 1.f));
+
+      for (final var lumensLevel : disjointLumensLevels) {
         timer.start("renderLumensOverlay:drawLights:drawArea");
         worldG.draw(lumensLevel.lightArea());
         worldG.draw(lumensLevel.darknessArea());
         timer.stop("renderLumensOverlay:drawLights:drawArea");
       }
-
-      timer.stop("renderLumensOverlay:drawLumens:fillArea");
     }
+
     timer.stop("renderLumensOverlay:drawLumens");
   }
 }
