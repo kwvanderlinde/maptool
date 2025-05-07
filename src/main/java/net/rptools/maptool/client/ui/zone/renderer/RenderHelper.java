@@ -23,7 +23,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.util.function.Consumer;
 import net.rptools.lib.CodeTimer;
-import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.ui.Scale;
 import net.rptools.maptool.client.ui.zone.BufferedImagePool;
 
@@ -47,7 +46,7 @@ public class RenderHelper {
     Dimension size = renderer.getSize();
     Scale scale = renderer.getZoneScale();
     g.setClip(new Area(new Rectangle(0, 0, size.width, size.height)));
-    SwingUtil.useAntiAliasing(g);
+    // SwingUtil.useAntiAliasing(g);
 
     AffineTransform af = new AffineTransform();
     af.translate(scale.getOffsetX(), scale.getOffsetY());
