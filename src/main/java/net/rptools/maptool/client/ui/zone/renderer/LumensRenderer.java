@@ -56,17 +56,18 @@ public class LumensRenderer {
     var timer = CodeTimer.get();
     var overlayOpacity = AppPreferences.lumensOverlayOpacity.get() / 255.0f;
 
+    worldG.setComposite(AlphaComposite.Src);
+
     var visibleArea = zoneView.getVisibleArea(view);
     final var disjointLumensLevels =
         zoneView.getIllumination(view).getObscuredLumensLevels().reversed();
 
     var originalClip = worldG.getClip();
     var bounds = originalClip.getBounds();
-    worldG.setComposite(AlphaComposite.Src.derive(overlayOpacity));
     // At night, show any uncovered areas as dark. In daylight, show them as light (clear).
     var backgroundFill =
         zone.getVisionType() == Zone.VisionType.NIGHT
-            ? new Color(0.f, 0.f, 0.f, 1.f)
+            ? new Color(0.f, 0.f, 0.f, overlayOpacity)
             : new Color(0.f, 0.f, 0.f, 0.f);
     worldG.setPaint(backgroundFill);
     worldG.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
@@ -82,8 +83,6 @@ public class LumensRenderer {
     final var borderThickness = AppPreferences.lumensOverlayBorderThickness.get();
     final var borderStroke =
         new BasicStroke((float) borderThickness, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
-
-    worldG.setComposite(AlphaComposite.Src);
 
     timer.start("renderLumensOverlay:drawLumens");
     for (final var lumensLevel : disjointLumensLevels) {
