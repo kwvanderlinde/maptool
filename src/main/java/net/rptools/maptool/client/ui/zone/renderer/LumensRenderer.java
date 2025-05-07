@@ -22,6 +22,7 @@ import java.awt.geom.Area;
 import net.rptools.lib.CodeTimer;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.AppState;
+import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.ZoneView;
 import net.rptools.maptool.model.Zone;
@@ -119,6 +120,8 @@ public class LumensRenderer {
     }
 
     if (borderThickness > 0) {
+      // TODO If `borderThickness <= 0`, need to antialias the fill instead.
+      SwingUtil.useAntiAliasing(worldG);
       worldG.setStroke(borderStroke);
       worldG.setPaint(new Color(0.f, 0.f, 0.f, 1.f));
 
