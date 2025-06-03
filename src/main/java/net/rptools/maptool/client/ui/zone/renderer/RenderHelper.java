@@ -66,7 +66,7 @@ public class RenderHelper {
 
     timer.start("%s-setTransform", timerPrefix);
     Scale scale = renderer.getViewModel().getZoneScale();
-    AffineTransform af = new AffineTransform();
+    AffineTransform af = g.getTransform();
     af.translate(scale.getOffsetX(), scale.getOffsetY());
     af.scale(scale.getScale(), scale.getScale());
     g.setTransform(af);

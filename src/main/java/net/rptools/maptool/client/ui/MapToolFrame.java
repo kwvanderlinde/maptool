@@ -482,6 +482,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     // var config = new LwjglApplicationConfiguration();
     config.foregroundFPS = 10000;
     config.vSyncEnabled = false;
+    config.samples = 1;
 
     var joglSwingCanvas = new JoglSwingCanvas(GdxRenderer.getInstance(), config);
     // var joglSwingCanvas = new LwjglAWTCanvas(GdxRenderer.getInstance(), config);

@@ -676,6 +676,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
               final var buffer = bufferHandle.get();
 
               final var bufferG2d = buffer.createGraphics();
+              bufferG2d.scale(g2d.getTransform().getScaleX(), g2d.getTransform().getScaleY());
               // Keep the clip to avoid rendering more than we have to.
               bufferG2d.setClip(g2d.getClip());
 

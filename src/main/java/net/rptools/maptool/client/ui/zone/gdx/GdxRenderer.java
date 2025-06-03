@@ -134,10 +134,15 @@ public class GdxRenderer extends ApplicationAdapter {
   // general resources
   private OrthographicCamera cam;
   private OrthographicCamera hudCam;
+  private OrthographicCamera blitCam;
   private PolygonSpriteBatch batch;
   private boolean initialized = false;
+
+  private int logicalWidth;
+  private int logicalHeight;
   private int width;
   private int height;
+
   private BitmapFont normalFont;
   private BitmapFont boldFont;
   private float boldFontScale = 0;
@@ -212,7 +217,6 @@ public class GdxRenderer extends ApplicationAdapter {
   @Override
   public void create() {
     try {
-
       // with jogl create is called every time we change the parent frame of the GLJPanel
       // e.g. change from fullcreen to window or the other way around. Reinit everthing in this
       // case.
@@ -273,11 +277,17 @@ public class GdxRenderer extends ApplicationAdapter {
         hudTextRenderer = new TextRenderer(atlas, batch, normalFont, false);
       }
 
-      width = Gdx.graphics.getWidth();
-      height = Gdx.graphics.getHeight();
+      logicalWidth = Gdx.graphics.getWidth();
+      logicalHeight = Gdx.graphics.getHeight();
+      width = Gdx.graphics.getBackBufferWidth();
+      height = Gdx.graphics.getBackBufferHeight();
 
       cam = new OrthographicCamera();
+      // TODO This should be `yDown == true`, but all our code manually negates the y-coordinates!
       cam.setToOrtho(false);
+
+      blitCam = new OrthographicCamera();
+      blitCam.setToOrtho(false);
 
       hudCam = new OrthographicCamera();
       hudCam.setToOrtho(false);
@@ -327,20 +337,19 @@ public class GdxRenderer extends ApplicationAdapter {
        * parameters here are neither the back buffer size nor the client area, and thus we can't use
        * them.
        */
-      width = Gdx.graphics.getWidth();
-      height = Gdx.graphics.getHeight();
-
-      this.width = width;
-      this.height = height;
+      this.logicalWidth = Gdx.graphics.getWidth();
+      this.logicalHeight = Gdx.graphics.getHeight();
+      this.width = Gdx.graphics.getBackBufferWidth();
+      this.height = Gdx.graphics.getBackBufferHeight();
 
       backBuffer.dispose();
-      backBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, false);
+      backBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, this.width, this.height, false);
 
       resultsBuffer.dispose();
-      resultsBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, false);
+      resultsBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, this.width, this.height, false);
 
       spareBuffer.dispose();
-      spareBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, false);
+      spareBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, this.width, this.height, false);
 
       updateCam();
     } catch (Exception e) {
@@ -349,7 +358,7 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   private void drawBackBuffer(BlendFunction blendDown) {
-    setProjectionMatrix(hudCam.combined);
+    setProjectionMatrix(blitCam.combined);
     resultsBuffer.begin();
     blendDown.applyToBatch(batch);
     batch.draw(backBuffer.getColorBufferTexture(), 0, 0, width, height, 0, 0, 1, 1);
@@ -360,7 +369,7 @@ public class GdxRenderer extends ApplicationAdapter {
   private void drawBackBuffer(ShaderProgram shader) {
     var oldShader = batch.getShader();
 
-    setProjectionMatrix(hudCam.combined);
+    setProjectionMatrix(blitCam.combined);
     spareBuffer.begin();
     batch.setShader(shader);
     ScreenUtils.clear(Color.CLEAR);
@@ -438,7 +447,9 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   private void updateCam() {
-    if (cam == null) return;
+    if (cam == null) {
+      return;
+    }
 
     cam.viewportWidth = width;
     cam.viewportHeight = height;
@@ -446,6 +457,13 @@ public class GdxRenderer extends ApplicationAdapter {
     cam.position.y = zoom * (cam.viewportHeight / 2f * -1 + offsetY);
     cam.zoom = zoom;
     cam.update();
+
+    blitCam.viewportWidth = width;
+    blitCam.viewportHeight = height;
+    blitCam.position.x = width / 2f;
+    blitCam.position.y = height / 2f;
+    blitCam.zoom = 1;
+    blitCam.update();
 
     hudCam.viewportWidth = width;
     hudCam.viewportHeight = height;
@@ -480,6 +498,7 @@ public class GdxRenderer extends ApplicationAdapter {
             ensureTtfFont();
             ScreenUtils.clear(Color.BLACK);
 
+            System.out.printf("Offset: %d, %d%n", offsetX, offsetY);
             doRendering();
           });
     } catch (Exception e) {
@@ -549,24 +568,26 @@ public class GdxRenderer extends ApplicationAdapter {
 
     var loadingProgress = viewModel.getLoadingStatus();
     if (loadingProgress.isPresent()) {
-      hudTextRenderer.drawBoxedString(loadingProgress.get(), width / 2f, height / 2f);
+      hudTextRenderer.drawBoxedString(
+          loadingProgress.get(), logicalHeight / 2f, logicalHeight / 2f);
     } else if (MapTool.getCampaign().isBeingSerialized()) {
-      hudTextRenderer.drawBoxedString("    Please Wait    ", width / 2f, height / 2f);
+      hudTextRenderer.drawBoxedString("    Please Wait    ", logicalWidth / 2f, logicalHeight / 2f);
     }
 
     float noteVPos = 20;
     if (!zoneCache.getZone().isVisible() && playerView.isGMView()) {
       hudTextRenderer.drawBoxedString(
-          I18N.getText("zone.map_not_visible"), width / 2f, height - noteVPos);
+          I18N.getText("zone.map_not_visible"), logicalWidth / 2f, logicalHeight - noteVPos);
       noteVPos += 20;
     }
     if (AppState.isShowAsPlayer()) {
       hudTextRenderer.drawBoxedString(
-          I18N.getText("zone.player_view"), width / 2f, height - noteVPos);
+          I18N.getText("zone.player_view"), logicalWidth / 2f, logicalHeight - noteVPos);
     }
 
-    hudTextRenderer.drawString("FPS:   " + Gdx.graphics.getFramesPerSecond(), width - 30, 30);
-    hudTextRenderer.drawString("Draws: " + batch.renderCalls, width - 30, 16);
+    hudTextRenderer.drawString(
+        "FPS:   " + Gdx.graphics.getFramesPerSecond(), logicalWidth - 30, 30);
+    hudTextRenderer.drawString("Draws: " + batch.renderCalls, logicalWidth - 30, 16);
 
     batch.end();
   }
@@ -629,7 +650,7 @@ public class GdxRenderer extends ApplicationAdapter {
     }
 
     timer.start("grid");
-    setProjectionMatrix(hudCam.combined);
+    setProjectionMatrix(blitCam.combined);
     gridRenderer.render();
     setProjectionMatrix(cam.combined);
     timer.stop("grid");
@@ -763,7 +784,8 @@ public class GdxRenderer extends ApplicationAdapter {
       // of, the tokens themselves.
       // So if one moving token is on top of another moving token, at least the textual identifiers
       // will be visible.
-      setProjectionMatrix(hudCam.combined);
+      // TODO Labels should really be rendered under hudCam
+      setProjectionMatrix(blitCam.combined);
       timer.start("token name/labels");
       renderRenderables();
       timer.stop("token name/labels");
@@ -790,8 +812,29 @@ public class GdxRenderer extends ApplicationAdapter {
     Gdx.gl.glViewport(0, 0, width, height);
     setProjectionMatrix(hudCam.combined);
     BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER.applyToBatch(batch);
-    batch.draw(resultsBuffer.getColorBufferTexture(), 0, 0, width, height, 0, 0, 1, 1);
-    setProjectionMatrix(cam.combined);
+    batch.draw(
+        resultsBuffer.getColorBufferTexture(),
+        0,
+        logicalHeight - height,
+        width,
+        height,
+        0,
+        0,
+        1,
+        1);
+
+    if (true) {
+      var region = atlas.findRegion("redDot");
+      if (false) {
+        setProjectionMatrix(hudCam.combined);
+        batch.draw(region, 0, 0, width, height);
+      } else {
+        setProjectionMatrix(cam.combined);
+        batch.draw(region, 0, 0, 100, -100);
+      }
+      batch.flush();
+      setProjectionMatrix(cam.combined);
+    }
   }
 
   /**
@@ -1139,7 +1182,6 @@ public class GdxRenderer extends ApplicationAdapter {
             //      g.setClip(new GeneralPath(visibleArea));
 
             clipInstalled = true;
-            // System.out.println("Adding Clip: " + MapTool.getPlayer().getName());
           }
         }
         // Show path only on the key token on token layer that are visible to the owner or gm while
