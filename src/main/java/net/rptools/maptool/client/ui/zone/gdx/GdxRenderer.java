@@ -196,6 +196,7 @@ public class GdxRenderer extends ApplicationAdapter {
 
   // temorary objects. Stored here to avoid garbage collection;
   private final Vector3 tmpWorldCoord = new Vector3();
+  private final Vector3 tmpWorldCoord2 = new Vector3();
   private final Color tmpColor = new Color();
   private final FloatArray tmpFloat = new FloatArray();
   private final Vector2 tmpVector = new Vector2();
@@ -1902,18 +1903,32 @@ public class GdxRenderer extends ApplicationAdapter {
 
         setProjectionMatrix(blitCam.combined);
         tmpWorldCoord.set(gdxTokenRectangle.x, gdxTokenRectangle.y, 0);
+        tmpWorldCoord2.set(
+            gdxTokenRectangle.x + gdxTokenRectangle.width,
+            gdxTokenRectangle.y + gdxTokenRectangle.height,
+            0);
+
         cam.project(tmpWorldCoord);
+        cam.project(tmpWorldCoord2);
+
+        blitCam.unproject(tmpWorldCoord);
+        blitCam.unproject(tmpWorldCoord2);
+        // Fun fact: unproject() always has inverted y relative to project(). So even if we had
+        // correctly oriented cameras, we would need to fix this up.
+        tmpWorldCoord.y = blitCam.viewportHeight - tmpWorldCoord.y;
+        tmpWorldCoord2.y = blitCam.viewportHeight - tmpWorldCoord2.y;
 
         gdxTokenRectangle.set(
+            // TODO Why do we get x, y here if we're just going to overwrite them with (0, 0) below?
             tmpWorldCoord.x,
             tmpWorldCoord.y,
-            gdxTokenRectangle.width / zoom,
-            gdxTokenRectangle.height / zoom);
+            tmpWorldCoord2.x - tmpWorldCoord.x,
+            tmpWorldCoord2.y - tmpWorldCoord.y);
 
         if (token.hasFacing()
             && (token.getShape() == Token.TokenShape.TOP_DOWN || token.getLayer().isStampLayer())) {
 
-          var transX = gdxTokenRectangle.width / 2f - token.getAnchor().x / zoom;
+          var transX = gdxTokenRectangle.width / 2f - token.getAnchor().x / zoom; // TOOD cam.zoom?
           var transY = gdxTokenRectangle.height / 2f + token.getAnchor().y / zoom;
 
           tmpMatrix.idt();
