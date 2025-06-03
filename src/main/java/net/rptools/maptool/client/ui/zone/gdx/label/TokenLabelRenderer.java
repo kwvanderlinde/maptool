@@ -39,7 +39,7 @@ public class TokenLabelRenderer implements ItemRenderer {
   }
 
   @Override
-  public void render(Camera camera, float zoom) {
+  public void render(Camera camera, Camera targetCamera, float zoom) {
     int offset = 3; // Keep it from tramping on the token border.
     TextRenderer.Background background;
     Color foreground;
@@ -69,7 +69,8 @@ public class TokenLabelRenderer implements ItemRenderer {
     tmpWorldCoord.x = r.x + r.width / 2;
     tmpWorldCoord.y = (r.y + r.height + offset + labelHeight * zoom / 2) * -1;
     tmpWorldCoord.z = 0;
-    tmpScreenCoord = camera.project(tmpWorldCoord);
+    tmpScreenCoord.set(targetCamera.unproject(camera.project(tmpWorldCoord)));
+    tmpScreenCoord.y = targetCamera.viewportHeight - tmpScreenCoord.y;
 
     textRenderer.drawBoxedString(
         name, tmpScreenCoord.x, tmpScreenCoord.y, SwingUtilities.CENTER, background, foreground);

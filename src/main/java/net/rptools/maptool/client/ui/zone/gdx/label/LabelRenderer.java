@@ -34,7 +34,7 @@ public class LabelRenderer implements ItemRenderer {
   }
 
   @Override
-  public void render(Camera camera, float zoom) {
+  public void render(Camera camera, Camera targetCamera, float zoom) {
     tmpWorldCoord.x = x;
     tmpWorldCoord.y = y;
     tmpWorldCoord.z = 0;

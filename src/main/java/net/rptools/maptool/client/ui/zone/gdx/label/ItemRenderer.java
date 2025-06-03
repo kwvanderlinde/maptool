@@ -17,5 +17,5 @@ package net.rptools.maptool.client.ui.zone.gdx.label;
 import com.badlogic.gdx.graphics.Camera;
 
 public interface ItemRenderer {
-  void render(Camera camera, float zoom);
+  void render(Camera camera, Camera targetCamera, float zoom);
 }
