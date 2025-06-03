@@ -296,7 +296,6 @@ public class GdxRenderer extends ApplicationAdapter {
       hudCam.setToOrtho(false);
 
       updateCam();
-
       backBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, false);
       resultsBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, false);
       spareBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, false);
@@ -347,6 +346,7 @@ public class GdxRenderer extends ApplicationAdapter {
 
       backBuffer.dispose();
       backBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, this.width, this.height, false);
+      backBuffer.getColorBufferTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 
       resultsBuffer.dispose();
       resultsBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, this.width, this.height, false);
@@ -469,13 +469,14 @@ public class GdxRenderer extends ApplicationAdapter {
 
     hudCam.viewportWidth = logicalWidth;
     hudCam.viewportHeight = logicalHeight;
-    hudCam.position.x = hudCam.viewportWidth / 2f;
-    hudCam.position.y = hudCam.viewportHeight / 2f;
+    hudCam.zoom = 1; // width / (float) logicalWidth;
+    hudCam.position.x = hudCam.viewportWidth / 2;
+    hudCam.position.y = hudCam.viewportHeight / 2;
     hudCam.update();
 
     cam.viewportWidth = width;
     cam.viewportHeight = height;
-    cam.zoom = zoom * (hudCam.viewportWidth / cam.viewportWidth);
+    cam.zoom = zoom * (logicalWidth / cam.viewportWidth);
     cam.position.x = cam.zoom * cam.viewportWidth / 2f + zoom * offsetX;
     cam.position.y = cam.zoom * cam.viewportHeight / 2f * -1 + zoom * offsetY;
     cam.update();
@@ -577,8 +578,7 @@ public class GdxRenderer extends ApplicationAdapter {
 
     var loadingProgress = viewModel.getLoadingStatus();
     if (loadingProgress.isPresent()) {
-      hudTextRenderer.drawBoxedString(
-          loadingProgress.get(), logicalHeight / 2f, logicalHeight / 2f);
+      hudTextRenderer.drawBoxedString(loadingProgress.get(), logicalWidth / 2f, logicalHeight / 2f);
     } else if (MapTool.getCampaign().isBeingSerialized()) {
       hudTextRenderer.drawBoxedString("    Please Wait    ", logicalWidth / 2f, logicalHeight / 2f);
     }
@@ -594,6 +594,16 @@ public class GdxRenderer extends ApplicationAdapter {
           I18N.getText("zone.player_view"), logicalWidth / 2f, logicalHeight - noteVPos);
     }
 
+    hudTextRenderer.drawString(
+        String.format("Size: %d x %d", Gdx.graphics.getWidth(), Gdx.graphics.getHeight()),
+        logicalWidth - 100,
+        50);
+    hudTextRenderer.drawString(
+        String.format(
+            "Back size: %d x %d",
+            Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight()),
+        logicalWidth - 100,
+        70);
     hudTextRenderer.drawString(
         "FPS:   " + Gdx.graphics.getFramesPerSecond(), logicalWidth - 30, 30);
     hudTextRenderer.drawString("Draws: " + batch.renderCalls, logicalWidth - 30, 16);
@@ -754,9 +764,6 @@ public class GdxRenderer extends ApplicationAdapter {
     if (AppState.getShowTextLabels()) {
       renderLabels(view);
     }
-    ;
-
-    createScreenshot("belowFog");
 
     if (zoneCache.getZone().hasFog()) {
       batch.flush();
@@ -823,32 +830,15 @@ public class GdxRenderer extends ApplicationAdapter {
 
     batch.flush();
 
-    if (true) {
-      var region = atlas.findRegion("redDot");
-      if (false) {
-        setProjectionMatrix(hudCam.combined);
-        batch.draw(region, 0, 0, width, height);
-      } else {
-        setProjectionMatrix(cam.combined);
-        batch.draw(region, 0, 0, 100, -100);
-      }
-      batch.flush();
-      setProjectionMatrix(cam.combined);
-    }
+    createScreenshot("full");
+
     resultsBuffer.end();
+
+    Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
     setProjectionMatrix(blitCam.combined);
     BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER.applyToBatch(batch);
-    batch.draw(
-        resultsBuffer.getColorBufferTexture(),
-        0,
-        0,
-        hudCam.viewportWidth,
-        hudCam.viewportHeight,
-        0,
-        0,
-        1,
-        1);
+    batch.draw(resultsBuffer.getColorBufferTexture(), 0, 0, width, height, 0, 0, 1, 1);
     batch.flush();
   }
 
@@ -891,7 +881,7 @@ public class GdxRenderer extends ApplicationAdapter {
     if (!AppState.isShowCoordinates()
         || !(zoneCache.getZone().getGrid() instanceof SquareGrid grid)) return;
 
-    batch.setProjectionMatrix(hudCam.combined);
+    batch.setProjectionMatrix(blitCam.combined);
     var font = boldFont;
 
     var zoneScale = zoneCache.getZoneViewModel().getZoneScale();
@@ -1034,7 +1024,7 @@ public class GdxRenderer extends ApplicationAdapter {
 
   private void renderRenderables() {
     for (ItemRenderer renderer : itemRenderList) {
-      renderer.render(cam, zoom);
+      renderer.render(cam, blitCam, zoom);
     }
   }
 
@@ -1546,11 +1536,11 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   private void fillViewportWith(Color tint, Texture texture) {
-    var w = cam.viewportWidth * zoom;
-    var h = cam.viewportHeight * zoom;
-    var startX = (cam.position.x - cam.viewportWidth * zoom / 2);
+    var w = cam.viewportWidth * cam.zoom;
+    var h = cam.viewportHeight * cam.zoom;
+    var startX = (cam.position.x - cam.viewportWidth * cam.zoom / 2);
+    var startY = (cam.position.y - cam.viewportHeight * cam.zoom / 2);
 
-    var startY = (cam.position.y - cam.viewportHeight * zoom / 2);
     var vertices =
         new float[] {
           startX, startY, startX, startY + h, startX + w, startY + h, startX + w, startY

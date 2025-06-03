@@ -191,12 +191,12 @@ public class GridRenderer {
     offsetY %= grid.getSize();
     offsetY /= cam.zoom;
 
-    for (float x_ = x; x_ < x + w; x_ += gridSize) {
+    for (float x_ = x; x_ < x + w + gridSize; x_ += gridSize) {
       // var rounded = Math.round(offsetX + x_);
       var rounded = offsetX + x_;
       drawer.line(rounded, y, rounded, y + h, lineWidth);
     }
-    for (float y_ = y; y_ < y + h; y_ += gridSize) {
+    for (float y_ = y; y_ < y + h + gridSize; y_ += gridSize) {
       // var rounded = Math.round(cam.viewportHeight - y_ - offsetY);
       var rounded = cam.viewportHeight - y_ - offsetY;
       drawer.line(x, rounded, x + w, rounded, lineWidth);
