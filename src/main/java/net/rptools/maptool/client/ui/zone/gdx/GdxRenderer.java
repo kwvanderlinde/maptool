@@ -465,8 +465,8 @@ public class GdxRenderer extends ApplicationAdapter {
     blitCam.zoom = 1;
     blitCam.update();
 
-    hudCam.viewportWidth = width;
-    hudCam.viewportHeight = height;
+    hudCam.viewportWidth = logicalWidth;
+    hudCam.viewportHeight = logicalHeight;
     hudCam.position.x = hudCam.viewportWidth / 2f;
     hudCam.position.y = hudCam.viewportHeight / 2f;
     hudCam.update();
@@ -742,6 +742,9 @@ public class GdxRenderer extends ApplicationAdapter {
     if (AppState.getShowTextLabels()) {
       renderLabels(view);
     }
+    ;
+
+    createScreenshot("belowFog");
 
     if (zoneCache.getZone().hasFog()) {
       batch.flush();
@@ -810,14 +813,14 @@ public class GdxRenderer extends ApplicationAdapter {
     resultsBuffer.end();
 
     Gdx.gl.glViewport(0, 0, width, height);
-    setProjectionMatrix(hudCam.combined);
+    setProjectionMatrix(blitCam.combined);
     BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER.applyToBatch(batch);
     batch.draw(
         resultsBuffer.getColorBufferTexture(),
         0,
         logicalHeight - height,
-        width,
-        height,
+        blitCam.viewportWidth,
+        blitCam.viewportHeight,
         0,
         0,
         1,
@@ -1496,6 +1499,7 @@ public class GdxRenderer extends ApplicationAdapter {
     timer.stop("renderLightOverlay:drawLights");
   }
 
+  @SuppressWarnings("unused")
   private void createScreenshot(String name) {
     var file = Gdx.files.absolute("C:\\Users\\tkunze\\OneDrive\\Desktop\\" + name + ".png");
     if (!file.exists()) {
@@ -1883,7 +1887,7 @@ public class GdxRenderer extends ApplicationAdapter {
           }
         }
 
-        setProjectionMatrix(hudCam.combined);
+        setProjectionMatrix(blitCam.combined);
         tmpWorldCoord.set(gdxTokenRectangle.x, gdxTokenRectangle.y, 0);
         cam.project(tmpWorldCoord);
 
