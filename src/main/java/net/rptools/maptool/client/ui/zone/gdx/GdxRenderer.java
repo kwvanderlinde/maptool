@@ -19,6 +19,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.*;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGeneratorLoader;
@@ -64,6 +65,7 @@ import net.rptools.maptool.client.ui.zone.gdx.label.LabelRenderer;
 import net.rptools.maptool.client.ui.zone.gdx.label.TextRenderer;
 import net.rptools.maptool.client.ui.zone.gdx.label.TokenLabelRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.SelectionSet;
+import net.rptools.maptool.client.ui.zone.renderer.ZoneRendererConstants;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
@@ -305,7 +307,7 @@ public class GdxRenderer extends ApplicationAdapter {
       tokenOverlayRenderer =
           new TokenOverlayRenderer(
               areaRenderer, key -> zoneCache.getImageAsset(key, transferringAsset, brokenAsset));
-      gridRenderer = new GridRenderer(areaRenderer, hudCam);
+      gridRenderer = new GridRenderer(areaRenderer, blitCam, cam);
 
       initialized = true;
     } catch (Exception e) {
@@ -347,9 +349,15 @@ public class GdxRenderer extends ApplicationAdapter {
 
       resultsBuffer.dispose();
       resultsBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, this.width, this.height, false);
+      // TODO How does this affect intermediate shading results? We definitely want it for the final
+      //  blit to avoid grid line shimmer.
+      resultsBuffer.getColorBufferTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 
       spareBuffer.dispose();
       spareBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, this.width, this.height, false);
+      // TODO How does this affect intermediate shading results? We definitely want it for the final
+      //  blit to avoid grid line shimmer.
+      spareBuffer.getColorBufferTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 
       updateCam();
     } catch (Exception e) {
@@ -451,13 +459,6 @@ public class GdxRenderer extends ApplicationAdapter {
       return;
     }
 
-    cam.viewportWidth = width;
-    cam.viewportHeight = height;
-    cam.position.x = zoom * (cam.viewportWidth / 2f + offsetX);
-    cam.position.y = zoom * (cam.viewportHeight / 2f * -1 + offsetY);
-    cam.zoom = zoom;
-    cam.update();
-
     blitCam.viewportWidth = width;
     blitCam.viewportHeight = height;
     blitCam.position.x = width / 2f;
@@ -470,6 +471,13 @@ public class GdxRenderer extends ApplicationAdapter {
     hudCam.position.x = hudCam.viewportWidth / 2f;
     hudCam.position.y = hudCam.viewportHeight / 2f;
     hudCam.update();
+
+    cam.viewportWidth = width;
+    cam.viewportHeight = height;
+    cam.zoom = zoom * (hudCam.viewportWidth / cam.viewportWidth);
+    cam.position.x = cam.zoom * cam.viewportWidth / 2f + zoom * offsetX;
+    cam.position.y = cam.zoom * cam.viewportHeight / 2f * -1 + zoom * offsetY;
+    cam.update();
   }
 
   @Override
@@ -649,11 +657,14 @@ public class GdxRenderer extends ApplicationAdapter {
       timer.stop("drawableObjects");
     }
 
-    timer.start("grid");
-    setProjectionMatrix(blitCam.combined);
-    gridRenderer.render();
-    setProjectionMatrix(cam.combined);
-    timer.stop("grid");
+    if (AppState.isShowGrid()
+        && zoneCache.getZone().getGrid().getSize() / zoom >= ZoneRendererConstants.MIN_GRID_SIZE) {
+      timer.start("grid");
+      setProjectionMatrix(blitCam.combined);
+      gridRenderer.render();
+      setProjectionMatrix(cam.combined);
+      timer.stop("grid");
+    }
 
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.OBJECT, view)) {
       // ... Images on the object layer are always ABOVE the grid.
@@ -810,21 +821,6 @@ public class GdxRenderer extends ApplicationAdapter {
     }
 
     batch.flush();
-    resultsBuffer.end();
-
-    Gdx.gl.glViewport(0, 0, width, height);
-    setProjectionMatrix(blitCam.combined);
-    BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER.applyToBatch(batch);
-    batch.draw(
-        resultsBuffer.getColorBufferTexture(),
-        0,
-        logicalHeight - height,
-        blitCam.viewportWidth,
-        blitCam.viewportHeight,
-        0,
-        0,
-        1,
-        1);
 
     if (true) {
       var region = atlas.findRegion("redDot");
@@ -838,6 +834,21 @@ public class GdxRenderer extends ApplicationAdapter {
       batch.flush();
       setProjectionMatrix(cam.combined);
     }
+    resultsBuffer.end();
+
+    setProjectionMatrix(blitCam.combined);
+    BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER.applyToBatch(batch);
+    batch.draw(
+        resultsBuffer.getColorBufferTexture(),
+        0,
+        0,
+        hudCam.viewportWidth,
+        hudCam.viewportHeight,
+        0,
+        0,
+        1,
+        1);
+    batch.flush();
   }
 
   /**
@@ -1501,7 +1512,9 @@ public class GdxRenderer extends ApplicationAdapter {
 
   @SuppressWarnings("unused")
   private void createScreenshot(String name) {
-    var file = Gdx.files.absolute("C:\\Users\\tkunze\\OneDrive\\Desktop\\" + name + ".png");
+    var path = java.nio.file.Path.of(System.getProperty("user.home")).resolve(name + ".png");
+
+    var file = Gdx.files.absolute(path.toString());
     if (!file.exists()) {
       Pixmap pixmap = Pixmap.createFromFrameBuffer(0, 0, width, height);
       PixmapIO.writePNG(file, pixmap, Deflater.DEFAULT_COMPRESSION, true);

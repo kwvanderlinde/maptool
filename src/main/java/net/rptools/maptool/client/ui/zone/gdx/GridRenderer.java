@@ -16,11 +16,11 @@ package net.rptools.maptool.client.ui.zone.gdx;
 
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.utils.Pools;
 import net.rptools.maptool.client.AppState;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRendererConstants;
 import net.rptools.maptool.model.*;
 import space.earlygrey.shapedrawer.JoinType;
 import space.earlygrey.shapedrawer.ShapeDrawer;
@@ -31,12 +31,14 @@ public class GridRenderer {
   private final ShapeDrawer drawer;
   private final Batch batch;
   private final Camera hudCam;
+  private final OrthographicCamera cam;
 
-  public GridRenderer(AreaRenderer areaRenderer, Camera hudCam) {
+  public GridRenderer(AreaRenderer areaRenderer, Camera hudCam, OrthographicCamera cam) {
     this.areaRenderer = areaRenderer;
     this.drawer = areaRenderer.getShapeDrawer();
     batch = drawer.getBatch();
     this.hudCam = hudCam;
+    this.cam = cam;
   }
 
   public void setZoneCache(ZoneCache zoneCache) {
@@ -45,12 +47,6 @@ public class GridRenderer {
 
   public void render() {
     var grid = zoneCache.getZone().getGrid();
-    var scale = (float) zoneCache.getZoneViewModel().getZoneScale().getScale();
-    int gridSize = (int) (grid.getSize() * scale);
-
-    if (!AppState.isShowGrid() || gridSize < ZoneRendererConstants.MIN_GRID_SIZE) {
-      return;
-    }
 
     // Do nothing for GridlessGrid
     if (grid instanceof HexGrid hexGrid) {
@@ -173,36 +169,39 @@ public class GridRenderer {
   private void renderGrid(SquareGrid grid) {
     var zoneScale = zoneCache.getZoneViewModel().getZoneScale();
 
-    var scale = (float) zoneScale.getScale();
-    float gridSize = (grid.getSize() * scale);
+    var lineWidth = AppState.getGridLineWeight();
+    float scale = (float) zoneScale.getScale();
+    float gridSize = (grid.getSize() / cam.zoom);
     var tmpColor = Pools.obtain(Color.class);
     Color.argb8888ToColor(tmpColor, zoneCache.getZone().getGridColor());
     tmpColor.premultiplyAlpha();
 
     drawer.setColor(tmpColor);
 
-    var x = hudCam.position.x - hudCam.viewportWidth / 2;
-    var y = hudCam.position.y - hudCam.viewportHeight / 2;
+    var x = 0;
+    var y = 0;
     var w = hudCam.viewportWidth;
     var h = hudCam.viewportHeight;
 
-    var offX = Math.round(zoneScale.getOffsetX() % gridSize + grid.getOffsetX() * scale);
-    var offY = Math.round(zoneScale.getOffsetY() % gridSize + grid.getOffsetY() * scale);
+    var offsetX = zoneScale.getOffsetX() / scale + grid.getOffsetX();
+    offsetX %= grid.getSize();
+    offsetX /= cam.zoom;
 
-    var startCol = ((int) (x / gridSize) * gridSize);
-    var startRow = ((int) (y / gridSize) * gridSize);
+    var offsetY = zoneScale.getOffsetY() / scale + grid.getOffsetY();
+    offsetY %= grid.getSize();
+    offsetY /= cam.zoom;
 
-    var lineWidth = AppState.getGridLineWeight();
-
-    for (float row = startRow; row < y + h + gridSize; row += gridSize) {
-      var rounded = Math.round(h - (row + offY));
+    for (float x_ = x; x_ < x + w; x_ += gridSize) {
+      // var rounded = Math.round(offsetX + x_);
+      var rounded = offsetX + x_;
+      drawer.line(rounded, y, rounded, y + h, lineWidth);
+    }
+    for (float y_ = y; y_ < y + h; y_ += gridSize) {
+      // var rounded = Math.round(cam.viewportHeight - y_ - offsetY);
+      var rounded = cam.viewportHeight - y_ - offsetY;
       drawer.line(x, rounded, x + w, rounded, lineWidth);
     }
 
-    for (float col = startCol; col < x + w + gridSize; col += gridSize) {
-      var rounded = Math.round(col + offX);
-      drawer.line(rounded, y, rounded, y + h, lineWidth);
-    }
     Pools.free(tmpColor);
   }
 }
