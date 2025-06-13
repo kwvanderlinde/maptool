@@ -10,9 +10,3 @@ updates:
   - dependency-name: org.reflections:reflections
     versions:
     - "> 0.9.11, < 0.10"
-  - dependency-name: org.apache.logging.log4j:log4j-1.2-api
-    versions:
-    - 2.14.0
-  - dependency-name: org.apache.logging.log4j:log4j-core
-    versions:
-    - 2.13.0
