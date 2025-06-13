@@ -1,11 +1,15 @@
 name: Nightly Release
 
+permissions: read-all
+
 on:
   schedule:
     - cron: '13 2 * * *' # Odd time so that it doesn't run afoul of busy periods everyone picks
 
 jobs:
   build:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: Set Vars
