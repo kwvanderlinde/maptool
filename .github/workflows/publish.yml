@@ -4,7 +4,6 @@
 # Only digits allowed and must include major.minor.patch numbers.
 
 name: Publish Assets
-permissions: read-all
 on:
   release:
     types:
