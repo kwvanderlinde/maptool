@@ -2,7 +2,7 @@ name: Nightly Release
 
 on:
   schedule:
-    - cron: '13 2 * * *' # Odd time so that it doesn't run afoul of busy periods everyone picks
+    - cron: '17 0 * * *' # Odd time so that it doesn't run afoul of busy periods everyone picks
 
 jobs:
   build:
