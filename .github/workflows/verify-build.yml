@@ -3,6 +3,7 @@
 
 name: Build Verification
 
+permissions: "read-all"
 on:
   push:
     branches:
