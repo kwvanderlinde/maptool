@@ -81,8 +81,8 @@ jobs:
       id: upload-release-asset-exe
       uses: actions/upload-release-asset@v1
       if: matrix.os == 'windows-latest'
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: releases/renamed/MapTool-${{ github.event.release.tag_name }}.exe
@@ -92,8 +92,8 @@ jobs:
       id: upload-release-asset-msi
       uses: actions/upload-release-asset@v1
       if: matrix.os == 'windows-latest'
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: releases/renamed/MapTool-${{ github.event.release.tag_name }}.msi
@@ -103,8 +103,8 @@ jobs:
       id: upload-release-asset-windows-image
       uses: actions/upload-release-asset@v1
       if: matrix.os == 'windows-latest'
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: releases/renamed/MapTool-${{ github.event.release.tag_name }}-win.zip
@@ -114,8 +114,8 @@ jobs:
       id: upload-release-asset-jar
       uses: actions/upload-release-asset@v1
       if: matrix.os == 'windows-latest'
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: releases/renamed/MapTool-${{ github.event.release.tag_name }}.jar
@@ -140,8 +140,8 @@ jobs:
       id: upload-release-asset-rpm
       uses: actions/upload-release-asset@v1
       if: matrix.os == 'ubuntu-latest'
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: releases/renamed/maptool-${{ github.event.release.tag_name }}.x86_64.rpm
@@ -151,8 +151,8 @@ jobs:
       id: upload-release-asset-deb
       uses: actions/upload-release-asset@v1
       if: matrix.os == 'ubuntu-latest'
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: releases/renamed/maptool_${{ github.event.release.tag_name }}_amd64.deb
@@ -162,8 +162,8 @@ jobs:
       id: upload-release-asset-arch
       uses: actions/upload-release-asset@v1
       if: matrix.os == 'ubuntu-latest'
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: releases/renamed/maptool-${{ github.event.release.tag_name }}-x86_64.pkg.tar.zst
@@ -173,8 +173,8 @@ jobs:
       id: upload-release-asset-linux-image
       uses: actions/upload-release-asset@v1
       if: matrix.os == 'ubuntu-latest'
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: releases/renamed/MapTool-${{ github.event.release.tag_name }}-linux.zip
@@ -198,8 +198,8 @@ jobs:
       id: upload-release-asset-dmg
       uses: actions/upload-release-asset@v1
       if: matrix.os == 'macOS-13'
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: releases/renamed/MapTool-${{ github.event.release.tag_name }}.dmg
@@ -209,8 +209,8 @@ jobs:
       id: upload-release-asset-pkg
       uses: actions/upload-release-asset@v1
       if: matrix.os == 'macOS-13'
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: releases/renamed/MapTool-${{ github.event.release.tag_name }}.pkg
@@ -220,8 +220,8 @@ jobs:
       id: upload-release-asset-mac-image
       uses: actions/upload-release-asset@v1
       if: matrix.os == 'macOS-13'
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: releases/renamed/MapTool-${{ github.event.release.tag_name }}-mac.app.zip
