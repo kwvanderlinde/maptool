@@ -26,7 +26,6 @@ import net.rptools.maptool.client.events.PlayerStatusChanged;
 import net.rptools.maptool.client.events.ServerDisconnected;
 import net.rptools.maptool.client.ui.theme.Icons;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.player.Player;
 
@@ -45,7 +44,7 @@ public class PlayersLoadingStatusBar extends JLabel {
 
   public PlayersLoadingStatusBar() {
     refreshCount();
-    new MapToolEventBus().getMainEventBus().register(this);
+    MapTool.getEventBus().register(this);
   }
 
   private void refreshCount() {

@@ -49,7 +49,6 @@ import net.rptools.maptool.client.AppConstants;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.themes.*;
-import net.rptools.maptool.events.MapToolEventBus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -498,7 +497,7 @@ public class ThemeSupport {
       pendingThemeDetails = themeDetails;
     }
 
-    new MapToolEventBus().getMainEventBus().post(new ThemeLoadedEvent(currentThemeDetails));
+    MapTool.getEventBus().post(new ThemeLoadedEvent(currentThemeDetails));
   }
 
   /**

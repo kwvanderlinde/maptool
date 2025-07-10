@@ -29,7 +29,6 @@ import net.rptools.maptool.client.ui.MapToolFrame.MTFrame;
 import net.rptools.maptool.client.ui.theme.Icons;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.ui.zone.SelectionModel;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.MacroButtonProperties;
@@ -44,7 +43,7 @@ public class ImpersonatePanel extends AbstractMacroPanel {
 
   public ImpersonatePanel() {
     setPanelClass("ImpersonatePanel");
-    new MapToolEventBus().getMainEventBus().register(this);
+    MapTool.getEventBus().register(this);
   }
 
   public void init() {

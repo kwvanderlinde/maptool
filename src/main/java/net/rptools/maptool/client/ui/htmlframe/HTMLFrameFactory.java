@@ -20,7 +20,6 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.events.ZoneActivated;
 import net.rptools.maptool.client.events.ZoneDeactivated;
 import net.rptools.maptool.client.ui.zone.SelectionModel;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
@@ -219,7 +218,7 @@ public class HTMLFrameFactory {
     private Zone currentZone;
 
     public Listener() {
-      new MapToolEventBus().getMainEventBus().register(this);
+      MapTool.getEventBus().register(this);
       currentZone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
     }
 

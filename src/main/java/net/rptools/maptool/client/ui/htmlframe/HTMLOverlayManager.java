@@ -30,7 +30,6 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.events.OverlayVisibilityChanged;
 import net.rptools.maptool.client.functions.MacroLinkFunction;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
-import net.rptools.maptool.events.MapToolEventBus;
 import netscape.javascript.JSObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -232,7 +231,7 @@ public class HTMLOverlayManager extends HTMLWebViewManager implements HTMLPanelC
   @Override
   public void setVisible(boolean visible) {
     getWebView().setVisible(visible);
-    new MapToolEventBus().getMainEventBus().post(new OverlayVisibilityChanged(this, visible));
+    MapTool.getEventBus().post(new OverlayVisibilityChanged(this, visible));
   }
 
   @Override

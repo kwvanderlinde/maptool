@@ -41,7 +41,6 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.ViewAssetDialog;
 import net.rptools.maptool.client.ui.javfx.AbstractSwingJavaFXDialogController;
 import net.rptools.maptool.client.ui.javfx.SwingJavaFXDialogController;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.library.AddOnsAddedEvent;
 import net.rptools.maptool.model.library.AddOnsRemovedEvent;
@@ -203,7 +202,7 @@ public class AddOnLibrariesDialogController extends AbstractSwingJavaFXDialogCon
     } catch (ExecutionException | InterruptedException e) {
       log.error("Error displaying add-on libraries", e);
     }
-    new MapToolEventBus().getMainEventBus().register(this);
+    MapTool.getEventBus().register(this);
     addOnsTable.setItems(addOnList);
 
     addButton.setOnAction(a -> addAddOnLibrary());
@@ -352,7 +351,7 @@ public class AddOnLibrariesDialogController extends AbstractSwingJavaFXDialogCon
     Platform.runLater(
         () -> {
           addOnList.clear();
-          new MapToolEventBus().getMainEventBus().unregister(this);
+          MapTool.getEventBus().unregister(this);
         });
   }
 

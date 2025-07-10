@@ -32,7 +32,7 @@ public class ZoneLoadedListener {
   public static final String ON_CHANGE_MAP_CALLBACK = "onChangeMap";
 
   public ZoneLoadedListener() {
-    new MapToolEventBus().getMainEventBus().register(this);
+    MapTool.getEventBus().register(this);
   }
 
   @Subscribe

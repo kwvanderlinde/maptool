@@ -59,6 +59,7 @@ import net.rptools.lib.OsDetection;
 import net.rptools.lib.StringUtil;
 import net.rptools.lib.TaskBarFlasher;
 import net.rptools.lib.cipher.PublicPrivateKeyStore;
+import net.rptools.lib.events.MapToolEventBus;
 import net.rptools.lib.image.ThumbnailManager;
 import net.rptools.lib.net.RPTURLStreamHandlerFactory;
 import net.rptools.lib.net.SyrinscapeURLStreamHandler;
@@ -84,7 +85,6 @@ import net.rptools.maptool.client.ui.theme.ThemeSupport;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRendererFactory;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.events.TokenHoverListener;
 import net.rptools.maptool.events.ZoneLoadedListener;
 import net.rptools.maptool.language.I18N;
@@ -164,6 +164,7 @@ public class MapTool {
   private static LogConsoleFrame logConsoleFrame;
   @Nullable private static MapToolServer server;
   private static MapToolClient client;
+  private static final MapToolEventBus eventBus = new MapToolEventBus();
 
   private static BackupManager backupManager;
   private static AssetTransferManager assetTransferManager;
@@ -778,6 +779,10 @@ public class MapTool {
     return client.getServerCommand();
   }
 
+  public static MapToolEventBus getEventBus() {
+    return eventBus;
+  }
+
   /**
    * @return the server, or null if player is a client.
    */
@@ -818,7 +823,7 @@ public class MapTool {
       setLastWhisperer(message.getSource());
     }
 
-    new MapToolEventBus().getMainEventBus().post(new ChatMessageAdded(message));
+    getEventBus().post(new ChatMessageAdded(message));
   }
 
   /**
@@ -965,9 +970,8 @@ public class MapTool {
       if (defaultZone != null && defaultZone.getId().equals(zone.getId())) {
         currRenderer = renderer;
       }
-      new MapToolEventBus().getMainEventBus().post(new ZoneAdded(zone));
       // Now we have fire off adding the tokens in the zone
-      new MapToolEventBus().getMainEventBus().post(new TokensAdded(zone, zone.getAllTokens()));
+      getEventBus().post(new ZoneAdded(zone)).post(new TokensAdded(zone, zone.getAllTokens()));
     }
 
     clientFrame.setCurrentZoneRenderer(currRenderer);
@@ -1130,8 +1134,7 @@ public class MapTool {
     MapTool.getCampaign().removeZone(zone.getId());
 
     // Now we have fire off adding the tokens in the zone
-    new MapToolEventBus().getMainEventBus().post(new TokensRemoved(zone, zone.getAllTokens()));
-    new MapToolEventBus().getMainEventBus().post(new ZoneRemoved(zone));
+    getEventBus().post(new TokensRemoved(zone, zone.getAllTokens())).post(new ZoneRemoved(zone));
   }
 
   public static void addZone(Zone zone) {
@@ -1157,9 +1160,8 @@ public class MapTool {
       changeZone = true;
     }
 
-    new MapToolEventBus().getMainEventBus().post(new ZoneAdded(zone));
     // Now we have fire off adding the tokens in the zone
-    new MapToolEventBus().getMainEventBus().post(new TokensAdded(zone, zone.getAllTokens()));
+    getEventBus().post(new ZoneAdded(zone)).post(new TokensAdded(zone, zone.getAllTokens()));
 
     // Show the new zone
     if (changeZone) {
@@ -1247,7 +1249,7 @@ public class MapTool {
 
   public static void disconnect() {
     client.close();
-    new MapToolEventBus().getMainEventBus().post(new ServerDisconnected());
+    getEventBus().post(new ServerDisconnected());
 
     MapTool.getFrame()
         .getConnectionStatusPanel()
@@ -1365,8 +1367,7 @@ public class MapTool {
     MapTool.getFrame().getAssetPanel().getAssetTree().initialize();
 
     // Register the instance that will listen for token hover events and create a stat sheet.
-    new MapToolEventBus().getMainEventBus().register(new StatSheetListener());
-    new MapToolEventBus().getMainEventBus().register(new TokenHoverListener());
+    getEventBus().register(new StatSheetListener()).register(new TokenHoverListener());
 
     final var enabledDeveloperOptions = DeveloperOptions.Toggle.getEnabledOptions();
     if (!enabledDeveloperOptions.isEmpty() && !MapTool.isDevelopment()) {

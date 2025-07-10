@@ -99,7 +99,6 @@ import net.rptools.maptool.client.ui.zone.PointerToolOverlay;
 import net.rptools.maptool.client.ui.zone.ZoneMiniMapPanel;
 import net.rptools.maptool.client.ui.zone.gdx.GdxRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.GUID;
@@ -460,7 +459,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     if (!OsDetection.MAC_OS_X) removeWindowsF10();
     else registerForMacOSXEvents();
 
-    new MapToolEventBus().getMainEventBus().register(this);
+    MapTool.getEventBus().register(this);
 
     restorePreferences();
     updateKeyStrokes();
@@ -1697,7 +1696,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
   public void setCurrentZoneRenderer(ZoneRenderer renderer) {
     // Flush first so that the new zone renderer can inject the newly needed images
     if (renderer != null) {
-      new MapToolEventBus().getMainEventBus().post(new ZoneLoading(renderer.getZone()));
+      MapTool.getEventBus().post(new ZoneLoading(renderer.getZone()));
 
       ImageManager.flush(renderer.getZone().getAllAssetIds());
     } else {
@@ -1729,7 +1728,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     if (renderer != null) {
       // Previous zone must be passed for the listeners to be properly removed. Fix #1670.
 
-      final var eventBus = new MapToolEventBus().getMainEventBus();
+      final var eventBus = MapTool.getEventBus();
       if (oldZone != null) {
         eventBus.post(new ZoneDeactivated(oldZone));
       }

@@ -45,7 +45,6 @@ import net.rptools.maptool.client.functions.MacroLinkFunction;
 import net.rptools.maptool.client.swing.MessagePanelEditorKit;
 import net.rptools.maptool.client.ui.theme.ThemeLoadedEvent;
 import net.rptools.maptool.client.ui.theme.ThemeSupport;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.TextMessage;
 import net.rptools.maptool.util.MessageUtil;
 import org.apache.logging.log4j.LogManager;
@@ -152,7 +151,7 @@ public class MessagePanel extends JPanel {
       SwingUtilities.invokeLater(this::refreshRenderer);
       return;
     }
-    new MapToolEventBus().getMainEventBus().register(this);
+    MapTool.getEventBus().register(this);
     // Create the style
     StyleSheet style = document.getStyleSheet();
     var fgColour =

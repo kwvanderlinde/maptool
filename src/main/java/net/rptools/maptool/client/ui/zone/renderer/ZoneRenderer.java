@@ -59,7 +59,6 @@ import net.rptools.maptool.client.ui.zone.gdx.GdxRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.tokenRender.FacingArrowRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.tokenRender.TokenRenderer;
 import net.rptools.maptool.client.walker.ZoneWalker;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.Label;
@@ -214,7 +213,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           }
         });
 
-    new MapToolEventBus().getMainEventBus().register(this);
+    MapTool.getEventBus().register(this);
   }
 
   public void setFrameRateCap(int cap) {

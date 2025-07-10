@@ -32,7 +32,6 @@ import net.rptools.maptool.client.ui.zone.IlluminationModel.ContributedLight;
 import net.rptools.maptool.client.ui.zone.IlluminationModel.LightInfo;
 import net.rptools.maptool.client.ui.zone.Illuminator.LitArea;
 import net.rptools.maptool.client.ui.zone.vbl.NodedTopology;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.topology.VisibilityType;
@@ -166,7 +165,7 @@ public class ZoneView {
 
     updateLightSourcesFromTokens(zone.getAllTokens());
 
-    new MapToolEventBus().getMainEventBus().register(this);
+    MapTool.getEventBus().register(this);
   }
 
   public Area getExposedArea(PlayerView view) {

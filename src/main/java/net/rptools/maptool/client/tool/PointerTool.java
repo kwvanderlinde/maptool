@@ -51,7 +51,6 @@ import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.ui.zone.FogUtil;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.Pointer.Type;
 import net.rptools.maptool.model.Zone.VisionType;
@@ -636,8 +635,7 @@ public class PointerTool extends DefaultTool {
     if (tokenUnderMouse == null) {
       statSheet = null;
       if (oldTokenUnderMouse != null) {
-        new MapToolEventBus()
-            .getMainEventBus()
+        MapTool.getEventBus()
             .post(
                 new TokenHoverExit(
                     oldTokenUnderMouse,
@@ -648,8 +646,7 @@ public class PointerTool extends DefaultTool {
     } else if (tokenUnderMouse != oldTokenUnderMouse) {
       statSheet = null;
       if (oldTokenUnderMouse != null) {
-        new MapToolEventBus()
-            .getMainEventBus()
+        MapTool.getEventBus()
             .post(
                 new TokenHoverExit(
                     oldTokenUnderMouse,
@@ -657,8 +654,7 @@ public class PointerTool extends DefaultTool {
                     SwingUtil.isShiftDown(keysDown),
                     SwingUtil.isControlDown(keysDown)));
       }
-      new MapToolEventBus()
-          .getMainEventBus()
+      MapTool.getEventBus()
           .post(
               new TokenHoverEnter(
                   tokenUnderMouse,

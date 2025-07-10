@@ -30,7 +30,6 @@ import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import net.rptools.lib.CollectionUtil;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.drawing.AbstractTemplate;
 import net.rptools.maptool.model.drawing.DrawablesGroup;
@@ -70,7 +69,7 @@ public class DrawPanelTreeModel implements TreeModel {
   public DrawPanelTreeModel(JTree tree) {
     this.tree = tree;
     update();
-    new MapToolEventBus().getMainEventBus().register(this);
+    MapTool.getEventBus().register(this);
     ToolTipManager.sharedInstance().registerComponent(this.tree);
   }
 

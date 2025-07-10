@@ -30,7 +30,6 @@ import net.rptools.clientserver.simple.connection.Connection;
 import net.rptools.lib.cipher.PublicPrivateKeyStore;
 import net.rptools.maptool.client.events.PlayerConnected;
 import net.rptools.maptool.client.events.PlayerDisconnected;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.CampaignFactory;
@@ -245,9 +244,7 @@ public class MapToolClient {
   public void addPlayer(Player player) {
     if (!playerList.contains(player)) {
       playerList.add(player);
-      new MapToolEventBus()
-          .getMainEventBus()
-          .post(new PlayerConnected(player, this.player.equals(player)));
+      MapTool.getEventBus().post(new PlayerConnected(player, this.player.equals(player)));
       playerDatabase.playerSignedIn(player);
 
       playerList.sort((arg0, arg1) -> arg0.getName().compareToIgnoreCase(arg1.getName()));
@@ -256,7 +253,7 @@ public class MapToolClient {
 
   public void removePlayer(Player player) {
     playerList.remove(player);
-    new MapToolEventBus().getMainEventBus().post(new PlayerDisconnected(player));
+    MapTool.getEventBus().post(new PlayerDisconnected(player));
     playerDatabase.playerSignedOut(player);
   }
 

@@ -35,7 +35,6 @@ import net.rptools.maptool.client.ui.tokenpanel.InitiativePanel;
 import net.rptools.maptool.client.ui.zone.FogUtil;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRendererFactory;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.AssetManager;
@@ -709,10 +708,9 @@ public class ClientMessageHandler implements MessageHandler {
           MapTool.getFrame().removeZoneRenderer(renderer);
 
           // Now we have fire off adding the tokens in the zone
-          new MapToolEventBus()
-              .getMainEventBus()
-              .post(new TokensRemoved(zone, zone.getAllTokens()));
-          new MapToolEventBus().getMainEventBus().post(new ZoneRemoved(zone));
+          MapTool.getEventBus()
+              .post(new TokensRemoved(zone, zone.getAllTokens()))
+              .post(new ZoneRemoved(zone));
         });
   }
 
@@ -762,9 +760,10 @@ public class ClientMessageHandler implements MessageHandler {
             MapTool.getFrame().setCurrentZoneRenderer(renderer);
           }
 
-          new MapToolEventBus().getMainEventBus().post(new ZoneAdded(zone));
           // Now we have fire off adding the tokens in the zone
-          new MapToolEventBus().getMainEventBus().post(new TokensAdded(zone, zone.getAllTokens()));
+          MapTool.getEventBus()
+              .post(new ZoneAdded(zone))
+              .post(new TokensAdded(zone, zone.getAllTokens()));
         });
   }
 
@@ -1060,8 +1059,7 @@ public class ClientMessageHandler implements MessageHandler {
     player.setZoneId(zoneGUID);
     player.setLoaded(loaded);
 
-    final var eventBus = new MapToolEventBus().getMainEventBus();
-    eventBus.post(new PlayerStatusChanged(player));
+    MapTool.getEventBus().post(new PlayerStatusChanged(player));
   }
 
   private void handle(SetWallTopologyMsg setWallTopologyMsg) {

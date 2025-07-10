@@ -30,7 +30,6 @@ import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
@@ -80,7 +79,7 @@ public class TokenPanelTreeModel implements TreeModel {
     }
     filterList.add(new LightSourceFilter());
 
-    new MapToolEventBus().getMainEventBus().register(this);
+    MapTool.getEventBus().register(this);
   }
 
   private final List<TreeModelListener> listenerList = new ArrayList<TreeModelListener>();

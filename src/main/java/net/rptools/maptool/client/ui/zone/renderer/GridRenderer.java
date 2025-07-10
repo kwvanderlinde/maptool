@@ -19,8 +19,8 @@ import com.google.common.eventbus.Subscribe;
 import java.awt.*;
 import net.rptools.lib.image.ImageUtil;
 import net.rptools.maptool.client.AppState;
+import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.PlayerView;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.zones.GridChanged;
 
@@ -34,7 +34,7 @@ public class GridRenderer {
   private int baseColourInt = -1;
 
   GridRenderer(ZoneRenderer renderer) {
-    new MapToolEventBus().getMainEventBus().register(this);
+    MapTool.getEventBus().register(this);
     this.renderer = renderer;
     this.zone = renderer.getZone();
     setGridColours();

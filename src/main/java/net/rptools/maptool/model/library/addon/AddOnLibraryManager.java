@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import net.rptools.maptool.events.MapToolEventBus;
+import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.model.library.AddOnsAddedEvent;
 import net.rptools.maptool.model.library.AddOnsRemovedEvent;
 import net.rptools.maptool.model.library.Library;
@@ -80,9 +80,7 @@ public class AddOnLibraryManager {
     }
 
     library.initialize();
-    new MapToolEventBus()
-        .getMainEventBus()
-        .post(new AddOnsAddedEvent(Set.of(library.getLibraryInfo().join())));
+    MapTool.getEventBus().post(new AddOnsAddedEvent(Set.of(library.getLibraryInfo().join())));
   }
 
   /**
@@ -94,9 +92,7 @@ public class AddOnLibraryManager {
     var removed = namespaceLibraryMap.remove(namespace.toLowerCase());
     if (removed != null) {
       removed.cleanup();
-      new MapToolEventBus()
-          .getMainEventBus()
-          .post(new AddOnsRemovedEvent(Set.of(removed.getLibraryInfo().join())));
+      MapTool.getEventBus().post(new AddOnsRemovedEvent(Set.of(removed.getLibraryInfo().join())));
     }
   }
 
@@ -172,7 +168,7 @@ public class AddOnLibraryManager {
             .collect(Collectors.toSet());
 
     if (libs.size() > 0) {
-      new MapToolEventBus().getMainEventBus().post(new AddOnsRemovedEvent(libs));
+      MapTool.getEventBus().post(new AddOnsRemovedEvent(libs));
       for (var library : namespaceLibraryMap.values()) {
         library.cleanup();
       }

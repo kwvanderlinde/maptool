@@ -21,7 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import net.rptools.maptool.client.AppUtil;
-import net.rptools.maptool.events.MapToolEventBus;
+import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Zone;
 
@@ -75,7 +75,7 @@ public class SelectionModel {
 
   /** Fire a SelectionChanged event. */
   private void selectionChanged() {
-    new MapToolEventBus().getMainEventBus().post(new SelectionChanged(zone));
+    MapTool.getEventBus().post(new SelectionChanged(zone));
   }
 
   /**

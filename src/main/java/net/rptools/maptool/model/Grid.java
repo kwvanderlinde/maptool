@@ -38,7 +38,6 @@ import net.rptools.maptool.client.tool.PointerTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.client.walker.WalkerMetric;
 import net.rptools.maptool.client.walker.ZoneWalker;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.TokenFootprint.OffsetTranslator;
 import net.rptools.maptool.model.zones.GridChanged;
 import net.rptools.maptool.server.proto.GridDto;
@@ -716,7 +715,7 @@ public abstract class Grid implements Cloneable {
 
   private void fireGridChanged() {
     getGridShapeCache().clear();
-    new MapToolEventBus().getMainEventBus().post(new GridChanged(this.zone));
+    MapTool.getEventBus().post(new GridChanged(this.zone));
   }
 
   /**

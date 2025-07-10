@@ -39,7 +39,6 @@ import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.events.ZoneLoaded;
 import net.rptools.maptool.client.ui.Scale;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.AssetManager;
 import net.rptools.maptool.model.AttachedLightSource;
@@ -315,7 +314,7 @@ public class ZoneViewModel {
 
       // Notify the token tree that it should update
       MapTool.getFrame().updateTokenTree();
-      new MapToolEventBus().getMainEventBus().post(new ZoneLoaded(zone));
+      MapTool.getEventBus().post(new ZoneLoaded(zone));
     } else {
       loadingProgress =
           String.format(

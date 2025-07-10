@@ -31,7 +31,6 @@ import net.rptools.maptool.client.tool.DefaultTool;
 import net.rptools.maptool.client.ui.drawpanel.DrawPanelPopupMenu;
 import net.rptools.maptool.client.ui.zone.ZoneOverlay;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.DrawnElement;
@@ -46,7 +45,7 @@ public class DeleteDrawingTool extends DefaultTool implements ZoneOverlay, Mouse
       new DrawPanelPopupMenu.DeleteDrawingAction(selectedDrawings);
 
   public DeleteDrawingTool() {
-    new MapToolEventBus().getMainEventBus().register(this);
+    MapTool.getEventBus().register(this);
   }
 
   @Override

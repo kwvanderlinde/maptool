@@ -20,5 +20,6 @@ dependencies {
 
     implementation(libs.apache.commons.io)
 
+    implementation(libs.guava)
     implementation(libs.jts.core)
 }

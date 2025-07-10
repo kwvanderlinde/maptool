@@ -27,7 +27,6 @@ import net.rptools.maptool.client.ui.theme.Icons;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.ui.zone.SelectionModel;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.MacroButtonProperties;
 import net.rptools.maptool.model.Token;
@@ -47,7 +46,7 @@ public class SelectionPanel extends AbstractMacroPanel {
     setPanelClass("SelectionPanel");
     // when initially loading MT, the CurrentZoneRenderer isn't ready yet; just send an empty list
     init(new ArrayList<Token>());
-    new MapToolEventBus().getMainEventBus().register(this);
+    MapTool.getEventBus().register(this);
   }
 
   public List<MacroButtonProperties> getCommonMacros() {

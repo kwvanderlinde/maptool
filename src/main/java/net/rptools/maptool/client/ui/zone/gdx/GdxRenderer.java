@@ -63,7 +63,6 @@ import net.rptools.maptool.client.ui.zone.gdx.label.TextRenderer;
 import net.rptools.maptool.client.ui.zone.gdx.label.TokenLabelRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.SelectionSet;
 import net.rptools.maptool.client.walker.ZoneWalker;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.Label;
@@ -174,7 +173,7 @@ public class GdxRenderer extends ApplicationAdapter {
   private final TiledDrawable tmpTile = new TiledDrawable();
 
   public GdxRenderer() {
-    new MapToolEventBus().getMainEventBus().register(this);
+    MapTool.getEventBus().register(this);
   }
 
   public static GdxRenderer getInstance() {

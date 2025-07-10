@@ -35,7 +35,6 @@ import net.rptools.maptool.client.ui.MapToolFrame;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.ZoneView;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.InitiativeList.TokenInitiative;
 import net.rptools.maptool.model.Token.TerrainModifierOperation;
@@ -474,7 +473,7 @@ public class Zone {
 
   public void setLightingStyle(LightingStyle lightingStyle) {
     this.lightingStyle = lightingStyle;
-    new MapToolEventBus().getMainEventBus().post(new ZoneLightingChanged(this));
+    MapTool.getEventBus().post(new ZoneLightingChanged(this));
   }
 
   public TokenSelection getTokenSelection() {
@@ -726,8 +725,7 @@ public class Zone {
     this.grid = grid;
     grid.setZone(this);
     // invoke later to prevent firing with null zone during initialisation
-    SwingUtilities.invokeLater(
-        () -> new MapToolEventBus().getMainEventBus().post(new GridChanged(this)));
+    SwingUtilities.invokeLater(() -> MapTool.getEventBus().post(new GridChanged(this)));
   }
 
   public Grid getGrid() {
@@ -760,14 +758,14 @@ public class Zone {
     boardPosition.x = position.x;
     boardPosition.y = position.y;
     setBoardChanged(true);
-    new MapToolEventBus().getMainEventBus().post(new BoardChanged(this, mapAsset, boardPosition));
+    MapTool.getEventBus().post(new BoardChanged(this, mapAsset, boardPosition));
   }
 
   public void setBoard(int newX, int newY) {
     boardPosition.x = newX;
     boardPosition.y = newY;
     setBoardChanged(true);
-    new MapToolEventBus().getMainEventBus().post(new BoardChanged(this, mapAsset, boardPosition));
+    MapTool.getEventBus().post(new BoardChanged(this, mapAsset, boardPosition));
   }
 
   public void setBoard(Point position, MD5Key asset) {
@@ -820,7 +818,7 @@ public class Zone {
 
   public void setHasFog(boolean flag) {
     hasFog = flag;
-    new MapToolEventBus().getMainEventBus().post(new FogChanged(this));
+    MapTool.getEventBus().post(new FogChanged(this));
   }
 
   /**
@@ -997,7 +995,7 @@ public class Zone {
 
   public void replaceWalls(WallTopology walls) {
     this.walls = walls;
-    new MapToolEventBus().getMainEventBus().post(new WallTopologyChanged(this));
+    MapTool.getEventBus().post(new WallTopologyChanged(this));
   }
 
   public void updateWall(Wall wall) {
@@ -1007,7 +1005,7 @@ public class Zone {
         existing -> {
           existing.setData(wall.data());
 
-          new MapToolEventBus().getMainEventBus().post(new WallTopologyChanged(this));
+          MapTool.getEventBus().post(new WallTopologyChanged(this));
         },
         () -> {
           log.warn("Could not find wall [{}, {}] for updating", wall.from(), wall.to());
@@ -1046,12 +1044,12 @@ public class Zone {
       topology.add(area);
     }
 
-    new MapToolEventBus().getMainEventBus().post(new MaskTopologyChanged(this));
+    MapTool.getEventBus().post(new MaskTopologyChanged(this));
   }
 
   /** Fire the event {@link MaskTopologyChanged}. */
   public void tokenMaskTopologyChanged(Collection<TopologyType> types) {
-    new MapToolEventBus().getMainEventBus().post(new MaskTopologyChanged(this));
+    MapTool.getEventBus().post(new MaskTopologyChanged(this));
   }
 
   public Map<TopologyType, List<Area>> getTokenMaskTopologies(@Nullable GUID excluding) {
@@ -1081,9 +1079,7 @@ public class Zone {
    * @param token the token that changed
    */
   public void tokenChanged(Token token) {
-    new MapToolEventBus()
-        .getMainEventBus()
-        .post(new TokensChanged(this, Collections.singletonList(token)));
+    MapTool.getEventBus().post(new TokensChanged(this, Collections.singletonList(token)));
   }
 
   /**
@@ -1092,7 +1088,7 @@ public class Zone {
    * @param token the token that had its macro changed
    */
   public void tokenMacroChanged(Token token) {
-    new MapToolEventBus().getMainEventBus().post(new TokenMacroChanged(token));
+    MapTool.getEventBus().post(new TokenMacroChanged(token));
   }
 
   /**
@@ -1101,7 +1097,7 @@ public class Zone {
    * @param token the token that had its panel appearance changed
    */
   public void tokenPanelChanged(Token token) {
-    new MapToolEventBus().getMainEventBus().post(new TokenPanelChanged(token));
+    MapTool.getEventBus().post(new TokenPanelChanged(token));
   }
 
   /**
@@ -1114,7 +1110,7 @@ public class Zone {
     if (!globalOnly) {
       exposedAreaMeta.clear();
     }
-    new MapToolEventBus().getMainEventBus().post(new FogChanged(this));
+    MapTool.getEventBus().post(new FogChanged(this));
   }
 
   /**
@@ -1138,7 +1134,7 @@ public class Zone {
       }
     }
 
-    new MapToolEventBus().getMainEventBus().post(new FogChanged(this));
+    MapTool.getEventBus().post(new FogChanged(this));
   }
 
   /**
@@ -1170,12 +1166,12 @@ public class Zone {
           zr.getZoneView().flush();
         }
         putToken(tok);
-        new MapToolEventBus().getMainEventBus().post(new FogChanged(this));
+        MapTool.getEventBus().post(new FogChanged(this));
         return;
       }
     }
     exposedArea.add(area);
-    new MapToolEventBus().getMainEventBus().post(new FogChanged(this));
+    MapTool.getEventBus().post(new FogChanged(this));
   }
 
   /**
@@ -1225,7 +1221,7 @@ public class Zone {
       // Not using IF so add the EA to the GEA instead of a TEA.
       exposedArea.add(area);
     }
-    new MapToolEventBus().getMainEventBus().post(new FogChanged(this));
+    MapTool.getEventBus().post(new FogChanged(this));
   }
 
   /**
@@ -1263,7 +1259,7 @@ public class Zone {
       exposedArea.reset();
       exposedArea.add(area);
     }
-    new MapToolEventBus().getMainEventBus().post(new FogChanged(this));
+    MapTool.getEventBus().post(new FogChanged(this));
   }
 
   public void hideArea(Area area, Set<GUID> selectedToks) {
@@ -1300,7 +1296,7 @@ public class Zone {
     } else {
       exposedArea.subtract(area);
     }
-    new MapToolEventBus().getMainEventBus().post(new FogChanged(this));
+    MapTool.getEventBus().post(new FogChanged(this));
   }
 
   public long getCreationTime() {
@@ -1386,9 +1382,9 @@ public class Zone {
     labels.put(label.getId(), label);
 
     if (newLabel) {
-      new MapToolEventBus().getMainEventBus().post(new LabelAdded(label));
+      MapTool.getEventBus().post(new LabelAdded(label));
     } else {
-      new MapToolEventBus().getMainEventBus().post(new LabelChanged(label));
+      MapTool.getEventBus().post(new LabelChanged(label));
     }
   }
 
@@ -1399,7 +1395,7 @@ public class Zone {
   public void removeLabel(GUID labelId) {
     Label label = labels.remove(labelId);
     if (label != null) {
-      new MapToolEventBus().getMainEventBus().post(new LabelRemoved(label));
+      MapTool.getEventBus().post(new LabelRemoved(label));
     }
   }
 
@@ -1409,7 +1405,7 @@ public class Zone {
 
   public void addDrawable(DrawnElement drawnElement) {
     drawablesByLayer.get(drawnElement.getDrawable().getLayer()).add(drawnElement);
-    new MapToolEventBus().getMainEventBus().post(new DrawableAdded(this, drawnElement));
+    MapTool.getEventBus().post(new DrawableAdded(this, drawnElement));
   }
 
   public void updateDrawable(DrawnElement drawnElement, Pen pen) {
@@ -1420,14 +1416,14 @@ public class Zone {
         break;
       }
     }
-    new MapToolEventBus().getMainEventBus().post(new DrawableAdded(this, drawnElement));
+    MapTool.getEventBus().post(new DrawableAdded(this, drawnElement));
   }
 
   public void addDrawableRear(DrawnElement drawnElement) {
     // Since the list is drawn in order
     // items that are drawn first are at the "back"
     drawablesByLayer.get(drawnElement.getDrawable().getLayer()).addFirst(drawnElement);
-    new MapToolEventBus().getMainEventBus().post(new DrawableAdded(this, drawnElement));
+    MapTool.getEventBus().post(new DrawableAdded(this, drawnElement));
   }
 
   public List<DrawnElement> getDrawnElements(Zone.Layer layer) {
@@ -1449,7 +1445,7 @@ public class Zone {
       DrawnElement drawable = i.next();
       if (drawable.getDrawable().getId().equals(drawableId)) {
         i.remove();
-        new MapToolEventBus().getMainEventBus().post(new DrawableRemoved(this, drawable));
+        MapTool.getEventBus().post(new DrawableRemoved(this, drawable));
         return;
       }
       if (drawable.getDrawable() instanceof DrawablesGroup) {
@@ -1466,7 +1462,7 @@ public class Zone {
     undo.clear(); // clears the *entire* undo queue, but finer grained control isn't available
 
     for (final var drawable : copy) {
-      new MapToolEventBus().getMainEventBus().post(new DrawableRemoved(this, drawable));
+      MapTool.getEventBus().post(new DrawableRemoved(this, drawable));
     }
   }
 
@@ -1512,13 +1508,9 @@ public class Zone {
     tokenOrderedList.sort(TOKEN_Z_ORDER_COMPARATOR);
 
     if (newToken) {
-      new MapToolEventBus()
-          .getMainEventBus()
-          .post(new TokensAdded(this, Collections.singletonList(token)));
+      MapTool.getEventBus().post(new TokensAdded(this, Collections.singletonList(token)));
     } else {
-      new MapToolEventBus()
-          .getMainEventBus()
-          .post(new TokensChanged(this, Collections.singletonList(token)));
+      MapTool.getEventBus().post(new TokensChanged(this, Collections.singletonList(token)));
     }
   }
 
@@ -1529,7 +1521,7 @@ public class Zone {
    */
   public void editToken(Token token) {
     putToken(token);
-    new MapToolEventBus().getMainEventBus().post(new TokenEdited(this, token));
+    MapTool.getEventBus().post(new TokenEdited(this, token));
   }
 
   /**
@@ -1561,10 +1553,10 @@ public class Zone {
     tokenOrderedList.sort(TOKEN_Z_ORDER_COMPARATOR);
 
     if (!addedTokens.isEmpty()) {
-      new MapToolEventBus().getMainEventBus().post(new TokensAdded(this, addedTokens));
+      MapTool.getEventBus().post(new TokensAdded(this, addedTokens));
     }
     if (!changedTokens.isEmpty()) {
-      new MapToolEventBus().getMainEventBus().post(new TokensChanged(this, changedTokens));
+      MapTool.getEventBus().post(new TokensChanged(this, changedTokens));
     }
   }
 
@@ -1577,9 +1569,7 @@ public class Zone {
     Token token = tokenMap.remove(id);
     if (token != null) {
       tokenOrderedList.remove(token);
-      new MapToolEventBus()
-          .getMainEventBus()
-          .post(new TokensRemoved(this, Collections.singletonList(token)));
+      MapTool.getEventBus().post(new TokensRemoved(this, Collections.singletonList(token)));
     }
   }
 
@@ -1599,7 +1589,7 @@ public class Zone {
         }
       }
       if (!removedTokens.isEmpty()) {
-        new MapToolEventBus().getMainEventBus().post(new TokensRemoved(this, removedTokens));
+        MapTool.getEventBus().post(new TokensRemoved(this, removedTokens));
       }
     }
   }
@@ -2000,7 +1990,7 @@ public class Zone {
    */
   public void setInitiativeList(InitiativeList initiativeList) {
     this.initiativeList = initiativeList;
-    new MapToolEventBus().getMainEventBus().post(new InitiativeListChanged(initiativeList));
+    MapTool.getEventBus().post(new InitiativeListChanged(initiativeList));
   }
 
   public void optimize() {
@@ -2215,7 +2205,7 @@ public class Zone {
       exposedAreaMeta = new HashMap<GUID, ExposedAreaMetaData>();
     }
     exposedAreaMeta.put(tokenExposedAreaGUID, meta);
-    new MapToolEventBus().getMainEventBus().post(new FogChanged(this));
+    MapTool.getEventBus().post(new FogChanged(this));
   }
 
   /**

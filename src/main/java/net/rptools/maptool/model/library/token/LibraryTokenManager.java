@@ -26,7 +26,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Token;
@@ -163,7 +162,7 @@ public class LibraryTokenManager {
                 zone.getTokensFiltered(f -> f.getName().toLowerCase().startsWith("lib:")));
           }
           addTokens(tokens.stream().map(LibraryToken::new).toList());
-          new MapToolEventBus().getMainEventBus().register(tokenEventListener);
+          MapTool.getEventBus().register(tokenEventListener);
         });
   }
 

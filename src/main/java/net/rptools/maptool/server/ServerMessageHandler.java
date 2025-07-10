@@ -30,7 +30,6 @@ import net.rptools.maptool.client.ServerCommandClientImpl;
 import net.rptools.maptool.client.ui.zone.FogUtil;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.common.MapToolConstants;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.InitiativeList.TokenInitiative;
 import net.rptools.maptool.model.Zone.VisionType;
@@ -508,10 +507,9 @@ public class ServerMessageHandler implements MessageHandler {
           server.getCampaign().removeZone(zoneGUID);
 
           // Now we have fire off adding the tokens in the zone
-          new MapToolEventBus()
-              .getMainEventBus()
-              .post(new TokensRemoved(zone, zone.getAllTokens()));
-          new MapToolEventBus().getMainEventBus().post(new ZoneRemoved(zone));
+          MapTool.getEventBus()
+              .post(new TokensRemoved(zone, zone.getAllTokens()))
+              .post(new ZoneRemoved(zone));
         });
   }
 
@@ -554,8 +552,9 @@ public class ServerMessageHandler implements MessageHandler {
           server.getCampaign().putZone(zone);
 
           // Now we have fire off adding the tokens in the zone
-          new MapToolEventBus().getMainEventBus().post(new ZoneAdded(zone));
-          new MapToolEventBus().getMainEventBus().post(new TokensAdded(zone, zone.getAllTokens()));
+          MapTool.getEventBus()
+              .post(new ZoneAdded(zone))
+              .post(new TokensAdded(zone, zone.getAllTokens()));
         });
   }
 

@@ -19,11 +19,10 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.events.PlayerStatusChanged;
 import net.rptools.maptool.client.events.ZoneLoaded;
 import net.rptools.maptool.client.events.ZoneLoading;
-import net.rptools.maptool.events.MapToolEventBus;
 
 public class PlayerZoneListener {
   public PlayerZoneListener() {
-    new MapToolEventBus().getMainEventBus().register(this);
+    MapTool.getEventBus().register(this);
   }
 
   @Subscribe
@@ -46,7 +45,7 @@ public class PlayerZoneListener {
       playerListPlayer.setZoneId(event.zone().getId());
     }
 
-    final var eventBus = new MapToolEventBus().getMainEventBus();
+    final var eventBus = MapTool.getEventBus();
     eventBus.post(new PlayerStatusChanged(player));
 
     MapTool.serverCommand().updatePlayerStatus(player);
@@ -72,7 +71,7 @@ public class PlayerZoneListener {
       playerListPlayer.setZoneId(event.zone().getId());
     }
 
-    final var eventBus = new MapToolEventBus().getMainEventBus();
+    final var eventBus = MapTool.getEventBus();
     eventBus.post(new PlayerStatusChanged(player));
 
     MapTool.serverCommand().updatePlayerStatus(player);

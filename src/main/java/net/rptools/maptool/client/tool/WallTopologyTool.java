@@ -48,7 +48,6 @@ import net.rptools.maptool.client.tool.rig.Snap;
 import net.rptools.maptool.client.tool.rig.WallTopologyRig;
 import net.rptools.maptool.client.ui.zone.ZoneOverlay;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.topology.Vertex;
 import net.rptools.maptool.model.topology.Wall;
 import net.rptools.maptool.model.zones.WallTopologyChanged;
@@ -121,12 +120,12 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
 
     MapTool.getFrame().showControlPanel(controlPanel.getView().getRootComponent());
 
-    new MapToolEventBus().getMainEventBus().register(this);
+    MapTool.getEventBus().register(this);
   }
 
   @Override
   protected void detachFrom(ZoneRenderer renderer) {
-    new MapToolEventBus().getMainEventBus().unregister(this);
+    MapTool.getEventBus().unregister(this);
 
     MapTool.getFrame().removeControlPanel();
 

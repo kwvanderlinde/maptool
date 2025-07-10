@@ -43,7 +43,6 @@ import net.rptools.maptool.client.DeveloperOptions;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.vbl.MovementBlockingTopology;
 import net.rptools.maptool.client.walker.AbstractZoneWalker;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.CellPoint;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Label;
@@ -106,12 +105,12 @@ public abstract class AbstractAStarWalker extends AbstractZoneWalker {
       }
     }
 
-    new MapToolEventBus().getMainEventBus().register(this);
+    MapTool.getEventBus().register(this);
   }
 
   @Override
   public void close() {
-    new MapToolEventBus().getMainEventBus().unregister(this);
+    MapTool.getEventBus().unregister(this);
   }
 
   private void onTopologyChanged() {

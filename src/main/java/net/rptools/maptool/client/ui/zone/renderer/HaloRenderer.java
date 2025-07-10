@@ -22,8 +22,8 @@ import java.awt.geom.Ellipse2D;
 import java.util.HashMap;
 import java.util.Map;
 import net.rptools.maptool.client.AppPreferences;
+import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.ZoneViewModel;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.zones.GridChanged;
 
@@ -42,7 +42,7 @@ public class HaloRenderer {
     this.renderHelper = renderHelper;
     this.zone = zone;
 
-    new MapToolEventBus().getMainEventBus().register(this);
+    MapTool.getEventBus().register(this);
   }
 
   @Subscribe

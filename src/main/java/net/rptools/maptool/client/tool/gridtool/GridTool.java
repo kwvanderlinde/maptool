@@ -37,7 +37,6 @@ import net.rptools.maptool.client.swing.ColorWell;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.tool.DefaultTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.CellPoint;
 import net.rptools.maptool.model.Grid;
 import net.rptools.maptool.model.Zone;
@@ -179,7 +178,7 @@ public class GridTool extends DefaultTool {
     zone.setGridColor(colorWell.getColor().getRGB());
     grid.setSize(Math.max((Integer) gridSizeSpinner.getValue(), Grid.MIN_GRID_SIZE));
 
-    new MapToolEventBus().getMainEventBus().post(new GridChanged(zone));
+    MapTool.getEventBus().post(new GridChanged(zone));
   }
 
   @Override

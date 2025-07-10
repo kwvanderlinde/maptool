@@ -53,7 +53,6 @@ import net.rptools.maptool.client.ui.theme.ThemeFontPreferences;
 import net.rptools.maptool.client.ui.theme.ThemeSupport;
 import net.rptools.maptool.client.ui.theme.ThemeSupport.ThemeDetails;
 import net.rptools.maptool.client.walker.WalkerMetric;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.GridFactory;
 import net.rptools.maptool.model.Token;
@@ -606,7 +605,7 @@ public class PreferencesDialog extends AbeillePanel {
         .onBeforeClose(
             e -> {
               themeChanged = themeChanged | themeFontPreferences.commit();
-              new MapToolEventBus().getMainEventBus().post(new PreferencesChanged());
+              MapTool.getEventBus().post(new PreferencesChanged());
               if (themeChanged || ThemeSupport.needsRestartForNewTheme()) {
                 MapTool.showMessage(
                     "PreferencesDialog.themeChangeWarning",
