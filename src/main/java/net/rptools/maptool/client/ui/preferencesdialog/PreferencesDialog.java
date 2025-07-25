@@ -109,6 +109,12 @@ public class PreferencesDialog extends JDialog {
   /** Represents a checkbox indicating whether to hide the token stack indicator. */
   private final JCheckBox hideTokenStackIndicatorCheckBox;
 
+  /**
+   * Represents a checkbox indicating whether to align the selection marquee with the token layout
+   * offset.
+   */
+  private final JCheckBox selectionMarqueeAlignToImage;
+
   /** Represents a checkbox for controlling the visibility of new maps. */
   private final JCheckBox newMapsVisibleCheckBox;
 
@@ -820,6 +826,12 @@ public class PreferencesDialog extends JDialog {
                 ((SpinnerNumberModel) ((JSpinner) e.getSource()).getModel())
                     .getNumber()
                     .doubleValue()));
+
+    selectionMarqueeAlignToImage = panel.getCheckBox("selectionMarqueeAlignToImage");
+    selectionMarqueeAlignToImage.addChangeListener(
+        e ->
+            AppPreferences.selectMarqueeAlignToImage.set(
+                selectionMarqueeAlignToImage.isSelected()));
 
     showLabelBorderCheckBox = (JCheckBox) panel.getComponent("showLabelBorder");
     showLabelBorderCheckBox.addActionListener(
@@ -1650,6 +1662,7 @@ public class PreferencesDialog extends JDialog {
    * method is called during the initialization process.
    */
   private void setInitialState() {
+    selectionMarqueeAlignToImage.setSelected(AppPreferences.selectMarqueeAlignToImage.get());
     showDialogOnNewToken.setSelected(AppPreferences.showDialogOnNewToken.get());
     saveReminderCheckBox.setSelected(AppPreferences.saveReminder.get());
     fillSelectionCheckBox.setSelected(AppPreferences.fillSelectionBox.get());
