@@ -52,39 +52,17 @@ public class FogRenderer {
   }
 
   private void renderWorld(Graphics2D worldG, PlayerView view) {
+    /*
+     * The tricky thing in this method is that the areas we have (exposed, visible) are the areas
+     * where we should _not_ render. So we have to do clipped fills and clears instead of directly
+     * rendering the areas.
+     */
+
     var timer = CodeTimer.get();
 
-    /* The tricky thing in this method is that the areas we have (exposed, visible) are the areas
-     * where we should _not_ render. So we have to do clipped fills and clears instead of directly
-     * rendering the areas. */
-    timer.start("renderFog-getVisibleArea");
-    Area visibleArea = zoneView.getVisibleArea(view);
-    timer.stop("renderFog-getVisibleArea");
-
-    String msg = null;
-    if (timer.isEnabled()) {
-      msg =
-          "renderFog-getExposedArea("
-              + (view.isUsingTokenView() ? view.getTokens().size() : 0)
-              + ")";
-    }
-    timer.start(msg);
-    Area exposedArea = zoneView.getExposedArea(view);
-    timer.stop(msg);
-
-    // Hard FOW is cleared by exposed areas. The exposed area itself has two regions: the visible
-    // area (rendered clear) and the soft FOW area (rendered translucent). But if vision is off,
-    // treat the entire exposed area as visible.
-    Area softFogArea;
-    Area clearArea;
-    if (zoneView.isUsingVision()) {
-      softFogArea = exposedArea;
-      clearArea = new Area(visibleArea);
-      clearArea.intersect(softFogArea);
-    } else {
-      softFogArea = new Area();
-      clearArea = exposedArea;
-    }
+    var visibility = zoneView.getVisibility(view);
+    Area softFogArea = visibility.softFogArea();
+    Area clearArea = visibility.clearArea();
 
     var originalClip = worldG.getClip();
 
