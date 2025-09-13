@@ -68,19 +68,22 @@ public class FacingArrowRenderer {
     var tokenShape = token.getShape();
 
     timer.start("FacingArrowRenderer-preCheck");
-    if (!token.hasFacing()) {
-      return;
-    }
-    final var forceFacing = AppPreferences.forceFacingArrow.get();
-    if (!forceFacing) {
-      if (TokenShape.TOP_DOWN.equals(tokenShape)) {
+    try {
+      if (!token.hasFacing()) {
         return;
       }
-      if (TokenShape.FIGURE.equals(tokenShape) && token.getHasImageTable()) {
-        return;
+      final var forceFacing = AppPreferences.forceFacingArrow.get();
+      if (!forceFacing) {
+        if (TokenShape.TOP_DOWN.equals(tokenShape)) {
+          return;
+        }
+        if (TokenShape.FIGURE.equals(tokenShape) && token.getHasImageTable()) {
+          return;
+        }
       }
+    } finally {
+      timer.stop("FacingArrowRenderer-preCheck");
     }
-    timer.stop("FacingArrowRenderer-preCheck");
 
     timer.start("FacingArrowRenderer-render");
     renderHelper.render(
