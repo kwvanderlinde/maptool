@@ -714,7 +714,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         timer -> {
           timer.setThreshold(10);
 
-          if (!MapTool.getFrame().getGdxPanel().isVisible()) {
+          if (!viewModel.isUsingGdxRenderer()) {
             timer.start("paintComponent");
             Graphics2D g2d = (Graphics2D) g;
 
