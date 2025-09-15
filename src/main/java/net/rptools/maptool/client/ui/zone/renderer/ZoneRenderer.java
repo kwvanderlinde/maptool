@@ -15,6 +15,7 @@
 package net.rptools.maptool.client.ui.zone.renderer;
 
 import com.google.common.eventbus.Subscribe;
+import com.sun.management.HotSpotDiagnosticMXBean;
 import java.awt.*;
 import java.awt.Rectangle;
 import java.awt.dnd.DropTargetDragEvent;
@@ -28,6 +29,8 @@ import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
 import java.awt.geom.*;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
@@ -707,11 +710,26 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     return miniImage;
   }
 
+  private long frameCount = 0;
+
   @Override
   public void paintComponent(Graphics g) {
     CodeTimer.using(
         "ZoneRenderer.renderZone",
         timer -> {
+          if (timer.isEnabled()) {
+            try {
+              HotSpotDiagnosticMXBean mxBean =
+                  ManagementFactory.newPlatformMXBeanProxy(
+                      ManagementFactory.getPlatformMBeanServer(),
+                      "com.sun.management:type=HotSpotDiagnostic",
+                      HotSpotDiagnosticMXBean.class);
+              mxBean.dumpHeap(String.format(".\\dumps\\dump-%d.hprof", ++frameCount), true);
+            } catch (IOException e) {
+              log.warn("Unable to write heap dump", e);
+            }
+          }
+
           timer.setThreshold(10);
 
           if (!viewModel.isUsingGdxRenderer()) {
