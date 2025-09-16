@@ -35,76 +35,91 @@ import net.rptools.maptool.client.ui.zone.BufferedImagePool;
  * <p>Also optionally renders onto an intermediate buffer.
  */
 public class RenderHelper {
+  private final String timerPrefix;
   private final ZoneRenderer renderer;
   private final BufferedImagePool tempBufferPool;
 
-  public RenderHelper(ZoneRenderer renderer, BufferedImagePool tempBufferPool) {
+  private RenderHelper(ZoneRenderer renderer, BufferedImagePool tempBufferPool, String timerPrefix) {
     this.renderer = renderer;
     this.tempBufferPool = tempBufferPool;
+    this.timerPrefix = timerPrefix;
+  }
+
+  public RenderHelper(ZoneRenderer renderer, BufferedImagePool tempBufferPool) {
+    this(renderer, tempBufferPool, "RenderHelper");
   }
 
   public ImageObserver getImageObserver() {
     return renderer;
   }
 
+  public RenderHelper withTimerPrefix(String timerPrefix) {
+    return new RenderHelper(renderer, tempBufferPool, timerPrefix);
+  }
+
   private void doRender(Graphics2D g, Consumer<Graphics2D> render) {
     var timer = CodeTimer.get();
 
-    timer.start("RenderHelper-useAA");
+    timer.start("%s-useAA", timerPrefix);
     SwingUtil.useAntiAliasing(g);
-    timer.stop("RenderHelper-useAA");
+    timer.stop("%s-useAA", timerPrefix);
 
-    timer.start("RenderHelper-setTransform");
+    timer.start("%s-setTransform", timerPrefix);
     Scale scale = renderer.getZoneScale();
     AffineTransform af = new AffineTransform();
     af.translate(scale.getOffsetX(), scale.getOffsetY());
     af.scale(scale.getScale(), scale.getScale());
     g.setTransform(af);
-    timer.stop("RenderHelper-setTransform");
+    timer.stop("%s-setTransform", timerPrefix);
 
-    timer.start("RenderHelper-render");
+    timer.start("%s-render", timerPrefix);
     render.accept(g);
-    timer.stop("RenderHelper-render");
+    timer.stop("%s-render", timerPrefix);
   }
 
   public void render(Graphics2D g, Consumer<Graphics2D> render) {
     var timer = CodeTimer.get();
-    timer.start("RenderHelper-createContext");
+    timer.start("%s-createContext", timerPrefix);
     g = (Graphics2D) g.create();
-    timer.stop("RenderHelper-createContext");
+    timer.stop("%s-createContext", timerPrefix);
     try {
-      timer.start("RenderHelper-doRender");
+      timer.start("%s-doRender", timerPrefix);
       doRender(g, render);
     } finally {
-      timer.stop("RenderHelper-doRender");
-      timer.start("RenderHelper-disposeContext");
+      timer.stop("%s-doRender", timerPrefix);
+      timer.start("%s-disposeContext", timerPrefix);
       g.dispose();
-      timer.stop("RenderHelper-disposeContext");
+      timer.stop("%s-disposeContext", timerPrefix);
     }
   }
 
   public void bufferedRender(Graphics2D g, Composite blitComposite, Consumer<Graphics2D> render) {
     var timer = CodeTimer.get();
 
-    timer.start("RenderHelper-acquireBuffer");
+    timer.start("%s-acquireBuffer", timerPrefix);
     if (tempBufferPool.getWidth() == renderer.getWidth()
         && tempBufferPool.getHeight() == renderer.getHeight()) {
+      timer.increment(String.format("%s-matching-dimensions", timerPrefix));
       // This case only holds during regular rendering. Other rendering, such as screenshots, may
       // have different dimensions.
       try (final var entry = tempBufferPool.acquire()) {
         var buffer = entry.get();
+        timer.stop("%s-acquireBuffer", timerPrefix);
+
         bufferedRender(buffer, g, blitComposite, render);
       }
     } else {
+      timer.increment(String.format("%s-mismatched-dimensions", timerPrefix));
       var buffer =
           GraphicsEnvironment.getLocalGraphicsEnvironment()
               .getDefaultScreenDevice()
               .getDefaultConfiguration()
               .createCompatibleImage(
                   renderer.getWidth(), renderer.getHeight(), Transparency.TRANSLUCENT);
+      timer.stop("%s-acquireBuffer", timerPrefix);
+
       bufferedRender(buffer, g, blitComposite, render);
     }
-    timer.stop("RenderHelper-acquireBuffer");
   }
 
   private void bufferedRender(
@@ -119,7 +134,7 @@ public class RenderHelper {
       buffG.dispose();
     }
 
-    timer.start("RenderHelper-blit");
+    timer.start("%s-blit", timerPrefix);
     g = (Graphics2D) g.create();
     try {
       g.setComposite(blitComposite);
@@ -127,6 +142,6 @@ public class RenderHelper {
     } finally {
       g.dispose();
     }
-    timer.stop("RenderHelper-blit");
+    timer.stop("%s-blit", timerPrefix);
   }
 }
