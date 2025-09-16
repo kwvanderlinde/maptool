@@ -104,6 +104,7 @@ public class RenderHelper {
                   renderer.getWidth(), renderer.getHeight(), Transparency.TRANSLUCENT);
       bufferedRender(buffer, g, blitComposite, render);
     }
+    timer.stop("RenderHelper-acquireBuffer");
   }
 
   private void bufferedRender(
