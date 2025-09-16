@@ -14,13 +14,8 @@
  */
 package net.rptools.maptool.client.ui.zone.renderer;
 
-import java.awt.Composite;
-import java.awt.Graphics2D;
-import java.awt.GraphicsEnvironment;
-import java.awt.Rectangle;
-import java.awt.Transparency;
+import java.awt.*;
 import java.awt.geom.AffineTransform;
-import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.util.function.Consumer;
 import net.rptools.lib.CodeTimer;
@@ -103,10 +98,9 @@ public class RenderHelper {
       // This case only holds during regular rendering. Other rendering, such as screenshots, may
       // have different dimensions.
       try (final var entry = tempBufferPool.acquire()) {
-        var buffer = entry.get();
         timer.stop("%s-acquireBuffer", timerPrefix);
 
-        bufferedRender(buffer, g, blitComposite, render);
+        bufferedRender(entry, g, blitComposite, render);
       }
     } else {
       timer.increment(String.format("%s-mismatched-dimensions", timerPrefix));
@@ -114,21 +108,41 @@ public class RenderHelper {
           GraphicsEnvironment.getLocalGraphicsEnvironment()
               .getDefaultScreenDevice()
               .getDefaultConfiguration()
-              .createCompatibleImage(
+              .createCompatibleVolatileImage(
                   renderer.getWidth(), renderer.getHeight(), Transparency.TRANSLUCENT);
       timer.stop("%s-acquireBuffer", timerPrefix);
 
-      bufferedRender(buffer, g, blitComposite, render);
+      var handle =
+          new BufferedImagePool.Handle() {
+            @Override
+            public void close() {}
+
+            @Override
+            public Image get() {
+              return buffer;
+            }
+
+            @Override
+            public Graphics2D createGraphics() {
+              return buffer.createGraphics();
+            }
+          };
+
+      bufferedRender(handle, g, blitComposite, render);
     }
   }
 
   private void bufferedRender(
-      BufferedImage buffer, Graphics2D g, Composite blitComposite, Consumer<Graphics2D> render) {
+      BufferedImagePool.Handle bufferHandle,
+      Graphics2D g,
+      Composite blitComposite,
+      Consumer<Graphics2D> render) {
     var timer = CodeTimer.get();
 
-    Graphics2D buffG = buffer.createGraphics();
+    Image buffer = bufferHandle.get();
+    Graphics2D buffG = bufferHandle.createGraphics();
     try {
-      buffG.setClip(new Rectangle(0, 0, buffer.getWidth(), buffer.getHeight()));
+      buffG.setClip(new Rectangle(0, 0, buffer.getWidth(null), buffer.getHeight(null)));
       doRender(buffG, render);
     } finally {
       buffG.dispose();

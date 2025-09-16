@@ -14,10 +14,8 @@
  */
 package net.rptools.maptool.client.ui.zone;
 
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsEnvironment;
-import java.awt.Transparency;
-import java.awt.image.BufferedImage;
+import java.awt.*;
+import java.awt.image.VolatileImage;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
@@ -35,20 +33,33 @@ import org.apache.logging.log4j.Logger;
 public class BufferedImagePool {
   private static final Logger log = LogManager.getLogger(BufferedImagePool.class);
 
-  public final class Handle implements AutoCloseable {
-    private final BufferedImage image;
+  public interface Handle extends AutoCloseable {
+    @Override
+    void close();
 
-    private Handle(BufferedImage image) {
+    Image get();
+
+    Graphics2D createGraphics();
+  }
+
+  private final class VolatileImageHandle implements Handle {
+    private final VolatileImage image;
+
+    private VolatileImageHandle(VolatileImage image) {
       this.image = image;
     }
 
-    public BufferedImage get() {
+    public Image get() {
       return image;
     }
 
     @Override
     public void close() {
       release(image);
+    }
+
+    public Graphics2D createGraphics() {
+      return image.createGraphics();
     }
   }
 
@@ -57,8 +68,8 @@ public class BufferedImagePool {
   private @Nonnull GraphicsConfiguration configuration;
 
   private final int maxSize;
-  private final Deque<BufferedImage> available = new ArrayDeque<>();
-  private final Set<BufferedImage> checkedOut = Collections.newSetFromMap(new IdentityHashMap<>());
+  private final Deque<VolatileImage> available = new ArrayDeque<>();
+  private final Set<VolatileImage> checkedOut = Collections.newSetFromMap(new IdentityHashMap<>());
 
   public BufferedImagePool(int maxSize) {
     this.maxSize = maxSize;
@@ -108,7 +119,7 @@ public class BufferedImagePool {
   public Handle acquire() {
     if (available.isEmpty()) {
       final var newInstance =
-          this.configuration.createCompatibleImage(width, height, Transparency.TRANSLUCENT);
+          this.configuration.createCompatibleVolatileImage(width, height, Transparency.TRANSLUCENT);
 
       // If there is still space available in the pool, start tracking the newly created image.
       // Otherwise, we can just return it and forget about it.
@@ -118,17 +129,17 @@ public class BufferedImagePool {
         log.info("Needed new instance but pool is full.");
       }
 
-      return new Handle(newInstance);
+      return new VolatileImageHandle(newInstance);
     }
 
     // We've got an existing instance. We'll need to make sure it's cleared before yielding it.
     final var instance = available.removeLast();
     checkedOut.add(instance);
 
-    return new Handle(instance);
+    return new VolatileImageHandle(instance);
   }
 
-  private void release(BufferedImage image) {
+  private void release(VolatileImage image) {
     final var wasCheckedOut = checkedOut.remove(image);
     if (wasCheckedOut) {
       available.addLast(image);
