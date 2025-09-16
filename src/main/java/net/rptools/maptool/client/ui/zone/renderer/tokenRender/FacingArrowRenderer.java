@@ -52,7 +52,7 @@ public class FacingArrowRenderer {
   private final Color borderColour = Color.DARK_GRAY;
 
   public FacingArrowRenderer(RenderHelper renderHelper, Zone zone) {
-    this.renderHelper = renderHelper;
+    this.renderHelper = renderHelper.withTimerPrefix("FacingArrowRenderer");
     this.zone = zone;
     for (int i = 0; i <= 90; i++) {
       figureFillColours.add(new Color(1 - 0.5f / 90f * i, 1 - 0.5f / 90f * i, 0));

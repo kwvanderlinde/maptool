@@ -39,7 +39,7 @@ public class HaloRenderer {
   // endregion
 
   public HaloRenderer(RenderHelper renderHelper, Zone zone) {
-    this.renderHelper = renderHelper;
+    this.renderHelper = renderHelper.withTimerPrefix("HaloRenderer");
     this.zone = zone;
 
     new MapToolEventBus().getMainEventBus().register(this);

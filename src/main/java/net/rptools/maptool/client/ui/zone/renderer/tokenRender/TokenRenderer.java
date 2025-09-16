@@ -43,7 +43,7 @@ public class TokenRenderer {
   private final Zone zone;
 
   public TokenRenderer(RenderHelper renderHelper, Zone zone) {
-    this.renderHelper = renderHelper;
+    this.renderHelper = renderHelper.withTimerPrefix("TokenRenderer");
     this.zone = zone;
   }
 

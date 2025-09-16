@@ -39,7 +39,8 @@ public class RenderHelper {
   private final ZoneRenderer renderer;
   private final BufferedImagePool tempBufferPool;
 
-  private RenderHelper(ZoneRenderer renderer, BufferedImagePool tempBufferPool, String timerPrefix) {
+  private RenderHelper(
+      ZoneRenderer renderer, BufferedImagePool tempBufferPool, String timerPrefix) {
     this.renderer = renderer;
     this.tempBufferPool = tempBufferPool;
     this.timerPrefix = timerPrefix;
