@@ -14,9 +14,7 @@
  */
 package net.rptools.maptool.client.swing;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
+import java.awt.*;
 import java.awt.event.WindowEvent;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -47,6 +45,7 @@ public class NoteFrame extends JFrame {
     if (noteArea == null) {
       noteArea = new JTextArea();
       noteArea.setBorder(BorderFactory.createLineBorder(Color.black));
+      noteArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, noteArea.getFont().getSize()));
     }
     return noteArea;
   }
