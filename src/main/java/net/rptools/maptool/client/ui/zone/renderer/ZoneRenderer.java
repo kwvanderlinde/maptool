@@ -31,6 +31,7 @@ import java.awt.image.BufferedImage;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -703,7 +704,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     CodeTimer.using(
         "ZoneRenderer.renderZone",
         timer -> {
-          timer.setThreshold(10);
+          timer.setThreshold(1, TimeUnit.MICROSECONDS);
+          timer.setReportingUnit(TimeUnit.MICROSECONDS);
 
           if (!viewModel.isUsingGdxRenderer()) {
             timer.start("paintComponent");
