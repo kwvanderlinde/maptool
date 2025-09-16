@@ -18,8 +18,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.util.StringUtil;
 
 public class CodeTimer {
   private static final ThreadLocal<CodeTimer> ROOT_TIMER =
@@ -66,6 +68,7 @@ public class CodeTimer {
   private final Map<String, Timer> timeMap = new LinkedHashMap<>();
   private final String name;
   private long threshold = 1;
+  private TimeUnit reportingUnit = TimeUnit.MILLISECONDS;
   private boolean enabled;
 
   public CodeTimer(String n) {
@@ -78,7 +81,15 @@ public class CodeTimer {
   }
 
   public void setThreshold(long threshold) {
-    this.threshold = threshold;
+    this.threshold = TimeUnit.NANOSECONDS.convert(threshold, TimeUnit.MILLISECONDS);
+  }
+
+  public void setThreshold(long threshold, TimeUnit timeUnit) {
+    this.threshold = TimeUnit.NANOSECONDS.convert(threshold, timeUnit);
+  }
+
+  public void setReportingUnit(TimeUnit reportingUnit) {
+    this.reportingUnit = reportingUnit;
   }
 
   public void setEnabled(boolean enabled) {
@@ -141,11 +152,18 @@ public class CodeTimer {
       ++i;
 
       var id = entry.getKey();
-      long elapsed = entry.getValue().getElapsed() / 1_000_000;
+      long elapsed = entry.getValue().getElapsed();
       if (elapsed < threshold) {
         continue;
       }
-      builder.append(String.format("  %3d.  %6d ms  %s\n", i, elapsed, id));
+
+      builder.append(
+          String.format(
+              "  %3d.  %6d %s  %s\n",
+              i,
+              reportingUnit.convert(elapsed, TimeUnit.NANOSECONDS),
+              StringUtil.formatTimeUnit(reportingUnit),
+              id));
     }
 
     if (!counterMap.isEmpty()) {
