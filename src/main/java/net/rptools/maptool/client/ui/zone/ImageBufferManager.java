@@ -67,17 +67,8 @@ public class ImageBufferManager {
     return height;
   }
 
-  private void clear(Graphics2D g) {
-    g.setComposite(AlphaComposite.Clear);
-    g.fillRect(0, 0, width, height);
-  }
-
   public void update(int width, int height, GraphicsConfiguration configuration) {
-    if (this.width == width && this.height == height && this.configuration.equals(configuration)) {
-      // Just clear existing buffers.
-      drawToResultsBuffer(this::clear);
-      drawToBackBuffer(AlphaComposite.Clear, this::clear);
-    } else {
+    if (this.width != width || this.height != height || !this.configuration.equals(configuration)) {
       this.width = width;
       this.height = height;
       this.configuration = configuration;
