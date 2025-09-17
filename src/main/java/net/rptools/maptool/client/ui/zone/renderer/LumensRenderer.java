@@ -43,7 +43,7 @@ public class LumensRenderer {
     this.zoneView = zoneView;
   }
 
-  public void render(Graphics2D g2d, PlayerView view) {
+  public void render(PlayerView view) {
     var timer = CodeTimer.get();
     timer.start("LumensRenderer-renderLumensOverlay");
     try {
@@ -51,7 +51,7 @@ public class LumensRenderer {
         return;
       }
 
-      renderHelper.bufferedRender(g2d, AlphaComposite.SrcOver, worldG -> renderWorld(worldG, view));
+      renderHelper.bufferedRender(AlphaComposite.SrcOver, worldG -> renderWorld(worldG, view));
     } finally {
       timer.stop("LumensRenderer-renderLumensOverlay");
     }

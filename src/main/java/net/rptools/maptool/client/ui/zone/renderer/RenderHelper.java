@@ -21,7 +21,7 @@ import java.util.function.Consumer;
 import net.rptools.lib.CodeTimer;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.ui.Scale;
-import net.rptools.maptool.client.ui.zone.BufferedImagePool;
+import net.rptools.maptool.client.ui.zone.ImageBufferManager;
 
 /**
  * Transform graphics objects into world space to enable more convenient rendering for some layers.
@@ -31,17 +31,17 @@ import net.rptools.maptool.client.ui.zone.BufferedImagePool;
 public class RenderHelper {
   private final String timerPrefix;
   private final ZoneRenderer renderer;
-  private final BufferedImagePool tempBufferPool;
+  private final ImageBufferManager imageBufferManager;
 
   private RenderHelper(
-      ZoneRenderer renderer, BufferedImagePool tempBufferPool, String timerPrefix) {
+      ZoneRenderer renderer, ImageBufferManager imageBufferManager, String timerPrefix) {
     this.renderer = renderer;
-    this.tempBufferPool = tempBufferPool;
     this.timerPrefix = timerPrefix;
+    this.imageBufferManager = imageBufferManager;
   }
 
-  public RenderHelper(ZoneRenderer renderer, BufferedImagePool tempBufferPool) {
-    this(renderer, tempBufferPool, "RenderHelper");
+  public RenderHelper(ZoneRenderer renderer, ImageBufferManager imageBufferManager) {
+    this(renderer, imageBufferManager, "RenderHelper");
   }
 
   public ImageObserver getImageObserver() {
@@ -49,7 +49,7 @@ public class RenderHelper {
   }
 
   public RenderHelper withTimerPrefix(String timerPrefix) {
-    return new RenderHelper(renderer, tempBufferPool, timerPrefix);
+    return new RenderHelper(renderer, imageBufferManager, timerPrefix);
   }
 
   private void doRender(Graphics2D g, Consumer<Graphics2D> render) {
@@ -88,40 +88,13 @@ public class RenderHelper {
     }
   }
 
-  public void bufferedRender(Graphics2D g, Composite blitComposite, Consumer<Graphics2D> render) {
-    var timer = CodeTimer.get();
-
-    timer.start("%s-acquireBuffer", timerPrefix);
-    try (var entry = tempBufferPool.acquire(renderer.getWidth(), renderer.getHeight())) {
-        timer.stop("%s-acquireBuffer", timerPrefix);
-        bufferedRender(entry, g, blitComposite, render);
-    }
-  }
-
-  private void bufferedRender(
-      BufferedImagePool.Handle bufferHandle,
-      Graphics2D g,
-      Composite blitComposite,
-      Consumer<Graphics2D> render) {
-    var timer = CodeTimer.get();
-
-    Image buffer = bufferHandle.get();
-    Graphics2D buffG = bufferHandle.createGraphics();
-    try {
-      buffG.setClip(new Rectangle(0, 0, buffer.getWidth(null), buffer.getHeight(null)));
-      doRender(buffG, render);
-    } finally {
-      buffG.dispose();
-    }
-
-    timer.start("%s-blit", timerPrefix);
-    g = (Graphics2D) g.create();
-    try {
-      g.setComposite(blitComposite);
-      g.drawImage(buffer, null, null);
-    } finally {
-      g.dispose();
-    }
-    timer.stop("%s-blit", timerPrefix);
+  public void bufferedRender(Composite blitComposite, Consumer<Graphics2D> render) {
+    imageBufferManager.drawToBackBuffer(
+        blitComposite,
+        buffG -> {
+          buffG.setClip(
+              new Rectangle(0, 0, imageBufferManager.getWidth(), imageBufferManager.getHeight()));
+          doRender(buffG, render);
+        });
   }
 }

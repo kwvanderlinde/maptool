@@ -45,7 +45,7 @@ public class LightsRenderer {
     this.zoneView = zoneView;
   }
 
-  public void renderAuras(Graphics2D g2d, PlayerView view) {
+  public void renderAuras(PlayerView view) {
     var timer = CodeTimer.get();
     timer.start("LightsRenderer-renderAuras");
     try {
@@ -59,7 +59,6 @@ public class LightsRenderer {
       final var overlayFillColor = new Color(0, 0, 0, 0);
 
       renderHelper.bufferedRender(
-          g2d,
           AlphaComposite.SrcOver,
           worldG -> renderWorld(worldG, view, drawableAuras, lightBlending, overlayFillColor));
     } finally {
@@ -67,7 +66,7 @@ public class LightsRenderer {
     }
   }
 
-  public void renderLights(Graphics2D g2d, PlayerView view) {
+  public void renderLights(PlayerView view) {
     var timer = CodeTimer.get();
     timer.start("LightsRenderer-renderLights");
     try {
@@ -93,7 +92,6 @@ public class LightsRenderer {
           };
 
       renderHelper.bufferedRender(
-          g2d,
           overlayBlending,
           worldG ->
               renderWorld(

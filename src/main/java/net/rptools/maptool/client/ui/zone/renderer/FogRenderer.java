@@ -36,7 +36,7 @@ public class FogRenderer {
     this.zoneView = zoneView;
   }
 
-  public void render(Graphics2D g, PlayerView view) {
+  public void render(PlayerView view) {
     var timer = CodeTimer.get();
     timer.start("FogRenderer-renderFog");
     try {
@@ -44,8 +44,7 @@ public class FogRenderer {
         return;
       }
 
-      this.renderHelper.bufferedRender(
-          g, AlphaComposite.SrcOver, worldG -> renderWorld(worldG, view));
+      this.renderHelper.bufferedRender(AlphaComposite.SrcOver, worldG -> renderWorld(worldG, view));
     } finally {
       timer.stop("FogRenderer-renderFog");
     }
