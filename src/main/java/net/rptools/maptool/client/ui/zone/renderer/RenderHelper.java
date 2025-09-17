@@ -92,43 +92,9 @@ public class RenderHelper {
     var timer = CodeTimer.get();
 
     timer.start("%s-acquireBuffer", timerPrefix);
-    if (tempBufferPool.getWidth() == renderer.getWidth()
-        && tempBufferPool.getHeight() == renderer.getHeight()) {
-      timer.increment(String.format("%s-matching-dimensions", timerPrefix));
-      // This case only holds during regular rendering. Other rendering, such as screenshots, may
-      // have different dimensions.
-      try (final var entry = tempBufferPool.acquire()) {
+    try (var entry = tempBufferPool.acquire(renderer.getWidth(), renderer.getHeight())) {
         timer.stop("%s-acquireBuffer", timerPrefix);
-
         bufferedRender(entry, g, blitComposite, render);
-      }
-    } else {
-      timer.increment(String.format("%s-mismatched-dimensions", timerPrefix));
-      var buffer =
-          GraphicsEnvironment.getLocalGraphicsEnvironment()
-              .getDefaultScreenDevice()
-              .getDefaultConfiguration()
-              .createCompatibleVolatileImage(
-                  renderer.getWidth(), renderer.getHeight(), Transparency.TRANSLUCENT);
-      timer.stop("%s-acquireBuffer", timerPrefix);
-
-      var handle =
-          new BufferedImagePool.Handle() {
-            @Override
-            public void close() {}
-
-            @Override
-            public Image get() {
-              return buffer;
-            }
-
-            @Override
-            public Graphics2D createGraphics() {
-              return buffer.createGraphics();
-            }
-          };
-
-      bufferedRender(handle, g, blitComposite, render);
     }
   }
 

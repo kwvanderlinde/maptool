@@ -25,6 +25,9 @@ import javax.annotation.Nonnull;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+// TODO Don't bother with a pool. We should work similar to the GdxRenderer where any given renderer
+//  has a backBuffer, resultsBuffer, and a spareBuffer that can be swapped as needed.
+
 /**
  * A single-element pool of BufferedImages.
  *
@@ -137,6 +140,38 @@ public class BufferedImagePool {
     checkedOut.add(instance);
 
     return new VolatileImageHandle(instance);
+  }
+
+  public Handle acquire(int width, int height) {
+    if (this.width == width && this.height == height) {
+      // We can use the pool objects since the dimensions match.
+      return acquire();
+    }
+    else {
+      // Make temporary images as the dimensions don't match.
+      var buffer =
+              GraphicsEnvironment.getLocalGraphicsEnvironment()
+                      .getDefaultScreenDevice()
+                      .getDefaultConfiguration()
+                      .createCompatibleVolatileImage(
+                              width, height, Transparency.TRANSLUCENT);
+      return new Handle() {
+        @Override
+        public void close() {
+          // Do not return the object to the pool.
+        }
+
+        @Override
+        public Image get() {
+          return buffer;
+        }
+
+        @Override
+        public Graphics2D createGraphics() {
+          return buffer.createGraphics();
+        }
+      };
+    }
   }
 
   private void release(VolatileImage image) {
