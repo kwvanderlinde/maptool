@@ -44,7 +44,9 @@ public class FogRenderer {
         return;
       }
 
-      this.renderHelper.bufferedRender(AlphaComposite.SrcOver, worldG -> renderWorld(worldG, view));
+      this.renderHelper.bufferedRender(
+          AlphaComposite.SrcOver.derive(view.isGMView() ? .6f : 1f),
+          worldG -> renderWorld(worldG, view));
     } finally {
       timer.stop("FogRenderer-renderFog");
     }
@@ -69,7 +71,7 @@ public class FogRenderer {
     // Fill. This will be cleared out later to produce soft fog and clear visible area.
     worldG.setPaint(zone.getFogPaint().getPaint());
     // JFJ this fixes the GM exposed area view.
-    worldG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC, view.isGMView() ? .6f : 1f));
+    worldG.setComposite(AlphaComposite.Src);
     var bounds = originalClip.getBounds();
     worldG.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
     timer.stop("FogRenderer-renderFog:hardFow");
