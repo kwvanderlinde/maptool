@@ -282,8 +282,9 @@ public class MapToolUtil {
     if (!AssetManager.hasAsset(asset.getMD5Key())) {
       AssetManager.putAsset(asset);
     }
-    if (!MapTool.isHostingServer() && !MapTool.getCampaign().containsAsset(asset.getMD5Key())) {
-      MapTool.serverCommand().putAsset(asset);
+    if (!MapTool.getClient().isHostingServer()
+        && !MapTool.getClient().getCampaign().containsAsset(asset.getMD5Key())) {
+      MapTool.getClient().getServerCommand().putAsset(asset);
     }
   }
 }

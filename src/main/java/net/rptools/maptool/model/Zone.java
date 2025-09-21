@@ -69,6 +69,7 @@ import net.rptools.maptool.model.zones.TokensRemoved;
 import net.rptools.maptool.model.zones.WallTopologyChanged;
 import net.rptools.maptool.model.zones.ZoneLightingChanged;
 import net.rptools.maptool.server.Mapper;
+import net.rptools.maptool.server.ServerPolicy;
 import net.rptools.maptool.server.proto.DrawnElementListDto;
 import net.rptools.maptool.server.proto.ZoneDto;
 import org.apache.logging.log4j.LogManager;
@@ -633,7 +634,11 @@ public class Zone {
           // Update the TEA on the new map, since we have the Token object available...
           ExposedAreaMetaData eamd = zone.getExposedAreaMetaData(old.getExposedAreaGUID());
           if (eamd != null) {
-            exposeArea(eamd.getExposedAreaHistory(), token);
+            exposeArea(
+                eamd.getExposedAreaHistory(),
+                token,
+                // TODO No change using the current server policy is legitimate in a constructor.
+                MapTool.getClient().getServerPolicy());
           }
         }
         putToken(token);
@@ -838,13 +843,14 @@ public class Zone {
    *
    * @param point the ZonePoint to test.
    * @param view the PlayerView.
+   * @param serverPolicy The current gameplay settings to respect.
    * @return is the point visible?
    */
-  public boolean isPointVisible(ZonePoint point, PlayerView view) {
+  public boolean isPointVisible(ZonePoint point, PlayerView view, ServerPolicy serverPolicy) {
     if (!hasFog() || view.isGMView()) {
       return true;
     }
-    if (MapTool.getServerPolicy().isUseIndividualFOW() && getVisionType() != VisionType.OFF) {
+    if (serverPolicy.isUseIndividualFOW() && getVisionType() != VisionType.OFF) {
       Area combined = new Area(exposedArea);
       if (view.isUsingTokenView()) {
         for (Token tok : view.getTokens()) { // only owned and HasSight tokens are returned
@@ -879,9 +885,10 @@ public class Zone {
    * </ol>
    *
    * @param token the token to test.
+   * @param serverPolicy the current gameplay settings to respect.
    * @return is the token visible?
    */
-  public boolean isTokenVisible(Token token) {
+  public boolean isTokenVisible(Token token, ServerPolicy serverPolicy) {
     if (token == null) {
       return false;
     }
@@ -905,7 +912,7 @@ public class Zone {
     Rectangle tokenSize = token.getFootprintBounds(this);
     Area combined = new Area(exposedArea);
     PlayerView view = MapTool.getFrame().getZoneRenderer(this).getPlayerView();
-    if (MapTool.getServerPolicy().isUseIndividualFOW() && getVisionType() != VisionType.OFF) {
+    if (serverPolicy.isUseIndividualFOW() && getVisionType() != VisionType.OFF) {
       // Jamz: Lets change the logic a bit looking for ownerships
       if (view.isUsingTokenView()) {
         for (Token tok : view.getTokens()) {
@@ -1110,14 +1117,15 @@ public class Zone {
    *
    * @param area the area to expose
    * @param tok the token to expose for, or null
+   * @param serverPolicy the current gameplay settings to respect.
    */
-  public void exposeArea(Area area, Token tok) {
+  public void exposeArea(Area area, Token tok, ServerPolicy serverPolicy) {
     if (area == null || area.isEmpty()) {
       return;
     }
     if (tok != null) {
-      if (MapTool.isPersonalServer()
-          || (MapTool.getServerPolicy().isUseIndividualFOW() && AppUtil.playerOwns(tok))) {
+      if (MapTool.getClient().isPersonalServer()
+          || (serverPolicy.isUseIndividualFOW() && AppUtil.playerOwns(tok))) {
         GUID tea = tok.getExposedAreaGUID();
         ExposedAreaMetaData meta = exposedAreaMeta.get(tea);
         if (meta == null) {
@@ -1147,8 +1155,11 @@ public class Zone {
    *
    * @param area the area to expose
    * @param selectedToks the set GUID of selected tokens
+   * @param serverPolicy the current gameplay settings to respect.
+   * @param player the local player
    */
-  public void exposeArea(Area area, Set<GUID> selectedToks) {
+  public void exposeArea(
+      Area area, Set<GUID> selectedToks, ServerPolicy serverPolicy, Player player) {
     if (area == null || area.isEmpty()) {
       return;
     }
@@ -1160,10 +1171,9 @@ public class Zone {
     }
     if (selectedToks != null
         && !selectedToks.isEmpty()
-        && (MapTool.getServerPolicy().isUseIndividualFOW() || MapTool.isPersonalServer())) {
-      boolean isAllowed =
-          MapTool.getPlayer().isGM() || !MapTool.getServerPolicy().useStrictTokenManagement();
-      String playerId = MapTool.getPlayer().getName();
+        && (serverPolicy.isUseIndividualFOW() || MapTool.getClient().isPersonalServer())) {
+      boolean isAllowed = player.isGM() || !serverPolicy.useStrictTokenManagement();
+      String playerId = player.getName();
       MapToolFrame frame = MapTool.getFrame();
       ZoneRenderer zr = frame.getZoneRenderer(getId());
       ZoneView zoneView = zr.getZoneView();
@@ -1229,7 +1239,7 @@ public class Zone {
     new MapToolEventBus().getMainEventBus().post(new FogChanged(this));
   }
 
-  public void hideArea(Area area, Set<GUID> selectedToks) {
+  public void hideArea(Area area, Set<GUID> selectedToks, ServerPolicy serverPolicy) {
     if (area == null) {
       return;
     }
@@ -1238,7 +1248,7 @@ public class Zone {
     }
     if (selectedToks != null
         && !selectedToks.isEmpty()
-        && (MapTool.getServerPolicy().isUseIndividualFOW() || MapTool.isPersonalServer())) {
+        && (serverPolicy.isUseIndividualFOW() || MapTool.getClient().isPersonalServer())) {
       List<Token> allToks = new ArrayList<Token>();
 
       for (GUID guid : selectedToks) {

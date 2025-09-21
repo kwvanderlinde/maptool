@@ -53,7 +53,7 @@ public class SelectionRenderer {
 
     final ImageBorder selectedBorder;
 
-    if (MapTool.getServerPolicy().isUseIndividualFOW()
+    if (MapTool.getClient().getServerPolicy().isUseIndividualFOW()
         && token.getLayer().supportsVision()
         && zoneView.isUsingVision()
         && MapTool.getFrame().getToolbox().getSelectedTool() instanceof ExposeTool<?>) {

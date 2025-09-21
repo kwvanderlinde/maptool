@@ -24,6 +24,7 @@ import java.util.Set;
 import javax.annotation.Nullable;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Zone;
@@ -66,7 +67,8 @@ public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
   }
 
   private void submit(Shape shape) {
-    if (!MapTool.getPlayer().isGM()) {
+    MapToolClient client = MapTool.getClient();
+    if (!client.getPlayer().isGM()) {
       MapTool.showError("msg.error.fogexpose");
       MapTool.getFrame().refresh();
       return;
@@ -84,10 +86,10 @@ public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
     Set<GUID> selectedToks = renderer.getSelectedTokenSet();
 
     if (isEraser()) {
-      zone.hideArea(area, selectedToks);
-      MapTool.serverCommand().hideFoW(zone.getId(), area, selectedToks);
+      zone.hideArea(area, selectedToks, client.getServerPolicy());
+      client.getServerCommand().hideFoW(zone.getId(), area, selectedToks);
     } else {
-      MapTool.serverCommand().exposeFoW(zone.getId(), area, selectedToks);
+      client.getServerCommand().exposeFoW(zone.getId(), area, selectedToks);
     }
   }
 

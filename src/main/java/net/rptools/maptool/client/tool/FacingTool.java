@@ -14,7 +14,6 @@
  */
 package net.rptools.maptool.client.tool;
 
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -25,10 +24,12 @@ import java.util.Set;
 import javax.swing.*;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.server.ServerPolicy;
 
 /** */
 public class FacingTool extends DefaultTool {
@@ -117,18 +118,20 @@ public class FacingTool extends DefaultTool {
     Area visibleArea = null;
     Set<GUID> remoteSelected = new HashSet<GUID>();
 
-    String name = MapTool.getPlayer().getName();
-    boolean isGM = MapTool.getPlayer().isGM();
+    MapToolClient client = MapTool.getClient();
+    String name = client.getPlayer().getName();
+    boolean isGM = client.getPlayer().isGM();
+    ServerPolicy serverPolicy = client.getServerPolicy();
     boolean ownerReveal; // if true, reveal FoW if current player owns the token.
     boolean hasOwnerReveal; // if true, reveal FoW if token has an owner.
     boolean noOwnerReveal; // if true, reveal FoW if token has no owners.
-    if (MapTool.isPersonalServer()) {
+    if (MapTool.getClient().isPersonalServer()) {
       ownerReveal =
           hasOwnerReveal = noOwnerReveal = AppPreferences.autoRevealVisionOnGMMovement.get();
     } else {
-      ownerReveal = MapTool.getServerPolicy().isAutoRevealOnMovement();
-      hasOwnerReveal = isGM && MapTool.getServerPolicy().isAutoRevealOnMovement();
-      noOwnerReveal = isGM && MapTool.getServerPolicy().getGmRevealsVisionForUnownedTokens();
+      ownerReveal = serverPolicy.isAutoRevealOnMovement();
+      hasOwnerReveal = isGM && serverPolicy.isAutoRevealOnMovement();
+      noOwnerReveal = isGM && serverPolicy.getGmRevealsVisionForUnownedTokens();
     }
     for (GUID tokenGUID : selectedTokenSet) {
       Token token = renderer.getZone().getToken(tokenGUID);
@@ -151,7 +154,7 @@ public class FacingTool extends DefaultTool {
       if (revealFog) {
         visibleArea = renderer.getZoneView().getVisibleArea(token, renderer.getPlayerView());
         remoteSelected.add(token.getId());
-        renderer.getZone().exposeArea(visibleArea, token);
+        renderer.getZone().exposeArea(visibleArea, token, client.getServerPolicy());
       }
 
       renderer.flushFog();

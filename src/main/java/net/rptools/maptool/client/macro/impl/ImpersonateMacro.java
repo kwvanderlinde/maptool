@@ -15,6 +15,7 @@
 package net.rptools.maptool.client.macro.impl;
 
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.macro.Macro;
 import net.rptools.maptool.client.macro.MacroContext;
@@ -83,17 +84,17 @@ public class ImpersonateMacro implements Macro {
    * @return true if the player is allowed to impersonate, false otherwise
    */
   private boolean canImpersonate(Token token) {
-    // my addition
-    if (!MapTool.getServerPolicy().isRestrictedImpersonation()) {
+    MapToolClient client = MapTool.getClient();
+    if (!client.getServerPolicy().isRestrictedImpersonation()) {
       return true;
     }
-    if (MapTool.getPlayer().isGM()) {
+    if (client.getPlayer().isGM()) {
       return true;
     }
     if (token == null) {
       return false;
     }
-    return token.isOwner(MapTool.getPlayer().getName());
+    return token.isOwner(client.getPlayer().getName());
   }
 
   /**
@@ -106,6 +107,7 @@ public class ImpersonateMacro implements Macro {
     if (token == null) {
       return false;
     }
-    return MapTool.getPlayer().isGM() || token.isOwner(MapTool.getPlayer().getName());
+    MapToolClient client = MapTool.getClient();
+    return client.getPlayer().isGM() || token.isOwner(client.getPlayer().getName());
   }
 }

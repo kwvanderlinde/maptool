@@ -455,7 +455,10 @@ public class ServerCommandClientImpl implements ServerCommand {
 
   public void exposeFoW(GUID zoneGUID, Area area, Set<GUID> selectedToks) {
     // Expose locally right away.
-    client.getCampaign().getZone(zoneGUID).exposeArea(area, selectedToks);
+    var zone = client.getCampaign().getZone(zoneGUID);
+    if (zone != null) {
+      zone.exposeArea(area, selectedToks, client.getServerPolicy(), client.getPlayer());
+    }
     var msg = ExposeFowMsg.newBuilder().setZoneGuid(zoneGUID.toString()).setArea(Mapper.map(area));
     msg.addAllTokenGuid(selectedToks.stream().map(g -> g.toString()).collect(Collectors.toList()));
     makeServerCall(Message.newBuilder().setExposeFowMsg(msg).build());

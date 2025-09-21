@@ -81,7 +81,7 @@ public class ZoneView {
 
   private void addLightSourceToken(Token token, Set<Player.Role> roles) {
     for (AttachedLightSource als : token.getLightSources()) {
-      LightSource lightSource = als.resolve(token, MapTool.getCampaign());
+      LightSource lightSource = als.resolve(token, MapTool.getClient().getCampaign());
       if (lightSource == null) {
         continue;
       }
@@ -175,8 +175,8 @@ public class ZoneView {
     if (exposed == null) {
       boolean combinedView =
           !isUsingVision()
-              || MapTool.isPersonalServer()
-              || !MapTool.getServerPolicy().isUseIndividualFOW()
+              || MapTool.getClient().isPersonalServer()
+              || !MapTool.getClient().getServerPolicy().isUseIndividualFOW()
               || view.isGMView();
 
       if (view.isUsingTokenView() || combinedView) {
@@ -276,7 +276,7 @@ public class ZoneView {
 
     for (final var attachedLightSource : lightSourceToken.getLightSources()) {
       LightSource lightSource =
-          attachedLightSource.resolve(lightSourceToken, MapTool.getCampaign());
+          attachedLightSource.resolve(lightSourceToken, MapTool.getClient().getCampaign());
       if (lightSource == null) {
         continue;
       }
@@ -369,7 +369,8 @@ public class ZoneView {
   private Stream<Token> getTokensForView(PlayerView view) {
     final boolean isGMview = view.isGMView();
     final boolean checkOwnership =
-        MapTool.getServerPolicy().isUseIndividualViews() || MapTool.isPersonalServer();
+        MapTool.getClient().getServerPolicy().isUseIndividualViews()
+            || MapTool.getClient().isPersonalServer();
     List<Token> tokenList =
         view.isUsingTokenView()
             ? view.getTokens()
@@ -414,7 +415,7 @@ public class ZoneView {
             ? view.getTokens().stream()
                 .filter(Token::getHasSight)
                 .map(Token::getSightType)
-                .map(sightName -> MapTool.getCampaign().getSightType(sightName))
+                .map(sightName -> MapTool.getClient().getCampaign().getSightType(sightName))
                 .filter(Objects::nonNull)
                 .map(SightType::getMultiplier)
                 .max(Double::compare)
@@ -442,7 +443,7 @@ public class ZoneView {
     if (!token.getHasSight()) {
       return Collections.emptyList();
     }
-    final var sight = MapTool.getCampaign().getSightType(token.getSightType());
+    final var sight = MapTool.getClient().getCampaign().getSightType(token.getSightType());
     if (sight == null) {
       return Collections.emptyList();
     }
@@ -533,7 +534,7 @@ public class ZoneView {
       return new Area();
     }
 
-    SightType sight = MapTool.getCampaign().getSightType(token.getSightType());
+    SightType sight = MapTool.getClient().getCampaign().getSightType(token.getSightType());
     // More sanity checks; maybe sight type removed from campaign after token set?
     if (sight == null) {
       return new Area();
@@ -608,11 +609,11 @@ public class ZoneView {
                 if (token.isVisibleOnlyToOwner() && !AppUtil.playerOwns(token)) {
                   continue;
                 }
-                boolean isOwner = token.isOwner(MapTool.getPlayer().getName());
+                boolean isOwner = token.isOwner(MapTool.getClient().getPlayer().getName());
                 Point p = FogUtil.calculateVisionCenter(token, zone);
 
                 for (AttachedLightSource als : token.getLightSources()) {
-                  LightSource lightSource = als.resolve(token, MapTool.getCampaign());
+                  LightSource lightSource = als.resolve(token, MapTool.getClient().getCampaign());
                   if (lightSource == null) {
                     continue;
                   }
@@ -913,7 +914,7 @@ public class ZoneView {
       anyLightingChanges |= token.hasLightSources();
 
       var includeForRoles = EnumSet.noneOf(Player.Role.class);
-      if (MapTool.getPlayer().isGM()) {
+      if (MapTool.getClient().getPlayer().isGM()) {
         includeForRoles.add(Player.Role.GM);
       }
       if (token.isVisible()) {

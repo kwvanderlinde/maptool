@@ -583,7 +583,9 @@ public class ServerMessageHandler implements MessageHandler {
               msg.getTokenGuidList().stream().map(GUID::valueOf).collect(Collectors.toSet());
 
           Zone zone = server.getCampaign().getZone(zoneGUID);
-          zone.hideArea(area, selectedTokens);
+          if (zone != null) {
+            zone.hideArea(area, selectedTokens, server.getPolicy());
+          }
         });
   }
 
@@ -612,7 +614,11 @@ public class ServerMessageHandler implements MessageHandler {
           Area area = Mapper.map(msg.getArea());
           var selectedTokens =
               msg.getTokenGuidList().stream().map(GUID::valueOf).collect(Collectors.toSet());
-          zone.exposeArea(area, selectedTokens);
+          if (zone != null) {
+            // TODO Using the client's player here is beyond sus.
+            zone.exposeArea(
+                area, selectedTokens, server.getPolicy(), MapTool.getClient().getPlayer());
+          }
         });
   }
 

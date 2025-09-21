@@ -44,21 +44,18 @@ public class ServerFunctions extends AbstractFunction {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
+    MapToolClient client = MapTool.getClient();
 
     String fName = functionName.toLowerCase();
     return switch (fName) {
-      case "server.isserver" ->
-          MapTool.isHostingServer() || MapTool.isPersonalServer()
-              ? BigDecimal.ONE
-              : BigDecimal.ZERO;
-      case "server.ishosting" -> MapTool.isHostingServer() ? BigDecimal.ONE : BigDecimal.ZERO;
-      case "server.ispersonal" -> MapTool.isPersonalServer() ? BigDecimal.ONE : BigDecimal.ZERO;
-      case "getmovelock" -> MapTool.getServerPolicy().isMovementLocked();
+      case "server.isserver" -> client.getLocalServer() != null ? BigDecimal.ONE : BigDecimal.ZERO;
+      case "server.ishosting" -> client.isHostingServer() ? BigDecimal.ONE : BigDecimal.ZERO;
+      case "server.ispersonal" -> client.isPersonalServer() ? BigDecimal.ONE : BigDecimal.ZERO;
+      case "getmovelock" -> client.getServerPolicy().isMovementLocked();
       case "setmovelock" -> {
         if (parameters.size() == 1) {
           BigDecimal ml = (BigDecimal) parameters.get(0);
           if (ml.intValue() == 0 || ml.intValue() == 1) {
-            MapToolClient client = MapTool.getClient();
             ServerPolicy policy = client.getServerPolicy();
             policy.setIsMovementLocked(ml.intValue() != 0);
             client.setServerPolicy(policy);

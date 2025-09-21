@@ -49,6 +49,7 @@ import net.rptools.maptool.client.AppActions;
 import net.rptools.maptool.client.AppActions.TranslatedClientAction;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.MapToolUtil;
 import net.rptools.maptool.client.functions.TokenBarFunction;
 import net.rptools.maptool.client.ui.token.BarTokenOverlay;
@@ -65,8 +66,10 @@ import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.library.token.LibTokenConverter;
+import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.player.Player.Role;
+import net.rptools.maptool.server.ServerPolicy;
 import net.rptools.maptool.util.FunctionUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -104,10 +107,13 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
     /*
      * This adds the expose menu to token right click when the player is GM and the server setting is set to use individual FOW
      */
-    if (MapTool.getPlayer().isGM() && MapTool.getServerPolicy().isUseIndividualFOW()) {
+    MapToolClient client = MapTool.getClient();
+    LocalPlayer player = client.getPlayer();
+    ServerPolicy serverPolicy = client.getServerPolicy();
+    if (player.isGM() && serverPolicy.isUseIndividualFOW()) {
       add(createExposedFOWMenu());
     }
-    if (MapTool.getPlayer().isGM() || MapTool.getServerPolicy().getPlayersCanRevealVision()) {
+    if (player.isGM() || serverPolicy.getPlayersCanRevealVision()) {
       add(createExposeMenu());
     }
     addOwnedItem(createLightSourceMenu());
@@ -299,7 +305,8 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-      if (MapTool.getServerPolicy().isUseIndividualFOW()) {
+      MapToolClient client = MapTool.getClient();
+      if (client.getServerPolicy().isUseIndividualFOW()) {
         Zone zone = getRenderer().getZone();
         for (GUID tok : selectedTokenSet) {
           Token token = zone.getToken(tok);
@@ -307,7 +314,8 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
           meta.clearExposedAreaHistory();
           getRenderer().flush(token);
           zone.setExposedAreaMetaData(token.getExposedAreaGUID(), meta);
-          MapTool.serverCommand()
+          client
+              .getServerCommand()
               .updateExposedAreaMeta(zone.getId(), token.getExposedAreaGUID(), meta);
         }
       }

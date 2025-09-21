@@ -30,6 +30,7 @@ import net.rptools.lib.CodeTimer;
 import net.rptools.lib.GeometryUtil;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.client.ui.zone.vbl.NodedTopology;
 import net.rptools.maptool.client.ui.zone.vbl.VisibilityProblem;
@@ -291,14 +292,15 @@ public class FogUtil {
     Set<GUID> tokenSet = new HashSet<GUID>();
     List<Token> tokList = renderer.getZone().getPlayerTokensWithSight();
 
-    String playerName = MapTool.getPlayer().getName();
-    boolean isGM = MapTool.getPlayer().getRole() == Role.GM;
+    MapToolClient client = MapTool.getClient();
+    String playerName = client.getPlayer().getName();
+    boolean isGM = client.getPlayer().getRole() == Role.GM;
 
     for (Token token : tokList) {
       // why check ownership? Only GM can run this.
       boolean owner = token.isOwner(playerName) || isGM;
 
-      if ((!MapTool.isPersonalServer() || MapTool.getServerPolicy().isUseIndividualViews())
+      if ((!client.isPersonalServer() || client.getServerPolicy().isUseIndividualViews())
           && !owner) {
         continue;
       }

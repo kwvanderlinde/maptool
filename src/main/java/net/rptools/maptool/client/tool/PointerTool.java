@@ -57,6 +57,7 @@ import net.rptools.maptool.model.Pointer.Type;
 import net.rptools.maptool.model.Zone.VisionType;
 import net.rptools.maptool.model.player.Player.Role;
 import net.rptools.maptool.model.sheet.stats.StatSheetManager;
+import net.rptools.maptool.server.ServerPolicy;
 import net.rptools.maptool.util.GraphicsUtil;
 import net.rptools.maptool.util.HTMLUtil;
 import net.rptools.maptool.util.ImageManager;
@@ -210,18 +211,20 @@ public class PointerTool extends DefaultTool {
 
   private void startTokenDrag(
       Token keyToken, Set<GUID> tokens, ZonePoint dragStart, boolean isMovingWithKeys) {
-    if (!MapTool.getPlayer().isGM()
-        && (MapTool.getServerPolicy().isMovementLocked()
+    MapToolClient client = MapTool.getClient();
+    if (!client.getPlayer().isGM()
+        && (client.getServerPolicy().isMovementLocked()
             || MapTool.getFrame().getInitiativePanel().isMovementLocked(keyToken))) {
       // Not allowed
       return;
     }
 
     tokens = renderer.getOwnedTokens(tokens);
-    renderer.addMoveSelectionSet(MapTool.getPlayer().getName(), keyToken.getId(), tokens);
-    MapTool.serverCommand()
+    renderer.addMoveSelectionSet(client.getPlayer().getName(), keyToken.getId(), tokens);
+    client
+        .getServerCommand()
         .startTokenMove(
-            MapTool.getPlayer().getName(), renderer.getZone().getId(), keyToken.getId(), tokens);
+            client.getPlayer().getName(), renderer.getZone().getId(), keyToken.getId(), tokens);
 
     tokenDragOp = new TokenDragOp(renderer, keyToken, dragStart, isMovingWithKeys);
   }
@@ -740,16 +743,17 @@ public class PointerTool extends DefaultTool {
       isNewTokenSelected = false;
 
       // Make sure we're allowed
-      if (!MapTool.getPlayer().isGM() && MapTool.getServerPolicy().isMovementLocked()) {
+      MapToolClient client = MapTool.getClient();
+      if (!client.getPlayer().isGM() && client.getServerPolicy().isMovementLocked()) {
         return;
       }
       // Might be dragging a token
-      String playerId = MapTool.getPlayer().getName();
+      String playerId = client.getPlayer().getName();
       Set<GUID> selectedTokenSet = renderer.getOwnedTokens(renderer.getSelectedTokenSet());
       if (!selectedTokenSet.isEmpty()) {
         // Make sure we can do this
         // Possibly let unowned tokens be moved?
-        if (!MapTool.getPlayer().isGM() && MapTool.getServerPolicy().useStrictTokenManagement()) {
+        if (!client.getPlayer().isGM() && client.getServerPolicy().useStrictTokenManagement()) {
           for (GUID tokenGUID : selectedTokenSet) {
             Token token = renderer.getZone().getToken(tokenGUID);
             if (!token.isOwner(playerId)) {
@@ -1868,19 +1872,21 @@ public class PointerTool extends DefaultTool {
       // if has fog(required)
       // and ((isGM with pref set) OR serverPolicy allows auto reveal by players)
 
-      String name = MapTool.getPlayer().getName();
-      boolean isGM = MapTool.getPlayer().isGM();
+      MapToolClient client = MapTool.getClient();
+      String name = client.getPlayer().getName();
+      boolean isGM = client.getPlayer().isGM();
+      ServerPolicy serverPolicy = client.getServerPolicy();
       boolean ownerReveal; // if true, reveal FoW if current player owns the token.
       boolean hasOwnerReveal; // if true, reveal FoW if token has an owner.
       boolean noOwnerReveal; // if true, reveal FoW if token has no owners.
 
-      if (MapTool.isPersonalServer()) {
+      if (MapTool.getClient().isPersonalServer()) {
         ownerReveal =
             hasOwnerReveal = noOwnerReveal = AppPreferences.autoRevealVisionOnGMMovement.get();
       } else {
-        ownerReveal = MapTool.getServerPolicy().isAutoRevealOnMovement();
-        hasOwnerReveal = isGM && MapTool.getServerPolicy().isAutoRevealOnMovement();
-        noOwnerReveal = isGM && MapTool.getServerPolicy().getGmRevealsVisionForUnownedTokens();
+        ownerReveal = serverPolicy.isAutoRevealOnMovement();
+        hasOwnerReveal = isGM && serverPolicy.isAutoRevealOnMovement();
+        noOwnerReveal = isGM && serverPolicy.getGmRevealsVisionForUnownedTokens();
       }
       if (renderer.getZone().hasFog() && (ownerReveal || hasOwnerReveal || noOwnerReveal)) {
         Set<GUID> exposeSet = new HashSet<GUID>();
@@ -1914,7 +1920,8 @@ public class PointerTool extends DefaultTool {
 
     private boolean validateMove(
         Set<GUID> tokenSet, ZonePoint leadTokenNewAnchor, int dirx, int diry) {
-      if (MapTool.getPlayer().isGM()) {
+      MapToolClient client = MapTool.getClient();
+      if (client.getPlayer().isGM()) {
         return true;
       }
       boolean isBlocked = false;
@@ -1926,8 +1933,7 @@ public class PointerTool extends DefaultTool {
           zoneFog = new Area();
         }
         boolean useTokenExposedArea =
-            MapTool.getServerPolicy().isUseIndividualFOW()
-                && zone.getVisionType() != VisionType.OFF;
+            client.getServerPolicy().isUseIndividualFOW() && zone.getVisionType() != VisionType.OFF;
         int deltaX = leadTokenNewAnchor.x - this.dragAnchor.x;
         int deltaY = leadTokenNewAnchor.y - this.dragAnchor.y;
         Grid grid = zone.getGrid();
@@ -1969,8 +1975,9 @@ public class PointerTool extends DefaultTool {
     }
 
     private boolean validateMove_legacy(Set<GUID> tokenSet, ZonePoint leadTokenNewAnchor) {
+      MapToolClient client = MapTool.getClient();
       Zone zone = renderer.getZone();
-      if (MapTool.getPlayer().isGM()) {
+      if (client.getPlayer().isGM()) {
         return true;
       }
       boolean isVisible = true;
@@ -2016,7 +2023,7 @@ public class PointerTool extends DefaultTool {
               // arithmetic
               bounds.height = intervalX * (dx + 1) / 3 - intervalX * dx / 3;
 
-              if (!MapTool.getServerPolicy().isUseIndividualFOW()
+              if (!client.getServerPolicy().isUseIndividualFOW()
                   || zone.getVisionType() == VisionType.OFF) {
                 if (fow.contains(bounds)) {
                   counter++;

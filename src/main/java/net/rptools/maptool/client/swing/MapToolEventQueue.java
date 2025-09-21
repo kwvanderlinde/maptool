@@ -27,6 +27,7 @@ import java.util.Collections;
 import javax.swing.*;
 import net.rptools.lib.OsDetection;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.functions.getInfoFunction;
 import net.rptools.maptool.client.macro.MacroLocationFactory;
@@ -138,9 +139,10 @@ public class MapToolEventQueue extends EventQueue {
     // events in the
     // current context (until the context is cleared).
 
-    // Record a breadcrumb in the current context. By default the last 100 breadcrumbs are kept.
+    // Record a breadcrumb in the current context. By default, the last 100 breadcrumbs are kept.
     User user = new User();
-    Player player = MapTool.getPlayer();
+    MapToolClient client = MapTool.getClient();
+    Player player = client.getPlayer();
     if (player != null) {
       user.setUsername(player.getName());
       user.setId(MapTool.getClientId());
@@ -155,8 +157,8 @@ public class MapToolEventQueue extends EventQueue {
     Sentry.setUser(user);
 
     Sentry.setTag("role", player != null ? player.getRole().name() : null);
-    boolean hostingServer = MapTool.isHostingServer();
-    Sentry.setTag("hosting", String.valueOf(MapTool.isHostingServer()));
+    boolean hostingServer = MapTool.getClient().isHostingServer();
+    Sentry.setTag("hosting", String.valueOf(hostingServer));
 
     Sentry.setExtra("System Info", new MapToolSysInfoProvider().getSysInfoJSON().toString());
 
@@ -164,7 +166,8 @@ public class MapToolEventQueue extends EventQueue {
 
     if (hostingServer) {
       addGetInfoToSentry("server");
-      Sentry.setExtra("Server Policy", MapTool.getServerPolicy().toJSON().toString());
+      // TODO Rename to gameplay when we rename the ServerPolicy type to Gameplay.
+      Sentry.setExtra("Server Policy", client.getServerPolicy().toJSON().toString());
     }
 
     // Send the event!

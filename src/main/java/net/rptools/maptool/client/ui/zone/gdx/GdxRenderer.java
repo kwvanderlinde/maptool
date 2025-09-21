@@ -69,6 +69,7 @@ import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.Label;
 import net.rptools.maptool.model.Path;
 import net.rptools.maptool.model.drawing.DrawnElement;
+import net.rptools.maptool.server.ServerPolicy;
 import net.rptools.maptool.util.GraphicsUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -436,7 +437,7 @@ public class GdxRenderer extends ApplicationAdapter {
     var loadingProgress = viewModel.getLoadingStatus();
     if (loadingProgress.isPresent()) {
       hudTextRenderer.drawBoxedString(loadingProgress.get(), width / 2f, height / 2f);
-    } else if (MapTool.getCampaign().isBeingSerialized()) {
+    } else if (MapTool.getClient().getCampaign().isBeingSerialized()) {
       hudTextRenderer.drawBoxedString("    Please Wait    ", width / 2f, height / 2f);
     }
 
@@ -812,8 +813,8 @@ public class GdxRenderer extends ApplicationAdapter {
     }
     boolean isOwner = AppUtil.playerOwns(tokenUnderMouse);
     boolean tokenIsPC = tokenUnderMouse.getType() == Token.Type.PC;
-    boolean strictOwnership =
-        MapTool.getServerPolicy() != null && MapTool.getServerPolicy().useStrictTokenManagement();
+    ServerPolicy serverPolicy = MapTool.getClient().getServerPolicy();
+    boolean strictOwnership = serverPolicy != null && serverPolicy.useStrictTokenManagement();
     boolean showVisionAndHalo = isOwner || view.isGMView() || (tokenIsPC && !strictOwnership);
 
     /*
@@ -1076,7 +1077,7 @@ public class GdxRenderer extends ApplicationAdapter {
 
           Grid grid = zoneCache.getZone().getGrid();
           boolean checkForFog =
-              MapTool.getServerPolicy().isUseIndividualFOW()
+              MapTool.getClient().getServerPolicy().isUseIndividualFOW()
                   && zoneCache.getZoneView().isUsingVision();
           boolean showLabels = isOwner;
           if (checkForFog) {
@@ -1392,7 +1393,7 @@ public class GdxRenderer extends ApplicationAdapter {
     if (tokenList.isEmpty() || visibleScreenArea == null) {
       return;
     }
-
+    MapToolClient client = MapTool.getClient();
     boolean isGMView = view.isGMView(); // speed things up
 
     for (Token token : tokenList) {
@@ -1653,15 +1654,15 @@ public class GdxRenderer extends ApplicationAdapter {
       timer.start("tokenlist-9");
 
       // Check each of the set values
-      for (String state : MapTool.getCampaign().getTokenStatesMap().keySet()) {
+      for (String state : client.getCampaign().getTokenStatesMap().keySet()) {
         Object stateValue = token.getState(state);
-        AbstractTokenOverlay overlay = MapTool.getCampaign().getTokenStatesMap().get(state);
+        AbstractTokenOverlay overlay = client.getCampaign().getTokenStatesMap().get(state);
         if (stateValue instanceof AbstractTokenOverlay) {
           overlay = (AbstractTokenOverlay) stateValue;
         }
         if (overlay == null
             || overlay.isMouseover() && token != zoneCache.getZoneRenderer().getTokenUnderMouse()
-            || !overlay.showPlayer(token, MapTool.getPlayer())) {
+            || !overlay.showPlayer(token, client.getPlayer())) {
           continue;
         }
         tokenOverlayRenderer.render(stateTime, overlay, token, stateValue);
@@ -1670,12 +1671,12 @@ public class GdxRenderer extends ApplicationAdapter {
 
       timer.start("tokenlist-10");
 
-      for (String bar : MapTool.getCampaign().getTokenBarsMap().keySet()) {
+      for (String bar : client.getCampaign().getTokenBarsMap().keySet()) {
         Object barValue = token.getState(bar);
-        BarTokenOverlay overlay = MapTool.getCampaign().getTokenBarsMap().get(bar);
+        BarTokenOverlay overlay = client.getCampaign().getTokenBarsMap().get(bar);
         if (overlay == null
             || overlay.isMouseover() && token != zoneCache.getZoneRenderer().getTokenUnderMouse()
-            || !overlay.showPlayer(token, MapTool.getPlayer())) {
+            || !overlay.showPlayer(token, client.getPlayer())) {
           continue;
         }
         tokenOverlayRenderer.render(stateTime, overlay, token, barValue);
@@ -1690,7 +1691,7 @@ public class GdxRenderer extends ApplicationAdapter {
       timer.stop("tokenlist-11");
       timer.start("tokenlist-12");
 
-      boolean useIF = MapTool.getServerPolicy().isUseIndividualFOW();
+      boolean useIF = client.getServerPolicy().isUseIndividualFOW();
 
       // Selection and labels
 
@@ -1763,8 +1764,8 @@ public class GdxRenderer extends ApplicationAdapter {
       if (showCurrentTokenLabel
           && !isGMView
           && (!zoneCache.getZoneView().isUsingVision()
-              || !MapTool.getServerPolicy().isAutoRevealOnMovement())
-          && !zoneCache.getZone().isTokenVisible(token)) {
+              || !client.getServerPolicy().isAutoRevealOnMovement())
+          && !zoneCache.getZone().isTokenVisible(token, client.getServerPolicy())) {
         showCurrentTokenLabel = false;
       }
       if (showCurrentTokenLabel) {

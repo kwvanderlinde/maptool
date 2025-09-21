@@ -30,6 +30,7 @@ import javax.swing.*;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.events.ZoneActivated;
 import net.rptools.maptool.client.swing.colorpicker.ColorPicker;
@@ -1058,9 +1059,9 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
     Zone zone = getZone();
     Grid grid = zone.getGrid();
     WalkerMetric wm =
-        MapTool.isPersonalServer()
+        MapTool.getClient().isPersonalServer()
             ? AppPreferences.movementMetric.get()
-            : MapTool.getServerPolicy().getMovementMetric();
+            : MapTool.getClient().getServerPolicy().getMovementMetric();
     ZonePoint endVertex = at.getVertex();
     CellPoint dragStartCellPoint = grid.convert(startVertex);
     CellPoint dragVertexCellPoint = grid.convert(endVertex);
@@ -1222,8 +1223,8 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
    * @param at the template what is being dragged.
    */
   private void updateDraggedDrawnElements(MouseEvent e, AbstractTemplate at) {
-
-    if (!MapTool.getPlayer().isGM() && MapTool.getServerPolicy().isMovementLocked()) {
+    MapToolClient client = MapTool.getClient();
+    if (!client.getPlayer().isGM() && client.getServerPolicy().isMovementLocked()) {
       // i.e. not allowed
       return;
     }
@@ -1288,11 +1289,11 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
 
   /** Once a drag has completed, apply any changes to the original drawings. */
   private void updateOriginalDrawnElements() {
-
+    MapToolClient client = MapTool.getClient();
     Zone zone = getZone();
     List<DrawnElement> drawableList;
 
-    if (MapTool.getPlayer().isGM()) {
+    if (client.getPlayer().isGM()) {
       drawableList = zone.getDrawnElements(getSelectedLayer());
     } else {
       drawableList = zone.getDrawnElements(Zone.Layer.getDefaultPlayerLayer());
@@ -1323,7 +1324,7 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
             }
 
             // Server drawing update
-            MapTool.serverCommand().updateDrawing(zone.getId(), deOriginal.getPen(), deOriginal);
+            client.getServerCommand().updateDrawing(zone.getId(), deOriginal.getPen(), deOriginal);
             renderer.getZone().updateDrawable(deOriginal, deOriginal.getPen());
           }
         }

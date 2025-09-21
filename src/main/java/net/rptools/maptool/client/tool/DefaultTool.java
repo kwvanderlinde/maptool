@@ -95,6 +95,9 @@ public abstract class DefaultTool extends Tool
     super.detachFrom(renderer);
   }
 
+  // TODO Add getClient() method so all implementations can easily access the client without direct
+  //  access to MapTool god class.
+
   protected boolean isDraggingMap() {
     return isDraggingMap;
   }

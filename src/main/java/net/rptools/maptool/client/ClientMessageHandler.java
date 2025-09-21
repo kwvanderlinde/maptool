@@ -861,7 +861,9 @@ public class ClientMessageHandler implements MessageHandler {
               msg.getTokenGuidList().stream().map(GUID::valueOf).collect(Collectors.toSet());
 
           var zone = client.getCampaign().getZone(zoneGUID);
-          zone.hideArea(area, selectedTokens);
+          if (zone != null) {
+            zone.hideArea(area, selectedTokens, client.getServerPolicy());
+          }
           MapTool.getFrame().refresh();
         });
   }
@@ -883,7 +885,9 @@ public class ClientMessageHandler implements MessageHandler {
           var selectedTokens =
               msg.getTokenGuidList().stream().map(GUID::valueOf).collect(Collectors.toSet());
           var zone = client.getCampaign().getZone(zoneGUID);
-          zone.exposeArea(area, selectedTokens);
+          if (zone != null) {
+            zone.exposeArea(area, selectedTokens, client.getServerPolicy(), client.getPlayer());
+          }
           MapTool.getFrame().refresh();
         });
   }

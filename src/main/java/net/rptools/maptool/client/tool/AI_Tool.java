@@ -29,6 +29,7 @@ public class AI_Tool extends DefaultTool {
 
   @Override
   public void actionPerformed(ActionEvent e) {
+    // TODO Do not update the preference, only the current campaign's settings.
     AppPreferences.pathfindingEnabled.set(isSelected());
 
     var client = MapTool.getClient();
@@ -42,8 +43,11 @@ public class AI_Tool extends DefaultTool {
   }
 
   public void updateButtonState() {
-    if (MapTool.getServerPolicy() != null) {
-      setSelected(MapTool.getServerPolicy().isUsingAstarPathfinding());
+    var client = MapTool.getClient();
+    var policy = client.getServerPolicy();
+    // TODO Surely getServerPolicy() returns something non-null?
+    if (policy != null) {
+      setSelected(policy.isUsingAstarPathfinding());
     }
   }
 

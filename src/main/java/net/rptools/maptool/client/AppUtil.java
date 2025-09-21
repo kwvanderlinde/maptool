@@ -290,12 +290,14 @@ public class AppUtil {
    * @param token the {@link Token} to check the ownership of.
    * @return {@code true} if the player owns the token, otherwise {@code false}.
    */
+  // TODO This method should accept the player and server policy that is being checked.
   public static boolean playerOwns(Token token) {
-    Player player = MapTool.getPlayer();
+    MapToolClient client = MapTool.getClient();
+    Player player = client.getPlayer();
     if (player.isGM()) {
       return true;
     }
-    if (!MapTool.getServerPolicy().useStrictTokenManagement()) {
+    if (!client.getServerPolicy().useStrictTokenManagement()) {
       return true;
     }
     return token.isOwner(player.getName());
@@ -319,9 +321,9 @@ public class AppUtil {
    * @return {@code true} if the GM "owns" the {@link Token}, otherwise {@code false}.
    */
   public static boolean gmOwns(Token token) {
-    Player player = MapTool.getPlayer();
-
-    if (!MapTool.getServerPolicy().useStrictTokenManagement()) {
+    MapToolClient client = MapTool.getClient();
+    Player player = client.getPlayer();
+    if (!client.getServerPolicy().useStrictTokenManagement()) {
       return true;
     }
     return (token.isOwner(player.getName()) && !token.isOwnedByAll()) || !token.hasOwners();
@@ -340,7 +342,7 @@ public class AppUtil {
     if (view.isGMView()) {
       return true;
     }
-    return zone.isTokenVisible(token);
+    return zone.isTokenVisible(token, MapTool.getClient().getServerPolicy());
   }
 
   /**

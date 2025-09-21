@@ -1066,10 +1066,12 @@ public abstract class Grid implements Cloneable {
    *
    * @return the current {@link WalkerMetric} depending on if a server is running or not
    */
+  @Deprecated
   protected WalkerMetric getCurrentMetric() {
-    return MapTool.isPersonalServer()
+    // TODO Bonkers. This has nothing to do with the grid and should be placed elsewhere.
+    return MapTool.getClient().isPersonalServer()
         ? AppPreferences.movementMetric.get()
-        : MapTool.getServerPolicy().getMovementMetric();
+        : MapTool.getClient().getServerPolicy().getMovementMetric();
   }
 
   /**

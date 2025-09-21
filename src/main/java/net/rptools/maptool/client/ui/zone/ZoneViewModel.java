@@ -37,6 +37,7 @@ import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.events.ZoneLoaded;
 import net.rptools.maptool.client.ui.Scale;
 import net.rptools.maptool.events.MapToolEventBus;
@@ -184,12 +185,13 @@ public class ZoneViewModel {
       selectedTokens.removeIf(token -> !token.getHasSight() || !AppUtil.playerOwns(token));
     }
     if (selectedTokens == null || selectedTokens.isEmpty()) {
+      MapToolClient client = MapTool.getClient();
       // if no selected token qualifying for view, use owned tokens or player tokens with sight
       final boolean checkOwnership =
-          MapTool.getServerPolicy().isUseIndividualViews() || MapTool.isPersonalServer();
+          client.getServerPolicy().isUseIndividualViews() || MapTool.getClient().isPersonalServer();
       selectedTokens =
           checkOwnership
-              ? zone.getOwnedTokensWithSight(MapTool.getPlayer())
+              ? zone.getOwnedTokensWithSight(client.getPlayer())
               : zone.getPlayerTokensWithSight();
     }
     if (selectedTokens == null || selectedTokens.isEmpty()) {

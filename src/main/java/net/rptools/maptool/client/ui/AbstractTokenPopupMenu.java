@@ -40,6 +40,7 @@ import net.rptools.maptool.client.AppActions;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.tool.*;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
@@ -87,11 +88,12 @@ public abstract class AbstractTokenPopupMenu extends JPopupMenu {
 
   private void setOwnership() {
     areTokensOwned = true;
-    if (!MapTool.getPlayer().isGM() && MapTool.getServerPolicy().useStrictTokenManagement()) {
+    MapToolClient client = MapTool.getClient();
+    if (!client.getPlayer().isGM() && client.getServerPolicy().useStrictTokenManagement()) {
       for (GUID tokenGUID : selectedTokenSet) {
         Token token = getRenderer().getZone().getToken(tokenGUID);
 
-        if (!token.isOwner(MapTool.getPlayer().getName())) {
+        if (!token.isOwner(client.getPlayer().getName())) {
           areTokensOwned = false;
           break;
         }
@@ -944,9 +946,10 @@ public abstract class AbstractTokenPopupMenu extends JPopupMenu {
       putValue(Action.NAME, I18N.getText("token.popup.menu.edit"));
 
       // Jamz: Bug fix, we don't support editing multiple tokens here.
+      MapToolClient client = MapTool.getClient();
       if (selectedTokenSet.size() > 1) {
         setEnabled(false);
-      } else if (!MapTool.getPlayer().isGM() && MapTool.getServerPolicy().isTokenEditorLocked()) {
+      } else if (!client.getPlayer().isGM() && client.getServerPolicy().isTokenEditorLocked()) {
         setEnabled(false);
       }
     }
@@ -963,9 +966,10 @@ public abstract class AbstractTokenPopupMenu extends JPopupMenu {
      */
     public JMenuItem asJMenuItem() {
       JMenuItem jMenuItem = new JMenuItem(this);
+      MapToolClient client = MapTool.getClient();
       if (selectedTokenSet.size() > 1) {
         jMenuItem.setToolTipText(I18N.getText("token.popup.menu.edit.toomany.tooltip"));
-      } else if (!MapTool.getPlayer().isGM() && MapTool.getServerPolicy().isTokenEditorLocked()) {
+      } else if (!client.getPlayer().isGM() && client.getServerPolicy().isTokenEditorLocked()) {
         jMenuItem.setToolTipText(I18N.getText("token.popup.menu.edit.notallowed.tooltip"));
       }
       return jMenuItem;

@@ -17,6 +17,7 @@ package net.rptools.maptool.client.macro.impl;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.macro.Macro;
 import net.rptools.maptool.client.macro.MacroContext;
@@ -47,7 +48,8 @@ public class GotoMacro implements Macro {
       Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
       Token token = zone.getTokenByName(parameter);
 
-      if (!MapTool.getPlayer().isGM() && !zone.isTokenVisible(token)) {
+      MapToolClient client = MapTool.getClient();
+      if (!client.getPlayer().isGM() && !zone.isTokenVisible(token, client.getServerPolicy())) {
         return;
       }
       if (token != null) {

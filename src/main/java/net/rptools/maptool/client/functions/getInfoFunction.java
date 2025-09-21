@@ -29,6 +29,7 @@ import javax.swing.*;
 import net.rptools.maptool.client.AppConstants;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.MapToolExpressionParser;
 import net.rptools.maptool.client.ui.htmlframe.HTMLDialog;
 import net.rptools.maptool.client.ui.htmlframe.HTMLFrame;
@@ -217,8 +218,9 @@ public class getInfoFunction extends AbstractFunction {
    * @return the client side preferences
    */
   private JsonObject getClientInfo() {
-    JsonObject cinfo = new JsonObject();
+    MapToolClient client = MapTool.getClient();
 
+    JsonObject cinfo = new JsonObject();
     cinfo.addProperty(
         "face edge", FunctionUtil.getDecimalForBoolean(AppPreferences.faceEdge.get()));
     cinfo.addProperty(
@@ -238,8 +240,8 @@ public class getInfoFunction extends AbstractFunction {
     cinfo.addProperty("timeInMs", System.currentTimeMillis());
     cinfo.addProperty("timeDate", getTimeDate());
     cinfo.addProperty("isoTimeDate", getIsoTimeDate());
-    cinfo.addProperty("isHosting", MapTool.isHostingServer());
-    cinfo.addProperty("isPersonalServer", MapTool.isPersonalServer());
+    cinfo.addProperty("isHosting", client.isHostingServer());
+    cinfo.addProperty("isPersonalServer", client.isPersonalServer());
     cinfo.addProperty("userLanguage", MapTool.getLanguage());
 
     JsonObject dialogs = new JsonObject();
@@ -331,7 +333,7 @@ public class getInfoFunction extends AbstractFunction {
    * @return the server side preferences
    */
   private JsonObject getServerInfo() {
-    ServerPolicy sp = MapTool.getServerPolicy();
+    ServerPolicy sp = MapTool.getClient().getServerPolicy();
 
     return sp.toJSON();
   }

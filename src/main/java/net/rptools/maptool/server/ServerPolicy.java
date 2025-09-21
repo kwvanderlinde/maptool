@@ -21,6 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.ui.startserverdialog.StartServerDialogPreferences;
 import net.rptools.maptool.client.walker.WalkerMetric;
 import net.rptools.maptool.server.proto.ServerPolicyDto;
@@ -290,7 +291,9 @@ public class ServerPolicy {
         getDisablePlayerAssetPanel() ? BigDecimal.ONE : BigDecimal.ZERO);
 
     WalkerMetric metric =
-        MapTool.isPersonalServer() ? AppPreferences.movementMetric.get() : getMovementMetric();
+        MapTool.getClient().isPersonalServer()
+            ? AppPreferences.movementMetric.get()
+            : getMovementMetric();
     sinfo.addProperty("movement metric", metric.name());
 
     sinfo.addProperty("using ai", isUsingAstarPathfinding() ? BigDecimal.ONE : BigDecimal.ZERO);
@@ -301,15 +304,17 @@ public class ServerPolicy {
 
     JsonArray gms = new JsonArray();
 
+    // TODO :facepalm: Why are we including connection information here?
+    MapToolClient client = MapTool.getClient();
     for (String gm : MapTool.getGMs()) {
       gms.add(gm);
     }
     sinfo.add("gm", gms);
     sinfo.addProperty(
-        "hosting server", MapTool.isHostingServer() ? BigDecimal.ONE : BigDecimal.ZERO);
+        "hosting server", client.isHostingServer() ? BigDecimal.ONE : BigDecimal.ZERO);
 
     sinfo.addProperty(
-        "personal server", MapTool.isPersonalServer() ? BigDecimal.ONE : BigDecimal.ZERO);
+        "personal server", client.isPersonalServer() ? BigDecimal.ONE : BigDecimal.ZERO);
 
     StartServerDialogPreferences prefs = new StartServerDialogPreferences();
     sinfo.addProperty("useWebRTC", prefs.getUseWebRtc() ? BigDecimal.ONE : BigDecimal.ZERO);

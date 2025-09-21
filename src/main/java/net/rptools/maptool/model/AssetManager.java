@@ -122,14 +122,14 @@ public class AssetManager {
   public static void updateRepositoryList() {
     List<String> invalidRepos = new ArrayList<>();
     assetLoader.removeAllRepositories();
-    for (String repo : MapTool.getCampaign().getRemoteRepositoryList()) {
+    for (String repo : MapTool.getClient().getCampaign().getRemoteRepositoryList()) {
       if (!assetLoader.addRepository(repo)) {
         invalidRepos.add(repo);
       }
     }
 
     if (!invalidRepos.isEmpty()) {
-      if (MapTool.isHostingServer()) {
+      if (MapTool.getClient().isHostingServer()) {
         String tab = "    ";
         String repos = tab + String.join("\n" + tab, invalidRepos);
         MapTool.showError(I18N.getText("msg.error.host.inaccessibleRepo", repos));

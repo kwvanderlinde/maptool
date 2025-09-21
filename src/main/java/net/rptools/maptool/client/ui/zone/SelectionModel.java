@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import net.rptools.maptool.client.AppUtil;
+import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Zone;
@@ -131,7 +132,7 @@ public class SelectionModel {
     if (token == null) {
       return false; // doesn't exist
     }
-    if (!zone.isTokenVisible(token)) {
+    if (!zone.isTokenVisible(token, MapTool.getClient().getServerPolicy())) {
       return AppUtil.playerOwns(token); // can't own or see
     }
     return true;

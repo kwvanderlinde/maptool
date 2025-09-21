@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.macro.Macro;
 import net.rptools.maptool.client.macro.MacroContext;
@@ -112,10 +113,12 @@ public class SetTokenPropertyMacro implements Macro {
        * Give the player the benefit of the doubt. If they specified a token that is invisible then try the name as a property. This will also stop players that are trying to "guess" token names
        * and trying to change properties figuring out that there is a token there because they are getting a different error message (benefit of the doubt only goes so far ;) )
        */
+      MapToolClient client = MapTool.getClient();
       if (!MapTool.getPlayer().isGM()) {
-        if (!zone.isTokenVisible(token) || !token.getLayer().isVisibleToPlayers()) {
+        if (!zone.isTokenVisible(token, client.getServerPolicy())
+            || !token.getLayer().isVisibleToPlayers()) {
           token = null;
-        } else if (!token.isOwner(MapTool.getPlayer().getName())) {
+        } else if (!token.isOwner(client.getPlayer().getName())) {
           token = null;
         }
       }

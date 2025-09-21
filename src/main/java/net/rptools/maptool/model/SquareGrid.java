@@ -33,8 +33,6 @@ import java.util.Map;
 import javax.swing.Action;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
-import net.rptools.maptool.client.AppPreferences;
-import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.tool.PointerTool;
@@ -362,10 +360,7 @@ public class SquareGrid extends Grid {
 
   @Override
   public ZoneWalker createZoneWalker() {
-    WalkerMetric metric =
-        MapTool.isPersonalServer()
-            ? AppPreferences.movementMetric.get()
-            : MapTool.getServerPolicy().getMovementMetric();
+    WalkerMetric metric = getCurrentMetric();
     return new AStarSquareEuclideanWalker(getZone(), metric);
   }
 

@@ -55,6 +55,7 @@ import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.DeveloperOptions;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.ui.AutoResizeStampDialog;
@@ -138,14 +139,16 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
 
   private void startTokenDrag(
       Token keyToken, Set<GUID> tokens, ZonePoint dragStart, boolean isMovingWithKeys) {
-    if (!MapTool.getPlayer().isGM() && MapTool.getServerPolicy().isMovementLocked()) {
+    MapToolClient client = MapTool.getClient();
+    if (!client.getPlayer().isGM() && client.getServerPolicy().isMovementLocked()) {
       // Not allowed
       return;
     }
-    renderer.addMoveSelectionSet(MapTool.getPlayer().getName(), keyToken.getId(), tokens);
-    MapTool.serverCommand()
+    renderer.addMoveSelectionSet(client.getPlayer().getName(), keyToken.getId(), tokens);
+    client
+        .getServerCommand()
         .startTokenMove(
-            MapTool.getPlayer().getName(), renderer.getZone().getId(), keyToken.getId(), tokens);
+            client.getPlayer().getName(), renderer.getZone().getId(), keyToken.getId(), tokens);
 
     tokenDragOp = new TokenDragOp(renderer, keyToken, dragStart, isMovingWithKeys);
   }
@@ -602,16 +605,17 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
       isNewTokenSelected = false;
 
       // Make user we're allowed
-      if (!MapTool.getPlayer().isGM() && MapTool.getServerPolicy().isMovementLocked()) {
+      MapToolClient client = MapTool.getClient();
+      if (!client.getPlayer().isGM() && client.getServerPolicy().isMovementLocked()) {
         return;
       }
 
       // Might be dragging a token
-      String playerId = MapTool.getPlayer().getName();
+      String playerId = client.getPlayer().getName();
       Set<GUID> selectedTokenSet = renderer.getSelectedTokenSet();
       if (selectedTokenSet.size() > 0) {
         // Make sure we can do this
-        if (!MapTool.getPlayer().isGM() && MapTool.getServerPolicy().useStrictTokenManagement()) {
+        if (!client.getPlayer().isGM() && client.getServerPolicy().useStrictTokenManagement()) {
           for (GUID tokenGUID : selectedTokenSet) {
             Token token = renderer.getZone().getToken(tokenGUID);
             if (!token.isOwner(playerId)) {

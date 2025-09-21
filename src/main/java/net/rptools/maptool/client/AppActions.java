@@ -131,7 +131,9 @@ public class AppActions {
           Token chosenOne = null;
           List<Token> myPlayers = new ArrayList<Token>();
           for (Token t : renderer.getZone().getPlayerTokens()) {
-            if (AppUtil.playerOwns(t) && t.isVisible() && renderer.getZone().isTokenVisible(t)) {
+            if (AppUtil.playerOwns(t)
+                && t.isVisible()
+                && renderer.getZone().isTokenVisible(t, getClient().getServerPolicy())) {
               myPlayers.add(t);
             }
           }
@@ -170,7 +172,7 @@ public class AppActions {
       new TranslatedClientAction("menu.recent") {
         @Override
         public boolean isAvailable() {
-          return MapTool.isHostingServer() || MapTool.isPersonalServer();
+          return getClient().getLocalServer() != null;
         }
 
         @Override
@@ -184,9 +186,9 @@ public class AppActions {
         @Override
         protected void executeAction(@Nonnull ZoneRenderer renderer) {
           try {
-            ExportDialog d = MapTool.getCampaign().getExportDialog();
+            ExportDialog d = getClient().getCampaign().getExportDialog();
             d.setVisible(true);
-            MapTool.getCampaign().setExportDialog(d);
+            getClient().getCampaign().setExportDialog(d);
           } catch (Exception ex) {
             MapTool.showError("Cannot create the ExportDialog object", ex);
           }
@@ -198,7 +200,7 @@ public class AppActions {
           "action.exportScreenShot", withMenuShortcut(KeyStroke.getKeyStroke("shift S"))) {
         @Override
         protected void executeAction(@Nonnull ZoneRenderer renderer) {
-          ExportDialog d = MapTool.getCampaign().getExportDialog();
+          ExportDialog d = getClient().getCampaign().getExportDialog();
           if (d == null || d.getExportLocation() == null || d.getExportSettings() == null) {
             // Can't do a save.. so try "save as"
             EXPORT_SCREENSHOT.executeAction();
@@ -217,7 +219,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM();
+          return getClient().getPlayer().isGM();
         }
 
         @Override
@@ -253,7 +255,7 @@ public class AppActions {
           }
 
           // Create index
-          Campaign campaign = MapTool.getCampaign();
+          Campaign campaign = getClient().getCampaign();
           Set<Asset> assetSet = new HashSet<Asset>();
           for (Zone zone : campaign.getZones()) {
 
@@ -334,12 +336,12 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM() && super.isAvailable();
+          return getClient().getPlayer().isGM() && super.isAvailable();
         }
 
         @Override
         protected void executeAction(@Nonnull ZoneRenderer renderer) {
-          MapTool.serverCommand().enforceZone(renderer.getZone().getId());
+          getClient().getServerCommand().enforceZone(renderer.getZone().getId());
         }
       };
 
@@ -383,7 +385,7 @@ public class AppActions {
               AppSetup.installDefaultTokens();
             }
 
-            MapTool.getCampaign().mergeCampaignProperties(properties);
+            getClient().getCampaign().mergeCampaignProperties(properties);
 
             MapTool.getFrame().repaint();
 
@@ -398,7 +400,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM() && super.isAvailable();
+          return getClient().getPlayer().isGM() && super.isAvailable();
         }
 
         @Override
@@ -412,7 +414,7 @@ public class AppActions {
           String name = JOptionPane.showInputDialog(MapTool.getFrame(), msg, oldName);
           if (name != null) {
             zone.setName(name);
-            MapTool.serverCommand().renameZone(zone.getId(), name);
+            getClient().getServerCommand().renameZone(zone.getId(), name);
             MapTool.getFrame().setCurrentZoneRenderer(renderer);
           }
         }
@@ -463,12 +465,12 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return super.isAvailable() && (MapTool.isPersonalServer() || MapTool.isHostingServer());
+          return super.isAvailable() && getClient().getLocalServer() != null;
         }
 
         @Override
         protected void executeAction() {
-          final var server = MapTool.getServer();
+          final var server = getClient().getLocalServer();
           if (server != null) {
             ConnectionInfoDialog dialog = new ConnectionInfoDialog(server);
             dialog.setVisible(true);
@@ -587,7 +589,7 @@ public class AppActions {
           if (!MapTool.confirm("msg.confirm.clearAllDrawings", layer)) {
             return;
           }
-          MapTool.serverCommand().clearAllDrawings(renderer.getZone().getId(), layer);
+          getClient().getServerCommand().clearAllDrawings(renderer.getZone().getId(), layer);
         }
       };
 
@@ -1052,7 +1054,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.isHostingServer() || MapTool.getPlayer().isGM();
+          return getClient().isHostingServer() || getClient().getPlayer().isGM();
         }
 
         @Override
@@ -1064,14 +1066,14 @@ public class AppActions {
             MapTool.showError("msg.error.mustSelectPlayerFirst");
             return;
           }
-          if (MapTool.getPlayer().equals(selectedPlayer)) {
+          if (getClient().getPlayer().equals(selectedPlayer)) {
             MapTool.showError("msg.error.cantBootSelf");
             return;
           }
-          if (MapTool.getClient().isPlayerConnected(selectedPlayer.getName())) {
+          if (getClient().isPlayerConnected(selectedPlayer.getName())) {
             String msg = I18N.getText("msg.confirm.bootPlayer", selectedPlayer.getName());
             if (MapTool.confirm(msg)) {
-              MapTool.serverCommand().bootPlayer(selectedPlayer.getName());
+              getClient().getServerCommand().bootPlayer(selectedPlayer.getName());
               msg = I18N.getText("msg.info.playerBooted", selectedPlayer.getName());
               MapTool.showInformation(msg);
               return;
@@ -1089,7 +1091,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM();
+          return getClient().getPlayer().isGM();
         }
 
         @Override
@@ -1100,7 +1102,7 @@ public class AppActions {
         @Override
         protected void executeAction() {
           AppState.setNotificationEnforced(!AppState.isNotificationEnforced());
-          MapTool.serverCommand().enforceNotification(AppState.isNotificationEnforced());
+          getClient().getServerCommand().enforceNotification(AppState.isNotificationEnforced());
         }
       };
 
@@ -1111,7 +1113,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM();
+          return getClient().getPlayer().isGM();
         }
 
         @Override
@@ -1133,7 +1135,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM();
+          return getClient().getPlayer().isGM();
         }
 
         @Override
@@ -1155,7 +1157,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM();
+          return getClient().getPlayer().isGM();
         }
 
         @Override
@@ -1242,7 +1244,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM() && super.isAvailable();
+          return getClient().getPlayer().isGM() && super.isAvailable();
         }
 
         @Override
@@ -1268,7 +1270,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM() && super.isAvailable();
+          return getClient().getPlayer().isGM() && super.isAvailable();
         }
 
         @Override
@@ -1295,7 +1297,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM() && super.isAvailable();
+          return getClient().getPlayer().isGM() && super.isAvailable();
         }
 
         @Override
@@ -1394,7 +1396,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM() && super.isAvailable();
+          return getClient().getPlayer().isGM() && super.isAvailable();
         }
 
         @Override
@@ -1408,7 +1410,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM() && super.isAvailable();
+          return getClient().getPlayer().isGM() && super.isAvailable();
         }
 
         @Override
@@ -1514,7 +1516,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM() && super.isAvailable();
+          return getClient().getPlayer().isGM() && super.isAvailable();
         }
 
         @Override
@@ -1532,7 +1534,7 @@ public class AppActions {
           Zone zone = renderer.getZone();
           zone.setHasFog(!zone.hasFog());
 
-          MapTool.serverCommand().setZoneHasFoW(zone.getId(), zone.hasFog());
+          getClient().getServerCommand().setZoneHasFoW(zone.getId(), zone.hasFog());
 
           renderer.repaint();
         }
@@ -1545,7 +1547,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM() && TOGGLE_FOG.isSelected() && super.isAvailable();
+          return getClient().getPlayer().isGM() && TOGGLE_FOG.isSelected() && super.isAvailable();
         }
 
         @Override
@@ -1571,7 +1573,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM() && super.isAvailable();
+          return getClient().getPlayer().isGM() && super.isAvailable();
         }
 
         @Override
@@ -1595,7 +1597,7 @@ public class AppActions {
 
     @Override
     public boolean isAvailable() {
-      return MapTool.getPlayer().isGM() && super.isAvailable();
+      return getClient().getPlayer().isGM() && super.isAvailable();
     }
 
     @Override
@@ -1614,7 +1616,7 @@ public class AppActions {
       if (zone.getVisionType() != visionType) {
         zone.setVisionType(visionType);
 
-        MapTool.serverCommand().setVisionType(zone.getId(), visionType);
+        getClient().getServerCommand().setVisionType(zone.getId(), visionType);
 
         renderer.flushFog();
         renderer.flushLight();
@@ -1645,7 +1647,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM() && super.isAvailable();
+          return getClient().getPlayer().isGM() && super.isAvailable();
         }
 
         @Override
@@ -1655,7 +1657,7 @@ public class AppActions {
             return false;
           }
 
-          var landingMapId = MapTool.getCampaign().getLandingMapId();
+          var landingMapId = getClient().getCampaign().getLandingMapId();
           if (landingMapId == null) {
             return false;
           }
@@ -1665,14 +1667,14 @@ public class AppActions {
 
         @Override
         protected void executeAction(@Nonnull ZoneRenderer renderer) {
-          var landingMapId = MapTool.getCampaign().getLandingMapId();
+          var landingMapId = getClient().getCampaign().getLandingMapId();
 
           var newLandingMapId = renderer.getZone().getId();
           if (newLandingMapId.equals(landingMapId)) {
             // Already set. Unset it instead.
             newLandingMapId = null;
           }
-          MapTool.serverCommand().setLandingMap(newLandingMapId);
+          getClient().getServerCommand().setLandingMap(newLandingMapId);
         }
       };
 
@@ -1681,7 +1683,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM() && super.isAvailable();
+          return getClient().getPlayer().isGM() && super.isAvailable();
         }
 
         @Override
@@ -1698,7 +1700,7 @@ public class AppActions {
           Zone zone = renderer.getZone();
           zone.setVisible(!zone.isVisible());
 
-          MapTool.serverCommand().setZoneVisibility(zone.getId(), zone.isVisible());
+          getClient().getServerCommand().setZoneVisibility(zone.getId(), zone.isVisible());
           MapTool.getFrame().getZoneMiniMapPanel().flush();
           MapTool.getFrame().repaint();
         }
@@ -1709,7 +1711,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM();
+          return getClient().getPlayer().isGM();
         }
 
         /**
@@ -1752,7 +1754,7 @@ public class AppActions {
           Campaign campaign = CampaignFactory.createBasicCampaign();
           AppState.setCampaignFile(null);
           MapTool.setCampaign(campaign, null);
-          MapTool.serverCommand().setCampaign(campaign);
+          getClient().getServerCommand().setCampaign(campaign);
 
           ImageManager.flush();
           MapTool.getFrame()
@@ -1843,17 +1845,17 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM();
+          return getClient().getPlayer().isGM();
         }
 
         @Override
         public boolean isSelected() {
-          return MapTool.getServerPolicy().isMovementLocked();
+          return getClient().getServerPolicy().isMovementLocked();
         }
 
         @Override
         protected void executeAction() {
-          var client = MapTool.getClient();
+          var client = getClient();
 
           ServerPolicy policy = client.getServerPolicy();
           policy.setIsMovementLocked(!policy.isMovementLocked());
@@ -1869,17 +1871,17 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM();
+          return getClient().getPlayer().isGM();
         }
 
         @Override
         public boolean isSelected() {
-          return MapTool.getServerPolicy().isTokenEditorLocked();
+          return getClient().getServerPolicy().isTokenEditorLocked();
         }
 
         @Override
         protected void executeAction() {
-          var client = MapTool.getClient();
+          var client = getClient();
 
           ServerPolicy policy = client.getServerPolicy();
           policy.setIsTokenEditorLocked(!policy.isTokenEditorLocked());
@@ -1894,12 +1896,12 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.isPersonalServer();
+          return getClient().isPersonalServer();
         }
 
         @Override
         protected void executeAction() {
-          if (!MapTool.isPersonalServer()) {
+          if (!getClient().isPersonalServer()) {
             MapTool.showError("msg.error.alreadyRunningServer");
             return;
           }
@@ -1967,7 +1969,7 @@ public class AppActions {
                   serverProps.getUseWebRtc());
 
           // Use the existing campaign
-          Campaign campaign = MapTool.getCampaign();
+          Campaign campaign = getClient().getCampaign();
 
           boolean failed = false;
           try {
@@ -2057,7 +2059,7 @@ public class AppActions {
     MapTool.stopServer();
 
     // Install a temporary gimped campaign until we get the one from the server
-    final Campaign oldCampaign = MapTool.getCampaign();
+    final Campaign oldCampaign = MapTool.getClient().getCampaign();
     MapTool.setCampaign(new Campaign(), null);
 
     // connecting
@@ -2115,7 +2117,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.isPersonalServer();
+          return getClient().isPersonalServer();
         }
 
         @Override
@@ -2145,12 +2147,12 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return !MapTool.isPersonalServer();
+          return !getClient().isPersonalServer();
         }
 
         @Override
         protected void executeAction() {
-          if (MapTool.isHostingServer() && !MapTool.confirm("msg.confirm.hostingDisconnect")) {
+          if (getClient().isHostingServer() && !MapTool.confirm("msg.confirm.hostingDisconnect")) {
             return;
           }
           disconnectFromServer();
@@ -2168,8 +2170,8 @@ public class AppActions {
     MapTool.getFrame().setCurrentZoneRenderer(null);
 
     Campaign campaign;
-    if (MapTool.isHostingServer()) {
-      campaign = MapTool.getCampaign();
+    if (MapTool.getClient().isHostingServer()) {
+      campaign = MapTool.getClient().getCampaign();
     } else {
       campaign = CampaignFactory.createBasicCampaign();
       new CampaignManager().clearCampaignData();
@@ -2193,7 +2195,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getClient().getPlayerDatabase() instanceof PersistedPlayerDatabase;
+          return getClient().getPlayerDatabase() instanceof PersistedPlayerDatabase;
         }
 
         @Override
@@ -2208,7 +2210,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.isHostingServer() || MapTool.isPersonalServer();
+          return getClient().getLocalServer() != null;
         }
 
         @Override
@@ -2359,7 +2361,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return (MapTool.isHostingServer() || MapTool.getPlayer().isGM());
+          return (getClient().isHostingServer() || getClient().getPlayer().isGM());
         }
 
         @Override
@@ -2374,7 +2376,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.isHostingServer() || MapTool.getPlayer().isGM();
+          return getClient().isHostingServer() || getClient().getPlayer().isGM();
         }
 
         @Override
@@ -2427,7 +2429,7 @@ public class AppActions {
 
       try {
         long start = System.currentTimeMillis();
-        PersistenceUtil.saveCampaign(MapTool.getCampaign(), file);
+        PersistenceUtil.saveCampaign(MapTool.getClient().getCampaign(), file);
 
         publish(I18N.getString("msg.info.campaignSaved"));
 
@@ -2496,8 +2498,8 @@ public class AppActions {
     AppState.setCampaignFile(campaignFile);
     AppPreferences.saveDirectory.set(campaignFile.getParentFile());
     AppMenuBar.getMruManager().addMRUCampaign(AppState.getCampaignFile());
-    if (MapTool.isHostingServer() || MapTool.isPersonalServer()) {
-      MapTool.serverCommand().setCampaignName(AppState.getCampaignName());
+    if (MapTool.getClient().getLocalServer() != null) {
+      MapTool.getClient().getServerCommand().setCampaignName(AppState.getCampaignName());
     }
   }
 
@@ -2514,8 +2516,8 @@ public class AppActions {
         @Override
         public boolean isAvailable() {
           return MapTool.getFrame().getCurrentZoneRenderer() != null
-              && (MapTool.isHostingServer()
-                  || (MapTool.getPlayer() != null && MapTool.getPlayer().isGM()));
+              && (getClient().isHostingServer()
+                  || (getClient().getPlayer() != null && getClient().getPlayer().isGM()));
         }
 
         @Override
@@ -2572,13 +2574,12 @@ public class AppActions {
           // return MapTool.isHostingServer() || MapTool.isPersonalServer();
           // I'd like to be able to use this instead as it's less restrictive, but it's
           // safer to disallow for now.
-          return MapTool.isHostingServer()
-              || (MapTool.getPlayer() != null && MapTool.getPlayer().isGM());
+          return getClient().isHostingServer()
+              || (getClient().getPlayer() != null && getClient().getPlayer().isGM());
         }
 
         @Override
         protected void executeAction() {
-          boolean isConnected = !MapTool.isHostingServer() && !MapTool.isPersonalServer();
           JFileChooser chooser = new MapPreviewFileChooser();
           chooser.setDialogTitle(I18N.getText("msg.title.loadMap"));
           chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -2595,13 +2596,12 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.isHostingServer()
-              || (MapTool.getPlayer() != null && MapTool.getPlayer().isGM());
+          return getClient().isHostingServer()
+              || (getClient().getPlayer() != null && getClient().getPlayer().isGM());
         }
 
         @Override
         protected void executeAction() {
-          boolean isConnected = !MapTool.isHostingServer() && !MapTool.isPersonalServer();
           JFileChooser chooser = new MapPreviewFileChooser();
           chooser.setDialogTitle(I18N.getText("action.import.dungeondraft.dialog.title"));
           chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -2691,12 +2691,12 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM();
+          return getClient().getPlayer().isGM();
         }
 
         @Override
         protected void executeAction() {
-          Campaign campaign = MapTool.getCampaign();
+          Campaign campaign = getClient().getCampaign();
 
           CampaignPropertiesDialog dialog = new CampaignPropertiesDialog();
           dialog.setCampaign(campaign);
@@ -2704,7 +2704,7 @@ public class AppActions {
           if (cancelled) {
             return;
           }
-          MapTool.serverCommand().updateCampaign(campaign.getCampaignProperties());
+          getClient().getServerCommand().updateCampaign(campaign.getCampaignProperties());
         }
       };
 
@@ -2765,7 +2765,7 @@ public class AppActions {
 
     @Override
     public boolean isAvailable() {
-      return MapTool.getPlayer().isGM();
+      return getClient().getPlayer().isGM();
     }
 
     @Override
@@ -2783,7 +2783,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM();
+          return getClient().getPlayer().isGM();
         }
 
         @Override
@@ -2806,7 +2806,7 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.getPlayer().isGM() && super.isAvailable();
+          return getClient().getPlayer().isGM() && super.isAvailable();
         }
 
         @Override
@@ -2817,8 +2817,8 @@ public class AppActions {
           newMapDialog.setZone(zone);
           newMapDialog.setVisible(true);
 
-          MapTool.serverCommand().removeZone(zone.getId());
-          MapTool.serverCommand().putZone(zone);
+          getClient().getServerCommand().removeZone(zone.getId());
+          getClient().getServerCommand().putZone(zone);
           MapTool.getFrame().setCurrentZoneRenderer(renderer);
         }
       };
@@ -2847,8 +2847,8 @@ public class AppActions {
 
         @Override
         public boolean isAvailable() {
-          return MapTool.isHostingServer()
-              || (MapTool.getPlayer() != null && MapTool.getPlayer().isGM());
+          return getClient().isHostingServer()
+              || (getClient().getPlayer() != null && getClient().getPlayer().isGM());
         }
 
         @Override
@@ -2933,8 +2933,8 @@ public class AppActions {
         @Override
         public boolean isAvailable() {
           return super.isAvailable()
-              && (MapTool.getPlayer().isGM()
-                  || MapTool.getServerPolicy().getPlayersCanRevealVision());
+              && (getClient().getPlayer().isGM()
+                  || getClient().getServerPolicy().getPlayersCanRevealVision());
         }
 
         @Override
@@ -2950,7 +2950,7 @@ public class AppActions {
           withMenuShortcut(KeyStroke.getKeyStroke("shift O"))) {
         @Override
         public boolean isAvailable() {
-          return super.isAvailable() && MapTool.getPlayer().isGM();
+          return super.isAvailable() && getClient().getPlayer().isGM();
         }
 
         @Override
@@ -2967,8 +2967,8 @@ public class AppActions {
           if (!super.isAvailable()) {
             return false;
           }
-          if (!MapTool.getPlayer().isGM()
-              && !MapTool.getServerPolicy().getPlayersCanRevealVision()) {
+          if (!getClient().getPlayer().isGM()
+              && !getClient().getServerPolicy().getPlayersCanRevealVision()) {
             return false;
           }
 
@@ -2992,8 +2992,8 @@ public class AppActions {
         @Override
         public boolean isAvailable() {
           return super.isAvailable()
-              && (MapTool.getPlayer().isGM()
-                  || MapTool.getServerPolicy().getPlayersCanRevealVision());
+              && (getClient().getPlayer().isGM()
+                  || getClient().getServerPolicy().getPlayersCanRevealVision());
         }
 
         @Override
@@ -3090,6 +3090,10 @@ public class AppActions {
       if (accelerator != null) {
         putValue(Action.ACCELERATOR_KEY, accelerator);
       }
+    }
+
+    protected MapToolClient getClient() {
+      return MapTool.getClient();
     }
 
     /**

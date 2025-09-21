@@ -1027,7 +1027,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       timer.stop("token name/labels");
     }
 
-    this.visionOverlayRenderer.render(g2d, view, tokenUnderMouse);
+    this.visionOverlayRenderer.render(
+        g2d, view, tokenUnderMouse, MapTool.getClient().getServerPolicy());
 
     timer.start("overlays");
     for (ZoneOverlay overlay : overlayList) {
@@ -1079,7 +1080,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     for (Label label : zone.getLabels()) {
       var fLabel = labelRenderFactory.getMapImageLabel(label);
       ZonePoint zp = new ZonePoint(label.getX(), label.getY());
-      if (!zone.isPointVisible(zp, view)) {
+      if (!zone.isPointVisible(zp, view, MapTool.getClient().getServerPolicy())) {
         continue;
       }
       timer.start("labels-1.1");
@@ -1734,6 +1735,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     Graphics2D clippedG = g;
     var imageLabelFactory = new FlatImageLabelFactory();
+    MapToolClient client = MapTool.getClient();
 
     boolean isGMView = view.isGMView(); // speed things up
 
@@ -1839,15 +1841,15 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           new Rectangle(0, 0, (int) tokenBounds.getWidth(), (int) tokenBounds.getHeight());
 
       // Check each of the set values
-      for (String state : MapTool.getCampaign().getTokenStatesMap().keySet()) {
+      for (String state : client.getCampaign().getTokenStatesMap().keySet()) {
         Object stateValue = token.getState(state);
-        AbstractTokenOverlay overlay = MapTool.getCampaign().getTokenStatesMap().get(state);
+        AbstractTokenOverlay overlay = client.getCampaign().getTokenStatesMap().get(state);
         if (stateValue instanceof AbstractTokenOverlay) {
           overlay = (AbstractTokenOverlay) stateValue;
         }
         if (overlay == null
             || overlay.isMouseover() && token != tokenUnderMouse
-            || !overlay.showPlayer(token, MapTool.getPlayer())) {
+            || !overlay.showPlayer(token, client.getPlayer())) {
           continue;
         }
         overlay.paintOverlay(locG, token, bounds, stateValue);
@@ -1856,12 +1858,12 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
       timer.start("token-list-10");
 
-      for (String bar : MapTool.getCampaign().getTokenBarsMap().keySet()) {
+      for (String bar : client.getCampaign().getTokenBarsMap().keySet()) {
         Object barValue = token.getState(bar);
-        BarTokenOverlay overlay = MapTool.getCampaign().getTokenBarsMap().get(bar);
+        BarTokenOverlay overlay = client.getCampaign().getTokenBarsMap().get(bar);
         if (overlay == null
             || overlay.isMouseover() && token != tokenUnderMouse
-            || !overlay.showPlayer(token, MapTool.getPlayer())) {
+            || !overlay.showPlayer(token, client.getPlayer())) {
           continue;
         }
 
@@ -1905,8 +1907,10 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       // if policy does not auto-reveal FoW, check if fog covers the token (slow)
       if (showCurrentTokenLabel
           && !isGMView
-          && (!zoneView.isUsingVision() || !MapTool.getServerPolicy().isAutoRevealOnMovement())
-          && !zone.isTokenVisible(token)) {
+          && (!zoneView.isUsingVision()
+              // TODO Inject the Campaign when creating the ZoneRenderer.
+              || !client.getServerPolicy().isAutoRevealOnMovement())
+          && !zone.isTokenVisible(token, client.getServerPolicy())) {
         showCurrentTokenLabel = false;
       }
       if (showCurrentTokenLabel) {
@@ -2100,7 +2104,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     if (token == null) {
       return false; // doesn't exist
     }
-    if (!zone.isTokenVisible(token)) {
+    if (!zone.isTokenVisible(token, MapTool.getClient().getServerPolicy())) {
       return AppUtil.playerOwns(token); // can't own or see
     }
     return true;
@@ -2514,7 +2518,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    */
   @Override
   public void drop(DropTargetDropEvent dtde) {
-    if (MapTool.getPlayer().isGM() || !MapTool.getServerPolicy().getDisablePlayerAssetPanel()) {
+    MapToolClient client = MapTool.getClient();
+    if (client.getPlayer().isGM() || !client.getServerPolicy().getDisablePlayerAssetPanel()) {
       ZonePoint zp =
           new ScreenPoint((int) dtde.getLocation().getX(), (int) dtde.getLocation().getY())
               .convertToZone(this);

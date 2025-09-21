@@ -162,7 +162,6 @@ public class MapTool {
   private static MapToolFrame clientFrame;
   private static NoteFrame profilingNoteFrame;
   private static LogConsoleFrame logConsoleFrame;
-  @Nullable private static MapToolServer server;
   private static MapToolClient client;
 
   private static BackupManager backupManager;
@@ -197,7 +196,7 @@ public class MapTool {
       var campaign = CampaignFactory.createEmptyCampaign();
       var policy = new ServerPolicy();
 
-      server = new MapToolServer(null, new Campaign(campaign), null, false, policy, playerDB);
+      var server = new MapToolServer(null, new Campaign(campaign), null, false, policy, playerDB);
       client =
           new MapToolClient(
               server, campaign, playerDB.getPlayer(), connections.clientSide(), keyStore);
@@ -770,19 +769,8 @@ public class MapTool {
     return System.getProperty("RUN_FROM_IDE") != null;
   }
 
-  public static ServerPolicy getServerPolicy() {
-    return client.getServerPolicy();
-  }
-
   public static @Nonnull ServerCommand serverCommand() {
     return client.getServerCommand();
-  }
-
-  /**
-   * @return the server, or null if player is a client.
-   */
-  public static MapToolServer getServer() {
-    return server;
   }
 
   /**
@@ -997,9 +985,9 @@ public class MapTool {
    * @param policy the server policy configuration to use.
    * @param campaign the campaign.
    * @param playerDatabase the player database to use for the connection.
-   * @throws IOException if we fail to start the new server. In this case, the new client and server
-   *     will be available via {@link #getServer()} and {@link #getClient()}, but neither will be in
-   *     a started state.
+   * @throws IOException if we fail to start the new server. In this case, the new client with be
+   *     available via {@link #getClient()}, but neither the client nor local server will be in a
+   *     started state.
    */
   public static void startServer(
       String id,
@@ -1010,7 +998,8 @@ public class MapTool {
       ServerSidePlayerDatabase playerDatabase,
       LocalPlayer player)
       throws IOException {
-    if (server != null && server.getState() == MapToolServer.State.Started) {
+    var currentServer = client.getLocalServer();
+    if (currentServer != null && currentServer.getState() == MapToolServer.State.Started) {
       log.error("A server is already running.", new Exception());
       showError("msg.error.alreadyRunningServer");
       return;
@@ -1019,7 +1008,8 @@ public class MapTool {
     assetTransferManager.flush();
 
     var connections = DirectConnection.create("local");
-    server = new MapToolServer(id, new Campaign(campaign), config, useUPnP, policy, playerDatabase);
+    var server =
+        new MapToolServer(id, new Campaign(campaign), config, useUPnP, policy, playerDatabase);
     client = new MapToolClient(server, campaign, player, connections.clientSide(), keyStore);
 
     if (!server.isPersonalServer()) {
@@ -1086,6 +1076,7 @@ public class MapTool {
    * <p>The client must have already been disconnected if necessary.
    */
   public static void stopServer() {
+    var server = client.getLocalServer();
     if (server == null) {
       return;
     }
@@ -1214,7 +1205,8 @@ public class MapTool {
       @Nonnull LocalPlayer player,
       @Nonnull HandshakeCompletionObserver onCompleted)
       throws IOException {
-    if (server != null && server.getState() == MapToolServer.State.Started) {
+    var existingServer = client.getLocalServer();
+    if (existingServer != null && existingServer.getState() == MapToolServer.State.Started) {
       log.error("A local server is still running.", new Exception());
       showError("msg.error.stillRunningServer");
       return;
@@ -1222,7 +1214,6 @@ public class MapTool {
 
     var connection = ConnectionFactory.getInstance().createConnection(player.getName(), config);
 
-    server = null;
     client = new MapToolClient(player, connection, keyStore);
     setUpClient(client);
     client.getConnection().onCompleted(onCompleted);
@@ -1235,16 +1226,6 @@ public class MapTool {
     return Locale.getDefault(Locale.Category.DISPLAY).getLanguage();
   }
 
-  /** returns whether the player is using a personal server. */
-  public static boolean isPersonalServer() {
-    return server != null && server.isPersonalServer();
-  }
-
-  /** returns whether the player is hosting a server - personal servers do not count. */
-  public static boolean isHostingServer() {
-    return server != null && !server.isPersonalServer();
-  }
-
   public static void disconnect() {
     client.close();
     new MapToolEventBus().getMainEventBus().post(new ServerDisconnected());
@@ -1253,7 +1234,7 @@ public class MapTool {
         .getConnectionStatusPanel()
         .setStatus(ConnectionStatusPanel.Status.disconnected);
 
-    if (!isPersonalServer()) {
+    if (!client.isPersonalServer()) {
       addLocalMessage(MessageUtil.getFormattedSystemMsg(I18N.getText("msg.info.disconnected")));
     }
   }
@@ -1426,10 +1407,10 @@ public class MapTool {
   }
 
   public static boolean useToolTipsForUnformatedRolls() {
-    if (isPersonalServer() || getServerPolicy() == null) {
+    if (client.isPersonalServer() || client.getServerPolicy() == null) {
       return AppPreferences.useToolTipForInlineRoll.get();
     } else {
-      return getServerPolicy().getUseToolTipsForDefaultRollFormat();
+      return client.getServerPolicy().getUseToolTipsForDefaultRollFormat();
     }
   }
 

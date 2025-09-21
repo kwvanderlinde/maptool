@@ -224,7 +224,7 @@ public abstract class AbstractAStarWalker extends AbstractZoneWalker {
         this.vblBlockedMovesByGoal.clear();
 
         var topologyTypes =
-            MapTool.getServerPolicy().getVblBlocksMove()
+            MapTool.getClient().getServerPolicy().getVblBlocksMove()
                 ? EnumSet.allOf(Zone.TopologyType.class)
                 : EnumSet.of(Zone.TopologyType.MBL);
         this.preparedTopology =

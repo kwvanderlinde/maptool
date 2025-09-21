@@ -22,11 +22,11 @@ import java.util.List;
 import net.rptools.lib.CodeTimer;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.AppUtil;
-import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.ZoneView;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.server.ServerPolicy;
 
 /**
  * This outlines the area visible to the token under the cursor. For player views, this is clipped
@@ -43,7 +43,8 @@ public class VisionOverlayRenderer {
     this.zoneView = zoneView;
   }
 
-  public void render(Graphics2D g, PlayerView view, Token tokenUnderMouse) {
+  public void render(
+      Graphics2D g, PlayerView view, Token tokenUnderMouse, ServerPolicy serverPolicy) {
     var timer = CodeTimer.get();
     timer.start("renderVisionOverlay");
     try {
@@ -53,8 +54,7 @@ public class VisionOverlayRenderer {
 
       boolean isOwner = AppUtil.playerOwns(tokenUnderMouse);
       boolean tokenIsPC = tokenUnderMouse.getType() == Token.Type.PC;
-      boolean strictOwnership =
-          MapTool.getServerPolicy() != null && MapTool.getServerPolicy().useStrictTokenManagement();
+      boolean strictOwnership = serverPolicy != null && serverPolicy.useStrictTokenManagement();
       boolean showVisionAndHalo = isOwner || view.isGMView() || (tokenIsPC && !strictOwnership);
       if (!showVisionAndHalo) {
         return;

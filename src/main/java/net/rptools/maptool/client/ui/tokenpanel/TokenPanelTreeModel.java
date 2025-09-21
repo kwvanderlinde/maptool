@@ -30,6 +30,7 @@ import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Token;
@@ -267,6 +268,7 @@ public class TokenPanelTreeModel implements TreeModel {
     }
   }
 
+  // TODO Update reference to ServerPolicy
   /**
    * Accepts only PC tokens (for GM) or PC tokens owned by the current player (takes {@link
    * ServerPolicy#useStrictTokenManagement()} into account). Here's the selection process:
@@ -291,11 +293,13 @@ public class TokenPanelTreeModel implements TreeModel {
       if (token.getType() != Token.Type.PC) {
         return false;
       }
-      if (MapTool.getPlayer().isGM()) {
+
+      MapToolClient client = MapTool.getClient();
+      if (client.getPlayer().isGM()) {
         return true;
       }
       if (!AppUtil.playerOwns(token)
-          && (MapTool.getServerPolicy().isUseIndividualViews() || token.isVisibleOnlyToOwner())) {
+          && (client.getServerPolicy().isUseIndividualViews() || token.isVisibleOnlyToOwner())) {
         return false;
       }
       return token.isVisible() && token.getLayer().isVisibleToPlayers();
@@ -314,6 +318,7 @@ public class TokenPanelTreeModel implements TreeModel {
     }
   }
 
+  // TODO Update reference to ServerPolicy
   /**
    * Accepts only NPC tokens (for GM) or NPC tokens owned by the current player (takes {@link
    * ServerPolicy#useStrictTokenManagement()} into account). Here's the selection process:

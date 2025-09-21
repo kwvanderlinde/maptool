@@ -163,7 +163,8 @@ public class FindTokenFunctions extends AbstractFunction {
     }
 
     public boolean matchToken(Token t) {
-      boolean isExposed = zone.isTokenVisible(t) && !t.isImgOrLib();
+      boolean isExposed =
+          zone.isTokenVisible(t, MapTool.getClient().getServerPolicy()) && !t.isImgOrLib();
       return match == isExposed;
     }
   }

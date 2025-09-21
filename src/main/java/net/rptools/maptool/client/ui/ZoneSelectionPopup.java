@@ -23,6 +23,7 @@ import javax.swing.*;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.ui.theme.Icons;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
@@ -45,12 +46,13 @@ public class ZoneSelectionPopup extends JScrollPopupMenu {
   private JMenuItem createEntries() {
 
     JMenuItem selection = null;
-    if (MapTool.getServerPolicy().getMapSelectUIHidden() && !MapTool.getPlayer().isGM()) {
+    MapToolClient client = MapTool.getClient();
+    if (client.getServerPolicy().getMapSelectUIHidden() && !client.getPlayer().isGM()) {
       MapTool.getFrame().getToolbarPanel().getMapselect().setVisible(false);
     } else {
       List<ZoneRenderer> rendererList =
           new LinkedList<ZoneRenderer>(MapTool.getFrame().getZoneRenderers());
-      if (!MapTool.getPlayer().isGM()) {
+      if (!client.getPlayer().isGM()) {
         rendererList.removeIf(renderer -> !renderer.getZone().isVisible());
       }
 

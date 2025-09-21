@@ -760,13 +760,14 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
    */
   public void showTokenPropertiesDialog(Token token, ZoneRenderer zr) {
     if (token != null && zr != null) {
-      if (MapTool.getPlayer().isGM() || !MapTool.getServerPolicy().isTokenEditorLocked()) {
+      MapToolClient client = MapTool.getClient();
+      if (client.getPlayer().isGM() || !client.getServerPolicy().isTokenEditorLocked()) {
         EditTokenDialog dialog = MapTool.getFrame().getTokenPropertiesDialog();
         dialog.showDialog(token);
         if (dialog.isTokenSaved()) {
           // Checks if the map still exists. Fixes #1646.
           if (getZoneRenderers().contains(zr) && zr.getZone().getToken(token.getId()) != null) {
-            MapTool.serverCommand().editToken(zr.getZone().getId(), token);
+            client.getServerCommand().editToken(zr.getZone().getId(), token);
           }
         }
       }
@@ -2000,7 +2001,8 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
   }
 
   public boolean confirmClose() {
-    return !MapTool.isHostingServer() || MapTool.confirm("msg.confirm.hostingDisconnect");
+    return !MapTool.getClient().isHostingServer()
+        || MapTool.confirm("msg.confirm.hostingDisconnect");
   }
 
   public void closingMaintenance() {

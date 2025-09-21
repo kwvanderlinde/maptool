@@ -31,6 +31,7 @@ import javax.swing.event.ListSelectionListener;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.ui.theme.Icons;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
@@ -425,11 +426,17 @@ public class InitiativePanel extends JPanel
    * @return The value <code>true</code> if this player has permission for restricted actions.
    */
   public boolean hasOwnerPermission(Token token) {
-    if (token == null) return false;
-    if (hasGMPermission()) return true;
+    if (token == null) {
+      return false;
+    }
+    if (hasGMPermission()) {
+      return true;
+    }
+
+    MapToolClient client = MapTool.getClient();
     if (ownerPermissions
-        && (!MapTool.getServerPolicy().useStrictTokenManagement()
-            || token.isOwner(MapTool.getPlayer().getName()))) return true;
+        && (!client.getServerPolicy().useStrictTokenManagement()
+            || token.isOwner(client.getPlayer().getName()))) return true;
     return false;
   }
 
@@ -440,7 +447,8 @@ public class InitiativePanel extends JPanel
    * @return The value <code>true</code> if this player has permission for all actions.
    */
   public boolean hasGMPermission() {
-    return (MapTool.getPlayer() == null || MapTool.getPlayer().isGM());
+    MapToolClient client = MapTool.getClient();
+    return (client.getPlayer() == null || client.getPlayer().isGM());
   }
 
   /**

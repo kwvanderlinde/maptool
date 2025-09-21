@@ -167,8 +167,10 @@ public class LibraryManager {
   public boolean registerAddOnLibrary(AddOnLibrary addOn) {
     try {
       addOnLibraryManager.registerLibrary(addOn);
-      if (MapTool.isHostingServer()) {
-        MapTool.serverCommand().addAddOnLibrary(List.of(new TransferableAddOnLibrary(addOn)));
+      if (MapTool.getClient().isHostingServer()) {
+        MapTool.getClient()
+            .getServerCommand()
+            .addAddOnLibrary(List.of(new TransferableAddOnLibrary(addOn)));
       }
     } catch (ExecutionException | InterruptedException | IllegalStateException e) {
       log.error("Error registering add-on in library", e);
@@ -184,8 +186,8 @@ public class LibraryManager {
    */
   public void deregisterAddOnLibrary(String namespace) {
     addOnLibraryManager.deregisterLibrary(namespace);
-    if (MapTool.isHostingServer()) {
-      MapTool.serverCommand().removeAddOnLibrary(List.of(namespace));
+    if (MapTool.getClient().isHostingServer()) {
+      MapTool.getClient().getServerCommand().removeAddOnLibrary(List.of(namespace));
     }
   }
 
@@ -198,8 +200,9 @@ public class LibraryManager {
     try {
       addOnLibraryManager.deregisterLibrary(addOnLibrary.getNamespace().get());
       addOnLibraryManager.registerLibrary(addOnLibrary);
-      if (MapTool.isHostingServer()) {
-        MapTool.serverCommand()
+      if (MapTool.getClient().isHostingServer()) {
+        MapTool.getClient()
+            .getServerCommand()
             .addAddOnLibrary(List.of(new TransferableAddOnLibrary(addOnLibrary)));
       }
     } catch (InterruptedException | ExecutionException e) {
@@ -313,8 +316,8 @@ public class LibraryManager {
   /** de-registers all the add-on in libraries. */
   public void deregisterAddOnLibraries() {
     addOnLibraryManager.removeAllLibraries();
-    if (MapTool.isHostingServer()) {
-      MapTool.serverCommand().removeAllAddOnLibraries();
+    if (MapTool.getClient().isHostingServer()) {
+      MapTool.getClient().getServerCommand().removeAllAddOnLibraries();
     }
   }
 

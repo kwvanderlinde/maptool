@@ -28,6 +28,7 @@ import java.util.List;
 import javax.swing.JLabel;
 import net.rptools.lib.OsDetection;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.ui.macrobuttons.MacroButtonHotKeyManager;
 import net.rptools.maptool.client.ui.macrobuttons.buttons.MacroButton;
 import net.rptools.maptool.client.ui.macrobuttons.buttons.MacroButtonPrefs;
@@ -132,18 +133,19 @@ public class ButtonGroup extends AbstractButtonGroup {
 
       // stops players from moving macros into/from the Campaign/GM panels
       // debounce first, ignore moves to the same group in the same panel
+      MapToolClient client = MapTool.getClient();
       if (tempProperties.getGroup().equals(getMacroGroup()) && data.panelClass.equals(panelClass)) {
         event.dropComplete(false);
-      } else if (!MapTool.getPlayer().isGM()
+      } else if (!client.getPlayer().isGM()
           && (panelClass.equals("CampaignPanel")
               || panelClass.equals("GmPanel")
               || (data.panelClass.equals("CampaignPanel")
-                  && !MapTool.getServerPolicy().playersReceiveCampaignMacros())
+                  && !client.getServerPolicy().playersReceiveCampaignMacros())
               || data.panelClass.equals("GmPanel"))) {
         MapTool.showError(
             I18N.getText(
                 "macro.function.MacroFunctions.noPermMove",
-                MapTool.getPlayer().getName(),
+                client.getPlayer().getName(),
                 tempProperties.getLabel(),
                 tempProperties.getIndex()));
         event.dropComplete(false);
@@ -164,7 +166,7 @@ public class ButtonGroup extends AbstractButtonGroup {
           if (!tempProperties.isDuplicateMacro("CampaignPanel", null)) {
             deleteOriginalMacroIfMove(event, oldMacroProps, data);
             new MacroButtonProperties(
-                panelClass, MapTool.getCampaign().getMacroButtonNextIndex(), tempProperties);
+                panelClass, client.getCampaign().getMacroButtonNextIndex(), tempProperties);
           }
         } else if (panelClass.equals("GmPanel")) {
           tempProperties.setGroup(
@@ -173,7 +175,7 @@ public class ButtonGroup extends AbstractButtonGroup {
           if (!tempProperties.isDuplicateMacro("GmPanel", null)) {
             deleteOriginalMacroIfMove(event, oldMacroProps, data);
             new MacroButtonProperties(
-                panelClass, MapTool.getCampaign().getGmMacroButtonNextIndex(), tempProperties);
+                panelClass, client.getCampaign().getGmMacroButtonNextIndex(), tempProperties);
           }
         } else if (panelClass.equals("SelectionPanel")) {
           if (getArea() != null) {

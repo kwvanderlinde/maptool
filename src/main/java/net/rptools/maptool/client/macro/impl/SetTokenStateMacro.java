@@ -17,6 +17,7 @@ package net.rptools.maptool.client.macro.impl;
 import java.util.HashSet;
 import java.util.Set;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.macro.Macro;
 import net.rptools.maptool.client.macro.MacroContext;
@@ -63,6 +64,8 @@ public class SetTokenStateMacro implements Macro {
     }
     String[] args = aMacro.trim().split("\\s");
 
+    MapToolClient client = MapTool.getClient();
+
     // If we don't have 2 or more arguments then try to apply states to the selected tokens
     if (args.length < 2) {
       selectedTokenSet = MapTool.getFrame().getCurrentZoneRenderer().getSelectedTokenSet();
@@ -80,8 +83,9 @@ public class SetTokenStateMacro implements Macro {
       // names
       // and trying to change state figuring out that there is a token there because they are
       // getting a different error message (benefit of the doubt only goes so far ;) )
-      if (!MapTool.getPlayer().isGM()
-          && (!zone.isTokenVisible(token) || !token.getLayer().isVisibleToPlayers())) {
+      if (!client.getPlayer().isGM()
+          && (!zone.isTokenVisible(token, client.getServerPolicy())
+              || !token.getLayer().isVisibleToPlayers())) {
         token = null;
       }
       if (token
@@ -115,7 +119,7 @@ public class SetTokenStateMacro implements Macro {
       return;
     }
     // Set the state for all the tokens
-    if (MapTool.getCampaign().getTokenStatesMap().containsKey(state)) {
+    if (client.getCampaign().getTokenStatesMap().containsKey(state)) {
       for (GUID tokenId : selectedTokenSet) {
         Token tok = MapTool.getFrame().getCurrentZoneRenderer().getZone().getToken(tokenId);
         handleBooleanValue(tok, state, value);

@@ -155,6 +155,32 @@ public class MapToolClient {
   }
 
   /**
+   * @return The locally hosted server, or null if this is a player client connected to a remote
+   *     server.
+   */
+  public @Nullable MapToolServer getLocalServer() {
+    return localServer;
+  }
+
+  public boolean isLocalServer() {
+    return localServer != null;
+  }
+
+  /**
+   * @return {@code true} if hosting a personal server.
+   */
+  public boolean isPersonalServer() {
+    return localServer != null && localServer.isPersonalServer();
+  }
+
+  /**
+   * @return {@code true} if hosting a non-personal server.
+   */
+  public boolean isHostingServer() {
+    return localServer != null && !localServer.isPersonalServer();
+  }
+
+  /**
    * Transition from any state except {@code newState} to {@code newState}.
    *
    * @param newState The new state to set.
@@ -234,6 +260,7 @@ public class MapToolClient {
     return serverCommand;
   }
 
+  // TODO Mark as non-null
   public LocalPlayer getPlayer() {
     return player;
   }

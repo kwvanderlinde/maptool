@@ -17,6 +17,7 @@ package net.rptools.maptool.client.ui.macrobuttons.panels;
 import java.util.ArrayList;
 import java.util.List;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.ui.macrobuttons.buttongroups.AbstractButtonGroup;
 import net.rptools.maptool.model.MacroButtonProperties;
 
@@ -29,10 +30,11 @@ public class CampaignPanel extends AbstractMacroPanel {
   }
 
   private void init() {
-    if (MapTool.getPlayer() == null
-        || MapTool.getPlayer().isGM()
-        || MapTool.getServerPolicy().playersReceiveCampaignMacros()) {
-      addArea(MapTool.getCampaign().getMacroButtonPropertiesArray(), "");
+    MapToolClient client = MapTool.getClient();
+    if (client.getPlayer() == null
+        || client.getPlayer().isGM()
+        || client.getServerPolicy().playersReceiveCampaignMacros()) {
+      addArea(client.getCampaign().getMacroButtonPropertiesArray(), "");
     }
   }
 

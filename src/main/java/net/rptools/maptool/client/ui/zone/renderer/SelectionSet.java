@@ -161,8 +161,11 @@ public class SelectionSet {
         renderPathTask.cancel(true);
       }
 
+      // TODO SelectionSet should ultimately be associated with a single fixed campaign. So this
+      //  should be injected in the constructor.
       boolean restrictMovement =
-          MapTool.getServerPolicy().isUsingAstarPathfinding() && token.getLayer().supportsWalker();
+          MapTool.getClient().getServerPolicy().isUsingAstarPathfinding()
+              && token.getLayer().supportsWalker();
 
       Set<Token.TerrainModifierOperation> terrainModifiersIgnored =
           token.getTerrainModifiersIgnored();

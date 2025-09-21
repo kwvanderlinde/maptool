@@ -29,6 +29,7 @@ public class AI_UseVblTool extends DefaultTool {
 
   @Override
   public void actionPerformed(ActionEvent e) {
+    // TODO Do not update the preference, only the current campaign's settings.
     AppPreferences.pathfindingBlockedByVbl.set(isSelected());
 
     var client = MapTool.getClient();
@@ -40,8 +41,10 @@ public class AI_UseVblTool extends DefaultTool {
 
   @Override
   public void updateButtonState() {
-    if (MapTool.getServerPolicy() != null) {
-      setSelected(MapTool.getServerPolicy().getVblBlocksMove());
+    var client = MapTool.getClient();
+    var policy = client.getServerPolicy();
+    if (policy != null) {
+      setSelected(policy.getVblBlocksMove());
     }
   }
 
