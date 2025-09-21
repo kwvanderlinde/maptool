@@ -15,6 +15,7 @@
 package net.rptools.maptool.client.ui.preferencesdialog;
 
 import javax.swing.*;
+import net.rptools.maptool.client.walker.WalkerMetric;
 
 /**
  * The PreferencesDialogView class represents the view for a preferences dialog. It provides methods
@@ -27,6 +28,8 @@ public class PreferencesDialogView {
    * instance of JPanel and serves as the main content panel for the dialog.
    */
   private JPanel mainPanel;
+
+  private JComboBox<WalkerMetric> gameplayMovementMetric;
 
   /**
    * Returns the root component of the preferences dialog view.

@@ -23,6 +23,7 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.GridFactory;
 import net.rptools.maptool.model.Label;
 import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.server.ServerPolicy;
 import net.rptools.maptool.util.preferences.Preference;
 import net.rptools.maptool.util.preferences.PreferenceStore;
 
@@ -186,13 +187,6 @@ public class AppPreferences {
           "Preferences.label.chat.type.background",
           "Preferences.label.chat.type.background.tooltip",
           true);
-
-  public static final Preference<Boolean> useToolTipForInlineRoll =
-      store.defineBoolean(
-          "toolTipInlineRolls",
-          "Preferences.label.chat.rolls",
-          "Preferences.label.chat.rolls.tooltip",
-          false);
 
   public static final Preference<Boolean> suppressToolTipsForMacroLinks =
       store.defineBoolean(
@@ -670,11 +664,124 @@ public class AppPreferences {
           .setLabel("Preferences.label.client.default.username")
           .setTooltip("Preferences.label.client.default.username.tooltip");
 
+  // region Gameplay preferences
+  // TODO Singular preference containing the entire ServerPolicy (as JSON?)
+
+  public static final Preference<Boolean> strictTokenOwnership =
+      store
+          .defineBoolean("strictTokenOwnership", false)
+          .setLabel("ServerDialog.option.ownership")
+          .setTooltip("ServerDialog.option.ownership.tooltip");
+
+  public static final Preference<Boolean> gmRevealsVisionForUnownedTokens =
+      store
+          .defineBoolean("gmRevealsVisionForUnownedTokens", false)
+          .setLabel("ServerDialog.option.reveal.gm")
+          .setTooltip("ServerDialog.option.reveal.gm.tooltip");
+
+  public static final Preference<Boolean> playersCanRevealVision =
+      store
+          .defineBoolean("playersCanRevealVision", false)
+          .setLabel("ServerDialog.option.reveal.player")
+          .setTooltip("ServerDialog.option.reveal.player.tooltip");
+
+  public static final Preference<Boolean> autoRevealOnMovement =
+      store
+          .defineBoolean("autoRevealOnMovement", false)
+          .setLabel("ServerDialog.option.reveal.move")
+          .setTooltip("ServerDialog.option.reveal.move.tooltip");
+
+  public static final Preference<Boolean> useIndividualViews =
+      store
+          .defineBoolean("useIndividualViews", false)
+          .setLabel("ServerDialog.option.vision.individual")
+          .setTooltip("ServerDialog.option.vision.individual.tooltip");
+
+  public static final Preference<Boolean> useIndividualFow =
+      store
+          .defineBoolean("useIndividualFow", false)
+          .setLabel("ServerDialog.option.fow.individual")
+          .setTooltip("ServerDialog.option.fow.individual.tooltip");
+
+  public static final Preference<Boolean> allowsPlayersToImpersonate =
+      store
+          .defineBoolean("allowsPlayersToImpersonate", false)
+          .setLabel("ServerDialog.option.impersonate")
+          .setTooltip("ServerDialog.option.impersonate.tooltip");
+
+  public static final Preference<Boolean> playersReceiveCampaignMacros =
+      store
+          .defineBoolean("playersReceiveCampaignMacros", false)
+          .setLabel("ServerDialog.option.macros")
+          .setTooltip("ServerDialog.option.macros.tooltip");
+
+  // TODO Already in use.
+  public static final Preference<Boolean> useToolTipForInlineRoll =
+      store.defineBoolean(
+          "toolTipInlineRolls",
+          "ServerDialog.option.rolls",
+          "ServerDialog.option.rolls.tooltip",
+          false);
+
+  public static final Preference<Boolean> hideMapSelectUi =
+      store
+          .defineBoolean("hideMapSelectUi", false)
+          .setLabel("ServerDialog.option.hidemapselectui")
+          .setTooltip("ServerDialog.option.hidemapselectui.tooltip");
+
+  // TODO Don't use action.* I18N as they can include mnemonics.
+
+  public static final Preference<Boolean> lockPlayerTokenEditor =
+      store
+          .defineBoolean("lockPlayerTokenEditor", false)
+          .setLabel("action.toggleTokenEditorLock")
+          .setTooltip("action.toggleTokenEditorLock.tooltip");
+
+  public static final Preference<Boolean> lockPlayerMovement =
+      store
+          .defineBoolean("lockPlayerMovement", false)
+          .setLabel("action.toggleMovementLock")
+          .setTooltip("action.toggleMovementLock.tooltip");
+
+  public static final Preference<Boolean> hidePlayerLibrary =
+      store
+          .defineBoolean("hidePlayerLibrary", false)
+          .setLabel("ServerDialog.option.disablePlayerLibrary")
+          .setTooltip("ServerDialog.option.disablePlayerLibrary.tooltip");
+
   public static final Preference<WalkerMetric> movementMetric =
       store
           .defineEnum(WalkerMetric.class, "movementMetric", WalkerMetric.ONE_TWO_ONE)
           .setLabel("Preferences.label.maps.metric")
           .setTooltip("Preferences.label.maps.metric.tooltip");
+
+  public static ServerPolicy getServerPolicy() {
+    var result = new ServerPolicy();
+    result.setUseStrictTokenManagement(strictTokenOwnership.get());
+    result.setIsMovementLocked(lockPlayerMovement.get());
+    result.setIsTokenEditorLocked(lockPlayerTokenEditor.get());
+    result.setPlayersCanRevealVision(playersCanRevealVision.get());
+    result.setGmRevealsVisionForUnownedTokens(gmRevealsVisionForUnownedTokens.get());
+    result.setUseIndividualViews(useIndividualViews.get());
+    result.setUseIndividualFOW(useIndividualFow.get());
+    result.setRestrictedImpersonation(!allowsPlayersToImpersonate.get());
+    result.setPlayersReceiveCampaignMacros(playersReceiveCampaignMacros.get());
+    result.setUseToolTipsForDefaultRollFormat(useToolTipForInlineRoll.get());
+    result.setAutoRevealOnMovement(autoRevealOnMovement.get());
+    // TODO This is an existing preference that I think may be overused. It is used for personal
+    //  servers, but otherwise controls all of player and GM auto-reveal, I think.
+    // autoRevealVisionOnGMMovement;
+    result.setMovementMetric(movementMetric.get());
+    result.setHiddenMapSelectUI(hideMapSelectUi.get());
+    result.setDisablePlayerAssetPanel(hidePlayerLibrary.get());
+    // TODO These should also be part of the gameplay preferences, including in the Campaign. Their
+    //  existence in the toolbar can also live on, but they are still gameplay settings.
+    result.setUsingAstarPathfinding(pathfindingEnabled.get());
+    result.setVblBlocksMove(pathfindingBlockedByVbl.get());
+    return result;
+  }
+
+  // endregion
 
   public static final Preference.Numeric<Integer> frameRateCap =
       (Preference.Numeric<Integer>)

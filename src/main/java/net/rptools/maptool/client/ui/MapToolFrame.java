@@ -297,7 +297,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
                 return;
               }
               ZoneRenderer zr = getCurrentZoneRenderer();
-              AppActions.deleteTokens(zr.getZone(), zr.getSelectedTokenSet());
+              AppActions.deleteTokens(MapTool.getClient(), zr.getZone(), zr.getSelectedTokenSet());
             });
       }
     }

@@ -27,31 +27,39 @@ import net.rptools.maptool.client.walker.WalkerMetric;
 import net.rptools.maptool.server.proto.ServerPolicyDto;
 import net.rptools.maptool.server.proto.WalkerMetricDto;
 
+// TODO I would much prefer if this were immutable.
+// TODO Rename to something like GameplaySettings.
 public class ServerPolicy {
-  private boolean strictTokenMovement;
-  private boolean isMovementLocked;
-  private boolean isTokenEditorLocked;
-  private boolean playersCanRevealVision;
-  private boolean gmRevealsVisionForUnownedTokens;
-  private boolean useIndividualViews;
-  private boolean restrictedImpersonation;
-  private boolean playersReceiveCampaignMacros;
-  private boolean useToolTipsForDefaultRollFormat;
-  private boolean useIndividualFOW;
-  private boolean isAutoRevealOnMovement;
-  private boolean includeOwnedNPCs = true; // Include Owned NPC Tokens in FoW views
-  private WalkerMetric movementMetric;
-  private boolean hidemapselectui;
-  private boolean disablePlayerAssetPanel;
+  private boolean strictTokenMovement = false;
+  private boolean isMovementLocked = false;
+  private boolean isTokenEditorLocked = false;
+  private boolean playersCanRevealVision = false;
+  private boolean gmRevealsVisionForUnownedTokens = false;
+  private boolean useIndividualViews = false;
+  private boolean restrictedImpersonation = false;
+  private boolean playersReceiveCampaignMacros = false;
+  private boolean useToolTipsForDefaultRollFormat = false;
+  private boolean useIndividualFOW = false;
+  private boolean isAutoRevealOnMovement = false;
+  private boolean includeOwnedNPCs = true; // Include Owned NPC Tokens in FoW views. Unused
+  private WalkerMetric movementMetric = WalkerMetric.ONE_TWO_ONE;
+  private boolean hidemapselectui = false;
+  private boolean disablePlayerAssetPanel = false;
 
-  private boolean useAstarPathfinding = AppPreferences.pathfindingEnabled.get();
-  private boolean vblBlocksMove = AppPreferences.pathfindingBlockedByVbl.get();
+  private boolean useAstarPathfinding = true;
+  private boolean vblBlocksMove = true;
 
-  public ServerPolicy() {
+  public ServerPolicy() {}
+
+  public static ServerPolicy makePreferential() {
+    var policy = new ServerPolicy();
+    policy.useAstarPathfinding = AppPreferences.pathfindingEnabled.get();
+    policy.vblBlocksMove = AppPreferences.pathfindingBlockedByVbl.get();
     // Default tool tip usage for inline rolls to user preferences.
-    useToolTipsForDefaultRollFormat = AppPreferences.useToolTipForInlineRoll.get();
+    policy.useToolTipsForDefaultRollFormat = AppPreferences.useToolTipForInlineRoll.get();
     // Default movement metric from preferences
-    movementMetric = AppPreferences.movementMetric.get();
+    policy.movementMetric = AppPreferences.movementMetric.get();
+    return policy;
   }
 
   public ServerPolicy(ServerPolicy other) {
@@ -208,6 +216,8 @@ public class ServerPolicy {
   }
 
   public boolean isUseIndividualFOW() {
+    // TODO Only return true if individual views is true. This used to be done when starting a
+    //  server in AppActions.START_SERVER.
     return useIndividualFOW;
   }
 
@@ -238,6 +248,7 @@ public class ServerPolicy {
   }
 
   public boolean getVblBlocksMove() {
+    // TODO Only return true if useAstarPathfinding is true.
     return vblBlocksMove;
   }
 

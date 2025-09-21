@@ -134,6 +134,7 @@ message CampaignPropertiesDto {
   repeated SightTypeDto sight_types = 13;
   map<string, StatSheetPropertiesDto> token_type_stat_sheet = 14;
   google.protobuf.StringValue default_token_property_type = 15;
+  ServerPolicyDto server_policy = 16;
 }
 
 message SightTypeDto {

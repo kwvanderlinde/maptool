@@ -336,7 +336,7 @@ public class ClientHandshake implements Handshake<Void>, MessageHandler {
 
   private void handle(ConnectionSuccessfulMsg connectionSuccessfulMsg) throws IOException {
     var policy = ServerPolicy.fromDto(connectionSuccessfulMsg.getServerPolicyDto());
-    client.setServerPolicy(policy);
+    client.getCampaign().setServerPolicy(policy);
     client
         .getPlayer()
         .setRole(connectionSuccessfulMsg.getRoleDto() == RoleDto.GM ? Role.GM : Role.PLAYER);

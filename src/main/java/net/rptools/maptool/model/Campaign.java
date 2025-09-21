@@ -35,6 +35,7 @@ import net.rptools.maptool.client.ui.token.MultipleImageBarTokenOverlay;
 import net.rptools.maptool.client.ui.token.SingleImageBarTokenOverlay;
 import net.rptools.maptool.client.ui.token.TwoImageBarTokenOverlay;
 import net.rptools.maptool.model.sheet.stats.StatSheetProperties;
+import net.rptools.maptool.server.ServerPolicy;
 import net.rptools.maptool.server.proto.CampaignDto;
 
 /**
@@ -689,6 +690,14 @@ public class Campaign implements Serializable {
    */
   public Map<String, String> getCharacterSheets() {
     return getCampaignProperties().getCharacterSheets();
+  }
+
+  public ServerPolicy getServerPolicy() {
+    return campaignProperties.getServerPolicy();
+  }
+
+  public void setServerPolicy(ServerPolicy serverPolicy) {
+    campaignProperties.setServerPolicy(serverPolicy);
   }
 
   public ExportDialog getExportDialog() {

@@ -35,7 +35,6 @@ public class AI_UseVblTool extends DefaultTool {
     var client = MapTool.getClient();
     var policy = client.getServerPolicy();
     policy.setVblBlocksMove(isSelected());
-    client.setServerPolicy(policy);
     client.getServerCommand().setServerPolicy(policy);
   }
 

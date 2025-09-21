@@ -502,9 +502,14 @@ public class ServerCommandClientImpl implements ServerCommand {
     makeServerCall(Message.newBuilder().setEnforceZoneMsg(msg).build());
   }
 
+  @Override
   public void setServerPolicy(ServerPolicy policy) {
     var msg = SetServerPolicyMsg.newBuilder().setPolicy(policy.toDto());
+    client.getCampaign().setServerPolicy(policy);
     makeServerCall(Message.newBuilder().setSetServerPolicyMsg(msg).build());
+
+    // TODO Should we do this after sending every message perhaps?
+    MapTool.getFrame().getToolbox().updateTools();
   }
 
   public void updateInitiative(InitiativeList list, Boolean ownerPermission) {

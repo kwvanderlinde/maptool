@@ -55,6 +55,7 @@ import net.rptools.maptool.util.SightSyntax;
 import org.apache.commons.text.*;
 
 public class CampaignPropertiesDialog extends AbeillePanel<CampaignPropertiesDialogView> {
+  private final CampaignPropertiesDialogView view;
 
   private final TokenPropertiesManagementPanel tokenPropertiesPanel =
       new TokenPropertiesManagementPanel();
@@ -92,7 +93,13 @@ public class CampaignPropertiesDialog extends AbeillePanel<CampaignPropertiesDia
           .setCloseOperation(WindowConstants.HIDE_ON_CLOSE);
 
   public CampaignPropertiesDialog() {
-    super(new CampaignPropertiesDialogView().getRootComponent());
+    this(new CampaignPropertiesDialogView());
+  }
+
+  private CampaignPropertiesDialog(CampaignPropertiesDialogView view) {
+    super(view.getRootComponent());
+    this.view = view;
+
     init();
     dialogFactory
         .setContent(this)
@@ -208,7 +215,6 @@ public class CampaignPropertiesDialog extends AbeillePanel<CampaignPropertiesDia
   }
 
   private void copyCampaignToUI(CampaignProperties campaignProperties) {
-
     tokenPropertiesPanel.copyCampaignToUI(campaignProperties);
     updateRepositoryList(campaignProperties);
 

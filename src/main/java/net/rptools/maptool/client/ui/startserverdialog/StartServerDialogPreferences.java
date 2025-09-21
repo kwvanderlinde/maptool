@@ -26,6 +26,8 @@ public class StartServerDialogPreferences {
   private static Preferences prefs =
       Preferences.userRoot().node(AppConstants.APP_NAME + "/prefs/server");
 
+  // TODO Remove gameplay settings.
+
   private static final String KEY_USERNAME = "name";
   private static final String KEY_ROLE = "playerRole";
   private static final String KEY_PORT = "port";

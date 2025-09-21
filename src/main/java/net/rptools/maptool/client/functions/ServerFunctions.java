@@ -58,7 +58,6 @@ public class ServerFunctions extends AbstractFunction {
           if (ml.intValue() == 0 || ml.intValue() == 1) {
             ServerPolicy policy = client.getServerPolicy();
             policy.setIsMovementLocked(ml.intValue() != 0);
-            client.setServerPolicy(policy);
             client.getServerCommand().setServerPolicy(policy);
           } else {
             throw new ParserException(

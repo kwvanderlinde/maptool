@@ -35,11 +35,7 @@ public class AI_Tool extends DefaultTool {
     var client = MapTool.getClient();
     var policy = client.getServerPolicy();
     policy.setUsingAstarPathfinding(isSelected());
-    client.setServerPolicy(policy);
     client.getServerCommand().setServerPolicy(policy);
-
-    // Trigger AI_UseVblTool's isAvailable
-    MapTool.getFrame().getToolbox().updateTools();
   }
 
   public void updateButtonState() {

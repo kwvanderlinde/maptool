@@ -495,7 +495,7 @@ public abstract class AbstractTokenPopupMenu extends JPopupMenu {
     }
 
     public void actionPerformed(ActionEvent e) {
-      AppActions.cutTokens(renderer.getZone(), selectedTokenSet);
+      AppActions.cutTokens(MapTool.getClient(), renderer.getZone(), selectedTokenSet);
       AppActions.updateActions();
     }
   }
@@ -986,7 +986,7 @@ public abstract class AbstractTokenPopupMenu extends JPopupMenu {
       if (!MapTool.confirmTokenDelete()) {
         return;
       }
-      AppActions.deleteTokens(renderer.getZone(), selectedTokenSet);
+      AppActions.deleteTokens(MapTool.getClient(), renderer.getZone(), selectedTokenSet);
     }
   }
 

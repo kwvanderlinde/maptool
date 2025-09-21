@@ -90,7 +90,6 @@ public class MapToolServer {
   private final boolean useUPnP;
   @Nullable private ServiceAnnouncer announcer;
   private Campaign campaign;
-  private ServerPolicy policy;
   private HeartbeatThread heartbeatThread;
   private final DisconnectHandler onConnectionDisconnected;
   private final ServerObserver serverObserver;
@@ -102,12 +101,10 @@ public class MapToolServer {
       Campaign campaign,
       @Nullable ServerConfig config,
       boolean useUPnP,
-      ServerPolicy policy,
       ServerSidePlayerDatabase playerDb) {
     this.serviceIdentifier = id;
     this.config = config;
     this.useUPnP = useUPnP;
-    this.policy = new ServerPolicy(policy);
     this.playerDatabase = playerDb;
 
     server = ConnectionFactory.getInstance().createServer(this.config);
@@ -342,14 +339,6 @@ public class MapToolServer {
 
   public Campaign getCampaign() {
     return campaign;
-  }
-
-  public ServerPolicy getPolicy() {
-    return new ServerPolicy(policy);
-  }
-
-  public void updateServerPolicy(ServerPolicy policy) {
-    this.policy = new ServerPolicy(policy);
   }
 
   public void stop() {

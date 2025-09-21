@@ -52,6 +52,7 @@ import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.sheet.stats.StatSheetLocation;
 import net.rptools.maptool.model.sheet.stats.StatSheetManager;
 import net.rptools.maptool.model.sheet.stats.StatSheetProperties;
+import net.rptools.maptool.server.ServerPolicy;
 import net.rptools.maptool.server.proto.CampaignPropertiesDto;
 import net.rptools.maptool.server.proto.LightSourceListDto;
 import net.rptools.maptool.server.proto.TokenPropertyListDto;
@@ -112,6 +113,13 @@ public class CampaignProperties implements Serializable {
   /** Whether the Next/Previous buttons are disabled on the Initiative Panel */
   private boolean initiativePanelButtonsDisabled = false;
 
+  // TODO Treat this seriously. Add it to DTO, and use preferences to supply defaults in
+  //  readResolve() and constructor.
+  // TODO Serialize it (not transient).
+  // TODO We need a campaign factory that can inject things like this. Defaults should be basic as
+  //  basic can be.
+  private transient ServerPolicy serverPolicy = ServerPolicy.makePreferential();
+
   /**
    * Returns the default property type for tokens.
    *
@@ -130,7 +138,9 @@ public class CampaignProperties implements Serializable {
     defaultTokenPropertyType = def;
   }
 
-  public CampaignProperties() {}
+  public CampaignProperties() {
+    final var i = 0;
+  }
 
   public CampaignProperties(CampaignProperties properties) {
     for (Entry<String, List<TokenProperty>> entry : properties.tokenTypeMap.entrySet()) {
@@ -166,6 +176,8 @@ public class CampaignProperties implements Serializable {
       characterSheets.put(type, properties.characterSheets.get(type));
     }
     defaultTokenPropertyType = properties.defaultTokenPropertyType;
+
+    serverPolicy = new ServerPolicy(properties.serverPolicy);
   }
 
   public void mergeInto(CampaignProperties properties) {
@@ -186,6 +198,7 @@ public class CampaignProperties implements Serializable {
     properties.tokenStates.putAll(tokenStates);
     properties.tokenBars.putAll(tokenBars);
     properties.defaultTokenPropertyType = defaultTokenPropertyType;
+    properties.setServerPolicy(serverPolicy);
   }
 
   public Map<String, List<TokenProperty>> getTokenTypeMap() {
@@ -546,8 +559,20 @@ public class CampaignProperties implements Serializable {
     this.characterSheets.putAll(characterSheets);
   }
 
+  public ServerPolicy getServerPolicy() {
+    return new ServerPolicy(serverPolicy);
+  }
+
+  public void setServerPolicy(ServerPolicy serverPolicy) {
+    this.serverPolicy = new ServerPolicy(serverPolicy);
+  }
+
   @Serial
   protected Object readResolve() {
+    // TODO This should actually load the server policy from all preferences, not just the
+    //  pathfinding preferences.
+    serverPolicy = ServerPolicy.makePreferential();
+
     if (tokenTypeMap == null) {
       tokenTypeMap = new HashMap<>();
     }
@@ -682,6 +707,8 @@ public class CampaignProperties implements Serializable {
       props.defaultTokenPropertyType = FALLBACK_DEFAULT_TOKEN_PROPERTY_TYPE;
     }
 
+    props.serverPolicy = ServerPolicy.fromDto(dto.getServerPolicy());
+
     return props;
   }
 
@@ -731,6 +758,7 @@ public class CampaignProperties implements Serializable {
         lookupTableMap.values().stream().map(LookupTable::toDto).collect(Collectors.toList()));
     dto.addAllSightTypes(sights.stream().map(SightType::toDto).collect(Collectors.toList()));
     dto.setDefaultTokenPropertyType(StringValue.of(defaultTokenPropertyType));
+    dto.setServerPolicy(serverPolicy.toDto());
     return dto.build();
   }
 }

@@ -75,7 +75,6 @@ public class MapToolClient {
 
   private final MapToolConnection conn;
   private Campaign campaign;
-  private ServerPolicy serverPolicy;
   private final ServerCommandClientImpl serverCommand;
   private State currentState = State.New;
 
@@ -86,7 +85,6 @@ public class MapToolClient {
       Campaign campaign,
       LocalPlayer player,
       Connection connection,
-      ServerPolicy policy,
       PlayerDatabase playerDatabase,
       PublicPrivateKeyStore keyStore) {
     this.localServer = localServer;
@@ -94,7 +92,6 @@ public class MapToolClient {
     this.player = player;
     this.playerDatabase = playerDatabase;
     this.playerList = new ArrayList<>();
-    this.serverPolicy = new ServerPolicy(policy);
 
     ClientHandshake handshake = null;
     if (localServer == null) {
@@ -128,14 +125,7 @@ public class MapToolClient {
       LocalPlayer player,
       Connection connection,
       PublicPrivateKeyStore keyStore) {
-    this(
-        localServer,
-        campaign,
-        player,
-        connection,
-        localServer.getPolicy(),
-        localServer.getPlayerDatabase(),
-        keyStore);
+    this(localServer, campaign, player, connection, localServer.getPlayerDatabase(), keyStore);
   }
 
   /**
@@ -149,7 +139,6 @@ public class MapToolClient {
         new Campaign(),
         player,
         connection,
-        new ServerPolicy(),
         PlayerDatabaseFactory.getLocalPlayerDatabase(player),
         keyStore);
   }
@@ -329,7 +318,7 @@ public class MapToolClient {
    * @return A copy of the client's server policy.
    */
   public ServerPolicy getServerPolicy() {
-    return new ServerPolicy(serverPolicy);
+    return campaign.getServerPolicy();
   }
 
   /**
@@ -342,7 +331,7 @@ public class MapToolClient {
    * @param serverPolicy The new policy to set.
    */
   public void setServerPolicy(ServerPolicy serverPolicy) {
-    this.serverPolicy = new ServerPolicy(serverPolicy);
+    this.campaign.setServerPolicy(serverPolicy);
   }
 
   public Campaign getCampaign() {

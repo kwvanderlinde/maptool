@@ -599,7 +599,7 @@ public class AppActions {
         @Override
         protected void executeAction(@Nonnull ZoneRenderer renderer) {
           Set<GUID> selectedSet = renderer.getSelectedTokenSet();
-          cutTokens(renderer.getZone(), selectedSet);
+          cutTokens(getClient(), renderer.getZone(), selectedSet);
         }
       };
 
@@ -612,11 +612,12 @@ public class AppActions {
    *
    * <p>If any tokens<i>are</i> deleted, then the selection set for the zone is cleared.
    *
+   * @param client The client owning the zone and tokens.
    * @param zone the {@link Zone} the tokens belong to.
    * @param tokenSet a {code Set} containing ght ID's of the tokens to cut.
    */
-  public static void cutTokens(Zone zone, Set<GUID> tokenSet) {
-    cutOrDeleteTokens(true, zone, tokenSet);
+  public static void cutTokens(MapToolClient client, Zone zone, Set<GUID> tokenSet) {
+    cutOrDeleteTokens(client, true, zone, tokenSet);
   }
 
   /**
@@ -628,11 +629,12 @@ public class AppActions {
    *
    * <p>If any tokens <i>are</i> deleted, then the selection set for the zone is cleared.
    *
+   * @param client The client owning the zone and tokens.
    * @param zone the {@link Zone} the tokens belong to.
    * @param tokenSet a {code Set} containing ght ID's of the tokens to cut.
    */
-  public static void deleteTokens(Zone zone, Set<GUID> tokenSet) {
-    cutOrDeleteTokens(false, zone, tokenSet);
+  public static void deleteTokens(MapToolClient client, Zone zone, Set<GUID> tokenSet) {
+    cutOrDeleteTokens(client, false, zone, tokenSet);
   }
 
   /**
@@ -648,7 +650,8 @@ public class AppActions {
    * @param zone the {@link Zone} the tokens belong to.
    * @param tokenSet a {code Set} containing ght ID's of the tokens to cut.
    */
-  public static void cutOrDeleteTokens(Boolean copy, Zone zone, Set<GUID> tokenSet) {
+  public static void cutOrDeleteTokens(
+      MapToolClient client, Boolean copy, Zone zone, Set<GUID> tokenSet) {
     // Only cut if some tokens are selected. Don't want to accidentally
     // lose what might already be in the clipboard.
     List<GUID> tokensToRemove = new ArrayList<>();
@@ -665,7 +668,7 @@ public class AppActions {
       }
     }
     if (!tokensToRemove.isEmpty()) {
-      MapTool.serverCommand().removeTokens(zone.getId(), tokensToRemove);
+      client.getServerCommand().removeTokens(zone.getId(), tokensToRemove);
       MapTool.getFrame()
           .getCurrentZoneRenderer()
           .getSelectionModel()
@@ -836,7 +839,7 @@ public class AppActions {
             screenPoint = ScreenPoint.fromZonePoint(renderer, renderer.getCenterPoint());
           }
           ZonePoint zonePoint = screenPoint.convertToZone(renderer);
-          pasteTokens(zonePoint, renderer.getActiveLayer());
+          pasteTokens(getClient(), zonePoint, renderer.getActiveLayer());
           keepIdsOnPaste = false; // once pasted, subsequent paste should have new ids
           renderer.repaint();
         }
@@ -847,11 +850,12 @@ public class AppActions {
    * given layer. See {@link #copyTokens(List)} for details of how the copy/paste operations work
    * with respect to grid type on the source and destination zones.
    *
+   * @param client The client owning the zone and tokens.
    * @param destination ZonePoint specifying where to paste; normally this is unchanged from the
    *     MouseEvent
    * @param layer the Zone.Layer that specifies which layer to paste onto
    */
-  private static void pasteTokens(ZonePoint destination, Layer layer) {
+  private static void pasteTokens(MapToolClient client, ZonePoint destination, Layer layer) {
     Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
     Grid grid = zone.getGrid();
     double sizeRatio = 1;
@@ -909,7 +913,8 @@ public class AppActions {
         // created if
         // necessary).
         meta.addToExposedAreaHistory(meta.getExposedAreaHistory());
-        MapTool.serverCommand()
+        client
+            .getServerCommand()
             .updateExposedAreaMeta(zone.getId(), token.getExposedAreaGUID(), meta);
       }
 
@@ -942,7 +947,7 @@ public class AppActions {
 
       // check the token's name and change it, if necessary
       boolean tokenNeedsNewName = false;
-      if (MapTool.getPlayer().isGM()) {
+      if (client.getPlayer().isGM()) {
         // For GMs, only change the name of NPCs. It's possible that we should be
         // changing the name
         // of PCs as well
@@ -973,7 +978,7 @@ public class AppActions {
         String newName = MapToolUtil.nextTokenId(zone, token, true);
         token.setName(newName);
       }
-      MapTool.serverCommand().putToken(zone.getId(), token);
+      client.getServerCommand().putToken(zone.getId(), token);
     }
     if (!failedPaste.isEmpty()) {
       String mesg = I18N.getText("Token.error.unableToPaste", failedPaste);
@@ -1855,13 +1860,10 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-          var client = getClient();
-
-          ServerPolicy policy = client.getServerPolicy();
+          ServerPolicy policy = getClient().getServerPolicy();
           policy.setIsMovementLocked(!policy.isMovementLocked());
 
-          client.setServerPolicy(policy);
-          client.getServerCommand().setServerPolicy(policy);
+          getClient().getServerCommand().setServerPolicy(policy);
         }
       };
 
@@ -1881,13 +1883,10 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-          var client = getClient();
-
-          ServerPolicy policy = client.getServerPolicy();
+          ServerPolicy policy = getClient().getServerPolicy();
           policy.setIsTokenEditorLocked(!policy.isTokenEditorLocked());
 
-          client.setServerPolicy(policy);
-          client.getServerCommand().setServerPolicy(policy);
+          getClient().getServerCommand().setServerPolicy(policy);
         }
       };
 
@@ -1921,31 +1920,6 @@ public class AppActions {
             return;
           }
 
-          ServerPolicy policy = new ServerPolicy();
-          policy.setAutoRevealOnMovement(serverProps.isAutoRevealOnMovement());
-          policy.setUseStrictTokenManagement(serverProps.getUseStrictTokenOwnership());
-          policy.setGmRevealsVisionForUnownedTokens(
-              serverProps.getGmRevealsVisionForUnownedTokens());
-          policy.setPlayersCanRevealVision(serverProps.getPlayersCanRevealVision());
-          policy.setUseIndividualViews(serverProps.getUseIndividualViews());
-          policy.setPlayersReceiveCampaignMacros(serverProps.getPlayersReceiveCampaignMacros());
-          policy.setHiddenMapSelectUI(serverProps.getMapSelectUIHidden());
-          policy.setIsTokenEditorLocked(serverProps.getLockTokenEditOnStart());
-          policy.setIsMovementLocked(serverProps.getLockPlayerMovementOnStart());
-          policy.setDisablePlayerAssetPanel(serverProps.getPlayerLibraryLock());
-
-          // Tool Tips for unformatted inline rolls.
-          policy.setUseToolTipsForDefaultRollFormat(
-              serverProps.getUseToolTipsForUnformattedRolls());
-
-          // my addition
-          // Note: Restricted impersonation setting is the opposite of its label
-          // (Unrestricted when checked and restricted when unchecked)
-          policy.setRestrictedImpersonation(!serverProps.getRestrictedImpersonation());
-          policy.setMovementMetric(serverProps.getMovementMetric());
-          boolean useIF = serverProps.getUseIndividualViews() && serverProps.getUseIndividualFOW();
-          policy.setUseIndividualFOW(useIF);
-
           String gmPassword;
           String playerPassword;
 
@@ -1976,7 +1950,7 @@ public class AppActions {
             MapTool.disconnect();
             MapTool.stopServer();
 
-            campaign.setHasUsedFogToolbar(useIF);
+            campaign.setHasUsedFogToolbar(getClient().getServerPolicy().isUseIndividualFOW());
 
             ServerSidePlayerDatabase playerDatabase;
             if (serverProps.getUsePasswordFile()) {
@@ -2021,7 +1995,6 @@ public class AppActions {
                 dialog.getUsernameTextField().getText(),
                 config,
                 serverProps.getUseUPnP(),
-                policy,
                 campaign,
                 playerDatabase,
                 player);

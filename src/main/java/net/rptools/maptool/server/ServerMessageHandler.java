@@ -337,6 +337,7 @@ public class ServerMessageHandler implements MessageHandler {
             Zone zone = server.getCampaign().getZone(list.getZone().getId());
             zone.setInitiativeList(list);
           } else if (msg.hasOwnerPermission()) {
+            // TODO No! Server is not responsible for the UI.
             MapTool.getFrame()
                 .getInitiativePanel()
                 .setOwnerPermissions(msg.getOwnerPermission().getValue());
@@ -356,8 +357,9 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(SetServerPolicyMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          server.updateServerPolicy(
-              ServerPolicy.fromDto(msg.getPolicy())); // updates the server policy, fixes #1648
+          // updates the server policy, fixes #1648
+          server.getCampaign().setServerPolicy(ServerPolicy.fromDto(msg.getPolicy()));
+          // TODO No! Server is not responsible for the UI.
           MapTool.getFrame().getToolbox().updateTools();
         });
   }
@@ -584,7 +586,7 @@ public class ServerMessageHandler implements MessageHandler {
 
           Zone zone = server.getCampaign().getZone(zoneGUID);
           if (zone != null) {
-            zone.hideArea(area, selectedTokens, server.getPolicy());
+            zone.hideArea(area, selectedTokens, server.getCampaign().getServerPolicy());
           }
         });
   }
@@ -601,6 +603,7 @@ public class ServerMessageHandler implements MessageHandler {
     EventQueue.invokeLater(
         () -> {
           var zoneGUID = GUID.valueOf(msg.getZoneGuid());
+          // TODO No! Server is not responsible for the UI.
           ZoneRenderer renderer = MapTool.getFrame().getZoneRenderer(zoneGUID);
           FogUtil.exposePCArea(renderer);
         });
@@ -617,7 +620,10 @@ public class ServerMessageHandler implements MessageHandler {
           if (zone != null) {
             // TODO Using the client's player here is beyond sus.
             zone.exposeArea(
-                area, selectedTokens, server.getPolicy(), MapTool.getClient().getPlayer());
+                area,
+                selectedTokens,
+                server.getCampaign().getServerPolicy(),
+                MapTool.getClient().getPlayer());
           }
         });
   }

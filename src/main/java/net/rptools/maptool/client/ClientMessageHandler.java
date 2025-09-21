@@ -293,7 +293,9 @@ public class ClientMessageHandler implements MessageHandler {
     EventQueue.invokeLater(
         () -> {
           ServerPolicy policy = ServerPolicy.fromDto(msg.getPolicy());
-          client.setServerPolicy(policy);
+          client.getCampaign().setServerPolicy(policy);
+          // TODO This is for the A* and VBL buttons. Need that be more explicit? Should we update
+          //  after every handled message perhaps?
           MapTool.getFrame().getToolbox().updateTools();
         });
   }

@@ -43,7 +43,8 @@ public class ToolHelper {
           }
 
           ZoneRenderer renderer = (ZoneRenderer) e.getSource();
-          AppActions.deleteTokens(renderer.getZone(), renderer.getSelectedTokenSet());
+          AppActions.deleteTokens(
+              MapTool.getClient(), renderer.getZone(), renderer.getSelectedTokenSet());
         }
       };
 

@@ -109,7 +109,6 @@ import net.rptools.maptool.model.zones.ZoneRemoved;
 import net.rptools.maptool.server.MapToolServer;
 import net.rptools.maptool.server.ServerCommand;
 import net.rptools.maptool.server.ServerConfig;
-import net.rptools.maptool.server.ServerPolicy;
 import net.rptools.maptool.transfer.AssetTransferManager;
 import net.rptools.maptool.util.*;
 import net.rptools.parser.ParserException;
@@ -193,9 +192,8 @@ public class MapTool {
       var connections = DirectConnection.create("local");
       var playerDB = new PersonalServerPlayerDatabase(new LocalPlayer());
       var campaign = CampaignFactory.createEmptyCampaign();
-      var policy = new ServerPolicy();
 
-      var server = new MapToolServer(null, new Campaign(campaign), null, false, policy, playerDB);
+      var server = new MapToolServer(null, new Campaign(campaign), null, false, playerDB);
       client =
           new MapToolClient(
               server, campaign, playerDB.getPlayer(), connections.clientSide(), keyStore);
@@ -981,7 +979,6 @@ public class MapTool {
    *
    * @param id the id of the server for announcement.
    * @param config the server configuration. Set to null only for a personal server.
-   * @param policy the server policy configuration to use.
    * @param campaign the campaign.
    * @param playerDatabase the player database to use for the connection.
    * @throws IOException if we fail to start the new server. In this case, the new client with be
@@ -992,7 +989,6 @@ public class MapTool {
       String id,
       @Nullable ServerConfig config,
       boolean useUPnP,
-      ServerPolicy policy,
       Campaign campaign,
       ServerSidePlayerDatabase playerDatabase,
       LocalPlayer player)
@@ -1007,8 +1003,7 @@ public class MapTool {
     assetTransferManager.flush();
 
     var connections = DirectConnection.create("local");
-    var server =
-        new MapToolServer(id, new Campaign(campaign), config, useUPnP, policy, playerDatabase);
+    var server = new MapToolServer(id, new Campaign(campaign), config, useUPnP, playerDatabase);
     client = new MapToolClient(server, campaign, player, connections.clientSide(), keyStore);
 
     if (!server.isPersonalServer()) {
@@ -1148,7 +1143,6 @@ public class MapTool {
         "",
         null,
         false,
-        new ServerPolicy(),
         campaign,
         PlayerDatabaseFactory.getPersonalServerPlayerDatabase(player),
         player);
@@ -1373,14 +1367,6 @@ public class MapTool {
 
   public static String getLastWhisperer() {
     return lastWhisperer;
-  }
-
-  public static boolean useToolTipsForUnformatedRolls() {
-    if (client.isPersonalServer() || client.getServerPolicy() == null) {
-      return AppPreferences.useToolTipForInlineRoll.get();
-    } else {
-      return client.getServerPolicy().getUseToolTipsForDefaultRollFormat();
-    }
   }
 
   public static String getClientId() {
