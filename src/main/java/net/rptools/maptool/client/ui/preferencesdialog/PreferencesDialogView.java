@@ -29,6 +29,22 @@ public class PreferencesDialogView {
    */
   private JPanel mainPanel;
 
+  private JCheckBox gameplayStrictTokenOwnership;
+  private JCheckBox gameplayGmRevealsVisionForUnownedTokens;
+  private JCheckBox gameplayPlayersCanRevealVision;
+  private JCheckBox gameplayUseIndividualViews;
+  private JCheckBox gameplayUnrestrictedImpersonation;
+  private JCheckBox gameplayPlayersReceiveCampaignMacros;
+  private JCheckBox gameplayUseToolTipsForDefaultRollFormat;
+  private JCheckBox gameplayMapSelectUIHidden;
+  private JCheckBox gameplayTokenEditorLocked;
+  private JCheckBox gameplayMovementLocked;
+  private JCheckBox gameplayDisablePlayerAssetPanel;
+  private JCheckBox gameplayAutoRevealOnMovement;
+  private JCheckBox gameplayUseIndividualFow;
+  private JCheckBox gameplayUseAiPathfinding;
+  private JCheckBox gameplayNavigateAroundVbl;
+
   private JComboBox<WalkerMetric> gameplayMovementMetric;
 
   /**
