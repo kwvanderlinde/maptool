@@ -712,7 +712,7 @@
               <tabbedpane title-resource-bundle="net/rptools/maptool/language/i18n" title-key="CampaignPropertiesDialog.tab.bars"/>
             </constraints>
             <properties>
-              <visible value="true"/>
+              <visible value="false"/>
             </properties>
             <border type="none"/>
             <children>
@@ -1134,6 +1134,203 @@
                   </vspacer>
                 </children>
               </grid>
+            </children>
+          </grid>
+          <grid id="652b3" layout-manager="GridLayoutManager" row-count="17" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <tabbedpane title-resource-bundle="net/rptools/maptool/language/i18n" title-key="CampaignPropertiesDialog.tab.gameplay"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <vspacer id="4f156">
+                <constraints>
+                  <grid row="16" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </vspacer>
+              <component id="86bb9" class="javax.swing.JCheckBox" binding="gameplayStrictTokenOwnership">
+                <constraints>
+                  <grid row="2" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <actionCommand value="Strict token ownership"/>
+                  <name value="@useStrictTokenOwnership"/>
+                  <text resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.option.ownership"/>
+                  <toolTipText resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.option.ownership.tooltip"/>
+                </properties>
+              </component>
+              <component id="365cd" class="javax.swing.JCheckBox" binding="gameplayGmRevealsVisionForUnownedTokens">
+                <constraints>
+                  <grid row="3" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <actionCommand value="Players can reveal vision"/>
+                  <name value="@gmRevealsVisionForUnownedTokens"/>
+                  <text resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.option.reveal.gm"/>
+                  <toolTipText resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.option.reveal.gm.tooltip"/>
+                </properties>
+              </component>
+              <component id="d8fde" class="javax.swing.JCheckBox" binding="gameplayPlayersCanRevealVision">
+                <constraints>
+                  <grid row="4" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <actionCommand value="Players can reveal vision"/>
+                  <name value="@playersCanRevealVision"/>
+                  <text resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.option.reveal.player"/>
+                </properties>
+              </component>
+              <component id="4f7a0" class="javax.swing.JCheckBox" binding="gameplayUseIndividualViews">
+                <constraints>
+                  <grid row="6" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <actionCommand value="Use Individual Views"/>
+                  <name value="@useIndividualViews"/>
+                  <text resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.option.vision.individual"/>
+                  <toolTipText resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.option.vision.individual.tooltip"/>
+                </properties>
+              </component>
+              <component id="ae8a0" class="javax.swing.JCheckBox" binding="gameplayUnrestrictedImpersonation">
+                <constraints>
+                  <grid row="8" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <actionCommand value="Use Unrestricted Player Impersonation"/>
+                  <name value="@restrictedImpersonation"/>
+                  <text resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.option.impersonate"/>
+                  <toolTipText resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.option.impersonate.tooltip"/>
+                </properties>
+              </component>
+              <component id="53757" class="javax.swing.JCheckBox" binding="gameplayPlayersReceiveCampaignMacros">
+                <constraints>
+                  <grid row="9" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <actionCommand value="Use Unrestricted Player Impersonation"/>
+                  <name value="@playersReceiveCampaignMacros"/>
+                  <text resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.option.macros"/>
+                  <toolTipText resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.option.macros.tooltip"/>
+                </properties>
+              </component>
+              <component id="3a09c" class="javax.swing.JCheckBox" binding="gameplayUseToolTipsForDefaultRollFormat">
+                <constraints>
+                  <grid row="10" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <actionCommand value="Use Unrestricted Player Impersonation"/>
+                  <name value="@useToolTipsForUnformattedRolls"/>
+                  <text resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.option.rolls"/>
+                  <toolTipText resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.option.rolls.tooltip"/>
+                </properties>
+              </component>
+              <component id="5d36f" class="javax.swing.JCheckBox" binding="gameplayMapSelectUIHidden">
+                <constraints>
+                  <grid row="11" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <actionCommand value="Use Unrestricted Player Impersonation"/>
+                  <name value="@hideMapSelectUI"/>
+                  <text resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.option.hidemapselectui"/>
+                  <toolTipText resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.option.hidemapselectui.tooltip"/>
+                </properties>
+              </component>
+              <component id="c6007" class="javax.swing.JCheckBox" binding="gameplayTokenEditorLocked">
+                <constraints>
+                  <grid row="12" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <actionCommand value="Lock Token Edit on Start"/>
+                  <name value="@lockTokenEditOnStartup"/>
+                  <text resource-bundle="net/rptools/maptool/language/i18n" key="action.toggleTokenEditorLock"/>
+                  <toolTipText resource-bundle="net/rptools/maptool/language/i18n" key="action.toggleTokenEditorLock.description"/>
+                </properties>
+              </component>
+              <component id="864ba" class="javax.swing.JCheckBox" binding="gameplayMovementLocked">
+                <constraints>
+                  <grid row="13" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <actionCommand value="Lock Play Movement"/>
+                  <name value="@lockPlayerMovementOnStartup"/>
+                  <text resource-bundle="net/rptools/maptool/language/i18n" key="action.toggleMovementLock"/>
+                  <toolTipText resource-bundle="net/rptools/maptool/language/i18n" key="action.toggleMovementLock.description"/>
+                </properties>
+              </component>
+              <component id="3cc8a" class="javax.swing.JCheckBox" binding="gameplayDisablePlayerAssetPanel">
+                <constraints>
+                  <grid row="14" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <actionCommand value="Lock Player Library"/>
+                  <name value="@disablePlayerLibrary"/>
+                  <text resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.option.disablePlayerLibrary"/>
+                  <toolTipText resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.option.disablePlayerLibrary.tooltip"/>
+                </properties>
+              </component>
+              <component id="8193f" class="javax.swing.JLabel">
+                <constraints>
+                  <grid row="15" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.label.metric"/>
+                  <toolTipText resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.label.metric.tooltip"/>
+                </properties>
+              </component>
+              <component id="fd63e" class="javax.swing.JComboBox" binding="gameplayMovementMetric">
+                <constraints>
+                  <grid row="15" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <actionCommand value="comboBoxChanged"/>
+                  <name value="movementMetric"/>
+                  <toolTipText value="Determines how MapTool handles movement on the selected grid type."/>
+                </properties>
+              </component>
+              <component id="f0f6" class="javax.swing.JCheckBox" binding="gameplayUseIndividualFow">
+                <constraints>
+                  <grid row="7" column="1" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <actionCommand value="Use Individual Views"/>
+                  <name value="@useIndividualFOW"/>
+                  <text resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.option.fow.individual"/>
+                  <toolTipText resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.option.fow.individual.tooltip"/>
+                </properties>
+              </component>
+              <component id="d4c2" class="javax.swing.JCheckBox" binding="gameplayAutoRevealOnMovement">
+                <constraints>
+                  <grid row="5" column="1" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.option.reveal.move"/>
+                  <toolTipText resource-bundle="net/rptools/maptool/language/i18n" key="ServerDialog.option.reveal.move.tooltip"/>
+                </properties>
+              </component>
+              <hspacer id="1558d">
+                <constraints>
+                  <grid row="15" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </hspacer>
+              <component id="1a04" class="javax.swing.JCheckBox" binding="gameplayUseAiPathfinding">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="4" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="net/rptools/maptool/language/i18n" key="Preferences.label.gameplay.useAstar"/>
+                  <toolTipText resource-bundle="net/rptools/maptool/language/i18n" key="Preferences.label.gameplay.useAstar.tooltip"/>
+                </properties>
+              </component>
+              <component id="5905" class="javax.swing.JCheckBox" binding="gameplayNavigateAroundVbl">
+                <constraints>
+                  <grid row="1" column="1" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="net/rptools/maptool/language/i18n" key="Preferences.label.gameplay.vblAstar"/>
+                  <toolTipText resource-bundle="net/rptools/maptool/language/i18n" key="Preferences.label.gameplay.vblAstar.tooltip"/>
+                </properties>
+              </component>
             </children>
           </grid>
         </children>

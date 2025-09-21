@@ -36,17 +36,20 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import net.rptools.lib.FileUtil;
 import net.rptools.maptool.client.AppConstants;
+import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.swing.*;
 import net.rptools.maptool.client.ui.StaticMessageDialog;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
+import net.rptools.maptool.client.walker.WalkerMetric;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.AssetManager;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.CampaignProperties;
 import net.rptools.maptool.model.CategorizedLights;
 import net.rptools.maptool.model.Sights;
+import net.rptools.maptool.server.ServerPolicy;
 import net.rptools.maptool.server.proto.CampaignPropertiesDto;
 import net.rptools.maptool.util.AuraSyntax;
 import net.rptools.maptool.util.LightSyntax;
@@ -133,6 +136,7 @@ public class CampaignPropertiesDialog extends AbeillePanel<CampaignPropertiesDia
     initHelp();
     initAddRepoButton();
     initDeleteRepoButton();
+    initGameplayMovementMetric();
   }
 
   public JTextField getNewServerTextField() {
@@ -192,6 +196,11 @@ public class CampaignPropertiesDialog extends AbeillePanel<CampaignPropertiesDia
         });
   }
 
+  public void initGameplayMovementMetric() {
+    var movementMetric = view.getGameplayMovementMetric();
+    movementMetric.setModel(new DefaultComboBoxModel<>(WalkerMetric.values()));
+  }
+
   private void accept() {
     try {
       MapTool.getFrame()
@@ -247,6 +256,27 @@ public class CampaignPropertiesDialog extends AbeillePanel<CampaignPropertiesDia
 
     tokenStatesController.copyCampaignToUI(campaignProperties);
     tokenBarController.copyCampaignToUI(campaignProperties);
+
+    var policy = campaignProperties.getServerPolicy();
+    view.getGameplayUseAiPathfinding().setSelected(policy.isUsingAstarPathfinding());
+    view.getGameplayNavigateAroundVbl().setSelected(policy.getVblBlocksMove());
+    view.getGameplayStrictTokenOwnership().setSelected(policy.useStrictTokenManagement());
+    view.getGameplayGmRevealsVisionForUnownedTokens()
+        .setSelected(policy.getGmRevealsVisionForUnownedTokens());
+    view.getGameplayPlayersCanRevealVision().setSelected(policy.getPlayersCanRevealVision());
+    view.getGameplayAutoRevealOnMovement().setSelected(policy.isAutoRevealOnMovement());
+    view.getGameplayUseIndividualViews().setSelected(policy.isUseIndividualViews());
+    view.getGameplayUseIndividualFow().setSelected(policy.isUseIndividualFOW());
+    view.getGameplayUnrestrictedImpersonation().setSelected(!policy.isRestrictedImpersonation());
+    view.getGameplayPlayersReceiveCampaignMacros()
+        .setSelected(policy.playersReceiveCampaignMacros());
+    view.getGameplayUseToolTipsForDefaultRollFormat()
+        .setSelected(policy.getUseToolTipsForDefaultRollFormat());
+    view.getGameplayMapSelectUIHidden().setSelected(policy.getMapSelectUIHidden());
+    view.getGameplayTokenEditorLocked().setSelected(policy.isTokenEditorLocked());
+    view.getGameplayMovementLocked().setSelected(policy.isMovementLocked());
+    view.getGameplayDisablePlayerAssetPanel().setSelected(policy.getDisablePlayerAssetPanel());
+    view.getGameplayMovementMetric().setSelectedItem(policy.getMovementMetric());
   }
 
   private void updateRepositoryList(CampaignProperties properties) {
@@ -284,6 +314,33 @@ public class CampaignPropertiesDialog extends AbeillePanel<CampaignPropertiesDia
 
     tokenStatesController.copyUIToCampaign(campaign);
     tokenBarController.copyUIToCampaign(campaign);
+
+    var policy = new ServerPolicy();
+    policy.setUsingAstarPathfinding(view.getGameplayUseAiPathfinding().isSelected());
+    policy.setVblBlocksMove(view.getGameplayNavigateAroundVbl().isSelected());
+    policy.setUseStrictTokenManagement(view.getGameplayStrictTokenOwnership().isSelected());
+    policy.setGmRevealsVisionForUnownedTokens(
+        view.getGameplayGmRevealsVisionForUnownedTokens().isSelected());
+    policy.setPlayersCanRevealVision(view.getGameplayPlayersCanRevealVision().isSelected());
+    policy.setAutoRevealOnMovement(view.getGameplayAutoRevealOnMovement().isSelected());
+    policy.setUseIndividualViews(view.getGameplayUseIndividualViews().isSelected());
+    policy.setUseIndividualFOW(view.getGameplayUseIndividualFow().isSelected());
+    policy.setRestrictedImpersonation(!view.getGameplayUnrestrictedImpersonation().isSelected());
+    policy.setPlayersReceiveCampaignMacros(
+        view.getGameplayPlayersReceiveCampaignMacros().isSelected());
+    policy.setUseToolTipsForDefaultRollFormat(
+        view.getGameplayUseToolTipsForDefaultRollFormat().isSelected());
+    policy.setHiddenMapSelectUI(view.getGameplayMapSelectUIHidden().isSelected());
+    policy.setIsTokenEditorLocked(view.getGameplayTokenEditorLocked().isSelected());
+    policy.setIsMovementLocked(view.getGameplayMovementLocked().isSelected());
+    policy.setDisablePlayerAssetPanel(view.getGameplayDisablePlayerAssetPanel().isSelected());
+    var movementMetricIndex = view.getGameplayMovementMetric().getSelectedIndex();
+    if (movementMetricIndex >= 0) {
+      policy.setMovementMetric(WalkerMetric.values()[movementMetricIndex]);
+    } else {
+      policy.setMovementMetric(AppPreferences.movementMetric.get());
+    }
+    campaign.setServerPolicy(policy);
 
     ZoneRenderer zr = MapTool.getFrame().getCurrentZoneRenderer();
     if (zr != null) {
