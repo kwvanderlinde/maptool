@@ -61,6 +61,7 @@ import net.rptools.lib.image.ImageUtil;
 import net.rptools.maptool.client.AppConstants;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.MapToolUtil;
 import net.rptools.maptool.client.functions.TokenBarFunction;
 import net.rptools.maptool.client.swing.*;
@@ -794,6 +795,7 @@ public class EditTokenDialog extends AbeillePanel<Token> {
   @Override
   public boolean commit() {
     Token token = getModel();
+    MapToolClient client = MapTool.getClient();
 
     if (getNameField().getText().isEmpty()) {
       MapTool.showError("msg.error.emptyTokenName");
@@ -890,7 +892,7 @@ public class EditTokenDialog extends AbeillePanel<Token> {
     }
     /* OWNERSHIP */
     /* If the token is owned by all and we are a player don't alter the ownership list. */
-    if (MapTool.getClient().getPlayer().isGM() || !token.isOwnedByAll()) {
+    if (client.getPlayer().isGM() || !token.isOwnedByAll()) {
       token.clearAllOwners();
 
       for (int i = 0; i < getOwnerList().getModel().getSize(); i++) {
@@ -901,10 +903,10 @@ public class EditTokenDialog extends AbeillePanel<Token> {
         }
       }
       /* If we are not a GM and we are the only non-GM owner, make sure we cannot remove ourself from the owners list */
-      if (!MapTool.getClient().getPlayer().isGM()) {
-        boolean hasPlayer = token.isOwnedByAny(MapTool.getNonGMs());
+      if (!client.getPlayer().isGM()) {
+        boolean hasPlayer = token.isOwnedByAny(client.getNonGMs());
         if (!hasPlayer) {
-          token.addOwner(MapTool.getClient().getPlayer().getName());
+          token.addOwner(client.getPlayer().getName());
         }
       }
     }
@@ -952,10 +954,8 @@ public class EditTokenDialog extends AbeillePanel<Token> {
     /* PORTRAIT */
     if (getPortraitPanel().getImageId() != null) {
       /* Make sure the server has the image */
-      if (!MapTool.getClient().getCampaign().containsAsset(getPortraitPanel().getImageId())) {
-        MapTool.getClient()
-            .getServerCommand()
-            .putAsset(AssetManager.getAsset(getPortraitPanel().getImageId()));
+      if (!client.getCampaign().containsAsset(getPortraitPanel().getImageId())) {
+        client.getServerCommand().putAsset(AssetManager.getAsset(getPortraitPanel().getImageId()));
       }
     }
     token.setPortraitImage(getPortraitPanel().getImageId());

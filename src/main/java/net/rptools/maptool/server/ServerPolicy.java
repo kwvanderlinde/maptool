@@ -306,7 +306,7 @@ public class ServerPolicy {
 
     // TODO :facepalm: Why are we including connection information here?
     MapToolClient client = MapTool.getClient();
-    for (String gm : MapTool.getGMs()) {
+    for (String gm : client.getGMs()) {
       gms.add(gm);
     }
     sinfo.add("gm", gms);

@@ -269,6 +269,32 @@ public class MapToolClient {
     return Collections.unmodifiableList(playerList);
   }
 
+  // TODO Stream these next two methods.
+
+  /** Returns the list of non-gm names. */
+  public List<String> getNonGMs() {
+    List<String> nonGMs = new ArrayList<>(playerList.size());
+    playerList.forEach(
+        player -> {
+          if (!player.isGM()) {
+            nonGMs.add(player.getName());
+          }
+        });
+    return nonGMs;
+  }
+
+  /** Returns the list of gm names. */
+  public List<String> getGMs() {
+    List<String> gms = new ArrayList<>(playerList.size());
+    playerList.forEach(
+        player -> {
+          if (player.isGM()) {
+            gms.add(player.getName());
+          }
+        });
+    return gms;
+  }
+
   public void addPlayer(Player player) {
     if (!playerList.contains(player)) {
       playerList.add(player);

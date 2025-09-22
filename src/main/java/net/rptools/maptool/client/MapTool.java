@@ -1084,32 +1084,6 @@ public class MapTool {
     getFrame().getConnectionPanel().stopHosting();
   }
 
-  /** Returns the list of non-gm names. */
-  public static List<String> getNonGMs() {
-    var playerList = client.getPlayerList();
-    List<String> nonGMs = new ArrayList<>(playerList.size());
-    playerList.forEach(
-        player -> {
-          if (!player.isGM()) {
-            nonGMs.add(player.getName());
-          }
-        });
-    return nonGMs;
-  }
-
-  /** Returns the list of gm names. */
-  public static List<String> getGMs() {
-    var playerList = client.getPlayerList();
-    List<String> gms = new ArrayList<>(playerList.size());
-    playerList.forEach(
-        player -> {
-          if (player.isGM()) {
-            gms.add(player.getName());
-          }
-        });
-    return gms;
-  }
-
   public static void removeZone(Zone zone) {
     MapTool.serverCommand().removeZone(zone.getId());
     MapTool.getFrame().removeZoneRenderer(MapTool.getFrame().getZoneRenderer(zone.getId()));

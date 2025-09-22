@@ -533,7 +533,7 @@ public class MacroLinkFunction extends AbstractFunction {
         if (playerList.size() == 0) { // if that was only thing in the list then dont use whispers
           outputTo = OutputTo.SELF_AND_GM;
         } else {
-          playerList.addAll(MapTool.getGMs());
+          playerList.addAll(MapTool.getClient().getGMs());
           playerList.add(getSelf());
         }
       } else if (playerList.contains("gm") && playerList.contains("self")) {
@@ -542,7 +542,7 @@ public class MacroLinkFunction extends AbstractFunction {
         if (playerList.size() == 0) { // if that was only thing in the list then don't use whispers
           outputTo = OutputTo.SELF_AND_GM;
         } else {
-          playerList.addAll(MapTool.getGMs());
+          playerList.addAll(MapTool.getClient().getGMs());
           playerList.add(getSelf());
         }
       } else if (playerList.contains("gm")) {
@@ -550,7 +550,7 @@ public class MacroLinkFunction extends AbstractFunction {
         if (playerList.size() == 0) { // if that was only thing in the list then don't use whispers
           outputTo = OutputTo.GM;
         } else {
-          playerList.addAll(MapTool.getGMs());
+          playerList.addAll(MapTool.getClient().getGMs());
           playerList.add(getSelf());
         }
       } else if (playerList.contains("self")) {
