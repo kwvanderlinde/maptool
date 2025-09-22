@@ -143,7 +143,9 @@ public class MapToolUtil {
       return baseName;
     } else if (baseName == null) {
       int nextId = nextTokenId.getAndIncrement();
-      char ch = (char) ('a' + MapTool.getPlayerList().indexOf(MapTool.getPlayer()));
+      var client = MapTool.getClient();
+      // TODO Seems busted for large player counts.
+      char ch = (char) ('a' + client.getPlayerList().indexOf(client.getPlayer()));
       return ch + Integer.toString(nextId);
     } else {
       baseName = baseName.trim();

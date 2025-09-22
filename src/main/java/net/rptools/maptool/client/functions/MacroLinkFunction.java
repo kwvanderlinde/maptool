@@ -203,10 +203,10 @@ public class MacroLinkFunction extends AbstractFunction {
    * @param targets the list of targets
    */
   private static void sendExecLink(final String link, Collection<String> targets) {
-    String source = MapTool.getPlayer().getName();
+    String source = MapTool.getClient().getPlayer().getName();
 
     for (String target : targets) {
-      MapTool.serverCommand().execLink(link, target, source);
+      MapTool.getClient().getServerCommand().execLink(link, target, source);
     }
   }
 
@@ -539,7 +539,7 @@ public class MacroLinkFunction extends AbstractFunction {
       } else if (playerList.contains("gm") && playerList.contains("self")) {
         playerList.remove("gm");
         playerList.remove("self");
-        if (playerList.size() == 0) { // if that was only thing in the list then dont use whispers
+        if (playerList.size() == 0) { // if that was only thing in the list then don't use whispers
           outputTo = OutputTo.SELF_AND_GM;
         } else {
           playerList.addAll(MapTool.getGMs());
@@ -547,7 +547,7 @@ public class MacroLinkFunction extends AbstractFunction {
         }
       } else if (playerList.contains("gm")) {
         playerList.remove("gm");
-        if (playerList.size() == 0) { // if that was only thing in the list then dont use whispers
+        if (playerList.size() == 0) { // if that was only thing in the list then don't use whispers
           outputTo = OutputTo.GM;
         } else {
           playerList.addAll(MapTool.getGMs());
@@ -555,7 +555,7 @@ public class MacroLinkFunction extends AbstractFunction {
         }
       } else if (playerList.contains("self")) {
         playerList.remove("self");
-        if (playerList.size() == 0) { // if that was only thing in the list then dont use whispers
+        if (playerList.size() == 0) { // if that was only thing in the list then don't use whispers
           outputTo = OutputTo.SELF;
         } else {
           playerList.add(getSelf());
@@ -576,7 +576,7 @@ public class MacroLinkFunction extends AbstractFunction {
                 null,
                 MessageUtil.getFormattedToGmRecipient(
                     line,
-                    MapTool.getPlayer().getName(),
+                    MapTool.getClient().getPlayer().getName(),
                     MapTool.getParser().isMacroPathTrusted(),
                     macroName,
                     null)));
@@ -607,7 +607,8 @@ public class MacroLinkFunction extends AbstractFunction {
   }
 
   private static void doWhisper(String message, Token token, String playerName) {
-    List<Player> playerList = MapTool.getPlayerList();
+    var client = MapTool.getClient();
+    List<Player> playerList = client.getPlayerList();
     List<String> players = new ArrayList<>();
     for (int count = 0; count < playerList.size(); count++) {
       Player p = playerList.get(count);
@@ -618,11 +619,11 @@ public class MacroLinkFunction extends AbstractFunction {
     playerName = (!playerNameMatch.equals("")) ? playerNameMatch : playerName;
 
     // Validate
-    if (!MapTool.getClient().isPlayerConnected(playerName)) {
+    if (!client.isPlayerConnected(playerName)) {
       MapTool.addLocalMessage(I18N.getText("msg.error.playerNotConnected", playerName));
       return;
     }
-    if (MapTool.getPlayer().getName().equalsIgnoreCase(playerName)) {
+    if (client.getPlayer().getName().equalsIgnoreCase(playerName)) {
       return;
     }
 
@@ -636,7 +637,7 @@ public class MacroLinkFunction extends AbstractFunction {
   }
 
   private static String getSelf() {
-    return MapTool.getPlayer().getName();
+    return MapTool.getClient().getPlayer().getName();
   }
 
   /**

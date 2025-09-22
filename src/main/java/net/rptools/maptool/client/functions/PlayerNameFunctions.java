@@ -43,9 +43,9 @@ public class PlayerNameFunctions extends AbstractFunction {
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
     if (functionName.equalsIgnoreCase("getPlayerName")) {
-      return MapTool.getPlayer().getName();
+      return MapTool.getClient().getPlayer().getName();
     } else if ("getAllPlayerNames".equalsIgnoreCase(functionName)) {
-      List<Player> players = MapTool.getPlayerList();
+      List<Player> players = MapTool.getClient().getPlayerList();
       String[] playerArray = new String[players.size()];
       Iterator<Player> iter = players.iterator();
 

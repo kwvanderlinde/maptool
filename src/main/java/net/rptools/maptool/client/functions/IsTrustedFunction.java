@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.parser.Parser;
@@ -46,11 +47,11 @@ public class IsTrustedFunction extends AbstractFunction {
     } else if (functionName.equalsIgnoreCase("isExternalMacroAccessAllowed")) {
       return AppPreferences.allowExternalMacroAccess.get() ? BigDecimal.ONE : BigDecimal.ZERO;
     } else if ("isGM".equalsIgnoreCase(functionName)) {
-      if (parameters.isEmpty())
-        return MapTool.getPlayer().isGM() ? BigDecimal.ONE : BigDecimal.ZERO;
-      else {
-
-        return getGMs().contains(parameters.get(0)) ? BigDecimal.ONE : BigDecimal.ZERO;
+      var client = MapTool.getClient();
+      if (parameters.isEmpty()) {
+        return client.getPlayer().isGM() ? BigDecimal.ONE : BigDecimal.ZERO;
+      } else {
+        return getGMs(client).contains(parameters.get(0)) ? BigDecimal.ONE : BigDecimal.ZERO;
       }
     }
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));
@@ -61,10 +62,10 @@ public class IsTrustedFunction extends AbstractFunction {
    *
    * @return copied from MacroLinkFunctions since its private there
    */
-  private List<String> getGMs() {
+  private List<String> getGMs(MapToolClient client) {
     List<String> gms = new ArrayList<String>();
 
-    for (Player plr : MapTool.getPlayerList()) {
+    for (Player plr : client.getPlayerList()) {
       if (plr.isGM()) {
         gms.add(plr.getName());
       }

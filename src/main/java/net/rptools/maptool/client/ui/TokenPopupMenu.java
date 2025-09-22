@@ -188,7 +188,7 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
     JMenu menu = new JMenu(I18N.getText("token.popup.menu.fow.expose"));
     menu.add(AppActions.EXPOSE_VISIBLE_AREA_ACTION);
     menu.add(AppActions.EXPOSE_LAST_PATH_ACTION);
-    if (MapTool.getPlayer().getRole() == Role.GM) {
+    if (MapTool.getClient().getPlayer().getRole() == Role.GM) {
       menu.add(AppActions.EXPOSE_VISIBLE_AREA_ONLY_ACTION);
     }
     menu.setEnabled(getTokenUnderMouse().getHasSight());
@@ -250,7 +250,8 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
         targetMeta.addToExposedAreaHistory(sourceMeta.getExposedAreaHistory());
         getRenderer().flush(targetToken);
         zone.setExposedAreaMetaData(targetToken.getExposedAreaGUID(), targetMeta);
-        MapTool.serverCommand()
+        MapTool.getClient()
+            .getServerCommand()
             .updateExposedAreaMeta(zone.getId(), targetToken.getExposedAreaGUID(), targetMeta);
       }
       getRenderer().repaint();
@@ -290,7 +291,7 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
         meta.addToExposedAreaHistory(tokenArea);
         renderer.flush(token);
         zone.setExposedAreaMetaData(tGUID, meta);
-        MapTool.serverCommand().updateExposedAreaMeta(zone.getId(), tGUID, meta);
+        MapTool.getClient().getServerCommand().updateExposedAreaMeta(zone.getId(), tGUID, meta);
       }
       renderer.repaint();
     }
@@ -390,7 +391,8 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
 
   protected JMenu createBarMenu() {
     List<BarTokenOverlay> overlays =
-        new ArrayList<BarTokenOverlay>(MapTool.getCampaign().getTokenBarsMap().values());
+        new ArrayList<BarTokenOverlay>(
+            MapTool.getClient().getCampaign().getTokenBarsMap().values());
     if (overlays.isEmpty()) {
       return null;
     }
@@ -408,7 +410,8 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
     stateMenu.add(new ClearStateAction());
     stateMenu.addSeparator();
     List<BooleanTokenOverlay> overlays =
-        new ArrayList<BooleanTokenOverlay>(MapTool.getCampaign().getTokenStatesMap().values());
+        new ArrayList<BooleanTokenOverlay>(
+            MapTool.getClient().getCampaign().getTokenStatesMap().values());
     overlays.sort(BooleanTokenOverlay.COMPARATOR);
 
     // Create the group menus first so that they can be placed at the top of the state menu
@@ -517,14 +520,14 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
         Token token = zone.getToken(guid);
 
         if (selected) {
-          for (Player player : MapTool.getPlayerList()) {
+          for (Player player : MapTool.getClient().getPlayerList()) {
             token.addOwner(player.getName());
           }
           token.removeOwner(name);
         } else {
           token.addOwner(name);
         }
-        MapTool.serverCommand().putToken(zone.getId(), token);
+        MapTool.getClient().getServerCommand().putToken(zone.getId(), token);
       }
       MapTool.getFrame().updateTokenTree();
     }
@@ -579,7 +582,7 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
           continue;
         }
         updateToken(token, color);
-        MapTool.serverCommand().putToken(zone.getId(), token);
+        MapTool.getClient().getServerCommand().putToken(zone.getId(), token);
       }
       MapTool.getFrame().updateTokenTree();
       renderer.repaint();
@@ -616,7 +619,7 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
             continue;
           }
           updateToken(token, color);
-          MapTool.serverCommand().putToken(zone.getId(), token);
+          MapTool.getClient().getServerCommand().putToken(zone.getId(), token);
         }
         MapTool.getFrame().updateTokenTree();
         renderer.repaint();
@@ -729,7 +732,7 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
           Token token = zone.getToken(tokenGUID);
           BigDecimal val = hide.isSelected() ? null : new BigDecimal(slider.getValue() / 100.0);
           token.setState(name, val);
-          MapTool.serverCommand().putToken(zone.getId(), token);
+          MapTool.getClient().getServerCommand().putToken(zone.getId(), token);
         }
       }
     }
@@ -745,10 +748,10 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
       ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
       for (GUID tokenGUID : selectedTokenSet) {
         Token token = renderer.getZone().getToken(tokenGUID);
-        for (String state : MapTool.getCampaign().getTokenStatesMap().keySet()) {
+        for (String state : MapTool.getClient().getCampaign().getTokenStatesMap().keySet()) {
           token.setState(state, null);
         }
-        MapTool.serverCommand().putToken(renderer.getZone().getId(), token);
+        MapTool.getClient().getServerCommand().putToken(renderer.getZone().getId(), token);
       }
       renderer.repaint();
     }
@@ -779,7 +782,7 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
         token.setState(
             aE.getActionCommand(),
             ((JCheckBoxMenuItem) aE.getSource()).isSelected() ? Boolean.TRUE : null);
-        MapTool.serverCommand().putToken(renderer.getZone().getId(), token);
+        MapTool.getClient().getServerCommand().putToken(renderer.getZone().getId(), token);
       }
       renderer.repaint();
     }
@@ -845,7 +848,7 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
         Token token = zone.getToken(tokenGUID);
         if (token != null) {
           token.setOwnedByAll(true);
-          MapTool.serverCommand().putToken(zone.getId(), token);
+          MapTool.getClient().getServerCommand().putToken(zone.getId(), token);
         }
       }
     }
@@ -863,7 +866,7 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
         Token token = zone.getToken(tokenGUID);
         if (token != null) {
           token.clearAllOwners();
-          MapTool.serverCommand().putToken(zone.getId(), token);
+          MapTool.getClient().getServerCommand().putToken(zone.getId(), token);
         }
       }
     }
@@ -938,7 +941,7 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
         // No more last path
         token.setLastPath(null);
 
-        MapTool.serverCommand().putToken(zone.getId(), token);
+        MapTool.getClient().getServerCommand().putToken(zone.getId(), token);
       }
       getRenderer().repaint();
     }

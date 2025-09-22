@@ -99,7 +99,6 @@ import net.rptools.maptool.model.library.LibraryManager;
 import net.rptools.maptool.model.library.url.LibraryURLStreamHandler;
 import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.model.player.PersonalServerPlayerDatabase;
-import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.player.PlayerDatabaseFactory;
 import net.rptools.maptool.model.player.PlayerZoneListener;
 import net.rptools.maptool.model.player.ServerSidePlayerDatabase;
@@ -1083,10 +1082,6 @@ public class MapTool {
 
     server.stop();
     getFrame().getConnectionPanel().stopHosting();
-  }
-
-  public static List<Player> getPlayerList() {
-    return client.getPlayerList();
   }
 
   /** Returns the list of non-gm names. */

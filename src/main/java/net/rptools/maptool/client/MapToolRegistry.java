@@ -230,20 +230,22 @@ public class MapToolRegistry {
   }
 
   public void heartBeat() {
+    var mtClient = MapTool.getClient();
+
     JsonObject body = new JsonObject();
     body.addProperty("id", serverRegistrationId);
     body.addProperty("clientId", MapTool.getClientId());
     var address = getAddress();
     body.addProperty("address", address == null ? "" : address.getHostName());
-    body.addProperty("number_players", MapTool.getPlayerList().size());
-    body.addProperty("number_maps", MapTool.getCampaign().getZones().size());
+    body.addProperty("number_players", mtClient.getPlayerList().size());
+    body.addProperty("number_maps", mtClient.getCampaign().getZones().size());
 
-    OkHttpClient client = new OkHttpClient();
+    OkHttpClient httpClient = new OkHttpClient();
     RequestBody requestBody = RequestBody.create(body.toString(), JSON);
 
     Request request = new Request.Builder().url(SERVER_HEARTBEAT).patch(requestBody).build();
 
-    client
+    httpClient
         .newCall(request)
         .enqueue(
             new Callback() {

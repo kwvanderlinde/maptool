@@ -44,7 +44,7 @@ public class WhisperMacro extends AbstractMacro {
         (macro.startsWith("\"")) ? macro.indexOf(" ", playerName.length() + 2) : macro.indexOf(" ");
 
     String message = processText(macro.substring(indexSpace + 1));
-    List<Player> playerList = MapTool.getPlayerList();
+    List<Player> playerList = MapTool.getClient().getPlayerList();
     List<String> players = new ArrayList<String>();
     for (int count = 0; count < playerList.size(); count++) {
       Player p = playerList.get(count);
@@ -62,7 +62,7 @@ public class WhisperMacro extends AbstractMacro {
               I18N.getText("msg.error.playerNotConnected", playerName)));
       return;
     }
-    if (MapTool.getPlayer().getName().equalsIgnoreCase(playerName)) {
+    if (MapTool.getClient().getPlayer().getName().equalsIgnoreCase(playerName)) {
       MapTool.addMessage(
           TextMessage.me(context.getTransformationHistory(), I18N.getText("whisper.toSelf")));
       return;

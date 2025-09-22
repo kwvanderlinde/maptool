@@ -143,7 +143,7 @@ public class EditTokenDialog extends AbeillePanel<Token> {
 
   @SuppressWarnings("unused")
   public void initGMNotesEditorPane() {
-    setGmNotesEnabled(MapTool.getPlayer().isGM());
+    setGmNotesEnabled(MapTool.getClient().getPlayer().isGM());
   }
 
   @SuppressWarnings("unused")
@@ -168,7 +168,9 @@ public class EditTokenDialog extends AbeillePanel<Token> {
               locationCombo.setSelectedItem(tokenSheet.location());
             } else {
               var sheetProp =
-                  MapTool.getCampaign().getTokenTypeDefaultSheetId(getModel().getPropertyType());
+                  MapTool.getClient()
+                      .getCampaign()
+                      .getTokenTypeDefaultSheetId(getModel().getPropertyType());
               locationCombo.setSelectedItem(sheetProp.location());
             }
           }
@@ -198,12 +200,12 @@ public class EditTokenDialog extends AbeillePanel<Token> {
 
   @SuppressWarnings("unused")
   public void initUniqueLightSourcesTextPane() {
-    setUniqueLightSourcesEnabled(MapTool.getPlayer().isGM());
+    setUniqueLightSourcesEnabled(MapTool.getClient().getPlayer().isGM());
   }
 
   @SuppressWarnings("unused")
   public void initUniqueAurasTextPane() {
-    setUniqueAurasEnabled(MapTool.getPlayer().isGM());
+    setUniqueAurasEnabled(MapTool.getClient().getPlayer().isGM());
   }
 
   @SuppressWarnings("unused")
@@ -248,12 +250,13 @@ public class EditTokenDialog extends AbeillePanel<Token> {
     getTokenTopologyPanel().reset(token);
     bind(token);
 
+    var player = MapTool.getClient().getPlayer();
     getRootPane().setDefaultButton((JButton) dialogFactory.getDialog().getOKButton());
-    setGmNotesEnabled(MapTool.getPlayer().isGM());
-    getComponent("@GMName").setEnabled(MapTool.getPlayer().isGM());
+    setGmNotesEnabled(player.isGM());
+    getComponent("@GMName").setEnabled(player.isGM());
 
-    setUniqueLightSourcesEnabled(MapTool.getPlayer().isGM());
-    setUniqueAurasEnabled(MapTool.getPlayer().isGM());
+    setUniqueLightSourcesEnabled(player.isGM());
+    setUniqueAurasEnabled(player.isGM());
 
     setLibTokenPaneEnabled(token.isLibToken());
     validateLibTokenURIAccess(getNameField().getText());
@@ -384,7 +387,7 @@ public class EditTokenDialog extends AbeillePanel<Token> {
         .setSelectedItem(
             token.getSightType() != null
                 ? token.getSightType()
-                : MapTool.getCampaign().getCampaignProperties().getDefaultSightType());
+                : MapTool.getClient().getCampaign().getCampaignProperties().getDefaultSightType());
     getCharSheetPanel().setImageId(token.getCharsheetImage());
     getPortraitPanel().setImageId(token.getPortraitImage());
     getTokenLayoutPanel().setToken(token);
@@ -426,7 +429,7 @@ public class EditTokenDialog extends AbeillePanel<Token> {
     JTabbedPane tabbedPane = getTabbedPane();
 
     String topologyTitle = I18N.getText("EditTokenDialog.tab.vbl");
-    if (MapTool.getPlayer().isGM()) {
+    if (MapTool.getClient().getPlayer().isGM()) {
       tabbedPane.setEnabledAt(tabbedPane.indexOfTab(topologyTitle), true);
       getTokenTopologyPanel().setToken(token);
       getInverseTopologyCheckbox().setSelected(getTokenTopologyPanel().isInverseTopology());
@@ -659,7 +662,8 @@ public class EditTokenDialog extends AbeillePanel<Token> {
 
   /** Updates the Property Type dropdown list with the current campaign types. */
   private void updatePropertyTypeCombo() {
-    List<String> typeList = new ArrayList<String>(MapTool.getCampaign().getTokenTypes());
+    List<String> typeList =
+        new ArrayList<String>(MapTool.getClient().getCampaign().getTokenTypes());
     Collections.sort(typeList);
     DefaultComboBoxModel model = new DefaultComboBoxModel(typeList.toArray());
     getPropertyTypeCombo().setModel(model);
@@ -667,7 +671,7 @@ public class EditTokenDialog extends AbeillePanel<Token> {
 
   private void updateSightTypeCombo() {
     List<String> typeList = new ArrayList<String>();
-    for (var sightType : MapTool.getCampaign().getSightTypes()) {
+    for (var sightType : MapTool.getClient().getCampaign().getSightTypes()) {
       typeList.add(sightType.getName());
     }
 
@@ -676,7 +680,8 @@ public class EditTokenDialog extends AbeillePanel<Token> {
   }
 
   private void updateImageTableCombo() {
-    List<String> typeList = new ArrayList<String>(MapTool.getCampaign().getLookupTables());
+    List<String> typeList =
+        new ArrayList<String>(MapTool.getClient().getCampaign().getLookupTables());
     Collections.sort(typeList);
 
     DefaultComboBoxModel model = new DefaultComboBoxModel(typeList.toArray());
@@ -692,7 +697,7 @@ public class EditTokenDialog extends AbeillePanel<Token> {
     EventQueue.invokeLater(
         () -> {
           PropertyTable pp = getPropertyTable();
-          var propertyList = MapTool.getCampaign().getTokenPropertyList(propertyType);
+          var propertyList = MapTool.getClient().getCampaign().getTokenPropertyList(propertyType);
           pp.setModel(
               new TokenPropertyTableModel(token, propertyType, propertyList, propertyCellRenderer));
           pp.expandAll();
@@ -885,7 +890,7 @@ public class EditTokenDialog extends AbeillePanel<Token> {
     }
     /* OWNERSHIP */
     /* If the token is owned by all and we are a player don't alter the ownership list. */
-    if (MapTool.getPlayer().isGM() || !token.isOwnedByAll()) {
+    if (MapTool.getClient().getPlayer().isGM() || !token.isOwnedByAll()) {
       token.clearAllOwners();
 
       for (int i = 0; i < getOwnerList().getModel().getSize(); i++) {
@@ -896,10 +901,10 @@ public class EditTokenDialog extends AbeillePanel<Token> {
         }
       }
       /* If we are not a GM and we are the only non-GM owner, make sure we cannot remove ourself from the owners list */
-      if (!MapTool.getPlayer().isGM()) {
+      if (!MapTool.getClient().getPlayer().isGM()) {
         boolean hasPlayer = token.isOwnedByAny(MapTool.getNonGMs());
         if (!hasPlayer) {
-          token.addOwner(MapTool.getPlayer().getName());
+          token.addOwner(MapTool.getClient().getPlayer().getName());
         }
       }
     }
@@ -947,8 +952,10 @@ public class EditTokenDialog extends AbeillePanel<Token> {
     /* PORTRAIT */
     if (getPortraitPanel().getImageId() != null) {
       /* Make sure the server has the image */
-      if (!MapTool.getCampaign().containsAsset(getPortraitPanel().getImageId())) {
-        MapTool.serverCommand().putAsset(AssetManager.getAsset(getPortraitPanel().getImageId()));
+      if (!MapTool.getClient().getCampaign().containsAsset(getPortraitPanel().getImageId())) {
+        MapTool.getClient()
+            .getServerCommand()
+            .putAsset(AssetManager.getAsset(getPortraitPanel().getImageId()));
       }
     }
     token.setPortraitImage(getPortraitPanel().getImageId());
@@ -998,7 +1005,8 @@ public class EditTokenDialog extends AbeillePanel<Token> {
     statesPanel.removeAll();
     /* Group the states first into individual panels */
     List<BooleanTokenOverlay> overlays =
-        new ArrayList<BooleanTokenOverlay>(MapTool.getCampaign().getTokenStatesMap().values());
+        new ArrayList<BooleanTokenOverlay>(
+            MapTool.getClient().getCampaign().getTokenStatesMap().values());
     if (overlays.isEmpty()) {
       statesPanel.setVisible(false);
     } else {
@@ -1044,11 +1052,11 @@ public class EditTokenDialog extends AbeillePanel<Token> {
     var barsPanel = getBarsPanel();
     barsPanel.setLayout(new MigLayout("wrap 2,gapx 5%", "[fill,grow][fill,grow]"));
     barsPanel.removeAll();
-    if (MapTool.getCampaign().getTokenBarsMap().isEmpty()) {
+    if (MapTool.getClient().getCampaign().getTokenBarsMap().isEmpty()) {
       barsPanel.setVisible(false);
     } else {
       barsPanel.setVisible(true);
-      for (BarTokenOverlay bar : MapTool.getCampaign().getTokenBarsMap().values()) {
+      for (BarTokenOverlay bar : MapTool.getClient().getCampaign().getTokenBarsMap().values()) {
         JSlider slider = new JSlider(0, 100);
         JCheckBox hide = new JCheckBox(I18N.getString("EditTokenDialog.checkbox.state.hide"));
         hide.addChangeListener(
@@ -1421,7 +1429,8 @@ public class EditTokenDialog extends AbeillePanel<Token> {
                 for (final var type : Zone.TopologyType.values()) {
                   final var topology = getTokenTopologyPanel().getTopology(type);
                   if (topology != null) {
-                    MapTool.serverCommand()
+                    MapTool.getClient()
+                        .getServerCommand()
                         .updateMaskTopology(
                             MapTool.getFrame().getCurrentZoneRenderer().getZone(),
                             getTokenTopologyPanel()
@@ -1455,7 +1464,9 @@ public class EditTokenDialog extends AbeillePanel<Token> {
                 getTokenTopologyPanel().putCustomTopology(type, newTokenTopology);
 
                 if (removeFromMap) {
-                  MapTool.serverCommand().updateMaskTopology(zone, mapTopology, true, type);
+                  MapTool.getClient()
+                      .getServerCommand()
+                      .updateMaskTopology(zone, mapTopology, true, type);
                 }
               }
 
@@ -2245,7 +2256,7 @@ public class EditTokenDialog extends AbeillePanel<Token> {
       Set<String> ownerSet = model.getOwners();
       List<String> list = new ArrayList<String>(ownerSet);
 
-      List<Player> playerList = MapTool.getPlayerList();
+      List<Player> playerList = MapTool.getClient().getPlayerList();
       for (Object item : playerList) {
         Player player = (Player) item;
         String playerId = player.getName();
