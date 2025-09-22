@@ -1040,7 +1040,7 @@ public class ClientMessageHandler implements MessageHandler {
     if (client.getPlayer().getName().equals(playerName))
       EventQueue.invokeLater(
           () -> {
-            AppActions.disconnectFromServer();
+            AppActions.disconnectFromServer(client);
             MapTool.showInformation("You have been booted from the server.");
           });
   }

@@ -2152,26 +2152,33 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
-          if (getClient().isHostingServer() && !MapTool.confirm("msg.confirm.hostingDisconnect")) {
+          var client = MapTool.getClient();
+          if (client.isHostingServer() && !MapTool.confirm("msg.confirm.hostingDisconnect")) {
             return;
           }
-          disconnectFromServer();
+          disconnectFromServer(client);
         }
       };
+
+  public static void disconnectFromServer() {
+    disconnectFromServer(MapTool.getClient());
+  }
 
   /**
    * Disconnects the client and starts a personal server.
    *
    * <p>If we are hosting the server, the personal server will have the same campaign as the server.
    * Otherwise a new basic campaign will be created.
+   *
+   * @param client The MapTool client that should disconnect.
    */
-  public static void disconnectFromServer() {
+  public static void disconnectFromServer(MapToolClient client) {
     // hide map so player doesn't get a brief GM view
     MapTool.getFrame().setCurrentZoneRenderer(null);
 
     Campaign campaign;
-    if (MapTool.getClient().isHostingServer()) {
-      campaign = MapTool.getClient().getCampaign();
+    if (client.isHostingServer()) {
+      campaign = client.getCampaign();
     } else {
       campaign = CampaignFactory.createBasicCampaign();
       new CampaignManager().clearCampaignData();
