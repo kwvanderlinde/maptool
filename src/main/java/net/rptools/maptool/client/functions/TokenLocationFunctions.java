@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
-import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
@@ -304,11 +303,9 @@ public class TokenLocationFunctions extends AbstractFunction {
 
       distance = Double.MAX_VALUE;
       if (closedForm) {
-        if (wmetric == null && grid.useMetric())
-          wmetric =
-              MapTool.getClient().isPersonalServer()
-                  ? AppPreferences.movementMetric.get()
-                  : MapTool.getClient().getServerPolicy().getMovementMetric();
+        if (wmetric == null && grid.useMetric()) {
+          wmetric = MapTool.getClient().getServerPolicy().getMovementMetric();
+        }
         // explicitly find difference without walkers
         double curDist;
         for (CellPoint scell : sourceCells) {

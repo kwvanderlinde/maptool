@@ -30,7 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
@@ -472,10 +471,7 @@ public class TokenMoveFunctions extends AbstractFunction {
 
   private String getMovement(
       final Token source, boolean returnFractionOnly, boolean useTerrainModifiers) {
-    WalkerMetric metric =
-        MapTool.getClient().isPersonalServer()
-            ? AppPreferences.movementMetric.get()
-            : MapTool.getClient().getServerPolicy().getMovementMetric();
+    WalkerMetric metric = MapTool.getClient().getServerPolicy().getMovementMetric();
 
     ZoneRenderer zr = MapTool.getFrame().getCurrentZoneRenderer();
     Zone zone = zr.getZone();

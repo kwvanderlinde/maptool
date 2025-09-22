@@ -1124,8 +1124,7 @@ public class Zone {
       return;
     }
     if (tok != null) {
-      if (MapTool.getClient().isPersonalServer()
-          || (serverPolicy.isUseIndividualFOW() && AppUtil.playerOwns(tok))) {
+      if (serverPolicy.isUseIndividualFOW() && AppUtil.playerOwns(tok)) {
         GUID tea = tok.getExposedAreaGUID();
         ExposedAreaMetaData meta = exposedAreaMeta.get(tea);
         if (meta == null) {
@@ -1169,9 +1168,7 @@ public class Zone {
       // Jamz: if this exposedArea isn't done then it breaks getExposedTokens when vision is off...
       exposedArea.add(area);
     }
-    if (selectedToks != null
-        && !selectedToks.isEmpty()
-        && (serverPolicy.isUseIndividualFOW() || MapTool.getClient().isPersonalServer())) {
+    if (selectedToks != null && !selectedToks.isEmpty() && serverPolicy.isUseIndividualFOW()) {
       boolean isAllowed = player.isGM() || !serverPolicy.useStrictTokenManagement();
       String playerId = player.getName();
       MapToolFrame frame = MapTool.getFrame();
@@ -1246,9 +1243,7 @@ public class Zone {
     if (getVisionType() == VisionType.OFF) {
       exposedArea.subtract(area);
     }
-    if (selectedToks != null
-        && !selectedToks.isEmpty()
-        && (serverPolicy.isUseIndividualFOW() || MapTool.getClient().isPersonalServer())) {
+    if (selectedToks != null && !selectedToks.isEmpty() && serverPolicy.isUseIndividualFOW()) {
       List<Token> allToks = new ArrayList<Token>();
 
       for (GUID guid : selectedToks) {

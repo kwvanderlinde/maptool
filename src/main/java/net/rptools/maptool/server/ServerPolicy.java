@@ -301,10 +301,7 @@ public class ServerPolicy {
         "disable player asset panel",
         getDisablePlayerAssetPanel() ? BigDecimal.ONE : BigDecimal.ZERO);
 
-    WalkerMetric metric =
-        MapTool.getClient().isPersonalServer()
-            ? AppPreferences.movementMetric.get()
-            : getMovementMetric();
+    WalkerMetric metric = getMovementMetric();
     sinfo.addProperty("movement metric", metric.name());
 
     sinfo.addProperty("using ai", isUsingAstarPathfinding() ? BigDecimal.ONE : BigDecimal.ZERO);

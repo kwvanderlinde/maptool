@@ -1058,10 +1058,7 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
     double moveDistance;
     Zone zone = getZone();
     Grid grid = zone.getGrid();
-    WalkerMetric wm =
-        MapTool.getClient().isPersonalServer()
-            ? AppPreferences.movementMetric.get()
-            : MapTool.getClient().getServerPolicy().getMovementMetric();
+    WalkerMetric wm = MapTool.getClient().getServerPolicy().getMovementMetric();
     ZonePoint endVertex = at.getVertex();
     CellPoint dragStartCellPoint = grid.convert(startVertex);
     CellPoint dragVertexCellPoint = grid.convert(endVertex);

@@ -187,8 +187,7 @@ public class ZoneViewModel {
     if (selectedTokens == null || selectedTokens.isEmpty()) {
       MapToolClient client = MapTool.getClient();
       // if no selected token qualifying for view, use owned tokens or player tokens with sight
-      final boolean checkOwnership =
-          client.getServerPolicy().isUseIndividualViews() || MapTool.getClient().isPersonalServer();
+      final boolean checkOwnership = client.getServerPolicy().isUseIndividualViews();
       selectedTokens =
           checkOwnership
               ? zone.getOwnedTokensWithSight(client.getPlayer())

@@ -1876,18 +1876,12 @@ public class PointerTool extends DefaultTool {
       String name = client.getPlayer().getName();
       boolean isGM = client.getPlayer().isGM();
       ServerPolicy serverPolicy = client.getServerPolicy();
-      boolean ownerReveal; // if true, reveal FoW if current player owns the token.
-      boolean hasOwnerReveal; // if true, reveal FoW if token has an owner.
-      boolean noOwnerReveal; // if true, reveal FoW if token has no owners.
-
-      if (MapTool.getClient().isPersonalServer()) {
-        ownerReveal =
-            hasOwnerReveal = noOwnerReveal = AppPreferences.autoRevealVisionOnGMMovement.get();
-      } else {
-        ownerReveal = serverPolicy.isAutoRevealOnMovement();
-        hasOwnerReveal = isGM && serverPolicy.isAutoRevealOnMovement();
-        noOwnerReveal = isGM && serverPolicy.getGmRevealsVisionForUnownedTokens();
-      }
+      // if true, reveal FoW if current player owns the token.
+      boolean ownerReveal = serverPolicy.isAutoRevealOnMovement();
+      // if true, reveal FoW if token has an owner.
+      boolean hasOwnerReveal = isGM && serverPolicy.isAutoRevealOnMovement();
+      // if true, reveal FoW if token has no owners.
+      boolean noOwnerReveal = isGM && serverPolicy.getGmRevealsVisionForUnownedTokens();
       if (renderer.getZone().hasFog() && (ownerReveal || hasOwnerReveal || noOwnerReveal)) {
         Set<GUID> exposeSet = new HashSet<GUID>();
         Zone zone = renderer.getZone();

@@ -300,8 +300,7 @@ public class FogUtil {
       // why check ownership? Only GM can run this.
       boolean owner = token.isOwner(playerName) || isGM;
 
-      if ((!client.isPersonalServer() || client.getServerPolicy().isUseIndividualViews())
-          && !owner) {
+      if (client.getServerPolicy().isUseIndividualViews() && !owner) {
         continue;
       }
 
