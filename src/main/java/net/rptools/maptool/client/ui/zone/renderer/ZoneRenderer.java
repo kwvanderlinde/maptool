@@ -756,9 +756,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
               g2d.drawImage(buffer, null, 0, 0);
               timer.stop("paintComponent:renderBuffer");
             }
+            timer.stop("paintComponent");
           }
-
-          timer.stop("paintComponent");
         });
   }
 
