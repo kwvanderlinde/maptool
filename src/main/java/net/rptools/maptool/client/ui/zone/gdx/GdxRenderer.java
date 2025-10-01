@@ -1455,7 +1455,7 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   private void createScreenshot(String name) {
-    var file = Gdx.files.absolute("C:\\Users\\tkunze\\OneDrive\\Desktop\\" + name + ".png");
+    var file = Gdx.files.absolute("/home/kenneth/" + name + ".png");
     if (!file.exists()) {
       Pixmap pixmap = Pixmap.createFromFrameBuffer(0, 0, width, height);
       PixmapIO.writePNG(file, pixmap, Deflater.DEFAULT_COMPRESSION, true);
