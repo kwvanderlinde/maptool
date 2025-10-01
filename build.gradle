@@ -172,7 +172,7 @@ def instrumentForms = tasks.register('instrumentForms', Sync) {
         )
         ant.javac2(
                 includeantruntime: false,
-                srcdir: sourceSets.main.allSource.sourceDirectories.asPath,
+                srcdir: sourceSets.main.java.sourceDirectories.asPath,
                 destdir: sourceSets.main.java.destinationDirectory.get(),
                 classpath: configurations.forms.asPath
         )
