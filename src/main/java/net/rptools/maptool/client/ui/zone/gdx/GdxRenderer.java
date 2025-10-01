@@ -133,6 +133,7 @@ public class GdxRenderer extends ApplicationAdapter {
 
   // general resources
   private OrthographicCamera cam;
+  private OrthographicCamera blitCam;
   private OrthographicCamera hudCam;
   private PolygonSpriteBatch batch;
   private boolean initialized = false;
@@ -279,6 +280,9 @@ public class GdxRenderer extends ApplicationAdapter {
       cam = new OrthographicCamera();
       cam.setToOrtho(false);
 
+      blitCam = new OrthographicCamera();
+      blitCam.setToOrtho(false);
+
       hudCam = new OrthographicCamera();
       hudCam.setToOrtho(false);
 
@@ -349,7 +353,7 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   private void drawBackBuffer(BlendFunction blendDown) {
-    setProjectionMatrix(hudCam.combined);
+    setProjectionMatrix(blitCam.combined);
     resultsBuffer.begin();
     blendDown.applyToBatch(batch);
     batch.draw(backBuffer.getColorBufferTexture(), 0, 0, width, height, 0, 0, 1, 1);
@@ -360,7 +364,7 @@ public class GdxRenderer extends ApplicationAdapter {
   private void drawBackBuffer(ShaderProgram shader) {
     var oldShader = batch.getShader();
 
-    setProjectionMatrix(hudCam.combined);
+    setProjectionMatrix(blitCam.combined);
     spareBuffer.begin();
     batch.setShader(shader);
     ScreenUtils.clear(Color.CLEAR);
@@ -438,7 +442,17 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   private void updateCam() {
-    if (cam == null) return;
+    if (cam == null) {
+      return;
+    }
+
+    // TODO Should be back buffer width/height?
+    blitCam.viewportWidth = width;
+    blitCam.viewportHeight = height;
+    blitCam.position.x = blitCam.viewportWidth / 2f;
+    blitCam.position.y = blitCam.viewportHeight / 2f;
+    blitCam.zoom = 1;
+    blitCam.update();
 
     cam.viewportWidth = width;
     cam.viewportHeight = height;
@@ -447,8 +461,10 @@ public class GdxRenderer extends ApplicationAdapter {
     cam.zoom = zoom;
     cam.update();
 
+    // TODO Should be logical width/height?
     hudCam.viewportWidth = width;
     hudCam.viewportHeight = height;
+    hudCam.zoom = 1;
     hudCam.position.x = hudCam.viewportWidth / 2f;
     hudCam.position.y = hudCam.viewportHeight / 2f;
     hudCam.update();
@@ -820,7 +836,7 @@ public class GdxRenderer extends ApplicationAdapter {
     endFBO(resultsBuffer);
 
     Gdx.gl.glViewport(0, 0, width, height);
-    setProjectionMatrix(hudCam.combined);
+    setProjectionMatrix(blitCam.combined);
     BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER.applyToBatch(batch);
     batch.draw(resultsBuffer.getColorBufferTexture(), 0, 0, width, height, 0, 0, 1, 1);
     setProjectionMatrix(cam.combined);
