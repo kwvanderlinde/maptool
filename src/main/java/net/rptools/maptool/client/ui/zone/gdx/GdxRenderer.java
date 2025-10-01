@@ -28,6 +28,7 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.*;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.utils.TiledDrawable;
+import com.badlogic.gdx.utils.BufferUtils;
 import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.google.common.eventbus.Subscribe;
@@ -36,6 +37,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.GeneralPath;
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
@@ -454,6 +456,30 @@ public class GdxRenderer extends ApplicationAdapter {
     hudCam.update();
   }
 
+  /**
+   * @see #endFBO(FrameBuffer)
+   */
+  private int defaultBuffer = 0;
+
+  /**
+   * Unbinds the framebuffer and binds the default framebuffer.
+   *
+   * <p>Note that LibGDX has its own static concept of the "default framebuffer". However, being
+   * embedded in a larger application means we are not necessarily supposed to render results to
+   * that default framebuffer, but must use whichever framebuffer is given us. So this method
+   * decorates {@link FrameBuffer#end()} to instead restore whichever buffer is set in {@link
+   * #defaultBuffer}, which gets updated in {@link #render()}.
+   *
+   * @param fbo The framebuffer to unbind.
+   */
+  private void endFBO(FrameBuffer fbo) {
+    fbo.end();
+
+    // With openglfx, the default buffer can change every frame, and is not 0!
+    Gdx.gl20.glBindFramebuffer(GL20.GL_FRAMEBUFFER, defaultBuffer);
+    Gdx.gl20.glViewport(0, 0, width, height);
+  }
+
   @Override
   public void render() {
     try {
@@ -463,6 +489,18 @@ public class GdxRenderer extends ApplicationAdapter {
             timer.setThreshold(10);
             timer.setThreshold(1, TimeUnit.MICROSECONDS);
             timer.setReportingUnit(TimeUnit.MICROSECONDS);
+
+            /* Workaround: with opengljx, the buffer we need to render is not necessarily the
+             * default buffer according to LibGDX (which would normally be zero). Instead, some
+             * alternative frame buffer is bound, which we need to return to after finishing with
+             * our own frame buffers.
+             * This is not ideal, because it can be slow to query GPU state like this.
+             * See #endFBO(FrameBuffer)
+             */
+            defaultBuffer = 0;
+            IntBuffer buffer = BufferUtils.newIntBuffer(1);
+            Gdx.gl.glGetIntegerv(GL20.GL_FRAMEBUFFER_BINDING, buffer);
+            defaultBuffer = buffer.get(0);
 
             ScreenUtils.clear(Color.BLACK);
 
@@ -528,7 +566,9 @@ public class GdxRenderer extends ApplicationAdapter {
     BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER.applyToBatch(batch);
 
     // this happens sometimes when starting with ide (non-debug)
-    if (batch.isDrawing()) batch.end();
+    if (batch.isDrawing()) {
+      batch.end();
+    }
     batch.begin();
 
     if (zoneCache == null || !renderZone) return;
@@ -727,7 +767,7 @@ public class GdxRenderer extends ApplicationAdapter {
       backBuffer.begin();
       renderFog(view);
       batch.flush();
-      backBuffer.end();
+      endFBO(backBuffer);
 
       drawBackBuffer(BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER);
     }
@@ -785,7 +825,7 @@ public class GdxRenderer extends ApplicationAdapter {
     }
 
     batch.flush();
-    resultsBuffer.end();
+    endFBO(resultsBuffer);
 
     Gdx.gl.glViewport(0, 0, width, height);
     setProjectionMatrix(hudCam.combined);
@@ -1377,7 +1417,7 @@ public class GdxRenderer extends ApplicationAdapter {
             BlendFunction.SCREEN,
             false);
         batch.flush();
-        backBuffer.end();
+        endFBO(backBuffer);
 
         if (zoneCache.getZone().getLightingStyle() == Zone.LightingStyle.ENVIRONMENTAL) {
           drawBackBuffer(environmentalLightingShader);
@@ -1395,7 +1435,7 @@ public class GdxRenderer extends ApplicationAdapter {
       backBuffer.begin();
       renderLumensOverlay(view, AppPreferences.lumensOverlayOpacity.get() / 255.0f);
       batch.flush();
-      backBuffer.end();
+      endFBO(backBuffer);
       drawBackBuffer(BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER);
     }
   }
@@ -1414,7 +1454,7 @@ public class GdxRenderer extends ApplicationAdapter {
         BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER,
         true);
     batch.flush();
-    backBuffer.end();
+    endFBO(backBuffer);
     drawBackBuffer(BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER);
   }
 
@@ -2141,7 +2181,7 @@ public class GdxRenderer extends ApplicationAdapter {
 
   private void paintClipped(FrameBuffer buffer, Sprite image, Area bounds, Area clip) {
     batch.flush();
-    buffer.end();
+    endFBO(buffer);
 
     spareBuffer.begin();
     ScreenUtils.clear(Color.CLEAR);
@@ -2157,7 +2197,7 @@ public class GdxRenderer extends ApplicationAdapter {
     areaRenderer.fillArea(batch, tmpArea);
 
     batch.flush();
-    spareBuffer.end();
+    endFBO(spareBuffer);
 
     buffer.begin();
     BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER.applyToBatch(batch);
