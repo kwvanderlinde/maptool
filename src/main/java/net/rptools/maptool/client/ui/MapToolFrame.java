@@ -14,13 +14,15 @@
  */
 package net.rptools.maptool.client.ui;
 
-import com.badlogic.gdx.backends.jogamp.JoglAwtApplicationConfiguration;
-import com.badlogic.gdx.backends.jogamp.JoglSwingCanvas;
 import com.google.common.eventbus.Subscribe;
+import com.huskerdev.grapl.gl.GLProfile;
+import com.huskerdev.openglfx.canvas.GLCanvas;
+import com.huskerdev.openglfx.internal.GLInteropType;
+import com.huskerdev.openglfx.libgdx.LibGDXCanvas;
+import com.huskerdev.openglfx.libgdx.OGLFXApplicationConfiguration;
 import com.jidesoft.docking.DefaultDockableHolder;
 import com.jidesoft.docking.DockableFrame;
 import com.jidesoft.docking.DockingManager;
-import com.jogamp.opengl.awt.GLJPanel;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
@@ -35,6 +37,10 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
+import javafx.scene.layout.StackPane;
 import javax.swing.*;
 import javax.swing.Timer;
 import javax.swing.border.BevelBorder;
@@ -158,7 +164,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
   /** Contains the zoneRenderer, as well as all overlays. */
   private final JPanel zoneRendererPanel;
 
-  private GLJPanel gdxPanel;
+  private JFXPanel gdxPanel;
 
   private JPanel currentRenderPanel;
 
@@ -415,11 +421,15 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     zoneRendererPanel = new JPanel(new PositionalLayout(5));
     zoneRendererPanel.setBackground(Color.black);
     currentRenderPanel = zoneRendererPanel;
-    initGdx();
+    gdxPanel = new JFXPanel();
+    gdxPanel.setVisible(false);
+    gdxPanel.setOpaque(false);
 
     zoneRendererPanel.add(getChatTypingPanel(), PositionalLayout.Position.NW);
     zoneRendererPanel.add(getChatActionLabel(), PositionalLayout.Position.SW);
     zoneRendererPanel.add(gdxPanel, PositionalLayout.Position.CENTER);
+
+    initGdx(gdxPanel);
 
     commandPanel = new CommandPanel();
 
@@ -471,25 +481,55 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     setChatTypingLabelColor(AppPreferences.chatNotificationColor.get());
   }
 
-  private void initGdx() {
-    var config = new JoglAwtApplicationConfiguration();
-    // config.foregroundFPS = 300;
-    // config.backgroundFPS = 10;
-    // config.title = "maptool";
-    // config.width = 640;
-    // config.height = 480;
-    // config.samples = 1;
-    // var config = new LwjglApplicationConfiguration();
-    config.foregroundFPS = 10000;
-    config.vSyncEnabled = false;
+  private void initGdx(JFXPanel gdxPanel) {
+    Platform.runLater(
+        () -> {
+          var root = new StackPane();
 
-    var joglSwingCanvas = new JoglSwingCanvas(GdxRenderer.getInstance(), config);
-    // var joglSwingCanvas = new LwjglAWTCanvas(GdxRenderer.getInstance(), config);
+          var config = new OGLFXApplicationConfiguration();
+          // config.foregroundFPS = 300;
+          // config.backgroundFPS = 10;
+          // config.title = "maptool";
+          // config.width = 640;
+          // config.height = 480;
+          // config.samples = 1;
+          // var config = new LwjglApplicationConfiguration();
+          // config.foregroundFPS = 10000;
+          // config.vSyncEnabled = false;
 
-    gdxPanel = joglSwingCanvas.getGLCanvas();
-    gdxPanel.setVisible(false);
-    gdxPanel.setOpaque(false);
-    // gdxPanel.setLayout(new PositionalLayout(5));
+          LibGDXCanvas canvas =
+              new LibGDXCanvas(
+                  GdxRenderer.getInstance(),
+                  config,
+                  GLCanvas.Defaults.FLIP_Y,
+                  GLCanvas.Defaults.MSAA,
+                  GLCanvas.Defaults.FPS,
+                  GLCanvas.Defaults.SWAP_BUFFERS,
+                  // GLInteropType.Blit, // TODO GLCanvas.Defaults.INTEROP_TYPE is private
+                  // GLInteropType.Companion.getAuto(),
+                  GLInteropType.ExternalObjectsESLinux,
+                  GLProfile.CORE, // TODO GLCanvas.Defaults.PROFILE is private
+                  GLCanvas.Defaults.DEBUG,
+                  null, // TODO GLCanvas.Defaults.SHARE_WITH is private
+                  GLCanvas.Defaults.MAJOR_VERSION,
+                  GLCanvas.Defaults.MINOR_VERSION,
+                  GLCanvas.Defaults.EXTERNAL_WINDOW);
+          // canvas.setMinWidth(500);
+          // canvas.setMinHeight(500);
+          // canvas.addOnInitEvent(renderExample::init);
+          // canvas.addOnReshapeEvent(renderExample::reshape);
+          // canvas.addOnRenderEvent(renderExample::render);
+
+          root.getChildren().add(canvas);
+          // var region = new Region();
+          // region.setBackground(Background.fill(javafx.scene.paint.Color.GREEN));
+          // var root = new StackPane(region);
+          // root.setStyle("-fx-background-color: rgba(0, 0, 0, 0);"); // set stackpane transparent
+          var scene = new Scene(root);
+          // scene.setFill(javafx.scene.paint.Color.BLUE); // set scene transparent
+
+          gdxPanel.setScene(scene);
+        });
   }
 
   public void switchRenderers() {
@@ -498,7 +538,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     // currentRenderer.setVisible(isVisible);
   }
 
-  public GLJPanel getGdxPanel() {
+  public JComponent getGdxPanel() {
     return gdxPanel;
   }
 
