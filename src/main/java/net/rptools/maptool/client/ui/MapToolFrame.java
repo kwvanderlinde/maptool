@@ -514,19 +514,11 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
                   GLCanvas.Defaults.MAJOR_VERSION,
                   GLCanvas.Defaults.MINOR_VERSION,
                   GLCanvas.Defaults.EXTERNAL_WINDOW);
-          // canvas.setMinWidth(500);
-          // canvas.setMinHeight(500);
-          // canvas.addOnInitEvent(renderExample::init);
-          // canvas.addOnReshapeEvent(renderExample::reshape);
-          // canvas.addOnRenderEvent(renderExample::render);
 
           root.getChildren().add(canvas);
-          // var region = new Region();
-          // region.setBackground(Background.fill(javafx.scene.paint.Color.GREEN));
-          // var root = new StackPane(region);
-          // root.setStyle("-fx-background-color: rgba(0, 0, 0, 0);"); // set stackpane transparent
+          root.setStyle("-fx-background-color: rgba(0, 0, 0, 0);"); // set stackpane transparent
           var scene = new Scene(root);
-          // scene.setFill(javafx.scene.paint.Color.BLUE); // set scene transparent
+          scene.setFill(javafx.scene.paint.Color.TRANSPARENT); // set scene transparent
 
           gdxPanel.setScene(scene);
         });
