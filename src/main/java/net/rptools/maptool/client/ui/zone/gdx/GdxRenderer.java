@@ -652,21 +652,31 @@ public class GdxRenderer extends ApplicationAdapter {
       return;
     }
 
+    createScreenshot("openglfx-pre-1");
+
     resultsBuffer.begin();
     BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER.applyToBatch(batch);
     ScreenUtils.clear(Color.CLEAR);
 
+    createScreenshot("openglfx-0");
+
     renderBoard();
+
+    createScreenshot("openglfx-1-board");
 
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.BACKGROUND, view)) {
       renderDrawables(zoneCache.getZone().getDrawnElements(Zone.Layer.BACKGROUND));
     }
+
+    createScreenshot("openglfx-2-background-drawables");
 
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.BACKGROUND, view)) {
       timer.start("tokensBackground");
       renderTokens(zoneCache.getZone().getTokensOnLayer(Zone.Layer.BACKGROUND, false), view, false);
       timer.stop("tokensBackground");
     }
+
+    createScreenshot("openglfx-3-background-tokens");
 
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.OBJECT, view)) {
       // Drawables on the object layer are always below the grid, and...
@@ -676,11 +686,15 @@ public class GdxRenderer extends ApplicationAdapter {
       timer.stop("drawableObjects");
     }
 
+    createScreenshot("openglfx-4-object-drawables");
+
     timer.start("grid");
     setProjectionMatrix(hudCam.combined);
     gridRenderer.render();
     setProjectionMatrix(cam.combined);
     timer.stop("grid");
+
+    createScreenshot("openglfx-5-grid");
 
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.OBJECT, view)) {
       // ... Images on the object layer are always ABOVE the grid.
@@ -689,11 +703,15 @@ public class GdxRenderer extends ApplicationAdapter {
       timer.stop("tokensStamp");
     }
 
+    createScreenshot("openglfx-6-object-tokens");
+
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
       timer.start("lights");
       renderLights(view);
       timer.stop("lights");
     }
+
+    createScreenshot("openglfx-7-lights");
 
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
       timer.start("lumens");
@@ -701,13 +719,19 @@ public class GdxRenderer extends ApplicationAdapter {
       timer.stop("lumens");
     }
 
+    createScreenshot("openglfx-8-lumens");
+
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
       timer.start("auras");
       renderAuras(view);
       timer.stop("auras");
     }
 
+    createScreenshot("openglfx-9-auras");
+
     renderPlayerDarkness(view);
+
+    createScreenshot("openglfx-10-darkness");
 
     /*
      * The following sections used to handle rendering of the Hidden (i.e. "GM") layer followed by
@@ -737,6 +761,8 @@ public class GdxRenderer extends ApplicationAdapter {
       timer.stop("drawableTokens");
     }
 
+    createScreenshot("openglfx-11-token-drawables");
+
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
       if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.GM, view)) {
         timer.start("drawableGM");
@@ -746,6 +772,8 @@ public class GdxRenderer extends ApplicationAdapter {
       }
     }
 
+    createScreenshot("openglfx-12-hidden-drawables");
+
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
       if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.GM, view)) {
         timer.start("tokensGM");
@@ -754,11 +782,15 @@ public class GdxRenderer extends ApplicationAdapter {
       }
     }
 
+    createScreenshot("openglfx-13-hidden-tokens");
+
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
       timer.start("tokens");
       renderTokens(zoneCache.getZone().getTokensOnLayer(Zone.Layer.TOKEN, false), view, false);
       timer.stop("tokens");
     }
+
+    createScreenshot("openglfx-14-token-tokens");
 
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
       timer.start("unowned movement");
@@ -766,9 +798,13 @@ public class GdxRenderer extends ApplicationAdapter {
       timer.stop("unowned movement");
     }
 
+    createScreenshot("openglfx-15-blocked-moves");
+
     if (AppState.getShowTextLabels()) {
       renderLabels(view);
     }
+
+    createScreenshot("openglfx-16-labels");
 
     if (zoneCache.getZone().hasFog()) {
       batch.flush();
@@ -780,6 +816,8 @@ public class GdxRenderer extends ApplicationAdapter {
       drawBackBuffer(BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER);
     }
 
+    createScreenshot("openglfx-17-fog");
+
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
       // Jamz: If there is fog or vision we may need to re-render vision-blocking type tokens
       // For example. this allows a "door" stamp to block vision but still allow you to see the
@@ -788,6 +826,8 @@ public class GdxRenderer extends ApplicationAdapter {
       renderTokens(zoneCache.getZone().getTokensAlwaysVisible(), view, true);
       timer.stop("tokens - always visible");
     }
+
+    createScreenshot("openglfx-18-always-visible");
 
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
       // if there is fog or vision we may need to re-render figure type tokens
@@ -800,11 +840,15 @@ public class GdxRenderer extends ApplicationAdapter {
       timer.stop("tokens - figures");
     }
 
+    createScreenshot("openglfx-19-figures");
+
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
       timer.start("owned movement");
       showBlockedMoves(view, zoneCache.getZoneRenderer().getOwnedMovementSet(view));
       timer.stop("owned movement");
     }
+
+    createScreenshot("openglfx-20-owned-movement");
 
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
       // Text associated with tokens being moved is added to a list to be drawn after, i.e. on top
@@ -818,19 +862,29 @@ public class GdxRenderer extends ApplicationAdapter {
       setProjectionMatrix(cam.combined);
     }
 
+    createScreenshot("openglfx-21-renderables");
+
     timer.start("visionOverlay");
     renderVisionOverlay(view);
     timer.stop("visionOverlay");
 
+    createScreenshot("openglfx-22-vision-overlay");
+
     timer.start("renderCoordinates");
     renderCoordinates(view);
     timer.stop("renderCoordinates");
+
+    createScreenshot("openglfx-23-coordinates");
 
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
       timer.start("lightSourceIconOverlay.paintOverlay");
       paintLightSourceIconOverlay(view);
       timer.stop("lightSourceIconOverlay.paintOverlay");
     }
+
+    createScreenshot("openglfx-24-light-source-icons");
+    createScreenshot("openglfx-25-batch-flush");
+    createScreenshot("openglfx-26-results-end");
 
     batch.flush();
     endFBO(resultsBuffer);
@@ -840,6 +894,8 @@ public class GdxRenderer extends ApplicationAdapter {
     BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER.applyToBatch(batch);
     batch.draw(resultsBuffer.getColorBufferTexture(), 0, 0, width, height, 0, 0, 1, 1);
     setProjectionMatrix(cam.combined);
+    batch.flush();
+    createScreenshot("openglfx-27-final");
   }
 
   /**
