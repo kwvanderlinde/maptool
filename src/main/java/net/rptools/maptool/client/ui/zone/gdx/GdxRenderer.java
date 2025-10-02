@@ -201,7 +201,9 @@ public class GdxRenderer extends ApplicationAdapter {
   private final Area tmpArea = new Area();
   private final TiledDrawable tmpTile = new TiledDrawable();
 
-  public GdxRenderer() {}
+  public GdxRenderer() {
+    new MapToolEventBus().getMainEventBus().register(this);
+  }
 
   public static GdxRenderer getInstance() {
     if (_instance == null) _instance = new GdxRenderer();
@@ -299,17 +301,6 @@ public class GdxRenderer extends ApplicationAdapter {
               areaRenderer, key -> zoneCache.getImageAsset(key, transferringAsset, brokenAsset));
       gridRenderer = new GridRenderer(areaRenderer, hudCam);
 
-      {
-        var zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
-        zoneCache = new ZoneCache(zone, atlas);
-        viewModel = zoneCache.getZoneRenderer().getViewModel();
-        drawnElementRenderer.setZoneCache(zoneCache);
-        tokenOverlayRenderer.setZoneCache(zoneCache);
-        gridRenderer.setZoneCache(zoneCache);
-      }
-
-      new MapToolEventBus().getMainEventBus().register(this);
-
       initialized = true;
     } catch (Exception e) {
       log.error("Unhandled exception in GdxRenderer::create()", e);
@@ -319,8 +310,6 @@ public class GdxRenderer extends ApplicationAdapter {
   @Override
   public void dispose() {
     try {
-      new MapToolEventBus().getMainEventBus().unregister(this);
-
       environmentalLightingShader.dispose();
       manager.dispose();
       batch.dispose();
