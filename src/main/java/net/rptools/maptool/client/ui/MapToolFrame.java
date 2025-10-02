@@ -429,7 +429,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     zoneRendererPanel.add(getChatActionLabel(), PositionalLayout.Position.SW);
     zoneRendererPanel.add(gdxPanel, PositionalLayout.Position.CENTER);
 
-    initGdx(gdxPanel);
+    initGdx(gdxPanel, GdxRenderer.getInstance());
 
     commandPanel = new CommandPanel();
 
@@ -481,7 +481,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     setChatTypingLabelColor(AppPreferences.chatNotificationColor.get());
   }
 
-  private void initGdx(JFXPanel gdxPanel) {
+  private void initGdx(JFXPanel gdxPanel, GdxRenderer renderer) {
     Platform.runLater(
         () -> {
           var root = new StackPane();
@@ -499,7 +499,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
 
           LibGDXCanvas canvas =
               new LibGDXCanvas(
-                  GdxRenderer.getInstance(),
+                  renderer,
                   config,
                   GLCanvas.Defaults.FLIP_Y,
                   GLCanvas.Defaults.MSAA,
@@ -514,6 +514,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
                   GLCanvas.Defaults.MAJOR_VERSION,
                   GLCanvas.Defaults.MINOR_VERSION,
                   GLCanvas.Defaults.EXTERNAL_WINDOW);
+          canvas.addOnRenderEvent(event -> renderer.setDefaultFrameBuffer(event.fbo));
 
           root.getChildren().add(canvas);
           root.setStyle("-fx-background-color: rgba(0, 0, 0, 0);"); // set stackpane transparent
