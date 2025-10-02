@@ -28,7 +28,6 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.*;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.utils.TiledDrawable;
-import com.badlogic.gdx.utils.BufferUtils;
 import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.google.common.eventbus.Subscribe;
@@ -37,7 +36,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.GeneralPath;
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
@@ -459,24 +457,30 @@ public class GdxRenderer extends ApplicationAdapter {
   /**
    * @see #endFBO(FrameBuffer)
    */
-  private int defaultBuffer = 0;
+  private int defaultFrameBuffer = 0;
 
   /**
-   * Unbinds the framebuffer and binds the default framebuffer.
+   * Sets the default framebuffer ID.
    *
-   * <p>Note that LibGDX has its own static concept of the "default framebuffer". However, being
-   * embedded in a larger application means we are not necessarily supposed to render results to
-   * that default framebuffer, but must use whichever framebuffer is given us. So this method
-   * decorates {@link FrameBuffer#end()} to instead restore whichever buffer is set in {@link
-   * #defaultBuffer}, which gets updated in {@link #render()}.
+   * <p>LibGDX uses a static default framebuffer (typically 0), but when using openglfx the
+   * framebuffer we are rendering to can vary each frame. This method allows the fraembuffer to be
+   * set as needed.
+   *
+   * @param fbo The ID of the framebuffer object ot use as the default framebuffer.
+   */
+  public void setDefaultFrameBuffer(int fbo) {
+    defaultFrameBuffer = fbo;
+  }
+
+  /**
+   * Unbinds the framebuffer and binds {@link #defaultFrameBuffer}.
    *
    * @param fbo The framebuffer to unbind.
    */
   private void endFBO(FrameBuffer fbo) {
     fbo.end();
 
-    // With openglfx, the default buffer can change every frame, and is not 0!
-    Gdx.gl20.glBindFramebuffer(GL20.GL_FRAMEBUFFER, defaultBuffer);
+    Gdx.gl20.glBindFramebuffer(GL20.GL_FRAMEBUFFER, defaultFrameBuffer);
     Gdx.gl20.glViewport(0, 0, width, height);
   }
 
@@ -489,18 +493,6 @@ public class GdxRenderer extends ApplicationAdapter {
             timer.setThreshold(10);
             timer.setThreshold(1, TimeUnit.MICROSECONDS);
             timer.setReportingUnit(TimeUnit.MICROSECONDS);
-
-            /* Workaround: with opengljx, the buffer we need to render is not necessarily the
-             * default buffer according to LibGDX (which would normally be zero). Instead, some
-             * alternative frame buffer is bound, which we need to return to after finishing with
-             * our own frame buffers.
-             * This is not ideal, because it can be slow to query GPU state like this.
-             * See #endFBO(FrameBuffer)
-             */
-            defaultBuffer = 0;
-            IntBuffer buffer = BufferUtils.newIntBuffer(1);
-            Gdx.gl.glGetIntegerv(GL20.GL_FRAMEBUFFER_BINDING, buffer);
-            defaultBuffer = buffer.get(0);
 
             ScreenUtils.clear(Color.BLACK);
 
