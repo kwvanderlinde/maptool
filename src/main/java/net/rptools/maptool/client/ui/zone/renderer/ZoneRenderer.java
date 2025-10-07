@@ -74,6 +74,7 @@ import net.rptools.maptool.client.ui.token.BarTokenOverlay;
 import net.rptools.maptool.client.ui.token.dialog.create.NewTokenDialog;
 import net.rptools.maptool.client.ui.zone.*;
 import net.rptools.maptool.client.ui.zone.gdx.GdxRenderer;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSet;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.Paint;
 import net.rptools.maptool.client.ui.zone.renderer.tokenRender.FacingArrowRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.tokenRender.TokenRenderer;
@@ -139,6 +140,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
   private ZonePoint previousZonePoint;
 
+  private final ZoneCompositor compositor;
   private final EnumSet<Layer> disabledLayers = EnumSet.noneOf(Layer.class);
   private final GridRenderer gridRenderer;
   private final HaloRenderer haloRenderer;
@@ -169,6 +171,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     drawableRenderers =
         CollectionUtil.newFilledEnumMap(
             Zone.Layer.class, layer -> new PartitionedDrawableRenderer(zone));
+
+    this.compositor = new ZoneCompositor(this);
 
     var renderHelper = new RenderHelper(this, tempBufferPool);
     this.gridRenderer = new GridRenderer(this);
@@ -643,6 +647,9 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           timer.setThreshold(1, TimeUnit.MICROSECONDS);
           timer.setReportingUnit(TimeUnit.MICROSECONDS);
 
+          var instructionSet = updateZone(null);
+          GdxRenderer.getInstance().renderInstructionSet.set(instructionSet);
+
           if (!viewModel.isUsingGdxRenderer()) {
             timer.start("paintComponent");
             Graphics2D g2d = (Graphics2D) g;
@@ -660,7 +667,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
               // Keep the clip to avoid rendering more than we have to.
               bufferG2d.setClip(g2d.getClip());
 
-              renderZone(bufferG2d, null);
+              renderZoneInternal(bufferG2d, viewModel.getPlayerView());
 
               int noteVPos = 20;
               bufferG2d.setFont(AppStyle.labelFont);
@@ -727,16 +734,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     return !disabledLayers.contains(layer) && (layer.isVisibleToPlayers() || view.isGMView());
   }
 
-  /**
-   * This is the top-level method of the rendering pipeline that coordinates all other calls. {@link
-   * #paintComponent(Graphics)} calls this method, then adds the two optional strings, "Map not
-   * visible to players" and "Player View" as appropriate.
-   *
-   * @param g2d Graphics2D object normally passed in by {@link #paintComponent(Graphics)}
-   * @param view PlayerView object that describes whether the view is a Player or GM view. Pass
-   *     {@code null} to use the current view.
-   */
-  public void renderZone(Graphics2D g2d, @Nullable PlayerView view) {
+  private InstructionSet updateZone(@Nullable PlayerView imposedView) {
     final var timer = CodeTimer.get();
 
     timer.start("update");
@@ -746,10 +744,77 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     timer.start("setup");
     // Clear internal state
     itemRenderList.clear();
+    timer.stop("setup");
 
-    if (view == null) {
-      view = getPlayerView();
+    var view = Objects.requireNonNullElseGet(imposedView, this::getPlayerView);
+
+    final var renderInstructions = compositor.produceInstructions(view);
+
+    return renderInstructions;
+  }
+
+  /**
+   * This is the top-level method of the rendering pipeline that coordinates all other calls. {@link
+   * #paintComponent(Graphics)} calls this method, then adds the two optional strings, "Map not
+   * visible to players" and "Player View" as appropriate.
+   *
+   * @param g2d Graphics2D object normally passed in by {@link #paintComponent(Graphics)}
+   * @param imposedView PlayerView object that describes whether the view is a Player or GM view.
+   *     Pass {@code null} to use the current view.
+   */
+  public void renderZone(Graphics2D g2d, @Nullable PlayerView imposedView) {
+    var instructionSet = updateZone(imposedView);
+    renderZoneInternal(g2d, imposedView);
+  }
+
+  /**
+   * This is the top-level method of the rendering pipeline that coordinates all other calls. {@link
+   * #paintComponent(Graphics)} calls this method, then adds the two optional strings, "Map not
+   * visible to players" and "Player View" as appropriate.
+   *
+   * @param g2d Graphics2D object normally passed in by {@link #paintComponent(Graphics)}
+   * @param instructionSet The instructions from the compositor that need to be rendered.
+   */
+  private void renderZoneInternal(Graphics2D g2d, InstructionSet instructionSet) {
+    g2d = (Graphics2D) g2d.create();
+
+    Rectangle viewRect = new Rectangle(getSize().width, getSize().height);
+
+    g2d.setFont(AppStyle.labelFont);
+    SwingUtil.useAntiAliasing(g2d);
+
+    // much of the raster code assumes the user clip is set
+    if (g2d.getClipBounds() == null) {
+      g2d.setClip(0, 0, viewRect.width, viewRect.height);
     }
+
+    g2d.setPaint(Color.black);
+    g2d.fillRect(viewRect.x, viewRect.y, viewRect.width, viewRect.height);
+
+    AffineTransform worldToScreen = viewModel.getZoneScale().toScreenTransform();
+
+    for (var instruction : instructionSet.instructions()) {
+      switch (instruction) {
+        // TODO Remove default case and force full coverage.
+        default -> {
+          log.error(
+              "Unrecognized render instruction {}", instruction.getClass().getCanonicalName());
+        }
+      }
+    }
+  }
+
+  /**
+   * This is the top-level method of the rendering pipeline that coordinates all other calls. {@link
+   * #paintComponent(Graphics)} calls this method, then adds the two optional strings, "Map not
+   * visible to players" and "Player View" as appropriate.
+   *
+   * @param g2d Graphics2D object normally passed in by {@link #paintComponent(Graphics)}
+   * @param view PlayerView object that describes whether the view is a Player or GM view. Pass
+   *     {@code null} to use the current view.
+   */
+  private void renderZoneInternal(Graphics2D g2d, PlayerView view) {
+    final var timer = CodeTimer.get();
 
     g2d = (Graphics2D) g2d.create();
 
@@ -791,8 +856,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       invalidateCurrentViewCache();
     }
     lastView = view;
-
-    timer.stop("setup");
 
     // Calculations
     timer.start("calcs-1");

@@ -14,9 +14,10 @@
  */
 package net.rptools.maptool.client.ui.zone.renderer;
 
-import java.awt.geom.Rectangle2D;
-import java.util.*;
-import net.rptools.maptool.model.Token;
+import net.rptools.maptool.client.ui.zone.PlayerView;
+import net.rptools.maptool.client.ui.zone.ZoneViewModel;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionBuilder;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSet;
 import net.rptools.maptool.model.Zone;
 
 /**
@@ -25,27 +26,26 @@ import net.rptools.maptool.model.Zone;
  * on screen?"
  */
 public class ZoneCompositor {
-  Zone zone;
-  ZoneRenderer renderer;
-  private Map<Token, Set<Token>> objectCache; // placeholder
-  private boolean initialised;
+  private final ZoneRenderer renderer;
+  private final ZoneViewModel viewModel;
+  private final Zone zone;
 
-  ZoneCompositor() {
-    initialised = false;
+  public ZoneCompositor(ZoneRenderer renderer) {
+    this.renderer = renderer;
+    this.viewModel = renderer.getViewModel();
+    this.zone = renderer.getZone();
   }
 
-  public boolean isInitialised() {
-    return initialised;
-  }
-
-  public void setRenderer(ZoneRenderer zoneRenderer) {
-    renderer = zoneRenderer;
-    zone = renderer.getZone();
-    initialised = true;
-  }
-
-  protected Map<Token, Set<Token>> drawWhat(Rectangle2D bounds) {
-    // Some logic goes here
-    return objectCache;
+  /**
+   * @param view
+   * @return
+   */
+  public InstructionSet produceInstructions(PlayerView view) {
+    // TODO Actually keep the same builder around each time, clearing in between.
+    //  Would save on allocations.
+    // TODO Respect bounds. E.g., don't add drawings or tokens that are completely outside of the
+    //  bounds.
+    var instructionBuilder = new InstructionBuilder();
+    return instructionBuilder.snapshot();
   }
 }

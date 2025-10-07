@@ -40,6 +40,7 @@ import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.Deflater;
 import javax.swing.*;
 import net.rptools.lib.AwtUtil;
@@ -64,6 +65,7 @@ import net.rptools.maptool.client.ui.zone.gdx.label.LabelRenderer;
 import net.rptools.maptool.client.ui.zone.gdx.label.TextRenderer;
 import net.rptools.maptool.client.ui.zone.gdx.label.TokenLabelRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.SelectionSet;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSet;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.Paint;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.events.MapToolEventBus;
@@ -112,6 +114,9 @@ public class GdxRenderer extends ApplicationAdapter {
   private final String FONT_BOLD = "boldFont.ttf";
 
   private final String font = "NotoSansSymbols";
+
+  public AtomicReference<InstructionSet> renderInstructionSet =
+      new AtomicReference<>(new InstructionSet(List.of()));
 
   private ZoneViewModel viewModel;
 
@@ -472,6 +477,8 @@ public class GdxRenderer extends ApplicationAdapter {
               return;
             }
 
+            var instructionSet = renderInstructionSet.get();
+
             viewModel.update();
 
             // System.out.println("FPS:   " + Gdx.graphics.getFramesPerSecond());
@@ -481,7 +488,7 @@ public class GdxRenderer extends ApplicationAdapter {
             ensureTtfFont();
             ScreenUtils.clear(Color.BLACK);
 
-            doRendering();
+            doRendering(instructionSet);
           });
     } catch (Exception e) {
       log.error("Unhandled exception in GdxRenderer::render()", e);
@@ -520,9 +527,8 @@ public class GdxRenderer extends ApplicationAdapter {
     manager.load(FONT_NORMAL, BitmapFont.class, fontParams);
   }
 
-  private void doRendering() {
+  private void doRendering(InstructionSet instructionSet) {
     CodeTimer timer = CodeTimer.get();
-
     batch.enableBlending();
     // Framebuffer is premultiplied. Assume source textures are as well (can be changed for
     // operations that require something else).
@@ -544,7 +550,7 @@ public class GdxRenderer extends ApplicationAdapter {
 
     setProjectionMatrix(cam.combined);
 
-    renderZone(playerView);
+    renderZone(playerView, instructionSet);
 
     setProjectionMatrix(hudCam.combined);
 
@@ -620,16 +626,35 @@ public class GdxRenderer extends ApplicationAdapter {
     lastView = null;
   }
 
-  private void renderZone(PlayerView view) {
+  private void renderZone(PlayerView view, InstructionSet instructionSet) {
     CodeTimer timer = CodeTimer.get();
-
     if (!prerender(view)) {
-      return;
+      // return;
     }
 
     resultsBuffer.begin();
     BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER.applyToBatch(batch);
     ScreenUtils.clear(Color.CLEAR);
+
+    for (var instruction : instructionSet.instructions()) {
+      switch (instruction) {
+        // TODO Remove default case and force full coverage.
+        default -> {
+          log.error(
+              "Unrecognized render instruction {}", instruction.getClass().getCanonicalName());
+        }
+      }
+    }
+    if (true) {
+      batch.flush();
+      resultsBuffer.end();
+
+      setProjectionMatrix(hudCam.combined);
+      BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER.applyToBatch(batch);
+      batch.draw(resultsBuffer.getColorBufferTexture(), 0, 0, width, height, 0, 0, 1, 1);
+      setProjectionMatrix(cam.combined);
+      return;
+    }
 
     renderBoard();
 
@@ -1727,8 +1752,7 @@ public class GdxRenderer extends ApplicationAdapter {
                 && AppPreferences.forceFacingArrow.get() == false) {
               break;
             }
-            java.awt.Shape arrow =
-                getFigureFacingArrow(token.getFacing(), footprintBounds.width / 2);
+            Shape arrow = getFigureFacingArrow(token.getFacing(), footprintBounds.width / 2);
 
             if (!zoneCache.getZone().getGrid().getType().isIsometric()) {
               arrow = getCircleFacingArrow(token.getFacing(), footprintBounds.width / 2);
@@ -2020,8 +2044,7 @@ public class GdxRenderer extends ApplicationAdapter {
     // Position
     // For Isometric Grid we alter the height offset
     float iso_ho = 0;
-    java.awt.Dimension imgSize =
-        new java.awt.Dimension((int) image.getWidth(), (int) image.getHeight());
+    Dimension imgSize = new Dimension((int) image.getWidth(), (int) image.getHeight());
     if (token.getShape() == Token.TokenShape.FIGURE) {
       float th = token.getHeight() * (float) footprintBounds.width / token.getWidth();
       iso_ho = footprintBounds.height - th;
@@ -2165,7 +2188,7 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   // FIXME: I don't like this hardwiring
-  protected java.awt.Shape getFigureFacingArrow(int angle, int size) {
+  protected Shape getFigureFacingArrow(int angle, int size) {
     int base = (int) (size * .75);
     int width = (int) (size * .35);
 
@@ -2180,7 +2203,7 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   // FIXME: I don't like this hardwiring
-  protected java.awt.Shape getCircleFacingArrow(int angle, int size) {
+  protected Shape getCircleFacingArrow(int angle, int size) {
     int base = (int) (size * .75);
     int width = (int) (size * .35);
 
@@ -2195,7 +2218,7 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   // FIXME: I don't like this hardwiring
-  protected java.awt.Shape getSquareFacingArrow(int angle, int size) {
+  protected Shape getSquareFacingArrow(int angle, int size) {
     int base = (int) (size * .75);
     int width = (int) (size * .35);
 
