@@ -586,6 +586,10 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     return zone;
   }
 
+  public List<ZoneOverlay> getOverlays() {
+    return Collections.unmodifiableList(overlayList);
+  }
+
   public void addOverlay(ZoneOverlay overlay) {
     overlayList.add(overlay);
     repaintDebouncer.dispatch();

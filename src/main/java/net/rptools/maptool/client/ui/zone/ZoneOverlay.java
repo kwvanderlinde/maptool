@@ -15,10 +15,18 @@
 package net.rptools.maptool.client.ui.zone;
 
 import java.awt.Graphics2D;
+import java.awt.geom.Rectangle2D;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSetBuilder;
 
 /** */
 public interface ZoneOverlay {
 
-  public void paintOverlay(ZoneRenderer renderer, Graphics2D g);
+  public default void paintOverlay(ZoneRenderer renderer, Graphics2D g) {}
+
+  public default void compositeOverlay(InstructionSetBuilder builder, Rectangle2D bounds) {
+    compositeOverlay(builder);
+  }
+
+  public default void compositeOverlay(InstructionSetBuilder builder) {}
 }

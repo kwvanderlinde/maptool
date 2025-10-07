@@ -141,7 +141,14 @@ public class ZoneCompositor {
 
       // TODO Vision overlay.
 
-      // TODO Zone overlays
+      for (var overlay : renderer.getOverlays()) {
+        builder.unbufferedLayer(
+            String.format("overlay-%s", overlay.getClass().getCanonicalName()),
+            ClipType.NoClipping,
+            () -> {
+              overlay.compositeOverlay(builder, worldBounds);
+            });
+      }
 
       // TODO Coordinates
 
