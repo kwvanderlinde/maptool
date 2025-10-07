@@ -16,9 +16,11 @@ package net.rptools.maptool.client.ui.zone.renderer;
 
 import com.google.common.collect.ImmutableList;
 import java.awt.geom.Area;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
+import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.ZoneView;
 import net.rptools.maptool.client.ui.zone.ZoneViewModel;
@@ -77,6 +79,57 @@ public class ZoneCompositor {
     var builder = new InstructionSetBuilder(instructions::add, renderer.getZone(), viewport);
 
     var worldBounds = viewport.getWorldSpaceBounds();
+
+    // TODO Shan't we take this from the ZoneViewModel#getViewSize()?
+    var screenBounds = new Rectangle2D.Double(0, 0, renderer.getWidth(), renderer.getHeight());
+    var playerView = viewModel.getPlayerView();
+
+    var loadingProgress = viewModel.getLoadingStatus();
+    if (loadingProgress.isPresent()) {
+      // TODO Loading progress
+    } else if (MapTool.getCampaign().isBeingSerialized()) {
+      // TODO Serialization notes
+    } else {
+      // TODO Map board
+
+      // TODO Object drawables
+
+      // TODO Grid
+
+      // TODO Object stamps if Object layer enabled.
+
+      // TODO Lights/lumens/auras if Token layer enabled
+
+      // TODO Darkness
+
+      // TODO Token drawables
+      // TODO Only do GM layer if Token layer is also enabled.
+      // TODO GM drawables
+
+      // TODO GM tokens if GM layer & Token layer is enabled.
+      // TODO Regular tokens if Token layer is enabled.
+      // TODO Unowned moves if Token layer is enabled.
+
+      // TODO Text labels
+
+      // TODO Fog of war
+
+      // TODO VBL & Figure tokens if Token layer enabled (even though they aren't all Tokens).
+
+      // TODO Owned moves if Token layer is enabled.
+
+      // TODO General renderables if Token layer is enabled. Whatever these are.
+
+      // TODO Vision overlay.
+
+      // TODO Zone overlays
+
+      // TODO Coordinates
+
+      // TODO Light source icons, if Token layer is enabled, is GM view & option is enabled.
+
+      // TODO Debug rendering.
+    }
 
     return new InstructionSet(viewport, ImmutableList.copyOf(instructions), clips);
   }
