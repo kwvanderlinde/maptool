@@ -64,7 +64,6 @@ import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.*;
-import net.rptools.maptool.model.Label;
 import net.rptools.maptool.model.Zone.Layer;
 import net.rptools.maptool.model.drawing.*;
 import net.rptools.maptool.model.player.Player;
@@ -104,7 +103,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
   private final Map<Zone.Layer, DrawableRenderer> drawableRenderers;
   private final List<ZoneOverlay> overlayList = new ArrayList<>();
-  private final List<LabelLocation> labelLocationList = new LinkedList<>();
   private final Map<GUID, SelectionSet> selectionSetMap = new HashMap<>();
   private final List<Token> showPathList = new ArrayList<>();
 
@@ -931,7 +929,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     // (This method has its own 'timer' calls)
     if (AppState.getShowTextLabels()) {
-      renderLabels(g2d, view);
+      renderLabels(g2d);
     }
 
     this.fogRenderer.render(g2d, view);
@@ -1014,25 +1012,24 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    */
   private final BufferedImagePool tempBufferPool = new BufferedImagePool(2);
 
-  private void renderLabels(Graphics2D g, PlayerView view) {
+  private void renderLabels(Graphics2D g) {
     final var timer = CodeTimer.get();
 
     timer.start("labels-1");
     var labelRenderFactory = new FlatImageLabelFactory();
-    labelLocationList.clear();
-    for (Label label : zone.getLabels()) {
+    for (var labelLocation : viewModel.getLabelLocations()) {
+      final var label = labelLocation.label();
+      final var bounds = labelLocation.bounds();
+
       var fLabel = labelRenderFactory.getMapImageLabel(label);
-      ZonePoint zp = new ZonePoint(label.getX(), label.getY());
-      if (!zone.isPointVisible(zp, view)) {
-        continue;
-      }
       timer.start("labels-1.1");
-      ScreenPoint sp = ScreenPoint.fromZonePointRnd(viewModel.getZoneScale(), zp.x, zp.y);
-      var dim = fLabel.getDimensions(g, label.getLabel());
-      Rectangle bounds =
-          fLabel.render(
-              g, (int) (sp.x - dim.width / 2), (int) (sp.y - dim.height / 2), label.getLabel());
-      labelLocationList.add(new LabelLocation(bounds, label));
+      fLabel.render(
+          g,
+          (int) bounds.getX(),
+          (int) bounds.getY(),
+          (int) bounds.getWidth(),
+          (int) bounds.getHeight(),
+          label.getLabel());
       timer.stop("labels-1.1");
     }
     timer.stop("labels-1");
@@ -2077,15 +2074,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         Collections.singletonList(visibleTokens.get(newSelection).getId()));
   }
 
-  public Rectangle getLabelBounds(Label label) {
-    for (LabelLocation location : labelLocationList) {
-      if (location.label == label) {
-        return location.bounds;
-      }
-    }
-    return null;
-  }
-
   /**
    * Returns the token at screen location x, y (not cell location).
    *
@@ -2131,25 +2119,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     List<Token> tokenList = new ArrayList<>(tokenStackMap.get(token));
     tokenList.sort(Token.COMPARE_BY_NAME);
     return tokenList;
-  }
-
-  /**
-   * Returns the label at screen location x, y (not cell location). To get the token at a cell
-   * location, use getGameMap() and use that.
-   *
-   * @param x the screen location x
-   * @param y the screen location y
-   * @return the Label
-   */
-  public Label getLabelAt(int x, int y) {
-    List<LabelLocation> labelList = new ArrayList<>(labelLocationList);
-    Collections.reverse(labelList);
-    for (LabelLocation location : labelList) {
-      if (location.bounds.contains(x, y)) {
-        return location.label;
-      }
-    }
-    return null;
   }
 
   /**

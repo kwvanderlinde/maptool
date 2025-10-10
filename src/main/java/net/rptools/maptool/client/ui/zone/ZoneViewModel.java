@@ -14,7 +14,9 @@
  */
 package net.rptools.maptool.client.ui.zone;
 
+import java.awt.Canvas;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
@@ -35,24 +37,30 @@ import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.swing.SwingUtilities;
 import net.rptools.lib.CollectionUtil;
 import net.rptools.lib.MD5Key;
 import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.AppState;
+import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.events.RepaintZoneRequested;
 import net.rptools.maptool.client.events.ZoneLoaded;
 import net.rptools.maptool.client.ui.Scale;
+import net.rptools.maptool.client.ui.zone.renderer.LabelLocation;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.AssetManager;
 import net.rptools.maptool.model.AttachedLightSource;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.GUID;
+import net.rptools.maptool.model.Label;
 import net.rptools.maptool.model.LightSource;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.util.GraphicsUtil;
 import net.rptools.maptool.util.ImageManager;
@@ -150,6 +158,8 @@ public class ZoneViewModel {
       CollectionUtil.newFilledEnumMap(Zone.Layer.class, layer -> new HashSet<>());
 
   private final List<Point2D> lightPositions = new ArrayList<>();
+
+  private final List<LabelLocation> labelLocations = new ArrayList<>();
 
   // endregion
 
@@ -312,6 +322,42 @@ public class ZoneViewModel {
     return Collections.unmodifiableList(lightPositions);
   }
 
+  public List<LabelLocation> getLabelLocations() {
+    return Collections.unmodifiableList(labelLocations);
+  }
+
+  /**
+   * Look up the label location for given label ID.
+   *
+   * @param id The ID of the label to look up.
+   * @return The label location for the label with ID {@code id}.
+   */
+  public Optional<LabelLocation> getLabelLocation(@Nonnull GUID id) {
+    // TODO Why do we not reverse the list like in getLabelLocationAt()?
+    for (LabelLocation location : labelLocations) {
+      if (id.equals(location.label().getId())) {
+        return Optional.of(location);
+      }
+    }
+    return Optional.empty();
+  }
+
+  /**
+   * Look up the label location for a given screen point.
+   *
+   * @param x The screen location x
+   * @param y The screen location y
+   * @return The label location for the topmost label at (x, y).
+   */
+  public Optional<LabelLocation> getLabelLocationAt(double x, double y) {
+    for (LabelLocation location : labelLocations.reversed()) {
+      if (location.bounds().contains(x, y)) {
+        return Optional.of(location);
+      }
+    }
+    return Optional.empty();
+  }
+
   public void update() {
     updateIsUsingGdxRenderer();
     updateIsLoading();
@@ -324,6 +370,7 @@ public class ZoneViewModel {
     updateTokenStacks();
     updateVisibleTokens();
     updateLightPosition();
+    updateLabelPositions();
   }
 
   // What follows are "systems".
@@ -580,6 +627,51 @@ public class ZoneViewModel {
         var bounds = position.transformedBounds().getBounds2D();
         lightPositions.add(new Point2D.Double(bounds.getCenterX(), bounds.getCenterY()));
       }
+    }
+  }
+
+  /** Updates {@link #labelLocations} based on {@link #playerView} and {@link #zoneScale}. */
+  private void updateLabelPositions() {
+    labelLocations.clear();
+
+    if (!AppState.getShowTextLabels()) {
+      return;
+    }
+
+    final var paddingX = 4;
+    final var paddingY = 4;
+
+    for (Label label : zone.getLabels()) {
+      ZonePoint zp = new ZonePoint(label.getX(), label.getY());
+      // TODO I feel like this visibility check could be much refined. Why only consider the center
+      //  point as opposed to the entire bounds?
+      if (!zone.isPointVisible(zp, playerView)) {
+        continue;
+      }
+      // TODO Why round the results?
+      ScreenPoint sp = zoneScale.toScreenSpace(zp.x, zp.y);
+      sp.x = Math.round(sp.x);
+      sp.y = Math.round(sp.y);
+
+      var font = AppStyle.labelFont.deriveFont(AppStyle.labelFont.getStyle(), label.getFontSize());
+
+      var canvas = new Canvas();
+      var fm = canvas.getFontMetrics(font);
+      int strWidth = SwingUtilities.computeStringWidth(fm, label.getLabel());
+      int strHeight = fm.getHeight();
+      var dimensions =
+          new Dimension(
+              strWidth + paddingX * 2 + label.getBorderWidth() * 2,
+              strHeight + paddingY * 2 + label.getBorderWidth() * 2);
+
+      var bounds =
+          new Rectangle2D.Double(
+              sp.x - dimensions.width / 2.,
+              sp.y - dimensions.height / 2.,
+              dimensions.width,
+              dimensions.height);
+
+      labelLocations.add(new LabelLocation(bounds, label));
     }
   }
 }

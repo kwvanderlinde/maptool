@@ -16,6 +16,7 @@ package net.rptools.maptool.client.tool.texttool;
 
 import java.awt.Cursor;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -97,9 +98,24 @@ public class TextTool extends DefaultTool implements ZoneOverlay {
    * @param g the Graphics2D object used for rendering
    */
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    if (selectedLabel != null && renderer.getLabelBounds(selectedLabel) != null) {
-      AppStyle.selectedBorder.paintWithin(g, renderer.getLabelBounds(selectedLabel));
+    if (selectedLabel == null) {
+      return;
     }
+
+    renderer
+        .getViewModel()
+        .getLabelLocation(selectedLabel.getId())
+        .ifPresent(
+            location -> {
+              var bounds2D = location.bounds();
+              var bounds =
+                  new Rectangle(
+                      (int) bounds2D.getX(),
+                      (int) bounds2D.getY(),
+                      (int) bounds2D.getWidth(),
+                      (int) bounds2D.getHeight());
+              AppStyle.selectedBorder.paintWithin(g, bounds);
+            });
   }
 
   @Override
@@ -127,7 +143,12 @@ public class TextTool extends DefaultTool implements ZoneOverlay {
   public void mousePressed(MouseEvent e) {
     super.mousePressed(e);
 
-    Label label = renderer.getLabelAt(e.getX(), e.getY());
+    Label label =
+        renderer
+            .getViewModel()
+            .getLabelLocationAt(e.getX(), e.getY())
+            .map(loc -> loc.label())
+            .orElse(null);
     if (label != selectedLabel) {
       selectedNewLabel = true;
       renderer.repaint();
@@ -148,7 +169,12 @@ public class TextTool extends DefaultTool implements ZoneOverlay {
 
     if (SwingUtilities.isLeftMouseButton(e)) {
       if (!isDragging) {
-        Label label = renderer.getLabelAt(e.getX(), e.getY());
+        Label label =
+            renderer
+                .getViewModel()
+                .getLabelLocationAt(e.getX(), e.getY())
+                .map(loc -> loc.label())
+                .orElse(null);
         if (label == null) {
           if (selectedLabel == null) {
             ZonePoint zp =
@@ -189,7 +215,12 @@ public class TextTool extends DefaultTool implements ZoneOverlay {
     super.mouseDragged(e);
     if (!isDragging) {
       // Setup
-      Label label = renderer.getLabelAt(e.getX(), e.getY());
+      Label label =
+          renderer
+              .getViewModel()
+              .getLabelLocationAt(e.getX(), e.getY())
+              .map(loc -> loc.label())
+              .orElse(null);
       if (selectedLabel == null || selectedLabel != label) {
         selectedLabel = label;
       }

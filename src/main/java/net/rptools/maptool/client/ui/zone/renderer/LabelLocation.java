@@ -14,16 +14,9 @@
  */
 package net.rptools.maptool.client.ui.zone.renderer;
 
-import java.awt.*;
+import java.awt.geom.Rectangle2D;
 import net.rptools.maptool.model.Label;
 
-class LabelLocation {
-
-  public Rectangle bounds;
-  public net.rptools.maptool.model.Label label;
-
-  public LabelLocation(Rectangle bounds, Label label) {
-    this.bounds = bounds;
-    this.label = label;
-  }
+public record LabelLocation(Rectangle2D bounds, Label label) {
+  // TODO Include other important information, like font, external bounds, and text bounds.
 }
