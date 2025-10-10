@@ -14,39 +14,33 @@
  */
 package net.rptools.maptool.client.ui.zone.renderer;
 
-import com.google.common.collect.Iterators;
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Shape;
+import java.util.Map;
+import net.rptools.maptool.client.ui.zone.ZoneViewModel;
 
 public class DebugRenderer {
   private final RenderHelper renderHelper;
-  private final Color[] palette;
 
   public DebugRenderer(RenderHelper renderHelper) {
     this.renderHelper = renderHelper.withTimerPrefix("DebugRenderer");
-    palette =
-        new Color[] {Color.red, Color.green, Color.blue, Color.magenta, Color.orange, Color.yellow};
   }
 
-  public void renderShapes(Graphics2D g2d, Iterable<Shape> shapes) {
+  public void renderShapes(Graphics2D g2d, Map<ZoneViewModel.DebugType, Shape> shapes) {
     renderHelper.render(g2d, worldG -> renderWorld(worldG, shapes));
   }
 
-  private void renderWorld(Graphics2D worldG, Iterable<Shape> shapes) {
+  private void renderWorld(Graphics2D worldG, Map<ZoneViewModel.DebugType, Shape> shapes) {
     worldG.setComposite(AlphaComposite.SrcOver);
     // Keep the line a consistent thickness
     worldG.setStroke(new BasicStroke(1 / (float) worldG.getTransform().getScaleX()));
 
-    var paletteIterator = Iterators.cycle(palette);
-    for (final var shape : shapes) {
-      final var color = paletteIterator.next();
-
-      if (shape == null) {
-        continue;
-      }
+    for (final var entry : shapes.entrySet()) {
+      final var color = entry.getKey().color;
+      final var shape = entry.getValue();
 
       var fillColor = color.darker();
       fillColor =

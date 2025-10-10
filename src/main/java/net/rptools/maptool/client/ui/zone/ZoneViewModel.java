@@ -14,7 +14,9 @@
  */
 package net.rptools.maptool.client.ui.zone;
 
+import java.awt.Color;
 import java.awt.Image;
+import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
@@ -22,6 +24,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.ImageObserver;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -89,6 +92,25 @@ public class ZoneViewModel {
     }
   }
 
+  public enum DebugCategory {
+    Drag
+  }
+
+  public enum DebugType {
+    DragMouseStart(DebugCategory.Drag, Color.blue),
+    DragMouseCurrent(DebugCategory.Drag, Color.cyan),
+    DragAnchorStart(DebugCategory.Drag, Color.red),
+    DragAnchorCurrent(DebugCategory.Drag, Color.magenta);
+
+    public final DebugCategory category;
+    public final Color color;
+
+    DebugType(DebugCategory category, Color color) {
+      this.category = category;
+      this.color = color;
+    }
+  }
+
   private final Campaign campaign;
   public final Zone zone;
 
@@ -99,6 +121,7 @@ public class ZoneViewModel {
   private final ZoneView zoneView;
   private final SelectionModel selectionModel;
   private final List<GUID> highlightCommonMacros = new ArrayList<>();
+  private final Map<DebugType, Shape> debugShapes = new EnumMap<>(DebugType.class);
 
   // endregion
 
@@ -153,6 +176,18 @@ public class ZoneViewModel {
 
   public boolean isUsingGdxRenderer() {
     return isUsingGdxRenderer;
+  }
+
+  public void clearDebugCategory(DebugCategory category) {
+    debugShapes.entrySet().removeIf(entry -> entry.getKey().category.equals(category));
+  }
+
+  public void setDebugShape(DebugType type, Shape shape) {
+    debugShapes.put(type, shape);
+  }
+
+  public Map<DebugType, Shape> getDebugShapes() {
+    return Collections.unmodifiableMap(debugShapes);
   }
 
   /**

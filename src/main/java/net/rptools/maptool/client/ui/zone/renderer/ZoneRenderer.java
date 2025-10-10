@@ -993,7 +993,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     }
     timer.stop("lightSourceIconOverlay.paintOverlay");
 
-    debugRenderer.renderShapes(g2d, Arrays.asList(shape, shape2, shape3, shape4));
+    debugRenderer.renderShapes(g2d, viewModel.getDebugShapes());
   }
 
   private void delayRendering(ItemRenderer renderer) {
@@ -1475,47 +1475,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     }
 
     g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, oldRendering);
-  }
-
-  private Shape shape;
-  private Shape shape2;
-  private Shape shape3;
-  private Shape shape4;
-
-  public void setShape(Shape shape) {
-    if (shape == null) {
-      return;
-    }
-
-    this.shape = shape;
-    this.repaintDebouncer.dispatch();
-  }
-
-  public void setShape2(Shape shape) {
-    if (shape == null) {
-      return;
-    }
-
-    this.shape2 = shape;
-    this.repaintDebouncer.dispatch();
-  }
-
-  public void setShape3(Shape shape) {
-    if (shape == null) {
-      return;
-    }
-
-    this.shape3 = shape;
-    this.repaintDebouncer.dispatch();
-  }
-
-  public void setShape4(Shape shape) {
-    if (shape == null) {
-      return;
-    }
-
-    this.shape4 = shape;
-    this.repaintDebouncer.dispatch();
   }
 
   public void showBlockedMoves(Graphics2D g, ZonePoint point, BufferedImage image, float size) {

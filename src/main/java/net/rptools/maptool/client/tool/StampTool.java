@@ -64,6 +64,7 @@ import net.rptools.maptool.client.ui.TokenPopupMenu;
 import net.rptools.maptool.client.ui.theme.Images;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.ui.zone.ZoneOverlay;
+import net.rptools.maptool.client.ui.zone.ZoneViewModel;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.*;
@@ -1175,19 +1176,33 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
 
       final boolean debugEnabled = DeveloperOptions.Toggle.DebugTokenDragging.get();
 
+      var viewModel = renderer.getViewModel();
+      viewModel.clearDebugCategory(ZoneViewModel.DebugCategory.Drag);
+
       if (debugEnabled) {
-        renderer.setShape3(
+        viewModel.setDebugShape(
+            ZoneViewModel.DebugType.DragMouseStart,
             new Rectangle2D.Double(tokenDragStart.x - 5, tokenDragStart.y - 5, 10, 10));
-        renderer.setShape4(new Rectangle2D.Double(dragAnchor.x - 5, dragAnchor.y - 5, 10, 10));
+        viewModel.setDebugShape(
+            ZoneViewModel.DebugType.DragAnchorStart,
+            new Rectangle2D.Double(dragAnchor.x - 5, dragAnchor.y - 5, 10, 10));
       }
 
       ZonePoint zonePoint =
           new ScreenPoint(mouseX, mouseY).convertToZone(renderer.getViewModel().getZoneScale());
+      if (debugEnabled) {
+        viewModel.setDebugShape(
+            ZoneViewModel.DebugType.DragMouseCurrent,
+            new Rectangle2D.Double(zonePoint.x - 5, zonePoint.y - 5, 10, 10));
+      }
+
       zonePoint.x += dragAnchor.x - tokenDragStart.x;
       zonePoint.y += dragAnchor.y - tokenDragStart.y;
 
       if (debugEnabled) {
-        renderer.setShape2(new Rectangle2D.Double(zonePoint.x - 5, zonePoint.y - 5, 10, 10));
+        viewModel.setDebugShape(
+            ZoneViewModel.DebugType.DragAnchorCurrent,
+            new Rectangle2D.Double(zonePoint.x - 5, zonePoint.y - 5, 10, 10));
       }
 
       doDragTo(zonePoint);
