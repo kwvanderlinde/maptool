@@ -128,6 +128,7 @@ public class ZoneCompositor {
     var screenBounds = new Rectangle2D.Double(0, 0, renderer.getWidth(), renderer.getHeight());
     var worldBounds = viewport.getWorldSpaceBounds();
     var playerView = viewModel.getPlayerView();
+    var delayedCompositing = new ArrayList<Runnable>();
 
     var loadingProgress = viewModel.getLoadingStatus();
     if (loadingProgress.isPresent()) {
@@ -203,6 +204,18 @@ public class ZoneCompositor {
       compositeLightSourceIcons(builder, viewport, view);
 
       compositeDebugShapes(builder, viewport);
+
+      // Finally, put out any labels that have been delayed, e.g., from rendering tokens.
+      if (!delayedCompositing.isEmpty()) {
+        builder.unbufferedLayer(
+            "delayedRendering",
+            ClipType.NoClipping,
+            () -> {
+              for (var action : delayedCompositing) {
+                action.run();
+              }
+            });
+      }
 
       // TODO Notes weren't part of renderZone(), so should actually be done separately otherwise
       //  they will end up in screenshots and such.
