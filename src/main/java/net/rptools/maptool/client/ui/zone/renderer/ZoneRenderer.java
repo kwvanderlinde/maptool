@@ -745,6 +745,9 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       g2d.setClip(0, 0, viewRect.width, viewRect.height);
     }
 
+    g2d.setPaint(Color.black);
+    g2d.fillRect(viewRect.x, viewRect.y, viewRect.width, viewRect.height);
+
     // Are we still waiting to show the zone ?
     var loadingProgress = viewModel.getLoadingStatus();
     if (loadingProgress.isPresent()) {
