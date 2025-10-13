@@ -21,6 +21,8 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
+import net.rptools.maptool.client.AppPreferences;
+import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.ZoneView;
@@ -32,6 +34,7 @@ import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstructio
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.BoxedString;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.ClearScreen;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.ZoneViewport;
+import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Zone;
 
 /**
@@ -155,6 +158,32 @@ public class ZoneCompositor {
       // TODO Light source icons, if Token layer is enabled, is GM view & option is enabled.
 
       // TODO Debug rendering.
+
+      // TODO Notes weren't part of renderZone(), so should actually be done separately otherwise
+      //  they will end up in screenshots and such.
+      {
+        var notes = new ArrayList<String>();
+        if (!AppPreferences.mapVisibilityWarning.get()
+            && (!zone.isVisible() && playerView.isGMView())) {
+          notes.add(I18N.getText("zone.map_not_visible"));
+        }
+        if (AppState.isShowAsPlayer()) {
+          notes.add(I18N.getText("zone.player_view"));
+        }
+
+        if (!notes.isEmpty()) {
+          builder.unbufferedLayer(
+              "notes",
+              ClipType.NoClipping,
+              () -> {
+                int noteVPos = 20;
+                for (var note : notes) {
+                  builder.add(new BoxedString(screenBounds.getCenterX(), noteVPos, note));
+                  noteVPos += 20;
+                }
+              });
+        }
+      }
     }
 
     return new InstructionSet(viewport, ImmutableList.copyOf(instructions), clips);

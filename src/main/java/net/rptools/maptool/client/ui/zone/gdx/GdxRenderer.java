@@ -82,7 +82,6 @@ import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstructio
 import net.rptools.maptool.client.ui.zone.renderer.instructions.ZoneViewport;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.events.MapToolEventBus;
-import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.Label;
 import net.rptools.maptool.model.Path;
@@ -699,27 +698,6 @@ public class GdxRenderer extends ApplicationAdapter {
     renderZone(playerView, instructionSet);
 
     setProjectionMatrix(hudCam.combined);
-
-    float noteVPos = 20;
-    if (!zoneCache.getZone().isVisible() && playerView.isGMView()) {
-      hudTextRenderer.drawBoxedString(
-          I18N.getText("zone.map_not_visible"),
-          width / 2f,
-          height - noteVPos,
-          SwingUtilities.CENTER,
-          LabelBackgrounds.BOX_GRAY,
-          Color.BLACK);
-      noteVPos += 20;
-    }
-    if (AppState.isShowAsPlayer()) {
-      hudTextRenderer.drawBoxedString(
-          I18N.getText("zone.player_view"),
-          width / 2f,
-          height - noteVPos,
-          SwingUtilities.CENTER,
-          LabelBackgrounds.BOX_GRAY,
-          Color.BLACK);
-    }
 
     hudTextRenderer.drawString("FPS:   " + Gdx.graphics.getFramesPerSecond(), width - 30, 30);
     hudTextRenderer.drawString("Draws: " + batch.renderCalls, width - 30, 16);
