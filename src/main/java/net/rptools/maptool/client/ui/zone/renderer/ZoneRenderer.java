@@ -987,7 +987,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    * <p>Size is set to two: one for the buffer to draw the entire zone, and one for drawing each
    * overlay in turn.
    */
-  private final BufferedImagePool tempBufferPool = new BufferedImagePool(2);
+  private final BufferedImagePool tempBufferPool = new BufferedImagePool(10);
 
   private void renderLabels(Graphics2D g) {
     final var timer = CodeTimer.get();
