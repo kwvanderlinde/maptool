@@ -64,6 +64,7 @@ import net.rptools.maptool.client.ui.zone.gdx.label.LabelRenderer;
 import net.rptools.maptool.client.ui.zone.gdx.label.TextRenderer;
 import net.rptools.maptool.client.ui.zone.gdx.label.TokenLabelRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.SelectionSet;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.Paint;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
@@ -586,6 +587,28 @@ public class GdxRenderer extends ApplicationAdapter {
         texture =
             zoneCache.getPaintTexture(
                 texturePaint.getAssetId(), transferringAssetTexture, brokenAssetTexture);
+      }
+    }
+
+    return new GdxPaint(color, texture);
+  }
+
+  private GdxPaint getPaint(Paint paint) {
+    var color = new Color();
+    Texture texture;
+
+    switch (paint) {
+      case Paint.Color colorPaint -> {
+        Color.argb8888ToColor(color, colorPaint.argb8888());
+        color.premultiplyAlpha();
+
+        texture = whitePixel;
+      }
+      case Paint.Texture texturePaint -> {
+        color.set(Color.WHITE);
+        texture =
+            zoneCache.getPaintTexture(
+                texturePaint.assetId(), transferringAssetTexture, brokenAssetTexture);
       }
     }
 

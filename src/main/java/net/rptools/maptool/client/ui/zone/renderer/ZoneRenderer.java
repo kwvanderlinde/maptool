@@ -15,8 +15,23 @@
 package net.rptools.maptool.client.ui.zone.renderer;
 
 import com.google.common.eventbus.Subscribe;
-import java.awt.*;
+import java.awt.AlphaComposite;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Stroke;
+import java.awt.TexturePaint;
+import java.awt.Toolkit;
+import java.awt.Transparency;
 import java.awt.dnd.DropTargetDragEvent;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.dnd.DropTargetEvent;
@@ -28,6 +43,7 @@ import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
 import java.awt.geom.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
@@ -58,6 +74,7 @@ import net.rptools.maptool.client.ui.token.BarTokenOverlay;
 import net.rptools.maptool.client.ui.token.dialog.create.NewTokenDialog;
 import net.rptools.maptool.client.ui.zone.*;
 import net.rptools.maptool.client.ui.zone.gdx.GdxRenderer;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.Paint;
 import net.rptools.maptool.client.ui.zone.renderer.tokenRender.FacingArrowRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.tokenRender.TokenRenderer;
 import net.rptools.maptool.client.walker.ZoneWalker;
@@ -971,6 +988,32 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     debugRenderer.renderShapes(g2d, viewModel.getDebugShapes());
   }
 
+  private java.awt.Paint resolveAwtPaint(
+      Paint paint, double offsetX, double offsetY, double scale, ImageObserver... observers) {
+    return switch (paint) {
+      case Paint.Color color -> {
+        yield new Color(color.argb8888(), true);
+      }
+      case Paint.Texture texture -> {
+        BufferedImage image = ImageManager.getImage(texture.assetId(), observers);
+        if (image == ImageManager.TRANSFERING_IMAGE) {
+          log.warn("Paint asset://{} not resolved", texture.assetId());
+        }
+        yield new TexturePaint(
+            image,
+            new Rectangle2D.Double(
+                offsetX,
+                offsetY,
+                image.getWidth() * scale * texture.imageScale(),
+                image.getHeight() * scale * texture.imageScale()));
+      }
+    };
+  }
+
+  private java.awt.Paint resolveAwtPaint(Paint paint, ImageObserver... observers) {
+    return resolveAwtPaint(paint, 0, 0, 1, observers);
+  }
+
   private void delayRendering(ItemRenderer renderer) {
     itemRenderList.add(renderer);
   }
@@ -1043,7 +1086,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       AppPreferences.renderQuality.get().setRenderingHints(bbg);
 
       // Background texture
-      Paint paint = zone.getBackgroundPaint().getPaint(scale, this);
+      java.awt.Paint paint = zone.getBackgroundPaint().getPaint(scale, this);
       bbg.setPaint(paint);
       bbg.fillRect(0, 0, size.width, size.height);
 
