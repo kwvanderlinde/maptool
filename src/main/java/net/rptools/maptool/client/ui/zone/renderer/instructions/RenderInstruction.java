@@ -25,5 +25,7 @@ public sealed interface RenderInstruction {
     record FinishLayer(String layerName) implements RenderInstruction {}
 
     record SwitchAlphaMode(AlphaMode mode) implements RenderInstruction {}
+
+    record SetClipType(ClipType clipType) implements RenderInstruction {}
   }
 }

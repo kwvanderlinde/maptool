@@ -1188,6 +1188,53 @@ public class GdxRenderer extends ApplicationAdapter {
           currentLayer.blendFunction = blendFunction;
           blendFunction.applyToBatch(batch);
         }
+        case RenderInstruction.Meta.SetClipType(ClipType clipType) -> {
+          batch.flush();
+          currentLayer.buffer.end();
+
+          var clipBuffer = clipBuffers.get(clipType);
+          if (clipBuffer == null) {
+            // Remove any clips.
+            if (currentLayer.maskBuffer != null) {
+              maskBufferPool.free(currentLayer.maskBuffer);
+              currentLayer.maskBuffer = null;
+            }
+            layerShader.setClipBuffer(null);
+          } else {
+            // Set up the new clip.
+            FrameBuffer maskBuffer = currentLayer.maskBuffer;
+            if (maskBuffer == null) {
+              maskBuffer = currentLayer.maskBuffer = maskBufferPool.obtain();
+            } else {
+              log.warn(
+                  "This layer already has a mask set. Overwriting with clip type {}", clipType);
+            }
+
+            // Update the mask texture to include the given clip type.
+            layerShader.save();
+            maskBuffer.begin();
+
+            // When setting up the clips, we only want the alpha channel preserved.
+            Gdx.gl.glColorMask(false, false, false, true);
+            BlendFunction.SRC_ONLY.applyToBatch(batch);
+            layerShader.setOpacity(1.f);
+            layerShader.setBlendMode(BlendMode.SrcOnly);
+            layerShader.setDestination(null);
+            layerShader.setClipBuffer(null);
+            ScreenUtils.clear(Color.CLEAR);
+            batch.draw(clipBuffer.getColorBufferTexture(), 0, 0, width, height, 0, 0, 1, 1);
+            batch.flush();
+            // Re-enable full color writing.
+            Gdx.gl.glColorMask(true, true, true, true);
+
+            maskBuffer.end();
+            currentLayer.buffer.begin();
+
+            currentLayer.blendFunction.applyToBatch(batch);
+            layerShader.restore();
+            layerShader.setClipBuffer(maskBuffer.getColorBufferTexture());
+          }
+        }
       }
 
       timer.stop("layer-%s[%s]", timerLayer, instruction);

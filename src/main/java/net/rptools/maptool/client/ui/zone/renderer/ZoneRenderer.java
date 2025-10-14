@@ -1232,6 +1232,17 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
               };
           currentLayer.currentG().setComposite(composite);
         }
+        case RenderInstruction.Meta.SetClipType(ClipType clipType) -> {
+          var clip = clips.get(clipType);
+          if (clip == null) {
+            currentLayer.currentG().setClip(null);
+          } else {
+            var oldTransform = currentLayer.currentG().getTransform();
+            currentLayer.currentG().transform(worldToScreen);
+            currentLayer.currentG().setClip(clip);
+            currentLayer.currentG().setTransform(oldTransform);
+          }
+        }
       }
 
       timer.stop("layer-%s[%s]", timerLayer, instruction);
