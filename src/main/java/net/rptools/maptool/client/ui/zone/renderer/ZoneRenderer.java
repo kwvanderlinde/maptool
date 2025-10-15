@@ -159,6 +159,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
   private final ZoneCompositor compositor;
   private final EnumSet<Layer> disabledLayers = EnumSet.noneOf(Layer.class);
+  private final RenderHelper renderHelper;
   private final GridRenderer gridRenderer;
   private final HaloRenderer haloRenderer;
   private final TokenRenderer tokenRenderer;
@@ -193,7 +194,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     this.compositor = new ZoneCompositor(this);
 
-    var renderHelper = new RenderHelper(this, tempBufferPool);
+    this.renderHelper = new RenderHelper(this, tempBufferPool);
     this.gridRenderer = new GridRenderer(this);
     this.haloRenderer = new HaloRenderer(renderHelper, campaign, zone);
     this.tokenRenderer = new TokenRenderer(renderHelper, campaign, zone);
@@ -1307,6 +1308,25 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             imageG.drawImage(image, fullTransform, this);
           } finally {
             imageG.dispose();
+          }
+        }
+        case RenderInstruction.Icon(Images resource, Rectangle2D worldBounds) -> {
+          var iconG = (Graphics2D) currentLayer.currentG().create();
+          try {
+            iconG.transform(worldToScreen);
+
+            var image = RessourceManager.getImage(resource);
+
+            var at = new AffineTransform();
+            at.translate(
+                worldBounds.getCenterX() - worldBounds.getWidth() / 2.,
+                worldBounds.getCenterY() - worldBounds.getHeight() / 2.);
+            at.scale(
+                worldBounds.getWidth() / image.getWidth(),
+                worldBounds.getHeight() / image.getHeight());
+            iconG.drawImage(image, at, null);
+          } finally {
+            iconG.dispose();
           }
         }
         case RenderInstruction.BoxedString(

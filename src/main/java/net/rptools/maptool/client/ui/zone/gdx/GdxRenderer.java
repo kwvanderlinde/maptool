@@ -1321,6 +1321,21 @@ public class GdxRenderer extends ApplicationAdapter {
             batch.setTransformMatrix(tmpMatrix2);
           }
         }
+        case RenderInstruction.Icon(Images resource, Rectangle2D worldBounds) -> {
+          TextureRegion image = fetchImageResource(resource);
+          if (image == null) {
+            log.warn("Could not find texture for image resource {}", resource);
+          } else {
+            var x = worldBounds.getCenterX() - worldBounds.getWidth() / 2.;
+            var y = -worldBounds.getCenterY() - worldBounds.getHeight() / 2.;
+            batch.draw(
+                image,
+                (float) x,
+                (float) y,
+                (float) worldBounds.getWidth(),
+                (float) worldBounds.getHeight());
+          }
+        }
         case RenderInstruction.BoxedString(
             Point2D center,
             String text,

@@ -22,6 +22,7 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.ScreenPoint;
+import net.rptools.maptool.client.ui.theme.Images;
 import net.rptools.maptool.client.ui.theme.LabelBackgrounds;
 import net.rptools.maptool.model.drawing.DrawableNoise;
 
@@ -86,4 +87,6 @@ public sealed interface RenderInstruction {
 
   record Stroke(Shape shape, Paint paint, BasicStroke stroke, double opacity)
       implements RenderInstruction {}
+
+  record Icon(Images resource, Rectangle2D worldBounds) implements RenderInstruction {}
 }
