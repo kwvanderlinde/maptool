@@ -70,7 +70,7 @@ public class CodeTimer {
 
   private record TimerEvent(TimerEventType type, long timeNs, String id, Object[] parameters) {}
 
-  private record CounterEvent(long amount, String id) {}
+  private record CounterEvent(long amount, String id, Object[] parameters) {}
 
   private ArrayList<TimerEvent> timerEvents = new ArrayList<>(100);
   private ArrayList<CounterEvent> counterEvents = new ArrayList<>(100);
@@ -105,11 +105,11 @@ public class CodeTimer {
     increment(id, 1);
   }
 
-  public void increment(String id, int amount) {
+  public void increment(String id, int amount, Object... parameters) {
     if (!enabled) {
       return;
     }
-    counterEvents.add(new CounterEvent(amount, id));
+    counterEvents.add(new CounterEvent(amount, id, parameters));
   }
 
   public void start(String id, Object... parameters) {
@@ -168,7 +168,8 @@ public class CodeTimer {
 
     // Count up all the counter events.
     for (var event : counterEvents) {
-      counterMap.merge(event.id(), event.amount(), Long::sum);
+      var id = String.format(event.id(), event.parameters());
+      counterMap.merge(id, event.amount(), Long::sum);
     }
 
     StringBuilder builder = new StringBuilder(100);
