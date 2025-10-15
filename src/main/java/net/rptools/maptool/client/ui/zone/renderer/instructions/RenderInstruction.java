@@ -16,10 +16,12 @@ package net.rptools.maptool.client.ui.zone.renderer.instructions;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import javax.annotation.Nullable;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.ui.theme.Images;
@@ -89,4 +91,23 @@ public sealed interface RenderInstruction {
       implements RenderInstruction {}
 
   record Icon(Images resource, Rectangle2D worldBounds) implements RenderInstruction {}
+
+  record Text(
+      String text, Font font, Rectangle2D screenBounds, Color textColor, Decoration decoration)
+      implements RenderInstruction {
+    public enum Decoration {
+      None,
+      Shadow,
+    }
+  }
+
+  record Label(
+      String text,
+      Font font,
+      Rectangle2D screenBounds,
+      @Nullable Color background,
+      Color foreground,
+      @Nullable Color borderColor,
+      double borderWidth,
+      double cornerArc) {}
 }

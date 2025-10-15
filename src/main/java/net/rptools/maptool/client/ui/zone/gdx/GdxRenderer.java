@@ -1364,6 +1364,24 @@ public class GdxRenderer extends ApplicationAdapter {
             double opacity) -> {
           simpleDrawingRenderer.stroke(batch, shape, getPaint(paint), (float) opacity, stroke);
         }
+        case RenderInstruction.Text(
+            String text,
+            Font font,
+            Rectangle2D screenBounds,
+            java.awt.Color foreground,
+            RenderInstruction.Text.Decoration decoration) -> {
+          setProjectionMatrix(hudCam.combined);
+
+          Color.argb8888ToColor(tmpColor, foreground.getRGB());
+          tmpColor.premultiplyAlpha();
+
+          // TODO Need to be able to provie the font size.
+          textRenderer.drawString(
+              text,
+              (float) screenBounds.getCenterX(),
+              height - (float) screenBounds.getCenterY(),
+              tmpColor);
+        }
       }
 
       timer.stop("layer-%s[%s]", timerLayer, instruction);

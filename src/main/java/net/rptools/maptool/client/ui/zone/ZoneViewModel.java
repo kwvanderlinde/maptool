@@ -742,7 +742,7 @@ public class ZoneViewModel {
               dimensions.width,
               dimensions.height);
 
-      labelLocations.add(new LabelLocation(bounds, label));
+      labelLocations.add(new LabelLocation(bounds, label, font));
     }
   }
 }

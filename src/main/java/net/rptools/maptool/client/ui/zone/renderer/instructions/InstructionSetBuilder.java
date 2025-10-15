@@ -14,8 +14,12 @@
  */
 package net.rptools.maptool.client.ui.zone.renderer.instructions;
 
+import java.awt.BasicStroke;
+import java.awt.geom.RoundRectangle2D;
 import java.util.function.Consumer;
 import net.rptools.lib.CodeTimer;
+import net.rptools.maptool.client.ui.zone.renderer.LabelLocation;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Text;
 import net.rptools.maptool.model.Zone;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -75,5 +79,56 @@ public class InstructionSetBuilder {
 
   public void add(RenderInstruction instruction) {
     instructionSink.accept(instruction);
+  }
+
+  public void addLabel(RenderInstruction.Label label) {
+    var scale = viewport.zoneScale().getScale();
+    var worldBounds = viewport.zoneScale().toWorldSpace(label.screenBounds());
+    // TODO We really need to fix our GDX polygonizer. A single rounded rectangle cuts our
+    //  frame rate in half.
+    var box =
+        new RoundRectangle2D.Double(
+            worldBounds.getX(),
+            worldBounds.getY(),
+            worldBounds.getWidth(),
+            worldBounds.getHeight(),
+            label.cornerArc() / scale,
+            label.cornerArc() / scale);
+    if (label.background() != null) {
+      add(new RenderInstruction.Fill(box, Paint.of(label.background()), 1.));
+    }
+
+    add(
+        new Text(
+            label.text(),
+            label.font(),
+            label.screenBounds(),
+            label.foreground(),
+            Text.Decoration.None));
+
+    if (label.borderWidth() > 0 && label.borderColor() != null) {
+      add(
+          new RenderInstruction.Stroke(
+              box,
+              Paint.of(label.borderColor()),
+              new BasicStroke(
+                  (float) (label.borderWidth() / scale),
+                  BasicStroke.CAP_ROUND,
+                  BasicStroke.JOIN_ROUND),
+              1.));
+    }
+  }
+
+  public void addLabel(LabelLocation label) {
+    addLabel(
+        new RenderInstruction.Label(
+            label.label().getLabel(),
+            label.font(),
+            label.bounds(),
+            label.label().isShowBackground() ? label.label().getBackgroundColor() : null,
+            label.label().getForegroundColor(),
+            label.label().isShowBorder() ? label.label().getBorderColor() : null,
+            label.label().getBorderWidth(),
+            label.label().getBorderArc()));
   }
 }

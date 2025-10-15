@@ -1383,6 +1383,37 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             drawingsG.dispose();
           }
         }
+        case RenderInstruction.Text(
+            String text,
+            Font font,
+            Rectangle2D screenBounds,
+            Color foreground,
+            RenderInstruction.Text.Decoration decoration) -> {
+          var labelG = (Graphics2D) currentLayer.currentG().create();
+          try {
+            labelG.setFont(font);
+            var fm = labelG.getFontMetrics();
+            int strWidth = SwingUtilities.computeStringWidth(fm, text);
+            int strHeight = fm.getAscent() - fm.getDescent() - fm.getLeading();
+
+            // TODO Support left & right justification as well.
+            //  For now assume centered text.
+            double stringY = screenBounds.getCenterY() + strHeight / 2.;
+            double stringX = screenBounds.getCenterX() - strWidth / 2.;
+
+            if (decoration == RenderInstruction.Text.Decoration.Shadow) {
+              labelG.setColor(Color.black);
+              labelG.drawString(text, (int) stringX - 1, (int) stringY - 1);
+              labelG.drawString(text, (int) stringX + 1, (int) stringY - 1);
+              labelG.drawString(text, (int) stringX - 1, (int) stringY + 1);
+              labelG.drawString(text, (int) stringX + 1, (int) stringY + 1);
+            }
+            labelG.setColor(foreground);
+            labelG.drawString(text, (int) stringX, (int) stringY);
+          } finally {
+            labelG.dispose();
+          }
+        }
       }
 
       timer.stop("layer-%s[%s]", timerLayer, instruction);
