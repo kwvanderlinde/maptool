@@ -1506,6 +1506,11 @@ public class ZoneCompositor {
         BlendMode.AlphaSrcOver,
         1.,
         () -> {
+
+          // To avoid any accidental revealing of the underlying map when the fog texture has
+          // transparency, render against a black background if not a GM.
+          builder.add(new ClearScreen(view.isGMView() ? COLOR_CLEAR : Color.black));
+
           var visibility = zoneView.getVisibility(view);
           Area softFogArea = visibility.softFogArea();
           Area clearArea = visibility.clearArea();
@@ -1514,8 +1519,11 @@ public class ZoneCompositor {
           var extraHardFogOpacity = view.isGMView() ? .6f : 1f;
           var softFogOpacity = AppPreferences.fogOverlayOpacity.get() / 255.;
 
-          builder.add(new SwitchAlphaMode(AlphaMode.SrcOnly));
+          // Do SrcOver so we can blend with the black background if set.
+          builder.add(new SwitchAlphaMode(AlphaMode.SrcOver));
           builder.add(new FillFrameBuffer(Paint.of(hardFogPaint), extraHardFogOpacity));
+
+          builder.add(new SwitchAlphaMode(AlphaMode.SrcOnly));
 
           if (!softFogArea.isEmpty()) {
             builder.add(
