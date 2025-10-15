@@ -827,8 +827,6 @@ public class GdxRenderer extends ApplicationAdapter {
       return;
     }
 
-    renderBoard();
-
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.BACKGROUND, view)) {
       renderDrawables(zoneCache.getZone().getDrawnElements(Zone.Layer.BACKGROUND));
     }
@@ -2120,21 +2118,6 @@ public class GdxRenderer extends ApplicationAdapter {
       Pixmap pixmap = Pixmap.createFromFrameBuffer(0, 0, width, height);
       PixmapIO.writePNG(file, pixmap, Deflater.DEFAULT_COMPRESSION, true);
       pixmap.dispose();
-    }
-  }
-
-  private void renderBoard() {
-    if (!zoneCache.getZone().drawBoard()) return;
-
-    var paint = getPaint(zoneCache.getZone().getBackgroundPaint());
-    fillViewportWith(paint.color(), paint.texture());
-
-    var assetId = zoneCache.getZone().getMapAssetId();
-    if (assetId != null) {
-      var map = new Sprite(zoneCache.getImageAsset(assetId, transferringAsset, brokenAsset));
-      map.setPosition(
-          zoneCache.getZone().getBoardX(), zoneCache.getZone().getBoardY() - map.getHeight());
-      map.draw(batch);
     }
   }
 

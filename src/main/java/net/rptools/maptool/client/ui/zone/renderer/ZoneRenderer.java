@@ -120,6 +120,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
   private final ZoneViewModel viewModel;
 
+  // TODO Move this into ZoneViewModel
   /** Noise for mask on repeating tiles. */
   private DrawableNoise noise = null;
 
@@ -893,7 +894,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       }
       timer.stop("createTransformedArea");
     }
-
     timer.stop("calcs-1");
 
     // Rendering pipeline
@@ -902,6 +902,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       renderBoard(g2d, view);
       timer.stop("board");
     }
+    // Rendering pipeline
     if (shouldRenderLayer(Layer.BACKGROUND, view)) {
       List<DrawnElement> drawables = zone.getDrawnElements(Layer.BACKGROUND);
 
@@ -3074,6 +3075,10 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     } catch (Exception ignored) {
     }
     return c;
+  }
+
+  public @Nullable DrawableNoise getNoise() {
+    return noise;
   }
 
   /**

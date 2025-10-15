@@ -16,6 +16,7 @@ package net.rptools.maptool.client.ui.zone.renderer;
 
 import com.google.common.collect.ImmutableList;
 import java.awt.Color;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
@@ -27,12 +28,18 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.ZoneView;
 import net.rptools.maptool.client.ui.zone.ZoneViewModel;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.AlphaMode;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.ClipType;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSet;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSetBuilder;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.Paint;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.BoxedString;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.ClearScreen;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.FillFrameBuffer;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.ImageAsset;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Meta.SwitchAlphaMode;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Noise;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.ZoneViewport;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Zone;
@@ -112,7 +119,7 @@ public class ZoneCompositor {
                     screenBounds.getCenterX(), screenBounds.getCenterY(), "    Please Wait    "));
           });
     } else {
-      // TODO Map board
+      compositeBoard(builder);
 
       // TODO Object drawables
 
@@ -187,5 +194,34 @@ public class ZoneCompositor {
     }
 
     return new InstructionSet(viewport, ImmutableList.copyOf(instructions), clips);
+  }
+
+  private void compositeBoard(InstructionSetBuilder builder) {
+    builder.unbufferedLayer(
+        "board",
+        ClipType.NoClipping,
+        () -> {
+          if (zone.drawBoard()) {
+            builder.add(new SwitchAlphaMode(AlphaMode.SrcOnly));
+
+            var backgroundPaint = Paint.of(zone.getBackgroundPaint());
+            builder.add(new FillFrameBuffer(backgroundPaint));
+
+            // Only apply the noise if the feature is on and the background a textured paint
+            if (renderer.isBgTextureNoiseFilterOn() && backgroundPaint instanceof Paint.Texture) {
+              builder.add(new Noise(renderer.getNoise()));
+            }
+          }
+
+          if (zone.getMapAssetId() != null) {
+            builder.add(new SwitchAlphaMode(AlphaMode.SrcOver));
+
+            AffineTransform transform = new AffineTransform();
+            transform.translate(zone.getBoardX(), zone.getBoardY());
+            transform.scale(zone.getImageScaleX(), zone.getImageScaleY());
+
+            builder.add(new ImageAsset(zone.getMapAssetId(), transform));
+          }
+        });
   }
 }
