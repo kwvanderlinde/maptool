@@ -700,25 +700,6 @@ public class GdxRenderer extends ApplicationAdapter {
 
     setProjectionMatrix(hudCam.combined);
 
-    var loadingProgress = viewModel.getLoadingStatus();
-    if (loadingProgress.isPresent()) {
-      hudTextRenderer.drawBoxedString(
-          loadingProgress.get(),
-          width / 2f,
-          height / 2f,
-          SwingUtilities.CENTER,
-          LabelBackgrounds.BOX_GRAY,
-          Color.BLACK);
-    } else if (viewModel.getCampaign().isBeingSerialized()) {
-      hudTextRenderer.drawBoxedString(
-          "    Please Wait    ",
-          width / 2f,
-          height / 2f,
-          SwingUtilities.CENTER,
-          LabelBackgrounds.BOX_GRAY,
-          Color.BLACK);
-    }
-
     float noteVPos = 20;
     if (!zoneCache.getZone().isVisible() && playerView.isGMView()) {
       hudTextRenderer.drawBoxedString(
@@ -796,9 +777,7 @@ public class GdxRenderer extends ApplicationAdapter {
 
   private void renderZone(PlayerView view, InstructionSet instructionSet) {
     CodeTimer timer = CodeTimer.get();
-    if (!prerender(view)) {
-      // return;
-    }
+    prerender(view);
 
     // Update the clips.
     batch.setShader(null);
@@ -1475,17 +1454,9 @@ public class GdxRenderer extends ApplicationAdapter {
     batch.flush();
   }
 
-  /**
-   * Updates renderer state prior to rendering the zone.
-   *
-   * @return {@code true} if rendering should proceed.
-   */
-  private boolean prerender(PlayerView view) {
+  /** Updates renderer state prior to rendering the zone. */
+  private void prerender(PlayerView view) {
     CodeTimer timer = CodeTimer.get();
-
-    if (viewModel.getLoadingStatus().isPresent() || viewModel.getCampaign().isBeingSerialized()) {
-      return false;
-    }
 
     if (lastView != null && !lastView.equals(view)) {
       invalidateCurrentViewCache();
@@ -1506,8 +1477,6 @@ public class GdxRenderer extends ApplicationAdapter {
     timer.start("calcs-2");
     exposedFogArea = new Area(zoneCache.getZone().getExposedArea());
     timer.stop("calcs-2");
-
-    return true;
   }
 
   private void renderCoordinates(PlayerView view) {

@@ -15,6 +15,7 @@
 package net.rptools.maptool.client.ui.zone.renderer;
 
 import com.google.common.collect.ImmutableList;
+import java.awt.Color;
 import java.awt.geom.Area;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
@@ -28,6 +29,8 @@ import net.rptools.maptool.client.ui.zone.renderer.instructions.ClipType;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSet;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSetBuilder;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.BoxedString;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.ClearScreen;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.ZoneViewport;
 import net.rptools.maptool.model.Zone;
 
@@ -78,17 +81,33 @@ public class ZoneCompositor {
     var viewport = new ZoneViewport(viewportRect.getWidth(), viewportRect.getHeight(), zoneScale);
     var builder = new InstructionSetBuilder(instructions::add, renderer.getZone(), viewport);
 
-    var worldBounds = viewport.getWorldSpaceBounds();
-
     // TODO Shan't we take this from the ZoneViewModel#getViewSize()?
     var screenBounds = new Rectangle2D.Double(0, 0, renderer.getWidth(), renderer.getHeight());
+    var worldBounds = viewport.getWorldSpaceBounds();
     var playerView = viewModel.getPlayerView();
 
     var loadingProgress = viewModel.getLoadingStatus();
     if (loadingProgress.isPresent()) {
-      // TODO Loading progress
+      builder.unbufferedLayer(
+          "loading",
+          ClipType.NoClipping,
+          () -> {
+            builder.add(new ClearScreen(Color.black));
+            builder.add(
+                new BoxedString(
+                    screenBounds.getCenterX(), screenBounds.getCenterY(), loadingProgress.get()));
+          });
+      viewModel.repaintNeeded();
     } else if (MapTool.getCampaign().isBeingSerialized()) {
-      // TODO Serialization notes
+      builder.unbufferedLayer(
+          "serializing",
+          ClipType.NoClipping,
+          () -> {
+            builder.add(new ClearScreen(Color.black));
+            builder.add(
+                new BoxedString(
+                    screenBounds.getCenterX(), screenBounds.getCenterY(), "    Please Wait    "));
+          });
     } else {
       // TODO Map board
 
