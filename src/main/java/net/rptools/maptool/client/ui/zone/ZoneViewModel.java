@@ -307,6 +307,16 @@ public class ZoneViewModel {
     return Collections.unmodifiableMap(tokenStackMap);
   }
 
+  public @Nonnull Zone.Layer getActiveLayer() {
+    return activeLayer;
+  }
+
+  public void setActiveLayer(@Nonnull Zone.Layer layer) {
+    activeLayer = Objects.requireNonNullElse(layer, Zone.Layer.getDefaultPlayerLayer());
+    selectionModel.replaceSelection(Collections.emptyList());
+    repaintNeeded();
+  }
+
   // TODO Make Optional<GUID>
   public @Nullable GUID getTokenUnderMouse() {
     return tokenUnderMouse;

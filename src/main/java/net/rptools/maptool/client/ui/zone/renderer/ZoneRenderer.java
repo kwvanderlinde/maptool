@@ -109,7 +109,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   final Map<GUID, BufferedImage> labelRenderingCache = new HashMap<>();
 
   private ScreenPoint pointUnderMouse;
-  private @Nonnull Zone.Layer activeLayer = Layer.getDefaultPlayerLayer();
 
   private BufferedImage miniImage;
   private BufferedImage backBuffer;
@@ -231,7 +230,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     viewModel.setZoneScale(
         viewModel.getZoneScale().centeredOn(token.getX(), token.getY(), getSize()));
-    setActiveLayer(token.getLayer());
+    viewModel.setActiveLayer(token.getLayer());
     MapTool.getFrame()
         .getToolbox()
         .setSelectedTool(!token.getLayer().isStampLayer() ? PointerTool.class : StampTool.class);
@@ -1574,18 +1573,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   }
 
   public @Nonnull Zone.Layer getActiveLayer() {
-    return activeLayer;
-  }
-
-  /**
-   * Sets the active layer.
-   *
-   * @param layer the layer to set active
-   */
-  public void setActiveLayer(Zone.Layer layer) {
-    activeLayer = Objects.requireNonNullElse(layer, Layer.getDefaultPlayerLayer());
-    selectionModel.replaceSelection(Collections.emptyList());
-    repaintDebouncer.dispatch();
+    return viewModel.getActiveLayer();
   }
 
   /**

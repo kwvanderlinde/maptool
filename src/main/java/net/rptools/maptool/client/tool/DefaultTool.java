@@ -77,7 +77,7 @@ public abstract class DefaultTool extends Tool
   protected void selectedLayerChanged(Zone.Layer layer) {
     selectedLayer = layer;
     if (renderer != null) {
-      renderer.setActiveLayer(layer);
+      renderer.getViewModel().setActiveLayer(layer);
     }
   }
 
