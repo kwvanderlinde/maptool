@@ -166,12 +166,11 @@ public class ZoneViewModel {
 
   // endregion
 
-  public ZoneViewModel(
-      Campaign campaign, Zone zone, ZoneView zoneView, SelectionModel selectionModel) {
+  public ZoneViewModel(Campaign campaign, Zone zone, ZoneView zoneView) {
     this.campaign = campaign;
     this.zone = zone;
     this.zoneView = zoneView;
-    this.selectionModel = selectionModel;
+    this.selectionModel = new SelectionModel(zone);
 
     new MapToolEventBus()
         .getMainEventBus()
@@ -199,6 +198,10 @@ public class ZoneViewModel {
 
   public Campaign getCampaign() {
     return campaign;
+  }
+
+  public SelectionModel getSelectionModel() {
+    return selectionModel;
   }
 
   public boolean isUsingGdxRenderer() {

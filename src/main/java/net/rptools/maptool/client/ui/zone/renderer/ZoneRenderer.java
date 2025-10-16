@@ -98,9 +98,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   /** The ZoneView constructed from the zone. */
   private final ZoneView zoneView;
 
-  /** Manages the selected tokens on the zone. */
-  private final SelectionModel selectionModel;
-
   private final Map<Zone.Layer, DrawableRenderer> drawableRenderers;
   private final List<ZoneOverlay> overlayList = new ArrayList<>();
   private final Map<GUID, SelectionSet> selectionSetMap = new HashMap<>();
@@ -149,9 +146,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       throw new IllegalArgumentException("Zone cannot be null");
     }
     this.zone = zone;
-    this.selectionModel = new SelectionModel(zone);
     this.zoneView = new ZoneView(zone);
-    this.viewModel = new ZoneViewModel(campaign, zone, zoneView, selectionModel);
+    this.viewModel = new ZoneViewModel(campaign, zone, zoneView);
 
     drawableRenderers =
         CollectionUtil.newFilledEnumMap(
@@ -235,7 +231,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         .getToolbox()
         .setSelectedTool(!token.getLayer().isStampLayer() ? PointerTool.class : StampTool.class);
 
-    selectionModel.replaceSelection(Collections.singletonList(token.getId()));
+    viewModel.getSelectionModel().replaceSelection(Collections.singletonList(token.getId()));
     requestFocusInWindow();
   }
 
@@ -512,7 +508,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   }
 
   public SelectionModel getSelectionModel() {
-    return selectionModel;
+    return viewModel.getSelectionModel();
   }
 
   /** Clear internal caches and back-buffers */
@@ -1762,7 +1758,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
       // Count moving tokens as "selected" so that a border is drawn around them.
       boolean isSelected =
-          selectionModel.isSelected(token.getId()) || viewModel.isTokenMoving(token.getId());
+          viewModel.getSelectionModel().isSelected(token.getId())
+              || viewModel.isTokenMoving(token.getId());
       if (isSelected) {
         selectionRenderer.drawSelectBorder(clippedG, position);
         // Remove labels from the cache if the corresponding tokens are deselected
@@ -1929,7 +1926,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   }
 
   public Set<GUID> getSelectedTokenSet() {
-    return selectionModel.getSelectedTokenIds();
+    return viewModel.getSelectionModel().getSelectedTokenIds();
   }
 
   /**
@@ -2018,14 +2015,14 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     if (visibleTokens.isEmpty()) {
       return;
     }
-    if (selectionModel.isAnyTokenSelected()) {
+    if (viewModel.getSelectionModel().isAnyTokenSelected()) {
       // Find the first selected token on the screen
       for (int i = 0; i < visibleTokens.size(); i++) {
         Token token = visibleTokens.get(i);
         if (!isTokenSelectable(token.getId())) {
           continue;
         }
-        if (selectionModel.isSelected(token.getId())) {
+        if (viewModel.getSelectionModel().isSelected(token.getId())) {
           newSelection = i;
           break;
         }
@@ -2041,8 +2038,9 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     }
 
     // Make the selection
-    selectionModel.replaceSelection(
-        Collections.singletonList(visibleTokens.get(newSelection).getId()));
+    viewModel
+        .getSelectionModel()
+        .replaceSelection(Collections.singletonList(visibleTokens.get(newSelection).getId()));
   }
 
   /**
@@ -2310,7 +2308,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       selectThese.add(token.getId());
     }
     // For convenience, select them
-    selectionModel.replaceSelection(selectThese);
+    viewModel.getSelectionModel().replaceSelection(selectThese);
 
     if (!isGM) {
       String msg = I18N.getText("Token.dropped.byPlayer", zone.getName(), MapTool.getPlayer());
