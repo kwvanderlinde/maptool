@@ -1571,7 +1571,7 @@ public class GdxRenderer extends ApplicationAdapter {
 
       // Previous path
       timer.start("renderTokens:ShowPath");
-      if (zoneCache.getZoneRenderer().getShowPathList().contains(token)
+      if (zoneCache.getZoneViewModel().isPathShowing(token.getId())
           && token.getLastPath() != null) {
         renderPath(token.getLastPath(), token.getFootprint(zoneCache.getZone().getGrid()));
       }

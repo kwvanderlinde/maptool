@@ -110,7 +110,8 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
     addOwnedItem(createAurasMenu());
     add(new JSeparator());
 
-    addToggledItem(new ShowPathsAction(), renderer.isPathShowing(tokenUnderMouse));
+    addToggledItem(
+        new ShowPathsAction(), renderer.getViewModel().isPathShowing(tokenUnderMouse.getId()));
     addToggledItem(
         new SnapToGridAction(tokenUnderMouse.isSnapToGrid(), renderer),
         tokenUnderMouse.isSnapToGrid());
@@ -689,7 +690,11 @@ public class TokenPopupMenu extends AbstractTokenPopupMenu {
         if (token == null) {
           continue;
         }
-        getRenderer().showPath(token, !getRenderer().isPathShowing(getTokenUnderMouse()));
+        // TODO Why are we using the token under mouse instead of setting it for all tokens?
+        var tokenUnderMouse = getTokenUnderMouse();
+        if (tokenUnderMouse != null) {
+          getRenderer().getViewModel().toggleShowPath(tokenUnderMouse.getId());
+        }
       }
       getRenderer().repaint();
     }

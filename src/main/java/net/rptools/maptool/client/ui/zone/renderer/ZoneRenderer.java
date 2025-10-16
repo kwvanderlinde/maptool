@@ -104,7 +104,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   private final Map<Zone.Layer, DrawableRenderer> drawableRenderers;
   private final List<ZoneOverlay> overlayList = new ArrayList<>();
   private final Map<GUID, SelectionSet> selectionSetMap = new HashMap<>();
-  private final List<Token> showPathList = new ArrayList<>();
 
   // Optimizations
   final Map<GUID, BufferedImage> labelRenderingCache = new HashMap<>();
@@ -225,18 +224,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     return autoResizeStamp;
   }
 
-  public void showPath(Token token, boolean show) {
-    if (show) {
-      showPathList.add(token);
-    } else {
-      showPathList.remove(token);
-    }
-  }
-
-  public List<Token> getShowPathList() {
-    return showPathList;
-  }
-
   /**
    * If token is not null, center on it, set the active layer to it, select it, and request focus.
    *
@@ -261,10 +248,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   public ZonePoint getCenterPoint() {
     return new ScreenPoint(getSize().width / 2d, getSize().height / 2d)
         .convertToZone(viewModel.getZoneScale());
-  }
-
-  public boolean isPathShowing(Token token) {
-    return showPathList.contains(token);
   }
 
   public void flushDrawableRenderer() {
@@ -1690,7 +1673,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
       // Previous path
       timer.start("renderTokens:ShowPath");
-      if (showPathList.contains(token) && token.getLastPath() != null) {
+      if (viewModel.isPathShowing(token.getId()) && token.getLastPath() != null) {
         renderPath(g, token.getLastPath(), token.getFootprint(zone.getGrid()));
       }
       timer.stop("renderTokens:ShowPath");
@@ -2399,16 +2382,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       return;
     }
 
-    repaintDebouncer.dispatch();
-  }
-
-  @Subscribe
-  private void onSelectionChanged(SelectionModel.SelectionChanged event) {
-    if (event.zone() != zone) {
-      return;
-    }
-
-    showPathList.clear();
     repaintDebouncer.dispatch();
   }
 

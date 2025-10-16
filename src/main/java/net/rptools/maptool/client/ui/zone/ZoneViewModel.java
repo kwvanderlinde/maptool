@@ -14,6 +14,7 @@
  */
 package net.rptools.maptool.client.ui.zone;
 
+import com.google.common.eventbus.Subscribe;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -128,6 +129,7 @@ public class ZoneViewModel {
   private Scale zoneScale = new Scale();
   private final ZoneView zoneView;
   private final SelectionModel selectionModel;
+  private final List<GUID> tokensWithPathsShowing = new ArrayList<>();
   private final List<GUID> highlightCommonMacros = new ArrayList<>();
   private final Map<DebugType, Shape> debugShapes = new EnumMap<>(DebugType.class);
 
@@ -169,6 +171,20 @@ public class ZoneViewModel {
     this.zone = zone;
     this.zoneView = zoneView;
     this.selectionModel = selectionModel;
+
+    new MapToolEventBus()
+        .getMainEventBus()
+        .register(
+            new Object() {
+              @Subscribe
+              private void onSelectionChanged(SelectionModel.SelectionChanged event) {
+                if (event.zone() != zone) {
+                  return;
+                }
+                tokensWithPathsShowing.clear();
+                repaintNeeded();
+              }
+            });
   }
 
   public void repaintNeeded() {
@@ -299,6 +315,26 @@ public class ZoneViewModel {
       }
     }
     return tokens;
+  }
+
+  public boolean isPathShowing(GUID tokenId) {
+    return tokensWithPathsShowing.contains(tokenId);
+  }
+
+  public void showPath(GUID tokenId) {
+    tokensWithPathsShowing.add(tokenId);
+  }
+
+  public void hidePath(GUID tokenId) {
+    tokensWithPathsShowing.remove(tokenId);
+  }
+
+  public void toggleShowPath(GUID tokenId) {
+    if (tokensWithPathsShowing.contains(tokenId)) {
+      tokensWithPathsShowing.remove(tokenId);
+    } else {
+      tokensWithPathsShowing.add(tokenId);
+    }
   }
 
   public Set<GUID> getVisibleTokens(Zone.Layer layer) {
