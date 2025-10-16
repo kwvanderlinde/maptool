@@ -639,7 +639,9 @@ public class PointerTool extends DefaultTool {
     var oldTokenUnderMouse = tokenUnderMouse;
     tokenUnderMouse = renderer.getTokenAt(mouseX, mouseY);
     keysDown = e.getModifiersEx();
-    renderer.setMouseOver(tokenUnderMouse);
+    renderer
+        .getViewModel()
+        .setTokenUnderMouse(tokenUnderMouse == null ? null : tokenUnderMouse.getId());
 
     if (tokenUnderMouse == null) {
       statSheet = null;

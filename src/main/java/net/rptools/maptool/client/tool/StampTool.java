@@ -512,7 +512,9 @@ public class StampTool extends DefaultTool implements ZoneOverlay {
       return;
     }
     tokenUnderMouse = getTokenAt(mouseX, mouseY);
-    renderer.setMouseOver(tokenUnderMouse);
+    renderer
+        .getViewModel()
+        .setTokenUnderMouse(tokenUnderMouse == null ? null : tokenUnderMouse.getId());
   }
 
   private Token getTokenAt(int x, int y) {

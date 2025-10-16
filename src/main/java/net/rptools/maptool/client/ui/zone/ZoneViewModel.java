@@ -128,6 +128,7 @@ public class ZoneViewModel {
   private @Nonnull Zone.Layer activeLayer = Zone.Layer.getDefaultPlayerLayer();
   private Scale zoneScale = new Scale();
   private final ZoneView zoneView;
+  private @Nullable GUID tokenUnderMouse = null;
   private final SelectionModel selectionModel;
   private final List<GUID> tokensWithPathsShowing = new ArrayList<>();
   private final List<GUID> highlightCommonMacros = new ArrayList<>();
@@ -304,6 +305,20 @@ public class ZoneViewModel {
 
   public Map<Token, Set<Token>> getTokenStackMap() {
     return Collections.unmodifiableMap(tokenStackMap);
+  }
+
+  // TODO Make Optional<GUID>
+  public @Nullable GUID getTokenUnderMouse() {
+    return tokenUnderMouse;
+  }
+
+  public void setTokenUnderMouse(GUID id) {
+    if (Objects.equals(tokenUnderMouse, id)) {
+      return;
+    }
+
+    tokenUnderMouse = id;
+    repaintNeeded();
   }
 
   public List<Token> getSelectedTokenList() {

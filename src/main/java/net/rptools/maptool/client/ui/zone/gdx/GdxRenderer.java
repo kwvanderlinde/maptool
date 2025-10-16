@@ -915,8 +915,20 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   private void renderVisionOverlay(PlayerView view) {
-    var tokenUnderMouse = zoneCache.getZoneRenderer().getTokenUnderMouse();
-    if (tokenUnderMouse == null) return;
+    var tokenIdUnderMouse = viewModel.getTokenUnderMouse();
+    if (tokenIdUnderMouse == null) {
+      return;
+    }
+
+    var tokenPosition = viewModel.getTokenPositions().get(tokenIdUnderMouse);
+    if (tokenPosition == null) {
+      return;
+    }
+
+    var tokenUnderMouse = tokenPosition.token();
+    if (tokenUnderMouse == null) {
+      return;
+    }
 
     Area currentTokenVisionArea = zoneCache.getZoneView().getVisibleArea(tokenUnderMouse, view);
     if (currentTokenVisionArea == null) {
@@ -953,8 +965,20 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   private void renderHaloArea(Area visible) {
-    var tokenUnderMouse = zoneCache.getZoneRenderer().getTokenUnderMouse();
-    if (tokenUnderMouse == null) return;
+    var tokenIdUnderMouse = viewModel.getTokenUnderMouse();
+    if (tokenIdUnderMouse == null) {
+      return;
+    }
+
+    var tokenPosition = viewModel.getTokenPositions().get(tokenIdUnderMouse);
+    if (tokenPosition == null) {
+      return;
+    }
+
+    var tokenUnderMouse = tokenPosition.token();
+    if (tokenUnderMouse == null) {
+      return;
+    }
 
     boolean useHaloColor =
         tokenUnderMouse.getHaloColor() != null && AppPreferences.useHaloColorOnVisionOverlay.get();
@@ -1512,8 +1536,11 @@ public class GdxRenderer extends ApplicationAdapter {
     }
 
     boolean isGMView = view.isGMView(); // speed things up
+    GUID tokenIdUnderMouse = viewModel.getTokenUnderMouse();
 
     for (Token token : tokenList) {
+      var isTokenUnderMouse = token.getId().equals(tokenIdUnderMouse);
+
       if (token.getShape() != Token.TokenShape.FIGURE && figuresOnly && !token.isAlwaysVisible()) {
         continue;
       }
@@ -1779,7 +1806,7 @@ public class GdxRenderer extends ApplicationAdapter {
           overlay = (AbstractTokenOverlay) stateValue;
         }
         if (overlay == null
-            || overlay.isMouseover() && token != zoneCache.getZoneRenderer().getTokenUnderMouse()
+            || overlay.isMouseover() && !isTokenUnderMouse
             || !overlay.showPlayer(token, MapTool.getPlayer())) {
           continue;
         }
@@ -1792,7 +1819,7 @@ public class GdxRenderer extends ApplicationAdapter {
         Object barValue = token.getState(entry.getKey());
         BarTokenOverlay overlay = entry.getValue();
         if (overlay == null
-            || overlay.isMouseover() && token != zoneCache.getZoneRenderer().getTokenUnderMouse()
+            || overlay.isMouseover() && !isTokenUnderMouse
             || !overlay.showPlayer(token, MapTool.getPlayer())) {
           continue;
         }
@@ -1876,8 +1903,7 @@ public class GdxRenderer extends ApplicationAdapter {
       }
 
       // Token names and labels
-      boolean showCurrentTokenLabel =
-          AppState.isShowTokenNames() || token == zoneCache.getZoneRenderer().getTokenUnderMouse();
+      boolean showCurrentTokenLabel = AppState.isShowTokenNames() || isTokenUnderMouse;
 
       // if policy does not auto-reveal FoW, check if fog covers the token (slow)
       if (showCurrentTokenLabel

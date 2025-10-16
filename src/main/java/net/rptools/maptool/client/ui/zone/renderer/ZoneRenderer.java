@@ -107,7 +107,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
   // Optimizations
   final Map<GUID, BufferedImage> labelRenderingCache = new HashMap<>();
-  private Token tokenUnderMouse;
 
   private ScreenPoint pointUnderMouse;
   private @Nonnull Zone.Layer activeLayer = Layer.getDefaultPlayerLayer();
@@ -139,10 +138,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   private final FogRenderer fogRenderer;
   private final VisionOverlayRenderer visionOverlayRenderer;
   private final DebugRenderer debugRenderer;
-
-  public Token getTokenUnderMouse() {
-    return tokenUnderMouse;
-  }
 
   /**
    * Constructor for the ZoneRenderer from a zone.
@@ -258,14 +253,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
   public ScreenPoint getPointUnderMouse() {
     return pointUnderMouse;
-  }
-
-  public void setMouseOver(Token token) {
-    if (tokenUnderMouse == token) {
-      return;
-    }
-    tokenUnderMouse = token;
-    repaintDebouncer.dispatch();
   }
 
   @Override
@@ -952,7 +939,15 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       timer.stop("token name/labels");
     }
 
-    this.visionOverlayRenderer.render(g2d, view, tokenUnderMouse);
+    {
+      var tokenIdUnderMouse = viewModel.getTokenUnderMouse();
+      if (tokenIdUnderMouse != null) {
+        var tokenPosition = viewModel.getTokenPositions().get(tokenIdUnderMouse);
+        if (tokenPosition != null) {
+          this.visionOverlayRenderer.render(g2d, view, tokenPosition.token());
+        }
+      }
+    }
 
     timer.start("overlays");
     for (ZoneOverlay overlay : overlayList) {
@@ -1628,8 +1623,12 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     }
     timer.stop("createClip");
 
+    var tokenIdUnderMouse = viewModel.getTokenUnderMouse();
+
     List<ZoneViewModel.TokenPosition> tokenPostProcessing = new ArrayList<>(tokenList.size());
     for (Token token : tokenList) {
+      var isTokenUnderMouse = token.getId().equals(tokenIdUnderMouse);
+
       if (token.getShape() != Token.TokenShape.FIGURE && figuresOnly && !token.isAlwaysVisible()) {
         continue;
       }
@@ -1729,7 +1728,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           overlay = (AbstractTokenOverlay) stateValue;
         }
         if (overlay == null
-            || overlay.isMouseover() && token != tokenUnderMouse
+            || overlay.isMouseover() && !isTokenUnderMouse
             || !overlay.showPlayer(token, MapTool.getPlayer())) {
           continue;
         }
@@ -1743,7 +1742,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         Object barValue = token.getState(bar);
         BarTokenOverlay overlay = viewModel.getCampaign().getTokenBarsMap().get(bar);
         if (overlay == null
-            || overlay.isMouseover() && token != tokenUnderMouse
+            || overlay.isMouseover() && !isTokenUnderMouse
             || !overlay.showPlayer(token, MapTool.getPlayer())) {
           continue;
         }
@@ -1771,6 +1770,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     timer.start("token-list-12");
     for (ZoneViewModel.TokenPosition position : tokenPostProcessing) {
       var token = position.token();
+      var isTokenUnderMouse = token.getId().equals(tokenIdUnderMouse);
 
       // Count moving tokens as "selected" so that a border is drawn around them.
       boolean isSelected =
@@ -1783,7 +1783,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       }
 
       // Token names and labels
-      boolean showCurrentTokenLabel = AppState.isShowTokenNames() || token == tokenUnderMouse;
+      boolean showCurrentTokenLabel = AppState.isShowTokenNames() || isTokenUnderMouse;
 
       // if policy does not auto-reveal FoW, check if fog covers the token (slow)
       if (showCurrentTokenLabel
