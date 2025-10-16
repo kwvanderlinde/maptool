@@ -358,8 +358,6 @@ public class ZoneCompositor {
 
       compositeLightSourceIcons(builder, viewport, view);
 
-      compositeDebugShapes(builder, viewport);
-
       // Finally, put out any labels that have been delayed, e.g., from rendering tokens.
       if (!delayedCompositing.isEmpty()) {
         builder.unbufferedLayer(
@@ -371,6 +369,8 @@ public class ZoneCompositor {
               }
             });
       }
+
+      compositeDebugShapes(builder, viewport);
 
       // TODO Notes weren't part of renderZone(), so should actually be done separately otherwise
       //  they will end up in screenshots and such.
