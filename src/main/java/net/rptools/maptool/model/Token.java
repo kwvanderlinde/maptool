@@ -1226,14 +1226,15 @@ public class Token implements Cloneable {
    * <p>If the token does not have an image table, or does not have its facing set, or otherwise
    * cannot find an image ID from the lookup table, this method return {@code null}.
    *
+   * @param campaign The campaign this token belongs to.
    * @return The image ID from the image table, or {@code null} if none can be found.
    */
-  private @Nullable MD5Key lookupImageTableByFacing() {
+  private @Nullable MD5Key lookupImageTableByFacing(Campaign campaign) {
     if (!getHasImageTable() || !hasFacing() || getImageTableName() == null) {
       return null;
     }
 
-    LookupTable lookupTable = MapTool.getCampaign().getLookupTableMap().get(getImageTableName());
+    LookupTable lookupTable = campaign.getLookupTableMap().get(getImageTableName());
     if (lookupTable == null) {
       return null;
     }
@@ -1265,8 +1266,8 @@ public class Token implements Cloneable {
    *
    * @return The image ID from the image table.
    */
-  public MD5Key getTokenImageAssetId() {
-    return Objects.requireNonNullElseGet(lookupImageTableByFacing(), this::getImageAssetId);
+  public MD5Key getTokenImageAssetId(Campaign campaign) {
+    return Objects.requireNonNullElseGet(lookupImageTableByFacing(campaign), this::getImageAssetId);
   }
 
   /**

@@ -155,8 +155,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     var renderHelper = new RenderHelper(this, tempBufferPool);
     this.gridRenderer = new GridRenderer(this);
-    this.haloRenderer = new HaloRenderer(renderHelper, MapTool.getCampaign(), zone);
-    this.tokenRenderer = new TokenRenderer(renderHelper, zone);
+    this.haloRenderer = new HaloRenderer(renderHelper, campaign, zone);
+    this.tokenRenderer = new TokenRenderer(renderHelper, campaign, zone);
     this.facingArrowRenderer = new FacingArrowRenderer(renderHelper, zone);
     this.selectionRenderer = new SelectionRenderer(renderHelper, viewModel, zoneView);
     this.lightsRenderer = new LightsRenderer(renderHelper, zone, zoneView);
@@ -1663,7 +1663,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
       timer.start("token-list-1b");
       // get token image, using image table if present
-      MD5Key tokenImageId = token.getTokenImageAssetId();
+      MD5Key tokenImageId = token.getTokenImageAssetId(viewModel.getCampaign());
       BufferedImage image = ImageManager.getImage(tokenImageId, this);
       timer.stop("token-list-1b");
 

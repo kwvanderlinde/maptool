@@ -1605,10 +1605,8 @@ public class GdxRenderer extends ApplicationAdapter {
       timer.stop("renderTokens:ShowPath");
 
       // get token image sprite, using image table if present
-      Sprite image =
-          new Sprite(
-              zoneCache.getImageAsset(
-                  token.getTokenImageAssetId(), transferringAsset, brokenAsset));
+      var imageKey = token.getTokenImageAssetId(viewModel.getCampaign());
+      Sprite image = new Sprite(zoneCache.getImageAsset(imageKey, transferringAsset, brokenAsset));
 
       prepareTokenSprite(image, token, footprintBounds);
 

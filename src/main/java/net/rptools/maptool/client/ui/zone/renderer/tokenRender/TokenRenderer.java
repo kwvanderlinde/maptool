@@ -30,10 +30,12 @@ public class TokenRenderer {
   private static final Logger log = LogManager.getLogger(TokenRenderer.class);
 
   private final RenderHelper renderHelper;
+  private final Campaign campaign;
   private final Zone zone;
 
-  public TokenRenderer(RenderHelper renderHelper, Zone zone) {
+  public TokenRenderer(RenderHelper renderHelper, Campaign campaign, Zone zone) {
     this.renderHelper = renderHelper.withTimerPrefix("TokenRenderer");
+    this.campaign = campaign;
     this.zone = zone;
   }
 
@@ -55,7 +57,7 @@ public class TokenRenderer {
    */
   private BufferedImage getRenderImage(Token token) {
     // get token image, using image table if present
-    MD5Key tokenImageId = token.getTokenImageAssetId();
+    MD5Key tokenImageId = token.getTokenImageAssetId(campaign);
     return ImageManager.getImage(tokenImageId, renderHelper.getImageObserver());
   }
 
