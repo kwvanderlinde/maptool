@@ -18,12 +18,9 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.awt.image.ImageObserver;
 import net.rptools.lib.image.ImageUtil;
 import net.rptools.lib.image.RenderQuality;
-import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.model.Grid;
-import net.rptools.maptool.model.LookupTable;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.TokenFootprint;
 import org.apache.logging.log4j.LogManager;
@@ -164,34 +161,6 @@ public class ImageSupport {
     return Math.min(
         footprintBounds.getWidth() / token.getWidth(),
         footprintBounds.getHeight() * 2 / token.getHeight());
-  }
-
-  /**
-   * Checks to see if token has an image table and references that if the token has a facing
-   * otherwise uses basic image
-   *
-   * @param token the token to get the image from.
-   * @return BufferedImage
-   */
-  public static BufferedImage getTokenImage(Token token, ImageObserver... observers) {
-    BufferedImage image = null;
-    // Get the basic image
-    if (token.getHasImageTable() && token.hasFacing() && token.getImageTableName() != null) {
-      LookupTable lookupTable =
-          MapTool.getCampaign().getLookupTableMap().get(token.getImageTableName());
-      if (lookupTable != null) {
-        LookupTable.LookupEntry result = lookupTable.getEntryByRollResult(token.getFacing());
-        if (result != null) {
-          image = ImageManager.getImage(result.getImageId(), observers);
-        }
-      }
-    }
-
-    if (image == null) {
-      // Adds zr as observer so we can repaint once the image is ready. Fixes #1700.
-      image = ImageManager.getImage(token.getImageAssetId(), observers);
-    }
-    return image;
   }
 
   /**
