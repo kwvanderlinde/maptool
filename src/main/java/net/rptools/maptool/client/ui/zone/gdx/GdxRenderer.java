@@ -550,7 +550,7 @@ public class GdxRenderer extends ApplicationAdapter {
     var loadingProgress = viewModel.getLoadingStatus();
     if (loadingProgress.isPresent()) {
       hudTextRenderer.drawBoxedString(loadingProgress.get(), width / 2f, height / 2f);
-    } else if (MapTool.getCampaign().isBeingSerialized()) {
+    } else if (viewModel.getCampaign().isBeingSerialized()) {
       hudTextRenderer.drawBoxedString("    Please Wait    ", width / 2f, height / 2f);
     }
 
@@ -802,7 +802,7 @@ public class GdxRenderer extends ApplicationAdapter {
   private boolean prerender(PlayerView view) {
     CodeTimer timer = CodeTimer.get();
 
-    if (viewModel.getLoadingStatus().isPresent() || MapTool.getCampaign().isBeingSerialized()) {
+    if (viewModel.getLoadingStatus().isPresent() || viewModel.getCampaign().isBeingSerialized()) {
       return false;
     }
 
@@ -1771,11 +1771,10 @@ public class GdxRenderer extends ApplicationAdapter {
       timer.stop("tokenlist-8");
 
       timer.start("tokenlist-9");
-
       // Check each of the set values
-      for (String state : MapTool.getCampaign().getTokenStatesMap().keySet()) {
-        Object stateValue = token.getState(state);
-        AbstractTokenOverlay overlay = MapTool.getCampaign().getTokenStatesMap().get(state);
+      for (var entry : viewModel.getCampaign().getTokenStatesMap().entrySet()) {
+        Object stateValue = token.getState(entry.getKey());
+        AbstractTokenOverlay overlay = entry.getValue();
         if (stateValue instanceof AbstractTokenOverlay) {
           overlay = (AbstractTokenOverlay) stateValue;
         }
@@ -1789,10 +1788,9 @@ public class GdxRenderer extends ApplicationAdapter {
       timer.stop("tokenlist-9");
 
       timer.start("tokenlist-10");
-
-      for (String bar : MapTool.getCampaign().getTokenBarsMap().keySet()) {
-        Object barValue = token.getState(bar);
-        BarTokenOverlay overlay = MapTool.getCampaign().getTokenBarsMap().get(bar);
+      for (var entry : viewModel.getCampaign().getTokenBarsMap().entrySet()) {
+        Object barValue = token.getState(entry.getKey());
+        BarTokenOverlay overlay = entry.getValue();
         if (overlay == null
             || overlay.isMouseover() && token != zoneCache.getZoneRenderer().getTokenUnderMouse()
             || !overlay.showPlayer(token, MapTool.getPlayer())) {
@@ -1805,7 +1803,9 @@ public class GdxRenderer extends ApplicationAdapter {
       timer.start("tokenlist-11");
       // Keep track of which tokens have been drawn so we can perform post-processing on them later
       // (such as selection borders and names/labels)
-      if (!zoneCache.getZoneRenderer().getActiveLayer().equals(token.getLayer())) continue;
+      if (!zoneCache.getZoneRenderer().getActiveLayer().equals(token.getLayer())) {
+        continue;
+      }
 
       timer.stop("tokenlist-11");
       timer.start("tokenlist-12");

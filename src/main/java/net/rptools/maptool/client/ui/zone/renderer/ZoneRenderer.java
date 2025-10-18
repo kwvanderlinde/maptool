@@ -150,16 +150,17 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   /**
    * Constructor for the ZoneRenderer from a zone.
    *
+   * @param campaign The campaign that {@code zone} belongs to.
    * @param zone the zone of the ZoneRenderer
    */
-  public ZoneRenderer(Zone zone) {
+  public ZoneRenderer(Campaign campaign, Zone zone) {
     if (zone == null) {
       throw new IllegalArgumentException("Zone cannot be null");
     }
     this.zone = zone;
     this.selectionModel = new SelectionModel(zone);
     this.zoneView = new ZoneView(zone);
-    this.viewModel = new ZoneViewModel(zone, zoneView, selectionModel);
+    this.viewModel = new ZoneViewModel(campaign, zone, zoneView, selectionModel);
 
     drawableRenderers =
         CollectionUtil.newFilledEnumMap(
@@ -792,7 +793,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       repaintDebouncer.dispatch();
       return;
     }
-    if (MapTool.getCampaign().isBeingSerialized()) {
+    if (viewModel.getCampaign().isBeingSerialized()) {
       g2d.setColor(Color.black);
       g2d.fillRect(0, 0, viewRect.width, viewRect.height);
       GraphicsUtil.drawBoxedString(
@@ -1782,9 +1783,9 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           new Rectangle(0, 0, (int) tokenBounds.getWidth(), (int) tokenBounds.getHeight());
 
       // Check each of the set values
-      for (String state : MapTool.getCampaign().getTokenStatesMap().keySet()) {
+      for (String state : viewModel.getCampaign().getTokenStatesMap().keySet()) {
         Object stateValue = token.getState(state);
-        AbstractTokenOverlay overlay = MapTool.getCampaign().getTokenStatesMap().get(state);
+        AbstractTokenOverlay overlay = viewModel.getCampaign().getTokenStatesMap().get(state);
         if (stateValue instanceof AbstractTokenOverlay) {
           overlay = (AbstractTokenOverlay) stateValue;
         }
@@ -1799,9 +1800,9 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
       timer.start("token-list-10");
 
-      for (String bar : MapTool.getCampaign().getTokenBarsMap().keySet()) {
+      for (String bar : viewModel.getCampaign().getTokenBarsMap().keySet()) {
         Object barValue = token.getState(bar);
-        BarTokenOverlay overlay = MapTool.getCampaign().getTokenBarsMap().get(bar);
+        BarTokenOverlay overlay = viewModel.getCampaign().getTokenBarsMap().get(bar);
         if (overlay == null
             || overlay.isMouseover() && token != tokenUnderMouse
             || !overlay.showPlayer(token, MapTool.getPlayer())) {

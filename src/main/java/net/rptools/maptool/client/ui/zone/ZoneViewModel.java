@@ -45,6 +45,7 @@ import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.AssetManager;
 import net.rptools.maptool.model.AttachedLightSource;
+import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.LightSource;
 import net.rptools.maptool.model.Token;
@@ -88,6 +89,7 @@ public class ZoneViewModel {
     }
   }
 
+  private final Campaign campaign;
   public final Zone zone;
 
   // region These are updated externally.
@@ -128,7 +130,9 @@ public class ZoneViewModel {
 
   // endregion
 
-  public ZoneViewModel(Zone zone, ZoneView zoneView, SelectionModel selectionModel) {
+  public ZoneViewModel(
+      Campaign campaign, Zone zone, ZoneView zoneView, SelectionModel selectionModel) {
+    this.campaign = campaign;
     this.zone = zone;
     this.zoneView = zoneView;
     this.selectionModel = selectionModel;
@@ -141,6 +145,10 @@ public class ZoneViewModel {
   /** Marks the zone as not loaded, so that it ensures once again that all assets are loaded. */
   public void flush() {
     loadingProgress = "";
+  }
+
+  public Campaign getCampaign() {
+    return campaign;
   }
 
   public boolean isUsingGdxRenderer() {
@@ -527,7 +535,7 @@ public class ZoneViewModel {
 
       boolean foundNormalLight = false;
       for (AttachedLightSource attachedLightSource : token.getLightSources()) {
-        LightSource lightSource = attachedLightSource.resolve(token, MapTool.getCampaign());
+        LightSource lightSource = attachedLightSource.resolve(token, campaign);
         if (lightSource != null && lightSource.getType() == LightSource.Type.NORMAL) {
           foundNormalLight = true;
           break;

@@ -964,7 +964,7 @@ public class MapTool {
     // Install new campaign
     ZoneRenderer currRenderer = null;
     for (Zone zone : campaign.getZones()) {
-      ZoneRenderer renderer = ZoneRendererFactory.newRenderer(zone);
+      ZoneRenderer renderer = ZoneRendererFactory.newRenderer(campaign, zone);
       clientFrame.addZoneRenderer(renderer);
       if (defaultZone != null && defaultZone.getId().equals(zone.getId())) {
         currRenderer = renderer;
@@ -1151,8 +1151,8 @@ public class MapTool {
         zoneToRemove = singleZone;
       }
     }
-    getCampaign().putZone(zone);
-    serverCommand().putZone(zone);
+    client.getCampaign().putZone(zone);
+    client.getServerCommand().putZone(zone);
 
     // Now that clients know about the new zone, we can delete the single empty zone. Otherwise
     // clients would not have anything to switch to, and they would get all confused.
@@ -1167,9 +1167,12 @@ public class MapTool {
 
     // Show the new zone
     if (changeZone) {
-      clientFrame.setCurrentZoneRenderer(ZoneRendererFactory.newRenderer(zone));
+      clientFrame.setCurrentZoneRenderer(
+          ZoneRendererFactory.newRenderer(client.getCampaign(), zone));
     } else {
-      getFrame().getZoneRenderers().add(ZoneRendererFactory.newRenderer(zone));
+      clientFrame
+          .getZoneRenderers()
+          .add(ZoneRendererFactory.newRenderer(client.getCampaign(), zone));
     }
   }
 
