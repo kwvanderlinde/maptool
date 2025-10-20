@@ -1118,6 +1118,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     final Dimension size = getSize();
     LayerState currentLayer = new LayerState("<root>", rootG, (Graphics2D) rootG.create(), null);
+    Shape clipToRestore = null;
     for (var instruction : instructions) {
       final var timerLayer = currentLayer.name;
       timer.increment("instructions-%s", 1, instruction.getClass().getCanonicalName());
@@ -1233,6 +1234,34 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
                 case Screen -> LightingComposite.BlendedLights;
               };
           currentLayer.currentG().setComposite(composite);
+        }
+        case RenderInstruction.Meta.SetCustomClip(Area clip, boolean invert) -> {
+          if (clipToRestore != null) {
+            log.error(
+                "Unexpected instruction: found another SetCustomClip without intervening ClearCustomClip.");
+            break;
+          } else {
+            clipToRestore = currentLayer.currentG().getClip();
+          }
+
+          var oldTransform = currentLayer.currentG().getTransform();
+          currentLayer.currentG().transform(worldToScreen);
+          if (invert) {
+            var inverted = new Area(currentLayer.currentG().getClip());
+            inverted.subtract(clip);
+            currentLayer.currentG().setClip(inverted);
+          } else {
+            currentLayer.currentG().clip(clip);
+          }
+          currentLayer.currentG().setTransform(oldTransform);
+        }
+        case RenderInstruction.Meta.ClearCustomClip() -> {
+          if (clipToRestore == null) {
+            log.error("Unexpected instruction: ClearCustomClip without previous SetCustomClip.");
+            break;
+          }
+          currentLayer.currentG().setClip(clipToRestore);
+          clipToRestore = null;
         }
         case RenderInstruction.Meta.SetClipType(ClipType clipType) -> {
           var clip = clips.get(clipType);

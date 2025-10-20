@@ -19,6 +19,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import javax.annotation.Nullable;
@@ -41,6 +42,10 @@ public sealed interface RenderInstruction {
     record SwitchAlphaMode(AlphaMode mode) implements RenderInstruction {}
 
     record SetClipType(ClipType clipType) implements RenderInstruction {}
+
+    record SetCustomClip(Area clip, boolean invert) implements RenderInstruction {}
+
+    record ClearCustomClip() implements RenderInstruction {}
   }
 
   record ClearScreen(Color color) implements RenderInstruction {}

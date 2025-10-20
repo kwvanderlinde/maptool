@@ -1267,6 +1267,56 @@ public class GdxRenderer extends ApplicationAdapter {
             layerShader.setClipBuffer(maskBuffer.getColorBufferTexture());
           }
         }
+        case RenderInstruction.Meta.SetCustomClip(Area clip, boolean inverted) -> {
+          batch.flush();
+          currentLayer.buffer.end();
+
+          {
+            // Set up the new clip.
+            FrameBuffer maskBuffer = currentLayer.maskBuffer;
+            if (maskBuffer == null) {
+              maskBuffer = currentLayer.maskBuffer = maskBufferPool.obtain();
+            } else {
+              log.warn("This layer already has a mask set. Overwriting with custom clip");
+            }
+
+            // Update the mask texture to include the given clip type.
+            layerShader.save();
+            maskBuffer.begin();
+
+            // When setting up the clips, we only want the alpha channel preserved.
+            Gdx.gl.glColorMask(false, false, false, true);
+            BlendFunction.SRC_ONLY.applyToBatch(batch);
+            // TODO Save all layerShadeer state and reset it.
+            layerShader.setOpacity(1.f);
+            layerShader.setBlendMode(BlendMode.SrcOnly);
+            layerShader.setDestination(null);
+            layerShader.setClipBuffer(null);
+            ScreenUtils.clear(inverted ? Color.WHITE : Color.CLEAR);
+            areaRenderer.setColor(inverted ? Color.CLEAR : Color.WHITE);
+            areaRenderer.fillArea(batch, clip);
+            batch.flush();
+            // Re-enable full color writing.
+            Gdx.gl.glColorMask(true, true, true, true);
+
+            maskBuffer.end();
+            currentLayer.buffer.begin();
+
+            currentLayer.blendFunction.applyToBatch(batch);
+            layerShader.restore();
+            layerShader.setClipBuffer(maskBuffer.getColorBufferTexture());
+          }
+        }
+        case RenderInstruction.Meta.ClearCustomClip() -> {
+          if (currentLayer.maskBuffer == null) {
+            log.error("Unexpected instruction: ClearCustomClip without previous SetCustomClip");
+            break;
+          }
+
+          maskBufferPool.free(currentLayer.maskBuffer);
+          currentLayer.maskBuffer = null;
+          layerShader.setClipBuffer(null);
+        }
         case RenderInstruction.ClearScreen(java.awt.Color clearColor) -> {
           Color.argb8888ToColor(tmpColor, clearColor.getRGB());
           tmpColor.premultiplyAlpha();

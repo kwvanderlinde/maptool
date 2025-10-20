@@ -15,6 +15,7 @@
 package net.rptools.maptool.client.ui.zone.renderer.instructions;
 
 import java.awt.BasicStroke;
+import java.awt.geom.Area;
 import java.awt.geom.RoundRectangle2D;
 import java.util.function.Consumer;
 import net.rptools.lib.CodeTimer;
@@ -79,6 +80,19 @@ public class InstructionSetBuilder {
 
   public void add(RenderInstruction instruction) {
     instructionSink.accept(instruction);
+  }
+
+  public void withCustomClip(Area clip, boolean invert, Runnable action) {
+    if (clip == null) {
+      action.run();
+    } else {
+      add(new RenderInstruction.Meta.SetCustomClip(clip, invert));
+      try {
+        action.run();
+      } finally {
+        add(new RenderInstruction.Meta.ClearCustomClip());
+      }
+    }
   }
 
   public void addLabel(RenderInstruction.Label label) {
