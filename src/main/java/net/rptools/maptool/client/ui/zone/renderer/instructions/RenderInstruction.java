@@ -18,6 +18,7 @@ import java.awt.Color;
 import java.awt.geom.Point2D;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.ui.theme.LabelBackgrounds;
+import net.rptools.maptool.model.drawing.DrawableNoise;
 
 public sealed interface RenderInstruction {
   interface Meta {
@@ -61,4 +62,6 @@ public sealed interface RenderInstruction {
       this(new ScreenPoint(centerX, centerY), text, background, foreground);
     }
   }
+
+  record Noise(DrawableNoise noise) implements RenderInstruction {}
 }

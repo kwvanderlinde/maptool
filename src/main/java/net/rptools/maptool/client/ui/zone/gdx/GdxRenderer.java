@@ -84,6 +84,7 @@ import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.Label;
 import net.rptools.maptool.model.Path;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
+import net.rptools.maptool.model.drawing.DrawableNoise;
 import net.rptools.maptool.model.drawing.DrawablePaint;
 import net.rptools.maptool.model.drawing.DrawableTexturePaint;
 import net.rptools.maptool.model.drawing.DrawnElement;
@@ -1267,6 +1268,10 @@ public class GdxRenderer extends ApplicationAdapter {
         case RenderInstruction.FillFrameBuffer(Paint paint, double opacity) -> {
           var gdxPain = getPaint(paint);
           fillViewportWith(tmpColor.set(gdxPain.color()).mul((float) opacity), gdxPain.texture());
+        }
+        case RenderInstruction.Noise(DrawableNoise noise) -> {
+          // TODO How can we implement this? Shouldn't it be basically the same thing as any
+          //  paint? Almost, but not quite.
         }
         case RenderInstruction.BoxedString(
             Point2D center,

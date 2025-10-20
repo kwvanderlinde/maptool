@@ -1265,13 +1265,17 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             }
 
             // Background texture
-            java.awt.Paint awtPaint =
-                resolveAwtPaint(paint, viewModel.getZoneScale(), this);
+            java.awt.Paint awtPaint = resolveAwtPaint(paint, viewport.zoneScale(), this);
             fillG.setPaint(awtPaint);
             fillG.fillRect(0, 0, size.width, size.height);
           } finally {
             fillG.dispose();
           }
+        }
+        case RenderInstruction.Noise(DrawableNoise noise) -> {
+          AppPreferences.renderQuality.get().setRenderingHints(currentLayer.currentG());
+          currentLayer.currentG().setPaint(noise.getPaint(viewport.zoneScale()));
+          currentLayer.currentG().fillRect(0, 0, size.width, size.height);
         }
         case RenderInstruction.BoxedString(
             Point2D center,
