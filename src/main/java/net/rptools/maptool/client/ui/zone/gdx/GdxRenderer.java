@@ -1235,6 +1235,11 @@ public class GdxRenderer extends ApplicationAdapter {
             layerShader.setClipBuffer(maskBuffer.getColorBufferTexture());
           }
         }
+        case RenderInstruction.ClearScreen(java.awt.Color clearColor) -> {
+          Color.argb8888ToColor(tmpColor, clearColor.getRGB());
+          tmpColor.premultiplyAlpha();
+          ScreenUtils.clear(tmpColor);
+        }
       }
 
       timer.stop("layer-%s[%s]", timerLayer, instruction);

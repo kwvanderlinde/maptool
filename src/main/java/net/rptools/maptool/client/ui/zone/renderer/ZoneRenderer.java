@@ -1243,6 +1243,16 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             currentLayer.currentG().setTransform(oldTransform);
           }
         }
+        case RenderInstruction.ClearScreen(Color clearColor) -> {
+          var clsG = (Graphics2D) currentLayer.layerRootG().create();
+          try {
+            clsG.setComposite(AlphaComposite.Src);
+            clsG.setPaint(clearColor);
+            clsG.fillRect(0, 0, size.width, size.height);
+          } finally {
+            clsG.dispose();
+          }
+        }
       }
 
       timer.stop("layer-%s[%s]", timerLayer, instruction);

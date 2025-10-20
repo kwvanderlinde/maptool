@@ -14,6 +14,8 @@
  */
 package net.rptools.maptool.client.ui.zone.renderer.instructions;
 
+import java.awt.Color;
+
 public sealed interface RenderInstruction {
   interface Meta {
     record StartUnbufferedLayer(String layerName, ClipType clipType) implements RenderInstruction {}
@@ -28,4 +30,6 @@ public sealed interface RenderInstruction {
 
     record SetClipType(ClipType clipType) implements RenderInstruction {}
   }
+
+  record ClearScreen(Color color) implements RenderInstruction {}
 }
