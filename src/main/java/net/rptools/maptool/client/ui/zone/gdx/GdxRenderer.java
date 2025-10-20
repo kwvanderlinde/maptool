@@ -1264,6 +1264,10 @@ public class GdxRenderer extends ApplicationAdapter {
           tmpColor.premultiplyAlpha();
           ScreenUtils.clear(tmpColor);
         }
+        case RenderInstruction.FillFrameBuffer(Paint paint, double opacity) -> {
+          var gdxPain = getPaint(paint);
+          fillViewportWith(tmpColor.set(gdxPain.color()).mul((float) opacity), gdxPain.texture());
+        }
         case RenderInstruction.BoxedString(
             Point2D center,
             String text,

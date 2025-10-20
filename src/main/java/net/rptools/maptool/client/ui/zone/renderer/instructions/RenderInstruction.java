@@ -36,6 +36,12 @@ public sealed interface RenderInstruction {
 
   record ClearScreen(Color color) implements RenderInstruction {}
 
+  record FillFrameBuffer(Paint paint, double opacity) implements RenderInstruction {
+    public FillFrameBuffer(Paint paint) {
+      this(paint, 1.);
+    }
+  }
+
   record BoxedString(Point2D center, String text, LabelBackgrounds background, Color foreground)
       implements RenderInstruction {
     public BoxedString(ScreenPoint center, String text) {

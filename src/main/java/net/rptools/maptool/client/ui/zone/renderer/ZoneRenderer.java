@@ -1066,14 +1066,9 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   }
 
   private java.awt.Paint resolveAwtPaint(
-      String layerName,
-      Paint paint,
-      double offsetX,
-      double offsetY,
-      double scale,
-      ImageObserver... observers) {
+      Paint paint, double offsetX, double offsetY, double scale, ImageObserver... observers) {
     var timer = CodeTimer.get();
-    timer.start("%s-resolvePaint", layerName);
+    timer.start("resolvePaint");
     try {
       return switch (paint) {
         case Paint.Color color -> {
@@ -1094,13 +1089,17 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         }
       };
     } finally {
-      timer.stop("%s-resolvePaint", layerName);
+      timer.stop("resolvePaint");
     }
   }
 
-  private java.awt.Paint resolveAwtPaint(
-      String layerName, Paint paint, ImageObserver... observers) {
-    return resolveAwtPaint(layerName, paint, 0, 0, 1, observers);
+  private java.awt.Paint resolveAwtPaint(Paint paint, Scale zoneScale, ImageObserver... observers) {
+    return resolveAwtPaint(
+        paint, zoneScale.getOffsetX(), zoneScale.getOffsetY(), zoneScale.getScale(), observers);
+  }
+
+  private java.awt.Paint resolveAwtPaint(Paint paint, ImageObserver... observers) {
+    return resolveAwtPaint(paint, 0, 0, 1, observers);
   }
 
   private void processInstructions(
@@ -1252,6 +1251,26 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             clsG.fillRect(0, 0, size.width, size.height);
           } finally {
             clsG.dispose();
+          }
+        }
+        case RenderInstruction.FillFrameBuffer(Paint paint, double opacity) -> {
+          var fillG = (Graphics2D) currentLayer.layerRootG().create();
+          try {
+            AppPreferences.renderQuality.get().setRenderingHints(fillG);
+
+            var composite = fillG.getComposite();
+            if (composite instanceof AlphaComposite alphaComposite) {
+              composite = alphaComposite.derive((float) opacity);
+              fillG.setComposite(composite);
+            }
+
+            // Background texture
+            java.awt.Paint awtPaint =
+                resolveAwtPaint(paint, viewModel.getZoneScale(), this);
+            fillG.setPaint(awtPaint);
+            fillG.fillRect(0, 0, size.width, size.height);
+          } finally {
+            fillG.dispose();
           }
         }
         case RenderInstruction.BoxedString(
