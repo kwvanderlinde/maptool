@@ -15,6 +15,9 @@
 package net.rptools.maptool.client.ui.zone.renderer.instructions;
 
 import java.awt.Color;
+import java.awt.geom.Point2D;
+import net.rptools.maptool.client.ScreenPoint;
+import net.rptools.maptool.client.ui.theme.LabelBackgrounds;
 
 public sealed interface RenderInstruction {
   interface Meta {
@@ -32,4 +35,24 @@ public sealed interface RenderInstruction {
   }
 
   record ClearScreen(Color color) implements RenderInstruction {}
+
+  record BoxedString(Point2D center, String text, LabelBackgrounds background, Color foreground)
+      implements RenderInstruction {
+    public BoxedString(ScreenPoint center, String text) {
+      this(center, text, LabelBackgrounds.BOX_GRAY, Color.black);
+    }
+
+    public BoxedString(double centerX, double centerY, String text) {
+      this(new ScreenPoint(centerX, centerY), text);
+    }
+
+    public BoxedString(
+        double centerX,
+        double centerY,
+        String text,
+        LabelBackgrounds background,
+        Color foreground) {
+      this(new ScreenPoint(centerX, centerY), text, background, foreground);
+    }
+  }
 }

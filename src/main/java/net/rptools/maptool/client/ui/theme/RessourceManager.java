@@ -22,6 +22,7 @@ import javax.swing.*;
 import net.rptools.lib.image.ImageUtil;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.swing.ImageBorder;
+import net.rptools.maptool.client.swing.ImageLabel;
 import org.javatuples.Triplet;
 
 public class RessourceManager {
@@ -241,9 +242,6 @@ public class RessourceManager {
   private static final HashMap<Images, String> images =
       new HashMap<>() {
         {
-          put(Images.BOX_BLUE, IMAGE_DIR + "blueLabelbox.png");
-          put(Images.BOX_DARK_GRAY, IMAGE_DIR + "darkGreyLabelbox.png");
-          put(Images.BOX_GRAY, IMAGE_DIR + "grayLabelbox.png");
           put(Images.BROKEN, IMAGE_DIR + "broken.png");
           put(Images.CURSOR_LOOK_HERE, IMAGE_DIR + "look_here.png");
           put(Images.CURSOR_POINTER, IMAGE_DIR + "arrow.png");
@@ -271,6 +269,15 @@ public class RessourceManager {
           put(Images.ZONE_RENDERER_BLOCK_MOVE, IMAGE_DIR + "block_move.png");
           put(Images.ZONE_RENDERER_CELL_WAYPOINT, IMAGE_DIR + "redDot.png");
           put(Images.ZONE_RENDERER_STACK_IMAGE, IMAGE_DIR + "stack.png");
+        }
+      };
+
+  private static final HashMap<LabelBackgrounds, String> labelBackgrounds =
+      new HashMap<>() {
+        {
+          put(LabelBackgrounds.BOX_BLUE, IMAGE_DIR + "blueLabelbox.png");
+          put(LabelBackgrounds.BOX_DARK_GRAY, IMAGE_DIR + "darkGreyLabelbox.png");
+          put(LabelBackgrounds.BOX_GRAY, IMAGE_DIR + "grayLabelbox.png");
         }
       };
 
@@ -491,6 +498,7 @@ public class RessourceManager {
 
   private static HashMap<Triplet<String, Integer, Integer>, ImageIcon> iconCache = new HashMap<>();
   private static HashMap<String, BufferedImage> imageCache = new HashMap<>();
+  private static HashMap<String, ImageLabel> labelBackgroundCache = new HashMap<>();
   private static HashMap<String, javafx.scene.image.Image> fxImageCache = new HashMap<>();
   private static HashMap<String, ImageBorder> borderCache = new HashMap<>();
 
@@ -517,6 +525,22 @@ public class RessourceManager {
         },
         path -> path,
         images);
+  }
+
+  public static ImageLabel getLabelBackground(LabelBackgrounds background) {
+    return getFromHashMapsAndCache(
+        background,
+        labelBackgroundCache,
+        (path) -> {
+          try {
+            var image = ImageUtil.getCompatibleImage(path);
+            return new ImageLabel(image, 4, 4);
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        },
+        path -> path,
+        labelBackgrounds);
   }
 
   private static ImageIcon getIcon(Icons icon, int widthAndHeight) {

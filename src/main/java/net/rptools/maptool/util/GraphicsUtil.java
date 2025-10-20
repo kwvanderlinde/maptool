@@ -21,7 +21,7 @@ import java.awt.Rectangle;
 import java.awt.geom.*;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.swing.ImageLabel;
-import net.rptools.maptool.client.ui.theme.Images;
+import net.rptools.maptool.client.ui.theme.LabelBackgrounds;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 
 /** */
@@ -30,20 +30,20 @@ public class GraphicsUtil {
   public static final int BOX_PADDINGX = 10;
   public static final int BOX_PADDINGY = 2;
 
-  public static final ImageLabel GREY_LABEL =
-      new ImageLabel(RessourceManager.getImage(Images.BOX_GRAY), 4, 4);
-  public static final ImageLabel BLUE_LABEL =
-      new ImageLabel(RessourceManager.getImage(Images.BOX_BLUE), 4, 4);
-  public static final ImageLabel DARK_GREY_LABEL =
-      new ImageLabel(RessourceManager.getImage(Images.BOX_DARK_GRAY), 4, 4);
-
   public static Rectangle drawBoxedString(Graphics2D g, String string, int centerX, int centerY) {
     return drawBoxedString(g, string, centerX, centerY, SwingUtilities.CENTER);
   }
 
   public static Rectangle drawBoxedString(
       Graphics2D g, String string, int x, int y, int justification) {
-    return drawBoxedString(g, string, x, y, justification, GREY_LABEL, Color.black);
+    return drawBoxedString(
+        g,
+        string,
+        x,
+        y,
+        justification,
+        RessourceManager.getLabelBackground(LabelBackgrounds.BOX_GRAY),
+        Color.black);
   }
 
   public static Rectangle drawBoxedString(

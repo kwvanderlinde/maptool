@@ -17,14 +17,9 @@ package net.rptools.maptool.client.ui.zone.gdx.label;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.*;
 import javax.swing.*;
+import net.rptools.maptool.client.ui.theme.LabelBackgrounds;
 
 public class TextRenderer {
-  public enum Background {
-    Gray,
-    Blue,
-    DarkGray
-  }
-
   private GlyphLayout glyphLayout = new GlyphLayout();
   private NinePatch blueLabel;
   private NinePatch grayLabel;
@@ -51,37 +46,29 @@ public class TextRenderer {
     return font;
   }
 
-  public void drawString(String text, float centerX, float centerY, Color foreground) {
-    drawBoxedString(text, centerX, centerY, SwingUtilities.CENTER, null, foreground);
-  }
-
   public void drawString(String text, float centerX, float centerY) {
-    drawBoxedString(text, centerX, centerY, SwingUtilities.CENTER, null, Color.WHITE);
+    drawString(text, centerX, centerY, Color.WHITE);
   }
 
-  public void drawBoxedString(String text, float centerX, float centerY) {
-    drawBoxedString(text, centerX, centerY, SwingUtilities.CENTER);
-  }
-
-  public void drawBoxedString(String text, float x, float y, int justification) {
-    drawBoxedString(text, x, y, justification, Background.Gray, Color.BLACK);
+  public void drawString(String text, float centerX, float centerY, Color color) {
+    drawBoxedString(text, centerX, centerY, SwingUtilities.CENTER, null, color);
   }
 
   public void drawBoxedString(
-      String text, float x, float y, int justification, Background background, Color foreground) {
+      String text,
+      float x,
+      float y,
+      int justification,
+      LabelBackgrounds background,
+      Color foreground) {
     NinePatch backgroundPatch = null;
     if (background != null) {
-      switch (background) {
-        case Gray -> {
-          backgroundPatch = grayLabel;
-        }
-        case Blue -> {
-          backgroundPatch = blueLabel;
-        }
-        case DarkGray -> {
-          backgroundPatch = darkGrayLabel;
-        }
-      }
+      backgroundPatch =
+          switch (background) {
+            case BOX_GRAY -> grayLabel;
+            case BOX_BLUE -> blueLabel;
+            case BOX_DARK_GRAY -> darkGrayLabel;
+          };
     }
 
     var BOX_PADDINGX = 10;

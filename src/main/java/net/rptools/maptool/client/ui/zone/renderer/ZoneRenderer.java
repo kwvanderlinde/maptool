@@ -69,6 +69,7 @@ import net.rptools.maptool.client.tool.PointerTool;
 import net.rptools.maptool.client.tool.StampTool;
 import net.rptools.maptool.client.ui.Scale;
 import net.rptools.maptool.client.ui.theme.Images;
+import net.rptools.maptool.client.ui.theme.LabelBackgrounds;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.ui.token.AbstractTokenOverlay;
 import net.rptools.maptool.client.ui.token.BarTokenOverlay;
@@ -1253,6 +1254,21 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             clsG.dispose();
           }
         }
+        case RenderInstruction.BoxedString(
+            Point2D center,
+            String text,
+            LabelBackgrounds background,
+            Color foreground) -> {
+          var backgroundImageLabel = RessourceManager.getLabelBackground(background);
+          GraphicsUtil.drawBoxedString(
+              currentLayer.currentG(),
+              text,
+              (int) center.getX(),
+              (int) center.getY(),
+              SwingUtilities.CENTER,
+              backgroundImageLabel,
+              foreground);
+        }
       }
 
       timer.stop("layer-%s[%s]", timerLayer, instruction);
@@ -2077,14 +2093,14 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
         if (token.isVisible()) {
           if (token.getType() == Token.Type.NPC) {
-            background = GraphicsUtil.BLUE_LABEL;
+            background = RessourceManager.getLabelBackground(LabelBackgrounds.BOX_BLUE);
             foreground = Color.WHITE;
           } else {
-            background = GraphicsUtil.GREY_LABEL;
+            background = RessourceManager.getLabelBackground(LabelBackgrounds.BOX_GRAY);
             foreground = Color.BLACK;
           }
         } else {
-          background = GraphicsUtil.DARK_GREY_LABEL;
+          background = RessourceManager.getLabelBackground(LabelBackgrounds.BOX_DARK_GRAY);
           foreground = Color.WHITE;
         }
         String name = token.getName();

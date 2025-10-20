@@ -15,8 +15,10 @@
 package net.rptools.maptool.client.ui.zone.gdx.label;
 
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector3;
 import javax.swing.*;
+import net.rptools.maptool.client.ui.theme.LabelBackgrounds;
 
 public class LabelRenderer implements ItemRenderer {
   private final TextRenderer renderer;
@@ -40,6 +42,12 @@ public class LabelRenderer implements ItemRenderer {
     tmpWorldCoord.z = 0;
     tmpScreenCoord = camera.project(tmpWorldCoord);
 
-    renderer.drawBoxedString(text, tmpScreenCoord.x, tmpScreenCoord.y, SwingUtilities.CENTER);
+    renderer.drawBoxedString(
+        text,
+        tmpScreenCoord.x,
+        tmpScreenCoord.y,
+        SwingUtilities.CENTER,
+        LabelBackgrounds.BOX_GRAY,
+        Color.BLACK);
   }
 }

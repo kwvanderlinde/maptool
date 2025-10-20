@@ -18,6 +18,8 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import javax.swing.*;
 import net.rptools.maptool.client.swing.ImageLabel;
+import net.rptools.maptool.client.ui.theme.LabelBackgrounds;
+import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.util.GraphicsUtil;
 
@@ -48,7 +50,7 @@ class LabelRenderer implements ItemRenderer {
 
     // Defaults
     this.align = SwingUtilities.CENTER;
-    this.background = GraphicsUtil.GREY_LABEL;
+    this.background = RessourceManager.getLabelBackground(LabelBackgrounds.BOX_GRAY);
     this.foreground = Color.black;
     tokenId = tId;
     if (tokenId != null) {

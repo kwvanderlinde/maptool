@@ -19,6 +19,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector3;
 import javax.swing.*;
 import net.rptools.lib.StringUtil;
+import net.rptools.maptool.client.ui.theme.LabelBackgrounds;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.util.GraphicsUtil;
@@ -41,19 +42,19 @@ public class TokenLabelRenderer implements ItemRenderer {
   @Override
   public void render(Camera camera, float zoom) {
     int offset = 3; // Keep it from tramping on the token border.
-    TextRenderer.Background background;
+    LabelBackgrounds background;
     Color foreground;
 
     if (token.isVisible()) {
       if (token.getType() == Token.Type.NPC) {
-        background = TextRenderer.Background.Blue;
+        background = LabelBackgrounds.BOX_BLUE;
         foreground = Color.WHITE;
       } else {
-        background = TextRenderer.Background.Gray;
+        background = LabelBackgrounds.BOX_GRAY;
         foreground = Color.BLACK;
       }
     } else {
-      background = TextRenderer.Background.DarkGray;
+      background = LabelBackgrounds.BOX_DARK_GRAY;
       foreground = Color.WHITE;
     }
     String name = token.getName();

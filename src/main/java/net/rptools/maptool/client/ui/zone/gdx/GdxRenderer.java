@@ -36,6 +36,7 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.GeneralPath;
+import java.awt.geom.Point2D;
 import java.nio.ByteBuffer;
 import java.text.NumberFormat;
 import java.util.*;
@@ -56,6 +57,7 @@ import net.rptools.maptool.client.tool.WallTopologyTool;
 import net.rptools.maptool.client.ui.Scale;
 import net.rptools.maptool.client.ui.theme.Borders;
 import net.rptools.maptool.client.ui.theme.Images;
+import net.rptools.maptool.client.ui.theme.LabelBackgrounds;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.ui.token.AbstractTokenOverlay;
 import net.rptools.maptool.client.ui.token.BarTokenOverlay;
@@ -692,20 +694,42 @@ public class GdxRenderer extends ApplicationAdapter {
 
     var loadingProgress = viewModel.getLoadingStatus();
     if (loadingProgress.isPresent()) {
-      hudTextRenderer.drawBoxedString(loadingProgress.get(), width / 2f, height / 2f);
+      hudTextRenderer.drawBoxedString(
+          loadingProgress.get(),
+          width / 2f,
+          height / 2f,
+          SwingUtilities.CENTER,
+          LabelBackgrounds.BOX_GRAY,
+          Color.BLACK);
     } else if (viewModel.getCampaign().isBeingSerialized()) {
-      hudTextRenderer.drawBoxedString("    Please Wait    ", width / 2f, height / 2f);
+      hudTextRenderer.drawBoxedString(
+          "    Please Wait    ",
+          width / 2f,
+          height / 2f,
+          SwingUtilities.CENTER,
+          LabelBackgrounds.BOX_GRAY,
+          Color.BLACK);
     }
 
     float noteVPos = 20;
     if (!zoneCache.getZone().isVisible() && playerView.isGMView()) {
       hudTextRenderer.drawBoxedString(
-          I18N.getText("zone.map_not_visible"), width / 2f, height - noteVPos);
+          I18N.getText("zone.map_not_visible"),
+          width / 2f,
+          height - noteVPos,
+          SwingUtilities.CENTER,
+          LabelBackgrounds.BOX_GRAY,
+          Color.BLACK);
       noteVPos += 20;
     }
     if (AppState.isShowAsPlayer()) {
       hudTextRenderer.drawBoxedString(
-          I18N.getText("zone.player_view"), width / 2f, height - noteVPos);
+          I18N.getText("zone.player_view"),
+          width / 2f,
+          height - noteVPos,
+          SwingUtilities.CENTER,
+          LabelBackgrounds.BOX_GRAY,
+          Color.BLACK);
     }
 
     hudTextRenderer.drawString("FPS:   " + Gdx.graphics.getFramesPerSecond(), width - 30, 30);
@@ -1240,6 +1264,24 @@ public class GdxRenderer extends ApplicationAdapter {
           tmpColor.premultiplyAlpha();
           ScreenUtils.clear(tmpColor);
         }
+        case RenderInstruction.BoxedString(
+            Point2D center,
+            String text,
+            LabelBackgrounds background,
+            java.awt.Color foreground) -> {
+          setProjectionMatrix(hudCam.combined);
+
+          Color.argb8888ToColor(tmpColor, foreground.getRGB());
+          tmpColor.premultiplyAlpha();
+
+          hudTextRenderer.drawBoxedString(
+              text,
+              (float) center.getX(),
+              (float) (height - center.getY()),
+              SwingUtilities.CENTER,
+              background,
+              tmpColor);
+        }
       }
 
       timer.stop("layer-%s[%s]", timerLayer, instruction);
@@ -1532,7 +1574,7 @@ public class GdxRenderer extends ApplicationAdapter {
             label.getX(),
             -label.getY(),
             SwingUtilities.CENTER,
-            TextRenderer.Background.Gray,
+            LabelBackgrounds.BOX_GRAY,
             tmpColor);
       } else {
         textRenderer.drawString(label.getLabel(), label.getX(), -label.getY(), tmpColor);
