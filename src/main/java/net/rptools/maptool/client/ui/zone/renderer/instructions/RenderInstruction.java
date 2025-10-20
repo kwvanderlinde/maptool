@@ -15,7 +15,10 @@
 package net.rptools.maptool.client.ui.zone.renderer.instructions;
 
 import java.awt.Color;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.ui.theme.LabelBackgrounds;
 import net.rptools.maptool.model.drawing.DrawableNoise;
@@ -64,4 +67,16 @@ public sealed interface RenderInstruction {
   }
 
   record Noise(DrawableNoise noise) implements RenderInstruction {}
+
+  record ImageAsset(
+      MD5Key id, Rectangle2D preTransformBounds, AffineTransform transform, double opacity)
+      implements RenderInstruction {
+    public ImageAsset(MD5Key id, AffineTransform transform) {
+      this(id, transform, 1.);
+    }
+
+    public ImageAsset(MD5Key id, AffineTransform transform, double opacity) {
+      this(id, null, transform, opacity);
+    }
+  }
 }

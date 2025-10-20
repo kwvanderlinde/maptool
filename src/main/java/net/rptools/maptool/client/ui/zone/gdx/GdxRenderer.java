@@ -37,6 +37,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.nio.ByteBuffer;
 import java.text.NumberFormat;
 import java.util.*;
@@ -48,6 +49,7 @@ import javax.annotation.Nullable;
 import javax.swing.*;
 import net.rptools.lib.AwtUtil;
 import net.rptools.lib.CodeTimer;
+import net.rptools.lib.MD5Key;
 import net.rptools.lib.gdx.ConfigurablePool;
 import net.rptools.maptool.client.*;
 import net.rptools.maptool.client.events.ZoneActivated;
@@ -265,6 +267,8 @@ public class GdxRenderer extends ApplicationAdapter {
   private final Vector2 tmpVector1 = new Vector2();
   private final Vector2 tmpVector2 = new Vector2();
   private final Matrix4 tmpMatrix = new Matrix4();
+  private final Matrix4 tmpMatrix2 = new Matrix4();
+  private final Affine2 tmpAffine = new Affine2();
   private final Area tmpArea = new Area();
   private final TiledDrawable tmpTile = new TiledDrawable();
 
@@ -1272,6 +1276,47 @@ public class GdxRenderer extends ApplicationAdapter {
         case RenderInstruction.Noise(DrawableNoise noise) -> {
           // TODO How can we implement this? Shouldn't it be basically the same thing as any
           //  paint? Almost, but not quite.
+        }
+        case RenderInstruction.ImageAsset(
+            MD5Key id,
+            Rectangle2D preTransformBounds,
+            AffineTransform transform,
+            double opacity) -> {
+          var image = new Sprite(zoneCache.getImageAsset(id, transferringAsset, brokenAsset));
+          image.setOrigin(0, 0);
+
+          if (preTransformBounds != null) {
+            var bounds = preTransformBounds;
+            image.setSize((float) bounds.getWidth(), (float) bounds.getHeight());
+            image.setPosition((float) bounds.getMinX(), -(float) bounds.getMaxY());
+          } else {
+            // Makes sure the image is at (0, 0) before we need to transform it.
+            image.setPosition(0, -image.getHeight());
+          }
+
+          // Opacity affect alpha, meaning we need to make sure to premultipy the tint properly.
+          // We can't use setAlpha() since that won't respect premultiplication.
+          image.setColor(tmpColor.set(Color.WHITE).mul((float) opacity));
+
+          // Shears and y-translation have to be negated.
+          Affine2 affine = tmpAffine;
+          affine.m00 = (float) transform.getScaleX();
+          affine.m01 = -(float) transform.getShearX();
+          affine.m02 = (float) transform.getTranslateX();
+          affine.m10 = -(float) transform.getShearY();
+          affine.m11 = (float) transform.getScaleY();
+          affine.m12 = -(float) transform.getTranslateY();
+
+          tmpMatrix.idt();
+          tmpMatrix.setAsAffine(affine);
+
+          tmpMatrix2.set(batch.getTransformMatrix());
+          try {
+            batch.setTransformMatrix(tmpMatrix);
+            image.draw(batch);
+          } finally {
+            batch.setTransformMatrix(tmpMatrix2);
+          }
         }
         case RenderInstruction.BoxedString(
             Point2D center,

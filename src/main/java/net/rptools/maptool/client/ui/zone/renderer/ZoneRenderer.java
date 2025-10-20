@@ -1277,6 +1277,37 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           currentLayer.currentG().setPaint(noise.getPaint(viewport.zoneScale()));
           currentLayer.currentG().fillRect(0, 0, size.width, size.height);
         }
+        case RenderInstruction.ImageAsset(
+            MD5Key id,
+            Rectangle2D preTransformBounds,
+            AffineTransform transform,
+            double opacity) -> {
+          var imageG = (Graphics2D) currentLayer.currentG().create();
+          try {
+            var composite = imageG.getComposite();
+            if (opacity < 1 && composite instanceof AlphaComposite alphaComposite) {
+              composite = alphaComposite.derive((float) opacity);
+              imageG.setComposite(composite);
+            }
+
+            AppPreferences.renderQuality.get().setRenderingHints(imageG);
+            BufferedImage image = ImageManager.getImage(id, this);
+
+            AffineTransform fullTransform = new AffineTransform(worldToScreen);
+            fullTransform.concatenate(transform);
+
+            var bounds = preTransformBounds;
+            if (bounds != null) {
+              fullTransform.translate(bounds.getMinX(), bounds.getMinY());
+              fullTransform.scale(
+                  bounds.getWidth() / image.getWidth(), bounds.getHeight() / image.getHeight());
+            }
+
+            imageG.drawImage(image, fullTransform, this);
+          } finally {
+            imageG.dispose();
+          }
+        }
         case RenderInstruction.BoxedString(
             Point2D center,
             String text,
