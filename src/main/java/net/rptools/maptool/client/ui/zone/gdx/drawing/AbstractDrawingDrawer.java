@@ -72,12 +72,7 @@ public abstract class AbstractDrawingDrawer {
     var floats = new FloatArray();
     // negate y values because we are y-up
     floats.add(x1, -y1, x2, -y2);
-    var polygon =
-        areaRenderer.drawPathWithJoin(
-            floats,
-            pen.getThickness(),
-            pen.getSquareCap() ? AreaRenderer.JoinType.Pointy : AreaRenderer.JoinType.Round,
-            false);
+    var polygon = areaRenderer.drawPathWithJoin(floats, pen.getStroke());
     applyColor(pen.getPaint(), false);
     areaRenderer.paintPolygon(batch, polygon);
   }
@@ -91,7 +86,7 @@ public abstract class AbstractDrawingDrawer {
   protected void drawArea(PolygonSpriteBatch batch, Area area, Pen pen) {
     alpha = pen.getOpacity();
     applyColor(pen.getPaint(), true);
-    areaRenderer.drawArea(batch, area, !pen.getSquareCap(), pen.getThickness());
+    areaRenderer.drawArea(batch, area, pen.getStroke());
   }
 
   protected abstract void drawBackground(

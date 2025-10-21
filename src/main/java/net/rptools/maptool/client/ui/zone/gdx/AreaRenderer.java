@@ -20,7 +20,7 @@ import com.badlogic.gdx.graphics.g2d.*;
 import com.badlogic.gdx.math.*;
 import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.IntArray;
-import com.badlogic.gdx.utils.ShortArray;
+import java.awt.BasicStroke;
 import java.awt.Shape;
 import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
@@ -34,17 +34,14 @@ import java.util.List;
 import java.util.Objects;
 import net.rptools.lib.GeometryUtil;
 import net.rptools.lib.gdx.Earcut;
-import net.rptools.lib.gdx.Joiner;
 import org.locationtech.jts.geom.Polygon;
-import space.earlygrey.shapedrawer.DefaultSideEstimator;
 import space.earlygrey.shapedrawer.ShapeDrawer;
-import space.earlygrey.shapedrawer.ShapeUtils;
-import space.earlygrey.shapedrawer.SideEstimator;
 
 public class AreaRenderer {
   public record TriangledPolygon(float[] vertices, short[] indices) {}
 
   private final ShapeDrawer drawer;
+  private final PathMesher pathMesher = new PathMesher();
   private final Texture whitePixel;
 
   private final FloatArray tmpFloat = new FloatArray();
@@ -152,17 +149,18 @@ public class AreaRenderer {
     }
   }
 
-  public void drawArea(PolygonSpriteBatch batch, Shape shape, boolean rounded, float thickness) {
+  public void drawArea(PolygonSpriteBatch batch, Shape shape, BasicStroke stroke) {
     if (shape == null) {
       return;
     }
 
+    // TODO pathToFloatArray() should have some basic guarantees about the minimum distance between
+    //  subsequent points, eliding any that fall afoul of this minimum. This will allow the jointer
+    //  to proceed unabashedly.
     pathToFloatArray(shape.getPathIterator(null));
 
     if (segmentIndicies.size == 1) {
-      removeStartFromEnd(); // start and end vertices are equal. we don't want this
-      var polygon =
-          drawPathWithJoin(tmpFloat, thickness, rounded ? JoinType.Round : JoinType.Pointy, true);
+      var polygon = drawPathWithJoin(tmpFloat, stroke);
       paintPolygon(batch, polygon);
     } else {
       var floats = tmpFloat.toArray();
@@ -174,22 +172,10 @@ public class AreaRenderer {
         tmpFloat.ensureCapacity(2 * vertexCount);
         System.arraycopy(floats, 2 * lastSegmentIndex, tmpFloat.items, 0, 2 * vertexCount);
         tmpFloat.setSize(2 * vertexCount);
-        removeStartFromEnd();
-        var polygon =
-            drawPathWithJoin(tmpFloat, thickness, rounded ? JoinType.Round : JoinType.Pointy, true);
+        var polygon = drawPathWithJoin(tmpFloat, stroke);
         paintPolygon(batch, polygon);
         lastSegmentIndex = idx;
       }
-    }
-  }
-
-  private void removeStartFromEnd() {
-    while (tmpFloat.size > 2
-        && tmpFloat.get(0) == tmpFloat.get(tmpFloat.size - 2)
-        && tmpFloat.get(1) == tmpFloat.get(tmpFloat.size - 1)) {
-      // make sure we don't have last and first point the same
-      tmpFloat.pop();
-      tmpFloat.pop();
     }
   }
 
@@ -283,365 +269,8 @@ public class AreaRenderer {
     return tmpFloat;
   }
 
-  private final Vector2 A = new Vector2();
-  private final Vector2 B = new Vector2();
-  private final Vector2 C = new Vector2();
-  private final Vector2 D = new Vector2();
-  private final Vector2 E = new Vector2();
-  private final Vector2 E0 = new Vector2();
-  private final Vector2 D0 = new Vector2();
-  private final Vector2 AB = new Vector2();
-  private final Vector2 BC = new Vector2();
-  private final Vector2 vec1 = new Vector2();
-
-  public enum JoinType {
-    Pointy,
-    Smooth,
-    Round
-  }
-
-  private final Vector2 vert1 = new Vector2();
-  private final Vector2 vert2 = new Vector2();
-  private final Vector2 vert3 = new Vector2();
-  private final Vector2 vert4 = new Vector2();
-
-  private void pushQuad(FloatArray vertices, ShortArray indices) {
-    var index = vertices.size / 2;
-    vertices.add(vert1.x);
-    vertices.add(vert1.y);
-    vertices.add(vert2.x);
-    vertices.add(vert2.y);
-    vertices.add(vert3.x);
-    vertices.add(vert3.y);
-    vertices.add(vert4.x);
-    vertices.add(vert4.y);
-    indices.add(index);
-    indices.add(index + 1);
-    indices.add(index + 2);
-    indices.add(index);
-    indices.add(index + 2);
-    indices.add(index + 3);
-  }
-
-  private void pushTriangle(FloatArray vertices, ShortArray indices) {
-    var index = vertices.size / 2;
-    vertices.add(vert1.x);
-    vertices.add(vert1.y);
-    vertices.add(vert2.x);
-    vertices.add(vert2.y);
-    vertices.add(vert3.x);
-    vertices.add(vert3.y);
-    indices.add(index);
-    indices.add(index + 1);
-    indices.add(index + 2);
-  }
-
-  public TriangledPolygon drawPathWithJoin(
-      FloatArray path, float lineWidth, JoinType joinType, boolean open) {
-    // this code was adapted from shapedrawer
-    float halfWidth = lineWidth / 2f;
-    boolean pointyJoin = joinType == JoinType.Pointy;
-
-    var vertices = new FloatArray();
-    var indices = new ShortArray();
-
-    if (path.size == 2) {
-      var x = path.get(0);
-      var y = path.get(1);
-      if (joinType == JoinType.Round) {
-        vertices.add(x + halfWidth, y);
-        addArc(vertices, indices, x, y, halfWidth, 0, MathUtils.PI2 - 0.1f, false);
-        vertices.add(x + halfWidth, y);
-      } else {
-        vert1.set(x - halfWidth, y - halfWidth);
-        vert2.set(x - halfWidth, y + halfWidth);
-        vert3.set(x + halfWidth, y + halfWidth);
-        vert4.set(x + halfWidth, y - halfWidth);
-        pushQuad(vertices, indices);
-      }
-      return new TriangledPolygon(vertices.toArray(), indices.toArray());
-    }
-
-    if (path.size == 4) {
-      A.set(path.get(0), path.get(1));
-      B.set(path.get(2), path.get(3));
-
-      if (joinType == JoinType.Round) {
-        Joiner.prepareFlatEndpoint(B, A, D, E, halfWidth);
-
-        vertices.add(D.x);
-        vertices.add(D.y);
-        vec1.set(D).add(-A.x, -A.y);
-        var angle = vec1.angleRad();
-        addArc(vertices, indices, A.x, A.y, halfWidth, angle, angle + MathUtils.PI, false);
-        vertices.add(E.x);
-        vertices.add(E.y);
-
-        vert1.set(D);
-        vert2.set(E);
-
-        Joiner.prepareFlatEndpoint(A, B, D, E, halfWidth);
-        vertices.add(D.x);
-        vertices.add(D.y);
-        vec1.set(D).add(-B.x, -B.y);
-        angle = vec1.angleRad();
-        addArc(vertices, indices, B.x, B.y, halfWidth, angle, angle + MathUtils.PI, false);
-
-        vertices.add(E.x);
-        vertices.add(E.y);
-
-        vert3.set(D);
-        vert4.set(E);
-        pushQuad(vertices, indices);
-
-      } else {
-        Joiner.prepareSquareEndpoint(B, A, D, E, halfWidth);
-        E0.set(D);
-        vert1.set(D);
-        vert2.set(E);
-
-        Joiner.prepareSquareEndpoint(A, B, D, E, halfWidth);
-        vert3.set(D);
-        vert4.set(E);
-        pushQuad(vertices, indices);
-      }
-      return new TriangledPolygon(vertices.toArray(), indices.toArray());
-    }
-
-    for (int i = 2; i < path.size - 2; i += 2) {
-      A.set(path.get(i - 2), path.get(i - 1));
-      B.set(path.get(i), path.get(i + 1));
-      C.set(path.get(i + 2), path.get(i + 3));
-
-      if (pointyJoin) {
-        Joiner.preparePointyJoin(A, B, C, D, E, halfWidth);
-      } else {
-        Joiner.prepareSmoothJoin(A, B, C, D, E, halfWidth, false);
-      }
-      vert3.set(D);
-      vert4.set(E);
-
-      if (i == 2) {
-        if (open) {
-          Joiner.prepareSquareEndpoint(B, A, D, E, halfWidth);
-          if (joinType == JoinType.Round) {
-            vec1.set(B).sub(A).setLength(halfWidth);
-            D.add(vec1);
-            E.add(vec1);
-            vertices.add(D.x);
-            vertices.add(D.y);
-            vec1.set(D).add(-A.x, -A.y);
-            var angle = vec1.angleRad();
-            addArc(vertices, indices, A.x, A.y, halfWidth, angle, angle + MathUtils.PI, false);
-            vertices.add(E.x);
-            vertices.add(E.y);
-          }
-
-          vert1.set(E);
-          vert2.set(D);
-
-        } else {
-          vec1.set(path.get(path.size - 2), path.get(path.size - 1));
-          if (pointyJoin) {
-            Joiner.preparePointyJoin(vec1, A, B, D0, E0, halfWidth);
-          } else {
-            Joiner.prepareSmoothJoin(vec1, A, B, D0, E0, halfWidth, true);
-          }
-          vert1.set(E0);
-          vert2.set(D0);
-        }
-      }
-
-      float x3, y3, x4, y4;
-      if (pointyJoin) {
-        x3 = vert3.x;
-        y3 = vert3.y;
-        x4 = vert4.x;
-        y4 = vert4.y;
-      } else {
-        Joiner.prepareSmoothJoin(A, B, C, D, E, halfWidth, true);
-        x3 = D.x;
-        y3 = D.y;
-        x4 = E.x;
-        y4 = E.y;
-      }
-
-      pushQuad(vertices, indices);
-      if (!pointyJoin) drawSmoothJoinFill(vertices, indices, A, B, C, D, E, halfWidth, joinType);
-      vert1.set(x4, y4);
-      vert2.set(x3, y3);
-    }
-
-    if (open) {
-      // draw last link on path
-      Joiner.prepareFlatEndpoint(B, C, D, E, halfWidth);
-      if (joinType == JoinType.Round) {
-
-        vertices.add(D.x);
-        vertices.add(D.y);
-        vec1.set(D).add(-C.x, -C.y);
-        var angle = vec1.angleRad();
-        addArc(vertices, indices, C.x, C.y, halfWidth, angle, angle + MathUtils.PI, false);
-        vertices.add(E.x);
-        vertices.add(E.y);
-      } else {
-        vec1.set(C).sub(B).setLength(halfWidth);
-        D.add(vec1);
-        E.add(vec1);
-      }
-
-      vert3.set(E);
-      vert4.set(D);
-      pushQuad(vertices, indices);
-    } else {
-      if (pointyJoin) {
-        // draw last link on path
-        A.set(path.get(0), path.get(1));
-        Joiner.preparePointyJoin(B, C, A, D, E, halfWidth);
-        vert3.set(D);
-        vert4.set(E);
-        pushQuad(vertices, indices);
-
-        // draw connection back to first vertex
-        vert1.set(D);
-        vert2.set(E);
-        vert3.set(E0);
-        vert4.set(D0);
-        pushQuad(vertices, indices);
-      } else {
-        // draw last link on path
-        A.set(B);
-        B.set(C);
-        C.set(path.get(0), path.get(1));
-        Joiner.prepareSmoothJoin(A, B, C, D, E, halfWidth, false);
-        vert3.set(D);
-        vert4.set(E);
-        pushQuad(vertices, indices);
-        drawSmoothJoinFill(vertices, indices, A, B, C, D, E, halfWidth, joinType);
-
-        // draw connection back to first vertex
-        Joiner.prepareSmoothJoin(A, B, C, D, E, halfWidth, true);
-        vert3.set(E);
-        vert4.set(D);
-        A.set(path.get(2), path.get(3));
-        Joiner.prepareSmoothJoin(B, C, A, D, E, halfWidth, false);
-        vert1.set(D);
-        vert2.set(E);
-        pushQuad(vertices, indices);
-        drawSmoothJoinFill(vertices, indices, B, C, A, D, E, halfWidth, joinType);
-      }
-    }
-    return new TriangledPolygon(vertices.toArray(), indices.toArray());
-  }
-
-  private void drawSmoothJoinFill(
-      FloatArray vertices,
-      ShortArray indices,
-      Vector2 A,
-      Vector2 B,
-      Vector2 C,
-      Vector2 D,
-      Vector2 E,
-      float halfLineWidth,
-      JoinType joinType) {
-    boolean bendsLeft = Joiner.prepareSmoothJoin(A, B, C, D, E, halfLineWidth, false);
-    vert1.set(bendsLeft ? E : D);
-    vert2.set(bendsLeft ? D : E);
-    if (bendsLeft) {
-      vec1.set(E);
-    } else {
-      vec1.set(D);
-    }
-
-    bendsLeft = Joiner.prepareSmoothJoin(A, B, C, D, E, halfLineWidth, true);
-    vert3.set(bendsLeft ? E : D);
-    pushTriangle(vertices, indices);
-
-    if (joinType == JoinType.Round) {
-      if (bendsLeft) {
-        AB.set(B).sub(A);
-        BC.set(C).sub(B);
-        vec1.add(-B.x, -B.y);
-        var angle = vec1.angleRad();
-        var angleDiff = MathUtils.PI2 - ShapeUtils.angleRad(AB, BC);
-        vertices.add(vert1.x);
-        vertices.add(vert1.y);
-        addArc(vertices, indices, B.x, B.y, halfLineWidth, angle, angle + angleDiff, false);
-        vertices.add(vert3.x);
-        vertices.add(vert3.y);
-      } else {
-        AB.set(B).sub(A);
-        BC.set(C).sub(B);
-        vec1.add(-B.x, -B.y);
-        var angle = vec1.angleRad();
-        var angleDiff = MathUtils.PI2 - ShapeUtils.angleRad(AB, BC);
-        vertices.add(vert1.x);
-        vertices.add(vert1.y);
-        addArc(vertices, indices, B.x, B.y, halfLineWidth, angle, angle + angleDiff, true);
-        vertices.add(vert3.x);
-        vertices.add(vert3.y);
-      }
-    }
-  }
-
-  private void addArc(
-      FloatArray vertices,
-      ShortArray indices,
-      float centreX,
-      float centreY,
-      float radius,
-      float startAngle,
-      float endAngle,
-      boolean clockwise) {
-    var oldSize = vertices.size;
-    var oldVertexCount = oldSize / 2;
-
-    if (startAngle < 0) {
-      startAngle += MathUtils.PI2;
-    }
-
-    if (endAngle < 0) {
-      endAngle += MathUtils.PI2;
-    }
-
-    var deltaAngle = (endAngle + MathUtils.PI2 - startAngle) % MathUtils.PI2;
-    if (clockwise) {
-      deltaAngle = MathUtils.PI2 - deltaAngle;
-    }
-    var sides = estimateSidesRequired(radius, radius);
-    sides *= deltaAngle / MathUtils.PI2;
-
-    var dAnglePerSide = deltaAngle / sides;
-    var angle = startAngle;
-    angle += dAnglePerSide;
-    sides -= 1;
-    if (clockwise) {
-      dAnglePerSide *= -1;
-      angle += 2 * dAnglePerSide;
-    }
-
-    for (var i = 1; i <= sides; i++) {
-      var cos = MathUtils.cos(angle);
-      var sin = MathUtils.sin(angle);
-      angle += dAnglePerSide;
-      var x = centreX + cos * radius;
-      var y = centreY + sin * radius;
-
-      vertices.add(x);
-      vertices.add(y);
-    }
-    var vertexCount = (vertices.size - oldSize) / 2;
-
-    for (int j = 0; j < vertexCount; j++) {
-      indices.add(oldVertexCount - 1);
-      indices.add(oldVertexCount + j);
-      indices.add(oldVertexCount + j + 1);
-    }
-  }
-
-  private final SideEstimator sideEstimator = new DefaultSideEstimator();
-
-  protected int estimateSidesRequired(float radiusX, float radiusY) {
-    return sideEstimator.estimateSidesRequired(1, radiusX, radiusY);
+  public TriangledPolygon drawPathWithJoin(FloatArray path, BasicStroke stroke) {
+    pathMesher.clear();
+    return pathMesher.stroke(stroke, path);
   }
 }

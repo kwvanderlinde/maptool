@@ -37,8 +37,7 @@ public class SimpleDrawingRenderer {
   public void stroke(
       PolygonSpriteBatch batch, Shape shape, GdxPaint paint, float opacity, BasicStroke stroke) {
     applyPaint(paint, opacity);
-    areaRenderer.drawArea(
-        batch, shape, stroke.getEndCap() != BasicStroke.CAP_SQUARE, stroke.getLineWidth());
+    areaRenderer.drawArea(batch, shape, stroke);
   }
 
   private void applyPaint(GdxPaint paint, float opacity) {

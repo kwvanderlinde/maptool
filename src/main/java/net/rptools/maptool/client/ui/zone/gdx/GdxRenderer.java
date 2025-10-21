@@ -959,7 +959,7 @@ public class GdxRenderer extends ApplicationAdapter {
     if (showVisionAndHalo) {
       areaRenderer.setColor(Color.WHITE);
       areaRenderer.drawArea(
-          batch, combined, false, (float) (1 / viewModel.getZoneScale().getScale()));
+          batch, combined, new BasicStroke((float) (1 / viewModel.getZoneScale().getScale())));
       renderHaloArea(combined);
     }
   }
@@ -1049,7 +1049,9 @@ public class GdxRenderer extends ApplicationAdapter {
     if (!softFogArea.isEmpty() && !clearArea.isEmpty()) {
       areaRenderer.setColor(Color.BLACK);
       areaRenderer.drawArea(
-          batch, visibleScreenArea, false, (float) (1 / viewModel.getZoneScale().getScale()));
+          batch,
+          visibleScreenArea,
+          new BasicStroke((float) (1 / viewModel.getZoneScale().getScale())));
     }
     timer.stop("renderFog-outline");
 
@@ -1376,9 +1378,15 @@ public class GdxRenderer extends ApplicationAdapter {
       for (final var lumensLevel : disjointLumensLevels) {
         timer.start("renderLumensOverlay:drawLights:drawArea");
         areaRenderer.setColor(tmpColor);
-        areaRenderer.drawArea(batch, lumensLevel.lightArea(), true, borderThickness);
+        areaRenderer.drawArea(
+            batch,
+            lumensLevel.lightArea(),
+            new BasicStroke(borderThickness, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         areaRenderer.setColor(tmpColor);
-        areaRenderer.drawArea(batch, lumensLevel.darknessArea(), true, borderThickness);
+        areaRenderer.drawArea(
+            batch,
+            lumensLevel.darknessArea(),
+            new BasicStroke(borderThickness, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         timer.stop("renderLumensOverlay:drawLights:drawArea");
       }
     }
@@ -1619,8 +1627,9 @@ public class GdxRenderer extends ApplicationAdapter {
         areaRenderer.drawArea(
             batch,
             zoneCache.getZone().getGrid().getTokenCellArea(tokenBounds),
-            false,
-            (float) (AppPreferences.haloLineWidth.get() / viewModel.getZoneScale().getScale()));
+            new BasicStroke(
+                (float)
+                    (AppPreferences.haloLineWidth.get() / viewModel.getZoneScale().getScale())));
       }
 
       // Calculate alpha Transparency from token and use opacity for indicating that token is moving
@@ -1687,6 +1696,7 @@ public class GdxRenderer extends ApplicationAdapter {
       // Facing
       if (token.hasFacing()) {
         Token.TokenShape tokenType = token.getShape();
+        BasicStroke arrowStroke = new BasicStroke(1.f);
         switch (tokenType) {
           case FIGURE:
             if (token.getHasImageTable()
@@ -1720,7 +1730,7 @@ public class GdxRenderer extends ApplicationAdapter {
             areaRenderer.fillArea(batch, arrowArea);
 
             areaRenderer.setColor(Color.DARK_GRAY);
-            areaRenderer.drawArea(batch, arrowArea, false, 1);
+            areaRenderer.drawArea(batch, arrowArea, arrowStroke);
 
             break;
           case TOP_DOWN:
@@ -1744,7 +1754,7 @@ public class GdxRenderer extends ApplicationAdapter {
             areaRenderer.setColor(Color.YELLOW);
             areaRenderer.fillArea(batch, arrowArea);
             areaRenderer.setColor(Color.DARK_GRAY);
-            areaRenderer.drawArea(batch, arrowArea, false, 1);
+            areaRenderer.drawArea(batch, arrowArea, arrowStroke);
             tmpMatrix.idt();
             batch.setTransformMatrix(tmpMatrix);
             break;
@@ -1788,7 +1798,7 @@ public class GdxRenderer extends ApplicationAdapter {
 
             areaRenderer.fillArea(batch, arrowArea);
             areaRenderer.setColor(Color.DARK_GRAY);
-            areaRenderer.drawArea(batch, arrowArea, false, 1);
+            areaRenderer.drawArea(batch, arrowArea, arrowStroke);
             batch.setTransformMatrix(tmpMatrix.idt());
             break;
         }
