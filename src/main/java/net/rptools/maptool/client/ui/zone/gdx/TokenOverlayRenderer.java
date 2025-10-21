@@ -18,6 +18,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.PolygonSpriteBatch;
 import java.awt.*;
 import java.awt.geom.Area;
+import java.awt.geom.Rectangle2D;
 import net.rptools.lib.AwtUtil;
 import net.rptools.maptool.client.ui.token.*;
 import net.rptools.maptool.model.Token;
@@ -372,32 +373,36 @@ public class TokenOverlayRenderer {
 
   private void renderTokenOverlay(float stateTime, ImageTokenOverlay overlay, Token token) {
     var bounds = token.getFootprintBounds(zoneCache.getZone());
-    var x = bounds.x;
-    var y = -bounds.y;
-
-    // Get the image
-    java.awt.Rectangle iBounds = overlay.getImageBounds(bounds, token);
-    Dimension d = iBounds.getSize();
 
     var image = zoneCache.getSprite(overlay.getAssetId(), stateTime);
+    Rectangle2D imageBounds = new Rectangle2D.Double(0, 0, image.getWidth(), image.getHeight());
+    AwtUtil.fitInto(imageBounds, bounds);
 
-    Dimension size = new Dimension((int) image.getWidth(), (int) image.getHeight());
-    AwtUtil.constrainTo(size, d.width, d.height);
-
-    // Paint it at the right location
-    int width = size.width;
-    int height = size.height;
-
-    if (overlay instanceof CornerImageTokenOverlay) {
-      x += iBounds.x + (d.width - width) / 2;
-      y -= iBounds.y + (d.height - height) / 2 + iBounds.height;
-    } else {
-      x = iBounds.x + (d.width - width) / 2;
-      y = -(iBounds.y + (d.height - height) / 2) - iBounds.height;
-    }
+    int width = (int) imageBounds.getWidth();
+    int height = (int) imageBounds.getHeight();
+    int x = (int) imageBounds.getMinX();
+    int y = (int) imageBounds.getMinY();
 
     image.setPosition(x, y);
-    image.setSize(size.width, size.height);
+    image.setSize(width, height);
+    image.draw(batch, overlay.getOpacity() / 100f);
+  }
+
+  private void renderTokenOverlay(float stateTime, CornerImageTokenOverlay overlay, Token token) {
+    var bounds = token.getFootprintBounds(zoneCache.getZone());
+
+    var image = zoneCache.getSprite(overlay.getAssetId(), stateTime);
+    Rectangle2D imageBounds = new Rectangle2D.Double(0, 0, image.getWidth(), image.getHeight());
+    AwtUtil.fitInto(imageBounds, bounds);
+    imageBounds = overlay.getBounds(imageBounds);
+
+    int width = (int) imageBounds.getWidth();
+    int height = (int) imageBounds.getHeight();
+    int x = (int) imageBounds.getMinX();
+    int y = (int) imageBounds.getMinY();
+
+    image.setPosition(x, y);
+    image.setSize(width, height);
     image.draw(batch, overlay.getOpacity() / 100f);
   }
 
