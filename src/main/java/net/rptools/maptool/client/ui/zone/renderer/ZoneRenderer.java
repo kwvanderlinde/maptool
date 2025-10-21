@@ -29,6 +29,7 @@ import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.TexturePaint;
 import java.awt.Toolkit;
@@ -1322,6 +1323,45 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
               SwingUtilities.CENTER,
               backgroundImageLabel,
               foreground);
+        }
+        case RenderInstruction.Fill(Shape shape, Paint paint, double opacity) -> {
+          var drawingsG = (Graphics2D) currentLayer.currentG().create();
+          try {
+            drawingsG.transform(worldToScreen);
+
+            var composite = drawingsG.getComposite();
+            if (composite instanceof AlphaComposite alphaComposite) {
+              composite = alphaComposite.derive((float) opacity);
+              drawingsG.setComposite(composite);
+            }
+
+            drawingsG.setPaint(resolveAwtPaint(paint, this));
+            drawingsG.fill(shape);
+          } finally {
+            drawingsG.dispose();
+          }
+        }
+        case RenderInstruction.Stroke(
+            Shape shape,
+            Paint paint,
+            BasicStroke stroke,
+            double opacity) -> {
+          var drawingsG = (Graphics2D) currentLayer.currentG().create();
+          try {
+            drawingsG.transform(worldToScreen);
+
+            var composite = drawingsG.getComposite();
+            if (composite instanceof AlphaComposite alphaComposite) {
+              composite = alphaComposite.derive((float) opacity);
+              drawingsG.setComposite(composite);
+            }
+
+            drawingsG.setPaint(resolveAwtPaint(paint, this));
+            drawingsG.setStroke(stroke);
+            drawingsG.draw(shape);
+          } finally {
+            drawingsG.dispose();
+          }
         }
       }
 

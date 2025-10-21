@@ -14,7 +14,9 @@
  */
 package net.rptools.maptool.client.ui.zone.renderer.instructions;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -79,4 +81,9 @@ public sealed interface RenderInstruction {
       this(id, null, transform, opacity);
     }
   }
+
+  record Fill(Shape shape, Paint paint, double opacity) implements RenderInstruction {}
+
+  record Stroke(Shape shape, Paint paint, BasicStroke stroke, double opacity)
+      implements RenderInstruction {}
 }

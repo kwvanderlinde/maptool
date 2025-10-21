@@ -67,6 +67,7 @@ import net.rptools.maptool.client.ui.zone.DrawableLight;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.ZoneViewModel;
 import net.rptools.maptool.client.ui.zone.gdx.drawing.DrawnElementRenderer;
+import net.rptools.maptool.client.ui.zone.gdx.drawing.SimpleDrawingRenderer;
 import net.rptools.maptool.client.ui.zone.gdx.label.ItemRenderer;
 import net.rptools.maptool.client.ui.zone.gdx.label.LabelRenderer;
 import net.rptools.maptool.client.ui.zone.gdx.label.TextRenderer;
@@ -241,6 +242,7 @@ public class GdxRenderer extends ApplicationAdapter {
   private TextRenderer hudTextRenderer;
   private AreaRenderer areaRenderer;
   private DrawnElementRenderer drawnElementRenderer;
+  private SimpleDrawingRenderer simpleDrawingRenderer;
   private TokenOverlayRenderer tokenOverlayRenderer;
   private GridRenderer gridRenderer;
 
@@ -428,6 +430,7 @@ public class GdxRenderer extends ApplicationAdapter {
 
       areaRenderer = new AreaRenderer(drawer, whitePixel);
       drawnElementRenderer = new DrawnElementRenderer(areaRenderer, this::getPaint);
+      simpleDrawingRenderer = new SimpleDrawingRenderer(areaRenderer);
       tokenOverlayRenderer =
           new TokenOverlayRenderer(
               areaRenderer, key -> zoneCache.getImageAsset(key, transferringAsset, brokenAsset));
@@ -1335,6 +1338,16 @@ public class GdxRenderer extends ApplicationAdapter {
               SwingUtilities.CENTER,
               background,
               tmpColor);
+        }
+        case RenderInstruction.Fill(Shape shape, Paint paint, double opacity) -> {
+          simpleDrawingRenderer.fill(batch, shape, getPaint(paint), (float) opacity);
+        }
+        case RenderInstruction.Stroke(
+            Shape shape,
+            Paint paint,
+            BasicStroke stroke,
+            double opacity) -> {
+          simpleDrawingRenderer.stroke(batch, shape, getPaint(paint), (float) opacity, stroke);
         }
       }
 
