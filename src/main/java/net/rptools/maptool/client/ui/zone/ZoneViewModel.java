@@ -80,6 +80,13 @@ public class ZoneViewModel {
    * Represents the selectable bounds of a token.
    *
    * <p>Obsoletes various other TokenPosition types that are either screen-based or inconsistent.
+   *
+   * @param token The token that this record was created for.
+   * @param footprintBounds The bounds of the token, not accounting for rotation, e.g., as returned
+   *     by {@link Token#getFootprintBounds(Zone)}
+   * @param transformedBounds For top-down tokens, the rotated version of {@code footprintBounds}
+   *     that accounts for the token's facing. This shape is rotated around the token's anchor
+   *     point.
    */
   public record TokenPosition(Token token, Rectangle2D footprintBounds, Area transformedBounds) {
     public static TokenPosition fromToken(Token token, Zone zone) {
