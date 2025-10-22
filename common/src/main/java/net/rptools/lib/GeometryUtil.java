@@ -48,7 +48,6 @@ public class GeometryUtil {
 
   private static final PrecisionModel precisionModel = new PrecisionModel(100_000.0);
   private static final PrecisionModel finePrecisionModel = new PrecisionModel(1e10);
-  private static final PrecisionModel coarsePrecisionModel = new PrecisionModel(1.);
 
   private static final GeometryFactory geometryFactory = new GeometryFactory(precisionModel);
 
@@ -139,28 +138,11 @@ public class GeometryUtil {
   }
 
   public static Collection<Polygon> toJtsPolygons(Shape shape) {
-    return toJtsPolygons(shape, finePrecisionModel);
-  }
-
-  /**
-   * Applies a coarser level of precision than {@link #toJtsPolygons(Shape)}.
-   *
-   * <p>Useful for rendering when we triangulate areas, as that does not require too much precision
-   * in most cases.
-   *
-   * @param shape
-   * @return
-   */
-  public static Collection<Polygon> toJtsPolygonsCoarse(Shape shape) {
-    return toJtsPolygons(shape, coarsePrecisionModel);
-  }
-
-  private static Collection<Polygon> toJtsPolygons(Shape shape, PrecisionModel precisionModel) {
     if (shape instanceof Area area && area.isEmpty()) {
       return Collections.emptyList();
     }
 
-    final var pathIterator = shape.getPathIterator(null, 1. / precisionModel.getScale());
+    final var pathIterator = shape.getPathIterator(null, 1. / finePrecisionModel.getScale());
     final var coordinates = (List<Coordinate[]>) ShapeReader.toCoordinates(pathIterator);
 
     // Now collect all the noded rings into islands (JTS clockwise) and oceans (counterclockwise).
@@ -175,7 +157,7 @@ public class GeometryUtil {
       }
 
       for (var c : ring) {
-        precisionModel.makePrecise(c);
+        finePrecisionModel.makePrecise(c);
       }
       if (Orientation.isCCW(ring)) {
         oceans.add(ring);

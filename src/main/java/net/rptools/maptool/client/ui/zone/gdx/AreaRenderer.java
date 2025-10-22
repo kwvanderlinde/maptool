@@ -140,7 +140,7 @@ public class AreaRenderer {
           shape = new Area(shape);
         }
 
-        for (var poly : triangulate(GeometryUtil.toJtsPolygonsCoarse(shape))) {
+        for (var poly : triangulate(GeometryUtil.toJtsPolygons(shape))) {
           var polyRegion =
               new PolygonRegion(new TextureRegion(texture), poly.vertices, poly.indices);
           paintRegion(batch, polyRegion);
