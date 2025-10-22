@@ -113,12 +113,6 @@ public class GridlessGrid extends Grid {
   }
 
   @Override
-  public Point2D.Double getCellCenter(CellPoint cell) {
-    // For gridless grids, cell = pixel;
-    return new Point2D.Double(cell.x, cell.y);
-  }
-
-  @Override
   public double cellDistance(CellPoint cellA, CellPoint cellB, WalkerMetric wmetric) {
     int dX = cellA.x - cellB.x;
     int dY = cellA.y - cellB.y;
@@ -212,6 +206,7 @@ public class GridlessGrid extends Grid {
 
   @Override
   public Point2D.Double getCenterOffset() {
+    // For gridless grids, cell = pixel;
     return new Point2D.Double(0, 0);
   }
 

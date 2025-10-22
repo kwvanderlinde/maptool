@@ -266,7 +266,13 @@ public abstract class Grid implements Cloneable {
    * @param cell The cell to get the center of.
    * @return Point of the coordinates.
    */
-  public abstract Point2D.Double getCellCenter(CellPoint cell);
+  public Point2D.Double getCellCenter(CellPoint cell) {
+    var zp = convert(cell);
+    var offset = getCenterOffset();
+    offset.x += zp.x;
+    offset.y += zp.y;
+    return offset;
+  }
 
   protected OffsetTranslator getOffsetTranslator() {
     return null;

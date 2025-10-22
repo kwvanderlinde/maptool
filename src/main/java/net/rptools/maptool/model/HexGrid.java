@@ -80,6 +80,7 @@ public abstract class HexGrid extends Grid {
 
   @Override
   public Point2D.Double getCenterOffset() {
+    // hex grids have their pixel xy at their center
     return new Point2D.Double(0, 0);
   }
 
@@ -122,13 +123,6 @@ public abstract class HexGrid extends Grid {
 
   private boolean isHexHorizontal() {
     return getType() == GridType.HexHorizontal;
-  }
-
-  @Override
-  public Point2D.Double getCellCenter(CellPoint cell) {
-    // hex grids have their pixel xy at their center
-    ZonePoint zonePoint = convert(cell);
-    return new Point2D.Double(zonePoint.x, zonePoint.y);
   }
 
   @Override

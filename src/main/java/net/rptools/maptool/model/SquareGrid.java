@@ -156,6 +156,7 @@ public class SquareGrid extends Grid {
 
   @Override
   public Point2D.Double getCenterOffset() {
+    // square have their xy at their top left
     return new Point2D.Double(getCellWidth() / 2, getCellHeight() / 2);
   }
 
