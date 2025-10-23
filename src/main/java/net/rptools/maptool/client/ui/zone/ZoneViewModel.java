@@ -450,8 +450,9 @@ public class ZoneViewModel {
   }
 
   /**
-   * Updates {@link #onScreenTokens} and {@link #visibleTokensByLayer} based on {@link
-   * #tokenPositionsByLayer}, {@link #viewport}, {@link #playerView}, and {@link #visibleArea}.
+   * Updates {@link #onScreenTokens} and {@link #visibleTokensByLayer} based on {@link #zoneScale},
+   * {@link #tokenPositionsByLayer}, {@link #viewport}, {@link #playerView}, and {@link
+   * #visibleArea}.
    */
   private void updateVisibleTokens() {
     double scale = zoneScale.getScale();
