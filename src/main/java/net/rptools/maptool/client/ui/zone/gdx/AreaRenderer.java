@@ -152,6 +152,8 @@ public class AreaRenderer {
       return;
     }
 
+    // TODO My wall implementation is exposing an issue with turnbacks.
+
     // TODO pathToFloatArray() should have some basic guarantees about the minimum distance between
     //  subsequent points, eliding any that fall afoul of this minimum. This will allow the jointer
     //  to proceed unabashedly.
