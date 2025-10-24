@@ -508,6 +508,10 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   private void ensureTtfFont() {
+    // TODO The instruction set should have as its metadata instructions to ensure certain resources
+    //  are available, in this case the font needed for path distance text.
+    //  This is to avoid the need to depend on the zone.
+
     if (zoneCache == null) return;
 
     var fontScale =
