@@ -69,6 +69,7 @@ import net.rptools.maptool.client.swing.label.FlatImageLabelFactory;
 import net.rptools.maptool.client.tool.PointerTool;
 import net.rptools.maptool.client.tool.StampTool;
 import net.rptools.maptool.client.ui.Scale;
+import net.rptools.maptool.client.ui.theme.Borders;
 import net.rptools.maptool.client.ui.theme.Images;
 import net.rptools.maptool.client.ui.theme.LabelBackgrounds;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
@@ -1356,6 +1357,28 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             iconG.drawImage(image, at, null);
           } finally {
             iconG.dispose();
+          }
+        }
+        case RenderInstruction.Border(
+            Borders resource,
+            Rectangle2D worldBounds,
+            double rotation,
+            Point2D rotateAround) -> {
+          var borderG = (Graphics2D) currentLayer.currentG().create();
+          try {
+            var rotateAroundScreen = viewport.zoneScale().toScreenSpace(rotateAround);
+            borderG.rotate(rotation, rotateAroundScreen.x, rotateAroundScreen.y);
+
+            var borderResource = RessourceManager.getBorder(resource);
+            var screenBounds = viewport.zoneScale().toScreenSpace(worldBounds);
+            borderResource.paintAround(
+                borderG,
+                (int) screenBounds.getX(),
+                (int) screenBounds.getY(),
+                (int) screenBounds.getWidth(),
+                (int) screenBounds.getHeight());
+          } finally {
+            borderG.dispose();
           }
         }
         case RenderInstruction.BoxedString(

@@ -1386,6 +1386,41 @@ public class GdxRenderer extends ApplicationAdapter {
                 (float) worldBounds.getHeight());
           }
         }
+        case RenderInstruction.Border(
+            Borders resource,
+            Rectangle2D worldBounds,
+            double rotation,
+            Point2D rotateAround) -> {
+          // TODO Modify GdxRenderer#fetchBorder() to act directly on a Borders tag.
+          var borderResource = RessourceManager.getBorder(resource);
+
+          setProjectionMatrix(hudCam.combined);
+
+          tmpWorldCoord.set((float) worldBounds.getMinX(), (float) -worldBounds.getMaxY(), 0);
+          cam.project(tmpWorldCoord);
+
+          var gdxTokenRectangle =
+              new Rectangle(
+                  tmpWorldCoord.x,
+                  tmpWorldCoord.y,
+                  (float) worldBounds.getWidth() / zoom,
+                  (float) worldBounds.getHeight() / zoom);
+
+          tmpWorldCoord.set((float) rotateAround.getX(), -(float) rotateAround.getY(), 0);
+          cam.project(tmpWorldCoord);
+
+          tmpMatrix.idt();
+          tmpMatrix.translate(tmpWorldCoord.x, tmpWorldCoord.y, 0);
+          tmpMatrix.rotateRad(0, 0, 1, -(float) rotation);
+          tmpMatrix.translate(-tmpWorldCoord.x, -tmpWorldCoord.y, 0);
+          tmpMatrix2.set(batch.getTransformMatrix());
+          try {
+            batch.setTransformMatrix(tmpMatrix);
+            renderImageBorderAround(borderResource, gdxTokenRectangle);
+          } finally {
+            batch.setTransformMatrix(tmpMatrix2);
+          }
+        }
         case RenderInstruction.BoxedString(
             Point2D center,
             String text,
@@ -2705,7 +2740,6 @@ public class GdxRenderer extends ApplicationAdapter {
     var imagePath = imageBorder.getImagePath();
     var index = imagePath.indexOf("border/");
     var borderName = imagePath.substring(index);
-
     return cachedBorders.computeIfAbsent(
         borderName,
         name -> {

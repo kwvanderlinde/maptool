@@ -25,6 +25,7 @@ import java.awt.geom.Rectangle2D;
 import javax.annotation.Nullable;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.ScreenPoint;
+import net.rptools.maptool.client.ui.theme.Borders;
 import net.rptools.maptool.client.ui.theme.Images;
 import net.rptools.maptool.client.ui.theme.LabelBackgrounds;
 import net.rptools.maptool.model.drawing.DrawableNoise;
@@ -96,6 +97,17 @@ public sealed interface RenderInstruction {
       implements RenderInstruction {}
 
   record Icon(Images resource, Rectangle2D worldBounds) implements RenderInstruction {}
+
+  record Border(Borders resource, Rectangle2D worldBounds, double rotation, Point2D rotateAround)
+      implements RenderInstruction {
+    public Border(Borders resource, Rectangle2D worldBounds) {
+      this(
+          resource,
+          worldBounds,
+          0,
+          new Point2D.Double(worldBounds.getCenterX(), worldBounds.getCenterY()));
+    }
+  }
 
   record Text(
       String text, Font font, Rectangle2D screenBounds, Color textColor, Decoration decoration)
