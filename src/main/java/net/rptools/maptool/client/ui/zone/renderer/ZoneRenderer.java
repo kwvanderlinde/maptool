@@ -75,6 +75,7 @@ import net.rptools.maptool.client.ui.token.BarTokenOverlay;
 import net.rptools.maptool.client.ui.token.dialog.create.NewTokenDialog;
 import net.rptools.maptool.client.ui.zone.*;
 import net.rptools.maptool.client.ui.zone.gdx.GdxRenderer;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.AlphaMode;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.BlendMode;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.ClipType;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSet;
@@ -1220,6 +1221,16 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             bufferedLayerState.bufferHandle().close();
             timer.stop("layer-%s-blit", layerName);
           }
+        }
+        case RenderInstruction.Meta.SwitchAlphaMode(AlphaMode mode) -> {
+          var composite =
+              switch (mode) {
+                case Clear -> AlphaComposite.Clear;
+                case SrcOnly -> AlphaComposite.Src;
+                case SrcOver -> AlphaComposite.SrcOver;
+                case Screen -> LightingComposite.BlendedLights;
+              };
+          currentLayer.currentG().setComposite(composite);
         }
       }
 

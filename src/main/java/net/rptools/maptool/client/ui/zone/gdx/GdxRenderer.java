@@ -68,6 +68,7 @@ import net.rptools.maptool.client.ui.zone.gdx.label.LabelRenderer;
 import net.rptools.maptool.client.ui.zone.gdx.label.TextRenderer;
 import net.rptools.maptool.client.ui.zone.gdx.label.TokenLabelRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.SelectionSet;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.AlphaMode;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.BlendMode;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.ClipType;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSet;
@@ -1175,6 +1176,17 @@ public class GdxRenderer extends ApplicationAdapter {
                     : currentLayer.maskBuffer.getColorBufferTexture());
             timer.stop("layer-%s-complete", layerName);
           }
+        }
+        case RenderInstruction.Meta.SwitchAlphaMode(AlphaMode mode) -> {
+          var blendFunction =
+              switch (mode) {
+                case Clear -> BlendFunction.CLEAR;
+                case SrcOnly -> BlendFunction.SRC_ONLY;
+                case SrcOver -> BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER;
+                case Screen -> BlendFunction.SCREEN;
+              };
+          currentLayer.blendFunction = blendFunction;
+          blendFunction.applyToBatch(batch);
         }
       }
 
