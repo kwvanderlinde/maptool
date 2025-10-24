@@ -71,6 +71,15 @@ public final class Light implements Serializable {
 
     // Rather than modifying the current object, we'll create a replacement that is definitely
     // initialized properly.
+    var newPaint = paint;
+    if (paint instanceof DrawableColorPaint colorPaint) {
+      // Prior to 1.19, the default D20 light sources had a reduced alpha value, despite there
+      // no other way to accomplish this. This reduced alpha could be saved in campaigns, where they
+      // continue to cause trouble. So we remove the alpha here.
+      var color = new Color(colorPaint.getColor(), false);
+      newPaint = new DrawableColorPaint(color);
+    }
+
     return new Light(
         shape == null ? ShapeType.CIRCLE : shape,
         facingOffset,
