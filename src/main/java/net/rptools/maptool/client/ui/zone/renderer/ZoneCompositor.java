@@ -173,6 +173,28 @@ public class ZoneCompositor {
       compositeDrawings(builder, view, Zone.Layer.TOKEN, worldBounds);
       compositeDrawings(builder, view, Zone.Layer.GM, worldBounds);
 
+      /*
+       * The following sections used to handle rendering of the Hidden (i.e. "GM") layer followed by
+       * the Token layer. The problem was that we want all drawables to appear below all tokens, and
+       * the old configuration performed the rendering in the following order:
+       *
+       * <ol>
+       *   <li>Render Hidden-layer tokens
+       *   <li>Render Hidden-layer drawables
+       *   <li>Render Token-layer drawables
+       *   <li>Render Token-layer tokens
+       * </ol>
+       *
+       * That's fine for players, but clearly wrong if the view is for the GM. We now use:
+       *
+       * <ol>
+       *   <li>Render Token-layer drawables // Player-drawn images shouldn't obscure GM's images?
+       *   <li>Render Hidden-layer drawables // GM could always use "View As Player" if needed?
+       *   <li>Render Hidden-layer tokens
+       *   <li>Render Token-layer tokens
+       * </ol>
+       */
+
       // TODO GM tokens if GM layer & Token layer is enabled.
       // TODO Regular tokens if Token layer is enabled.
       compositeStacks(builder, viewport, view);
