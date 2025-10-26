@@ -60,6 +60,11 @@ public class ConeTemplate extends RadiusTemplate {
     return new ConeTemplate(this);
   }
 
+  @Override
+  public CursorType getCursorType() {
+    return CursorType.Cross;
+  }
+
   /**
    * Get the direction for this ConeTemplate.
    *

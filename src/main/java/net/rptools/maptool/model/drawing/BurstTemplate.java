@@ -55,6 +55,11 @@ public class BurstTemplate extends RadiusTemplate {
     return new BurstTemplate(this);
   }
 
+  @Override
+  public CursorType getCursorType() {
+    return CursorType.Cell;
+  }
+
   private Rectangle makeVertexShape(Zone zone) {
     int gridSize = zone.getGrid().getSize();
     return new Rectangle(getVertex().x, getVertex().y, gridSize, gridSize);

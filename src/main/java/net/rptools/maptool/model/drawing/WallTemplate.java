@@ -55,6 +55,11 @@ public class WallTemplate extends LineTemplate {
    * @see net.rptools.maptool.model.drawing.AbstractTemplate#getRadius()
    */
   @Override
+  public CursorType getCursorType() {
+    return CursorType.Cell;
+  }
+
+  @Override
   public int getRadius() {
     return getPath() == null ? 0 : getPath().size();
   }

@@ -17,8 +17,11 @@ package net.rptools.maptool.client.tool.drawing;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Graphics2D;
+import java.awt.Shape;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Path2D;
+import java.awt.geom.Rectangle2D;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolUtil;
 import net.rptools.maptool.client.swing.SwingUtil;
@@ -26,6 +29,8 @@ import net.rptools.maptool.client.tool.DefaultTool;
 import net.rptools.maptool.client.ui.zone.ZoneOverlay;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.Zone.Layer;
+import net.rptools.maptool.model.ZonePoint;
+import net.rptools.maptool.model.drawing.AbstractTemplate;
 import net.rptools.maptool.model.drawing.Drawable;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.drawing.Pen;
@@ -157,5 +162,24 @@ public abstract class AbstractTemplateTool extends DefaultTool implements ZoneOv
 
   private boolean hasPaint(Pen pen) {
     return pen.getPaint() != null || pen.getBackgroundPaint() != null;
+  }
+
+  protected Shape makeCursorShapeAt(ZonePoint vertex, AbstractTemplate.CursorType cursorType) {
+    return switch (cursorType) {
+      case Cross -> {
+        final var CURSOR_WIDTH = 25;
+        final double halfCursor = CURSOR_WIDTH / 2.;
+        var vertexCursor = new Path2D.Double();
+        vertexCursor.moveTo(vertex.x - halfCursor, vertex.y);
+        vertexCursor.lineTo(vertex.x + halfCursor, vertex.y);
+        vertexCursor.moveTo(vertex.x, vertex.y - halfCursor);
+        vertexCursor.lineTo(vertex.x, vertex.y + halfCursor);
+        yield vertexCursor;
+      }
+      case Cell -> {
+        int gridSize = getZone().getGrid().getSize();
+        yield new Rectangle2D.Double(vertex.x, vertex.y, gridSize, gridSize);
+      }
+    };
   }
 }

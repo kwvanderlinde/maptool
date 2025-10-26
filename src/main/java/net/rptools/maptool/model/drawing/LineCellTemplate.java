@@ -353,6 +353,11 @@ public class LineCellTemplate extends AbstractTemplate {
   }
 
   @Override
+  public CursorType getCursorType() {
+    return CursorType.Cell;
+  }
+
+  @Override
   public Rectangle getBounds(Zone zone) {
     // Get all of the numbers needed for the calculation
     if (zone == null) {

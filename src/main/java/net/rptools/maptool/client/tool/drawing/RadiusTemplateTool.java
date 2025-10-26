@@ -165,11 +165,9 @@ public class RadiusTemplateTool extends AbstractTemplateTool implements MouseMot
    * @param vertex The vertex holding the cursor.
    */
   protected void paintCursor(Graphics2D g, Paint paint, float thickness, ZonePoint vertex) {
-    int halfCursor = CURSOR_WIDTH / 2;
     g.setPaint(paint);
     g.setStroke(new BasicStroke(thickness));
-    g.drawLine(vertex.x - halfCursor, vertex.y, vertex.x + halfCursor, vertex.y);
-    g.drawLine(vertex.x, vertex.y - halfCursor, vertex.x, vertex.y + halfCursor);
+    g.draw(makeCursorShapeAt(vertex, template.getCursorType()));
   }
 
   /**

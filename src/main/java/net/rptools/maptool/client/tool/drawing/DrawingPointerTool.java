@@ -45,6 +45,7 @@ import net.rptools.maptool.client.walker.WalkerMetric;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.drawing.*;
+import net.rptools.maptool.model.drawing.AbstractTemplate.CursorType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -170,12 +171,6 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
   private ZonePoint dragStartVertex = null;
   private ZonePoint dragWorkingCell = null;
   private ZonePoint dragWorkingZonePoint = null;
-
-  /** An enumeration of template cursor types. */
-  private enum templateCursorType {
-    CROSS,
-    CELL
-  }
 
   /**
    * The width of the cursor. Since the cursor is a cross, this is the width of the horizontal bar
@@ -797,23 +792,6 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
   }
 
   /**
-   * Determines the type of cursor used by a template.
-   *
-   * @param at The template.
-   * @return Either a CROSS or CELL
-   */
-  private templateCursorType getTemplateCursorType(AbstractTemplate at) {
-    String templateType = getTemplateType(at);
-    if (templateType.equals("RadiusTemplate")
-        || templateType.equals("ConeTemplate")
-        || templateType.equals("LineTemplate")) {
-      return templateCursorType.CROSS;
-    } else {
-      return templateCursorType.CELL;
-    }
-  }
-
-  /**
    * Helper method to get the path vertex for the template (for known template types that have
    * them). *
    *
@@ -1067,20 +1045,22 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
    */
   private void paintTemplateCursor(
       Graphics2D g, Paint paint, float thickness, AbstractTemplate at, ZonePoint vertex) {
-
-    if (getTemplateCursorType(at) == templateCursorType.CROSS) {
-      // Paint a Cross
-      int halfCursor = CURSOR_WIDTH / 2;
-      g.setPaint(paint);
-      g.setStroke(new BasicStroke(thickness));
-      g.drawLine(vertex.x - halfCursor, vertex.y, vertex.x + halfCursor, vertex.y);
-      g.drawLine(vertex.x, vertex.y - halfCursor, vertex.x, vertex.y + halfCursor);
-    } else if (getTemplateCursorType(at) == templateCursorType.CELL) {
-      // Paint a Cell
-      g.setPaint(paint);
-      g.setStroke(new BasicStroke(thickness));
-      int grid = getZone().getGrid().getSize();
-      g.drawRect(vertex.x, vertex.y, grid, grid);
+    switch (at.getCursorType()) {
+      case Cross -> {
+        // Paint a Cross
+        int halfCursor = CURSOR_WIDTH / 2;
+        g.setPaint(paint);
+        g.setStroke(new BasicStroke(thickness));
+        g.drawLine(vertex.x - halfCursor, vertex.y, vertex.x + halfCursor, vertex.y);
+        g.drawLine(vertex.x, vertex.y - halfCursor, vertex.x, vertex.y + halfCursor);
+      }
+      case Cell -> {
+        // Paint a Cell
+        g.setPaint(paint);
+        g.setStroke(new BasicStroke(thickness));
+        int grid = getZone().getGrid().getSize();
+        g.drawRect(vertex.x, vertex.y, grid, grid);
+      }
     }
   }
 
@@ -1138,7 +1118,7 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
 
       // If the cursor type is a cell, draw from the middle of the cell
       int offsetXY = 0;
-      if (getTemplateCursorType(at) == templateCursorType.CELL) {
+      if (at.getCursorType() == CursorType.Cell) {
         offsetXY = getZone().getGrid().getSize() / 2;
       }
 

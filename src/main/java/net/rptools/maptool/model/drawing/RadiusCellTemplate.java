@@ -47,6 +47,11 @@ public class RadiusCellTemplate extends AbstractTemplate {
     return new RadiusCellTemplate(this);
   }
 
+  @Override
+  public CursorType getCursorType() {
+    return CursorType.Cell;
+  }
+
   /**
    * Paint the border at a specific radius.
    *

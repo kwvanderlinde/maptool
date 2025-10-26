@@ -406,6 +406,11 @@ public class LineTemplate extends AbstractTemplate {
   }
 
   @Override
+  public CursorType getCursorType() {
+    return CursorType.Cross;
+  }
+
+  @Override
   public Rectangle getBounds(Zone zone) {
     // Get all of the numbers needed for the calculation
     if (zone == null) {

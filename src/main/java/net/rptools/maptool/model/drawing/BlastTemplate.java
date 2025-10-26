@@ -64,6 +64,11 @@ public class BlastTemplate extends ConeTemplate {
     return new BlastTemplate(this);
   }
 
+  @Override
+  public CursorType getCursorType() {
+    return CursorType.Cell;
+  }
+
   private Rectangle makeShape(Zone zone) {
     if (zone == null) {
       return new Rectangle();

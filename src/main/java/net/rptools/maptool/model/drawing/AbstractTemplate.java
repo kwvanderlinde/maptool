@@ -76,6 +76,14 @@ public abstract class AbstractTemplate extends AbstractDrawing {
   /** The alpha forced on all background fills. */
   public static final float DEFAULT_BG_ALPHA = 0.20f;
 
+  /** Indicates what kind of cursor to draw when tools are manipulating the template. */
+  public enum CursorType {
+    /** The template uses a cross-hair cursor. */
+    Cross,
+    /** The template cursor covers the entire cell. */
+    Cell
+  }
+
   /** The directions that can be drawn. All is for a radius and the other values are for cones. */
   public enum Direction {
     /** Draw a Radius */
@@ -134,6 +142,8 @@ public abstract class AbstractTemplate extends AbstractDrawing {
   /*---------------------------------------------------------------------------------------------
    * Instance Methods
    *-------------------------------------------------------------------------------------------*/
+
+  public abstract CursorType getCursorType();
 
   /**
    * Set the radius of the template in squares.

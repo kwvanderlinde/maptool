@@ -14,9 +14,6 @@
  */
 package net.rptools.maptool.client.tool.drawing;
 
-import java.awt.BasicStroke;
-import java.awt.Graphics2D;
-import java.awt.Paint;
 import java.awt.event.MouseEvent;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.tool.Tool;
@@ -69,19 +66,6 @@ public class BurstTemplateTool extends RadiusTemplateTool {
         new ScreenPoint(e.getX(), e.getY()).convertToZone(renderer.getViewModel().getZoneScale());
     CellPoint cp = renderer.getZone().getGrid().convert(mouse);
     return renderer.getZone().getGrid().convert(cp);
-  }
-
-  /**
-   * @see
-   *     net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#paintCursor(java.awt.Graphics2D,
-   *     java.awt.Paint, float, net.rptools.maptool.model.ZonePoint)
-   */
-  @Override
-  protected void paintCursor(Graphics2D g, Paint paint, float thickness, ZonePoint vertex) {
-    g.setPaint(paint);
-    g.setStroke(new BasicStroke(thickness));
-    int grid = renderer.getZone().getGrid().getSize();
-    g.drawRect(vertex.x, vertex.y, grid, grid);
   }
 
   /**
