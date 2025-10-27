@@ -799,26 +799,11 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
    * @return The zone point for the path vertex, or <code>null</code>.
    */
   private ZonePoint getTemplatePathVertex(AbstractTemplate at) {
-    ZonePoint templatePathVertex = null;
-    String templateType = getTemplateType(at);
-    if (templateType.equals("LineTemplate")) {
-      LineTemplate lt = (LineTemplate) at;
-      templatePathVertex = new ZonePoint(lt.getPathVertex());
-    } else if (templateType.equals("LineCellTemplate")) {
-      LineCellTemplate lct = (LineCellTemplate) at;
-      templatePathVertex = new ZonePoint(lct.getPathVertex());
-    }
-    return templatePathVertex;
-  }
-
-  /**
-   * Determines the type of template.
-   *
-   * @param at The template.
-   * @return The simple class name (e.g. "WallTemplate")
-   */
-  private String getTemplateType(AbstractTemplate at) {
-    return at.getClass().getSimpleName();
+    return switch (at) {
+      case LineTemplate lt -> lt.getPathVertex();
+      case LineCellTemplate lct -> lct.getPathVertex();
+      default -> null;
+    };
   }
 
   /**
@@ -1229,14 +1214,15 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
    * @param zp the zone point for the path vertex.
    */
   private void setTemplatePathVertex(AbstractTemplate at, ZonePoint zp) {
-    if (!at.getVertex().equals(zp)) {
-      String templateType = getTemplateType(at);
-      if (templateType.equals("LineTemplate")) {
-        LineTemplate lt = (LineTemplate) at;
-        lt.setPathVertex(zp);
-      } else if (templateType.equals("LineCellTemplate")) {
-        LineCellTemplate lct = (LineCellTemplate) at;
-        lct.setPathVertex(zp);
+    if (at.getVertex().equals(zp)) {
+      return;
+    }
+
+    switch (at) {
+      case LineTemplate lt -> lt.setPathVertex(zp);
+      case LineCellTemplate lct -> lct.setPathVertex(zp);
+      default -> {
+        /* Nothing to do */
       }
     }
   }
@@ -1369,7 +1355,6 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
     dragCellOffset.x = dragWorkingCell.x - dragCellOffset.x;
     dragCellOffset.y = dragWorkingCell.y - dragCellOffset.y;
     ZonePoint vertex = new ZonePoint(at.getVertex());
-    String templateType = getTemplateType(at);
 
     // CTRL -> Change the radius if only one drawing selected
     if (selectedDrawableIdSet.size() == 1 && e.isControlDown()) {
@@ -1383,21 +1368,22 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
       at.setRadius(dragRadius);
 
       // Move the Template around the Vertex (if applicable)
-      if (templateType.equals("BlastTemplate")) {
-        ((BlastTemplate) at)
-            .setControlCellRelative(workingCell.x - vertexCell.x, workingCell.y - vertexCell.y);
+      switch (at) {
+        case BlastTemplate bt ->
+            bt.setControlCellRelative(workingCell.x - vertexCell.x, workingCell.y - vertexCell.y);
+        case ConeTemplate ct -> {
+          ZonePoint mouse =
+              new ScreenPoint(e.getX(), e.getY())
+                  .convertToZone(renderer.getViewModel().getZoneScale());
+          ct.setDirection(
+              RadiusTemplate.Direction.findDirection(mouse.x, mouse.y, vertex.x, vertex.y));
+        }
+        default -> {
+          /* Nothing special to do. */
+        }
       }
-      if (templateType.equals("ConeTemplate")) {
-        ZonePoint mouse =
-            new ScreenPoint(e.getX(), e.getY())
-                .convertToZone(renderer.getViewModel().getZoneScale());
-        ((ConeTemplate) at)
-            .setDirection(
-                RadiusTemplate.Direction.findDirection(mouse.x, mouse.y, vertex.x, vertex.y));
-      }
-
-      // ALT -> Change the Path Vertex if only one drawing selected
     } else if (selectedDrawableIdSet.size() == 1 && e.isAltDown()) {
+      // ALT -> Change the Path Vertex if only one drawing selected
 
       // Move just pathVertex (if applicable)
       ZonePoint pathVertex = getTemplatePathVertex(at);
