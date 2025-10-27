@@ -15,7 +15,6 @@
 package net.rptools.maptool.client.tool.texttool;
 
 import java.awt.Cursor;
-import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -29,15 +28,17 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
-import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.swing.AbeillePanel;
 import net.rptools.maptool.client.swing.ColorWell;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.tool.DefaultTool;
+import net.rptools.maptool.client.ui.theme.Borders;
 import net.rptools.maptool.client.ui.zone.ZoneOverlay;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSetBuilder;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Border;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Label;
 import net.rptools.maptool.model.ZonePoint;
@@ -91,13 +92,8 @@ public class TextTool extends DefaultTool implements ZoneOverlay {
     return "tool.label.instructions";
   }
 
-  /**
-   * Paints the overlay for the given ZoneRenderer using the provided Graphics2D object.
-   *
-   * @param renderer the ZoneRenderer object used to render the zone
-   * @param g the Graphics2D object used for rendering
-   */
-  public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
+  @Override
+  public void compositeOverlay(InstructionSetBuilder builder) {
     if (selectedLabel == null) {
       return;
     }
@@ -107,14 +103,15 @@ public class TextTool extends DefaultTool implements ZoneOverlay {
         .getLabelLocation(selectedLabel.getId())
         .ifPresent(
             location -> {
-              var bounds2D = location.bounds();
+              var screenBounds = location.bounds();
+              var worldBounds = builder.getViewport().zoneScale().toWorldSpace(screenBounds);
               var bounds =
                   new Rectangle(
-                      (int) bounds2D.getX(),
-                      (int) bounds2D.getY(),
-                      (int) bounds2D.getWidth(),
-                      (int) bounds2D.getHeight());
-              AppStyle.selectedBorder.paintWithin(g, bounds);
+                      (int) worldBounds.getX(),
+                      (int) worldBounds.getY(),
+                      (int) worldBounds.getWidth(),
+                      (int) worldBounds.getHeight());
+              builder.add(new Border(Borders.RED, bounds));
             });
   }
 
