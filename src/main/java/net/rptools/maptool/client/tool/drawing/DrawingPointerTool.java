@@ -807,20 +807,13 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
   }
 
   /**
-   * Determines whether a given {@link DrawnElement} or {@link Drawable} is an {@link
-   * AbstractTemplate} or not.
+   * Determines whether a given {@link DrawnElement} is an {@link AbstractTemplate} or not.
    *
-   * @param object The object to assess whether it is a template or not.
+   * @param de The object to assess whether it is a template or not.
    * @return A boolean true or false value.
    */
-  private boolean isTemplate(Object object) {
-    if (object instanceof DrawnElement de) {
-      return de.getDrawable() instanceof AbstractTemplate;
-    } else if (object instanceof Drawable d) {
-      return d instanceof AbstractTemplate;
-    } else {
-      return false;
-    }
+  private boolean isTemplate(DrawnElement de) {
+    return de != null && de.getDrawable() instanceof AbstractTemplate;
   }
 
   /**
