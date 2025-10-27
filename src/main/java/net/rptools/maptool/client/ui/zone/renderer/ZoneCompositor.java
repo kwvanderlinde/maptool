@@ -399,8 +399,6 @@ public class ZoneCompositor {
       }
     }
 
-    // Continuous rendering
-    viewModel.repaintNeeded();
     return new InstructionSet(viewport, ImmutableList.copyOf(instructions), clips);
   }
 
