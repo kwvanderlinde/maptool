@@ -29,6 +29,10 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.swing.TopologyModeSelectionPanel;
 import net.rptools.maptool.client.ui.zone.ZoneOverlay;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSetBuilder;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.Paint;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Fill;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Stroke;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
 
@@ -156,6 +160,37 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
   }
 
   @Override
+  public void compositeOverlay(InstructionSetBuilder builder) {
+    maskOverlay.compositeOverlay(builder);
+
+    if (state != null) {
+      var result = strategy.getShape(state, currentPoint, centerOnOrigin, false);
+      if (result != null) {
+        var stroke = getLineStroke();
+        var color = isEraser() ? AppStyle.topologyRemoveColor : AppStyle.topologyAddColor;
+        color = new Color(color.getRGB(), false);
+
+        if (!isFilled || isLinearTool()) {
+          // Render as a thick line.
+          builder.add(new Stroke(result.shape(), Paint.of(color), stroke, 0.5));
+        } else {
+          // Render as an area with a thin border.
+          builder.add(
+              new Stroke(
+                  result.shape(),
+                  Paint.of(color),
+                  new BasicStroke(
+                      1 / (float) builder.getViewport().zoneScale().getScale(),
+                      BasicStroke.CAP_BUTT,
+                      BasicStroke.JOIN_MITER),
+                  1.));
+          builder.add(new Fill(result.shape(), Paint.of(color), 0.5));
+        }
+      }
+    }
+  }
+
+  @Override
   public void mouseDragged(MouseEvent e) {
     if (state == null) {
       // We're not doing anything, so delegate to default behaviour.
@@ -257,6 +292,52 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
       g2.fill(zone.getMaskTopology(Zone.TopologyType.COVER_VBL));
 
       g2.dispose();
+    }
+
+    @Override
+    public void compositeOverlay(InstructionSetBuilder builder) {
+      var zone = builder.getZone();
+      var tokenMasks = zone.getTokenMaskTopologies(null);
+
+      var tokenMblPaint = Paint.ofRgb888(AppStyle.tokenMblColor.getRGB());
+      for (var topology : tokenMasks.getOrDefault(Zone.TopologyType.MBL, List.of())) {
+        builder.add(new Fill(topology, tokenMblPaint, 0.5));
+      }
+
+      var tokenWallVblPaint = Paint.ofRgb888(AppStyle.tokenTopologyColor.getRGB());
+      for (var topology : tokenMasks.getOrDefault(Zone.TopologyType.WALL_VBL, List.of())) {
+        builder.add(new Fill(topology, tokenWallVblPaint, 0.5));
+      }
+
+      var tokenHillVblPaint = Paint.ofRgb888(AppStyle.tokenHillVblColor.getRGB());
+      for (var topology : tokenMasks.getOrDefault(Zone.TopologyType.HILL_VBL, List.of())) {
+        builder.add(new Fill(topology, tokenHillVblPaint, 0.5));
+      }
+
+      var tokenPitVblPaint = Paint.ofRgb888(AppStyle.tokenPitVblColor.getRGB());
+      for (var topology : tokenMasks.getOrDefault(Zone.TopologyType.PIT_VBL, List.of())) {
+        builder.add(new Fill(topology, tokenPitVblPaint, 0.5));
+      }
+
+      var tokenCoverVblPaint = Paint.ofRgb888(AppStyle.tokenCoverVblColor.getRGB());
+      for (var topology : tokenMasks.getOrDefault(Zone.TopologyType.COVER_VBL, List.of())) {
+        builder.add(new Fill(topology, tokenCoverVblPaint, 0.5));
+      }
+
+      var mblPaint = Paint.ofRgb888(AppStyle.topologyTerrainColor.getRGB());
+      builder.add(new Fill(zone.getMaskTopology(Zone.TopologyType.MBL), mblPaint, 0.5));
+
+      var wallVblPaint = Paint.ofRgb888(AppStyle.topologyColor.getRGB());
+      builder.add(new Fill(zone.getMaskTopology(Zone.TopologyType.WALL_VBL), wallVblPaint, 0.5));
+
+      var hillVblPaint = Paint.ofRgb888(AppStyle.hillVblColor.getRGB());
+      builder.add(new Fill(zone.getMaskTopology(Zone.TopologyType.HILL_VBL), hillVblPaint, 0.5));
+
+      var pitVblPaint = Paint.ofRgb888(AppStyle.pitVblColor.getRGB());
+      builder.add(new Fill(zone.getMaskTopology(Zone.TopologyType.PIT_VBL), pitVblPaint, 0.5));
+
+      var coverVblPaint = Paint.ofRgb888(AppStyle.coverVblColor.getRGB());
+      builder.add(new Fill(zone.getMaskTopology(Zone.TopologyType.COVER_VBL), coverVblPaint, 0.5));
     }
   }
 }
