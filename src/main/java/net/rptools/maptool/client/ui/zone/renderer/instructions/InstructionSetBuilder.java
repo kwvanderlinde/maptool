@@ -15,21 +15,40 @@
 package net.rptools.maptool.client.ui.zone.renderer.instructions;
 
 import java.awt.BasicStroke;
+import java.awt.Canvas;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.geom.Area;
+import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
+import javax.swing.SwingUtilities;
 import net.rptools.lib.CodeTimer;
+import net.rptools.maptool.client.AppState;
+import net.rptools.maptool.client.DeveloperOptions;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.tool.drawing.Measurement;
+import net.rptools.maptool.client.ui.theme.Images;
 import net.rptools.maptool.client.ui.zone.renderer.LabelLocation;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Text;
+import net.rptools.maptool.model.AbstractPoint;
+import net.rptools.maptool.model.CellPoint;
+import net.rptools.maptool.model.GridlessGrid;
+import net.rptools.maptool.model.HexGridHorizontal;
+import net.rptools.maptool.model.HexGridVertical;
+import net.rptools.maptool.model.IsometricGrid;
+import net.rptools.maptool.model.Path;
+import net.rptools.maptool.model.SquareGrid;
+import net.rptools.maptool.model.TokenFootprint;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.AbstractTemplate;
@@ -377,6 +396,242 @@ public class InstructionSetBuilder {
 
   public void addDrawable(Drawable drawable, Pen pen) {
     addDrawnElements(List.of(new DrawnElement(drawable, pen)));
+  }
+
+  public void addPath(Path<? extends AbstractPoint> path, TokenFootprint footprint) {
+    if (path == null) {
+      return;
+    }
+    if (path.getCellPath().isEmpty()) {
+      return;
+    }
+
+    if (path.getCellPath().getFirst() instanceof CellPoint) {
+      addCellPointPath((Path<CellPoint>) path, footprint);
+    } else {
+      addZonePointPath((Path<ZonePoint>) path, footprint);
+    }
+  }
+
+  private void addCellPointPath(Path<CellPoint> path, TokenFootprint footprint) {
+    var timer = CodeTimer.get();
+
+    timer.start("renderPath-1");
+
+    List<CellPoint> cellPath = path.getCellPath();
+
+    var grid = zone.getGrid();
+
+    Set<CellPoint> pathSet = new HashSet<>();
+    List<Point2D> waypointList = new LinkedList<>();
+    for (CellPoint p : cellPath) {
+      pathSet.addAll(footprint.getOccupiedCells(p));
+
+      if (path.isWaypoint(p)) {
+        var bounds = footprint.getBounds(grid, p);
+        waypointList.add(new Point2D.Double(bounds.getCenterX(), bounds.getCenterY()));
+      }
+    }
+    // The first and last point are waypoints, but we don't want to draw those as waypoints.
+    if (waypointList.size() < 2) {
+      waypointList.clear();
+    } else {
+      waypointList.removeLast();
+      waypointList.removeFirst();
+    }
+    timer.stop("renderPath-1");
+
+    timer.start("renderPath-2");
+
+    Images highlight =
+        switch (zone.getGrid()) {
+          case SquareGrid ignored -> Images.GRID_BORDER_SQUARE;
+          case IsometricGrid ignored -> Images.GRID_BORDER_ISOMETRIC;
+          case HexGridHorizontal ignored -> Images.GRID_BORDER_HEX_HORIZONTAL;
+          case HexGridVertical ignored -> Images.GRID_BORDER_HEX;
+          case GridlessGrid ignored -> null;
+          default -> null;
+        };
+    // We don't really expect to end up here for gridless grids, but just in case, say, a token's
+    // last path was for a different grid, let's avoid assuming we have a highlight.
+    if (highlight != null) {
+      // TODO I believe this would be simpler if we instead used `zone.getGrid.getCenterOffset()`.
+      //  That would give a natural location to center the highlights upon.
+
+      for (CellPoint p : pathSet) {
+        var center = zone.getGrid().getCellCenter(p);
+
+        var bounds = new Rectangle2D.Double();
+        bounds.width = grid.getCellWidth();
+        bounds.height = grid.getCellHeight();
+        bounds.x = center.getX() - bounds.width / 2.;
+        bounds.y = center.getY() - bounds.height / 2.;
+
+        add(new RenderInstruction.Icon(highlight, bounds));
+      }
+    }
+    if (AppState.getShowMovementMeasurements()) {
+      for (CellPoint p : cellPath) {
+        var center = zone.getGrid().getCellCenter(p);
+        var distance = p.getDistanceTraveled(zone);
+        var distanceWithoutTerrain = p.getDistanceTraveledWithoutTerrain();
+
+        if (distance <= 0) {
+          continue;
+        }
+
+        // Font size of 12 at grid size 50 is default
+        double fontScale = grid.getSize() / 50.;
+        // 7 pixels at 100% zoom & grid size of 50
+        double padding = 7 * fontScale;
+        // For hexes, bump it a bit toward the center.
+        var isHexGrid = grid.getType().isHex();
+        double paddingX = padding + (isHexGrid ? grid.getCellWidth() / 10. : 0.);
+        double paddingY = padding + (isHexGrid ? grid.getCellHeight() / 10. : 0.);
+
+        var bounds = new Rectangle2D.Double();
+        bounds.width = grid.getCellWidth() - 2 * paddingX;
+        bounds.height = grid.getCellHeight() - 2 * paddingY;
+        bounds.x = center.getX() - bounds.width / 2.;
+        bounds.y = center.getY() - bounds.height / 2.;
+
+        var screenBounds = viewport.zoneScale().toScreenSpace(bounds);
+
+        int fontSize = (int) (viewport.zoneScale().getScale() * 12 * fontScale);
+        String distanceText = NumberFormat.getInstance().format(distance);
+        if (DeveloperOptions.Toggle.ShowAiDebugging.get()) {
+          distanceText += " (" + NumberFormat.getInstance().format(distanceWithoutTerrain) + ")";
+          fontSize = fontSize * 3 / 4;
+        }
+
+        Font font = new Font(Font.DIALOG, Font.BOLD, fontSize);
+
+        var canvas = new Canvas();
+        var fm = canvas.getFontMetrics(font);
+        int textWidth = SwingUtilities.computeStringWidth(fm, distanceText);
+        int textHeight = fm.getHeight();
+
+        // Text is aligned to the right, with the baseline aligned with the bottom.
+        // Add the descent is required to get the baseline rather than the lowest text point on
+        // the bottom of the bounds.
+        var textBounds =
+            new Rectangle2D.Double(
+                screenBounds.getMaxX() - textWidth,
+                screenBounds.getMaxY() - textHeight + fm.getDescent(),
+                textWidth,
+                textHeight);
+
+        add(
+            new RenderInstruction.Text(
+                distanceText,
+                font,
+                textBounds,
+                Color.black,
+                RenderInstruction.Text.Decoration.None));
+      }
+    }
+
+    for (Point2D center : waypointList) {
+      var bounds = new Rectangle2D.Double();
+      bounds.width = grid.getCellWidth() / 3.;
+      bounds.height = grid.getCellHeight() / 3.;
+      bounds.x = center.getX() - bounds.width / 2.;
+      bounds.y = center.getY() - bounds.height / 2.;
+
+      add(new RenderInstruction.Icon(Images.ZONE_RENDERER_CELL_WAYPOINT, bounds));
+    }
+
+    // Line path
+    if (grid.getCapabilities().isPathLineSupported()) {
+      var curve2d = new Path2D.Double();
+
+      Point2D previousPoint = null;
+      Point2D previousHalfPoint = null;
+      for (CellPoint p : cellPath) {
+        var bounds = footprint.getBounds(grid, p);
+        var center = new Point2D.Double(bounds.getCenterX(), bounds.getCenterY());
+
+        if (previousPoint == null) {
+          previousPoint = center;
+          continue;
+        }
+
+        var origin = previousPoint;
+        var destination = center;
+
+        var halfX = (origin.getX() + destination.getX()) / 2.;
+        var halfY = (origin.getY() + destination.getY()) / 2.;
+        var halfPoint = new Point2D.Double(halfX, halfY);
+
+        if (previousHalfPoint == null) {
+          curve2d.moveTo(halfPoint.getX(), halfPoint.getY());
+        } else {
+          // Tighten up the circular arc by extending the lines a bit.
+          var p1 =
+              new Point2D.Double(
+                  (previousHalfPoint.getX() + origin.getX()) / 2.,
+                  (previousHalfPoint.getY() + origin.getY()) / 2.);
+          var p2 =
+              new Point2D.Double(
+                  (halfPoint.getX() + origin.getX()) / 2., (halfPoint.getY() + origin.getY()) / 2.);
+          curve2d.lineTo(p1.getX(), p1.getY());
+          curve2d.quadTo(origin.getX(), origin.getY(), p2.getX(), p2.getY());
+          curve2d.lineTo(halfPoint.getX(), halfPoint.getY());
+        }
+
+        previousHalfPoint = halfPoint;
+        previousPoint = center;
+      }
+      add(new RenderInstruction.Stroke(curve2d, Paint.of(Color.blue), new BasicStroke(1.f), 1.));
+    }
+
+    timer.stop("renderPath-2");
+  }
+
+  private void addZonePointPath(Path<ZonePoint> pathZP, TokenFootprint footprint) {
+    var highlight = Color.white;
+    var highlightStroke = new BasicStroke(9);
+    var lineStroke = new BasicStroke(1);
+
+    var grid = zone.getGrid();
+    var footprintBounds = footprint.getBounds(grid);
+    List<ZonePoint> pathList = pathZP.getCellPath();
+
+    Point2D lastPoint = null;
+    for (ZonePoint zp : pathList) {
+      var nextPoint =
+          new Point2D.Double(
+              zp.x + footprintBounds.width * footprint.getScale() / 2d,
+              zp.y + footprintBounds.height * footprint.getScale() / 2d);
+      if (lastPoint == null) {
+        lastPoint = nextPoint;
+        continue;
+      }
+
+      var line = new Line2D.Double(lastPoint, nextPoint);
+      add(new RenderInstruction.Stroke(line, Paint.of(highlight), highlightStroke, 80. / 255.));
+      add(new RenderInstruction.Stroke(line, Paint.of(Color.blue), lineStroke, 1.));
+
+      lastPoint = nextPoint;
+    }
+
+    if (pathList.size() > 2) {
+      var waypoints = pathList.subList(1, pathList.size() - 1);
+      for (var zp : waypoints) {
+        var waypoint =
+            new Point2D.Double(
+                zp.x + footprintBounds.width * footprint.getScale() / 2d,
+                zp.y + footprintBounds.height * footprint.getScale() / 2d);
+
+        var bounds = new Rectangle2D.Double();
+        bounds.width = grid.getCellWidth() / 3.;
+        bounds.height = grid.getCellHeight() / 3.;
+        bounds.x = waypoint.getX() - bounds.width / 2.;
+        bounds.y = waypoint.getY() - bounds.height / 2.;
+
+        add(new RenderInstruction.Icon(Images.ZONE_RENDERER_CELL_WAYPOINT, bounds));
+      }
+    }
   }
 
   public void addLabel(RenderInstruction.Label label) {
