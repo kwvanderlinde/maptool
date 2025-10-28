@@ -22,6 +22,8 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import net.rptools.lib.CodeTimer;
 import net.rptools.maptool.client.ScreenPoint;
@@ -30,6 +32,11 @@ import net.rptools.maptool.client.ui.zone.renderer.LabelLocation;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Text;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
+import net.rptools.maptool.model.drawing.AbstractTemplate;
+import net.rptools.maptool.model.drawing.Drawable;
+import net.rptools.maptool.model.drawing.DrawablesGroup;
+import net.rptools.maptool.model.drawing.DrawnElement;
+import net.rptools.maptool.model.drawing.Pen;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -263,6 +270,113 @@ public class InstructionSetBuilder {
 
   private double isometricDistance(Point2D p1, Point2D p2) {
     return 2 * Math.abs(p2.getY() - p1.getY());
+  }
+
+  private final class DrawableCompositor {
+    private ArrayList<Area> erasedAreas = new ArrayList<>();
+    private ArrayList<Integer> eraseBarrierStack = new ArrayList<>();
+    private ArrayList<DrawnElement> nonErasers = new ArrayList<>();
+    // TODO We don't need indices since we can mutate the areas.
+    private ArrayList<Integer> erasedAreasToUse = new ArrayList<>();
+
+    {
+      erasedAreas.add(new Area());
+      eraseBarrierStack.add(0);
+    }
+
+    public void addElement(DrawnElement element) {
+      var pen = element.getPen();
+      var drawable = element.getDrawable();
+
+      if (drawable instanceof DrawablesGroup group) {
+        // The group does not affect erased areas below it.
+        erasedAreas.add(new Area());
+        eraseBarrierStack.add(erasedAreas.size() - 1);
+
+        for (var element2 : group.getDrawableList()) {
+          addElement(element2);
+        }
+
+        eraseBarrierStack.removeLast();
+      } else {
+        var stroke = pen.getStroke();
+        var area = pen.getBackgroundPaint() == null ? null : drawable.getArea(zone);
+        var border = pen.getPaint() == null ? null : drawable.getBorder(zone);
+
+        if (pen.isEraser()) {
+          // Add it to all previous masks, down to the latest barrier.
+          var combinedArea = area == null ? new Area() : new Area(area);
+          if (border != null) {
+            combinedArea.add(new Area(stroke.createStrokedShape(border)));
+          }
+
+          for (var mask : erasedAreas.subList(eraseBarrierStack.getLast(), erasedAreas.size())) {
+            mask.add(combinedArea);
+          }
+
+          erasedAreas.add(combinedArea);
+        } else {
+          nonErasers.add(element);
+          erasedAreasToUse.add(erasedAreas.size() - 1);
+        }
+      }
+    }
+
+    public void flush() {
+      for (int i = 0; i < nonErasers.size(); ++i) {
+        var element = nonErasers.get(i);
+        var maskIndex = erasedAreasToUse.get(i);
+        var mask = erasedAreas.get(maskIndex);
+
+        var pen = element.getPen();
+        var drawable = element.getDrawable();
+
+        var area = pen.getBackgroundPaint() == null ? null : drawable.getArea(zone);
+        var border = pen.getPaint() == null ? null : drawable.getBorder(zone);
+        var decorations =
+            drawable instanceof AbstractTemplate template
+                ? template.getDecorationsToStroke(zone)
+                : null;
+
+        withCustomClip(
+            mask,
+            true,
+            () -> {
+              if (area != null) {
+                var fillOpacity =
+                    pen.getOpacity()
+                        * (drawable instanceof AbstractTemplate
+                            ? AbstractTemplate.DEFAULT_BG_ALPHA
+                            : 1);
+                add(
+                    new RenderInstruction.Fill(
+                        area, Paint.of(pen.getBackgroundPaint()), fillOpacity));
+              }
+              if (border != null) {
+                add(
+                    new RenderInstruction.Stroke(
+                        border, Paint.of(pen.getPaint()), pen.getStroke(), pen.getOpacity()));
+              }
+              if (decorations != null) {
+                add(
+                    new RenderInstruction.Stroke(
+                        decorations, Paint.of(pen.getPaint()), pen.getStroke(), pen.getOpacity()));
+              }
+            });
+      }
+    }
+  }
+
+  public void addDrawnElements(List<DrawnElement> elements) {
+    var compositor = new DrawableCompositor();
+    for (var element : elements) {
+      compositor.addElement(element);
+    }
+    compositor.flush();
+  }
+
+  public void addDrawable(Drawable drawable, Pen pen) {
+    addDrawnElements(List.of(new DrawnElement(drawable, pen)));
   }
 
   public void addLabel(RenderInstruction.Label label) {
