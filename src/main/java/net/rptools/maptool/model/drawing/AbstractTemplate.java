@@ -18,7 +18,9 @@ import java.awt.AlphaComposite;
 import java.awt.Composite;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.Shape;
 import java.awt.geom.Line2D;
+import javax.annotation.Nullable;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
@@ -144,6 +146,12 @@ public abstract class AbstractTemplate extends AbstractDrawing {
    *-------------------------------------------------------------------------------------------*/
 
   public abstract CursorType getCursorType();
+
+  // TODO List of decorations to stroke.
+  public @Nullable Shape getDecorationsToStroke(Zone zone) {
+    // Most templates don't have a visible vertex.
+    return null;
+  }
 
   /**
    * Set the radius of the template in squares.

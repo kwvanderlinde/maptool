@@ -18,6 +18,7 @@ import com.google.protobuf.StringValue;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.Shape;
 import java.awt.geom.Area;
 import javax.annotation.Nonnull;
 import net.rptools.maptool.model.GUID;
@@ -124,6 +125,10 @@ public class BurstTemplate extends RadiusTemplate {
   @Override
   public @Nonnull Area getArea(Zone zone) {
     return new Area(makeShape(zone));
+  }
+
+  public @Nonnull Shape getDecorationsToStroke(Zone zone) {
+    return makeVertexShape(zone);
   }
 
   @Override
