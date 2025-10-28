@@ -451,7 +451,7 @@ public class ZoneViewModel {
 
   /** Updates {@link #isUsingGdxRenderer}. */
   private void updateIsUsingGdxRenderer() {
-    isUsingGdxRenderer = false; // MapTool.getFrame().getGdxPanel().isVisible();
+    isUsingGdxRenderer = MapTool.getFrame().getGdxPanel().isVisible();
   }
 
   /**
