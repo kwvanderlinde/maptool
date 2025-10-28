@@ -19,6 +19,7 @@ import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Shape;
 import java.awt.geom.Area;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Path2D;
@@ -28,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.server.Mapper;
@@ -149,6 +151,11 @@ public class LineSegment extends AbstractDrawing {
       area = createLineArea();
     }
     return Objects.requireNonNullElseGet(area, Area::new);
+  }
+
+  @Override
+  public @Nullable Shape getBorder(Zone zone) {
+    return null;
   }
 
   @Override

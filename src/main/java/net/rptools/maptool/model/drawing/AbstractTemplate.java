@@ -147,7 +147,6 @@ public abstract class AbstractTemplate extends AbstractDrawing {
 
   public abstract CursorType getCursorType();
 
-  // TODO List of decorations to stroke.
   public @Nullable Shape getDecorationsToStroke(Zone zone) {
     // Most templates don't have a visible vertex.
     return null;
