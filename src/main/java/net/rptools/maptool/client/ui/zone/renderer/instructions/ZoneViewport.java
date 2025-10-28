@@ -14,29 +14,15 @@
  */
 package net.rptools.maptool.client.ui.zone.renderer.instructions;
 
-import com.google.common.collect.ImmutableList;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Stream;
+import java.awt.geom.Rectangle2D;
+import net.rptools.maptool.client.ui.Scale;
 
-public class InstructionBuilder {
-  private final List<RenderInstruction> instructions = new ArrayList<>();
-
-  public InstructionBuilder() {}
-
-  public InstructionSet snapshot() {
-    return new InstructionSet(ImmutableList.copyOf(instructions));
-  }
-
-  public Stream<RenderInstruction> stream() {
-    return instructions.stream();
-  }
-
-  public void reset() {
-    instructions.clear();
-  }
-
-  public void add(RenderInstruction instruction) {
-    instructions.add(instruction);
+public record ZoneViewport(double viewportWidthWorld, double viewportHeightWorld, Scale zoneScale) {
+  public Rectangle2D getWorldSpaceBounds() {
+    return new Rectangle2D.Double(
+        -zoneScale.getOffsetX() / zoneScale.getScale(),
+        -zoneScale.getOffsetY() / zoneScale.getScale(),
+        viewportWidthWorld,
+        viewportHeightWorld);
   }
 }

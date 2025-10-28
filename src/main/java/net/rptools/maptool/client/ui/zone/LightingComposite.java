@@ -172,6 +172,12 @@ public class LightingComposite implements Composite {
    */
   private static final class ScreenBlender implements Blender {
     public void blendRow(int[] dstPixels, int[] srcPixels, int samples) {
+      /*
+       * Note: this implementation does not properly handle alpha. For each colour channel, we act
+       * as though the alpha is 1, or that it is premultiplied (even though in practice it is not).
+       * Meanwhile, we use the destination alpha as the result alpha rather than blending them.
+       */
+
       for (int x = 0; x < samples; ++x) {
         final int srcPixel = srcPixels[x];
         final int dstPixel = dstPixels[x];

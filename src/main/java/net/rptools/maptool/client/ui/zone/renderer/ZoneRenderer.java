@@ -18,6 +18,7 @@ import com.google.common.eventbus.Subscribe;
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -74,8 +75,12 @@ import net.rptools.maptool.client.ui.token.BarTokenOverlay;
 import net.rptools.maptool.client.ui.token.dialog.create.NewTokenDialog;
 import net.rptools.maptool.client.ui.zone.*;
 import net.rptools.maptool.client.ui.zone.gdx.GdxRenderer;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.BlendMode;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.ClipType;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSet;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.Paint;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.ZoneViewport;
 import net.rptools.maptool.client.ui.zone.renderer.tokenRender.FacingArrowRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.tokenRender.TokenRenderer;
 import net.rptools.maptool.client.walker.ZoneWalker;
@@ -97,6 +102,15 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   private static final long serialVersionUID = 3832897780066104884L;
   private static final Logger log = LogManager.getLogger(ZoneRenderer.class);
 
+  private record BufferedLayerState(
+      BufferedImagePool.Handle bufferHandle, BlendMode blendMode, float opacity) {}
+
+  private record LayerState(
+      String name,
+      Graphics2D layerRootG,
+      Graphics2D currentG,
+      @Nullable BufferedLayerState bufferedLayerState) {}
+
   /** DebounceExecutor for throttling repaint() requests. */
   private final DebounceExecutor repaintDebouncer;
 
@@ -116,7 +130,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   /** The ZoneView constructed from the zone. */
   private final ZoneView zoneView;
 
-  private final Map<Zone.Layer, DrawableRenderer> drawableRenderers;
+  private final Map<Layer, DrawableRenderer> drawableRenderers;
   private final List<ZoneOverlay> overlayList = new ArrayList<>();
   private final Map<GUID, SelectionSet> selectionSetMap = new HashMap<>();
 
@@ -154,6 +168,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   private final VisionOverlayRenderer visionOverlayRenderer;
   private final DebugRenderer debugRenderer;
 
+  private final List<LayerState> layerStack = new ArrayList<>();
+
   /**
    * Constructor for the ZoneRenderer from a zone.
    *
@@ -170,7 +186,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     drawableRenderers =
         CollectionUtil.newFilledEnumMap(
-            Zone.Layer.class, layer -> new PartitionedDrawableRenderer(zone));
+            Layer.class, layer -> new PartitionedDrawableRenderer(zone));
 
     this.compositor = new ZoneCompositor(this);
 
@@ -776,8 +792,11 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    * @param instructionSet The instructions from the compositor that need to be rendered.
    */
   private void renderZoneInternal(Graphics2D g2d, InstructionSet instructionSet) {
+    final var timer = CodeTimer.get();
+
     g2d = (Graphics2D) g2d.create();
 
+    var viewport = instructionSet.viewport();
     Rectangle viewRect = new Rectangle(getSize().width, getSize().height);
 
     g2d.setFont(AppStyle.labelFont);
@@ -791,17 +810,10 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     g2d.setPaint(Color.black);
     g2d.fillRect(viewRect.x, viewRect.y, viewRect.width, viewRect.height);
 
-    AffineTransform worldToScreen = viewModel.getZoneScale().toScreenTransform();
-
-    for (var instruction : instructionSet.instructions()) {
-      switch (instruction) {
-        // TODO Remove default case and force full coverage.
-        default -> {
-          log.error(
-              "Unrecognized render instruction {}", instruction.getClass().getCanonicalName());
-        }
-      }
-    }
+    AffineTransform worldToScreen = viewport.zoneScale().toScreenTransform();
+    final Dimension size = getSize();
+    var instructions = instructionSet.instructions();
+    processInstructions(g2d, viewport, instructions, instructionSet.clips());
   }
 
   /**
@@ -814,6 +826,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    *     {@code null} to use the current view.
    */
   private void renderZoneInternal(Graphics2D g2d, PlayerView view) {
+    layerStack.clear();
+
     final var timer = CodeTimer.get();
 
     g2d = (Graphics2D) g2d.create();
@@ -879,7 +893,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       renderBoard(g2d, view);
       timer.stop("board");
     }
-    if (shouldRenderLayer(Zone.Layer.BACKGROUND, view)) {
+    if (shouldRenderLayer(Layer.BACKGROUND, view)) {
       List<DrawnElement> drawables = zone.getDrawnElements(Layer.BACKGROUND);
 
       timer.start("drawableBackground");
@@ -893,7 +907,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         timer.stop("tokensBackground");
       }
     }
-    if (shouldRenderLayer(Zone.Layer.OBJECT, view)) {
+    if (shouldRenderLayer(Layer.OBJECT, view)) {
       // Drawables on the object layer are always below the grid, and...
       List<DrawnElement> drawables = zone.getDrawnElements(Layer.OBJECT);
 
@@ -906,7 +920,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     gridRenderer.renderGrid(g2d, view);
     timer.stop("grid");
 
-    if (shouldRenderLayer(Zone.Layer.OBJECT, view)) {
+    if (shouldRenderLayer(Layer.OBJECT, view)) {
       // ... Images on the object layer are always ABOVE the grid.
       List<Token> stamps = zone.getTokensOnLayer(Layer.OBJECT, false);
       if (!stamps.isEmpty()) {
@@ -915,7 +929,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         timer.stop("tokensStamp");
       }
     }
-    if (shouldRenderLayer(Zone.Layer.TOKEN, view)) {
+    if (shouldRenderLayer(Layer.TOKEN, view)) {
       this.lightsRenderer.renderLights(g2d, view);
       this.lumensRenderer.render(g2d, view);
       this.lightsRenderer.renderAuras(g2d, view);
@@ -944,14 +958,14 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
      *   <li>Render Token-layer tokens
      * </ol>
      */
-    if (shouldRenderLayer(Zone.Layer.TOKEN, view)) {
+    if (shouldRenderLayer(Layer.TOKEN, view)) {
       List<DrawnElement> drawables = zone.getDrawnElements(Layer.TOKEN);
 
       timer.start("drawableTokens");
       renderDrawableOverlay(g2d, drawableRenderers.get(Layer.TOKEN), view, drawables);
       timer.stop("drawableTokens");
 
-      if (shouldRenderLayer(Zone.Layer.GM, view)) {
+      if (shouldRenderLayer(Layer.GM, view)) {
         drawables = zone.getDrawnElements(Layer.GM);
 
         timer.start("drawableGM");
@@ -983,7 +997,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     this.fogRenderer.render(g2d, view);
 
-    if (shouldRenderLayer(Zone.Layer.TOKEN, view)) {
+    if (shouldRenderLayer(Layer.TOKEN, view)) {
       // Jamz: If there is fog or vision we may need to re-render vision-blocking type tokens
       // For example. this allows a "door" stamp to block vision but still allow you to see the
       // door.
@@ -1041,9 +1055,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     timer.stop("renderCoordinates");
 
     timer.start("lightSourceIconOverlay.paintOverlay");
-    if (shouldRenderLayer(Zone.Layer.TOKEN, view)
-        && view.isGMView()
-        && AppState.isShowLightSources()) {
+    if (shouldRenderLayer(Layer.TOKEN, view) && view.isGMView() && AppState.isShowLightSources()) {
       lightSourceIconOverlay.paintOverlay(this, g2d);
     }
     timer.stop("lightSourceIconOverlay.paintOverlay");
@@ -1052,29 +1064,167 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   }
 
   private java.awt.Paint resolveAwtPaint(
-      Paint paint, double offsetX, double offsetY, double scale, ImageObserver... observers) {
-    return switch (paint) {
-      case Paint.Color color -> {
-        yield new Color(color.argb8888(), true);
-      }
-      case Paint.Texture texture -> {
-        BufferedImage image = ImageManager.getImage(texture.assetId(), observers);
-        if (image == ImageManager.TRANSFERING_IMAGE) {
-          log.warn("Paint asset://{} not resolved", texture.assetId());
+      String layerName,
+      Paint paint,
+      double offsetX,
+      double offsetY,
+      double scale,
+      ImageObserver... observers) {
+    var timer = CodeTimer.get();
+    timer.start("%s-resolvePaint", layerName);
+    try {
+      return switch (paint) {
+        case Paint.Color color -> {
+          yield new Color(color.argb8888(), true);
         }
-        yield new TexturePaint(
-            image,
-            new Rectangle2D.Double(
-                offsetX,
-                offsetY,
-                image.getWidth() * scale * texture.imageScale(),
-                image.getHeight() * scale * texture.imageScale()));
-      }
-    };
+        case Paint.Texture texture -> {
+          BufferedImage image = ImageManager.getImage(texture.assetId(), observers);
+          if (image == ImageManager.TRANSFERING_IMAGE) {
+            log.warn("Paint asset://{} not resolved", texture.assetId());
+          }
+          yield new TexturePaint(
+              image,
+              new Rectangle2D.Double(
+                  offsetX,
+                  offsetY,
+                  image.getWidth() * scale * texture.imageScale(),
+                  image.getHeight() * scale * texture.imageScale()));
+        }
+      };
+    } finally {
+      timer.stop("%s-resolvePaint", layerName);
+    }
   }
 
-  private java.awt.Paint resolveAwtPaint(Paint paint, ImageObserver... observers) {
-    return resolveAwtPaint(paint, 0, 0, 1, observers);
+  private java.awt.Paint resolveAwtPaint(
+      String layerName, Paint paint, ImageObserver... observers) {
+    return resolveAwtPaint(layerName, paint, 0, 0, 1, observers);
+  }
+
+  private void processInstructions(
+      Graphics2D rootG,
+      ZoneViewport viewport,
+      List<RenderInstruction> instructions,
+      Map<ClipType, Area> clips) {
+    layerStack.clear();
+
+    var timer = CodeTimer.get();
+    timer.increment("instructions", instructions.size(), new Object[0]);
+
+    AffineTransform worldToScreen = viewport.zoneScale().toScreenTransform();
+
+    final Dimension size = getSize();
+    LayerState currentLayer = new LayerState("<root>", rootG, (Graphics2D) rootG.create(), null);
+    for (var instruction : instructions) {
+      final var timerLayer = currentLayer.name;
+      timer.increment("instructions-%s", 1, instruction.getClass().getCanonicalName());
+      timer.start("layer-%s[%s]", timerLayer, instruction);
+
+      switch (instruction) {
+        case RenderInstruction.Meta.StartBufferedLayer(
+            String layerName,
+            ClipType clipType,
+            BlendMode blendMode,
+            double opacity) -> {
+          timer.increment("layer-%s-render", 1, layerName);
+          timer.start("layer-%s-render", layerName);
+
+          layerStack.add(currentLayer);
+
+          var bufferHandle = tempBufferPool.acquire();
+          var buffer = bufferHandle.get();
+          var layerRootG = buffer.createGraphics();
+          layerRootG.setComposite(AlphaComposite.SrcOver);
+          currentLayer =
+              new LayerState(
+                  layerName,
+                  layerRootG,
+                  (Graphics2D) layerRootG.create(),
+                  new BufferedLayerState(
+                      //  TODO Switch to a regular pool rather than a precached set.
+                      bufferHandle, blendMode, (float) opacity));
+
+          currentLayer.currentG.setClip(new Rectangle(0, 0, buffer.getWidth(), buffer.getHeight()));
+
+          var clip = clips.get(clipType);
+          if (clip != null) {
+            var oldTransform = currentLayer.currentG().getTransform();
+            currentLayer.currentG().transform(worldToScreen);
+            currentLayer.currentG().clip(clip);
+            currentLayer.currentG().setTransform(oldTransform);
+          }
+        }
+        case RenderInstruction.Meta.StartUnbufferedLayer(String layerName, ClipType clipType) -> {
+          timer.increment("layer-%s-render", 1, layerName);
+          timer.start("layer-%s-render", layerName);
+
+          layerStack.add(currentLayer);
+
+          var layerRootG = (Graphics2D) currentLayer.currentG().create();
+          layerRootG.setComposite(AlphaComposite.SrcOver);
+          currentLayer =
+              new LayerState(layerName, layerRootG, (Graphics2D) layerRootG.create(), null);
+
+          var clip = clips.get(clipType);
+          if (clip != null) {
+            var oldTransform = currentLayer.currentG().getTransform();
+            currentLayer.currentG().transform(worldToScreen);
+            currentLayer.currentG().clip(clip);
+            currentLayer.currentG().setTransform(oldTransform);
+          }
+        }
+        case RenderInstruction.Meta.FinishLayer(String layerName) -> {
+          if (layerStack.isEmpty()) {
+            log.error("Tried to finish layer {}, but there are no layers right now!", layerName);
+            break;
+          }
+
+          if (!currentLayer.name().equals(layerName)) {
+            log.error(
+                "Tried to finish layer {}, but layer {} is still active!",
+                layerName,
+                currentLayer.name());
+            break;
+          }
+          timer.stop("layer-%s-render", layerName);
+          var poppedLayer = currentLayer;
+          currentLayer = layerStack.removeLast();
+
+          poppedLayer.layerRootG().dispose();
+          poppedLayer.currentG().dispose();
+
+          var bufferedLayerState = poppedLayer.bufferedLayerState();
+          if (bufferedLayerState != null) {
+            timer.increment("layer-%s-blit", 1, layerName);
+            timer.start("layer-%s-blit", layerName);
+
+            float layerOpacity = bufferedLayerState.opacity();
+            var blitComposite =
+                switch (bufferedLayerState.blendMode()) {
+                  // TODO Does the Swing renderer need to distinguish between the two alpha cases?
+                  case AlphaSrcOver -> AlphaComposite.SrcOver.derive(layerOpacity);
+                  case StraightAlphaSrcOver -> AlphaComposite.SrcOver.derive(layerOpacity);
+                  case Brighten -> LightingComposite.OverlaidLights;
+                  case SrcOnly -> AlphaComposite.Src.derive(layerOpacity);
+                };
+
+            // Needs to be blended down.
+            var g = (Graphics2D) currentLayer.currentG().create();
+            try {
+              g.setComposite(blitComposite);
+              g.drawImage(bufferedLayerState.bufferHandle().get(), 0, 0, this);
+            } finally {
+              g.dispose();
+            }
+
+            bufferedLayerState.bufferHandle().close();
+            timer.stop("layer-%s-blit", layerName);
+          }
+        }
+      }
+
+      timer.stop("layer-%s[%s]", timerLayer, instruction);
+    }
   }
 
   private void delayRendering(ItemRenderer renderer) {
@@ -1678,7 +1828,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     return list;
   }
 
-  public @Nonnull Zone.Layer getActiveLayer() {
+  public @Nonnull Layer getActiveLayer() {
     return viewModel.getActiveLayer();
   }
 
@@ -1686,7 +1836,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    * Get the token locations for the given layer, creates an empty list if there are no locations
    * for the given layer
    */
-  private List<ZoneViewModel.TokenPosition> getTokenPositions(Zone.Layer layer) {
+  private List<ZoneViewModel.TokenPosition> getTokenPositions(Layer layer) {
     return viewModel.getTokenPositionsForLayer(layer);
   }
 
@@ -2365,7 +2515,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         Token tokenNameUsed = zone.getTokenByName(token.getName());
         token.setName(MapToolUtil.nextTokenId(zone, token, tokenNameUsed != null));
 
-        if (getActiveLayer() == Zone.Layer.TOKEN) {
+        if (getActiveLayer() == Layer.TOKEN) {
           if (AppPreferences.showDialogOnNewToken.get() || showDialog) {
             NewTokenDialog dialog = new NewTokenDialog(token, dropPoint.x, dropPoint.y);
             if (dialog.showDialog().equals(GenericDialog.DENY)) {
@@ -2608,7 +2758,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    * by using an "if (false)" around the code block.
    *
    * @param cursor the cursor to set.
-   * @see java.awt.Component#setCursor(java.awt.Cursor)
+   * @see Component#setCursor(Cursor)
    */
   @SuppressWarnings("unused")
   @Override

@@ -22,12 +22,16 @@ public record BlendFunction(
   public static final BlendFunction PREMULTIPLIED_ALPHA_SRC_OVER =
       new BlendFunction(GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
+  public static final BlendFunction CLEAR =
+      new BlendFunction(GL20.GL_ZERO, GL20.GL_ZERO, GL20.GL_ZERO, GL20.GL_ZERO);
+
   public static final BlendFunction ALPHA_SRC_OVER =
       new BlendFunction(
           GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
   public static final BlendFunction SCREEN =
-      new BlendFunction(GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_COLOR, GL20.GL_ONE, GL20.GL_ZERO);
+      new BlendFunction(
+          GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_COLOR, GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
   public static final BlendFunction SRC_ONLY = new BlendFunction(GL20.GL_ONE, GL20.GL_ZERO);
 

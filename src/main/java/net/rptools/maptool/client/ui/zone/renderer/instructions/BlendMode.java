@@ -14,14 +14,13 @@
  */
 package net.rptools.maptool.client.ui.zone.renderer.instructions;
 
-public sealed interface RenderInstruction {
-  interface Meta {
-    record StartUnbufferedLayer(String layerName, ClipType clipType) implements RenderInstruction {}
+public enum BlendMode {
+  // TODO Use more semantic names. "Brighten" is good, but "StraightAlphaSrcOver" should become
+  //  "OverlaidLights" so the renderers can pick whether they ought to use premultiplied or straight
+  //  alpha compositing.
 
-    record StartBufferedLayer(
-        String layerName, ClipType clipType, BlendMode blendMode, double opacity)
-        implements RenderInstruction {}
-
-    record FinishLayer(String layerName) implements RenderInstruction {}
-  }
+  AlphaSrcOver,
+  StraightAlphaSrcOver,
+  Brighten,
+  SrcOnly;
 }

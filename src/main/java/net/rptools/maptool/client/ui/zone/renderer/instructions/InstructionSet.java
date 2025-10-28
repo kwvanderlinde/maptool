@@ -14,7 +14,9 @@
  */
 package net.rptools.maptool.client.ui.zone.renderer.instructions;
 
+import java.awt.geom.Area;
 import java.util.List;
+import java.util.Map;
 
-// TODO Add different clip types (exposed clip, visible clip).
-public record InstructionSet(List<RenderInstruction> instructions) {}
+public record InstructionSet(
+    ZoneViewport viewport, List<RenderInstruction> instructions, Map<ClipType, Area> clips) {}

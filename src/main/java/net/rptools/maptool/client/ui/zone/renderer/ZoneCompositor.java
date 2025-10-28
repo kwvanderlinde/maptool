@@ -14,10 +14,19 @@
  */
 package net.rptools.maptool.client.ui.zone.renderer;
 
+import com.google.common.collect.ImmutableList;
+import java.awt.geom.Area;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
 import net.rptools.maptool.client.ui.zone.PlayerView;
+import net.rptools.maptool.client.ui.zone.ZoneView;
 import net.rptools.maptool.client.ui.zone.ZoneViewModel;
-import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionBuilder;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.ClipType;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSet;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSetBuilder;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.ZoneViewport;
 import net.rptools.maptool.model.Zone;
 
 /**
@@ -26,13 +35,16 @@ import net.rptools.maptool.model.Zone;
  * on screen?"
  */
 public class ZoneCompositor {
+  private final List<RenderInstruction> instructions = new ArrayList<>();
   private final ZoneRenderer renderer;
   private final ZoneViewModel viewModel;
+  private final ZoneView zoneView;
   private final Zone zone;
 
   public ZoneCompositor(ZoneRenderer renderer) {
     this.renderer = renderer;
     this.viewModel = renderer.getViewModel();
+    this.zoneView = renderer.getZoneView();
     this.zone = renderer.getZone();
   }
 
@@ -41,11 +53,31 @@ public class ZoneCompositor {
    * @return
    */
   public InstructionSet produceInstructions(PlayerView view) {
-    // TODO Actually keep the same builder around each time, clearing in between.
-    //  Would save on allocations.
+    instructions.clear();
+
+    var visibility = renderer.getZoneView().getVisibility(view);
+    var clips = new EnumMap<ClipType, Area>(ClipType.class);
+    if (!view.isGMView()) {
+      clips.put(ClipType.NoClipping, null);
+      clips.put(ClipType.VisibleArea, visibility.visibleArea());
+      if (zone.hasFog()) {
+        clips.put(ClipType.ExposedArea, visibility.exposedArea());
+        clips.put(ClipType.ClearArea, visibility.clearArea());
+      } else {
+        clips.put(ClipType.ExposedArea, null);
+        clips.put(ClipType.ClearArea, zoneView.isUsingVision() ? visibility.visibleArea() : null);
+      }
+    }
+
     // TODO Respect bounds. E.g., don't add drawings or tokens that are completely outside of the
     //  bounds.
-    var instructionBuilder = new InstructionBuilder();
-    return instructionBuilder.snapshot();
+    var zoneScale = viewModel.getZoneScale();
+    var viewportRect = viewModel.getViewport();
+    var viewport = new ZoneViewport(viewportRect.getWidth(), viewportRect.getHeight(), zoneScale);
+    var builder = new InstructionSetBuilder(instructions::add, renderer.getZone(), viewport);
+
+    var worldBounds = viewport.getWorldSpaceBounds();
+
+    return new InstructionSet(viewport, ImmutableList.copyOf(instructions), clips);
   }
 }

@@ -14,14 +14,9 @@
  */
 package net.rptools.maptool.client.ui.zone.renderer.instructions;
 
-public sealed interface RenderInstruction {
-  interface Meta {
-    record StartUnbufferedLayer(String layerName, ClipType clipType) implements RenderInstruction {}
-
-    record StartBufferedLayer(
-        String layerName, ClipType clipType, BlendMode blendMode, double opacity)
-        implements RenderInstruction {}
-
-    record FinishLayer(String layerName) implements RenderInstruction {}
-  }
+public enum ClipType {
+  NoClipping,
+  ClearArea,
+  VisibleArea,
+  ExposedArea;
 }

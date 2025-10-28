@@ -29,6 +29,7 @@ import com.badlogic.gdx.math.*;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.utils.TiledDrawable;
 import com.badlogic.gdx.utils.FloatArray;
+import com.badlogic.gdx.utils.Pool;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.google.common.eventbus.Subscribe;
 import java.awt.*;
@@ -42,9 +43,11 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.Deflater;
+import javax.annotation.Nullable;
 import javax.swing.*;
 import net.rptools.lib.AwtUtil;
 import net.rptools.lib.CodeTimer;
+import net.rptools.lib.gdx.ConfigurablePool;
 import net.rptools.maptool.client.*;
 import net.rptools.maptool.client.events.ZoneActivated;
 import net.rptools.maptool.client.swing.ImageBorder;
@@ -65,8 +68,12 @@ import net.rptools.maptool.client.ui.zone.gdx.label.LabelRenderer;
 import net.rptools.maptool.client.ui.zone.gdx.label.TextRenderer;
 import net.rptools.maptool.client.ui.zone.gdx.label.TokenLabelRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.SelectionSet;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.BlendMode;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.ClipType;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSet;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.Paint;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.ZoneViewport;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
@@ -93,7 +100,7 @@ import space.earlygrey.shapedrawer.ShapeDrawer;
 public class GdxRenderer extends ApplicationAdapter {
 
   private static final Logger log = LogManager.getLogger(GdxRenderer.class);
-  private static final int BLENDING_TEXTURE_INDEX = 1;
+  private static final int BLENDING_TEXTURE_INDEX = 2;
 
   public static final float POINTS_PER_BEZIER = 10f;
   private static GdxRenderer _instance;
@@ -108,6 +115,47 @@ public class GdxRenderer extends ApplicationAdapter {
       TextureRegion bottomRight,
       TextureRegion right) {}
 
+  private static final class LayerState {
+    public final String name;
+    public final BlendMode blendMode;
+    public final ClipType clipType;
+    public final double opacity;
+    public BlendFunction blendFunction;
+    public FrameBuffer buffer;
+    // TODO Make nullable to indicate whether a custom clip has been set. We'll still have it
+    //  illegal to set more than one custom clip on a layer at one time.
+    public @Nullable FrameBuffer maskBuffer;
+
+    public LayerState(
+        String name,
+        ClipType clipType,
+        BlendMode blendMode,
+        double opacity,
+        BlendFunction blendFunction,
+        FrameBuffer buffer) {
+      this.name = name;
+      this.clipType = clipType;
+      this.blendMode = blendMode;
+      this.opacity = opacity;
+
+      this.blendFunction = blendFunction;
+      this.buffer = buffer;
+      this.maskBuffer = null;
+    }
+
+    public void begin(Batch batch) {
+      blendFunction.applyToBatch(batch);
+      buffer.begin();
+    }
+
+    public void end(Batch batch) {
+      batch.flush();
+      // createScreenshot(layerName);
+      buffer.end();
+      BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER.applyToBatch(batch);
+    }
+  }
+
   // renderFog
   private final String ATLAS = "net/rptools/maptool/client/maptool.atlas";
   private final String FONT_NORMAL = "normalFont.ttf";
@@ -116,7 +164,8 @@ public class GdxRenderer extends ApplicationAdapter {
   private final String font = "NotoSansSymbols";
 
   public AtomicReference<InstructionSet> renderInstructionSet =
-      new AtomicReference<>(new InstructionSet(List.of()));
+      new AtomicReference<>(
+          new InstructionSet(new ZoneViewport(1, 1, new Scale()), List.of(), Map.of()));
 
   private ZoneViewModel viewModel;
 
@@ -128,6 +177,7 @@ public class GdxRenderer extends ApplicationAdapter {
 
   // zone specific resources
   private ZoneCache zoneCache;
+  private ZoneViewport zoneViewport;
   private int offsetX = 0;
   private int offsetY = 0;
   private float zoom = 1.0f;
@@ -136,6 +186,7 @@ public class GdxRenderer extends ApplicationAdapter {
   private boolean showAstarDebugging = false;
 
   private ShaderProgram environmentalLightingShader;
+  private LayerShader layerShader;
 
   // general resources
   private OrthographicCamera cam;
@@ -167,6 +218,11 @@ public class GdxRenderer extends ApplicationAdapter {
    */
   private FrameBuffer spareBuffer;
 
+  private Pool<FrameBuffer> frameBufferPool;
+  private Pool<FrameBuffer> maskBufferPool;
+
+  private final Map<ClipType, FrameBuffer> clipBuffers = new EnumMap<>(ClipType.class);
+
   private com.badlogic.gdx.assets.AssetManager manager;
 
   private TextureAtlas atlas;
@@ -192,6 +248,8 @@ public class GdxRenderer extends ApplicationAdapter {
 
   private Texture whitePixel;
   private Texture clearPixel;
+
+  private final List<LayerState> layerStack = new ArrayList<>();
 
   // temorary objects. Stored here to avoid garbage collection;
   private final Vector3 tmpWorldCoord = new Vector3();
@@ -231,6 +289,68 @@ public class GdxRenderer extends ApplicationAdapter {
         boldFont = null;
       }
 
+      frameBufferPool =
+          new ConfigurablePool<>(
+              /*
+               * Our layer blending requires three buffers (source layer, destination layer, spare
+               * buffer. Drawing groups also require extra buffers (should only be one, but the
+               * model is recursive). So while we should only require 4, we'll be a bit loose on the
+               * maximum to avoid excessive frame buffer allocations.
+               */
+              3,
+              10,
+              new ConfigurablePool.PoolSupplier<>() {
+                @Override
+                public FrameBuffer get() {
+                  CodeTimer.get().increment("frame-buffer-get");
+
+                  return new FrameBuffer(Pixmap.Format.RGBA8888, width, height, false);
+                }
+
+                @Override
+                public void reset(FrameBuffer object) {
+                  CodeTimer.get().increment("frame-buffer-reset");
+
+                  // Nothing to do for resets.
+                }
+
+                @Override
+                public void discard(FrameBuffer fbo) {
+                  CodeTimer.get().increment("frame-buffer-discard");
+
+                  // Need to release the native resources.
+                  fbo.dispose();
+                }
+              });
+      maskBufferPool =
+          new ConfigurablePool<>(
+              // Four clip types, plus a typical three buffers being swapped, plus wiggle room.
+              7,
+              14,
+              new ConfigurablePool.PoolSupplier<>() {
+                @Override
+                public FrameBuffer get() {
+                  CodeTimer.get().increment("mask-buffer-get");
+
+                  return new FrameBuffer(Pixmap.Format.Alpha, width, height, false);
+                }
+
+                @Override
+                public void reset(FrameBuffer object) {
+                  CodeTimer.get().increment("mask-buffer-reset");
+
+                  // Nothing to do for resets.
+                }
+
+                @Override
+                public void discard(FrameBuffer fbo) {
+                  CodeTimer.get().increment("mask-buffer-discard");
+
+                  // Need to release the native resources.
+                  fbo.dispose();
+                }
+              });
+
       environmentalLightingShader =
           new ShaderProgram(
               Gdx.files.classpath(
@@ -255,6 +375,8 @@ public class GdxRenderer extends ApplicationAdapter {
 
       batch = new PolygonSpriteBatch();
       batch.enableBlending();
+
+      layerShader = new LayerShader(batch, whitePixel, clearPixel);
 
       manager = new com.badlogic.gdx.assets.AssetManager();
       {
@@ -313,6 +435,7 @@ public class GdxRenderer extends ApplicationAdapter {
   public void dispose() {
     try {
       environmentalLightingShader.dispose();
+      layerShader.dispose();
       manager.dispose();
       batch.dispose();
       if (zoneCache != null) {
@@ -348,6 +471,17 @@ public class GdxRenderer extends ApplicationAdapter {
       spareBuffer.dispose();
       spareBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, false);
 
+      for (var entry : clipBuffers.entrySet()) {
+        entry.getValue().dispose();
+      }
+      for (var clipType : ClipType.values()) {
+        clipBuffers.put(clipType, new FrameBuffer(Pixmap.Format.Alpha, width, height, false));
+      }
+
+      // Pooled frame buffers are no longer valid, so discard them all.
+      frameBufferPool.clear();
+      maskBufferPool.clear();
+
       updateCam();
     } catch (Exception e) {
       log.error("Unhandled exception in GdxRenderer::resize()", e);
@@ -370,6 +504,7 @@ public class GdxRenderer extends ApplicationAdapter {
     spareBuffer.begin();
     batch.setShader(shader);
     ScreenUtils.clear(Color.CLEAR);
+    // TODO Does SRC_ONLY even do anything here?
     BlendFunction.SRC_ONLY.applyToBatch(batch);
     try {
       shader.setUniformi("u_dst", BLENDING_TEXTURE_INDEX);
@@ -542,7 +677,7 @@ public class GdxRenderer extends ApplicationAdapter {
 
     if (zoneCache.getZoneRenderer() == null) return;
 
-    setScale(viewModel.getZoneScale());
+    setScale(instructionSet.viewport());
 
     timer.start("paintComponent:createView");
     PlayerView playerView = viewModel.getPlayerView();
@@ -632,27 +767,73 @@ public class GdxRenderer extends ApplicationAdapter {
       // return;
     }
 
-    resultsBuffer.begin();
-    BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER.applyToBatch(batch);
-    ScreenUtils.clear(Color.CLEAR);
+    // Update the clips.
+    batch.setShader(null);
+    // When setting up the clips, we only want the alpha channel preserved.
+    Gdx.gl.glColorMask(false, false, false, true);
+    // Exact color doesn't matter as we're only keeping the alpha channel anyways.
+    var maskColor = Color.WHITE;
+    for (var clipType : ClipType.values()) {
+      var area = instructionSet.clips().get(clipType);
+      if (area == null) {
+        // No need to allocate a buffer for this one.
+        continue;
+      }
 
-    for (var instruction : instructionSet.instructions()) {
-      switch (instruction) {
-        // TODO Remove default case and force full coverage.
-        default -> {
-          log.error(
-              "Unrecognized render instruction {}", instruction.getClass().getCanonicalName());
-        }
+      var clipBuffer = maskBufferPool.obtain();
+      clipBuffers.put(clipType, clipBuffer);
+
+      clipBuffer.begin();
+      try {
+        setProjectionMatrix(cam.combined);
+        ScreenUtils.clear(Color.CLEAR);
+        // Only fill the region inside the clip.
+        BlendFunction.SRC_ONLY.applyToBatch(batch);
+        areaRenderer.setColor(maskColor);
+        areaRenderer.fillArea(batch, area);
+        batch.flush();
+      } finally {
+        clipBuffer.end();
       }
     }
-    if (true) {
-      batch.flush();
-      resultsBuffer.end();
+    // Re-enable full color writing.
+    Gdx.gl.glColorMask(true, true, true, true);
 
-      setProjectionMatrix(hudCam.combined);
-      BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER.applyToBatch(batch);
-      batch.draw(resultsBuffer.getColorBufferTexture(), 0, 0, width, height, 0, 0, 1, 1);
-      setProjectionMatrix(cam.combined);
+    var rootLayer =
+        new LayerState(
+            "<root>",
+            ClipType.NoClipping,
+            BlendMode.AlphaSrcOver,
+            1.,
+            BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER,
+            frameBufferPool.obtain());
+    rootLayer.begin(batch);
+    layerShader.setClipBuffer(
+        rootLayer.maskBuffer == null ? null : rootLayer.maskBuffer.getColorBufferTexture());
+    ScreenUtils.clear(Color.CLEAR);
+
+    processInstructions(rootLayer, instructionSet.instructions());
+
+    rootLayer.buffer.end();
+
+    layerShader.start();
+    setProjectionMatrix(hudCam.combined);
+    BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER.applyToBatch(batch);
+    batch.draw(rootLayer.buffer.getColorBufferTexture(), 0, 0, width, height, 0, 0, 1, 1);
+    batch.flush();
+
+    frameBufferPool.free(rootLayer.buffer);
+    if (rootLayer.maskBuffer != null) {
+      maskBufferPool.free(rootLayer.maskBuffer);
+    }
+    setProjectionMatrix(cam.combined);
+
+    for (var buffer : clipBuffers.values()) {
+      maskBufferPool.free(buffer);
+    }
+    clipBuffers.clear();
+
+    if (true) {
       return;
     }
 
@@ -840,6 +1021,167 @@ public class GdxRenderer extends ApplicationAdapter {
     BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER.applyToBatch(batch);
     batch.draw(resultsBuffer.getColorBufferTexture(), 0, 0, width, height, 0, 0, 1, 1);
     setProjectionMatrix(cam.combined);
+  }
+
+  private void processInstructions(LayerState rootLayer, List<RenderInstruction> instructions) {
+    var timer = CodeTimer.get();
+    timer.increment("instructions", instructions.size(), new Object[0]);
+
+    layerStack.clear();
+    var currentLayer = rootLayer;
+
+    // Use our custom shader, but with no clipping or extra blending.
+    layerShader.start();
+
+    // Most layers will want premultiplied alpha, so just set it here.
+    BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER.applyToBatch(batch);
+
+    for (var instruction : instructions) {
+      final var timerLayer = currentLayer.name;
+      timer.increment("instructions-%s", 1, instruction);
+      timer.start("layer-%s[%s]", timerLayer, instruction);
+
+      setProjectionMatrix(cam.combined);
+
+      switch (instruction) {
+        case RenderInstruction.Meta.StartBufferedLayer(
+            String layerName,
+            ClipType clipType,
+            BlendMode blendMode,
+            double opacity) -> {
+          timer.increment("layer-%s-render", 1, layerName);
+          timer.start("layer-%s-render", layerName);
+
+          layerStack.add(currentLayer);
+          currentLayer.buffer.end();
+
+          currentLayer =
+              new LayerState(
+                  layerName,
+                  clipType,
+                  blendMode,
+                  opacity,
+                  BlendFunction.readFromBatch(batch),
+                  frameBufferPool.obtain());
+          currentLayer.begin(batch);
+          ScreenUtils.clear(Color.CLEAR, true);
+
+          layerShader.start();
+          layerShader.setDestination(null);
+          layerShader.setBlendMode(BlendMode.AlphaSrcOver);
+          layerShader.setOpacity(1.f);
+          layerShader.setClipBuffer(
+              currentLayer.maskBuffer == null
+                  ? null
+                  : currentLayer.maskBuffer.getColorBufferTexture());
+        }
+        case RenderInstruction.Meta.StartUnbufferedLayer(String layerName, ClipType clipType) -> {
+          timer.increment("layer-%s-render", 1, layerName);
+          timer.start("layer-%s-render", layerName);
+
+          layerStack.add(currentLayer);
+          currentLayer.buffer.end();
+
+          currentLayer =
+              new LayerState(
+                  layerName,
+                  clipType,
+                  BlendMode.AlphaSrcOver,
+                  1.,
+                  BlendFunction.readFromBatch(batch),
+                  frameBufferPool.obtain());
+          currentLayer.begin(batch);
+          ScreenUtils.clear(Color.CLEAR, true);
+
+          layerShader.start();
+          layerShader.setDestination(null);
+          layerShader.setBlendMode(BlendMode.AlphaSrcOver);
+          layerShader.setOpacity(1.f);
+          layerShader.setClipBuffer(
+              currentLayer.maskBuffer == null
+                  ? null
+                  : currentLayer.maskBuffer.getColorBufferTexture());
+        }
+        case RenderInstruction.Meta.FinishLayer(String layerName) -> {
+          // TODO We can still blit down if the stack is empty. Just new up a brand new layer state
+          //  (while still warning, of course).
+          if (layerStack.isEmpty()) {
+            log.error("Tried to finish layer {}, but there are no layers right now!", layerName);
+            break;
+          }
+
+          if (!currentLayer.name.equals(layerName)) {
+            log.error(
+                "Tried to finish layer {}, but layer {} is still active!",
+                layerName,
+                currentLayer.name);
+            break;
+          }
+          timer.stop("layer-%s-render", layerName);
+          var poppedLayer = currentLayer;
+          poppedLayer.end(batch);
+
+          currentLayer = layerStack.removeLast();
+
+          timer.increment("layer-%s-blit", 1, layerName);
+          timer.start("layer-%s-blit", layerName);
+          // We want to keep exactly whatever results the shader blended.
+          BlendFunction.SRC_ONLY.applyToBatch(batch);
+          var spareBuffer = frameBufferPool.obtain();
+          {
+            setProjectionMatrix(hudCam.combined);
+
+            spareBuffer.begin();
+            ScreenUtils.clear(Color.RED, true);
+            layerShader.start();
+
+            layerShader.setDestination(currentLayer.buffer.getColorBufferTexture());
+
+            /*TODO With dynamic layers, there are two sources of masks:
+             * 1. The outgoing layer's configured mask.
+             * 2. The parent layer's custom clip.
+             */
+            FrameBuffer clip = clipBuffers.get(poppedLayer.clipType);
+            Texture texture = clip == null ? null : clip.getColorBufferTexture();
+            layerShader.setClipBuffer(texture);
+
+            layerShader.setBlendMode(poppedLayer.blendMode);
+            layerShader.setOpacity((float) poppedLayer.opacity);
+
+            batch.setColor(Color.WHITE);
+            batch.draw(poppedLayer.buffer.getColorBufferTexture(), 0, 0, width, height, 0, 0, 1, 1);
+            batch.flush();
+            timer.stop("layer-%s-blit", layerName);
+
+            timer.start("layer-%s-complete", layerName);
+            // Release old buffers.
+            frameBufferPool.free(poppedLayer.buffer);
+            if (poppedLayer.maskBuffer != null) {
+              maskBufferPool.free(poppedLayer.maskBuffer);
+            }
+            // Swap buffers spare buffer with current layer's back buffer.
+            frameBufferPool.free(currentLayer.buffer);
+            currentLayer.buffer = spareBuffer;
+
+            // spareBuffer, being the new buffer for the now-current layer, must remain active.
+            currentLayer.blendFunction.applyToBatch(batch);
+            layerShader.start();
+            layerShader.setDestination(null);
+            layerShader.setOpacity(1.f);
+            layerShader.setBlendMode(BlendMode.AlphaSrcOver);
+            layerShader.setClipBuffer(
+                currentLayer.maskBuffer == null
+                    ? null
+                    : currentLayer.maskBuffer.getColorBufferTexture());
+            timer.stop("layer-%s-complete", layerName);
+          }
+        }
+      }
+
+      timer.stop("layer-%s[%s]", timerLayer, instruction);
+    }
+
+    batch.flush();
   }
 
   /**
@@ -2243,6 +2585,9 @@ public class GdxRenderer extends ApplicationAdapter {
 
     image.draw(batch);
 
+    // TODO Why not draw the area as Color.WHITE, then use a blending function to composite the
+    //  image
+
     areaRenderer.setColor(Color.CLEAR);
     tmpArea.reset();
     tmpArea.add(bounds);
@@ -2570,14 +2915,15 @@ public class GdxRenderer extends ApplicationAdapter {
         });
   }
 
-  public void setScale(Scale scale) {
+  private void setScale(ZoneViewport scale) {
     if (!initialized) {
       return;
     }
 
-    offsetX = (int) (scale.getOffsetX() * -1);
-    offsetY = (int) (scale.getOffsetY());
-    zoom = (float) (1f / scale.getScale());
+    zoneViewport = scale;
+    offsetX = -scale.zoneScale().getOffsetX();
+    offsetY = scale.zoneScale().getOffsetY();
+    zoom = (float) (1f / scale.zoneScale().getScale());
     updateCam();
   }
 
