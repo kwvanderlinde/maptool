@@ -79,9 +79,6 @@ public class BurstTemplate extends RadiusTemplate {
    * Overridden *Template Methods
    *-------------------------------------------------------------------------------------------*/
 
-  /**
-   * @see net.rptools.maptool.model.drawing.AbstractTemplate#getDistance(int, int)
-   */
   @Override
   public int getDistance(int x, int y) {
     return Math.max(x, y);

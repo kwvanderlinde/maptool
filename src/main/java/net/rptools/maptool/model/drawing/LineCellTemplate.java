@@ -67,22 +67,13 @@ public class LineCellTemplate extends AbstractTemplate {
    * Overridden AbstractTemplate Methods
    *-------------------------------------------------------------------------------------------*/
 
-  /**
-   * @see net.rptools.maptool.model.drawing.AbstractTemplate#paintArea(java.awt.Graphics2D, int,
-   *     int, int, int, int, int)
-   */
   @Override
   protected void paintArea(
       Graphics2D g, int x, int y, int xOff, int yOff, int gridSize, int distance) {
     paintArea(g, xOff, yOff, gridSize, getQuadrant());
   }
 
-  /**
-   * This method is cheating, the distance parameter was replaced with the offset into the path.
-   *
-   * @see net.rptools.maptool.model.drawing.AbstractTemplate#paintBorder(java.awt.Graphics2D, int,
-   *     int, int, int, int, int)
-   */
+  /** This method is cheating, the distance parameter was replaced with the offset into the path. */
   @Override
   protected void paintBorder(
       Graphics2D g, int x, int y, int xOff, int yOff, int gridSize, int pElement) {
@@ -161,18 +152,12 @@ public class LineCellTemplate extends AbstractTemplate {
     } // endfor
   }
 
-  /**
-   * @see net.rptools.maptool.model.drawing.AbstractTemplate#setVertex(ZonePoint)
-   */
   @Override
   public void setVertex(ZonePoint vertex) {
     clearPath();
     super.setVertex(vertex);
   }
 
-  /**
-   * @see net.rptools.maptool.model.drawing.AbstractTemplate#setRadius(int)
-   */
   @Override
   public void setRadius(int squares) {
     if (squares == getRadius()) {

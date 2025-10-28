@@ -20,7 +20,6 @@ import java.util.List;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.swing.SwingUtil;
-import net.rptools.maptool.client.tool.Tool;
 import net.rptools.maptool.model.CellPoint;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.AbstractTemplate;
@@ -45,34 +44,21 @@ public class WallTemplateTool extends BurstTemplateTool {
    * Overridden RadiusTemplateTool methods
    *-------------------------------------------------------------------------------------------*/
 
-  /**
-   * @see net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#createBaseTemplate()
-   */
   @Override
   protected AbstractTemplate createBaseTemplate() {
     return new WallTemplate();
   }
 
-  /**
-   * @see Tool#getTooltip()
-   */
   @Override
   public String getTooltip() {
     return "tool.walltemplate.tooltip";
   }
 
-  /**
-   * @see Tool#getInstructions()
-   */
   @Override
   public String getInstructions() {
     return "tool.walltemplate.instructions";
   }
 
-  /**
-   * @see
-   *     net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#mousePressed(java.awt.event.MouseEvent)
-   */
   @Override
   public void mousePressed(MouseEvent e) {
     if (!painting) return;
@@ -88,10 +74,6 @@ public class WallTemplateTool extends BurstTemplateTool {
     super.mousePressed(e);
   }
 
-  /**
-   * @see
-   *     net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#handleMouseMovement(java.awt.event.MouseEvent)
-   */
   @Override
   protected void handleMouseMovement(MouseEvent e) {
     // Set the anchor
@@ -140,9 +122,6 @@ public class WallTemplateTool extends BurstTemplateTool {
     } // endif
   }
 
-  /**
-   * @see net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#resetTool()
-   */
   @Override
   protected void resetTool() {
     super.resetTool();

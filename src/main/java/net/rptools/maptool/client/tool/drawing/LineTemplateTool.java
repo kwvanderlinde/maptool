@@ -24,7 +24,6 @@ import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.swing.SwingUtil;
-import net.rptools.maptool.client.tool.Tool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.AbstractTemplate;
@@ -61,34 +60,21 @@ public class LineTemplateTool extends RadiusTemplateTool implements PropertyChan
    * Overridden RadiusTemplateTool Methods
    *-------------------------------------------------------------------------------------------*/
 
-  /**
-   * @see net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#getTooltip()
-   */
   @Override
   public String getTooltip() {
     return "tool.linetemplate.tooltip";
   }
 
-  /**
-   * @see Tool#getInstructions()
-   */
   @Override
   public String getInstructions() {
     return "tool.linetemplate.instructions";
   }
 
-  /**
-   * @see net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#createBaseTemplate()
-   */
   @Override
   protected AbstractTemplate createBaseTemplate() {
     return new LineTemplate();
   }
 
-  /**
-   * @see
-   *     net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#resetTool(net.rptools.maptool.model.ZonePoint)
-   */
   @Override
   protected void resetTool(ZonePoint aVertex) {
     super.resetTool(aVertex);
@@ -100,10 +86,6 @@ public class LineTemplateTool extends RadiusTemplateTool implements PropertyChan
    * Overridden AbstractDrawingTool Methods
    *-------------------------------------------------------------------------------------------*/
 
-  /**
-   * @see net.rptools.maptool.client.ui.zone.ZoneOverlay#paintOverlay(ZoneRenderer,
-   *     java.awt.Graphics2D)
-   */
   @Override
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
     if (painting && renderer != null) {
@@ -127,20 +109,12 @@ public class LineTemplateTool extends RadiusTemplateTool implements PropertyChan
     }
   }
 
-  /**
-   * @see
-   *     net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#getRadiusAtMouse(java.awt.event.MouseEvent)
-   */
   @Override
   protected int getRadiusAtMouse(MouseEvent aE) {
     int radius = super.getRadiusAtMouse(aE);
     return Math.max(0, radius - 1);
   }
 
-  /**
-   * @see
-   *     net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#mousePressed(java.awt.event.MouseEvent)
-   */
   @Override
   public void mousePressed(MouseEvent aE) {
     if (!painting) return;
@@ -170,10 +144,6 @@ public class LineTemplateTool extends RadiusTemplateTool implements PropertyChan
     super.mousePressed(aE);
   }
 
-  /**
-   * @see
-   *     net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#handleMouseMovement(java.awt.event.MouseEvent)
-   */
   @Override
   protected void handleMouseMovement(MouseEvent e) {
     // Setting anchor point?
@@ -254,9 +224,6 @@ public class LineTemplateTool extends RadiusTemplateTool implements PropertyChan
    * PropertyChangeListener Interface Methods
    *-------------------------------------------------------------------------------------------*/
 
-  /**
-   * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
-   */
   public void propertyChange(PropertyChangeEvent aEvt) {
     ((LineTemplate) template).setDoubleWide((Boolean) aEvt.getNewValue());
   }

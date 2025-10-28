@@ -20,7 +20,6 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.swing.SwingUtil;
-import net.rptools.maptool.client.tool.Tool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.AbstractTemplate;
@@ -54,35 +53,22 @@ public class LineCellTemplateTool extends RadiusCellTemplateTool {
    * Overridden RadiusTemplateTool Methods
    *-------------------------------------------------------------------------------------------*/
 
-  /**
-   * @see net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#getTooltip()
-   */
   @Override
   public String getTooltip() {
     return "tool.LineCellTemplate.tooltip";
   }
 
-  /**
-   * @see Tool#getInstructions()
-   */
   @Override
   public String getInstructions() {
     // No reason to create new instructions
     return "tool.linetemplate.instructions";
   }
 
-  /**
-   * @see net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#createBaseTemplate()
-   */
   @Override
   protected AbstractTemplate createBaseTemplate() {
     return new LineCellTemplate();
   }
 
-  /**
-   * @see
-   *     net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#resetTool(net.rptools.maptool.model.ZonePoint)
-   */
   @Override
   protected void resetTool(ZonePoint aVertex) {
     super.resetTool(aVertex);
@@ -93,10 +79,6 @@ public class LineCellTemplateTool extends RadiusCellTemplateTool {
    * Overridden AbstractDrawingTool Methods
    *-------------------------------------------------------------------------------------------*/
 
-  /**
-   * @see net.rptools.maptool.client.ui.zone.ZoneOverlay#paintOverlay(ZoneRenderer,
-   *     java.awt.Graphics2D)
-   */
   @Override
   public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
     if (painting && renderer != null) {
@@ -120,20 +102,12 @@ public class LineCellTemplateTool extends RadiusCellTemplateTool {
     }
   }
 
-  /**
-   * @see
-   *     net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#getRadiusAtMouse(java.awt.event.MouseEvent)
-   */
   @Override
   protected int getRadiusAtMouse(MouseEvent aE) {
     int radius = super.getRadiusAtMouse(aE) + 1;
     return Math.max(0, radius - 1);
   }
 
-  /**
-   * @see
-   *     net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#mousePressed(java.awt.event.MouseEvent)
-   */
   @Override
   public void mousePressed(MouseEvent aE) {
     if (!painting) return;
@@ -163,10 +137,6 @@ public class LineCellTemplateTool extends RadiusCellTemplateTool {
     super.mousePressed(aE);
   }
 
-  /**
-   * @see
-   *     net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#handleMouseMovement(java.awt.event.MouseEvent)
-   */
   @Override
   protected void handleMouseMovement(MouseEvent e) {
     // Setting anchor point?

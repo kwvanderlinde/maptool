@@ -16,7 +16,6 @@ package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.event.MouseEvent;
 import net.rptools.maptool.client.ScreenPoint;
-import net.rptools.maptool.client.tool.Tool;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.AbstractTemplate;
 import net.rptools.maptool.model.drawing.ConeTemplate;
@@ -42,34 +41,21 @@ public class ConeTemplateTool extends RadiusTemplateTool {
    * Overridden RadiusTemplateTool Methods
    *-------------------------------------------------------------------------------------------*/
 
-  /**
-   * @see net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#createBaseTemplate()
-   */
   @Override
   protected AbstractTemplate createBaseTemplate() {
     return new ConeTemplate();
   }
 
-  /**
-   * @see Tool#getTooltip()
-   */
   @Override
   public String getTooltip() {
     return "tool.cone.tooltip";
   }
 
-  /**
-   * @see Tool#getInstructions()
-   */
   @Override
   public String getInstructions() {
     return "tool.cone.instructions";
   }
 
-  /**
-   * @see
-   *     net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#setRadiusFromAnchor(java.awt.event.MouseEvent)
-   */
   @Override
   protected void setRadiusFromAnchor(MouseEvent e) {
     super.setRadiusFromAnchor(e);

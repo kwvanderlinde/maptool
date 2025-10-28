@@ -64,8 +64,6 @@ public class RadiusCellTemplate extends AbstractTemplate {
    * @param distance The distance in cells from the vertex to the cell which is offset from the
    *     vertex by {@code x & y}.
    * @param radius The radius where the border is painted.
-   * @see net.rptools.maptool.model.drawing.AbstractTemplate#paintBorder(java.awt.Graphics2D, int,
-   *     int, int, int, int, int)
    */
   protected void paintBorderAtRadius(
       Graphics2D g, int x, int y, int xOff, int yOff, int gridSize, int distance, int radius) {
@@ -116,10 +114,6 @@ public class RadiusCellTemplate extends AbstractTemplate {
    * Overridden AbstractTemplate Methods
    *-------------------------------------------------------------------------------------------*/
 
-  /**
-   * @see net.rptools.maptool.model.drawing.AbstractTemplate#paintBorder(java.awt.Graphics2D, int,
-   *     int, int, int, int, int)
-   */
   @Override
   protected void paintBorder(
       Graphics2D g, int x, int y, int xOff, int yOff, int gridSize, int distance) {

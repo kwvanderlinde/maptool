@@ -16,7 +16,6 @@ package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.event.MouseEvent;
 import net.rptools.maptool.client.ScreenPoint;
-import net.rptools.maptool.client.tool.Tool;
 import net.rptools.maptool.model.CellPoint;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.AbstractTemplate;
@@ -45,9 +44,6 @@ public class BurstTemplateTool extends RadiusTemplateTool {
    * Overridden RadiusTemplateTool methods
    *-------------------------------------------------------------------------------------------*/
 
-  /**
-   * @see net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#createBaseTemplate()
-   */
   @Override
   protected AbstractTemplate createBaseTemplate() {
     return new BurstTemplate();
@@ -56,9 +52,6 @@ public class BurstTemplateTool extends RadiusTemplateTool {
   /**
    * This seems to be redundant and doesn't account for moving the mouse pointer to the nearest
    * vertex, only truncating to the nearest top/left vertex.
-   *
-   * @see
-   *     net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#getCellAtMouse(java.awt.event.MouseEvent)
    */
   @Override
   protected ZonePoint getCellAtMouse(MouseEvent e) {
@@ -68,26 +61,16 @@ public class BurstTemplateTool extends RadiusTemplateTool {
     return renderer.getZone().getGrid().convert(cp);
   }
 
-  /**
-   * @see
-   *     net.rptools.maptool.client.tool.drawing.RadiusTemplateTool#getRadiusAtMouse(java.awt.event.MouseEvent)
-   */
   @Override
   protected int getRadiusAtMouse(MouseEvent e) {
     return super.getRadiusAtMouse(e);
   }
 
-  /**
-   * @see Tool#getTooltip()
-   */
   @Override
   public String getTooltip() {
     return "tool.bursttemplate.tooltip";
   }
 
-  /**
-   * @see Tool#getInstructions()
-   */
   @Override
   public String getInstructions() {
     return "tool.bursttemplate.instructions";
