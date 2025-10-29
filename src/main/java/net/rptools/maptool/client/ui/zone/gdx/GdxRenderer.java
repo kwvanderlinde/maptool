@@ -779,8 +779,6 @@ public class GdxRenderer extends ApplicationAdapter {
       timer.stop("tokensStamp");
     }
 
-    renderPlayerDarkness(view);
-
     /*
      * The following sections used to handle rendering of the Hidden (i.e. "GM") layer followed by
      * the Token layer. The problem was that we want all drawables to appear below all tokens, and
@@ -1393,21 +1391,6 @@ public class GdxRenderer extends ApplicationAdapter {
       var y = -point.getY() - lightbulb.getRegionHeight() / 2.;
       batch.draw(lightbulb, (float) x, (float) y);
     }
-  }
-
-  private void renderPlayerDarkness(PlayerView view) {
-    if (view.isGMView()) {
-      // GMs see the darkness rendered as lights, not as blackness.
-      return;
-    }
-
-    final var darkness = zoneCache.getZoneView().getIllumination(view).getDarkenedArea();
-    if (darkness.isEmpty()) {
-      // Skip the rendering work if it isn't necessary.
-      return;
-    }
-    areaRenderer.setColor(Color.BLACK);
-    areaRenderer.fillArea(batch, darkness);
   }
 
   private void renderRenderables() {

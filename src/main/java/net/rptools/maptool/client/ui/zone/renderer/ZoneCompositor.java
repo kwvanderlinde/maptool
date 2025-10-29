@@ -161,7 +161,7 @@ public class ZoneCompositor {
       compositeLumens(builder, view);
       compositeAuras(builder, view);
 
-      // TODO Darkness
+      compositeDarkness(builder, view);
 
       compositeDrawings(builder, view, Zone.Layer.TOKEN, worldBounds);
       compositeDrawings(builder, view, Zone.Layer.GM, worldBounds);
@@ -839,6 +839,26 @@ public class ZoneCompositor {
             }
           }
           timer.stop("compositeLumensBorders");
+        });
+  }
+
+  private void compositeDarkness(InstructionSetBuilder builder, PlayerView view) {
+    if (view.isGMView()) {
+      // Darkness shouldn't hide anything from GMs.
+      return;
+    }
+
+    final Area darkness = zoneView.getIllumination(view).getDarkenedArea();
+    if (darkness.isEmpty()) {
+      // Nothing to do in this case.
+      return;
+    }
+
+    builder.unbufferedLayer(
+        "darkness",
+        ClipType.NoClipping,
+        () -> {
+          builder.add(new Fill(darkness, Paint.of(Color.black), 1.));
         });
   }
 }
