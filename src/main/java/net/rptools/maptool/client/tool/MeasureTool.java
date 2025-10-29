@@ -15,6 +15,7 @@
 package net.rptools.maptool.client.tool;
 
 import com.google.common.collect.Iterables;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Graphics2D;
@@ -24,6 +25,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +41,10 @@ import net.rptools.maptool.client.ui.theme.Images;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.ui.zone.ZoneOverlay;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSetBuilder;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.Paint;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.BoxedString;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Stroke;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.model.CellPoint;
 import net.rptools.maptool.model.Path;
@@ -139,6 +145,46 @@ public class MeasureTool extends DefaultTool implements ZoneOverlay {
       } finally {
         SwingUtil.restoreAntiAliasing(g, oldAA);
       }
+    }
+  }
+
+  @Override
+  public void compositeOverlay(InstructionSetBuilder builder) {
+    if (walker != null) {
+      builder.addPath(walker.getPath(), builder.getZone().getGrid().getDefaultFootprint());
+      ScreenPoint sp = walker.getLastPoint().convertToScreen(renderer);
+
+      int y = (int) sp.y - 10;
+      int x = (int) sp.x + (int) (renderer.getScaledGridSize() / 2);
+      builder.add(new BoxedString(x, y, Double.toString(walker.getDistance())));
+    } else if (gridlessPath != null) {
+      // distance
+      double c = 0;
+      var path2D = new Path2D.Double();
+      ZonePoint lastZP = null;
+      for (ZonePoint zp :
+          Iterables.concat(gridlessPath.getCellPath(), List.of(currentGridlessPoint))) {
+        if (lastZP == null) {
+          path2D.moveTo(zp.x, zp.y);
+        } else {
+          path2D.lineTo(zp.x, zp.y);
+          int a = lastZP.x - zp.x;
+          int b = lastZP.y - zp.y;
+          c += Math.sqrt(a * a + b * b);
+        }
+        lastZP = zp;
+      }
+      assert lastZP != null : "Our non-empty iterable was empty!";
+
+      c /= builder.getZone().getGrid().getSize();
+      c *= builder.getZone().getUnitsPerCell();
+
+      builder.add(new Stroke(path2D, Paint.of(Color.black), new BasicStroke(1.f), 1.));
+
+      String distance = NumberFormat.getInstance().format(c);
+      ScreenPoint sp =
+          builder.getViewport().zoneScale().toScreenSpace(new Point2D.Double(lastZP.x, lastZP.y));
+      builder.add(new BoxedString(sp.x, sp.y - 20, distance));
     }
   }
 
