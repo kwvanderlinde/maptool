@@ -341,18 +341,32 @@ public class SquareGrid extends Grid {
     return new Point2D.Double(x, y);
   }
 
-  @Override
-  public CellPoint convert(ZonePoint zp) {
-    double calcX = (zp.x - getOffsetX()) / (float) getSize();
-    double calcY = (zp.y - getOffsetY()) / (float) getSize();
+  /**
+   * Converts a world space point to a {@link CellPoint} without needing a grid instance.
+   *
+   * @param x The x position in world space
+   * @param y The y position in world space
+   * @param size The size of the imaginary grid
+   * @param offsetX The x offset of the imaginary grid
+   * @param offsetY The y offset of the imaginary grid
+   * @return The CellPoint corresponding to the world point (x, y).
+   */
+  public static CellPoint convert(double x, double y, int size, int offsetX, int offsetY) {
+    double calcX = (x - offsetX) / (double) size;
+    double calcY = (y - offsetY) / (double) size;
 
-    boolean exactCalcX = (zp.x - getOffsetX()) % getSize() == 0;
-    boolean exactCalcY = (zp.y - getOffsetY()) % getSize() == 0;
+    boolean exactCalcX = (x - offsetX) % size == 0;
+    boolean exactCalcY = (y - offsetY) % size == 0;
 
     int newX = (int) (calcX < 0 && !exactCalcX ? calcX - 1 : calcX);
     int newY = (int) (calcY < 0 && !exactCalcY ? calcY - 1 : calcY);
 
     return new CellPoint(newX, newY);
+  }
+
+  @Override
+  public CellPoint convert(ZonePoint zp) {
+    return convert(zp.x, zp.y, getSize(), getOffsetX(), getOffsetY());
   }
 
   @Override
@@ -376,6 +390,19 @@ public class SquareGrid extends Grid {
             ? AppPreferences.movementMetric.get()
             : MapTool.getServerPolicy().getMovementMetric();
     return new AStarSquareEuclideanWalker(getZone(), metric);
+  }
+
+  /**
+   * Converts a {@link CellPoint} to a world space point without needing a grid instance.
+   *
+   * @param cp The cell point to convert
+   * @param size The size of the imaginary grid
+   * @param offsetX The x offset of the imaginary grid
+   * @param offsetY The y offset of the imaginary grid
+   * @return The world space point corresponding to the cell point {@code cp}.
+   */
+  public static Point2D convert(CellPoint cp, int size, int offsetX, int offsetY) {
+    return new Point2D.Double((cp.x * size + offsetX), (cp.y * size + offsetY));
   }
 
   @Override
