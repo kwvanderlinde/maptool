@@ -25,6 +25,10 @@ import javax.annotation.Nullable;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSetBuilder;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.Paint;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Fill;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Stroke;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
@@ -88,6 +92,41 @@ public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
       MapTool.serverCommand().hideFoW(zone.getId(), area, selectedToks);
     } else {
       MapTool.serverCommand().exposeFoW(zone.getId(), area, selectedToks);
+    }
+  }
+
+  @Override
+  public void compositeOverlay(InstructionSetBuilder builder) {
+    if (state == null) {
+      return;
+    }
+
+    var result = strategy.getShape(state, currentPoint, centerOnOrigin, false);
+    if (result == null) {
+      return;
+    }
+
+    var color = isEraser() ? Color.white : Color.black;
+
+    if (!isLinearTool()) {
+      // Render the interior for better user feedback.
+      builder.add(new Fill(result.shape(), Paint.of(color), 0.25));
+    }
+
+    // Render the line.
+    builder.add(
+        new Stroke(
+            result.shape(),
+            Paint.of(color),
+            new BasicStroke(
+                1 / (float) builder.getViewport().zoneScale().getScale(),
+                BasicStroke.CAP_BUTT,
+                BasicStroke.JOIN_MITER),
+            1.));
+
+    // Measurements
+    if (MapTool.getFrame().isPaintDrawingMeasurement()) {
+      builder.addMeasurement(result.measurement());
     }
   }
 
