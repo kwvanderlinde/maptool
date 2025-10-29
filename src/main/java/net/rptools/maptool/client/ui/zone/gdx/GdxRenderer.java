@@ -1987,41 +1987,6 @@ public class GdxRenderer extends ApplicationAdapter {
       }
       timer.stop("tokenlist-12");
     }
-
-    timer.start("tokenlist-13");
-
-    var tokenStackMap = viewModel.getTokenStackMap();
-
-    // Stacks
-    // TODO: find a cleaner way to indicate token layer
-    if (!tokenList.isEmpty() && tokenList.get(0).getLayer().isTokenLayer()) {
-      boolean hideTSI = AppPreferences.hideTokenStackIndicator.get();
-      if (tokenStackMap != null
-          && !hideTSI) { // FIXME Needed to prevent NPE but how can it be null?
-        for (GUID tokenId : tokenStackMap.keySet()) {
-          var position = viewModel.getTokenPositions().get(tokenId);
-          if (position == null) {
-            // Shouldn't happen, but should handle the case anyway.
-            continue;
-          }
-          if (!viewModel.getOnScreenTokens().contains(tokenId)) {
-            // Don't draw indicator for offscreen tokens.
-            continue;
-          }
-          var tokenRectangle = position.footprintBounds();
-          var stackImage = fetchImageResource(Images.ZONE_RENDERER_STACK_IMAGE);
-          batch.draw(
-              stackImage,
-              (float)
-                  (tokenRectangle.getMinX()
-                      + tokenRectangle.getWidth()
-                      - stackImage.getRegionWidth()
-                      + 2),
-              (float) (-tokenRectangle.getMinY() - stackImage.getRegionHeight() + 2));
-        }
-      }
-    }
-    timer.stop("tokenlist-13");
   }
 
   private void prepareTokenSprite(Sprite image, Token token, java.awt.Rectangle footprintBounds) {

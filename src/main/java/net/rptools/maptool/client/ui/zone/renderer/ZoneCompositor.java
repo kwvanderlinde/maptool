@@ -61,6 +61,7 @@ import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstructio
 import net.rptools.maptool.client.ui.zone.renderer.instructions.ZoneViewport;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.CellPoint;
+import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Grid;
 import net.rptools.maptool.model.GridlessGrid;
 import net.rptools.maptool.model.HexGridHorizontal;
@@ -173,6 +174,7 @@ public class ZoneCompositor {
 
       // TODO GM tokens if GM layer & Token layer is enabled.
       // TODO Regular tokens if Token layer is enabled.
+      compositeStacks(builder, viewport, view);
       // TODO Unowned moves if Token layer is enabled.
 
       compositeTextLabels(builder);
@@ -306,6 +308,52 @@ public class ZoneCompositor {
           builder.add(new SwitchAlphaMode(AlphaMode.SrcOver));
 
           builder.addDrawnElements(drawnElements);
+        });
+  }
+
+  private void compositeStacks(
+      InstructionSetBuilder builder, ZoneViewport viewport, PlayerView view) {
+    if (!renderer.shouldRenderLayer(Zone.Layer.TOKEN, view)) {
+      return;
+    }
+
+    boolean hideTSI = AppPreferences.hideTokenStackIndicator.get();
+    if (hideTSI) {
+      return;
+    }
+
+    var tokenStackIds = viewModel.getTokenStackMap().keySet();
+    if (tokenStackIds.isEmpty()) {
+      return;
+    }
+
+    builder.unbufferedLayer(
+        "stackIndicators",
+        ClipType.VisibleArea,
+        () -> {
+          for (GUID tokenId : tokenStackIds) {
+            var position = viewModel.getTokenPositions().get(tokenId);
+            if (position == null) {
+              // Shouldn't happen, but should handle the case anyway.
+              continue;
+            }
+            if (!viewModel.getOnScreenTokens().contains(tokenId)) {
+              // Don't draw indicator for offscreen tokens.
+              continue;
+            }
+
+            var halfIconSize = 6;
+            var screenBounds =
+                viewport.zoneScale().toScreenSpace(position.transformedBounds().getBounds2D());
+            var imageScreenBounds =
+                new Rectangle2D.Double(
+                    screenBounds.getMaxX() - 2 * halfIconSize + 2,
+                    screenBounds.getMinY() - 2,
+                    2 * halfIconSize,
+                    2 * halfIconSize);
+            var worldBounds = viewport.zoneScale().toWorldSpace(imageScreenBounds);
+            builder.add(new Icon(Images.ZONE_RENDERER_STACK_IMAGE, worldBounds));
+          }
         });
   }
 
