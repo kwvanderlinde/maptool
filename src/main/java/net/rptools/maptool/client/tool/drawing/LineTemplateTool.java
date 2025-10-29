@@ -15,7 +15,6 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.Graphics2D;
-import java.awt.Paint;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.beans.PropertyChangeEvent;
@@ -25,6 +24,9 @@ import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSetBuilder;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.Paint;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Stroke;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.AbstractTemplate;
 import net.rptools.maptool.model.drawing.AbstractTemplate.Quadrant;
@@ -97,7 +99,7 @@ public class LineTemplateTool extends RadiusTemplateTool implements PropertyChan
       ZonePoint vertex = template.getVertex();
       ZonePoint pathVertex = ((LineTemplate) template).getPathVertex();
       template.draw(renderer.getZone(), g, pen);
-      Paint paint = pen.getPaint() != null ? pen.getPaint().getPaint() : null;
+      java.awt.Paint paint = pen.getPaint() != null ? pen.getPaint().getPaint() : null;
       paintCursor(g, paint, pen.getThickness(), vertex);
       if (pathVertex != null) {
         paintCursor(g, paint, pen.getThickness(), pathVertex);
@@ -105,6 +107,33 @@ public class LineTemplateTool extends RadiusTemplateTool implements PropertyChan
       g.setTransform(old);
       if (pathVertex != null) {
         paintRadius(g, vertex);
+      }
+    }
+  }
+
+  @Override
+  public void compositeOverlay(InstructionSetBuilder builder) {
+    if (painting) {
+      Pen pen = getPenForOverlay();
+      ZonePoint vertex = template.getVertex();
+      ZonePoint pathVertex = ((LineTemplate) template).getPathVertex();
+
+      builder.addDrawable(template, pen);
+      builder.add(
+          new Stroke(
+              makeCursorShapeAt(vertex, template.getCursorType()),
+              Paint.of(pen.getPaint()),
+              pen.getStroke(),
+              pen.getOpacity()));
+      if (pathVertex != null) {
+        builder.add(
+            new Stroke(
+                makeCursorShapeAt(pathVertex, template.getCursorType()),
+                Paint.of(pen.getPaint()),
+                pen.getStroke(),
+                pen.getOpacity()));
+
+        compositeRadius(builder, vertex);
       }
     }
   }

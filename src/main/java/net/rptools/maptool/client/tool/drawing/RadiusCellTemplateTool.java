@@ -16,15 +16,18 @@ package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
-import java.awt.Paint;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.AffineTransform;
 import javax.swing.SwingUtilities;
+import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.tool.ToolHelper;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSetBuilder;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.Paint;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Stroke;
 import net.rptools.maptool.model.CellPoint;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.AbstractTemplate;
@@ -151,7 +154,8 @@ public class RadiusCellTemplateTool extends AbstractTemplateTool implements Mous
    * @param thickness The thickness of the cursor.
    * @param vertex The vertex holding the cursor.
    */
-  protected void paintCursor(Graphics2D g, Paint paint, float thickness, ZonePoint vertex) {
+  protected void paintCursor(
+      Graphics2D g, java.awt.Paint paint, float thickness, ZonePoint vertex) {
     g.setPaint(paint);
     g.setStroke(new BasicStroke(thickness));
     g.draw(makeCursorShapeAt(vertex, template.getCursorType()));
@@ -173,6 +177,19 @@ public class RadiusCellTemplateTool extends AbstractTemplateTool implements Mous
           (int) centerText.x,
           (int) centerText.y);
     } // endif
+  }
+
+  /**
+   * Paint the radius value in feet.
+   *
+   * @param p Vertex where radius is painted.
+   */
+  protected void compositeRadius(InstructionSetBuilder builder, ZonePoint p) {
+    if (MapTool.getFrame().isPaintDrawingMeasurement() && template.getRadius() > 0 && anchorSet) {
+      builder.addMeasurement(
+          template.getRadius() * renderer.getZone().getUnitsPerCell(),
+          new ZonePoint(p.x + CURSOR_WIDTH, p.y - CURSOR_WIDTH));
+    }
   }
 
   /**
@@ -278,11 +295,29 @@ public class RadiusCellTemplateTool extends AbstractTemplateTool implements Mous
       newTransform.concatenate(getPaintTransform(renderer));
       g.setTransform(newTransform);
       template.draw(renderer.getZone(), g, pen);
-      Paint paint = pen.getPaint() != null ? pen.getPaint().getPaint() : null;
+      java.awt.Paint paint = pen.getPaint() != null ? pen.getPaint().getPaint() : null;
       paintCursor(g, paint, pen.getThickness(), template.getVertex());
       g.setTransform(old);
       paintRadius(g, template.getVertex());
     } // endif
+  }
+
+  @Override
+  public void compositeOverlay(InstructionSetBuilder builder) {
+    if (painting) {
+      Pen pen = getPenForOverlay();
+
+      builder.addDrawable(template, pen);
+
+      builder.add(
+          new Stroke(
+              makeCursorShapeAt(template.getVertex(), template.getCursorType()),
+              Paint.of(pen.getPaint()),
+              pen.getStroke(),
+              pen.getOpacity()));
+
+      compositeRadius(builder, template.getVertex());
+    }
   }
 
   /** New instance of the template, at the current vertex */
