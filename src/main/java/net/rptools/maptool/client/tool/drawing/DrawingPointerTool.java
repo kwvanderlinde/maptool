@@ -15,8 +15,16 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import com.google.common.eventbus.Subscribe;
-import java.awt.*;
+import java.awt.AlphaComposite;
+import java.awt.BasicStroke;
+import java.awt.Composite;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Polygon;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -24,10 +32,21 @@ import java.awt.event.MouseListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.RectangularShape;
+import java.awt.geom.Line2D;
+import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import java.awt.geom.RoundRectangle2D;
 import java.io.Serial;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import javax.swing.*;
+import java.util.Map;
+import java.util.Set;
+import javax.swing.Action;
+import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
@@ -39,13 +58,39 @@ import net.rptools.maptool.client.tool.DefaultTool;
 import net.rptools.maptool.client.tool.ToolHelper;
 import net.rptools.maptool.client.ui.drawpanel.DrawPanelPopupMenu;
 import net.rptools.maptool.client.ui.drawpanel.DrawablesPanel;
+import net.rptools.maptool.client.ui.theme.Borders;
 import net.rptools.maptool.client.ui.zone.ZoneOverlay;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSetBuilder;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.LabelFactory;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.Paint;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Border;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Fill;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Stroke;
 import net.rptools.maptool.client.walker.WalkerMetric;
 import net.rptools.maptool.events.MapToolEventBus;
-import net.rptools.maptool.model.*;
-import net.rptools.maptool.model.drawing.*;
+import net.rptools.maptool.model.CellPoint;
+import net.rptools.maptool.model.GUID;
+import net.rptools.maptool.model.Grid;
+import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.ZonePoint;
+import net.rptools.maptool.model.drawing.AbstractDrawing;
+import net.rptools.maptool.model.drawing.AbstractTemplate;
 import net.rptools.maptool.model.drawing.AbstractTemplate.CursorType;
+import net.rptools.maptool.model.drawing.BlastTemplate;
+import net.rptools.maptool.model.drawing.ConeTemplate;
+import net.rptools.maptool.model.drawing.Drawable;
+import net.rptools.maptool.model.drawing.DrawableColorPaint;
+import net.rptools.maptool.model.drawing.DrawablePaint;
+import net.rptools.maptool.model.drawing.DrawableTexturePaint;
+import net.rptools.maptool.model.drawing.DrawablesGroup;
+import net.rptools.maptool.model.drawing.DrawnElement;
+import net.rptools.maptool.model.drawing.LineCellTemplate;
+import net.rptools.maptool.model.drawing.LineSegment;
+import net.rptools.maptool.model.drawing.LineTemplate;
+import net.rptools.maptool.model.drawing.Pen;
+import net.rptools.maptool.model.drawing.RadiusTemplate;
+import net.rptools.maptool.model.drawing.ShapeDrawable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -224,7 +269,6 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
   protected void detachFrom(ZoneRenderer renderer) {
     selectedDrawableIdSet.clear();
     draggedDrawnElementSet.clear();
-    flatImageLabelCache.clear();
     MapTool.getFrame().removeControlPanel();
     renderer.setCursor(Cursor.getDefaultCursor());
     isSnapToGridSelected = MapTool.getFrame().getColorPicker().isSnapSelected();
@@ -322,12 +366,6 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
       drawnElementAtMouseMovePrevious = drawnElementAtMouseMove;
       if (drawnElementAtMouseMove != null) {
         renderer.setCursor(Cursor.getDefaultCursor());
-        GUID id = drawnElementAtMouseMove.getDrawable().getId();
-        if (!flatImageLabelCache.containsKey(id)) {
-          flatImageLabelFactory = new FlatImageLabelFactory();
-          flatImageLabelCache.put(
-              id, flatImageLabelFactory.getMapImageLabel(drawnElementAtMouseMove));
-        }
         renderer.repaint();
       } else {
         renderer.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
@@ -532,7 +570,6 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
     super.selectedLayerChanged(layer);
     selectedDrawableIdSet.clear();
     draggedDrawnElementSet.clear();
-    flatImageLabelCache.clear();
     try {
       // Try to clear the drawables panel
       MapTool.getFrame().getDrawablesPanel().clearSelectedIds();
@@ -559,7 +596,6 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
     } else if (!selectedDrawableIdSet.isEmpty()) {
       selectedDrawableIdSet.clear();
       draggedDrawnElementSet.clear();
-      flatImageLabelCache.clear();
       updateDrawablesPanel();
     }
     renderer.repaint();
@@ -568,6 +604,8 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
   /*---------------------------------------------------------------------------------------------
    * ZoneOverlay Interface Overridden Methods
    *-------------------------------------------------------------------------------------------*/
+
+  // TODO Remove paintOverlay.
 
   /**
    * Paints:
@@ -608,6 +646,110 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
       if (drawnElementAtMouseMove != null) {
         paintDrawingNameLabel(g, drawnElementAtMouseMove);
       }
+    }
+  }
+
+  /**
+   * Paints:
+   *
+   * <ol>
+   *   <li>drawing label names
+   *   <li>if the selection box is being dragged
+   *   <li>selected border box around selected templates
+   */
+  @Override
+  public void compositeOverlay(InstructionSetBuilder builder) {
+    var zone = builder.getZone();
+
+    // Paints a selected border box around the pre-dragged drawing position
+    for (var id : selectedDrawableIdSet) {
+      DrawnElement de = zone.getDrawnElement(id);
+      if (de == null) {
+        continue;
+      }
+
+      var penThickness = de.getPen().getThickness();
+      var bounds = de.getDrawable().getBounds(zone).getBounds2D();
+      bounds.setRect(
+          bounds.getMinX() - penThickness,
+          bounds.getMinY() - penThickness,
+          bounds.getWidth() + 2 * penThickness,
+          bounds.getHeight() + 2 * penThickness);
+
+      builder.add(new Border(Borders.RED, bounds));
+    }
+
+    if (isDraggingDrawings) {
+      // Paints the dragged drawings, movement line, and movement distance label
+      compositeDraggedDrawings(builder);
+    }
+
+    if (drawingSelectionBox != null) {
+      var worldSpace = builder.getViewport().zoneScale().toWorldSpace(drawingSelectionBox);
+
+      var roundedBox =
+          new RoundRectangle2D.Double(
+              worldSpace.getX(),
+              worldSpace.getY(),
+              worldSpace.getWidth(),
+              worldSpace.getHeight(),
+              10,
+              10);
+
+      if (AppPreferences.fillSelectionBox.get()) {
+        builder.add(new Fill(roundedBox, Paint.of(AppStyle.drawingSelectionBoxFill), 0.25));
+      }
+      builder.add(
+          new Stroke(roundedBox, Paint.of(AppStyle.selectionBoxOutline), new BasicStroke(2), 1.));
+    }
+
+    // Paints the select label name (if it has one)
+    for (GUID id : selectedDrawableIdSet) {
+      DrawnElement de = zone.getDrawnElement(id);
+      compositeDrawingNameLabel(builder, de);
+    }
+
+    // Paints the mouse move label name (if it has one)
+    if (drawnElementAtMouseMove != null) {
+      compositeDrawingNameLabel(builder, drawnElementAtMouseMove);
+    }
+  }
+
+  /**
+   * Paints the drawn element's name label.
+   *
+   * @param builder Where to pipe render instructions.
+   * @param drawnElement which drawn element to base the label on.
+   */
+  private void compositeDrawingNameLabel(InstructionSetBuilder builder, DrawnElement drawnElement) {
+    if (drawnElement == null) {
+      return;
+    }
+    var zone = builder.getZone();
+
+    String drawingName = null;
+    Rectangle bounds = null;
+    if (drawnElement.getDrawable() instanceof AbstractTemplate at) {
+      drawingName = at.getName();
+      bounds = at.getBounds(zone);
+    } else if (drawnElement.getDrawable() instanceof AbstractDrawing ad) {
+      drawingName = ad.getName();
+      bounds = ad.getBounds(zone);
+    }
+
+    if (drawingName != null && !drawingName.trim().isEmpty()) {
+      var labelFactory = new LabelFactory();
+      ScreenPoint centerText =
+          builder
+              .getViewport()
+              .zoneScale()
+              .toScreenSpace(
+                  new Point2D.Double(
+                      bounds.getCenterX(),
+                      // TODO I think pen thickness must be modified by zone scale.
+                      bounds.getMaxY() + drawnElement.getPen().getThickness()));
+
+      builder.addLabel(labelFactory.getMapImageLabel(drawnElement, drawingName, centerText));
     }
   }
 
@@ -855,7 +997,7 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
 
           g.setTransform(newTransform);
           at.draw(getZone(), g, pen);
-          Paint paint = pen.getPaint() != null ? pen.getPaint().getPaint() : null;
+          java.awt.Paint paint = pen.getPaint() != null ? pen.getPaint().getPaint() : null;
 
           // Only paint for the template at the mouse which instigated the drag
           if (drawnElementAtMouse.getDrawable().getId() == at.getId()) {
@@ -984,7 +1126,7 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
     // Paints the draggable selection box
     if (drawingSelectionBox != null) {
       Composite composite = g.getComposite();
-      Stroke stroke = g.getStroke();
+      java.awt.Stroke stroke = g.getStroke();
       g.setStroke(new BasicStroke(2));
       if (AppPreferences.fillSelectionBox.get()) {
         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP, .25f));
@@ -1022,7 +1164,7 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
    * @param vertex the position to paint the cursor.
    */
   private void paintTemplateCursor(
-      Graphics2D g, Paint paint, float thickness, AbstractTemplate at, ZonePoint vertex) {
+      Graphics2D g, java.awt.Paint paint, float thickness, AbstractTemplate at, ZonePoint vertex) {
     switch (at.getCursorType()) {
       case Cross -> {
         // Paint a Cross
@@ -1108,7 +1250,7 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
       float[] dashingPattern = {9f, 3f};
 
       Composite composite = g.getComposite();
-      Paint paint;
+      java.awt.Paint paint;
 
       paint = pen.getBackgroundPaint() != null ? pen.getBackgroundPaint().getPaint() : null;
       g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP, 0.5f));
@@ -1150,12 +1292,142 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
   }
 
   /**
-   * Creates a copy of the {@link DrawnElement}s being dragged and stores their pre-drag bounds.
-   *
-   * <p>The {@link Set} is used for displaying the dragged drawings. e.g. for templates this could
-   * be either a change in position, path, direction, and/or size.
-   *
-   * <p>The {@link Map} is used when snapping drawings to grid whilst dragging.
+   * Paints the drawings which are being changed via dragging. This could be a change in position,
+   * path, radius, direction, etc.
+   */
+  private void compositeDraggedDrawings(InstructionSetBuilder builder) {
+    // Loop through the copies of the drawings being dragged
+    for (DrawnElement de : draggedDrawnElementSet) {
+      if (de == null) {
+        continue;
+      }
+
+      // Templates only
+      if (de.getDrawable() instanceof AbstractTemplate at) {
+        Pen pen = de.getPen();
+
+        builder.addDrawable(de.getDrawable(), de.getPen());
+
+        // Only paint for the template at the mouse which instigated the drag
+        if (drawnElementAtMouse.getDrawable().getId() == at.getId()) {
+          compositeTemplateCursor(builder, dragStartVertex, at.getCursorType(), pen);
+          compositeTemplateMovementLine(
+              builder, pen, dragStartVertex, at.getVertex(), at.getCursorType());
+          compositeTemplateCursor(builder, at.getVertex(), at.getCursorType(), pen);
+          ZonePoint pathVertex = getTemplatePathVertex(at);
+          if (pathVertex != null) {
+            compositeTemplateCursor(builder, pathVertex, at.getCursorType(), pen);
+          }
+        }
+
+        compositeTemplateRadiusLabel(builder, at.getVertex(), at.getRadius());
+        if (drawnElementAtMouse.getDrawable().getId() == at.getId()) {
+          compositeTemplateMovementLabel(builder, dragStartVertex, at);
+        }
+      }
+    }
+  }
+
+  private void compositeTemplateCursor(
+      InstructionSetBuilder builder, ZonePoint point, CursorType cursorType, Pen pen) {
+    var cursorShape =
+        switch (cursorType) {
+          case Cross -> {
+            final double halfCursor = CURSOR_WIDTH / 2.;
+            var vertexCursor = new Path2D.Double();
+            vertexCursor.moveTo(point.x - halfCursor, point.y);
+            vertexCursor.lineTo(point.x + halfCursor, point.y);
+            vertexCursor.moveTo(point.x, point.y - halfCursor);
+            vertexCursor.lineTo(point.x, point.y + halfCursor);
+            yield vertexCursor;
+          }
+          case Cell -> {
+            int gridSize = getZone().getGrid().getSize();
+            yield new Rectangle2D.Double(point.x, point.y, gridSize, gridSize);
+          }
+        };
+
+    builder.add(
+        new Stroke(cursorShape, Paint.of(pen.getPaint()), new BasicStroke(pen.getThickness()), 1.));
+  }
+
+  private void compositeTemplateRadiusLabel(
+      InstructionSetBuilder builder, ZonePoint zp, int radius) {
+    if (!MapTool.getFrame().isPaintDrawingMeasurement() || radius <= 0) {
+      return;
+    }
+
+    builder.addMeasurement(radius * getZone().getUnitsPerCell(), zp, CURSOR_WIDTH, -CURSOR_WIDTH);
+  }
+
+  private void compositeTemplateMovementLine(
+      InstructionSetBuilder builder,
+      Pen pen,
+      ZonePoint start,
+      ZonePoint end,
+      CursorType cursorType) {
+    if (start.equals(end)) {
+      return;
+    }
+
+    int offsetXY = (cursorType == CursorType.Cell) ? getZone().getGrid().getSize() / 2 : 0;
+    var line =
+        new Line2D.Double(
+            start.x + offsetXY, start.y + offsetXY, end.x + offsetXY, end.y + offsetXY);
+    // TODO The LibGDX renderer does not support dash patterns.
+    float[] dashingPattern = {9f, 3f};
+
+    // TODO Must we handle null paints from the pen?
+    builder.add(
+        new Stroke(
+            line,
+            Paint.of(pen.getBackgroundPaint()),
+            new BasicStroke(
+                2 * pen.getThickness(), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 1.0f),
+            0.5));
+    builder.add(
+        new Stroke(
+            line,
+            Paint.of(pen.getPaint()),
+            new BasicStroke(
+                pen.getThickness(),
+                BasicStroke.CAP_BUTT,
+                BasicStroke.JOIN_MITER,
+                1.0f,
+                dashingPattern,
+                2.0f),
+            0.5));
+  }
+
+  private void compositeTemplateMovementLabel(
+      InstructionSetBuilder builder, ZonePoint startVertex, AbstractTemplate at) {
+    if (!MapTool.getFrame().isPaintDrawingMeasurement()) {
+      return;
+    }
+
+    Zone zone = getZone();
+    Grid grid = zone.getGrid();
+    WalkerMetric wm =
+        MapTool.isPersonalServer()
+            ? AppPreferences.movementMetric.get()
+            : MapTool.getServerPolicy().getMovementMetric();
+    ZonePoint endVertex = at.getVertex();
+    CellPoint dragStartCellPoint = grid.convert(startVertex);
+    CellPoint dragVertexCellPoint = grid.convert(endVertex);
+    double cellDistance = grid.cellDistance(dragStartCellPoint, dragVertexCellPoint, wm);
+    double moveDistance = cellDistance * zone.getUnitsPerCell();
+
+    if (moveDistance != 0) {
+      Rectangle bounds = at.getBounds(zone);
+      builder.addMeasurement(
+          moveDistance, new ZonePoint((int) bounds.getCenterX(), (int) bounds.getMaxY()));
+    }
+  }
+
+  /**
+   * Creates a copy of the {@link DrawnElement}s being dragged. This {@link Set} is used for
+   * displaying the dragged drawings. e.g. for templates this could be either a change in position,
+   * path, direction, and/or size.
    *
    * <p>In the event of the <kbd>Escape</kbd> key being pressed while dragging, any changes to
    * dragged drawings will not be applied to the original drawings.
