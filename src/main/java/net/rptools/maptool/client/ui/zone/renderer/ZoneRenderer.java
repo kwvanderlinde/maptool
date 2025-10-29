@@ -693,7 +693,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
               // Keep the clip to avoid rendering more than we have to.
               bufferG2d.setClip(g2d.getClip());
 
-              renderZoneInternal(bufferG2d, viewModel.getPlayerView());
+              renderZoneInternal(bufferG2d, instructionSet);
 
               int noteVPos = 20;
               bufferG2d.setFont(AppStyle.labelFont);
@@ -790,7 +790,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    */
   public void renderZone(Graphics2D g2d, @Nullable PlayerView imposedView) {
     var instructionSet = updateZone(imposedView);
-    renderZoneInternal(g2d, imposedView);
+    renderZoneInternal(g2d, instructionSet);
   }
 
   /**
