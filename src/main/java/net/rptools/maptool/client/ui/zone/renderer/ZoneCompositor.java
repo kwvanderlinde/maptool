@@ -28,9 +28,11 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.function.BiConsumer;
+import javax.annotation.Nullable;
 import net.rptools.lib.image.ImageUtil;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.AppState;
+import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.ZoneView;
@@ -58,6 +60,7 @@ import net.rptools.maptool.model.HexGridHorizontal;
 import net.rptools.maptool.model.HexGridVertical;
 import net.rptools.maptool.model.IsometricGrid;
 import net.rptools.maptool.model.SquareGrid;
+import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.drawing.DrawnElement;
 import org.apache.logging.log4j.LogManager;
@@ -173,7 +176,7 @@ public class ZoneCompositor {
 
       // TODO General renderables if Token layer is enabled. Whatever these are.
 
-      // TODO Vision overlay.
+      compositeVisionOverlay(builder, viewport, view);
 
       for (var overlay : renderer.getOverlays()) {
         builder.unbufferedLayer(
@@ -603,6 +606,70 @@ public class ZoneCompositor {
                     Paint.of(Color.black),
                     new BasicStroke(1 / (float) viewport.zoneScale().getScale()),
                     1.));
+          }
+        });
+  }
+
+  private void compositeVisionOverlay(
+      InstructionSetBuilder builder, ZoneViewport viewport, PlayerView view) {
+    var tokenIdUnderMouse = viewModel.getTokenUnderMouse();
+    if (tokenIdUnderMouse == null) {
+      return;
+    }
+
+    var tokenPositionUnderMouse = viewModel.getTokenPositions().get(tokenIdUnderMouse);
+    if (tokenPositionUnderMouse == null) {
+      return;
+    }
+
+    var tokenUnderMouse = tokenPositionUnderMouse.token();
+
+    boolean isOwner = AppUtil.playerOwns(tokenUnderMouse);
+    boolean tokenIsPC = tokenUnderMouse.getType() == Token.Type.PC;
+    boolean strictOwnership =
+        MapTool.getServerPolicy() != null && MapTool.getServerPolicy().useStrictTokenManagement();
+    boolean showVisionAndHalo = isOwner || view.isGMView() || (tokenIsPC && !strictOwnership);
+    if (!showVisionAndHalo) {
+      return;
+    }
+
+    builder.unbufferedLayer(
+        "vision",
+        ClipType.ExposedArea,
+        () -> {
+          // The vision of the token is not necessarily related to the current view.
+          final var tokenView = new PlayerView(view.getRole(), List.of(tokenUnderMouse));
+          Area currentTokenVisionArea = zoneView.getVisibleArea(tokenUnderMouse, tokenView);
+          // Nothing to show.
+          if (currentTokenVisionArea.isEmpty()) {
+            return;
+          }
+
+          // TODO Original explicitly clipped with the exposed area if fog was enabled. But I kind
+          // of like
+          //  the new approach that relies on the renderer doing the clipping. This changes the
+          // outline
+          //  when a token can see an area that is also covered in hard FoW.
+
+          // TODO For some reason the original does the fill after the stroke. Why not the other way
+          //  around? Not that it matters much
+          builder.add(
+              new Stroke(
+                  currentTokenVisionArea,
+                  Paint.of(Color.white),
+                  new BasicStroke(1 / (float) viewport.zoneScale().getScale()),
+                  1.));
+
+          @Nullable Color visionColor = tokenUnderMouse.getVisionOverlayColor();
+          if (visionColor == null && AppPreferences.useHaloColorOnVisionOverlay.get()) {
+            visionColor = tokenUnderMouse.getHaloColor();
+          }
+          if (visionColor != null) {
+            builder.add(
+                new Fill(
+                    currentTokenVisionArea,
+                    Paint.of(visionColor),
+                    AppPreferences.haloOverlayOpacity.get() / 255.));
           }
         });
   }

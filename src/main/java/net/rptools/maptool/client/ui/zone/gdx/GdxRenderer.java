@@ -938,14 +938,6 @@ public class GdxRenderer extends ApplicationAdapter {
       setProjectionMatrix(cam.combined);
     }
 
-    timer.start("visionOverlay");
-    renderVisionOverlay(view);
-    timer.stop("visionOverlay");
-
-    timer.start("renderCoordinates");
-    renderCoordinates(view);
-    timer.stop("renderCoordinates");
-
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
       timer.start("lightSourceIconOverlay.paintOverlay");
       paintLightSourceIconOverlay(view);
@@ -1489,90 +1481,6 @@ public class GdxRenderer extends ApplicationAdapter {
     }
     areaRenderer.setColor(Color.BLACK);
     areaRenderer.fillArea(batch, darkness);
-  }
-
-  private void renderVisionOverlay(PlayerView view) {
-    var tokenIdUnderMouse = viewModel.getTokenUnderMouse();
-    if (tokenIdUnderMouse == null) {
-      return;
-    }
-
-    var tokenPosition = viewModel.getTokenPositions().get(tokenIdUnderMouse);
-    if (tokenPosition == null) {
-      return;
-    }
-
-    var tokenUnderMouse = tokenPosition.token();
-    if (tokenUnderMouse == null) {
-      return;
-    }
-
-    Area currentTokenVisionArea = zoneCache.getZoneView().getVisibleArea(tokenUnderMouse, view);
-    if (currentTokenVisionArea == null) {
-      return;
-    }
-    Area combined = new Area(currentTokenVisionArea);
-    ExposedAreaMetaData meta =
-        zoneCache.getZone().getExposedAreaMetaData(tokenUnderMouse.getExposedAreaGUID());
-
-    Area tmpArea = new Area(meta.getExposedAreaHistory());
-    tmpArea.add(zoneCache.getZone().getExposedArea());
-    if (zoneCache.getZone().hasFog()) {
-      if (tmpArea.isEmpty()) {
-        return;
-      }
-      combined.intersect(tmpArea);
-    }
-    boolean isOwner = AppUtil.playerOwns(tokenUnderMouse);
-    boolean tokenIsPC = tokenUnderMouse.getType() == Token.Type.PC;
-    boolean strictOwnership =
-        MapTool.getServerPolicy() != null && MapTool.getServerPolicy().useStrictTokenManagement();
-    boolean showVisionAndHalo = isOwner || view.isGMView() || (tokenIsPC && !strictOwnership);
-
-    /*
-     * The vision arc and optional halo-filled visible area shouldn't be shown to everyone. If we are in GM view, or if we are the owner of the token in question, or if the token is a PC and
-     * strict token ownership is off... then the vision arc should be displayed.
-     */
-    if (showVisionAndHalo) {
-      areaRenderer.setColor(Color.WHITE);
-      areaRenderer.drawArea(
-          batch, combined, new BasicStroke((float) (1 / viewModel.getZoneScale().getScale())));
-      renderHaloArea(combined);
-    }
-  }
-
-  private void renderHaloArea(Area visible) {
-    var tokenIdUnderMouse = viewModel.getTokenUnderMouse();
-    if (tokenIdUnderMouse == null) {
-      return;
-    }
-
-    var tokenPosition = viewModel.getTokenPositions().get(tokenIdUnderMouse);
-    if (tokenPosition == null) {
-      return;
-    }
-
-    var tokenUnderMouse = tokenPosition.token();
-    if (tokenUnderMouse == null) {
-      return;
-    }
-
-    boolean useHaloColor =
-        tokenUnderMouse.getHaloColor() != null && AppPreferences.useHaloColorOnVisionOverlay.get();
-    if (tokenUnderMouse.getVisionOverlayColor() != null || useHaloColor) {
-      java.awt.Color visionColor =
-          useHaloColor ? tokenUnderMouse.getHaloColor() : tokenUnderMouse.getVisionOverlayColor();
-
-      tmpColor
-          .set(
-              visionColor.getRed() / 255f,
-              visionColor.getGreen() / 255f,
-              visionColor.getBlue() / 255f,
-              AppPreferences.haloOverlayOpacity.get() / 255f)
-          .premultiplyAlpha();
-      areaRenderer.setColor(tmpColor);
-      areaRenderer.fillArea(batch, visible);
-    }
   }
 
   private void renderRenderables() {
