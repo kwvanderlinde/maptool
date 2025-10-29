@@ -80,7 +80,6 @@ import net.rptools.maptool.client.ui.zone.renderer.instructions.ZoneViewport;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
-import net.rptools.maptool.model.Label;
 import net.rptools.maptool.model.Path;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.drawing.DrawableNoise;
@@ -821,10 +820,6 @@ public class GdxRenderer extends ApplicationAdapter {
       timer.stop("unowned movement");
     }
 
-    if (AppState.getShowTextLabels()) {
-      renderLabels(view);
-    }
-
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
       // Jamz: If there is fog or vision we may need to re-render vision-blocking type tokens
       // For example. this allows a "door" stamp to block vision but still allow you to see the
@@ -1396,31 +1391,6 @@ public class GdxRenderer extends ApplicationAdapter {
   private void setProjectionMatrix(Matrix4 matrix) {
     batch.setProjectionMatrix(matrix);
     drawer.update();
-  }
-
-  private void renderLabels(PlayerView view) {
-    CodeTimer timer = CodeTimer.get();
-
-    timer.start("labels-1");
-
-    for (Label label : zoneCache.getZone().getLabels()) {
-      timer.start("labels-1.1");
-      Color.argb8888ToColor(tmpColor, label.getForegroundColor().getRGB());
-      tmpColor.premultiplyAlpha();
-      if (label.isShowBackground()) {
-        textRenderer.drawBoxedString(
-            label.getLabel(),
-            label.getX(),
-            -label.getY(),
-            SwingUtilities.CENTER,
-            LabelBackgrounds.BOX_GRAY,
-            tmpColor);
-      } else {
-        textRenderer.drawString(label.getLabel(), label.getX(), -label.getY(), tmpColor);
-      }
-      timer.stop("labels-1.1");
-    }
-    timer.stop("labels-1");
   }
 
   private void showBlockedMoves(PlayerView view, Set<SelectionSet> movementSet) {

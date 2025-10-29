@@ -172,7 +172,7 @@ public class ZoneCompositor {
       // TODO Regular tokens if Token layer is enabled.
       // TODO Unowned moves if Token layer is enabled.
 
-      // TODO Text labels
+      compositeTextLabels(builder);
 
       compositeFog(builder, viewport, view);
 
@@ -563,6 +563,22 @@ public class ZoneCompositor {
     }
 
     return path;
+  }
+
+  private void compositeTextLabels(InstructionSetBuilder builder) {
+    var labelLocations = viewModel.getLabelLocations();
+    if (labelLocations.isEmpty()) {
+      return;
+    }
+
+    builder.unbufferedLayer(
+        "textLabels",
+        ClipType.NoClipping,
+        () -> {
+          for (var labelLocation : labelLocations) {
+            builder.addLabel(labelLocation);
+          }
+        });
   }
 
   private void compositeFog(InstructionSetBuilder builder, ZoneViewport viewport, PlayerView view) {
