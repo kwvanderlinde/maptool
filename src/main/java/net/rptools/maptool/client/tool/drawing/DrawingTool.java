@@ -16,7 +16,6 @@ package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Area;
@@ -168,39 +167,6 @@ public final class DrawingTool<StateT> extends AbstractDrawingLikeTool {
   }
 
   @Override
-  public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    Graphics2D g2 = (Graphics2D) g.create();
-    g2.transform(renderer.getViewModel().getZoneScale().toScreenTransform());
-
-    if (state != null) {
-      // Linear tools are not filled until completed.
-      var result = strategy.getShape(state, currentPoint, centerOnOrigin, false);
-      if (result != null) {
-        var drawable = toDrawable(result.shape());
-
-        Pen pen = getPen();
-        if (isEraser()) {
-          pen = new Pen(pen);
-          pen.setEraser(false);
-          pen.setPaint(new DrawableColorPaint(Color.white));
-          pen.setBackgroundPaint(new DrawableColorPaint(Color.white));
-        }
-        if (isLinearTool() && pen.getPaint() == null) {
-          // Make sure the user can see what they're drawing, even if it is a transparent line.
-          pen.setPaint(new DrawableColorPaint(Color.black));
-        }
-
-        drawable.draw(renderer.getZone(), g2, pen);
-
-        // Measurements
-        drawMeasurementOverlay(renderer, g, result.measurement());
-      }
-    }
-
-    g2.dispose();
-  }
-
-  @Override
   public void compositeOverlay(InstructionSetBuilder builder) {
     if (state != null) {
       // Linear tools are not filled until completed.
@@ -219,7 +185,6 @@ public final class DrawingTool<StateT> extends AbstractDrawingLikeTool {
           // Make sure the user can see what they're drawing, even if it is a transparent line.
           pen.setPaint(new DrawableColorPaint(Color.black));
         }
-
         builder.addDrawable(drawable, pen);
 
         // Measurements

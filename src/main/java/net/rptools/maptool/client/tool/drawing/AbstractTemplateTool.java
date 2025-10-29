@@ -16,7 +16,6 @@ package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
@@ -123,9 +122,6 @@ public abstract class AbstractTemplateTool extends DefaultTool implements ZoneOv
     }
     return pen;
   }
-
-  @Override
-  public abstract void paintOverlay(ZoneRenderer renderer, Graphics2D g);
 
   /**
    * Render a drawable on a zone. This method consolidates all of the calls to the server in one

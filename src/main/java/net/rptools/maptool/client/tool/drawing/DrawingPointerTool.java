@@ -15,27 +15,21 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import com.google.common.eventbus.Subscribe;
-import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
-import java.awt.Composite;
 import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Polygon;
 import java.awt.Rectangle;
-import java.awt.RenderingHints;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
-import java.awt.geom.RectangularShape;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.geom.RectangularShape;
 import java.awt.geom.RoundRectangle2D;
 import java.io.Serial;
 import java.util.ArrayList;
@@ -52,10 +46,7 @@ import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.events.ZoneActivated;
-import net.rptools.maptool.client.swing.label.FlatImageLabel;
-import net.rptools.maptool.client.swing.label.FlatImageLabelFactory;
 import net.rptools.maptool.client.tool.DefaultTool;
-import net.rptools.maptool.client.tool.ToolHelper;
 import net.rptools.maptool.client.ui.drawpanel.DrawPanelPopupMenu;
 import net.rptools.maptool.client.ui.drawpanel.DrawablesPanel;
 import net.rptools.maptool.client.ui.theme.Borders;
@@ -167,19 +158,6 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
    * on their original position.
    */
   private static final Map<GUID, Rectangle> draggedStartBoundsMap = new HashMap<>();
-
-  /**
-   * Factory to generate {@link FlatImageLabel}s for drawing/template name labels. Will be assigned
-   * prior to each use as user color preferences may change.
-   */
-  private static FlatImageLabelFactory flatImageLabelFactory;
-
-  /**
-   * Stores the factory generated {@link FlatImageLabel}s by each {@link Drawable}'s {@link GUID}
-   * Currently, this cache is flushed when the layer or zone changes, or when this tool is
-   * deselected.
-   */
-  private static final HashMap<GUID, FlatImageLabel> flatImageLabelCache = new HashMap<>();
 
   /** Reuse the delete action available from the {@link DrawPanelPopupMenu} */
   private static final DrawPanelPopupMenu.DeleteDrawingAction deleteAction =
@@ -616,48 +594,6 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
    *   <li>selected border box around selected templates
    */
   @Override
-  public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-
-    if (renderer != null) {
-
-      // Paints a selected border box around the pre-dragged drawing position
-      for (var id : selectedDrawableIdSet) {
-        DrawnElement de = renderer.getZone().getDrawnElement(id);
-        if (de == null) continue;
-        paintSelectedBorder(g, de);
-      }
-
-      if (isDraggingDrawings) {
-        // Paints the dragged drawings, movement line, and movement distance label
-        paintDraggedDrawings(g);
-      }
-
-      if (drawingSelectionBox != null) {
-        paintSelectionBox(g);
-      }
-
-      // Paints the select label name (if it has one)
-      for (GUID id : selectedDrawableIdSet) {
-        DrawnElement de = renderer.getZone().getDrawnElement(id);
-        paintDrawingNameLabel(g, de);
-      }
-
-      // Paints the mouse move label name (if it has one)
-      if (drawnElementAtMouseMove != null) {
-        paintDrawingNameLabel(g, drawnElementAtMouseMove);
-      }
-    }
-  }
-
-  /**
-   * Paints:
-   *
-   * <ol>
-   *   <li>drawing label names
-   *   <li>if the selection box is being dragged
-   *   <li>selected border box around selected templates
-   */
-  @Override
   public void compositeOverlay(InstructionSetBuilder builder) {
     var zone = builder.getZone();
 
@@ -920,10 +856,6 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
     return drawnElementList;
   }
 
-  private AffineTransform getPaintTransform(ZoneRenderer renderer) {
-    return renderer.getViewModel().getZoneScale().toScreenTransform();
-  }
-
   /**
    * Get the Pen of the Color Picker
    *
@@ -973,325 +905,6 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
   }
 
   /**
-   * Paints the drawables which are being changed via dragging.
-   *
-   * <p>For templates this could be a change in position, path, radius, direction, etc.
-   *
-   * <p>For drawings this is just a change in position
-   *
-   * @param g where to paint.
-   */
-  private void paintDraggedDrawings(Graphics2D g) {
-
-    // Loop through the copies of the drawings being dragged
-    for (DrawnElement de : draggedDrawnElementSet) {
-      if (de != null) {
-
-        if (de.getDrawable() instanceof AbstractTemplate at) {
-          // i.e. templates only
-
-          Pen pen = de.getPen();
-          AffineTransform oldTransform = g.getTransform();
-          AffineTransform newTransform = g.getTransform();
-          newTransform.concatenate(getPaintTransform(renderer));
-
-          g.setTransform(newTransform);
-          at.draw(getZone(), g, pen);
-          java.awt.Paint paint = pen.getPaint() != null ? pen.getPaint().getPaint() : null;
-
-          // Only paint for the template at the mouse which instigated the drag
-          if (drawnElementAtMouse.getDrawable().getId() == at.getId()) {
-            paintTemplateCursor(g, paint, pen.getThickness(), at, dragStartVertex);
-            paintTemplateMovementLine(g, pen, dragStartVertex, at);
-            paintTemplateCursor(g, paint, pen.getThickness(), at, at.getVertex());
-            ZonePoint pathVertex = getTemplatePathVertex(at);
-            if (pathVertex != null) {
-              paintTemplateCursor(g, paint, pen.getThickness(), at, pathVertex);
-            }
-          }
-
-          // Do not scale labels with zoom level
-          g.setTransform(oldTransform);
-          paintTemplateRadiusLabel(g, at.getVertex(), at);
-          if (drawnElementAtMouse.getDrawable().getId() == at.getId()) {
-            paintTemplateMovementLabel(g, dragStartVertex, at);
-          }
-
-        } else if (de.getDrawable() instanceof LineSegment ls) {
-          // e.g. points and lines
-
-          AffineTransform oldTransform = g.getTransform();
-          AffineTransform newTransform = g.getTransform();
-          newTransform.concatenate(getPaintTransform(renderer));
-          g.setTransform(newTransform);
-          ls.draw(getZone(), g, de.getPen());
-          g.setTransform(oldTransform);
-
-        } else if (de.getDrawable() instanceof ShapeDrawable sd) {
-          // e.g. rectangles, ellipses, etc
-
-          AffineTransform oldTransform = g.getTransform();
-          AffineTransform newTransform = g.getTransform();
-          newTransform.concatenate(getPaintTransform(renderer));
-          g.setTransform(newTransform);
-          sd.draw(getZone(), g, de.getPen());
-          g.setTransform(oldTransform);
-
-        } else if (de.getDrawable() instanceof DrawablesGroup dg) {
-          // groups of drawables (inc. other groups)
-
-          AffineTransform oldTransform = g.getTransform();
-          AffineTransform newTransform = g.getTransform();
-          newTransform.concatenate(getPaintTransform(renderer));
-          g.setTransform(newTransform);
-          dg.draw(getZone(), g, de.getPen());
-          g.setTransform(oldTransform);
-        }
-      }
-    } // end for
-  }
-
-  /**
-   * Paints the drawn element's name label.
-   *
-   * @param g where to draw.
-   * @param drawnElement which drawn element to base the label on.
-   */
-  private void paintDrawingNameLabel(Graphics2D g, DrawnElement drawnElement) {
-
-    if (drawnElement != null) {
-      String drawingName = null;
-      Rectangle bounds = null;
-      if (drawnElement.getDrawable() instanceof AbstractTemplate at) {
-        drawingName = at.getName();
-        bounds = at.getBounds(getZone());
-      } else if (drawnElement.getDrawable() instanceof AbstractDrawing ad) {
-        drawingName = ad.getName();
-        bounds = ad.getBounds(getZone());
-      }
-
-      if (drawingName != null && !drawingName.trim().isEmpty()) {
-
-        GUID id = drawnElement.getDrawable().getId();
-        if (!flatImageLabelCache.containsKey(id)) {
-          flatImageLabelFactory = new FlatImageLabelFactory();
-          flatImageLabelCache.put(id, flatImageLabelFactory.getMapImageLabel(drawnElement));
-        }
-
-        Pen pen = drawnElement.getPen();
-        int x = (int) (bounds.getMinX() + bounds.getMaxX()) / 2;
-        int y = (int) (bounds.getMaxY() + pen.getThickness());
-        ScreenPoint centerText = renderer.getViewModel().getZoneScale().toScreenSpace(x, y);
-
-        FlatImageLabel fil = flatImageLabelCache.get(id);
-        Dimension nameDimension = fil.getDimensions(g, drawingName);
-        fil.render(
-            g,
-            (int) (centerText.x - (nameDimension.width / 2f)),
-            (int) (centerText.y),
-            drawingName);
-      }
-    }
-  }
-
-  /**
-   * Paints a selected border around a drawn element.
-   *
-   * @param g where to draw.
-   * @param drawnElement which drawn element to draw the border around.
-   */
-  private void paintSelectedBorder(Graphics2D g, DrawnElement drawnElement) {
-    var box = drawnElement.getDrawable().getBounds(getZone());
-    var pen = drawnElement.getPen();
-
-    var zoneScale = renderer.getViewModel().getZoneScale();
-    var scale = zoneScale.getScale();
-
-    var screenPoint = zoneScale.toScreenSpace(box.x, box.y);
-
-    var x = (int) (screenPoint.x - pen.getThickness() * scale / 2);
-    var y = (int) (screenPoint.y - pen.getThickness() * scale / 2);
-    var w = (int) ((box.width + pen.getThickness()) * scale);
-    var h = (int) ((box.height + pen.getThickness()) * scale);
-
-    AppStyle.selectedBorder.paintAround(g, x, y, w, h);
-  }
-
-  /**
-   * Paint the draggable selection box.
-   *
-   * @param g where tp paint.
-   */
-  private void paintSelectionBox(Graphics2D g) {
-    // Paints the draggable selection box
-    if (drawingSelectionBox != null) {
-      Composite composite = g.getComposite();
-      java.awt.Stroke stroke = g.getStroke();
-      g.setStroke(new BasicStroke(2));
-      if (AppPreferences.fillSelectionBox.get()) {
-        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP, .25f));
-        g.setPaint(AppStyle.drawingSelectionBoxFill);
-        g.fillRoundRect(
-            drawingSelectionBox.x,
-            drawingSelectionBox.y,
-            drawingSelectionBox.width,
-            drawingSelectionBox.height,
-            10,
-            10);
-        g.setComposite(composite);
-      }
-      g.setColor(AppStyle.selectionBoxOutline);
-      g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-      g.drawRoundRect(
-          drawingSelectionBox.x,
-          drawingSelectionBox.y,
-          drawingSelectionBox.width,
-          drawingSelectionBox.height,
-          10,
-          10);
-      g.setStroke(stroke);
-    }
-  }
-
-  /**
-   * Paint a cursor on the template, either a cross or cell cursor depending on the template type.
-   * Can be used for both the vertex and (where applicable) the pathVertex.
-   *
-   * @param g where to draw.
-   * @param paint how to paint.
-   * @param thickness the line thickness.
-   * @param at the template.
-   * @param vertex the position to paint the cursor.
-   */
-  private void paintTemplateCursor(
-      Graphics2D g, java.awt.Paint paint, float thickness, AbstractTemplate at, ZonePoint vertex) {
-    switch (at.getCursorType()) {
-      case Cross -> {
-        // Paint a Cross
-        int halfCursor = CURSOR_WIDTH / 2;
-        g.setPaint(paint);
-        g.setStroke(new BasicStroke(thickness));
-        g.drawLine(vertex.x - halfCursor, vertex.y, vertex.x + halfCursor, vertex.y);
-        g.drawLine(vertex.x, vertex.y - halfCursor, vertex.x, vertex.y + halfCursor);
-      }
-      case Cell -> {
-        // Paint a Cell
-        g.setPaint(paint);
-        g.setStroke(new BasicStroke(thickness));
-        int grid = getZone().getGrid().getSize();
-        g.drawRect(vertex.x, vertex.y, grid, grid);
-      }
-    }
-  }
-
-  /**
-   * Paint the dragged movement distance in feet according to the Movement Metric setting.
-   *
-   * <p>Label is displayed below the template (i.e. similar to dragging a token)
-   *
-   * @param g where to draw.
-   * @param startVertex the starting point.
-   * @param at the template what is being dragged.
-   */
-  private void paintTemplateMovementLabel(
-      Graphics2D g, ZonePoint startVertex, AbstractTemplate at) {
-
-    // MOVEMENT LABEL
-    double moveDistance;
-    Zone zone = getZone();
-    Grid grid = zone.getGrid();
-    WalkerMetric wm =
-        MapTool.isPersonalServer()
-            ? AppPreferences.movementMetric.get()
-            : MapTool.getServerPolicy().getMovementMetric();
-    ZonePoint endVertex = at.getVertex();
-    CellPoint dragStartCellPoint = grid.convert(startVertex);
-    CellPoint dragVertexCellPoint = grid.convert(endVertex);
-    double cellDistance = grid.cellDistance(dragStartCellPoint, dragVertexCellPoint, wm);
-    moveDistance = cellDistance * zone.getUnitsPerCell();
-
-    if (moveDistance != 0) {
-      Rectangle bounds = at.getBounds(zone);
-      int x = (int) (bounds.getMinX() + bounds.getMaxX()) / 2;
-      int y = (int) (bounds.getMaxY());
-      ScreenPoint centerText = renderer.getViewModel().getZoneScale().toScreenSpace(x, y);
-
-      ToolHelper.drawMeasurement(g, moveDistance, (int) centerText.x, (int) centerText.y);
-    }
-  }
-
-  /**
-   * Draw a straight line between a point on the map and a template.
-   *
-   * @param g where to draw.
-   * @param pen the pen to use.
-   * @param startVertex the zone starting position.
-   * @param at the template what is being dragged.
-   */
-  private void paintTemplateMovementLine(
-      Graphics2D g, Pen pen, ZonePoint startVertex, AbstractTemplate at) {
-
-    ZonePoint endVertex = at.getVertex();
-
-    // Only paint of the vertices are different
-    if (!startVertex.equals(endVertex)) {
-
-      // If the cursor type is a cell, draw from the middle of the cell
-      int offsetXY = 0;
-      if (at.getCursorType() == CursorType.Cell) {
-        offsetXY = getZone().getGrid().getSize() / 2;
-      }
-
-      // MOVEMENT LINE
-      int startX = startVertex.x + offsetXY;
-      int startY = startVertex.y + offsetXY;
-      int endX = endVertex.x + offsetXY;
-      int endY = endVertex.y + offsetXY;
-      float[] dashingPattern = {9f, 3f};
-
-      Composite composite = g.getComposite();
-      java.awt.Paint paint;
-
-      paint = pen.getBackgroundPaint() != null ? pen.getBackgroundPaint().getPaint() : null;
-      g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP, 0.5f));
-      g.setPaint(paint);
-      g.setStroke(
-          new BasicStroke(
-              pen.getThickness() * 2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 1.0f));
-      g.drawLine(startX, startY, endX, endY);
-
-      paint = pen.getPaint() != null ? pen.getPaint().getPaint() : null;
-      g.setPaint(paint);
-      g.setStroke(
-          new BasicStroke(
-              pen.getThickness(),
-              BasicStroke.CAP_BUTT,
-              BasicStroke.JOIN_MITER,
-              1.0f,
-              dashingPattern,
-              2.0f));
-      g.drawLine(startX, startY, endX, endY);
-      g.setComposite(composite);
-    }
-  }
-
-  /**
-   * Paint the radius value in feet. To be displayed above the template vertex (i.e. same as when
-   * drawing a template)
-   *
-   * @param g where to paint.
-   * @param zp where on the map to paint the radius label.
-   */
-  private void paintTemplateRadiusLabel(Graphics2D g, ZonePoint zp, AbstractTemplate at) {
-    if (at.getRadius() > 0) {
-      ScreenPoint centerText = renderer.getViewModel().getZoneScale().toScreenSpace(zp.x, zp.y);
-      centerText.translate(CURSOR_WIDTH, -CURSOR_WIDTH);
-      ToolHelper.drawMeasurement(
-          g, at.getRadius() * getZone().getUnitsPerCell(), (int) centerText.x, (int) centerText.y);
-    } // endif
-  }
-
-  /**
    * Paints the drawings which are being changed via dragging. This could be a change in position,
    * path, radius, direction, etc.
    */
@@ -1302,11 +915,11 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
         continue;
       }
 
-      // Templates only
-      if (de.getDrawable() instanceof AbstractTemplate at) {
-        Pen pen = de.getPen();
+      Pen pen = de.getPen();
+      builder.addDrawable(de.getDrawable(), de.getPen());
 
-        builder.addDrawable(de.getDrawable(), de.getPen());
+      if (de.getDrawable() instanceof AbstractTemplate at) {
+        // i.e. templates only
 
         // Only paint for the template at the mouse which instigated the drag
         if (drawnElementAtMouse.getDrawable().getId() == at.getId()) {

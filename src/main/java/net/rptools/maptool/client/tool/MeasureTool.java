@@ -18,7 +18,6 @@ import com.google.common.collect.Iterables;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
@@ -36,7 +35,6 @@ import javax.swing.Action;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.ScreenPoint;
-import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.ui.theme.Images;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.ui.zone.ZoneOverlay;
@@ -49,7 +47,6 @@ import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.model.CellPoint;
 import net.rptools.maptool.model.Path;
 import net.rptools.maptool.model.ZonePoint;
-import net.rptools.maptool.util.GraphicsUtil;
 
 /** */
 public class MeasureTool extends DefaultTool implements ZoneOverlay {
@@ -101,51 +98,6 @@ public class MeasureTool extends DefaultTool implements ZoneOverlay {
   @Override
   public String getInstructions() {
     return "tool.measure.instructions";
-  }
-
-  public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    if (walker != null) {
-      renderer.renderPath(g, walker.getPath(), renderer.getZone().getGrid().getDefaultFootprint());
-      ScreenPoint sp = walker.getLastPoint().convertToScreen(renderer);
-
-      int y = (int) sp.y - 10;
-      int x = (int) sp.x + (int) (renderer.getScaledGridSize() / 2);
-      GraphicsUtil.drawBoxedString(g, Double.toString(walker.getDistance()), x, y);
-    } else if (gridlessPath != null) {
-      // distance
-      double c = 0;
-      var path2D = new Path2D.Double();
-      ZonePoint lastZP = null;
-      for (ZonePoint zp :
-          Iterables.concat(gridlessPath.getCellPath(), List.of(currentGridlessPoint))) {
-        var sp = renderer.getViewModel().getZoneScale().toScreenSpace(zp.x, zp.y);
-        if (lastZP == null) {
-          path2D.moveTo(sp.x, sp.y);
-        } else {
-          path2D.lineTo(sp.x, sp.y);
-          int a = lastZP.x - zp.x;
-          int b = lastZP.y - zp.y;
-          c += Math.sqrt(a * a + b * b);
-        }
-        lastZP = zp;
-      }
-      assert lastZP != null : "Our non-empty iterable was empty!";
-
-      c /= renderer.getZone().getGrid().getSize();
-      c *= renderer.getZone().getUnitsPerCell();
-
-      Object oldAA = SwingUtil.useAntiAliasing(g);
-      try {
-        g.setColor(Color.black);
-        g.draw(path2D);
-
-        String distance = NumberFormat.getInstance().format(c);
-        ScreenPoint sp = renderer.getViewModel().getZoneScale().toScreenSpace(lastZP.x, lastZP.y);
-        GraphicsUtil.drawBoxedString(g, distance, (int) sp.x, (int) sp.y - 20);
-      } finally {
-        SwingUtil.restoreAntiAliasing(g, oldAA);
-      }
-    }
   }
 
   @Override

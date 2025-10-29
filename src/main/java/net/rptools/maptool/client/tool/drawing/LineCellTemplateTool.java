@@ -14,12 +14,9 @@
  */
 package net.rptools.maptool.client.tool.drawing;
 
-import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
-import java.awt.geom.AffineTransform;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.swing.SwingUtil;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSetBuilder;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.Paint;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Stroke;
@@ -80,29 +77,6 @@ public class LineCellTemplateTool extends RadiusCellTemplateTool {
   /*---------------------------------------------------------------------------------------------
    * Overridden AbstractDrawingTool Methods
    *-------------------------------------------------------------------------------------------*/
-
-  @Override
-  public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    if (painting && renderer != null) {
-      Pen pen = getPenForOverlay();
-      AffineTransform old = g.getTransform();
-      AffineTransform newTransform = g.getTransform();
-      newTransform.concatenate(getPaintTransform(renderer));
-      g.setTransform(newTransform);
-      ZonePoint vertex = template.getVertex();
-      ZonePoint pathVertex = ((LineCellTemplate) template).getPathVertex();
-      template.draw(renderer.getZone(), g, pen);
-      java.awt.Paint paint = pen.getPaint() != null ? pen.getPaint().getPaint() : null;
-      paintCursor(g, paint, pen.getThickness(), vertex);
-      if (pathVertex != null) {
-        paintCursor(g, paint, pen.getThickness(), pathVertex);
-      }
-      g.setTransform(old);
-      if (pathVertex != null) {
-        paintRadius(g, vertex);
-      }
-    }
-  }
 
   @Override
   public void compositeOverlay(InstructionSetBuilder builder) {

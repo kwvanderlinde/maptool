@@ -14,16 +14,12 @@
  */
 package net.rptools.maptool.client.tool.drawing;
 
-import java.awt.BasicStroke;
-import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
-import java.awt.geom.AffineTransform;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.swing.SwingUtil;
-import net.rptools.maptool.client.tool.ToolHelper;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSetBuilder;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.Paint;
@@ -147,39 +143,6 @@ public class RadiusCellTemplateTool extends AbstractTemplateTool implements Mous
   }
 
   /**
-   * Paint a cursor
-   *
-   * @param g Where to paint.
-   * @param paint Data to draw the cursor
-   * @param thickness The thickness of the cursor.
-   * @param vertex The vertex holding the cursor.
-   */
-  protected void paintCursor(
-      Graphics2D g, java.awt.Paint paint, float thickness, ZonePoint vertex) {
-    g.setPaint(paint);
-    g.setStroke(new BasicStroke(thickness));
-    g.draw(makeCursorShapeAt(vertex, template.getCursorType()));
-  }
-
-  /**
-   * Paint the radius value in feet.
-   *
-   * @param g Where to paint.
-   * @param p Vertex where radius is painted.
-   */
-  protected void paintRadius(Graphics2D g, ZonePoint p) {
-    if (template.getRadius() > 0 && anchorSet) {
-      ScreenPoint centerText = renderer.getViewModel().getZoneScale().toScreenSpace(p.x, p.y);
-      centerText.translate(CURSOR_WIDTH, -CURSOR_WIDTH);
-      ToolHelper.drawMeasurement(
-          g,
-          template.getRadius() * renderer.getZone().getUnitsPerCell(),
-          (int) centerText.x,
-          (int) centerText.y);
-    } // endif
-  }
-
-  /**
    * Paint the radius value in feet.
    *
    * @param p Vertex where radius is painted.
@@ -285,22 +248,6 @@ public class RadiusCellTemplateTool extends AbstractTemplateTool implements Mous
   /*---------------------------------------------------------------------------------------------
    * Overridden AbstractDrawingTool Methods
    *-------------------------------------------------------------------------------------------*/
-
-  @Override
-  public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    if (painting && renderer != null) {
-      Pen pen = getPenForOverlay();
-      AffineTransform old = g.getTransform();
-      AffineTransform newTransform = g.getTransform();
-      newTransform.concatenate(getPaintTransform(renderer));
-      g.setTransform(newTransform);
-      template.draw(renderer.getZone(), g, pen);
-      java.awt.Paint paint = pen.getPaint() != null ? pen.getPaint().getPaint() : null;
-      paintCursor(g, paint, pen.getThickness(), template.getVertex());
-      g.setTransform(old);
-      paintRadius(g, template.getVertex());
-    } // endif
-  }
 
   @Override
   public void compositeOverlay(InstructionSetBuilder builder) {

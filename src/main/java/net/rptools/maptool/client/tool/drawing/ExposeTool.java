@@ -16,7 +16,6 @@ package net.rptools.maptool.client.tool.drawing;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Area;
@@ -24,7 +23,6 @@ import java.util.Set;
 import javax.annotation.Nullable;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSetBuilder;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.Paint;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Fill;
@@ -128,39 +126,6 @@ public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
     if (MapTool.getFrame().isPaintDrawingMeasurement()) {
       builder.addMeasurement(result.measurement());
     }
-  }
-
-  @Override
-  public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    var zoneScale = renderer.getViewModel().getZoneScale();
-
-    Graphics2D g2 = (Graphics2D) g.create();
-    g2.transform(zoneScale.toScreenTransform());
-
-    if (state != null) {
-      var result = strategy.getShape(state, currentPoint, centerOnOrigin, false);
-      if (result != null) {
-        var color = isEraser() ? Color.white : Color.black;
-
-        if (!isLinearTool()) {
-          // Render the interior for better user feedback.
-          g2.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 64));
-          g2.fill(result.shape());
-        }
-
-        // Render the line.
-        g2.setColor(color);
-        g2.setStroke(
-            new BasicStroke(
-                1 / (float) zoneScale.getScale(), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
-        g2.draw(result.shape());
-
-        // Measurements
-        drawMeasurementOverlay(renderer, g, result.measurement());
-      }
-    }
-
-    g2.dispose();
   }
 
   @Override

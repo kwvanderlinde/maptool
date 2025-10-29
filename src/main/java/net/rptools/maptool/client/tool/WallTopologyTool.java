@@ -15,10 +15,8 @@
 package net.rptools.maptool.client.tool;
 
 import com.google.common.eventbus.Subscribe;
-import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
@@ -135,20 +133,6 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
 
     changeToolMode(new NilToolMode());
     super.detachFrom(renderer);
-  }
-
-  @Override
-  public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-    // Paint legacy masks. This isn't strictly necessary, but I want to do it so that users can
-    // trace walls over masks if converting by hand.
-    maskOverlay.paintOverlay(renderer, g);
-
-    Graphics2D g2 = (Graphics2D) g.create();
-    g2.transform(renderer.getViewModel().getZoneScale().toScreenTransform());
-    SwingUtil.useAntiAliasing(g2);
-    g2.setComposite(AlphaComposite.SrcOver);
-
-    mode.paint(g2);
   }
 
   @Override
@@ -397,13 +381,6 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
     /**
      * Draws any custom visuals required by the tool mode.
      *
-     * @param g2 The graphics context for drawing.
-     */
-    void paint(Graphics2D g2);
-
-    /**
-     * Draws any custom visuals required by the tool mode.
-     *
      * @param builder
      * @param bounds
      */
@@ -449,9 +426,6 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
 
     @Override
     public void mouseClicked(Point2D point, Snap snapMode, MouseEvent event) {}
-
-    @Override
-    public void paint(Graphics2D g2) {}
 
     @Override
     public void composite(InstructionSetBuilder builder, Rectangle2D bounds) {}
@@ -543,28 +517,6 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
       return AppStyle.wallTopologyColor;
     }
 
-    protected void paintHandle(Graphics2D g2, Point2D point, java.awt.Paint fill) {
-      var handleRadius = tool.getHandleRadius();
-      var handleOutlineStroke =
-          new BasicStroke(
-              (float) (handleRadius / 4.), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
-      var handleOutlineColor = AppStyle.wallTopologyOutlineColor;
-
-      var shape =
-          new Ellipse2D.Double(
-              point.getX() - handleRadius,
-              point.getY() - handleRadius,
-              2 * handleRadius,
-              2 * handleRadius);
-
-      g2.setPaint(fill);
-      g2.fill(shape);
-
-      g2.setStroke(handleOutlineStroke);
-      g2.setPaint(handleOutlineColor);
-      g2.draw(shape);
-    }
-
     protected void compositeHandle(InstructionSetBuilder builder, Point2D point, Color fill) {
       var handleRadius = tool.getHandleRadius();
       var handleOutlineStroke =
@@ -581,119 +533,6 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
 
       builder.add(new Fill(shape, Paint.of(fill), 1.));
       builder.add(new Stroke(shape, Paint.of(handleOutlineColor), handleOutlineStroke, 1.));
-    }
-
-    @Override
-    public void paint(Graphics2D g2) {
-      var handleRadius = tool.getHandleRadius();
-
-      Rectangle2D bounds = g2.getClipBounds().getBounds2D();
-      // Pad the bounds by a bit so handles whose center is just outside will still show up.
-      var padding = handleRadius;
-      bounds.setRect(
-          bounds.getX() - padding,
-          bounds.getY() - padding,
-          bounds.getWidth() + 2 * padding,
-          bounds.getHeight() + 2 * padding);
-
-      // region Wall decorations.
-      // These are mere prototypes that sit at (0, 0). They will be instanced wherever they are
-      // needed during painting.
-      var directionalArrow = buildDirectionalArrowDecoration();
-      var sourceDecoration = buildWallSourceDecoration();
-      var targetDecoration = buildWallTargetDecoration();
-      // endregion
-
-      var wallStroke =
-          new BasicStroke(
-              (float) (2 * tool.getWallHalfWidth()), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
-      var wallOutlineColor = AppStyle.wallTopologyOutlineColor;
-      var wallOutlineStroke =
-          new BasicStroke(
-              (float) (wallStroke.getLineWidth() * 1.5),
-              wallStroke.getEndCap(),
-              wallStroke.getLineJoin());
-      var decorationStroke =
-          new BasicStroke(1.5f, wallStroke.getEndCap(), wallStroke.getLineJoin());
-      var walls = rig.getWallsWithin(bounds);
-      for (var wall : walls) {
-        var asSegment = wall.asLineSegment();
-        var asVector = Vector2D.create(asSegment.p0, asSegment.p1);
-
-        var lengthSquared = asVector.lengthSquared();
-        if (lengthSquared <= 4 * handleRadius * handleRadius) {
-          // The wall is so small it isn't worth drawing the wall or its decorations.
-          continue;
-        }
-
-        var angle = asVector.angle();
-        var normVector = asVector.normalize();
-
-        {
-          // Draw the wall itself.
-          var shape = new Path2D.Double();
-          shape.moveTo(asSegment.p0.getX(), asSegment.p0.getY());
-          shape.lineTo(asSegment.p1.getX(), asSegment.p1.getY());
-
-          // Draw it twice to get a black border effects without having to stroke the path.
-          g2.setStroke(wallOutlineStroke);
-          g2.setPaint(getWallStrokeColor(wall));
-          g2.draw(shape);
-
-          g2.setStroke(wallStroke);
-          g2.setPaint(getWallFill(wall));
-          g2.draw(shape);
-        }
-
-        // Next up: decorations
-        g2.setStroke(decorationStroke);
-        g2.setPaint(wallOutlineColor);
-        {
-          // Draw a tiny arrow head to indicate the target end of the wall.
-          var preTransform = g2.getTransform();
-
-          var point = normVector.multiply(-0.75 * handleRadius).translate(asSegment.p1);
-          g2.translate(point.getX(), point.getY());
-          g2.rotate(angle);
-
-          g2.draw(targetDecoration);
-          g2.fill(targetDecoration);
-
-          g2.setTransform(preTransform);
-        }
-        if (wall.getSource().data().direction() != Wall.Direction.Both) {
-          // Draw an arrow through the midpoint of the wall to indicate its direction.
-          var preTransform = g2.getTransform();
-          var wallMidpoint = asSegment.midPoint();
-          g2.translate(wallMidpoint.getX(), wallMidpoint.getY());
-          g2.rotate(angle);
-          if (wall.getSource().data().direction() == Wall.Direction.Left) {
-            g2.scale(-1, -1);
-          }
-
-          g2.draw(directionalArrow);
-
-          g2.setTransform(preTransform);
-        }
-
-        if (lengthSquared > 12 * handleRadius * handleRadius) {
-          // Draw a bar to indicate the source end of the wall.
-          // This is optional if the wall is on the small side.
-          var preTransform = g2.getTransform();
-          var barCenter = normVector.multiply(1.5 * handleRadius).translate(asSegment.p0);
-          g2.translate(barCenter.getX(), barCenter.getY());
-          g2.rotate(angle);
-
-          g2.draw(sourceDecoration);
-
-          g2.setTransform(preTransform);
-        }
-      }
-
-      var vertices = rig.getHandlesWithin(bounds);
-      for (var handle : vertices) {
-        paintHandle(g2, handle.getPosition(), getHandleFill(handle));
-      }
     }
 
     @Override

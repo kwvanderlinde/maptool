@@ -15,7 +15,6 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import com.google.common.eventbus.Subscribe;
-import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -37,7 +36,6 @@ import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstructio
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.ZonePoint;
-import net.rptools.maptool.model.drawing.DrawnElement;
 
 /** Tool for deleting drawings. */
 public class DeleteDrawingTool extends DefaultTool implements ZoneOverlay, MouseListener {
@@ -109,17 +107,6 @@ public class DeleteDrawingTool extends DefaultTool implements ZoneOverlay, Mouse
   }
 
   @Override
-  public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
-
-    for (var id : selectedDrawings) {
-      var drawnElement = renderer.getZone().getDrawnElement(id);
-      if (drawnElement == null) continue;
-
-      drawBox(g, drawnElement);
-    }
-  }
-
-  @Override
   public void compositeOverlay(InstructionSetBuilder builder) {
     var zone = builder.getZone();
 
@@ -139,23 +126,6 @@ public class DeleteDrawingTool extends DefaultTool implements ZoneOverlay, Mouse
 
       builder.add(new Border(Borders.RED, bounds));
     }
-  }
-
-  private void drawBox(Graphics2D g, DrawnElement element) {
-    var box = element.getDrawable().getBounds(getZone());
-    var pen = element.getPen();
-
-    var zoneScale = renderer.getViewModel().getZoneScale();
-    var scale = zoneScale.getScale();
-
-    var screenPoint = zoneScale.toScreenSpace(box.x, box.y);
-
-    var x = (int) (screenPoint.x - pen.getThickness() * scale / 2);
-    var y = (int) (screenPoint.y - pen.getThickness() * scale / 2);
-    var w = (int) ((box.width + pen.getThickness()) * scale);
-    var h = (int) ((box.height + pen.getThickness()) * scale);
-
-    AppStyle.selectedBorder.paintAround(g, x, y, w, h);
   }
 
   @Subscribe
