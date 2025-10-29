@@ -16,6 +16,7 @@ package net.rptools.maptool.client.ui.tokenpanel;
 
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
+import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -31,13 +32,14 @@ import net.rptools.lib.AwtUtil;
 import net.rptools.lib.image.ImageUtil;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.swing.label.FlatImageLabel;
-import net.rptools.maptool.client.swing.label.FlatImageLabelFactory;
+import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.ui.theme.Borders;
 import net.rptools.maptool.client.ui.theme.Icons;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.ui.token.AbstractTokenOverlay;
 import net.rptools.maptool.client.ui.token.BarTokenOverlay;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.LabelFactory;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction;
 import net.rptools.maptool.model.InitiativeList.TokenInitiative;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.util.ImageManager;
@@ -64,7 +66,7 @@ public class InitiativeListCellRenderer extends JPanel
   private final InitiativePanel panel;
 
   /** Used to draw the background of the item. */
-  private FlatImageLabel backgroundFlatImageLabel;
+  private RenderInstruction.Label backgroundFlatImageLabel;
 
   /**
    * The text height for the background image label. Only the text is painted inside, the token
@@ -159,8 +161,8 @@ public class InitiativeListCellRenderer extends JPanel
       return this;
     } // endif
 
-    var labelRenderFactory = new FlatImageLabelFactory();
-    backgroundFlatImageLabel = labelRenderFactory.getMapImageLabel(token);
+    var labelFactory = new LabelFactory();
+    backgroundFlatImageLabel = labelFactory.getMapImageLabel(token, "", new ScreenPoint(0, 0));
 
     // We still use the UI text so use the map label color preferences
     if (!token.isVisible()) {
@@ -240,8 +242,33 @@ public class InitiativeListCellRenderer extends JPanel
       boolean initStateSecondLine = panel.isInitStateSecondLine() && panel.isShowInitState();
       Dimension s = name.getSize();
       int th = (textHeight + 2) * (initStateSecondLine ? 2 : 1);
+
       // render an image label with set dimensions and without text
-      backgroundFlatImageLabel.render((Graphics2D) g, 0, (s.height - th) / 2, s.width, th, "");
+      var bounds = new Rectangle(0, (s.height - th) / 2, s.width, th);
+      boolean showBorder = AppPreferences.mapLabelShowBorder.get();
+      var borderArc = AppPreferences.mapLabelBorderArc.get();
+      var borderWidth = showBorder ? AppPreferences.mapLabelBorderWidth.get() : 0;
+      var background = backgroundFlatImageLabel.background();
+      var borderColor = backgroundFlatImageLabel.borderColor();
+      var labelRect =
+          new RoundRectangle2D.Double(
+              bounds.x, bounds.y, bounds.width - 1, bounds.height - 1, borderArc, borderArc);
+
+      var backgroundLabelG = (Graphics2D) g.create();
+      try {
+        backgroundLabelG.setColor(background);
+        backgroundLabelG.fill(labelRect);
+
+        if (borderWidth > 0) {
+          backgroundLabelG.setStroke(
+              new BasicStroke((float) borderWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+          backgroundLabelG.setColor(borderColor);
+          backgroundLabelG.draw(labelRect);
+        }
+      } finally {
+        backgroundLabelG.dispose();
+      }
+
       super.paintComponent(g);
     }
 
