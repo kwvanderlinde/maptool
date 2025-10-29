@@ -24,7 +24,6 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGeneratorLoader;
 import com.badlogic.gdx.graphics.g2d.freetype.FreetypeFontLoader;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
-import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.*;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.utils.TiledDrawable;
@@ -63,7 +62,6 @@ import net.rptools.maptool.client.ui.theme.LabelBackgrounds;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.ui.token.AbstractTokenOverlay;
 import net.rptools.maptool.client.ui.token.BarTokenOverlay;
-import net.rptools.maptool.client.ui.zone.DrawableLight;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.ZoneViewModel;
 import net.rptools.maptool.client.ui.zone.gdx.drawing.SimpleDrawingRenderer;
@@ -104,7 +102,6 @@ import space.earlygrey.shapedrawer.ShapeDrawer;
 public class GdxRenderer extends ApplicationAdapter {
 
   private static final Logger log = LogManager.getLogger(GdxRenderer.class);
-  private static final int BLENDING_TEXTURE_INDEX = 2;
 
   public static final float POINTS_PER_BEZIER = 10f;
   private static GdxRenderer _instance;
@@ -189,7 +186,6 @@ public class GdxRenderer extends ApplicationAdapter {
   private boolean renderZone = false;
   private boolean showAstarDebugging = false;
 
-  private ShaderProgram environmentalLightingShader;
   private LayerShader layerShader;
 
   // general resources
@@ -356,13 +352,6 @@ public class GdxRenderer extends ApplicationAdapter {
                 }
               });
 
-      environmentalLightingShader =
-          new ShaderProgram(
-              Gdx.files.classpath(
-                  "net/rptools/maptool/client/ui/zone/gdx/environmentalLighting.vsh"),
-              Gdx.files.classpath(
-                  "net/rptools/maptool/client/ui/zone/gdx/environmentalLighting.fsh"));
-
       Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
       try {
         pixmap.setBlending(Pixmap.Blending.None);
@@ -438,7 +427,6 @@ public class GdxRenderer extends ApplicationAdapter {
   @Override
   public void dispose() {
     try {
-      environmentalLightingShader.dispose();
       layerShader.dispose();
       manager.dispose();
       batch.dispose();
@@ -490,49 +478,6 @@ public class GdxRenderer extends ApplicationAdapter {
     } catch (Exception e) {
       log.error("Unhandled exception in GdxRenderer::resize()", e);
     }
-  }
-
-  private void drawBackBuffer(BlendFunction blendDown) {
-    setProjectionMatrix(hudCam.combined);
-    resultsBuffer.begin();
-    blendDown.applyToBatch(batch);
-    batch.draw(backBuffer.getColorBufferTexture(), 0, 0, width, height, 0, 0, 1, 1);
-    setProjectionMatrix(cam.combined);
-    // Leave results buffer current for the next folks.
-  }
-
-  private void drawBackBuffer(ShaderProgram shader) {
-    var oldShader = batch.getShader();
-
-    setProjectionMatrix(hudCam.combined);
-    spareBuffer.begin();
-    batch.setShader(shader);
-    ScreenUtils.clear(Color.CLEAR);
-    // TODO Does SRC_ONLY even do anything here?
-    BlendFunction.SRC_ONLY.applyToBatch(batch);
-    try {
-      shader.setUniformi("u_dst", BLENDING_TEXTURE_INDEX);
-      try {
-        resultsBuffer.getColorBufferTexture().bind(BLENDING_TEXTURE_INDEX);
-        // Avoid affecting resultsResults.getColorBufferTexture() any more (OpenGL state machine)
-        Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
-
-        batch.draw(backBuffer.getColorBufferTexture(), 0, 0, width, height, 0, 0, 1, 1);
-      } finally {
-        batch.flush();
-
-        // Swap buffers
-        var tmp = resultsBuffer;
-        resultsBuffer = spareBuffer;
-        spareBuffer = tmp;
-
-        // Leave results buffer current for the next folks.
-      }
-    } finally {
-      batch.setShader(oldShader);
-    }
-
-    setProjectionMatrix(cam.combined);
   }
 
   private TextureRegion fetchImageResource(Images resource) {
@@ -832,18 +777,6 @@ public class GdxRenderer extends ApplicationAdapter {
       timer.start("tokensStamp");
       renderTokens(zoneCache.getZone().getTokensOnLayer(Zone.Layer.OBJECT, false), view, false);
       timer.stop("tokensStamp");
-    }
-
-    if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
-      timer.start("lights");
-      renderLights(view);
-      timer.stop("lights");
-    }
-
-    if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
-      timer.start("auras");
-      renderAuras(view);
-      timer.stop("auras");
     }
 
     renderPlayerDarkness(view);
@@ -1744,89 +1677,6 @@ public class GdxRenderer extends ApplicationAdapter {
     sprite.setSize(w, h);
     sprite.setPosition(zp.x - w / 2f, -(zp.y - h / 2f));
     sprite.draw(batch);
-  }
-
-  private void renderLights(PlayerView view) {
-    CodeTimer timer = CodeTimer.get();
-    if (AppState.isShowLights()) {
-      timer.start("renderLights:getLights");
-      final var drawableLights = zoneCache.getZoneView().getDrawableLights(view);
-      timer.stop("renderLights:getLights");
-
-      timer.start("renderLights:renderLightOverlay");
-      if (!drawableLights.isEmpty()) {
-        batch.flush();
-        backBuffer.begin();
-        renderLightOverlay(
-            drawableLights,
-            AppPreferences.lightOverlayOpacity.get() / 255.f,
-            BlendFunction.SCREEN,
-            false);
-        batch.flush();
-        backBuffer.end();
-
-        if (zoneCache.getZone().getLightingStyle() == Zone.LightingStyle.ENVIRONMENTAL) {
-          drawBackBuffer(environmentalLightingShader);
-        } else {
-          drawBackBuffer(BlendFunction.ALPHA_SRC_OVER);
-        }
-      }
-      timer.stop("renderLights:renderLightOverlay");
-    }
-  }
-
-  private void renderAuras(PlayerView view) {
-    CodeTimer timer = CodeTimer.get();
-    timer.start("renderAuras:getAuras");
-    final var drawableAuras = zoneCache.getZoneView().getDrawableAuras(view);
-    timer.stop("renderAuras:getAuras");
-
-    batch.flush();
-    backBuffer.begin();
-    renderLightOverlay(
-        drawableAuras,
-        AppPreferences.auraOverlayOpacity.get() / 255.0f,
-        BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER,
-        true);
-    batch.flush();
-    backBuffer.end();
-    drawBackBuffer(BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER);
-  }
-
-  private void renderLightOverlay(
-      Collection<DrawableLight> lights,
-      float alpha,
-      BlendFunction lightBlending,
-      boolean premultipy) {
-    CodeTimer timer = CodeTimer.get();
-    // Set up a buffer image for lights to be drawn onto before the map
-    timer.start("renderLightOverlay:allocateBuffer");
-    ScreenUtils.clear(Color.CLEAR);
-    setProjectionMatrix(cam.combined);
-    lightBlending.applyToBatch(batch);
-    timer.stop("renderLightOverlay:allocateBuffer");
-
-    // Draw lights onto the buffer image so the map doesn't affect how they blend
-    timer.start("renderLightOverlay:drawLights");
-    for (var light : lights) {
-      var paint = light.getPaint().getPaint();
-
-      if (paint instanceof java.awt.Color color) {
-        Color.argb8888ToColor(tmpColor, color.getRGB());
-      } else {
-        log.warn("Unexpected color type: {}", paint.getClass());
-        continue;
-      }
-      tmpColor.set(tmpColor.r, tmpColor.g, tmpColor.b, alpha);
-      if (premultipy) {
-        tmpColor.premultiplyAlpha();
-      }
-      areaRenderer.setColor(tmpColor);
-
-      var triangulation = areaRenderer.triangulate(light.getAreaAsPolygons());
-      areaRenderer.fill(batch, triangulation);
-    }
-    timer.stop("renderLightOverlay:drawLights");
   }
 
   private void createScreenshot(String name) {

@@ -157,9 +157,9 @@ public class ZoneCompositor {
 
       // TODO Object stamps if Object layer enabled.
 
-      // TODO Lights here
+      compositeLights(builder, view);
       compositeLumens(builder, view);
-      // TODO Auras here
+      compositeAuras(builder, view);
 
       // TODO Darkness
 
@@ -676,6 +676,86 @@ public class ZoneCompositor {
                     AppPreferences.haloOverlayOpacity.get() / 255.));
           }
         });
+  }
+
+  private void compositeLights(InstructionSetBuilder builder, PlayerView view) {
+    var timer = CodeTimer.get();
+    timer.start("compositeLights");
+    try {
+      if (!renderer.shouldRenderLayer(Zone.Layer.TOKEN, view)) {
+        return;
+      }
+      if (!AppState.isShowLights()) {
+        return;
+      }
+
+      final var drawableLights = zoneView.getDrawableLights(view);
+      if (drawableLights.isEmpty()) {
+        return;
+      }
+      final var lightingStyle = zone.getLightingStyle();
+
+      final var clip = ClipType.VisibleArea;
+      final var blend =
+          switch (lightingStyle) {
+            case ENVIRONMENTAL -> BlendMode.Brighten;
+            case OVERTOP -> BlendMode.StraightAlphaSrcOver;
+          };
+      final var clearColor =
+          switch (lightingStyle) {
+            case ENVIRONMENTAL -> Color.black;
+            case OVERTOP -> COLOR_CLEAR;
+          };
+      final var opacity =
+          switch (lightingStyle) {
+            case ENVIRONMENTAL -> 1.;
+            case OVERTOP -> AppPreferences.lightOverlayOpacity.get() / 255.f;
+          };
+      builder.bufferedLayer(
+          "lights",
+          clip,
+          blend,
+          opacity,
+          () -> {
+            builder.add(new ClearScreen(clearColor));
+            builder.add(new SwitchAlphaMode(AlphaMode.Screen));
+
+            for (var light : drawableLights) {
+              builder.add(new Fill(light.getArea(), Paint.of(light.getPaint()), 1.));
+            }
+          });
+    } finally {
+      timer.stop("compositeLights");
+    }
+  }
+
+  private void compositeAuras(InstructionSetBuilder builder, PlayerView view) {
+    var timer = CodeTimer.get();
+    timer.start("compositeAuras");
+    try {
+      if (!renderer.shouldRenderLayer(Zone.Layer.TOKEN, view)) {
+        return;
+      }
+      // TODO No AppState control for auras?
+
+      final var drawableAuras = zoneView.getDrawableAuras(view);
+      if (drawableAuras.isEmpty()) {
+        return;
+      }
+
+      builder.unbufferedLayer(
+          "auras",
+          ClipType.VisibleArea,
+          () -> {
+            final var auraOpacity = AppPreferences.auraOverlayOpacity.get() / 255.f;
+
+            for (var aura : drawableAuras) {
+              builder.add(new Fill(aura.getArea(), Paint.of(aura.getPaint()), auraOpacity));
+            }
+          });
+    } finally {
+      timer.stop("compositeAuras");
+    }
   }
 
   private void compositeLumens(InstructionSetBuilder builder, PlayerView view) {
