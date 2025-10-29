@@ -1312,63 +1312,6 @@ public class GdxRenderer extends ApplicationAdapter {
     timer.stop("calcs-2");
   }
 
-  private void renderCoordinates(PlayerView view) {
-    if (!AppState.isShowCoordinates()
-        || !(zoneCache.getZone().getGrid() instanceof SquareGrid grid)) return;
-
-    batch.setProjectionMatrix(hudCam.combined);
-    var font = boldFont;
-
-    var zoneScale = zoneCache.getZoneViewModel().getZoneScale();
-    float cellSize = (float) zoneCache.getZoneRenderer().getScaledGridSize();
-    CellPoint topLeft = grid.convert(new ScreenPoint(0, 0).convertToZone(zoneScale));
-    ZonePoint topLeftZp = grid.convert(topLeft);
-    ScreenPoint sp = zoneScale.toScreenSpace(topLeftZp.x, topLeftZp.y);
-
-    Dimension size = zoneCache.getZoneRenderer().getSize();
-    glyphLayout.setText(font, "MMM");
-    float startX = glyphLayout.width + 10;
-
-    float x = (float) (sp.x + cellSize / 2); // Start at middle of the cell that's on screen
-    float nextAvailableSpace = -1;
-    while (x < size.width) {
-      String coord = Integer.toString(topLeft.x);
-      glyphLayout.setText(font, coord);
-      float strWidth = glyphLayout.width;
-      float strX = (int) x - strWidth / 2;
-
-      if (x > startX && strX > nextAvailableSpace) {
-        font.setColor(Color.BLACK);
-        font.draw(batch, coord, strX, height - glyphLayout.height / 2 - 1);
-        font.setColor(Color.ORANGE);
-        font.draw(batch, coord, strX - 1, height - glyphLayout.height / 2);
-
-        nextAvailableSpace = strX + strWidth + 10;
-      }
-      x += cellSize;
-      topLeft.x++;
-    }
-    float y = (float) sp.y + cellSize / 2f; // Start at middle of the cell that's on screen
-    nextAvailableSpace = -1;
-    while (y < size.height) {
-      String coord = grid.decimalToAlphaCoord(topLeft.y);
-
-      float strY = y + font.getAscent() / 2;
-
-      if (y > glyphLayout.height && strY > nextAvailableSpace) {
-        font.setColor(Color.BLACK);
-        font.draw(batch, coord, 10, height - strY + glyphLayout.height / 2 - 1);
-        font.setColor(Color.YELLOW);
-        font.draw(batch, coord, 10 - 1, height - strY + glyphLayout.height / 2);
-
-        nextAvailableSpace = strY + font.getAscent() / 2 + 10;
-      }
-      y += cellSize;
-      topLeft.y++;
-    }
-    batch.setProjectionMatrix(cam.combined);
-  }
-
   private void paintLightSourceIconOverlay(PlayerView view) {
     if (!AppState.isShowLightSources() || !view.isGMView()) {
       return;

@@ -35,6 +35,7 @@ import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.ui.theme.Images;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.ZoneView;
@@ -44,6 +45,7 @@ import net.rptools.maptool.client.ui.zone.renderer.instructions.BlendMode;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.ClipType;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSet;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSetBuilder;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.LabelFactory;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.Paint;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.BoxedString;
@@ -58,6 +60,7 @@ import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstructio
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Stroke;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.ZoneViewport;
 import net.rptools.maptool.language.I18N;
+import net.rptools.maptool.model.CellPoint;
 import net.rptools.maptool.model.Grid;
 import net.rptools.maptool.model.GridlessGrid;
 import net.rptools.maptool.model.HexGridHorizontal;
@@ -193,7 +196,7 @@ public class ZoneCompositor {
             });
       }
 
-      // TODO Coordinates
+      compositeCoordinates(builder, viewport, zone.getGrid());
 
       compositeLightSourceIcons(builder, viewport, view);
 
@@ -563,6 +566,80 @@ public class ZoneCompositor {
     }
 
     return path;
+  }
+
+  private void compositeCoordinates(
+      InstructionSetBuilder builder, ZoneViewport viewport, Grid grid) {
+    if (!AppState.isShowCoordinates()) {
+      return;
+    }
+    if (!(grid instanceof SquareGrid squareGrid)) {
+      // Only square grids have coordinate support for now.
+      return;
+    }
+
+    var factory = new LabelFactory();
+
+    builder.unbufferedLayer(
+        "coordinates",
+        ClipType.NoClipping,
+        () -> {
+          var bounds = viewport.getWorldSpaceBounds();
+
+          var dummy = factory.getXCoordinateLabel("MMM", new ScreenPoint(0, 0));
+
+          var topLeftZone = new Point2D.Double(bounds.getMinX(), bounds.getMinY());
+
+          CellPoint topLeft =
+              SquareGrid.convert(
+                  topLeftZone.getX(),
+                  topLeftZone.getY(),
+                  grid.getSize(),
+                  grid.getOffsetX(),
+                  grid.getOffsetY());
+          var topLeftCenter = squareGrid.getCellCenter(topLeft);
+
+          // Make sure we don't overlap coordinates in the top-left corner.
+          Point2D marginTopLeft =
+              new ScreenPoint(
+                  dummy.screenBounds().getWidth() + 10, dummy.screenBounds().getHeight());
+
+          double nextAvailableScreenSpace = -1;
+          for (double x = topLeftCenter.x; x < bounds.getMaxX(); x += grid.getSize(), ++topLeft.x) {
+            String coord = Integer.toString(topLeft.x);
+
+            var screenPosition = viewport.zoneScale().toScreenSpace(new Point2D.Double(x, 0));
+            screenPosition.y = 0;
+
+            var xLabel = factory.getXCoordinateLabel(coord, screenPosition);
+
+            if (xLabel.screenBounds().getMinX() > marginTopLeft.getX()
+                && xLabel.screenBounds().getMinX() > nextAvailableScreenSpace) {
+              // TODO Original make a drop shadow by drawing four offsets of the string as black
+              //  before changing to orange and drawing the final one.
+              builder.add(xLabel);
+              nextAvailableScreenSpace = xLabel.screenBounds().getMaxX() + 10;
+            }
+          }
+
+          nextAvailableScreenSpace = -1;
+          for (double y = topLeftCenter.y; y < bounds.getMaxY(); y += grid.getSize(), ++topLeft.y) {
+            String coord = SquareGrid.decimalToAlphaCoord(topLeft.y);
+
+            var leftCenter = viewport.zoneScale().toScreenSpace(new Point2D.Double(0, y));
+            leftCenter.x = 10;
+
+            var yLabel = factory.getYCoordinateLabel(coord, leftCenter);
+
+            if (yLabel.screenBounds().getMinY() > marginTopLeft.getY()
+                && yLabel.screenBounds().getMinY() > nextAvailableScreenSpace) {
+              // TODO Original make a drop shadow by drawing four offsets of the string as black
+              //  before changing to yellow and drawing the final one.
+              builder.add(yLabel);
+              nextAvailableScreenSpace = yLabel.screenBounds().getMaxY() + 10;
+            }
+          }
+        });
   }
 
   private void compositeTextLabels(InstructionSetBuilder builder) {
