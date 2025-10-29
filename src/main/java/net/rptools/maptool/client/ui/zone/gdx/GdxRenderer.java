@@ -900,16 +900,6 @@ public class GdxRenderer extends ApplicationAdapter {
       renderLabels(view);
     }
 
-    if (zoneCache.getZone().hasFog()) {
-      batch.flush();
-      backBuffer.begin();
-      renderFog(view);
-      batch.flush();
-      backBuffer.end();
-
-      drawBackBuffer(BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER);
-    }
-
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
       // Jamz: If there is fog or vision we may need to re-render vision-blocking type tokens
       // For example. this allows a "door" stamp to block vision but still allow you to see the
@@ -1589,60 +1579,6 @@ public class GdxRenderer extends ApplicationAdapter {
     for (ItemRenderer renderer : itemRenderList) {
       renderer.render(cam, zoom);
     }
-  }
-
-  private void renderFog(PlayerView view) {
-    CodeTimer timer = CodeTimer.get();
-
-    var zoneView = zoneCache.getZoneView();
-
-    var visibility = zoneView.getVisibility(view);
-    Area softFogArea = visibility.softFogArea();
-    Area clearArea = visibility.clearArea();
-
-    timer.start("renderFog");
-    ScreenUtils.clear(Color.CLEAR);
-
-    BlendFunction.SRC_ONLY.applyToBatch(batch);
-    setProjectionMatrix(cam.combined);
-
-    timer.start("renderFog-hardFow");
-    // Fill
-    batch.setColor(Color.WHITE);
-    var paint = zoneCache.getZone().getFogPaint();
-    var fogPaint = getPaint(paint);
-    fillViewportWith(
-        tmpColor.set(fogPaint.color()).mul(view.isGMView() ? .6f : 1f), fogPaint.texture());
-    timer.stop("renderFog-hardFow");
-
-    timer.start("renderFog-softFow");
-    if (!softFogArea.isEmpty()) {
-      areaRenderer.setColor(tmpColor.set(0, 0, 0, AppPreferences.fogOverlayOpacity.get() / 255.0f));
-      // Fill in the exposed area
-      areaRenderer.fillArea(batch, softFogArea);
-    }
-    timer.stop("renderFog-softFow");
-
-    timer.start("renderFog-exposedArea");
-    if (!clearArea.isEmpty()) {
-      areaRenderer.setColor(tmpColor.set(Color.CLEAR));
-      // Fill in the exposed area
-      areaRenderer.fillArea(batch, clearArea);
-    }
-    timer.stop("renderFog-exposedArea");
-
-    timer.start("renderFog-outline");
-    // If there is no boundary between soft fog and visible area, there is no need for an outline.
-    if (!softFogArea.isEmpty() && !clearArea.isEmpty()) {
-      areaRenderer.setColor(Color.BLACK);
-      areaRenderer.drawArea(
-          batch,
-          visibleScreenArea,
-          new BasicStroke((float) (1 / viewModel.getZoneScale().getScale())));
-    }
-    timer.stop("renderFog-outline");
-
-    timer.stop("renderFog");
   }
 
   private void setProjectionMatrix(Matrix4 matrix) {

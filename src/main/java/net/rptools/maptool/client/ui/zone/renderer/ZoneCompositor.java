@@ -44,6 +44,7 @@ import net.rptools.maptool.client.ui.zone.renderer.instructions.Paint;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.BoxedString;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.ClearScreen;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Fill;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.FillFrameBuffer;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.ImageAsset;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Meta.SwitchAlphaMode;
@@ -164,7 +165,7 @@ public class ZoneCompositor {
 
       // TODO Text labels
 
-      // TODO Fog of war
+      compositeFog(builder, viewport, view);
 
       // TODO VBL & Figure tokens if Token layer enabled (even though they aren't all Tokens).
 
@@ -553,5 +554,56 @@ public class ZoneCompositor {
     }
 
     return path;
+  }
+
+  private void compositeFog(InstructionSetBuilder builder, ZoneViewport viewport, PlayerView view) {
+    if (!zone.hasFog()) {
+      return;
+    }
+
+    // Fog of war intentionally hides lower layers behind it.
+    // TODO This doesn't work when the fog is transparent. Personally, I think fog of war should set
+    //  a black background before rendering the hard FoW on top of that. And it might make sense to
+    //  clip lower layers to the exposed area.
+    builder.bufferedLayer(
+        "fogOfWar",
+        ClipType.NoClipping,
+        BlendMode.AlphaSrcOver,
+        1.,
+        () -> {
+          var visibility = zoneView.getVisibility(view);
+          Area softFogArea = visibility.softFogArea();
+          Area clearArea = visibility.clearArea();
+
+          var hardFogPaint = zone.getFogPaint();
+          var extraHardFogOpacity = view.isGMView() ? .6f : 1f;
+          var softFogOpacity = AppPreferences.fogOverlayOpacity.get() / 255.;
+
+          builder.add(new SwitchAlphaMode(AlphaMode.SrcOnly));
+          builder.add(new FillFrameBuffer(Paint.of(hardFogPaint), extraHardFogOpacity));
+
+          if (!softFogArea.isEmpty()) {
+            builder.add(
+                new Fill(
+                    softFogArea,
+                    Paint.of(new Color(0, 0, 0, Math.clamp((int) (255 * softFogOpacity), 0, 255))),
+                    1.));
+          }
+
+          if (!clearArea.isEmpty()) {
+            builder.add(new Fill(clearArea, Paint.of(COLOR_CLEAR), 1.));
+          }
+
+          // If there is no boundary between soft fog and visible area, there is no need for an
+          // outline.
+          if (!softFogArea.isEmpty() && !clearArea.isEmpty()) {
+            builder.add(
+                new Stroke(
+                    clearArea,
+                    Paint.of(Color.black),
+                    new BasicStroke(1 / (float) viewport.zoneScale().getScale()),
+                    1.));
+          }
+        });
   }
 }
