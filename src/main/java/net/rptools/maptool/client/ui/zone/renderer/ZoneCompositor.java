@@ -29,6 +29,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.function.BiConsumer;
 import javax.annotation.Nullable;
+import net.rptools.lib.CodeTimer;
 import net.rptools.lib.image.ImageUtil;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.AppState;
@@ -49,6 +50,7 @@ import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstructio
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Fill;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.FillFrameBuffer;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.ImageAsset;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Meta.SetClipType;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Meta.SwitchAlphaMode;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Noise;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Stroke;
@@ -155,7 +157,9 @@ public class ZoneCompositor {
 
       // TODO Object stamps if Object layer enabled.
 
-      // TODO Lights/lumens/auras if Token layer enabled
+      // TODO Lights here
+      compositeLumens(builder, view);
+      // TODO Auras here
 
       // TODO Darkness
 
@@ -671,6 +675,90 @@ public class ZoneCompositor {
                     Paint.of(visionColor),
                     AppPreferences.haloOverlayOpacity.get() / 255.));
           }
+        });
+  }
+
+  private void compositeLumens(InstructionSetBuilder builder, PlayerView view) {
+    if (!renderer.shouldRenderLayer(Zone.Layer.TOKEN, view)) {
+      return;
+    }
+    if (!AppState.isShowLumensOverlay()) {
+      return;
+    }
+
+    var timer = CodeTimer.get();
+
+    var overlayOpacity = AppPreferences.lumensOverlayOpacity.get() / 255.0f;
+    var borderThickness = AppPreferences.lumensOverlayBorderThickness.get();
+    var disjointLumensLevels = new ArrayList<>(zoneView.getDisjointObscuredLumensLevels(view));
+
+    builder.bufferedLayer(
+        "lumens",
+        ClipType.NoClipping,
+        BlendMode.AlphaSrcOver,
+        1.,
+        () -> {
+          // At night, show any uncovered areas as dark. In daylight, show them as light (clear).
+          builder.add(
+              new ClearScreen(
+                  zone.getVisionType() == Zone.VisionType.NIGHT
+                      ? new Color(0.f, 0.f, 0.f, overlayOpacity)
+                      : COLOR_CLEAR));
+
+          builder.add(new SwitchAlphaMode(AlphaMode.SrcOnly));
+          // For the rest of the rendering, we need to clip to the visible area.
+          if (!view.isGMView()) {
+            builder.add(new SetClipType(ClipType.VisibleArea));
+          }
+
+          // Note that we want the fills to have transparency, but the borders to be solid. So we
+          // capture
+          // opacity in the fill colors.
+
+          // TODO Original did `new Color(0.f, 0.f, 0.f, 1.f)`. Any difference?
+          var darknessFill = Paint.of(Color.black);
+          var borderPaint = Paint.of(Color.black);
+
+          timer.start("compositeLumensFills");
+          for (final var lumensLevel : disjointLumensLevels) {
+            final var lumensStrength = lumensLevel.lumensStrength();
+
+            // Light is weaker than darkness, so do it first.
+            float lightOpacity;
+            float lightShade;
+            if (lumensStrength == 0) {
+              // This area represents daylight, so draw it as clear despite the low value.
+              lightShade = 1.f;
+              lightOpacity = 0;
+            } else if (lumensStrength >= 100) {
+              // Bright light, render mostly clear.
+              lightShade = 1.f;
+              lightOpacity = 1.f / 10.f;
+            } else {
+              lightShade = Math.max(0.f, Math.min(lumensStrength / 100.f, 1.f));
+              lightShade *= lightShade;
+              lightOpacity = 1.f;
+            }
+
+            builder.add(
+                new Fill(
+                    lumensLevel.lightArea(),
+                    Paint.of(new Color(lightShade, lightShade, lightShade, lightOpacity)),
+                    overlayOpacity));
+            builder.add(new Fill(lumensLevel.darknessArea(), darknessFill, overlayOpacity));
+          }
+          timer.stop("compositeLumensFills");
+
+          timer.start("compositeLumensBorders");
+          if (borderThickness > 0) {
+            var borderStroke =
+                new BasicStroke(
+                    (float) borderThickness, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
+            for (var lumensLevel : disjointLumensLevels) {
+              builder.add(new Stroke(lumensLevel.lightArea(), borderPaint, borderStroke, 1.));
+            }
+          }
+          timer.stop("compositeLumensBorders");
         });
   }
 }

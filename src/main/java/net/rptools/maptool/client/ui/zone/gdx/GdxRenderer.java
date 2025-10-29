@@ -841,12 +841,6 @@ public class GdxRenderer extends ApplicationAdapter {
     }
 
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
-      timer.start("lumens");
-      renderLumens(view);
-      timer.stop("lumens");
-    }
-
-    if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
       timer.start("auras");
       renderAuras(view);
       timer.stop("auras");
@@ -1752,77 +1746,6 @@ public class GdxRenderer extends ApplicationAdapter {
     sprite.draw(batch);
   }
 
-  private void renderLumensOverlay(PlayerView view, float overlayAlpha) {
-    CodeTimer timer = CodeTimer.get();
-    final var disjointLumensLevels = zoneCache.getZoneView().getDisjointObscuredLumensLevels(view);
-
-    BlendFunction.SRC_ONLY.applyToBatch(batch);
-    // At night, show any uncovered areas as dark. In daylight, show them as light (clear).
-    if (zoneCache.getZone().getVisionType() == Zone.VisionType.NIGHT) {
-      ScreenUtils.clear(0, 0, 0, overlayAlpha);
-    } else {
-      ScreenUtils.clear(Color.CLEAR);
-    }
-
-    timer.start("renderLumensOverlay:drawLumens");
-    for (final var lumensLevel : disjointLumensLevels) {
-      final var lumensStrength = lumensLevel.lumensStrength();
-
-      // Light is weaker than darkness, so do it first.
-      float lightOpacity;
-      float lightShade;
-      if (lumensStrength == 0) {
-        // This area represents daylight, so draw it as clear despite the low value.
-        lightShade = 1.f;
-        lightOpacity = 0;
-      } else if (lumensStrength >= 100) {
-        // Bright light, render mostly clear.
-        lightShade = 1.f;
-        lightOpacity = 1.f / 10.f;
-      } else {
-        lightShade = Math.max(0.f, Math.min(lumensStrength / 100.f, 1.f));
-        lightShade *= lightShade;
-        lightOpacity = 1.f;
-      }
-
-      timer.start("renderLumensOverlay:drawLights:fillArea");
-
-      areaRenderer.setColor(
-          tmpColor
-              .set(lightShade, lightShade, lightShade, lightOpacity * overlayAlpha)
-              .premultiplyAlpha());
-      areaRenderer.fillArea(batch, lumensLevel.lightArea());
-
-      areaRenderer.setColor(tmpColor.set(0.f, 0.f, 0.f, overlayAlpha));
-      areaRenderer.fillArea(batch, lumensLevel.darknessArea());
-      timer.stop("renderLumensOverlay:drawLights:fillArea");
-    }
-
-    timer.stop("renderLumensOverlay:drawLumens");
-
-    BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER.applyToBatch(batch);
-    // Now draw borders around each region if configured.
-    batch.setColor(Color.WHITE);
-    final var borderThickness = AppPreferences.lumensOverlayBorderThickness.get();
-    if (borderThickness > 0) {
-      tmpColor.set(0.f, 0.f, 0.f, 1.f);
-      for (final var lumensLevel : disjointLumensLevels) {
-        timer.start("renderLumensOverlay:drawLights:drawArea");
-        areaRenderer.setColor(tmpColor);
-        areaRenderer.drawArea(
-            batch,
-            lumensLevel.lightArea(),
-            new BasicStroke(borderThickness, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        areaRenderer.setColor(tmpColor);
-        areaRenderer.drawArea(
-            batch,
-            lumensLevel.darknessArea(),
-            new BasicStroke(borderThickness, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        timer.stop("renderLumensOverlay:drawLights:drawArea");
-      }
-    }
-  }
-
   private void renderLights(PlayerView view) {
     CodeTimer timer = CodeTimer.get();
     if (AppState.isShowLights()) {
@@ -1849,17 +1772,6 @@ public class GdxRenderer extends ApplicationAdapter {
         }
       }
       timer.stop("renderLights:renderLightOverlay");
-    }
-  }
-
-  private void renderLumens(PlayerView view) {
-    if (AppState.isShowLumensOverlay()) {
-      batch.flush();
-      backBuffer.begin();
-      renderLumensOverlay(view, AppPreferences.lumensOverlayOpacity.get() / 255.0f);
-      batch.flush();
-      backBuffer.end();
-      drawBackBuffer(BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER);
     }
   }
 
