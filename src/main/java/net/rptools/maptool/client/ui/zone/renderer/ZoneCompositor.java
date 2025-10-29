@@ -35,6 +35,7 @@ import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.ui.theme.Images;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.ZoneView;
 import net.rptools.maptool.client.ui.zone.ZoneViewModel;
@@ -49,6 +50,7 @@ import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstructio
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.ClearScreen;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Fill;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.FillFrameBuffer;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Icon;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.ImageAsset;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Meta.SetClipType;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Meta.SwitchAlphaMode;
@@ -193,7 +195,7 @@ public class ZoneCompositor {
 
       // TODO Coordinates
 
-      // TODO Light source icons, if Token layer is enabled, is GM view & option is enabled.
+      compositeLightSourceIcons(builder, viewport, view);
 
       // TODO Debug rendering.
 
@@ -859,6 +861,34 @@ public class ZoneCompositor {
         ClipType.NoClipping,
         () -> {
           builder.add(new Fill(darkness, Paint.of(Color.black), 1.));
+        });
+  }
+
+  private void compositeLightSourceIcons(
+      InstructionSetBuilder builder, ZoneViewport viewport, PlayerView view) {
+    if (!renderer.shouldRenderLayer(Zone.Layer.TOKEN, view)
+        || !view.isGMView()
+        || !AppState.isShowLightSources()) {
+      return;
+    }
+
+    builder.unbufferedLayer(
+        "lightSourceIcons",
+        ClipType.NoClipping,
+        () -> {
+          final var halfIconSize = 8.; // The light source icon is 16x16, so ...
+          for (var point : viewModel.getLightPositions()) {
+            var screenPoint = viewport.zoneScale().toScreenSpace(point);
+            var screenBounds =
+                new Rectangle2D.Double(
+                    screenPoint.x - halfIconSize,
+                    screenPoint.y - halfIconSize,
+                    halfIconSize * 2,
+                    halfIconSize * 2);
+            var worldBounds = viewport.zoneScale().toWorldSpace(screenBounds);
+
+            builder.add(new Icon(Images.LIGHT_SOURCE, worldBounds));
+          }
         });
   }
 }

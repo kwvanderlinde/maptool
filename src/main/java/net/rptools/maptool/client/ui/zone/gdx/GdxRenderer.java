@@ -863,12 +863,6 @@ public class GdxRenderer extends ApplicationAdapter {
       setProjectionMatrix(cam.combined);
     }
 
-    if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
-      timer.start("lightSourceIconOverlay.paintOverlay");
-      paintLightSourceIconOverlay(view);
-      timer.stop("lightSourceIconOverlay.paintOverlay");
-    }
-
     batch.flush();
     resultsBuffer.end();
 
