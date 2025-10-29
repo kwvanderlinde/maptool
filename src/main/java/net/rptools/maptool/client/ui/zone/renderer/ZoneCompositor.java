@@ -197,7 +197,7 @@ public class ZoneCompositor {
 
       compositeLightSourceIcons(builder, viewport, view);
 
-      // TODO Debug rendering.
+      compositeDebugShapes(builder, viewport);
 
       // TODO Notes weren't part of renderZone(), so should actually be done separately otherwise
       //  they will end up in screenshots and such.
@@ -888,6 +888,39 @@ public class ZoneCompositor {
             var worldBounds = viewport.zoneScale().toWorldSpace(screenBounds);
 
             builder.add(new Icon(Images.LIGHT_SOURCE, worldBounds));
+          }
+        });
+  }
+
+  private void compositeDebugShapes(InstructionSetBuilder builder, ZoneViewport viewport) {
+    var debugShapes = viewModel.getDebugShapes();
+    if (debugShapes.isEmpty()) {
+      return;
+    }
+
+    builder.unbufferedLayer(
+        "debug",
+        ClipType.NoClipping,
+        () -> {
+          // Keep the border a consistent thickness regardless of zoom level.
+          var stroke = new BasicStroke((float) (1. / viewport.zoneScale().getScale()));
+
+          for (var entry : debugShapes.entrySet()) {
+            var borderColor = entry.getKey().color;
+            var shape = entry.getValue();
+
+            var fillColor = borderColor.darker();
+            fillColor =
+                new Color(
+                    fillColor.getRed(),
+                    fillColor.getGreen(),
+                    fillColor.getBlue(),
+                    // TODO Can't I set the below opacities to `1./3.`?
+                    fillColor.getAlpha() / 3);
+            var paint = Paint.of(fillColor);
+
+            builder.add(new Fill(shape, paint, 1.));
+            builder.add(new Stroke(shape, paint, stroke, 1.));
           }
         });
   }
