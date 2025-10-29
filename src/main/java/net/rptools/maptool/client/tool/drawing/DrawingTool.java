@@ -26,6 +26,7 @@ import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolUtil;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSetBuilder;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.Drawable;
@@ -197,6 +198,36 @@ public final class DrawingTool<StateT> extends AbstractDrawingLikeTool {
     }
 
     g2.dispose();
+  }
+
+  @Override
+  public void compositeOverlay(InstructionSetBuilder builder) {
+    if (state != null) {
+      // Linear tools are not filled until completed.
+      var result = strategy.getShape(state, currentPoint, centerOnOrigin, false);
+      if (result != null) {
+        var drawable = toDrawable(result.shape());
+
+        Pen pen = getPen();
+        if (isEraser()) {
+          pen = new Pen(pen);
+          pen.setEraser(false);
+          pen.setPaint(new DrawableColorPaint(Color.white));
+          pen.setBackgroundPaint(new DrawableColorPaint(Color.white));
+        }
+        if (isLinearTool() && pen.getPaint() == null) {
+          // Make sure the user can see what they're drawing, even if it is a transparent line.
+          pen.setPaint(new DrawableColorPaint(Color.black));
+        }
+
+        builder.addDrawable(drawable, pen);
+
+        // Measurements
+        if (MapTool.getFrame().isPaintDrawingMeasurement()) {
+          builder.addMeasurement(result.measurement());
+        }
+      }
+    }
   }
 
   @Override
