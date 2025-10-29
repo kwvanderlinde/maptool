@@ -240,7 +240,6 @@ public class GdxRenderer extends ApplicationAdapter {
   private AreaRenderer areaRenderer;
   private SimpleDrawingRenderer simpleDrawingRenderer;
   private TokenOverlayRenderer tokenOverlayRenderer;
-  private GridRenderer gridRenderer;
 
   private TextureRegion transferringAsset;
   private TextureRegion brokenAsset;
@@ -429,7 +428,6 @@ public class GdxRenderer extends ApplicationAdapter {
       tokenOverlayRenderer =
           new TokenOverlayRenderer(
               areaRenderer, key -> zoneCache.getImageAsset(key, transferringAsset, brokenAsset));
-      gridRenderer = new GridRenderer(areaRenderer, hudCam);
 
       initialized = true;
     } catch (Exception e) {
@@ -828,12 +826,6 @@ public class GdxRenderer extends ApplicationAdapter {
       renderTokens(zoneCache.getZone().getTokensOnLayer(Zone.Layer.BACKGROUND, false), view, false);
       timer.stop("tokensBackground");
     }
-
-    timer.start("grid");
-    setProjectionMatrix(hudCam.combined);
-    gridRenderer.render();
-    setProjectionMatrix(cam.combined);
-    timer.stop("grid");
 
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.OBJECT, view)) {
       // ... Images on the object layer are always ABOVE the grid.
@@ -3090,7 +3082,6 @@ public class GdxRenderer extends ApplicationAdapter {
           zoneCache = new ZoneCache(renderer);
           viewModel = renderer.getViewModel();
           tokenOverlayRenderer.setZoneCache(zoneCache);
-          gridRenderer.setZoneCache(zoneCache);
 
           renderZone = true;
         });

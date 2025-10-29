@@ -14,14 +14,19 @@
  */
 package net.rptools.maptool.client.ui.zone.renderer;
 
+import com.github.weisj.jsvg.util.ColorUtil;
 import com.google.common.collect.ImmutableList;
+import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
+import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
+import net.rptools.lib.image.ImageUtil;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.MapTool;
@@ -41,8 +46,15 @@ import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstructio
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.ImageAsset;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Meta.SwitchAlphaMode;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Noise;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Stroke;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.ZoneViewport;
 import net.rptools.maptool.language.I18N;
+import net.rptools.maptool.model.Grid;
+import net.rptools.maptool.model.GridlessGrid;
+import net.rptools.maptool.model.HexGridHorizontal;
+import net.rptools.maptool.model.HexGridVertical;
+import net.rptools.maptool.model.IsometricGrid;
+import net.rptools.maptool.model.SquareGrid;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.drawing.DrawnElement;
 import org.apache.logging.log4j.LogManager;
@@ -133,7 +145,7 @@ public class ZoneCompositor {
 
       compositeDrawings(builder, view, Zone.Layer.OBJECT, worldBounds);
 
-      // TODO Grid
+      compositeGrid(builder, viewport, zone.getGrid(), new Color(zone.getGridColor(), false));
 
       // TODO Object stamps if Object layer enabled.
 
@@ -280,5 +292,216 @@ public class ZoneCompositor {
 
           builder.addDrawnElements(drawnElements);
         });
+  }
+
+  private void compositeGrid(
+      InstructionSetBuilder builder, ZoneViewport viewport, Grid grid, Color gridColor) {
+    if (!AppState.isShowGrid()) {
+      return;
+    }
+    if (grid.getSize() * viewport.zoneScale().getScale() < ZoneRendererConstants.MIN_GRID_SIZE) {
+      return;
+    }
+
+    builder.unbufferedLayer(
+        "grid",
+        ClipType.NoClipping,
+        () -> {
+          var path =
+              switch (grid) {
+                case HexGridVertical hexVertical ->
+                    buildHexGridPath(
+                        viewport,
+                        false,
+                        grid.getSize(),
+                        grid.getSecondDimension(),
+                        grid.getOffsetX(),
+                        grid.getOffsetY());
+                case HexGridHorizontal hexHorizontal ->
+                    buildHexGridPath(
+                        viewport,
+                        true,
+                        grid.getSize(),
+                        grid.getSecondDimension(),
+                        grid.getOffsetX(),
+                        grid.getOffsetY());
+                case SquareGrid square ->
+                    buildSquareGridPath(
+                        viewport, grid.getSize(), grid.getOffsetX(), grid.getOffsetY());
+                case IsometricGrid isometric ->
+                    buildIsometricGridPath(
+                        viewport, grid.getSize(), grid.getOffsetX(), grid.getOffsetY());
+                case GridlessGrid gridless -> new Path2D.Double();
+                default -> new Path2D.Double();
+              };
+
+          var contrast = new Color(ImageUtil.negativeColourInt(gridColor.getRGB()));
+          var gridColors =
+              List.of(
+                  gridColor,
+                  ColorUtil.withAlpha(gridColor, 0.14f),
+                  ColorUtil.withAlpha(contrast, 0.04f),
+                  ColorUtil.withAlpha(contrast, 0.05f));
+          var gridLineWeight = AppState.getGridLineWeight();
+          var baseWidth = grid.getSize() / 50.;
+          if (viewport.zoneScale().getScale() > 0.49f) {
+            for (int i = 3; i > -1; i--) {
+              builder.add(
+                  new Stroke(
+                      path,
+                      Paint.of(gridColors.get(i)),
+                      new BasicStroke(
+                          (float) (baseWidth * (i + 1) * 0.5 * gridLineWeight),
+                          BasicStroke.CAP_ROUND,
+                          BasicStroke.JOIN_MITER),
+                      1.));
+            }
+          } else {
+            builder.add(
+                new Stroke(
+                    path,
+                    Paint.of(gridColors.get(0)),
+                    new BasicStroke(
+                        (float) (baseWidth * gridLineWeight * 0.25),
+                        BasicStroke.CAP_ROUND,
+                        BasicStroke.JOIN_MITER),
+                    1.));
+          }
+        });
+  }
+
+  private Shape buildHexGridPath(
+      ZoneViewport viewport,
+      boolean isHorizontal,
+      int size,
+      double diameter,
+      int offsetX,
+      int offsetY) {
+    var bounds = viewport.getWorldSpaceBounds();
+
+    double minorRadius = size / 2.;
+    double edgeLength = diameter / 2.;
+    double edgeProjection = edgeLength / 2.;
+
+    double offsetU = isHorizontal ? offsetY : offsetX;
+    double offsetV = isHorizontal ? offsetX : offsetY;
+    double boundsMinU = isHorizontal ? bounds.getMinY() : bounds.getMinX();
+    double boundsMinV = isHorizontal ? bounds.getMinX() : bounds.getMinY();
+    double boundsSizeU = isHorizontal ? bounds.getHeight() : bounds.getWidth();
+    double boundsSizeV = isHorizontal ? bounds.getWidth() : bounds.getHeight();
+
+    double stepV = minorRadius;
+    double stepU = 2 * edgeLength + 2 * edgeProjection;
+
+    // Start assuming vertical, swap if needed.
+    double startU = boundsMinU + (offsetU - boundsMinU) % stepU;
+    if (startU > boundsMinU) {
+      startU -= stepU;
+    }
+    double endU = boundsMinU + boundsSizeU + stepU;
+
+    // Odd and even steps are handled differently w.r.t. `u`, so two steps are one cycle.
+    double startV = boundsMinV + (offsetV - boundsMinV) % (2 * stepV);
+    if (startV > boundsMinV) {
+      startV -= 2 * stepV;
+    }
+    double endV = boundsMinV + boundsSizeV;
+
+    int count = 0;
+
+    Path2D path = new Path2D.Double();
+    for (double v = startV; v < endV; v += stepV) {
+      double offsetU2 = (count++ & 1) == 0 ? 0 : -(edgeProjection + edgeLength);
+
+      for (double u = startU; u < endU; u += stepU) {
+        var x = isHorizontal ? v : u + offsetU2;
+        var y = isHorizontal ? u + offsetU2 : v;
+
+        if (isHorizontal) {
+          path.moveTo(x + minorRadius, y);
+          path.lineTo(x, y + edgeProjection);
+          path.lineTo(x, y + edgeProjection + edgeLength);
+          path.lineTo(x + minorRadius, y + edgeProjection + edgeLength + edgeProjection);
+        } else {
+          path.moveTo(x, y + minorRadius);
+          path.lineTo(x + edgeProjection, y);
+          path.lineTo(x + edgeProjection + edgeLength, y);
+          path.lineTo(x + edgeProjection + edgeLength + edgeProjection, y + minorRadius);
+        }
+      }
+    }
+
+    return path;
+  }
+
+  private Shape buildSquareGridPath(ZoneViewport viewport, int size, int offsetX, int offsetY) {
+    var bounds = viewport.getWorldSpaceBounds();
+    double gridSize = size;
+
+    double startX = bounds.getMinX() + (offsetX - bounds.getMinX()) % gridSize;
+    if (startX > bounds.getMinX()) {
+      startX -= gridSize;
+    }
+    double endX = startX + bounds.getWidth() + gridSize;
+
+    double startY = bounds.getMinY() + (offsetY - bounds.getMinY()) % gridSize;
+    if (startY > bounds.getMinY()) {
+      startY -= gridSize;
+    }
+    double endY = startY + bounds.getHeight() + gridSize;
+
+    Path2D path = new Path2D.Double();
+    for (double y = startY; y <= endY; y += gridSize) {
+      path.moveTo(startX, (int) (y));
+      path.lineTo(endX, (int) (y));
+    }
+    for (double x = startX; x < endX; x += gridSize) {
+      path.moveTo((int) (x), startY);
+      path.lineTo((int) (x), endY);
+    }
+
+    return path;
+  }
+
+  private Shape buildIsometricGridPath(ZoneViewport viewport, int size, int offsetX, int offsetY) {
+    var bounds = viewport.getWorldSpaceBounds();
+    double isoHeight = size;
+    double isoWidth = 2 * isoHeight;
+
+    Path2D path = new Path2D.Double();
+
+    double startX = bounds.getMinX() + (offsetX - bounds.getMinX()) % isoWidth;
+    if (startX > bounds.getMinX()) {
+      startX -= isoWidth;
+    }
+    double endX = startX + bounds.getWidth() + isoWidth;
+
+    double startY = bounds.getMinY() + (offsetY - bounds.getMinY()) % isoHeight;
+    if (startY > bounds.getMinY()) {
+      startY -= isoHeight;
+    }
+    double endY = startY + bounds.getHeight() + isoHeight;
+
+    int hatchSize = isoHeight > 10 ? (int) (isoHeight / 8) : 2;
+
+    for (double y = startY; y < endY; y += isoHeight) {
+      for (double x = startX; x < endX; x += isoWidth) {
+        // Draw one hatch at the top of the current cell.
+        path.moveTo(x - 2 * hatchSize, y - hatchSize);
+        path.lineTo(x + 2 * hatchSize, y + hatchSize);
+        path.moveTo(x - 2 * hatchSize, y + hatchSize);
+        path.lineTo(x + 2 * hatchSize, y - hatchSize);
+
+        // And another at the cell (+1, +1) from here.
+        var x2 = x + isoWidth / 2;
+        var y2 = y + isoHeight / 2;
+        path.moveTo(x2 - 2 * hatchSize, y2 - hatchSize);
+        path.lineTo(x2 + 2 * hatchSize, y2 + hatchSize);
+        path.moveTo(x2 - 2 * hatchSize, y2 + hatchSize);
+        path.lineTo(x2 + 2 * hatchSize, y2 - hatchSize);
+      }
+    }
+
+    return path;
   }
 }
