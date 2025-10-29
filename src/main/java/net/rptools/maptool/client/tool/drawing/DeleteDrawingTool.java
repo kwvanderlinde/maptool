@@ -15,7 +15,7 @@
 package net.rptools.maptool.client.tool.drawing;
 
 import com.google.common.eventbus.Subscribe;
-import java.awt.*;
+import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -29,8 +29,11 @@ import net.rptools.maptool.client.*;
 import net.rptools.maptool.client.events.ZoneActivated;
 import net.rptools.maptool.client.tool.DefaultTool;
 import net.rptools.maptool.client.ui.drawpanel.DrawPanelPopupMenu;
+import net.rptools.maptool.client.ui.theme.Borders;
 import net.rptools.maptool.client.ui.zone.ZoneOverlay;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSetBuilder;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction.Border;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.ZonePoint;
@@ -113,6 +116,28 @@ public class DeleteDrawingTool extends DefaultTool implements ZoneOverlay, Mouse
       if (drawnElement == null) continue;
 
       drawBox(g, drawnElement);
+    }
+  }
+
+  @Override
+  public void compositeOverlay(InstructionSetBuilder builder) {
+    var zone = builder.getZone();
+
+    for (var id : selectedDrawings) {
+      var drawnElement = zone.getDrawnElement(id);
+      if (drawnElement == null) {
+        continue;
+      }
+
+      var penThickness = drawnElement.getPen().getThickness();
+      var bounds = drawnElement.getDrawable().getBounds(zone).getBounds2D();
+      bounds.setRect(
+          bounds.getMinX() - penThickness,
+          bounds.getMinY() - penThickness,
+          bounds.getWidth() + 2 * penThickness,
+          bounds.getHeight() + 2 * penThickness);
+
+      builder.add(new Border(Borders.RED, bounds));
     }
   }
 
