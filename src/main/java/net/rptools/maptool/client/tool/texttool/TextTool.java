@@ -15,7 +15,6 @@
 package net.rptools.maptool.client.tool.texttool;
 
 import java.awt.Cursor;
-import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -105,13 +104,8 @@ public class TextTool extends DefaultTool implements ZoneOverlay {
             location -> {
               var screenBounds = location.bounds();
               var worldBounds = builder.getViewport().zoneScale().toWorldSpace(screenBounds);
-              var bounds =
-                  new Rectangle(
-                      (int) worldBounds.getX(),
-                      (int) worldBounds.getY(),
-                      (int) worldBounds.getWidth(),
-                      (int) worldBounds.getHeight());
-              builder.add(new Border(Borders.RED, bounds));
+              ;
+              builder.add(new Border(Borders.RED, worldBounds));
             });
   }
 
