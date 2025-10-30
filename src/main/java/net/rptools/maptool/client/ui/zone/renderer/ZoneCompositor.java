@@ -22,10 +22,12 @@ import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.function.BiConsumer;
 import net.rptools.lib.image.ImageUtil;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.AppState;
@@ -362,12 +364,47 @@ public class ZoneCompositor {
                     path,
                     Paint.of(gridColors.get(0)),
                     new BasicStroke(
-                        (float) (baseWidth * gridLineWeight * 0.25),
+                        (float)
+                            (baseWidth * gridLineWeight * 0.25 / viewport.zoneScale().getScale()),
                         BasicStroke.CAP_ROUND,
                         BasicStroke.JOIN_MITER),
                     1.));
           }
         });
+  }
+
+  /**
+   * A {@link BiConsumer}-like interface that accepts {@code double}.
+   *
+   * <p>Meant only for {@link #roundToPixel(ZoneViewport, double, double, PointConsumer)}.
+   */
+  @FunctionalInterface
+  private interface PointConsumer {
+    void accept(double x, double y);
+  }
+
+  /**
+   * A utility method for adding points to grid shapes.
+   *
+   * <p>Because grids are thin, we need to be careful not to place them between pixels, especially
+   * when using OpenGL. This method accepts a point, and will round it to the nearest pixel center.
+   * Rather than return the result, it will be passed to {@code consumer} so this method can be
+   * easily passed {@link Path2D#moveTo(double, double)} or {@link Path2D#lineTo(double, double)} as
+   * a method reference.
+   *
+   * @param viewport
+   * @param x
+   * @param y
+   * @param consumer
+   */
+  private static void roundToPixel(
+      ZoneViewport viewport, double x, double y, PointConsumer consumer) {
+    var roundedScreen = viewport.zoneScale().toScreenSpace(new Point2D.Double(x, y));
+    // Snap to pixel center.
+    roundedScreen.x = 0.5 + (int) roundedScreen.x;
+    roundedScreen.y = 0.5 + (int) roundedScreen.y;
+    var roundedWorld = viewport.zoneScale().toWorldSpace(roundedScreen);
+    consumer.accept(roundedWorld.getX(), roundedWorld.getY());
   }
 
   private Shape buildHexGridPath(
@@ -418,15 +455,17 @@ public class ZoneCompositor {
         var y = isHorizontal ? u + offsetU2 : v;
 
         if (isHorizontal) {
-          path.moveTo(x + minorRadius, y);
-          path.lineTo(x, y + edgeProjection);
-          path.lineTo(x, y + edgeProjection + edgeLength);
-          path.lineTo(x + minorRadius, y + edgeProjection + edgeLength + edgeProjection);
+          roundToPixel(viewport, x + minorRadius, y, path::moveTo);
+          roundToPixel(viewport, x, y + edgeProjection, path::lineTo);
+          roundToPixel(viewport, x, y + edgeProjection + edgeLength, path::lineTo);
+          roundToPixel(
+              viewport, x + minorRadius, y + 2 * edgeProjection + edgeLength, path::lineTo);
         } else {
-          path.moveTo(x, y + minorRadius);
-          path.lineTo(x + edgeProjection, y);
-          path.lineTo(x + edgeProjection + edgeLength, y);
-          path.lineTo(x + edgeProjection + edgeLength + edgeProjection, y + minorRadius);
+          roundToPixel(viewport, x, y + minorRadius, path::moveTo);
+          roundToPixel(viewport, x + edgeProjection, y, path::lineTo);
+          roundToPixel(viewport, x + edgeProjection + edgeLength, y, path::lineTo);
+          roundToPixel(
+              viewport, x + 2 * edgeProjection + edgeLength, y + minorRadius, path::lineTo);
         }
       }
     }
@@ -452,12 +491,12 @@ public class ZoneCompositor {
 
     Path2D path = new Path2D.Double();
     for (double y = startY; y <= endY; y += gridSize) {
-      path.moveTo(startX, (int) (y));
-      path.lineTo(endX, (int) (y));
+      roundToPixel(viewport, startX, y, path::moveTo);
+      roundToPixel(viewport, endX, y, path::lineTo);
     }
     for (double x = startX; x < endX; x += gridSize) {
-      path.moveTo((int) (x), startY);
-      path.lineTo((int) (x), endY);
+      roundToPixel(viewport, x, startY, path::moveTo);
+      roundToPixel(viewport, x, endY, path::lineTo);
     }
 
     return path;
@@ -487,18 +526,18 @@ public class ZoneCompositor {
     for (double y = startY; y < endY; y += isoHeight) {
       for (double x = startX; x < endX; x += isoWidth) {
         // Draw one hatch at the top of the current cell.
-        path.moveTo(x - 2 * hatchSize, y - hatchSize);
-        path.lineTo(x + 2 * hatchSize, y + hatchSize);
-        path.moveTo(x - 2 * hatchSize, y + hatchSize);
-        path.lineTo(x + 2 * hatchSize, y - hatchSize);
+        roundToPixel(viewport, x - 2 * hatchSize, y - hatchSize, path::moveTo);
+        roundToPixel(viewport, x + 2 * hatchSize, y + hatchSize, path::lineTo);
+        roundToPixel(viewport, x - 2 * hatchSize, y + hatchSize, path::moveTo);
+        roundToPixel(viewport, x + 2 * hatchSize, y - hatchSize, path::lineTo);
 
         // And another at the cell (+1, +1) from here.
         var x2 = x + isoWidth / 2;
         var y2 = y + isoHeight / 2;
-        path.moveTo(x2 - 2 * hatchSize, y2 - hatchSize);
-        path.lineTo(x2 + 2 * hatchSize, y2 + hatchSize);
-        path.moveTo(x2 - 2 * hatchSize, y2 + hatchSize);
-        path.lineTo(x2 + 2 * hatchSize, y2 - hatchSize);
+        roundToPixel(viewport, x2 - 2 * hatchSize, y2 - hatchSize, path::moveTo);
+        roundToPixel(viewport, x2 + 2 * hatchSize, y2 + hatchSize, path::lineTo);
+        roundToPixel(viewport, x2 - 2 * hatchSize, y2 + hatchSize, path::moveTo);
+        roundToPixel(viewport, x2 + 2 * hatchSize, y2 - hatchSize, path::lineTo);
       }
     }
 
