@@ -66,7 +66,6 @@ import net.rptools.maptool.client.ui.token.BarTokenOverlay;
 import net.rptools.maptool.client.ui.zone.DrawableLight;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.ZoneViewModel;
-import net.rptools.maptool.client.ui.zone.gdx.drawing.DrawnElementRenderer;
 import net.rptools.maptool.client.ui.zone.gdx.drawing.SimpleDrawingRenderer;
 import net.rptools.maptool.client.ui.zone.gdx.label.ItemRenderer;
 import net.rptools.maptool.client.ui.zone.gdx.label.LabelRenderer;
@@ -89,7 +88,6 @@ import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.drawing.DrawableNoise;
 import net.rptools.maptool.model.drawing.DrawablePaint;
 import net.rptools.maptool.model.drawing.DrawableTexturePaint;
-import net.rptools.maptool.model.drawing.DrawnElement;
 import net.rptools.maptool.util.GraphicsUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -240,7 +238,6 @@ public class GdxRenderer extends ApplicationAdapter {
   private TextRenderer textRenderer;
   private TextRenderer hudTextRenderer;
   private AreaRenderer areaRenderer;
-  private DrawnElementRenderer drawnElementRenderer;
   private SimpleDrawingRenderer simpleDrawingRenderer;
   private TokenOverlayRenderer tokenOverlayRenderer;
   private GridRenderer gridRenderer;
@@ -428,7 +425,6 @@ public class GdxRenderer extends ApplicationAdapter {
       drawer = new ShapeDrawer(batch, new TextureRegion(whitePixel));
 
       areaRenderer = new AreaRenderer(drawer, whitePixel);
-      drawnElementRenderer = new DrawnElementRenderer(areaRenderer, this::getPaint);
       simpleDrawingRenderer = new SimpleDrawingRenderer(areaRenderer);
       tokenOverlayRenderer =
           new TokenOverlayRenderer(
@@ -828,21 +824,9 @@ public class GdxRenderer extends ApplicationAdapter {
     }
 
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.BACKGROUND, view)) {
-      renderDrawables(zoneCache.getZone().getDrawnElements(Zone.Layer.BACKGROUND));
-    }
-
-    if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.BACKGROUND, view)) {
       timer.start("tokensBackground");
       renderTokens(zoneCache.getZone().getTokensOnLayer(Zone.Layer.BACKGROUND, false), view, false);
       timer.stop("tokensBackground");
-    }
-
-    if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.OBJECT, view)) {
-      // Drawables on the object layer are always below the grid, and...
-      timer.start("drawableObjects");
-      drawnElementRenderer.render(
-          batch, zoneCache.getZone(), zoneCache.getZone().getDrawnElements(Zone.Layer.OBJECT));
-      timer.stop("drawableObjects");
     }
 
     timer.start("grid");
@@ -899,21 +883,6 @@ public class GdxRenderer extends ApplicationAdapter {
      *   <li>Render Token-layer tokens
      * </ol>
      */
-    if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
-      timer.start("drawableTokens");
-      drawnElementRenderer.render(
-          batch, zoneCache.getZone(), zoneCache.getZone().getDrawnElements(Zone.Layer.TOKEN));
-      timer.stop("drawableTokens");
-    }
-
-    if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
-      if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.GM, view)) {
-        timer.start("drawableGM");
-        drawnElementRenderer.render(
-            batch, zoneCache.getZone(), zoneCache.getZone().getDrawnElements(Zone.Layer.GM));
-        timer.stop("drawableGM");
-      }
-    }
 
     if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.TOKEN, view)) {
       if (zoneCache.getZoneRenderer().shouldRenderLayer(Zone.Layer.GM, view)) {
@@ -2121,13 +2090,6 @@ public class GdxRenderer extends ApplicationAdapter {
     }
   }
 
-  private void renderDrawables(List<DrawnElement> drawables) {
-    CodeTimer timer = CodeTimer.get();
-    timer.start("drawableBackground");
-    drawnElementRenderer.render(batch, zoneCache.getZone(), drawables);
-    timer.stop("drawableBackground");
-  }
-
   private void fillViewportWith(Color tint, Texture texture) {
     var w = cam.viewportWidth * zoom;
     var h = cam.viewportHeight * zoom;
@@ -3127,7 +3089,6 @@ public class GdxRenderer extends ApplicationAdapter {
 
           zoneCache = new ZoneCache(renderer);
           viewModel = renderer.getViewModel();
-          drawnElementRenderer.setZoneCache(zoneCache);
           tokenOverlayRenderer.setZoneCache(zoneCache);
           gridRenderer.setZoneCache(zoneCache);
 

@@ -291,6 +291,7 @@ public class InstructionSetBuilder {
     return 2 * Math.abs(p2.getY() - p1.getY());
   }
 
+  // TODO Though cool that this works, the new flexible layers makes it unnecessary.
   private final class DrawableCompositor {
     private ArrayList<Area> erasedAreas = new ArrayList<>();
     private ArrayList<Integer> eraseBarrierStack = new ArrayList<>();

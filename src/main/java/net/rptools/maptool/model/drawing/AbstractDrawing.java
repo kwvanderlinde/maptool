@@ -26,6 +26,8 @@ import net.rptools.maptool.model.Zone;
  * Abstract drawing. This class takes care of setting up the Pen since that will be the same for all
  * implementing classes.
  */
+// TODO Remove ImageObserver
+// TODO Remove the draw() methods and related in subclasses.
 public abstract class AbstractDrawing implements Drawable, ImageObserver {
   /**
    * The unique identifier for this drawable.

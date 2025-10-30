@@ -29,6 +29,7 @@ import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.ZoneView;
 import net.rptools.maptool.client.ui.zone.ZoneViewModel;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.AlphaMode;
+import net.rptools.maptool.client.ui.zone.renderer.instructions.BlendMode;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.ClipType;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSet;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.InstructionSetBuilder;
@@ -43,6 +44,9 @@ import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstructio
 import net.rptools.maptool.client.ui.zone.renderer.instructions.ZoneViewport;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.drawing.DrawnElement;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * The Zone Compositor is responsible for providing the Zone Renderer with what needs to be
@@ -50,6 +54,9 @@ import net.rptools.maptool.model.Zone;
  * on screen?"
  */
 public class ZoneCompositor {
+  private static final Logger log = LogManager.getLogger(ZoneCompositor.class);
+  private static final Color COLOR_CLEAR = new Color(0, 0, 0, 0);
+
   private final List<RenderInstruction> instructions = new ArrayList<>();
   private final ZoneRenderer renderer;
   private final ZoneViewModel viewModel;
@@ -121,7 +128,10 @@ public class ZoneCompositor {
     } else {
       compositeBoard(builder);
 
-      // TODO Object drawables
+      compositeDrawings(builder, view, Zone.Layer.BACKGROUND, worldBounds);
+      // TODO Background stamps if Background layer is enabled.
+
+      compositeDrawings(builder, view, Zone.Layer.OBJECT, worldBounds);
 
       // TODO Grid
 
@@ -131,9 +141,8 @@ public class ZoneCompositor {
 
       // TODO Darkness
 
-      // TODO Token drawables
-      // TODO Only do GM layer if Token layer is also enabled.
-      // TODO GM drawables
+      compositeDrawings(builder, view, Zone.Layer.TOKEN, worldBounds);
+      compositeDrawings(builder, view, Zone.Layer.GM, worldBounds);
 
       // TODO GM tokens if GM layer & Token layer is enabled.
       // TODO Regular tokens if Token layer is enabled.
@@ -222,6 +231,54 @@ public class ZoneCompositor {
 
             builder.add(new ImageAsset(zone.getMapAssetId(), transform));
           }
+        });
+  }
+
+  private void compositeDrawings(
+      InstructionSetBuilder builder, PlayerView view, Zone.Layer layer, Rectangle2D worldBounds) {
+    if (!renderer.shouldRenderLayer(layer, view)) {
+      return;
+    }
+    // Special case: GM layer is like a subset of the Token layer. So turn off the GM layer when the
+    // Token layer is turned off.
+    if (Zone.Layer.GM.equals(layer) && !renderer.shouldRenderLayer(Zone.Layer.TOKEN, view)) {
+      return;
+    }
+
+    List<DrawnElement> drawnElements = new ArrayList<>(zone.getDrawnElements(layer));
+    drawnElements.removeIf(
+        element -> {
+          var drawable = element.getDrawable();
+          var pen = element.getPen();
+          var drawingBounds = drawable.getBounds(zone).getBounds2D();
+          if (pen.getPaint() != null) {
+            // Need to extend the bounds by the pen thickness.
+            var thickness = pen.getThickness();
+            drawingBounds.setRect(
+                drawingBounds.getMinX() - thickness,
+                drawingBounds.getMinY() - thickness,
+                drawingBounds.getWidth() + 2 * thickness,
+                drawingBounds.getHeight() + 2 * thickness);
+          }
+          return !worldBounds.intersects(drawingBounds);
+        });
+
+    if (drawnElements.isEmpty()) {
+      return;
+    }
+
+    // Note: can't queue up individual drawables, since deletions are modeled as drawables layered
+    // overtop of the areas they delete. So we must buffer this layer.
+    builder.bufferedLayer(
+        "drawings",
+        ClipType.ExposedArea,
+        BlendMode.AlphaSrcOver,
+        1.,
+        () -> {
+          builder.add(new ClearScreen(COLOR_CLEAR));
+          builder.add(new SwitchAlphaMode(AlphaMode.SrcOver));
+
+          builder.addDrawnElements(drawnElements);
         });
   }
 }
