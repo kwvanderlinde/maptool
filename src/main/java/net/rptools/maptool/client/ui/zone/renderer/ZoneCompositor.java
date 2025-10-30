@@ -410,15 +410,28 @@ public class ZoneCompositor {
   private Shape buildHexGridPath(
       ZoneViewport viewport,
       boolean isHorizontal,
-      int size,
-      double diameter,
+      int vSize,
+      double uSize,
       int offsetX,
       int offsetY) {
     var bounds = viewport.getWorldSpaceBounds();
 
-    double minorRadius = size / 2.;
-    double edgeLength = diameter / 2.;
-    double edgeProjection = edgeLength / 2.;
+    /*
+     * To understand the implementation, keep these facts in mind for a vertical hex:
+     * 1. The `vSize` is the vertical distance between the top and bottom edges.
+     * 2. The `uSize` is the horizontal distance between the left and right vertices.
+     * 3. The left and right edges extend exactly `0.25 * diameter` horizontally and `0.5 * size`
+     *    vertically.
+     * 4. The V axis is vertical, the U axis is horizontal.
+     *
+     * For a horizontal hex, rotate the above by 90°.
+     *
+     * The relationships in (3) can make some of this seem a bit magical. It can help to draw a
+     * picture for a full understanding.
+     */
+
+    double halfVWidth = vSize / 2.;
+    double halfUWidth = uSize / 2.;
 
     double offsetU = isHorizontal ? offsetY : offsetX;
     double offsetV = isHorizontal ? offsetX : offsetY;
@@ -427,8 +440,8 @@ public class ZoneCompositor {
     double boundsSizeU = isHorizontal ? bounds.getHeight() : bounds.getWidth();
     double boundsSizeV = isHorizontal ? bounds.getWidth() : bounds.getHeight();
 
-    double stepV = minorRadius;
-    double stepU = 2 * edgeLength + 2 * edgeProjection;
+    double stepV = halfVWidth;
+    double stepU = 3. * halfUWidth;
 
     // Start assuming vertical, swap if needed.
     double startU = boundsMinU + (offsetU - boundsMinU) % stepU;
@@ -448,24 +461,22 @@ public class ZoneCompositor {
 
     Path2D path = new Path2D.Double();
     for (double v = startV; v < endV; v += stepV) {
-      double offsetU2 = (count++ & 1) == 0 ? 0 : -(edgeProjection + edgeLength);
+      double offsetU2 = (count++ & 1) == 0 ? 0 : -1.5 * halfUWidth;
 
       for (double u = startU; u < endU; u += stepU) {
         var x = isHorizontal ? v : u + offsetU2;
         var y = isHorizontal ? u + offsetU2 : v;
 
         if (isHorizontal) {
-          roundToPixel(viewport, x + minorRadius, y, path::moveTo);
-          roundToPixel(viewport, x, y + edgeProjection, path::lineTo);
-          roundToPixel(viewport, x, y + edgeProjection + edgeLength, path::lineTo);
-          roundToPixel(
-              viewport, x + minorRadius, y + 2 * edgeProjection + edgeLength, path::lineTo);
+          roundToPixel(viewport, x + halfVWidth, y, path::moveTo);
+          roundToPixel(viewport, x, y + 0.5 * halfUWidth, path::lineTo);
+          roundToPixel(viewport, x, y + 1.5 * halfUWidth, path::lineTo);
+          roundToPixel(viewport, x + halfVWidth, y + 2.0 * halfUWidth, path::lineTo);
         } else {
-          roundToPixel(viewport, x, y + minorRadius, path::moveTo);
-          roundToPixel(viewport, x + edgeProjection, y, path::lineTo);
-          roundToPixel(viewport, x + edgeProjection + edgeLength, y, path::lineTo);
-          roundToPixel(
-              viewport, x + 2 * edgeProjection + edgeLength, y + minorRadius, path::lineTo);
+          roundToPixel(viewport, x, y + halfVWidth, path::moveTo);
+          roundToPixel(viewport, x + 0.5 * halfUWidth, y, path::lineTo);
+          roundToPixel(viewport, x + 1.5 * halfUWidth, y, path::lineTo);
+          roundToPixel(viewport, x + 2.0 * halfUWidth, y + halfVWidth, path::lineTo);
         }
       }
     }
