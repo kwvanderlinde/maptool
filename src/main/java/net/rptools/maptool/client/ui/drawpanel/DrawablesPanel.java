@@ -55,30 +55,39 @@ public class DrawablesPanel extends JComponent {
 
   @Override
   protected void paintComponent(Graphics g) {
-    if (selectedIDList.size() > 0) {
-      if (MapTool.getFrame().getCurrentZoneRenderer() != null) {
-        Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
-        if (zone != null) {
-          List<DrawnElement> drawableList = new ArrayList<DrawnElement>();
-          boolean onlyCuts = true;
-          for (GUID id : selectedIDList) {
-            DrawnElement de = zone.getDrawnElement(id);
-            if (de != null) {
-              drawableList.add(de);
-              if (!de.getPen().isEraser()) onlyCuts = false;
-            }
-          }
-          if (!drawableList.isEmpty()) {
-            Collections.reverse(drawableList);
-            Rectangle bounds = getBounds(zone, drawableList);
-            double scale =
-                (double) Math.min(MAX_PANEL_SIZE, getSize().width) / (double) bounds.width;
-            if ((bounds.height * scale) > MAX_PANEL_SIZE)
-              scale = (double) Math.min(MAX_PANEL_SIZE, getSize().height) / (double) bounds.height;
-            g.drawImage(drawDrawables(zone, drawableList, bounds, scale, onlyCuts), 0, 0, null);
-          }
+    if (selectedIDList.isEmpty()) {
+      return;
+    }
+
+    var renderer = MapTool.getFrame().getCurrentZoneRenderer();
+    if (renderer == null) {
+      return;
+    }
+
+    var zone = renderer.getZone();
+    if (zone == null) {
+      return;
+    }
+
+    List<DrawnElement> drawableList = new ArrayList<>();
+    boolean onlyCuts = true;
+    for (GUID id : selectedIDList) {
+      DrawnElement de = zone.getDrawnElement(id);
+      if (de != null) {
+        drawableList.add(de);
+        if (!de.getPen().isEraser()) {
+          onlyCuts = false;
         }
       }
+    }
+    if (!drawableList.isEmpty()) {
+      Collections.reverse(drawableList);
+      Rectangle bounds = getBounds(zone, drawableList);
+      double scale = (double) Math.min(MAX_PANEL_SIZE, getSize().width) / (double) bounds.width;
+      if ((bounds.height * scale) > MAX_PANEL_SIZE) {
+        scale = (double) Math.min(MAX_PANEL_SIZE, getSize().height) / (double) bounds.height;
+      }
+      g.drawImage(drawDrawables(zone, drawableList, bounds, scale, onlyCuts), 0, 0, null);
     }
   }
 
@@ -153,10 +162,15 @@ public class DrawablesPanel extends JComponent {
           drawnBounds.getY() - penSize,
           drawnBounds.getWidth() + (penSize * 2),
           drawnBounds.getHeight() + (penSize * 2));
-      if (bounds == null) bounds = drawnBounds;
-      else bounds.add(drawnBounds);
+      if (bounds == null) {
+        bounds = drawnBounds;
+      } else {
+        bounds.add(drawnBounds);
+      }
     }
     // Fix for Sentry MAPTOOL-20
+    // TODO No chance this actually fixes anything. The only use for the bounds is to create a
+    //  BufferedImage of the same dimension, meaning it will receive a negative width and height.
     if (bounds != null && bounds.getWidth() > 0 && bounds.getHeight() > 0) {
       return bounds;
     }
