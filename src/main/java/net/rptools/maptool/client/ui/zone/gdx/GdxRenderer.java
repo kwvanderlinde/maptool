@@ -500,15 +500,6 @@ public class GdxRenderer extends ApplicationAdapter {
             ensureTtfFont();
             ScreenUtils.clear(Color.BLACK);
 
-            // Try conservative rasterization. This avoids potential issues of samples being lost
-            // between pixels. TODO Should probably enable it solely for Stroke() instructions.
-            if (Gdx.graphics.supportsExtension("GL_NV_conservative_raster")) {
-              // Values taken from the spec here:
-              // https://registry.khronos.org/OpenGL/extensions/NV/NV_conservative_raster.txt
-              final var CONSERVATIVE_RASTERIZATION_NV = 0x9346;
-              Gdx.gl20.glEnable(CONSERVATIVE_RASTERIZATION_NV);
-            }
-
             doRendering(instructionSet);
           });
     } catch (Exception e) {
