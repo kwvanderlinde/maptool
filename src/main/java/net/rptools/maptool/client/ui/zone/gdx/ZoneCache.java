@@ -29,7 +29,6 @@ import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.ui.zone.ZoneView;
 import net.rptools.maptool.client.ui.zone.ZoneViewModel;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
-import net.rptools.maptool.model.IsometricGrid;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.util.ImageManager;
 import org.apache.logging.log4j.LogManager;
@@ -47,7 +46,6 @@ public class ZoneCache implements Disposable {
   private final Map<MD5Key, TextureRegion> tokenAtlasAssetRegions = new HashMap<>();
   private final Map<MD5Key, Texture> largeAssets = new HashMap<>();
 
-  private final Map<MD5Key, Texture> isoTextures = new HashMap<>();
   private final Map<MD5Key, Texture> paintTextures = new HashMap<>();
 
   public Zone getZone() {
@@ -197,30 +195,6 @@ public class ZoneCache implements Disposable {
     }
   }
 
-  public Texture getIsoImage(MD5Key key, Texture transferringAsset, Texture brokenAsset) {
-    if (isoTextures.containsKey(key)) {
-      return isoTextures.get(key);
-    }
-
-    var image = ImageManager.getImage(key);
-    if (image == ImageManager.TRANSFERING_IMAGE) {
-      return transferringAsset;
-    }
-    if (image == ImageManager.BROKEN_IMAGE) {
-      return brokenAsset;
-    }
-
-    var workImage = IsometricGrid.isoImage(image);
-    var pixmap = assetToPixmap(workImage);
-    try {
-      var region = new Texture(pixmap);
-      isoTextures.put(key, region);
-      return region;
-    } finally {
-      pixmap.dispose();
-    }
-  }
-
   @Override
   public void dispose() {
     Gdx.app.postRunnable(
@@ -236,11 +210,6 @@ public class ZoneCache implements Disposable {
             texture.dispose();
           }
           paintTextures.clear();
-
-          for (var texture : isoTextures.values()) {
-            texture.dispose();
-          }
-          isoTextures.clear();
 
           packer.dispose();
           tokenAtlas.dispose();

@@ -109,14 +109,18 @@ public class ZoneViewModel {
   }
 
   public enum DebugCategory {
-    Drag
+    Drag,
+    Labels,
+    Tokens,
   }
 
   public enum DebugType {
     DragMouseStart(DebugCategory.Drag, Color.blue),
     DragMouseCurrent(DebugCategory.Drag, Color.cyan),
     DragAnchorStart(DebugCategory.Drag, Color.red),
-    DragAnchorCurrent(DebugCategory.Drag, Color.magenta);
+    DragAnchorCurrent(DebugCategory.Drag, Color.magenta),
+    LabelBounds(DebugCategory.Labels, Color.yellow),
+    TokenClips(DebugCategory.Tokens, Color.orange.darker());
 
     public final DebugCategory category;
     public final Color color;

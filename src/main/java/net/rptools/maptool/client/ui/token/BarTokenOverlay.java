@@ -28,7 +28,7 @@ import org.apache.logging.log4j.Logger;
  *
  * @author Jay
  */
-public abstract class BarTokenOverlay extends AbstractTokenOverlay {
+public abstract non-sealed class BarTokenOverlay extends AbstractTokenOverlay {
 
   /*---------------------------------------------------------------------------------------------
    * Instance Variables

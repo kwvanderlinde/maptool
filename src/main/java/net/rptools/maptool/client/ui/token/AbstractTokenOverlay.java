@@ -29,7 +29,8 @@ import net.rptools.maptool.server.proto.TokenOverlayDto;
  * @version $Revision: 4531 $ $Date: 2008-08-20 14:15:46 -0500 (Wed, 20 Aug 2008) $ $Author:
  *     coloneldork $
  */
-public abstract class AbstractTokenOverlay implements Cloneable {
+public abstract sealed class AbstractTokenOverlay implements Cloneable
+    permits BooleanTokenOverlay, BarTokenOverlay {
 
   /*---------------------------------------------------------------------------------------------
    * Instance Variables

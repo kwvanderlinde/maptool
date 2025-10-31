@@ -31,6 +31,8 @@ import javax.swing.Action;
 import javax.swing.KeyStroke;
 import net.rptools.maptool.client.tool.PointerTool;
 import net.rptools.maptool.client.ui.Scale;
+import net.rptools.maptool.client.ui.theme.Images;
+import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.walker.WalkerMetric;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.client.walker.astar.AStarVertHexEuclideanWalker;
@@ -57,6 +59,9 @@ public class HexGridVertical extends HexGrid {
         }
       };
   private static final Map<Integer, Area> gridShapeCache = new ConcurrentHashMap<>();
+
+  private static final BufferedImage pathHighlight =
+      RessourceManager.getImage(Images.GRID_BORDER_HEX);
 
   @Override
   public GridType getType() {

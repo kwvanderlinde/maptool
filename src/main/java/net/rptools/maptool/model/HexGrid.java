@@ -26,13 +26,10 @@ import java.awt.geom.Dimension2D;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
-import java.awt.image.BufferedImage;
 import java.util.function.BiConsumer;
 import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.ui.Scale;
-import net.rptools.maptool.client.ui.theme.Images;
-import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.ui.zone.renderer.GridRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.server.proto.GridDto;
@@ -75,8 +72,6 @@ public abstract class HexGrid extends Grid {
           return false;
         }
       };
-  protected static final BufferedImage pathHighlight =
-      RessourceManager.getImage(Images.GRID_BORDER_HEX);
 
   @Override
   public Point2D.Double getCenterOffset() {

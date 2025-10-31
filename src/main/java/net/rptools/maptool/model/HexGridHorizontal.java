@@ -22,7 +22,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Dimension2D;
 import java.awt.geom.GeneralPath;
-import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +31,8 @@ import javax.swing.Action;
 import javax.swing.KeyStroke;
 import net.rptools.maptool.client.tool.PointerTool;
 import net.rptools.maptool.client.ui.Scale;
+import net.rptools.maptool.client.ui.theme.Images;
+import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.walker.WalkerMetric;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.client.walker.astar.AStarHorizHexEuclideanWalker;
@@ -57,6 +58,9 @@ public class HexGridHorizontal extends HexGrid {
       };
 
   private static final Map<Integer, Area> gridShapeCache = new ConcurrentHashMap<>();
+
+  private static final BufferedImage pathHighlight =
+      RessourceManager.getImage(Images.GRID_BORDER_HEX_HORIZONTAL);
 
   @Override
   public GridType getType() {
@@ -209,13 +213,7 @@ public class HexGridHorizontal extends HexGrid {
 
   @Override
   public BufferedImage getCellHighlight() {
-    // rotate the default path highlight 90 degrees
-    AffineTransform at = new AffineTransform();
-    at.rotate(Math.toRadians(90.0), pathHighlight.getHeight() / 2, pathHighlight.getHeight() / 2);
-
-    AffineTransformOp atOp = new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
-
-    return atOp.filter(pathHighlight, null);
+    return pathHighlight;
   }
 
   @Override
