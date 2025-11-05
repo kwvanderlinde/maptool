@@ -470,66 +470,6 @@ public class InstructionSetBuilder {
 
         add(new RenderInstruction.Icon(highlight, bounds));
       }
-      if (AppState.getShowMovementMeasurements()) {
-        for (CellPoint p : cellPath) {
-          var center = zone.getGrid().getCellCenter(p);
-          var distance = p.getDistanceTraveled(zone);
-          var distanceWithoutTerrain = p.getDistanceTraveledWithoutTerrain();
-
-          if (distance <= 0) {
-            continue;
-          }
-
-          // Font size of 12 at grid size 50 is default
-          double fontScale = grid.getSize() / 50.;
-          // 7 pixels at 100% zoom & grid size of 50
-          double padding = 7 * fontScale;
-          // For hexes, bump it a bit toward the center.
-          var isHexGrid = grid.getType().isHex();
-          double paddingX = padding + (isHexGrid ? grid.getCellWidth() / 10. : 0.);
-          double paddingY = padding + (isHexGrid ? grid.getCellHeight() / 10. : 0.);
-
-          var bounds = new Rectangle2D.Double();
-          bounds.width = grid.getCellWidth() - 2 * paddingX;
-          bounds.height = grid.getCellHeight() - 2 * paddingY;
-          bounds.x = center.getX() - bounds.width / 2.;
-          bounds.y = center.getY() - bounds.height / 2.;
-
-          var screenBounds = viewport.zoneScale().toScreenSpace(bounds);
-
-          int fontSize = (int) (viewport.zoneScale().getScale() * 12 * fontScale);
-          String distanceText = NumberFormat.getInstance().format(distance);
-          if (DeveloperOptions.Toggle.ShowAiDebugging.get()) {
-            distanceText += " (" + NumberFormat.getInstance().format(distanceWithoutTerrain) + ")";
-            fontSize = fontSize * 3 / 4;
-          }
-
-          Font font = new Font(Font.DIALOG, Font.BOLD, fontSize);
-
-          var canvas = new Canvas();
-          var fm = canvas.getFontMetrics(font);
-          int textWidth = SwingUtilities.computeStringWidth(fm, distanceText);
-          int textHeight = fm.getHeight();
-
-          // Text is aligned to the right, with the baseline aligned with the bottom.
-          // Add the descent is required to get the baseline rather than the lowest text point on
-          // the bottom of the bounds.
-          var textBounds =
-              new Rectangle2D.Double(
-                  screenBounds.getMaxX() - textWidth,
-                  screenBounds.getMaxY() - textHeight + fm.getDescent(),
-                  textWidth,
-                  textHeight);
-
-          add(
-              new RenderInstruction.Text(
-                  distanceText,
-                  font,
-                  textBounds,
-                  Color.black,
-                  RenderInstruction.Text.Decoration.None));
-        }
-      }
     }
 
     // Line path
@@ -606,6 +546,67 @@ public class InstructionSetBuilder {
       bounds.y = center.getY() - bounds.height / 2.;
 
       add(new RenderInstruction.Icon(Images.ZONE_RENDERER_CELL_WAYPOINT, bounds));
+    }
+
+    if (highlight != null && AppState.getShowMovementMeasurements()) {
+      for (CellPoint p : cellPath) {
+        var center = zone.getGrid().getCellCenter(p);
+        var distance = p.getDistanceTraveled(zone);
+        var distanceWithoutTerrain = p.getDistanceTraveledWithoutTerrain();
+
+        if (distance <= 0) {
+          continue;
+        }
+
+        // Font size of 12 at grid size 50 is default
+        double fontScale = grid.getSize() / 50.;
+        // 7 pixels at 100% zoom & grid size of 50
+        double padding = 7 * fontScale;
+        // For hexes, bump it a bit toward the center.
+        var isHexGrid = grid.getType().isHex();
+        double paddingX = padding + (isHexGrid ? grid.getCellWidth() / 10. : 0.);
+        double paddingY = padding + (isHexGrid ? grid.getCellHeight() / 10. : 0.);
+
+        var bounds = new Rectangle2D.Double();
+        bounds.width = grid.getCellWidth() - 2 * paddingX;
+        bounds.height = grid.getCellHeight() - 2 * paddingY;
+        bounds.x = center.getX() - bounds.width / 2.;
+        bounds.y = center.getY() - bounds.height / 2.;
+
+        var screenBounds = viewport.zoneScale().toScreenSpace(bounds);
+
+        int fontSize = (int) (viewport.zoneScale().getScale() * 12 * fontScale);
+        String distanceText = NumberFormat.getInstance().format(distance);
+        if (DeveloperOptions.Toggle.ShowAiDebugging.get()) {
+          distanceText += " (" + NumberFormat.getInstance().format(distanceWithoutTerrain) + ")";
+          fontSize = fontSize * 3 / 4;
+        }
+
+        Font font = new Font(Font.DIALOG, Font.BOLD, fontSize);
+
+        var canvas = new Canvas();
+        var fm = canvas.getFontMetrics(font);
+        int textWidth = SwingUtilities.computeStringWidth(fm, distanceText);
+        int textHeight = fm.getHeight();
+
+        // Text is aligned to the right, with the baseline aligned with the bottom.
+        // Add the descent is required to get the baseline rather than the lowest text point on
+        // the bottom of the bounds.
+        var textBounds =
+            new Rectangle2D.Double(
+                screenBounds.getMaxX() - textWidth,
+                screenBounds.getMaxY() - textHeight + fm.getDescent(),
+                textWidth,
+                textHeight);
+
+        add(
+            new RenderInstruction.Text(
+                distanceText,
+                font,
+                textBounds,
+                Color.black,
+                RenderInstruction.Text.Decoration.None));
+      }
     }
 
     timer.stop("renderPath-2");
