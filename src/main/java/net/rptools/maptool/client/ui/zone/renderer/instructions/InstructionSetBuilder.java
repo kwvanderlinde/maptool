@@ -470,82 +470,73 @@ public class InstructionSetBuilder {
 
         add(new RenderInstruction.Icon(highlight, bounds));
       }
-    }
-    if (AppState.getShowMovementMeasurements()) {
-      for (CellPoint p : cellPath) {
-        var center = zone.getGrid().getCellCenter(p);
-        var distance = p.getDistanceTraveled(zone);
-        var distanceWithoutTerrain = p.getDistanceTraveledWithoutTerrain();
+      if (AppState.getShowMovementMeasurements()) {
+        for (CellPoint p : cellPath) {
+          var center = zone.getGrid().getCellCenter(p);
+          var distance = p.getDistanceTraveled(zone);
+          var distanceWithoutTerrain = p.getDistanceTraveledWithoutTerrain();
 
-        if (distance <= 0) {
-          continue;
+          if (distance <= 0) {
+            continue;
+          }
+
+          // Font size of 12 at grid size 50 is default
+          double fontScale = grid.getSize() / 50.;
+          // 7 pixels at 100% zoom & grid size of 50
+          double padding = 7 * fontScale;
+          // For hexes, bump it a bit toward the center.
+          var isHexGrid = grid.getType().isHex();
+          double paddingX = padding + (isHexGrid ? grid.getCellWidth() / 10. : 0.);
+          double paddingY = padding + (isHexGrid ? grid.getCellHeight() / 10. : 0.);
+
+          var bounds = new Rectangle2D.Double();
+          bounds.width = grid.getCellWidth() - 2 * paddingX;
+          bounds.height = grid.getCellHeight() - 2 * paddingY;
+          bounds.x = center.getX() - bounds.width / 2.;
+          bounds.y = center.getY() - bounds.height / 2.;
+
+          var screenBounds = viewport.zoneScale().toScreenSpace(bounds);
+
+          int fontSize = (int) (viewport.zoneScale().getScale() * 12 * fontScale);
+          String distanceText = NumberFormat.getInstance().format(distance);
+          if (DeveloperOptions.Toggle.ShowAiDebugging.get()) {
+            distanceText += " (" + NumberFormat.getInstance().format(distanceWithoutTerrain) + ")";
+            fontSize = fontSize * 3 / 4;
+          }
+
+          Font font = new Font(Font.DIALOG, Font.BOLD, fontSize);
+
+          var canvas = new Canvas();
+          var fm = canvas.getFontMetrics(font);
+          int textWidth = SwingUtilities.computeStringWidth(fm, distanceText);
+          int textHeight = fm.getHeight();
+
+          // Text is aligned to the right, with the baseline aligned with the bottom.
+          // Add the descent is required to get the baseline rather than the lowest text point on
+          // the bottom of the bounds.
+          var textBounds =
+              new Rectangle2D.Double(
+                  screenBounds.getMaxX() - textWidth,
+                  screenBounds.getMaxY() - textHeight + fm.getDescent(),
+                  textWidth,
+                  textHeight);
+
+          add(
+              new RenderInstruction.Text(
+                  distanceText,
+                  font,
+                  textBounds,
+                  Color.black,
+                  RenderInstruction.Text.Decoration.None));
         }
-
-        // Font size of 12 at grid size 50 is default
-        double fontScale = grid.getSize() / 50.;
-        // 7 pixels at 100% zoom & grid size of 50
-        double padding = 7 * fontScale;
-        // For hexes, bump it a bit toward the center.
-        var isHexGrid = grid.getType().isHex();
-        double paddingX = padding + (isHexGrid ? grid.getCellWidth() / 10. : 0.);
-        double paddingY = padding + (isHexGrid ? grid.getCellHeight() / 10. : 0.);
-
-        var bounds = new Rectangle2D.Double();
-        bounds.width = grid.getCellWidth() - 2 * paddingX;
-        bounds.height = grid.getCellHeight() - 2 * paddingY;
-        bounds.x = center.getX() - bounds.width / 2.;
-        bounds.y = center.getY() - bounds.height / 2.;
-
-        var screenBounds = viewport.zoneScale().toScreenSpace(bounds);
-
-        int fontSize = (int) (viewport.zoneScale().getScale() * 12 * fontScale);
-        String distanceText = NumberFormat.getInstance().format(distance);
-        if (DeveloperOptions.Toggle.ShowAiDebugging.get()) {
-          distanceText += " (" + NumberFormat.getInstance().format(distanceWithoutTerrain) + ")";
-          fontSize = fontSize * 3 / 4;
-        }
-
-        Font font = new Font(Font.DIALOG, Font.BOLD, fontSize);
-
-        var canvas = new Canvas();
-        var fm = canvas.getFontMetrics(font);
-        int textWidth = SwingUtilities.computeStringWidth(fm, distanceText);
-        int textHeight = fm.getHeight();
-
-        // Text is aligned to the right, with the baseline aligned with the bottom.
-        // Add the descent is required to get the baseline rather than the lowest text point on
-        // the bottom of the bounds.
-        var textBounds =
-            new Rectangle2D.Double(
-                screenBounds.getMaxX() - textWidth,
-                screenBounds.getMaxY() - textHeight + fm.getDescent(),
-                textWidth,
-                textHeight);
-
-        add(
-            new RenderInstruction.Text(
-                distanceText,
-                font,
-                textBounds,
-                Color.black,
-                RenderInstruction.Text.Decoration.None));
       }
-    }
-
-    for (Point2D center : waypointList) {
-      var bounds = new Rectangle2D.Double();
-      bounds.width = grid.getCellWidth() / 3.;
-      bounds.height = grid.getCellHeight() / 3.;
-      bounds.x = center.getX() - bounds.width / 2.;
-      bounds.y = center.getY() - bounds.height / 2.;
-
-      add(new RenderInstruction.Icon(Images.ZONE_RENDERER_CELL_WAYPOINT, bounds));
     }
 
     // Line path
     if (grid.getCapabilities().isPathLineSupported()) {
       var curve2d = new Path2D.Double();
 
+      CellPoint previousCellPoint = null;
       Point2D previousPoint = null;
       Point2D previousHalfPoint = null;
       for (CellPoint p : cellPath) {
@@ -553,6 +544,7 @@ public class InstructionSetBuilder {
         var center = new Point2D.Double(bounds.getCenterX(), bounds.getCenterY());
 
         if (previousPoint == null) {
+          previousCellPoint = p;
           previousPoint = center;
           continue;
         }
@@ -565,7 +557,12 @@ public class InstructionSetBuilder {
         var halfPoint = new Point2D.Double(halfX, halfY);
 
         if (previousHalfPoint == null) {
-          curve2d.moveTo(halfPoint.getX(), halfPoint.getY());
+          curve2d.moveTo(origin.getX(), origin.getY());
+          curve2d.lineTo(halfPoint.getX(), halfPoint.getY());
+        } else if (path.isWaypoint(previousCellPoint)) {
+          // For waypoints, run the line right up to the cell center.
+          curve2d.lineTo(origin.getX(), origin.getY());
+          curve2d.lineTo(halfPoint.getX(), halfPoint.getY());
         } else {
           // Tighten up the circular arc by extending the lines a bit.
           var p1 =
@@ -581,9 +578,34 @@ public class InstructionSetBuilder {
         }
 
         previousHalfPoint = halfPoint;
+        previousCellPoint = p;
         previousPoint = center;
       }
-      add(new RenderInstruction.Stroke(curve2d, Paint.of(Color.blue), new BasicStroke(1.f), 1.));
+      if (previousPoint != null && previousHalfPoint != null) {
+        curve2d.lineTo(previousPoint.getX(), previousPoint.getY());
+      }
+      add(
+          new RenderInstruction.Stroke(
+              curve2d,
+              // Paint.of(new Color(0xFF_C3_37_28, true)),
+              // Paint.of(new Color(0xFF_E1_50_40, true)),
+              // Paint.of(new Color(0xFF_E1_9A_92, true)),
+              Paint.of(new Color(0x7F_A3_00_00, true)),
+              new BasicStroke(
+                  Math.max(1.f, grid.getSize() / 10.f),
+                  BasicStroke.CAP_ROUND,
+                  BasicStroke.JOIN_ROUND),
+              1.));
+    }
+
+    for (Point2D center : waypointList) {
+      var bounds = new Rectangle2D.Double();
+      bounds.width = grid.getCellWidth() / 3.;
+      bounds.height = grid.getCellHeight() / 3.;
+      bounds.x = center.getX() - bounds.width / 2.;
+      bounds.y = center.getY() - bounds.height / 2.;
+
+      add(new RenderInstruction.Icon(Images.ZONE_RENDERER_CELL_WAYPOINT, bounds));
     }
 
     timer.stop("renderPath-2");
