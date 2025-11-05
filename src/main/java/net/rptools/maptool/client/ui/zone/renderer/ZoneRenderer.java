@@ -663,6 +663,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
               timer.start("paintComponent:renderBuffer");
               bufferG2d.dispose();
+              g2d.setComposite(AlphaComposite.Src);
               g2d.drawImage(buffer, null, 0, 0);
               timer.stop("paintComponent:renderBuffer");
             }
