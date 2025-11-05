@@ -1928,13 +1928,26 @@ public class GdxRenderer extends ApplicationAdapter {
       boolean hideTSI = AppPreferences.hideTokenStackIndicator.get();
       if (tokenStackMap != null
           && !hideTSI) { // FIXME Needed to prevent NPE but how can it be null?
-        for (Token token : tokenStackMap.keySet()) {
-          var tokenRectangle = token.getFootprintBounds(zoneCache.getZone());
+        for (GUID tokenId : tokenStackMap.keySet()) {
+          var position = viewModel.getTokenPositions().get(tokenId);
+          if (position == null) {
+            // Shouldn't happen, but should handle the case anyway.
+            continue;
+          }
+          if (!viewModel.getOnScreenTokens().contains(tokenId)) {
+            // Don't draw indicator for offscreen tokens.
+            continue;
+          }
+          var tokenRectangle = position.footprintBounds();
           var stackImage = fetchImageResource(Images.ZONE_RENDERER_STACK_IMAGE);
           batch.draw(
               stackImage,
-              tokenRectangle.x + tokenRectangle.width - stackImage.getRegionWidth() + 2,
-              -tokenRectangle.y - stackImage.getRegionHeight() + 2);
+              (float)
+                  (tokenRectangle.getMinX()
+                      + tokenRectangle.getWidth()
+                      - stackImage.getRegionWidth()
+                      + 2),
+              (float) (-tokenRectangle.getMinY() - stackImage.getRegionHeight() + 2));
         }
       }
     }

@@ -162,7 +162,7 @@ public class ZoneViewModel {
       CollectionUtil.newFilledEnumMap(Zone.Layer.class, l -> new LinkedList<>());
 
   private final List<TokenPosition> markerList = new ArrayList<>();
-  private final Map<Token, Set<Token>> tokenStackMap = new HashMap<>();
+  private final Map<GUID, Set<Token>> tokenStackMap = new HashMap<>();
 
   private final Map<Zone.Layer, Set<GUID>> visibleTokensByLayer =
       CollectionUtil.newFilledEnumMap(Zone.Layer.class, layer -> new HashSet<>());
@@ -313,7 +313,7 @@ public class ZoneViewModel {
     return Collections.unmodifiableList(markerList);
   }
 
-  public Map<Token, Set<Token>> getTokenStackMap() {
+  public Map<GUID, Set<Token>> getTokenStackMap() {
     return Collections.unmodifiableMap(tokenStackMap);
   }
 
@@ -605,7 +605,7 @@ public class ZoneViewModel {
 
       if (!tokenStackSet.isEmpty()) {
         tokenStackSet.add(token);
-        tokenStackMap.put(token, tokenStackSet);
+        tokenStackMap.put(token.getId(), tokenStackSet);
       }
     }
   }

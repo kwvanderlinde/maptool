@@ -1859,13 +1859,13 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     if (!tokenList.isEmpty() && tokenList.getFirst().getLayer().isTokenLayer()) {
       boolean hideTSI = AppPreferences.hideTokenStackIndicator.get();
       if (!hideTSI) {
-        for (Token token : viewModel.getTokenStackMap().keySet()) {
-          var position = viewModel.getTokenPositions().get(token.getId());
+        for (GUID tokenId : viewModel.getTokenStackMap().keySet()) {
+          var position = viewModel.getTokenPositions().get(tokenId);
           if (position == null) {
             // Shouldn't happen, but should handle the case anyway.
             continue;
           }
-          if (!viewModel.getOnScreenTokens().contains(token.getId())) {
+          if (!viewModel.getOnScreenTokens().contains(tokenId)) {
             // Don't draw indicator for offscreen tokens.
             continue;
           }
@@ -2086,10 +2086,10 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     var tokenStackMap = viewModel.getTokenStackMap();
 
     Token token = getTokenAt(x, y);
-    if (token == null || !tokenStackMap.containsKey(token)) {
+    if (token == null || !tokenStackMap.containsKey(token.getId())) {
       return null;
     }
-    List<Token> tokenList = new ArrayList<>(tokenStackMap.get(token));
+    List<Token> tokenList = new ArrayList<>(tokenStackMap.get(token.getId()));
     tokenList.sort(Token.COMPARE_BY_NAME);
     return tokenList;
   }
