@@ -24,6 +24,8 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -35,6 +37,8 @@ import java.awt.dnd.DropTargetDragEvent;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.dnd.DropTargetEvent;
 import java.awt.dnd.DropTargetListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
@@ -53,6 +57,7 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import net.rptools.lib.CodeTimer;
 import net.rptools.lib.MD5Key;
+import net.rptools.lib.gdx.ConfigurablePool;
 import net.rptools.maptool.client.*;
 import net.rptools.maptool.client.events.RepaintZoneRequested;
 import net.rptools.maptool.client.functions.TokenMoveFunctions;
@@ -93,8 +98,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   private static final long serialVersionUID = 3832897780066104884L;
   private static final Logger log = LogManager.getLogger(ZoneRenderer.class);
 
-  private record BufferedLayerState(
-      BufferedImagePool.Handle bufferHandle, BlendMode blendMode, float opacity) {}
+  private record BufferedLayerState(BufferedImage buffer, BlendMode blendMode, float opacity) {}
 
   private record LayerState(
       String name,
@@ -187,6 +191,16 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           @Override
           public void mouseMoved(MouseEvent e) {
             pointUnderMouse = new ScreenPoint(e.getX(), e.getY());
+          }
+        });
+
+    addComponentListener(
+        new ComponentAdapter() {
+          @Override
+          public void componentResized(ComponentEvent e) {
+            // Pooled buffers are no longer valid after a resize, so discard them all.
+            bufferPool.clear();
+            repaintDebouncer.dispatch();
           }
         });
 
@@ -614,15 +628,17 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             timer.start("paintComponent");
             Graphics2D g2d = (Graphics2D) g;
 
-            timer.start("paintComponent:allocateBuffer");
-            tempBufferPool.setWidth(getSize().width);
-            tempBufferPool.setHeight(getSize().height);
-            tempBufferPool.setConfiguration(g2d.getDeviceConfiguration());
-            timer.stop("paintComponent:allocateBuffer");
+            timer.start("paintComponent:invalidateBufferPool");
+            var newConfiguration = g2d.getDeviceConfiguration();
+            if (!configuration.equals(newConfiguration)) {
+              configuration = newConfiguration;
+              // Need new buffers.
+              bufferPool.clear();
+            }
+            timer.stop("paintComponent:invalidateBufferPool");
 
-            try (final var bufferHandle = tempBufferPool.acquire()) {
-              final var buffer = bufferHandle.get();
-
+            BufferedImage buffer = bufferPool.obtain();
+            try {
               final var bufferG2d = buffer.createGraphics();
               // Keep the clip to avoid rendering more than we have to.
               bufferG2d.setClip(g2d.getClip());
@@ -650,6 +666,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
               g2d.setComposite(AlphaComposite.Src);
               g2d.drawImage(buffer, null, 0, 0);
               timer.stop("paintComponent:renderBuffer");
+            } finally {
+              bufferPool.free(buffer);
             }
             timer.stop("paintComponent");
           }
@@ -822,8 +840,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
           layerStack.add(currentLayer);
 
-          var bufferHandle = tempBufferPool.acquire();
-          var buffer = bufferHandle.get();
+          var buffer = bufferPool.obtain();
           var layerRootG = buffer.createGraphics();
           layerRootG.setComposite(AlphaComposite.SrcOver);
           currentLayer =
@@ -833,7 +850,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
                   (Graphics2D) layerRootG.create(),
                   new BufferedLayerState(
                       //  TODO Switch to a regular pool rather than a precached set.
-                      bufferHandle, blendMode, (float) opacity));
+                      buffer, blendMode, (float) opacity));
 
           currentLayer.currentG.setClip(new Rectangle(0, 0, buffer.getWidth(), buffer.getHeight()));
 
@@ -903,12 +920,12 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             var g = (Graphics2D) currentLayer.currentG().create();
             try {
               g.setComposite(blitComposite);
-              g.drawImage(bufferedLayerState.bufferHandle().get(), 0, 0, this);
+              g.drawImage(bufferedLayerState.buffer(), 0, 0, this);
             } finally {
               g.dispose();
             }
 
-            bufferedLayerState.bufferHandle().close();
+            bufferPool.free(bufferedLayerState.buffer());
             timer.stop("layer-%s-blit", layerName);
           }
         }
@@ -1158,13 +1175,45 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     }
   }
 
+  private GraphicsConfiguration configuration =
+      GraphicsEnvironment.getLocalGraphicsEnvironment()
+          .getDefaultScreenDevice()
+          .getDefaultConfiguration();
+
   /**
    * Cache of images for rendering overlays.
    *
-   * <p>Size is set to two: one for the buffer to draw the entire zone, and one for drawing each
-   * overlay in turn.
+   * <p>Minimum size is set to three: one for the main buffer that the entire zone is drawn two, and
+   * two to handle most layer compositions, e.g., for drawing groups. There is room to grow for
+   * cases like drawing groups that can be recursively nested.
    */
-  private final BufferedImagePool tempBufferPool = new BufferedImagePool(10);
+  private final ConfigurablePool<BufferedImage> bufferPool =
+      new ConfigurablePool<>(
+          3,
+          10,
+          new ConfigurablePool.PoolSupplier<>() {
+            @Override
+            public BufferedImage get() {
+              CodeTimer.get().increment("buffered-image-get");
+
+              return configuration.createCompatibleImage(
+                  getWidth(), getHeight(), Transparency.TRANSLUCENT);
+            }
+
+            @Override
+            public void reset(BufferedImage object) {
+              CodeTimer.get().increment("buffered-image-reset");
+
+              // Nothing to do.
+            }
+
+            @Override
+            public void discard(BufferedImage object) {
+              CodeTimer.get().increment("buffered-image-discard");
+
+              // Nothing to do. Will be garbage collected.
+            }
+          });
 
   /**
    * Get a list of tokens currently visible on the screen. The list is ordered by location starting
