@@ -120,7 +120,6 @@ public class GridRenderer {
 
   private void renderGrid(IsometricGrid grid) {
     var zoneScale = zoneCache.getZoneViewModel().getZoneScale();
-
     var scale = (float) zoneScale.getScale();
     int gridSize = (int) (grid.getSize() * scale);
 
@@ -172,7 +171,6 @@ public class GridRenderer {
 
   private void renderGrid(SquareGrid grid) {
     var zoneScale = zoneCache.getZoneViewModel().getZoneScale();
-
     var scale = (float) zoneScale.getScale();
     float gridSize = (grid.getSize() * scale);
     var tmpColor = Pools.obtain(Color.class);
