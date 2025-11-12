@@ -759,10 +759,12 @@ public class GdxRenderer extends ApplicationAdapter {
             break;
           }
           timer.stop("layer-%s-render", layerName);
+
+          timer.start("layer-%s-pop", layerName);
           var poppedLayer = currentLayer;
           poppedLayer.end(batch);
-
           currentLayer = layerStack.removeLast();
+          timer.stop("layer-%s-pop", layerName);
 
           timer.increment("layer-%s-blit", 1, layerName);
           timer.start("layer-%s-blit", layerName);
