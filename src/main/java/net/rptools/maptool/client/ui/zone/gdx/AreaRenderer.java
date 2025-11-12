@@ -32,9 +32,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import net.rptools.lib.CodeTimer;
 import net.rptools.lib.GeometryUtil;
 import net.rptools.lib.gdx.Earcut;
 import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.geom.PrecisionModel;
 import space.earlygrey.shapedrawer.ShapeDrawer;
 
 public class AreaRenderer {
@@ -112,6 +114,8 @@ public class AreaRenderer {
   }
 
   public void fillArea(PolygonSpriteBatch batch, Shape shape) {
+    var timer = CodeTimer.get();
+
     switch (shape) {
       case Line2D line2D -> {
         /*Not a filled shape, nothing to do*/
@@ -134,15 +138,28 @@ public class AreaRenderer {
       }
       default -> {
         // Handles Path2D and Area in particular.
+        timer.start("AreaRenderer#fillArea()-converToArea");
         if (!(shape instanceof Area)) {
           shape = new Area(shape);
         }
+        timer.stop("AreaRenderer#fillArea()-converToArea");
 
-        for (var poly : triangulate(GeometryUtil.toJtsPolygons(shape))) {
+        timer.start("AreaRenderer#fillArea()-converToPolygons");
+        // TODO Precision should depend on the current zoneScale' scale.
+        var polygons = GeometryUtil.toJtsPolygons(shape, new PrecisionModel(1e1));
+        timer.stop("AreaRenderer#fillArea()-converToPolygons");
+
+        timer.start("AreaRenderer#fillArea()-triangulate");
+        var triangulatedPolygons = triangulate(polygons);
+        timer.stop("AreaRenderer#fillArea()-triangulate");
+
+        timer.start("AreaRenderer#fillArea()-paint");
+        for (var poly : triangulatedPolygons) {
           var polyRegion =
               new PolygonRegion(new TextureRegion(texture), poly.vertices, poly.indices);
           paintRegion(batch, polyRegion);
         }
+        timer.stop("AreaRenderer#fillArea()-paint");
       }
     }
   }
