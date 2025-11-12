@@ -158,7 +158,14 @@ public class CodeTimer {
 
     // Count up all the timing events.
     for (var event : timerEvents) {
-      var id = String.format(event.id(), event.parameters());
+      String id;
+      try {
+        id = String.format(event.id(), event.parameters());
+      } catch (Exception e) {
+        log.error("Failed to apply parameters to format string", e);
+        id = event.id();
+      }
+
       var timer = timeMap.computeIfAbsent(id, Timer::new);
       switch (event.type()) {
         case Start -> timer.startAt(event.timeNs());
