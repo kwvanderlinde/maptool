@@ -14,6 +14,7 @@
  */
 package net.rptools.maptool.client.ui.zone;
 
+import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
@@ -108,6 +109,7 @@ public class ZoneViewModel {
   private @Nullable String loadingProgress = "";
 
   private PlayerView playerView = new PlayerView(Player.Role.PLAYER);
+  private final Dimension viewSize = new Dimension();
   private final Rectangle2D viewport = new Rectangle2D.Double();
   private Area visibleArea = new Area();
 
@@ -170,6 +172,13 @@ public class ZoneViewModel {
       repaintNeeded();
       // TODO Should we be calling renderer.maybeForcePlayersView() here?
     }
+  }
+
+  /**
+   * @return The physical size of the map viewport on the screen, in pixels.
+   */
+  public Dimension getViewSize() {
+    return viewSize;
   }
 
   public Rectangle2D getViewport() {
@@ -347,16 +356,18 @@ public class ZoneViewModel {
     }
   }
 
-  /** Updates {@link #viewport} based on {@link #zoneScale}. */
+  /** Updates {@link #viewSize} and {@link #viewport} based on {@link #zoneScale}. */
   private void updateViewport() {
     var renderer = MapTool.getFrame().getZoneRenderer(this.zone);
     if (renderer == null) {
       // No viewport.
+      viewSize.setSize(0, 0);
       viewport.setFrame(0, 0, 0, 0);
       return;
     }
 
-    var screenBounds = new Rectangle2D.Double(0, 0, renderer.getWidth(), renderer.getHeight());
+    viewSize.setSize(renderer.getSize());
+    var screenBounds = new Rectangle2D.Double(0, 0, viewSize.width, viewSize.height);
     viewport.setFrame(zoneScale.toWorldSpace(screenBounds));
   }
 
