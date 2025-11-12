@@ -138,11 +138,17 @@ public class GeometryUtil {
   }
 
   public static Collection<Polygon> toJtsPolygons(Shape shape) {
+    return toJtsPolygons(shape, finePrecisionModel);
+  }
+
+  public static Collection<Polygon> toJtsPolygons(Shape shape, PrecisionModel precisionModel) {
     if (shape instanceof Area area && area.isEmpty()) {
       return Collections.emptyList();
     }
 
-    final var pathIterator = shape.getPathIterator(null, 1. / finePrecisionModel.getScale());
+    var geometryFactory = new GeometryFactory(precisionModel);
+
+    final var pathIterator = shape.getPathIterator(null, 1. / precisionModel.getScale());
     final var coordinates = (List<Coordinate[]>) ShapeReader.toCoordinates(pathIterator);
 
     // Now collect all the noded rings into islands (JTS clockwise) and oceans (counterclockwise).
@@ -157,7 +163,7 @@ public class GeometryUtil {
       }
 
       for (var c : ring) {
-        finePrecisionModel.makePrecise(c);
+        precisionModel.makePrecise(c);
       }
       if (Orientation.isCCW(ring)) {
         oceans.add(ring);
