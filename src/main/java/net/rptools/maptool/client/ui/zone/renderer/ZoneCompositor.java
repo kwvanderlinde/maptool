@@ -23,7 +23,6 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
-import java.awt.geom.Ellipse2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -71,6 +70,7 @@ import net.rptools.maptool.client.ui.token.TwoToneBarTokenOverlay;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.client.ui.zone.ZoneView;
 import net.rptools.maptool.client.ui.zone.ZoneViewModel;
+import net.rptools.maptool.client.ui.zone.compositor.HaloCompositor;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.AlphaMode;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.BlendMode;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.ClipType;
@@ -93,6 +93,7 @@ import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstructio
 import net.rptools.maptool.client.ui.zone.renderer.instructions.ZoneViewport;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.language.I18N;
+import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.CellPoint;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Grid;
@@ -157,6 +158,9 @@ public class ZoneCompositor {
   private final ZoneViewModel viewModel;
   private final ZoneView zoneView;
   private final Zone zone;
+  private final Campaign campaign;
+
+  private final HaloCompositor haloCompositor;
 
   // region Temporary facing arrow state
 
@@ -177,6 +181,9 @@ public class ZoneCompositor {
     this.viewModel = renderer.getViewModel();
     this.zoneView = renderer.getZoneView();
     this.zone = renderer.getZone();
+    this.campaign = viewModel.getCampaign();
+
+    this.haloCompositor = new HaloCompositor(campaign, zone);
   }
 
   /**
@@ -588,7 +595,7 @@ public class ZoneCompositor {
                 tokenClip,
                 false,
                 () -> {
-                  compositeTokenHalo(builder, tokenPosition);
+                  haloCompositor.compositeHalos(builder, tokenPosition, view);
 
                   // region Token image
                   // Use opacity to indicate that token is moving
@@ -858,81 +865,6 @@ public class ZoneCompositor {
 
     // clipping needed
     return true;
-  }
-
-  private void compositeTokenHalo(
-      InstructionSetBuilder builder, ZoneViewModel.TokenPosition position) {
-    var token = position.token();
-
-    var haloColor = token.getHaloColor();
-    if (haloColor == null) {
-      return;
-    }
-
-    var grid = zone.getGrid();
-    if (grid == null) {
-      // This doesn't seem realistic, but the original did it.
-      return;
-    }
-
-    if (grid.getType().isNone()) {
-      // Ellipse-type areas can be expensive for the LibGDX renderer to triangulate. So we handle
-      // gridless grids specially so that we can directly stroke an `Ellipse2D`, which can be done
-      // more cheaply.
-      double strokeWidth =
-          Math.min(1f, token.getFootprint(grid).getScale()) * AppPreferences.haloLineWidth.get();
-      double maxD =
-          Math.max(position.footprintBounds().getWidth(), position.footprintBounds().getHeight());
-      Shape haloShape =
-          new Ellipse2D.Double(
-              position.transformedBounds().getBounds2D().getCenterX() - maxD / 2. - strokeWidth,
-              position.transformedBounds().getBounds2D().getCenterY() - maxD / 2. - strokeWidth,
-              maxD + 2 * strokeWidth,
-              maxD + 2 * strokeWidth);
-
-      builder.add(
-          new Stroke(haloShape, Paint.of(haloColor), new BasicStroke((float) strokeWidth), 1.));
-    } else {
-      Shape haloShape = grid.getCellShape();
-      haloShape =
-          AffineTransform.getTranslateInstance(
-                  -haloShape.getBounds2D().getCenterX(), -haloShape.getBounds2D().getCenterY())
-              .createTransformedShape(haloShape);
-
-      Shape paintShape;
-      {
-        double maxD =
-            Math.max(
-                position.footprintBounds().getWidth() / haloShape.getBounds2D().getWidth(),
-                position.footprintBounds().getHeight() / haloShape.getBounds2D().getHeight());
-        var transform = new AffineTransform();
-        transform.translate(
-            position.transformedBounds().getBounds2D().getCenterX(),
-            position.transformedBounds().getBounds2D().getCenterY());
-        transform.scale(maxD, maxD);
-
-        paintShape = transform.createTransformedShape(haloShape);
-      }
-
-      // Clip the interior of the halo so the token footprint is completely excluded.
-      // This is a workaround for not being able to set another level of clipping just at rendering
-      // time just for this operation. We'll create the stroked shape ourselves, then order a fill
-      // operation instead of a stroke operation.
-      Area strokedShape;
-      {
-        var stroke =
-            new BasicStroke(
-                // double width because we will clip the inside half
-                (float)
-                    (2f
-                        * Math.min(1f, token.getFootprint(grid).getScale())
-                        * AppPreferences.haloLineWidth.get()));
-        strokedShape = new Area(stroke.createStrokedShape(paintShape));
-        strokedShape.subtract(new Area(paintShape));
-      }
-
-      builder.add(new Fill(strokedShape, Paint.of(haloColor), 1.));
-    }
   }
 
   private void compositeSelectionBox(
