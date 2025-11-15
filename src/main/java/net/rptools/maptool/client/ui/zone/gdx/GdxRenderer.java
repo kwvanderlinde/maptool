@@ -1672,7 +1672,7 @@ public class GdxRenderer extends ApplicationAdapter {
             java.awt.Shape arrow =
                 getFigureFacingArrow(token.getFacing(), footprintBounds.width / 2);
 
-            if (!zoneCache.getZone().getGrid().isIsometric()) {
+            if (!zoneCache.getZone().getGrid().getType().isIsometric()) {
               arrow = getCircleFacingArrow(token.getFacing(), footprintBounds.width / 2);
             }
 
@@ -1704,7 +1704,7 @@ public class GdxRenderer extends ApplicationAdapter {
             }
           case CIRCLE:
             arrow = getCircleFacingArrow(token.getFacing(), footprintBounds.width / 2);
-            if (zoneCache.getZone().getGrid().isIsometric()) {
+            if (zoneCache.getZone().getGrid().getType().isIsometric()) {
               arrow = getFigureFacingArrow(token.getFacing(), footprintBounds.width / 2);
             }
             arrowArea = new Area(arrow);
@@ -1724,7 +1724,7 @@ public class GdxRenderer extends ApplicationAdapter {
             batch.setTransformMatrix(tmpMatrix);
             break;
           case SQUARE:
-            if (zoneCache.getZone().getGrid().isIsometric()) {
+            if (zoneCache.getZone().getGrid().getType().isIsometric()) {
               arrow = getFigureFacingArrow(token.getFacing(), footprintBounds.width / 2);
               cx = origBounds.x + origBounds.width / 2f;
               cy = origBounds.y + origBounds.height / 2f;
@@ -2241,7 +2241,7 @@ public class GdxRenderer extends ApplicationAdapter {
         highlightCell(zp, getCellHighlight(), 1.0f);
       }
       if (AppState.getShowMovementMeasurements()) {
-        double cellAdj = grid.isHex() ? 2.5 : 2;
+        double cellAdj = grid.getType().isHex() ? 2.5 : 2;
         for (CellPoint p : cellPath) {
           ZonePoint zp = grid.convert(p);
           zp.x += grid.getCellWidth() / cellAdj + cellOffset.width;
@@ -2262,7 +2262,7 @@ public class GdxRenderer extends ApplicationAdapter {
       // Line path
       if (grid.getCapabilities().isPathLineSupported()) {
         ZonePoint lineOffset;
-        if (grid.isHex()) {
+        if (grid.getType().isHex()) {
           lineOffset = new ZonePoint(0, 0);
         } else {
           lineOffset =
