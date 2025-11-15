@@ -249,7 +249,6 @@ public class ZoneViewModel {
   public void setZoneScale(Scale scale) {
     if (!this.zoneScale.equals(scale)) {
       this.zoneScale = scale;
-      MapTool.getFrame().getZoneRenderer(zone).invalidateCurrentViewCache();
       MapTool.getFrame().getZoomStatusBar().update();
       repaintNeeded();
       // TODO Should we be calling renderer.maybeForcePlayersView() here?

@@ -40,6 +40,8 @@ import space.earlygrey.shapedrawer.ShapeDrawer;
 public class AreaRenderer {
   public record TriangledPolygon(float[] vertices, short[] indices) {}
 
+  private static final float POINTS_PER_BEZIER = 10f;
+
   private final ShapeDrawer drawer;
   private final PathMesher pathMesher = new PathMesher();
   private final Texture whitePixel;
@@ -53,10 +55,6 @@ public class AreaRenderer {
   public AreaRenderer(ShapeDrawer drawer, Texture whitePixel) {
     this.drawer = drawer;
     this.whitePixel = whitePixel;
-  }
-
-  public ShapeDrawer getShapeDrawer() {
-    return drawer;
   }
 
   public void setColor(Color value) {
@@ -231,14 +229,9 @@ public class AreaRenderer {
           tmpVector0.set(tmpFloat.get(tmpFloat.size - 2), tmpFloat.get(tmpFloat.size - 1));
           tmpVector1.set(floatsFromArea[0], -floatsFromArea[1]);
           tmpVector2.set(floatsFromArea[2], -floatsFromArea[3]);
-          for (var i = 1; i <= GdxRenderer.POINTS_PER_BEZIER; i++) {
+          for (var i = 1; i <= POINTS_PER_BEZIER; i++) {
             Bezier.quadratic(
-                tmpVectorOut,
-                i / GdxRenderer.POINTS_PER_BEZIER,
-                tmpVector0,
-                tmpVector1,
-                tmpVector2,
-                tmpVector);
+                tmpVectorOut, i / POINTS_PER_BEZIER, tmpVector0, tmpVector1, tmpVector2, tmpVector);
             tmpFloat.add(tmpVectorOut.x, tmpVectorOut.y);
             index += 1;
           }
@@ -248,10 +241,10 @@ public class AreaRenderer {
           tmpVector1.set(floatsFromArea[0], -floatsFromArea[1]);
           tmpVector2.set(floatsFromArea[2], -floatsFromArea[3]);
           tmpVector3.set(floatsFromArea[4], -floatsFromArea[5]);
-          for (var i = 1; i <= GdxRenderer.POINTS_PER_BEZIER; i++) {
+          for (var i = 1; i <= POINTS_PER_BEZIER; i++) {
             Bezier.cubic(
                 tmpVectorOut,
-                i / GdxRenderer.POINTS_PER_BEZIER,
+                i / POINTS_PER_BEZIER,
                 tmpVector0,
                 tmpVector1,
                 tmpVector2,

@@ -16,7 +16,6 @@ package net.rptools.maptool.model.drawing;
 
 import com.google.protobuf.StringValue;
 import java.awt.BasicStroke;
-import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Shape;
@@ -200,19 +199,6 @@ public class LineSegment extends AbstractDrawing {
     }
     BasicStroke stroke = new BasicStroke(width, getStrokeCap(), getStrokeJoin());
     return new Area(stroke.createStrokedShape(gp));
-  }
-
-  @Override
-  protected void draw(Zone zone, Graphics2D g) {
-    width = ((BasicStroke) g.getStroke()).getLineWidth();
-    squareCap = ((BasicStroke) g.getStroke()).getEndCap() == BasicStroke.CAP_SQUARE;
-    Area area = getArea(zone);
-    g.fill(area);
-  }
-
-  @Override
-  protected void drawBackground(Zone zone, Graphics2D g) {
-    // do nothing
   }
 
   @Override

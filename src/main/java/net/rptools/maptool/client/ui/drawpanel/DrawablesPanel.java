@@ -104,19 +104,16 @@ public class DrawablesPanel extends JComponent {
             Transparency.TRANSLUCENT);
     Graphics2D g = backBuffer.createGraphics();
     g.setClip(0, 0, backBuffer.getWidth(), backBuffer.getHeight());
-    Composite oldComposite = g.getComposite();
     g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
     AffineTransform tf = new AffineTransform();
     tf.translate(-(viewport.x * scale), -(viewport.y * scale));
     tf.scale(scale, scale);
     g.transform(tf);
+
     for (DrawnElement element : drawableList) {
       Drawable drawable = element.getDrawable();
       Pen pen = element.getPen();
-      if (pen.getOpacity() != 1) {
-        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, pen.getOpacity()));
-      }
       // If we are only drawing cuts, make the pen visible
       if (showEraser && pen.isEraser()) {
         pen = new Pen(pen);
@@ -124,21 +121,67 @@ public class DrawablesPanel extends JComponent {
         pen.setPaint(new DrawableColorPaint(Color.red));
         pen.setBackgroundPaint(new DrawableColorPaint(Color.red));
       }
-      if (drawable instanceof DrawablesGroup) {
-        g.drawImage(
-            drawDrawables(
-                zone,
-                ((DrawablesGroup) drawable).getDrawableList(),
-                new Rectangle(viewport),
-                1,
-                false),
-            viewport.x,
-            viewport.y,
-            null);
-      } else {
-        drawable.draw(zone, g, pen);
+
+      switch (drawable) {
+        case DrawablesGroup group -> {
+          g.setComposite(AlphaComposite.SrcOver);
+          g.drawImage(
+              drawDrawables(zone, group.getDrawableList(), new Rectangle(viewport), 1, false),
+              viewport.x,
+              viewport.y,
+              null);
+        }
+        case DrawnLabel drawnLabel -> {
+          // TODO Conveniently ignoring this since DrawnLabels are not part of the model anymore.
+        }
+        default -> {
+          var isEraser = pen.isEraser();
+          var foregroundPaint = pen.getPaint();
+          var backgroundPaint = pen.getBackgroundPaint();
+
+          if (backgroundPaint != null) {
+            if (isEraser) {
+              g.setComposite(AlphaComposite.Clear);
+            } else {
+              var opacity =
+                  pen.getOpacity()
+                      * (drawable instanceof AbstractTemplate
+                          ? AbstractTemplate.DEFAULT_BG_ALPHA
+                          : 1);
+              g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
+            }
+
+            var area = drawable.getArea(zone);
+            if (area != null) {
+              g.setPaint(backgroundPaint.getPaint());
+              g.fill(area);
+            }
+          }
+
+          if (foregroundPaint != null) {
+            if (isEraser) {
+              g.setComposite(AlphaComposite.Clear);
+            } else {
+              g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, pen.getOpacity()));
+            }
+            g.setStroke(pen.getStroke());
+
+            var border = drawable.getBorder(zone);
+            if (border != null) {
+              g.setPaint(foregroundPaint.getPaint());
+              g.draw(border);
+            }
+
+            var decorations =
+                drawable instanceof AbstractTemplate template
+                    ? template.getDecorationsToStroke(zone)
+                    : null;
+            if (decorations != null) {
+              g.draw(decorations);
+            }
+          }
+        }
       }
-      g.setComposite(oldComposite);
     }
     g.dispose();
     return backBuffer;

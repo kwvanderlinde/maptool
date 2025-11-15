@@ -26,8 +26,6 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.Nonnull;
 import net.rptools.lib.MD5Key;
-import net.rptools.maptool.client.ui.zone.ZoneView;
-import net.rptools.maptool.client.ui.zone.ZoneViewModel;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.util.ImageManager;
@@ -38,7 +36,6 @@ public class ZoneCache implements Disposable {
 
   private static final Logger log = LogManager.getLogger(ZoneCache.class);
   private final Zone zone;
-  private final ZoneRenderer zoneRenderer;
   private final PixmapPacker packer =
       new PixmapPacker(2048, 2048, Pixmap.Format.RGBA8888, 2, false);
   private final TextureAtlas tokenAtlas = new TextureAtlas();
@@ -52,21 +49,8 @@ public class ZoneCache implements Disposable {
     return zone;
   }
 
-  public ZoneRenderer getZoneRenderer() {
-    return zoneRenderer;
-  }
-
-  public ZoneViewModel getZoneViewModel() {
-    return zoneRenderer.getViewModel();
-  }
-
-  public ZoneView getZoneView() {
-    return zoneRenderer.getZoneView();
-  }
-
   public ZoneCache(@Nonnull ZoneRenderer zoneRenderer) {
     this.zone = zoneRenderer.getZone();
-    this.zoneRenderer = zoneRenderer;
   }
 
   /**

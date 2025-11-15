@@ -17,7 +17,6 @@ package net.rptools.maptool.model.drawing;
 import com.google.protobuf.StringValue;
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.Area;
 import javax.annotation.Nonnull;
@@ -76,18 +75,6 @@ public class DrawnLabel extends AbstractDrawing {
   public String getFont() {
     return font;
   }
-
-  public void draw(Zone zone, Graphics2D aG) {
-    if (renderer == null) {
-      renderer = new CellRendererPane();
-      textPane = createTextPane(bounds, font);
-      textPane.setText(text);
-    }
-    renderer.paintComponent(aG, textPane, null, bounds);
-  }
-
-  @Override
-  protected void drawBackground(Zone zone, Graphics2D g) {}
 
   @Override
   public Rectangle getBounds(Zone zone) {

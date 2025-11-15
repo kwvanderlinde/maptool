@@ -15,13 +15,11 @@
 package net.rptools.maptool.model;
 
 import java.awt.Dimension;
-import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
-import java.awt.geom.Dimension2D;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.Action;
 import javax.swing.KeyStroke;
 import net.rptools.maptool.client.tool.PointerTool;
-import net.rptools.maptool.client.ui.Scale;
 import net.rptools.maptool.client.ui.theme.Images;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.walker.WalkerMetric;
@@ -214,11 +211,6 @@ public class HexGridVertical extends HexGrid {
   }
 
   @Override
-  public BufferedImage getCellHighlight() {
-    return pathHighlight;
-  }
-
-  @Override
   public double getCellHeight() {
     return getVRadius() * 2;
   }
@@ -236,31 +228,6 @@ public class HexGridVertical extends HexGrid {
   @Override
   public ZoneWalker createZoneWalker() {
     return new AStarVertHexEuclideanWalker(getZone());
-  }
-
-  @Override
-  protected void setGridDrawTranslation(Graphics2D g, double U, double V) {
-    g.translate(U, V);
-  }
-
-  @Override
-  public double getSizeV(Dimension2D size) {
-    return size.getHeight();
-  }
-
-  @Override
-  public double getSizeU(Dimension2D size) {
-    return size.getWidth();
-  }
-
-  @Override
-  public int getOffV(Scale scale) {
-    return (int) (scale.getOffsetY() + getOffsetY() * scale.getScale());
-  }
-
-  @Override
-  public int getOffU(Scale scale) {
-    return (int) (scale.getOffsetX() + getOffsetX() * scale.getScale());
   }
 
   @Override

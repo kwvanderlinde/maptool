@@ -786,7 +786,6 @@ public class ClientMessageHandler implements MessageHandler {
     AssetManager.putAsset(Asset.fromDto(msg.getAsset()));
     EventQueue.invokeLater(
         () -> {
-          MapTool.getFrame().getCurrentZoneRenderer().flushDrawableRenderer();
           MapTool.getFrame().refresh();
         });
   }

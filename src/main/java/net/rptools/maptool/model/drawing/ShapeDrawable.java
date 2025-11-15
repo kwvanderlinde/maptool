@@ -150,30 +150,8 @@ public class ShapeDrawable extends AbstractDrawing {
     return drawable;
   }
 
-  @Override
-  protected void draw(Zone zone, Graphics2D g) {
-    Object oldAA = applyAA(g);
-    g.draw(shape);
-    restoreAA(g, oldAA);
-  }
-
-  @Override
-  protected void drawBackground(Zone zone, Graphics2D g) {
-    Object oldAA = applyAA(g);
-    g.fill(shape);
-    restoreAA(g, oldAA);
-  }
-
   public Shape getShape() {
     return shape;
-  }
-
-  private Object applyAA(Graphics2D g) {
-    Object oldAA = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
-    g.setRenderingHint(
-        RenderingHints.KEY_ANTIALIASING,
-        useAntiAliasing ? RenderingHints.VALUE_ANTIALIAS_ON : RenderingHints.VALUE_ANTIALIAS_OFF);
-    return oldAA;
   }
 
   @Override
@@ -187,9 +165,5 @@ public class ShapeDrawable extends AbstractDrawing {
     sb.append("width=").append(getBounds().width).append(";");
     sb.append("height=").append(getBounds().height).append("\";");
     return sb.toString();
-  }
-
-  private void restoreAA(Graphics2D g, Object oldAA) {
-    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, oldAA);
   }
 }

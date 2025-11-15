@@ -14,12 +14,7 @@
  */
 package net.rptools.maptool.model.drawing;
 
-import java.awt.AlphaComposite;
-import java.awt.Composite;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
 import java.awt.Shape;
-import java.awt.geom.Line2D;
 import javax.annotation.Nullable;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Zone;
@@ -189,121 +184,6 @@ public abstract class AbstractTemplate extends AbstractDrawing {
   }
 
   /**
-   * Paint the border or area of the template
-   *
-   * @param zone The zone that is being painted
-   * @param g Where to paint
-   * @param border Paint the border?
-   * @param area Paint the area?
-   */
-  protected void paint(Zone zone, Graphics2D g, boolean border, boolean area) {
-    if (radius == 0) {
-      return;
-    }
-    if (zone == null) {
-      return;
-    }
-
-    // Find the proper distance
-    int gridSize = zone.getGrid().getSize();
-    for (int y = 0; y < radius; y++) {
-      for (int x = 0; x < radius; x++) {
-
-        // Get the offset to the corner of the square
-        int xOff = x * gridSize;
-        int yOff = y * gridSize;
-
-        // Template specific painting
-        if (border) paintBorder(g, x, y, xOff, yOff, gridSize, getDistance(x, y));
-        if (area) paintArea(g, x, y, xOff, yOff, gridSize, getDistance(x, y));
-      } // endfor
-    } // endfor
-  }
-
-  /**
-   * Paint the close horizontal line of a cell's border. All directions are relevant to the vertex.
-   *
-   * @param g The painter.
-   * @param xOff X Offset to cell from vertex in screen coordinates.
-   * @param yOff Y Offset to cell from vertex in screen coordinates.
-   * @param gridSize Size of a cell in screen coordinates.
-   * @param q The quadrant the cell is in relative to the vertex.
-   */
-  protected void paintCloseHorizontalBorder(
-      Graphics2D g, int xOff, int yOff, int gridSize, Quadrant q) {
-    int x = vertex.x + getXMult(q) * xOff;
-    int y = vertex.y + getYMult(q) * yOff;
-    Line2D l = new Line2D.Double(x, y, x + getXMult(q) * gridSize, y);
-    g.draw(l);
-  }
-
-  /**
-   * Paint the close vertical line of a cell's border. All directions are relevant to the vertex.
-   *
-   * @param g The painter.
-   * @param xOff X Offset to cell from vertex in screen coordinates.
-   * @param yOff Y Offset to cell from vertex in screen coordinates.
-   * @param gridSize Size of a cell in screen coordinates.
-   * @param q The quadrant the cell is in relative to the vertex.
-   */
-  protected void paintCloseVerticalBorder(
-      Graphics2D g, int xOff, int yOff, int gridSize, Quadrant q) {
-    int x = vertex.x + getXMult(q) * xOff;
-    int y = vertex.y + getYMult(q) * yOff;
-    Line2D l = new Line2D.Double(x, y, x, y + getYMult(q) * gridSize);
-    g.draw(l);
-  }
-
-  /**
-   * Fill the area of a cell.
-   *
-   * @param g The painter.
-   * @param xOff X Offset to cell from vertex in screen coordinates.
-   * @param yOff Y Offset to cell from vertex in screen coordinates.
-   * @param gridSize Size of a cell in screen coordinates.
-   * @param q The quadrant the cell is in relative to the vertex.
-   */
-  protected void paintArea(Graphics2D g, int xOff, int yOff, int gridSize, Quadrant q) {
-    int x = vertex.x + getXMult(q) * xOff + ((getXMult(q) - 1) / 2) * gridSize;
-    int y = vertex.y + getYMult(q) * yOff + ((getYMult(q) - 1) / 2) * gridSize;
-    g.fill(new Rectangle(x, y, gridSize, gridSize));
-  }
-
-  /**
-   * Paint the far horizontal line of a cell's border. All directions are relevant to the vertex.
-   *
-   * @param g The painter.
-   * @param xOff X Offset to cell from vertex in screen coordinates.
-   * @param yOff Y Offset to cell from vertex in screen coordinates.
-   * @param gridSize Size of a cell in screen coordinates.
-   * @param q The quadrant the cell is in relative to the vertex.
-   */
-  protected void paintFarHorizontalBorder(
-      Graphics2D g, int xOff, int yOff, int gridSize, Quadrant q) {
-    int x = vertex.x + getXMult(q) * xOff;
-    int y = vertex.y + getYMult(q) * yOff + getYMult(q) * gridSize;
-    Line2D l = new Line2D.Double(x, y, x + getXMult(q) * gridSize, y);
-    g.draw(l);
-  }
-
-  /**
-   * Paint the far vertical line of a cell's border. All directions are relevant to the vertex.
-   *
-   * @param g The painter.
-   * @param xOff X Offset to cell from vertex in screen coordinates.
-   * @param yOff Y Offset to cell from vertex in screen coordinates.
-   * @param gridSize Size of a cell in screen coordinates.
-   * @param q The quadrant the cell is in relative to the vertex.
-   */
-  protected void paintFarVerticalBorder(
-      Graphics2D g, int xOff, int yOff, int gridSize, Quadrant q) {
-    int x = vertex.x + getXMult(q) * xOff + getXMult(q) * gridSize;
-    int y = vertex.y + getYMult(q) * yOff;
-    Line2D l = new Line2D.Double(x, y, x, y + getYMult(q) * gridSize);
-    g.draw(l);
-  }
-
-  /**
    * Get the multiplier in the X direction.
    *
    * @param q Quadrant being accessed
@@ -334,61 +214,4 @@ public abstract class AbstractTemplate extends AbstractDrawing {
     if (x > y) return x + (y / 2) + 1 + (y & 1);
     return y + (x / 2) + 1 + (x & 1);
   }
-
-  /*---------------------------------------------------------------------------------------------
-   * Overridden AbstractDrawing Methods
-   *-------------------------------------------------------------------------------------------*/
-
-  @Override
-  protected void draw(Zone zone, Graphics2D g) {
-    paint(zone, g, true, false);
-  }
-
-  @Override
-  protected void drawBackground(Zone zone, Graphics2D g) {
-
-    // Adjust alpha automatically
-    Composite old = g.getComposite();
-    if (old != AlphaComposite.Clear) {
-      g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, DEFAULT_BG_ALPHA));
-    }
-    paint(zone, g, false, true);
-    g.setComposite(old);
-  }
-
-  /*---------------------------------------------------------------------------------------------
-   * Abstract Methods
-   *-------------------------------------------------------------------------------------------*/
-
-  /**
-   * Paint the border of the template. Note that all coordinates are for the south east quadrant,
-   * just change the signs of the x/y and xOff/yOff offsets to get to the other quadrants.
-   *
-   * @param g Where to paint
-   * @param x Distance from vertex along X axis in cell coordinates.
-   * @param y Distance from vertex along Y axis in cell coordinates.
-   * @param xOff Distance from vertex along X axis in screen coordinates.
-   * @param yOff Distance from vertex along Y axis in screen coordinates.
-   * @param gridSize The size of one side of the grid in screen coordinates.
-   * @param distance The distance in cells from the vertex to the cell which is offset from the
-   *     vertex by <code>x</code> &amp; <code>y</code>.
-   */
-  protected abstract void paintBorder(
-      Graphics2D g, int x, int y, int xOff, int yOff, int gridSize, int distance);
-
-  /**
-   * Paint the border of the template. Note that all coordinates are for the south east quadrant,
-   * just change the signs of the x/y and xOff/yOff offsets to get to the other quadrants.
-   *
-   * @param g Where to paint
-   * @param x Distance from vertex along X axis in cell coordinates.
-   * @param y Distance from vertex along Y axis in cell coordinates.
-   * @param xOff Distance from vertex along X axis in screen coordinates.
-   * @param yOff Distance from vertex along Y axis in screen coordinates.
-   * @param gridSize The size of one side of the grid in screen coordinates.
-   * @param distance The distance in cells from the vertex to the cell which is offset from the
-   *     vertex by <code>x</code> &amp; <code>y</code>.
-   */
-  protected abstract void paintArea(
-      Graphics2D g, int x, int y, int xOff, int yOff, int gridSize, int distance);
 }

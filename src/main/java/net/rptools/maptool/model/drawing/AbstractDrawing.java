@@ -54,41 +54,6 @@ public abstract class AbstractDrawing implements Drawable, ImageObserver {
     this.name = other.name;
   }
 
-  @Override
-  public void draw(Zone zone, Graphics2D g, Pen pen) {
-    if (pen == null) {
-      pen = new Pen();
-    }
-    Stroke oldStroke = g.getStroke();
-    g.setStroke(pen.getStroke());
-
-    Composite oldComposite = g.getComposite();
-    if (pen.isEraser()) {
-      g.setComposite(AlphaComposite.Clear);
-    } else if (pen.getOpacity() != 1) {
-      g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, pen.getOpacity()));
-    }
-
-    var backgroundPaint = pen.getBackgroundPaint();
-    if (backgroundPaint != null) {
-      g.setPaint(backgroundPaint.getPaint(this));
-      drawBackground(zone, g);
-    }
-
-    var foregroundPaint = pen.getPaint();
-    if (foregroundPaint != null) {
-      g.setPaint(foregroundPaint.getPaint(this));
-      draw(zone, g);
-    }
-
-    g.setComposite(oldComposite);
-    g.setStroke(oldStroke);
-  }
-
-  protected abstract void draw(Zone zone, Graphics2D g);
-
-  protected abstract void drawBackground(Zone zone, Graphics2D g);
-
   @VisibleForTesting
   protected Campaign getCampaign() {
     return MapTool.getCampaign();
@@ -157,7 +122,6 @@ public abstract class AbstractDrawing implements Drawable, ImageObserver {
   ////
   // IMAGE OBSERVER
   public boolean imageUpdate(Image img, int infoflags, int x, int y, int width, int height) {
-    MapTool.getFrame().getCurrentZoneRenderer().flushDrawableRenderer();
     MapTool.getFrame().refresh();
     return true;
   }

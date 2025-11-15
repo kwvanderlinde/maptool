@@ -57,8 +57,6 @@ import net.rptools.maptool.client.ui.theme.Borders;
 import net.rptools.maptool.client.ui.theme.Images;
 import net.rptools.maptool.client.ui.theme.LabelBackgrounds;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
-import net.rptools.maptool.client.ui.zone.PlayerView;
-import net.rptools.maptool.client.ui.zone.ZoneViewModel;
 import net.rptools.maptool.client.ui.zone.gdx.drawing.SimpleDrawingRenderer;
 import net.rptools.maptool.client.ui.zone.gdx.label.TextRenderer;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.AlphaMode;
@@ -69,10 +67,7 @@ import net.rptools.maptool.client.ui.zone.renderer.instructions.Paint;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.RenderInstruction;
 import net.rptools.maptool.client.ui.zone.renderer.instructions.ZoneViewport;
 import net.rptools.maptool.events.MapToolEventBus;
-import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.drawing.DrawableNoise;
-import net.rptools.maptool.model.drawing.DrawablePaint;
-import net.rptools.maptool.model.drawing.DrawableTexturePaint;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import space.earlygrey.shapedrawer.ShapeDrawer;
@@ -88,7 +83,6 @@ public class GdxRenderer extends ApplicationAdapter {
 
   private static final Logger log = LogManager.getLogger(GdxRenderer.class);
 
-  public static final float POINTS_PER_BEZIER = 10f;
   private static GdxRenderer _instance;
 
   private record RegionBorder(
@@ -153,13 +147,6 @@ public class GdxRenderer extends ApplicationAdapter {
       new AtomicReference<>(
           new InstructionSet(new ZoneViewport(1, 1, new Scale()), List.of(), Map.of()));
 
-  private ZoneViewModel viewModel;
-
-  // from renderToken:
-  private Area visibleScreenArea;
-  private Area exposedFogArea;
-  private PlayerView lastView;
-
   // zone specific resources
   private ZoneCache zoneCache;
   private ZoneViewport zoneViewport;
@@ -182,25 +169,6 @@ public class GdxRenderer extends ApplicationAdapter {
   private BitmapFont boldFont;
   private float boldFontScale = 0;
 
-  /** Used by render layers to compose the layer prior to blending. */
-  private FrameBuffer backBuffer;
-
-  /**
-   * Holds the results of all layers rendered so far.
-   *
-   * <p>If any rendering layer binds a different buffer, it must rebind this buffer before
-   * completing.
-   */
-  private FrameBuffer resultsBuffer;
-
-  /**
-   * Used when a layer needs to blend {@link #backBuffer} with {@link #resultsBuffer} using a
-   * shader.
-   *
-   * <p>After such a render, this buffer is swapped with {@link #resultsBuffer}.
-   */
-  private FrameBuffer spareBuffer;
-
   private Pool<FrameBuffer> frameBufferPool;
   private Pool<FrameBuffer> maskBufferPool;
 
@@ -213,7 +181,6 @@ public class GdxRenderer extends ApplicationAdapter {
   private final Map<String, RegionBorder> cachedBorders = new HashMap<>();
 
   private ShapeDrawer drawer;
-  private final GlyphLayout glyphLayout = new GlyphLayout();
   private TextRenderer textRenderer;
   private TextRenderer hudTextRenderer;
   private AreaRenderer areaRenderer;
@@ -389,10 +356,6 @@ public class GdxRenderer extends ApplicationAdapter {
 
       updateCam();
 
-      backBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, false);
-      resultsBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, false);
-      spareBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, false);
-
       drawer = new ShapeDrawer(batch, new TextureRegion(whitePixel));
 
       areaRenderer = new AreaRenderer(drawer, whitePixel);
@@ -433,15 +396,6 @@ public class GdxRenderer extends ApplicationAdapter {
 
       this.width = width;
       this.height = height;
-
-      backBuffer.dispose();
-      backBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, false);
-
-      resultsBuffer.dispose();
-      resultsBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, false);
-
-      spareBuffer.dispose();
-      spareBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, false);
 
       for (var entry : clipBuffers.entrySet()) {
         entry.getValue().dispose();
@@ -537,14 +491,7 @@ public class GdxRenderer extends ApplicationAdapter {
 
             ScreenUtils.clear(Color.BLACK);
 
-            if (viewModel == null) {
-              // Nothing to render.
-              return;
-            }
-
             var instructionSet = renderInstructionSet.get();
-
-            viewModel.update();
 
             // System.out.println("FPS:   " + Gdx.graphics.getFramesPerSecond());
             var delta = Gdx.graphics.getDeltaTime();
@@ -593,7 +540,6 @@ public class GdxRenderer extends ApplicationAdapter {
   }
 
   private void doRendering(InstructionSet instructionSet) {
-    CodeTimer timer = CodeTimer.get();
     batch.enableBlending();
     // Framebuffer is premultiplied. Assume source textures are as well (can be changed for
     // operations that require something else).
@@ -603,19 +549,15 @@ public class GdxRenderer extends ApplicationAdapter {
     if (batch.isDrawing()) batch.end();
     batch.begin();
 
-    if (zoneCache == null || !renderZone) return;
-
-    if (zoneCache.getZoneRenderer() == null) return;
+    if (zoneCache == null || !renderZone) {
+      return;
+    }
 
     setScale(instructionSet.viewport());
 
-    timer.start("paintComponent:createView");
-    PlayerView playerView = viewModel.getPlayerView();
-    timer.stop("paintComponent:createView");
-
     setProjectionMatrix(cam.combined);
 
-    renderZone(playerView, instructionSet);
+    renderZone(instructionSet);
 
     setProjectionMatrix(hudCam.combined);
 
@@ -623,27 +565,6 @@ public class GdxRenderer extends ApplicationAdapter {
     hudTextRenderer.drawString("Draws: " + batch.renderCalls, width - 30, 16);
 
     batch.end();
-  }
-
-  private GdxPaint getPaint(DrawablePaint paint) {
-    var color = new Color();
-    Texture texture;
-    switch (paint) {
-      case DrawableColorPaint colorPaint -> {
-        Color.argb8888ToColor(color, colorPaint.getColor());
-        color.premultiplyAlpha();
-
-        texture = whitePixel;
-      }
-      case DrawableTexturePaint texturePaint -> {
-        color.set(Color.WHITE);
-        texture =
-            zoneCache.getPaintTexture(
-                texturePaint.getAssetId(), transferringAssetTexture, brokenAssetTexture);
-      }
-    }
-
-    return new GdxPaint(color, texture);
   }
 
   private GdxPaint getPaint(Paint paint) {
@@ -668,14 +589,8 @@ public class GdxRenderer extends ApplicationAdapter {
     return new GdxPaint(color, texture);
   }
 
-  public void invalidateCurrentViewCache() {
-    visibleScreenArea = null;
-    lastView = null;
-  }
-
-  private void renderZone(PlayerView view, InstructionSet instructionSet) {
+  private void renderZone(InstructionSet instructionSet) {
     CodeTimer timer = CodeTimer.get();
-    prerender(view);
 
     // Update the clips.
     batch.setShader(null);
@@ -726,6 +641,7 @@ public class GdxRenderer extends ApplicationAdapter {
 
     rootLayer.buffer.end();
 
+    Gdx.gl.glViewport(0, 0, width, height);
     layerShader.start();
     setProjectionMatrix(hudCam.combined);
     BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER.applyToBatch(batch);
@@ -742,19 +658,6 @@ public class GdxRenderer extends ApplicationAdapter {
       maskBufferPool.free(buffer);
     }
     clipBuffers.clear();
-
-    if (true) {
-      return;
-    }
-
-    batch.flush();
-    resultsBuffer.end();
-
-    Gdx.gl.glViewport(0, 0, width, height);
-    setProjectionMatrix(hudCam.combined);
-    BlendFunction.PREMULTIPLIED_ALPHA_SRC_OVER.applyToBatch(batch);
-    batch.draw(resultsBuffer.getColorBufferTexture(), 0, 0, width, height, 0, 0, 1, 1);
-    setProjectionMatrix(cam.combined);
   }
 
   private void processInstructions(LayerState rootLayer, List<RenderInstruction> instructions) {
@@ -1176,43 +1079,6 @@ public class GdxRenderer extends ApplicationAdapter {
     batch.flush();
   }
 
-  /** Updates renderer state prior to rendering the zone. */
-  private void prerender(PlayerView view) {
-    CodeTimer timer = CodeTimer.get();
-
-    if (lastView != null && !lastView.equals(view)) {
-      invalidateCurrentViewCache();
-    }
-    lastView = view;
-
-    // Calculations
-    timer.start("calcs-1");
-    timer.start("ZoneRenderer-getVisibleArea");
-    if (visibleScreenArea == null) {
-      visibleScreenArea =
-          zoneCache.getZoneView().getVisibility(viewModel.getPlayerView()).visibleArea();
-    }
-    timer.stop("ZoneRenderer-getVisibleArea");
-
-    timer.stop("calcs-1");
-    timer.start("calcs-2");
-    exposedFogArea = new Area(zoneCache.getZone().getExposedArea());
-    timer.stop("calcs-2");
-  }
-
-  private void paintLightSourceIconOverlay(PlayerView view) {
-    if (!AppState.isShowLightSources() || !view.isGMView()) {
-      return;
-    }
-
-    TextureRegion lightbulb = fetchImageResource(Images.LIGHT_SOURCE);
-    for (var point : viewModel.getLightPositions()) {
-      var x = point.getX() - lightbulb.getRegionWidth() / 2.;
-      var y = -point.getY() - lightbulb.getRegionHeight() / 2.;
-      batch.draw(lightbulb, (float) x, (float) y);
-    }
-  }
-
   private void setProjectionMatrix(Matrix4 matrix) {
     batch.setProjectionMatrix(matrix);
     drawer.update();
@@ -1343,7 +1209,6 @@ public class GdxRenderer extends ApplicationAdapter {
           }
 
           zoneCache = new ZoneCache(renderer);
-          viewModel = renderer.getViewModel();
           renderZone = true;
         });
   }
@@ -1358,10 +1223,6 @@ public class GdxRenderer extends ApplicationAdapter {
     offsetY = scale.zoneScale().getOffsetY();
     zoom = (float) (1f / scale.zoneScale().getScale());
     updateCam();
-  }
-
-  public void flushFog() {
-    visibleScreenArea = null;
   }
 
   /**

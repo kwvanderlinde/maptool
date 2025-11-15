@@ -15,7 +15,6 @@
 package net.rptools.maptool.model.drawing;
 
 import com.google.protobuf.StringValue;
-import java.awt.*;
 import java.awt.Rectangle;
 import java.awt.geom.Area;
 import javax.annotation.Nonnull;
@@ -50,71 +49,6 @@ public class RadiusTemplate extends AbstractTemplate {
   @Override
   public CursorType getCursorType() {
     return CursorType.Cross;
-  }
-
-  /**
-   * Paint the border at a specific radius.
-   *
-   * @param g Where to paint
-   * @param x Distance from vertex along X axis in cell coordinates.
-   * @param y Distance from vertex along Y axis in cell coordinates.
-   * @param xOff Distance from vertex along X axis in screen coordinates.
-   * @param yOff Distance from vertex along Y axis in screen coordinates.
-   * @param gridSize The size of one side of the grid in screen coordinates.
-   * @param distance The distance in cells from the vertex to the cell which is offset from the
-   *     vertex by {@code x & y}.
-   * @param radius The radius where the border is painted.
-   * @see net.rptools.maptool.model.drawing.AbstractTemplate#paintBorder(java.awt.Graphics2D, int,
-   *     int, int, int, int, int)
-   */
-  protected void paintBorderAtRadius(
-      Graphics2D g, int x, int y, int xOff, int yOff, int gridSize, int distance, int radius) {
-    // At the border?
-    if (distance == radius) {
-      // Paint lines between vertical boundaries if needed
-      if (getDistance(x + 1, y) > radius) {
-        for (Quadrant q : Quadrant.values()) {
-          paintFarVerticalBorder(g, xOff, yOff, gridSize, q);
-        }
-      }
-
-      // Paint lines between horizontal boundaries if needed
-      if (getDistance(x, y + 1) > radius) {
-        for (Quadrant q : Quadrant.values()) {
-          paintFarHorizontalBorder(g, xOff, yOff, gridSize, q);
-        }
-      }
-    }
-  }
-
-  /*---------------------------------------------------------------------------------------------
-   * Overridden AbstractTemplate Methods
-   *-------------------------------------------------------------------------------------------*/
-
-  /**
-   * @see net.rptools.maptool.model.drawing.AbstractTemplate#paintBorder(java.awt.Graphics2D, int,
-   *     int, int, int, int, int)
-   */
-  @Override
-  protected void paintBorder(
-      Graphics2D g, int x, int y, int xOff, int yOff, int gridSize, int distance) {
-    paintBorderAtRadius(g, x, y, xOff, yOff, gridSize, distance, getRadius());
-  }
-
-  /**
-   * @see net.rptools.maptool.model.drawing.AbstractTemplate#paintArea(java.awt.Graphics2D, int,
-   *     int, int, int, int, int)
-   */
-  @Override
-  protected void paintArea(
-      Graphics2D g, int x, int y, int xOff, int yOff, int gridSize, int distance) {
-    // Only squares w/in the radius
-    if (distance <= getRadius()) {
-      // Paint the squares
-      for (Quadrant q : Quadrant.values()) {
-        paintArea(g, xOff, yOff, gridSize, q);
-      }
-    }
   }
 
   /*---------------------------------------------------------------------------------------------

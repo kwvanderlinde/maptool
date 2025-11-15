@@ -14,7 +14,6 @@
  */
 package net.rptools.maptool.model.drawing;
 
-import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.geom.Area;
 import javax.annotation.Nonnull;
@@ -29,8 +28,6 @@ import org.apache.logging.log4j.LogManager;
  */
 public interface Drawable {
   Drawable copy();
-
-  void draw(Zone zone, Graphics2D g, Pen pen);
 
   java.awt.Rectangle getBounds(Zone zone);
 
@@ -71,7 +68,7 @@ public interface Drawable {
       case WALL_TEMPLATE -> WallTemplate.fromDto(drawableDto.getWallTemplate());
       default -> {
         LogManager.getLogger(Drawable.class)
-            .warn("unknown DrawableDto type: " + drawableDto.getDrawableTypeCase());
+            .warn("unknown DrawableDto type: {}", drawableDto.getDrawableTypeCase());
         yield null;
       }
     };

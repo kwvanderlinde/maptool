@@ -15,7 +15,6 @@
 package net.rptools.maptool.model.drawing;
 
 import com.google.protobuf.StringValue;
-import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.Area;
 import java.util.ArrayList;
@@ -120,18 +119,5 @@ public class DrawablesGroup extends AbstractDrawing {
     }
     drawable.setLayer(Zone.Layer.valueOf(dto.getLayer()));
     return drawable;
-  }
-
-  @Override
-  protected void draw(Zone zone, Graphics2D g) {
-    // This should never be called
-    for (DrawnElement element : drawableList) {
-      element.getDrawable().draw(zone, g, element.getPen());
-    }
-  }
-
-  @Override
-  protected void drawBackground(Zone zone, Graphics2D g) {
-    // This should never be called
   }
 }
