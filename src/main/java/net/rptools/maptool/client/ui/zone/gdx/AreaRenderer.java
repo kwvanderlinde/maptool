@@ -17,40 +17,37 @@ package net.rptools.maptool.client.ui.zone.gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.*;
-import com.badlogic.gdx.math.*;
 import com.badlogic.gdx.utils.FloatArray;
-import com.badlogic.gdx.utils.IntArray;
 import java.awt.BasicStroke;
 import java.awt.Shape;
 import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
-import java.awt.geom.PathIterator;
-import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+
+import com.badlogic.gdx.utils.IntArray;
+import com.badlogic.gdx.utils.ShortArray;
 import net.rptools.lib.CodeTimer;
 import net.rptools.lib.GeometryUtil;
 import net.rptools.lib.gdx.Earcut;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.PrecisionModel;
+import org.locationtech.jts.triangulate.ConformingDelaunayTriangulationBuilder;
 import space.earlygrey.shapedrawer.ShapeDrawer;
 
 public class AreaRenderer {
   public record TriangledPolygon(float[] vertices, short[] indices) {}
 
-  private static final float POINTS_PER_BEZIER = 10f;
-
   private final ShapeDrawer drawer;
-  private final PathMesher pathMesher = new PathMesher();
   private final Texture whitePixel;
 
   private final FloatArray tmpFloat = new FloatArray();
-
-  private final IntArray segmentIndicies = new IntArray();
 
   private final Color color = Color.WHITE.cpy();
 
@@ -64,14 +61,6 @@ public class AreaRenderer {
     texture = whitePixel;
   }
 
-  private final float[] floatsFromArea = new float[6];
-  private final Vector2 tmpVector = new Vector2();
-  private final Vector2 tmpVector0 = new Vector2();
-  private final Vector2 tmpVector1 = new Vector2();
-  private final Vector2 tmpVector2 = new Vector2();
-  private final Vector2 tmpVector3 = new Vector2();
-  private final Vector2 tmpVectorOut = new Vector2();
-
   private Texture texture = null;
 
   public void setTexture(Texture texture) {
@@ -81,6 +70,37 @@ public class AreaRenderer {
   public List<TriangledPolygon> triangulate(Collection<Polygon> jts) {
     if (jts.isEmpty()) {
       return List.of();
+    }
+
+    if (true) {
+      ConformingDelaunayTriangulationBuilder b = new ConformingDelaunayTriangulationBuilder();
+      var geometryFactory = new GeometryFactory();
+      var geometry = geometryFactory.createMultiPolygon(jts.toArray(Polygon[]::new));
+      b.setConstraints(geometry);
+      b.setSites(geometry);
+
+      var triangles = b.getTriangles(geometryFactory);
+
+      // TODO The robust option would be to dedupe vertices.
+      // TODO Use temporary buffers.
+      var vertices = new FloatArray();
+      var indicies = new ShortArray();
+      for (var n = 0; n < triangles.getNumGeometries(); ++n) {
+        Polygon tri = (Polygon) triangles.getGeometryN(n);
+        Coordinate[] c = tri.getCoordinates(); // 0,1,2,0 (closed)
+
+        // We want the first 3 only.
+        for (int i = 0; i < 3; i++) {
+          Coordinate coord = c[i];
+          var idx = vertices.size / 2;
+          vertices.add((float) coord.x);
+          vertices.add((float) coord.y);
+
+          indicies.add(idx);
+        }
+      }
+
+      return List.of(new TriangledPolygon(vertices.toArray(), indicies.toArray()));
     }
 
     var result = new ArrayList<TriangledPolygon>();
@@ -137,17 +157,17 @@ public class AreaRenderer {
         drawer.setColor(Color.WHITE);
       }
       default -> {
-        // Handles Path2D and Area in particular.
-        timer.start("AreaRenderer#fillArea()-converToArea");
+        timer.start("AreaRenderer#fillArea()-convertToArea");
+        // Areas have consistent orientations for its segments, while generate shapes do not.
         if (!(shape instanceof Area)) {
           shape = new Area(shape);
         }
-        timer.stop("AreaRenderer#fillArea()-converToArea");
+        timer.stop("AreaRenderer#fillArea()-convertToArea");
 
-        timer.start("AreaRenderer#fillArea()-converToPolygons");
+        timer.start("AreaRenderer#fillArea()-convertToPolygons");
         // TODO Precision should depend on the current zoneScale' scale.
         var polygons = GeometryUtil.toJtsPolygons(shape, new PrecisionModel(1e1));
-        timer.stop("AreaRenderer#fillArea()-converToPolygons");
+        timer.stop("AreaRenderer#fillArea()-convertToPolygons");
 
         timer.start("AreaRenderer#fillArea()-triangulate");
         var triangulatedPolygons = triangulate(polygons);
@@ -169,42 +189,31 @@ public class AreaRenderer {
       return;
     }
 
-    // TODO My wall implementation is exposing an issue with turnbacks.
+    var timer = CodeTimer.get();
+    timer.start("AreaRenderer-drawArea:stroke");
+    var stroked = stroke.createStrokedShape(shape);
+    timer.stop("AreaRenderer-drawArea:stroke");
 
-    // TODO pathToFloatArray() should have some basic guarantees about the minimum distance between
-    //  subsequent points, eliding any that fall afoul of this minimum. This will allow the jointer
-    //  to proceed unabashedly.
-    pathToFloatArray(shape.getPathIterator(null));
+    /*
+     * The conversion to Area is not ideal, but the stroked shape may not represent shells and holes
+     * in the expected orientation. Area, on the other hand, will make them consistently clockwise
+     * or counterclockwise.
+     */
+    timer.start("AreaRenderer-drawArea:convertToArea");
+    stroked = new Area(stroked);
+    timer.stop("AreaRenderer-drawArea:convertToArea");
 
-    if (segmentIndicies.size == 1) {
-      var polygon = drawPathWithJoin(tmpFloat, stroke);
-      paintPolygon(batch, polygon);
-    } else {
-      var floats = tmpFloat.toArray();
-      var lastSegmentIndex = 0;
-      for (int i = 1; i <= segmentIndicies.size; i++) {
-        var idx = i == segmentIndicies.size ? floats.length / 2 : segmentIndicies.get(i);
-        var vertexCount = (idx - lastSegmentIndex);
+    timer.start("AreaRenderer-drawArea:convertToPolygons");
+    var polygons = GeometryUtil.toJtsSimple(stroked);
+    timer.stop("AreaRenderer-drawArea:convertToPolygons");
 
-        tmpFloat.ensureCapacity(2 * vertexCount);
-        System.arraycopy(floats, 2 * lastSegmentIndex, tmpFloat.items, 0, 2 * vertexCount);
-        tmpFloat.setSize(2 * vertexCount);
-        var polygon = drawPathWithJoin(tmpFloat, stroke);
-        paintPolygon(batch, polygon);
-        lastSegmentIndex = idx;
-      }
-    }
-  }
+    timer.start("AreaRenderer-drawArea:triangulate");
+    var triangulated = triangulate(polygons);
+    timer.stop("AreaRenderer-drawArea:triangulate");
 
-  public void paintPolygon(PolygonSpriteBatch batch, TriangledPolygon polygon) {
-    var polyReg = new PolygonRegion(new TextureRegion(texture), polygon.vertices, polygon.indices);
-    paintRegion(batch, polyReg);
-  }
-
-  public void paintVertices(PolygonSpriteBatch batch, float[] vertices, short[] holeIndices) {
-    var indices = Earcut.earcut(vertices, holeIndices, (short) 2).toArray();
-    var polyReg = new PolygonRegion(new TextureRegion(texture), vertices, indices);
-    paintRegion(batch, polyReg);
+    timer.start("AreaRenderer-drawArea:fill");
+    fill(batch, triangulated);
+    timer.stop("AreaRenderer-drawArea:fill");
   }
 
   protected void paintRegion(PolygonSpriteBatch batch, PolygonRegion polygonRegion) {
@@ -212,77 +221,5 @@ public class AreaRenderer {
     batch.setColor(color);
     batch.draw(polygonRegion, 0, 0);
     batch.setColor(oldColor);
-  }
-
-  public FloatArray pathToFloatArray(PathIterator it) {
-    tmpFloat.clear();
-    segmentIndicies.clear();
-
-    Point2D.Float lastMoveTo = null;
-
-    var index = 0;
-    for (; !it.isDone(); it.next()) {
-      int type = it.currentSegment(floatsFromArea);
-
-      switch (type) {
-        case PathIterator.SEG_MOVETO:
-          tmpFloat.add(floatsFromArea[0], -floatsFromArea[1]);
-          lastMoveTo = new Point2D.Float(floatsFromArea[0], -floatsFromArea[1]);
-          segmentIndicies.add(index);
-          index += 1;
-          break;
-        case PathIterator.SEG_CLOSE:
-          if (lastMoveTo != null) {
-            tmpFloat.add(lastMoveTo.x, lastMoveTo.y);
-            lastMoveTo = null;
-          }
-          break;
-        case PathIterator.SEG_LINETO:
-          if (tmpFloat.get(tmpFloat.size - 2) != floatsFromArea[0]
-              || tmpFloat.get(tmpFloat.size - 1) != -floatsFromArea[1]) {
-            tmpFloat.add(floatsFromArea[0], -floatsFromArea[1]);
-            index += 1;
-          }
-          break;
-        case PathIterator.SEG_QUADTO:
-          tmpVector0.set(tmpFloat.get(tmpFloat.size - 2), tmpFloat.get(tmpFloat.size - 1));
-          tmpVector1.set(floatsFromArea[0], -floatsFromArea[1]);
-          tmpVector2.set(floatsFromArea[2], -floatsFromArea[3]);
-          for (var i = 1; i <= POINTS_PER_BEZIER; i++) {
-            Bezier.quadratic(
-                tmpVectorOut, i / POINTS_PER_BEZIER, tmpVector0, tmpVector1, tmpVector2, tmpVector);
-            tmpFloat.add(tmpVectorOut.x, tmpVectorOut.y);
-            index += 1;
-          }
-          break;
-        case PathIterator.SEG_CUBICTO:
-          tmpVector0.set(tmpFloat.get(tmpFloat.size - 2), tmpFloat.get(tmpFloat.size - 1));
-          tmpVector1.set(floatsFromArea[0], -floatsFromArea[1]);
-          tmpVector2.set(floatsFromArea[2], -floatsFromArea[3]);
-          tmpVector3.set(floatsFromArea[4], -floatsFromArea[5]);
-          for (var i = 1; i <= POINTS_PER_BEZIER; i++) {
-            Bezier.cubic(
-                tmpVectorOut,
-                i / POINTS_PER_BEZIER,
-                tmpVector0,
-                tmpVector1,
-                tmpVector2,
-                tmpVector3,
-                tmpVector);
-            tmpFloat.add(tmpVectorOut.x, tmpVectorOut.y);
-            index += 1;
-          }
-          break;
-        default:
-          System.out.println("Type: " + type);
-      }
-    }
-
-    return tmpFloat;
-  }
-
-  public TriangledPolygon drawPathWithJoin(FloatArray path, BasicStroke stroke) {
-    pathMesher.clear();
-    return pathMesher.stroke(stroke, path);
   }
 }

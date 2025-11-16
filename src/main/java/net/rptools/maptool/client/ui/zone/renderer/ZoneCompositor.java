@@ -1184,6 +1184,7 @@ public class ZoneCompositor {
               };
 
           var contrast = new Color(ImageUtil.negativeColourInt(gridColor.getRGB()));
+          var cap = grid.getType().isIsometric() ? BasicStroke.CAP_ROUND : BasicStroke.CAP_BUTT;
           var gridColors =
               List.of(
                   gridColor,
@@ -1200,7 +1201,7 @@ public class ZoneCompositor {
                       Paint.of(gridColors.get(i)),
                       new BasicStroke(
                           (float) (baseWidth * (i + 1) * 0.5 * gridLineWeight),
-                          BasicStroke.CAP_ROUND,
+                          cap,
                           BasicStroke.JOIN_MITER),
                       1.));
             }
@@ -1212,7 +1213,7 @@ public class ZoneCompositor {
                     new BasicStroke(
                         (float)
                             (baseWidth * gridLineWeight * 0.25 / viewport.zoneScale().getScale()),
-                        BasicStroke.CAP_ROUND,
+                        cap,
                         BasicStroke.JOIN_MITER),
                     1.));
           }

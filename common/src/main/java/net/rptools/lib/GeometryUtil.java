@@ -40,6 +40,7 @@ import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.locationtech.jts.geom.util.GeometryFixer;
+import org.locationtech.jts.operation.polygonize.Polygonizer;
 import org.locationtech.jts.operation.valid.IsValidOp;
 import org.locationtech.jts.precision.GeometryPrecisionReducer;
 
@@ -126,6 +127,39 @@ public class GeometryUtil {
 
   public static GeometryFactory getGeometryFactory() {
     return geometryFactory;
+  }
+
+  /**
+   * Converts a simple {@code shape} to a collection of {@link Polygon}.
+   *
+   * <p>This method is appropriate for when the shape will not have extremely precise ppoints that
+   * need to be accounted for. This makes it much faster than toJtsPolygons() for the same precision
+   * model.
+   *
+   * @param shape
+   * @return
+   */
+  public static Collection<Polygon> toJtsSimple(Shape shape) {
+    var precisionModel = new PrecisionModel(2);
+    var geometryFactory = new GeometryFactory(precisionModel);
+
+    var pathIterator = shape.getPathIterator(null, 1. / precisionModel.getScale());
+
+    @SuppressWarnings("unchecked")
+    var rings = (List<Coordinate[]>) ShapeReader.toCoordinates(pathIterator);
+
+    var polygonizer = new Polygonizer(true);
+    for (var ring : rings) {
+      for (var c : ring) {
+        precisionModel.makePrecise(c);
+      }
+      polygonizer.add(geometryFactory.createLinearRing(ring));
+    }
+
+    @SuppressWarnings("unchecked")
+    var polygons = (Collection<Polygon>) polygonizer.getPolygons();
+
+    return polygons;
   }
 
   public static MultiPolygon toJts(Shape shape) {
