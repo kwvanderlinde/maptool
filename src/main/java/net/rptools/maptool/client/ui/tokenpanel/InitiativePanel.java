@@ -188,7 +188,13 @@ public class InitiativePanel extends JPanel
     displayList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
     displayList.addListSelectionListener(this);
     displayList.addMouseListener(new MouseHandler());
-    add(new JScrollPane(displayList), BorderLayout.CENTER);
+
+    var scrollPane =
+        new JScrollPane(
+            displayList,
+            ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+            ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+    add(scrollPane, BorderLayout.CENTER);
 
     // Set the keyboard mapping
     InputMap imap = displayList.getInputMap();

@@ -14,6 +14,9 @@
  */
 package net.rptools.maptool.client.ui.tokenpanel;
 
+import com.intellij.uiDesigner.core.GridConstraints;
+import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.intellij.uiDesigner.core.Spacer;
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
@@ -26,8 +29,8 @@ import javax.swing.JPanel;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
 import javax.swing.border.Border;
-import net.miginfocom.swing.MigLayout;
 import net.rptools.lib.AwtUtil;
+import net.rptools.lib.StringUtil;
 import net.rptools.lib.image.ImageUtil;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
@@ -54,11 +57,18 @@ public class InitiativeListCellRenderer extends JPanel
    * Instance Variables
    *-------------------------------------------------------------------------------------------*/
 
+  private final JPanel right;
+  private final JPanel textPanel;
+
   /** The label used to display the current item indicator. */
   private final JLabel currentIndicator;
 
+  private final JLabel iconLabel;
+
   /** The label used to display the item's name and icon. */
   private final JLabel name;
+
+  private final JLabel initLabel;
 
   /** This is the panel showing initiative. It contains the state for display. */
   private final InitiativePanel panel;
@@ -94,9 +104,6 @@ public class InitiativeListCellRenderer extends JPanel
           RessourceManager.getBorder(Borders.RED).getBottomMargin(),
           RessourceManager.getBorder(Borders.RED).getRightMargin());
 
-  /** Border used for name plate */
-  public static final Border NAME_BORDER = BorderFactory.createEmptyBorder(2, 4, 3, 4);
-
   /** The size of the ICON shown in the list renderer */
   public static final int ICON_SIZE = 50;
 
@@ -113,24 +120,177 @@ public class InitiativeListCellRenderer extends JPanel
 
     // Set up the panel
     panel = aPanel;
-    setLayout(new MigLayout("", "[][grow]"));
-    //    setBorder(SELECTED_BORDER);
-    //    setBackground(Color.WHITE);
+
+    setLayout(new GridLayoutManager(1, 2, new Insets(6, 6, 9, 6), 0, 0, false, false));
 
     // The current indicator
     currentIndicator = new JLabel();
+    currentIndicator.setBorder(BorderFactory.createEmptyBorder(4, 0, 0, 0));
     currentIndicator.setPreferredSize(INDICATOR_SIZE);
     currentIndicator.setHorizontalAlignment(SwingConstants.CENTER);
     currentIndicator.setVerticalAlignment(SwingConstants.CENTER);
-    add(currentIndicator);
+    add(
+        currentIndicator,
+        new GridConstraints(
+            0,
+            0,
+            1,
+            1,
+            GridConstraints.ANCHOR_CENTER,
+            GridConstraints.FILL_BOTH,
+            GridConstraints.SIZEPOLICY_FIXED,
+            GridConstraints.SIZEPOLICY_FIXED,
+            INDICATOR_SIZE,
+            INDICATOR_SIZE,
+            INDICATOR_SIZE,
+            0,
+            false));
+
+    right = new JPanel();
+    right.setOpaque(false);
+    right.setLayout(new GridLayoutManager(3, 3, new Insets(2, 7, 0, 0), 4, 0, false, false));
+    right.setBorder(BorderFactory.createEmptyBorder(0, 3, 0, 4));
+    add(
+        right,
+        new GridConstraints(
+            0,
+            1,
+            1,
+            1,
+            GridConstraints.ANCHOR_CENTER,
+            GridConstraints.FILL_BOTH,
+            GridConstraints.SIZEPOLICY_CAN_GROW | GridConstraints.SIZEPOLICY_CAN_SHRINK,
+            GridConstraints.SIZEPOLICY_CAN_GROW | GridConstraints.SIZEPOLICY_CAN_SHRINK,
+            null,
+            null,
+            null,
+            0,
+            false));
+
+    textPanel = new JPanel(new GridLayoutManager(2, 1, new Insets(3, 0, 1, 0), 0, 0, false, true));
+    // textPanel.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
+    textPanel.setOpaque(false);
+    right.add(
+        textPanel,
+        new GridConstraints(
+            1,
+            1,
+            1,
+            1,
+            GridConstraints.ANCHOR_EAST,
+            GridConstraints.FILL_VERTICAL,
+            GridConstraints.SIZEPOLICY_CAN_GROW | GridConstraints.SIZEPOLICY_CAN_SHRINK,
+            GridConstraints.SIZEPOLICY_CAN_GROW | GridConstraints.SIZEPOLICY_CAN_SHRINK,
+            null,
+            null,
+            null,
+            0,
+            false));
+
+    textHeight = getFontMetrics(getFont()).getHeight();
+
+    iconLabel = new JLabel();
+    iconLabel.putClientProperty("html.disable", true);
+    var iconSize = new Dimension(ICON_SIZE, ICON_SIZE);
+    right.add(
+        iconLabel,
+        new GridConstraints(
+            0,
+            0,
+            3,
+            1,
+            GridConstraints.ANCHOR_CENTER,
+            GridConstraints.FILL_BOTH,
+            GridConstraints.SIZEPOLICY_FIXED,
+            GridConstraints.SIZEPOLICY_FIXED,
+            iconSize,
+            iconSize,
+            iconSize,
+            0,
+            false));
 
     // And the name
-    name = new NameLabel();
+    name = new JLabel();
+    name.setHorizontalTextPosition(SwingConstants.LEADING);
+    name.putClientProperty("html.disable", true);
     name.setText("Ty");
-    name.setBorder(NAME_BORDER);
-    name.setFont(getFont().deriveFont(Font.BOLD));
-    textHeight = getFontMetrics(getFont()).getHeight();
-    add(name);
+    name.setBorder(BorderFactory.createEmptyBorder());
+    name.setFont(getFont());
+    name.setBackground(Color.blue);
+    textPanel.add(
+        name,
+        new GridConstraints(
+            0,
+            0,
+            1,
+            1,
+            GridConstraints.ANCHOR_EAST,
+            GridConstraints.FILL_VERTICAL,
+            GridConstraints.SIZEPOLICY_CAN_GROW | GridConstraints.SIZEPOLICY_CAN_SHRINK,
+            GridConstraints.SIZEPOLICY_CAN_GROW | GridConstraints.SIZEPOLICY_CAN_SHRINK,
+            new Dimension(0, 0),
+            null,
+            null,
+            0,
+            false));
+
+    initLabel = new JLabel();
+    initLabel.setHorizontalTextPosition(SwingConstants.LEADING);
+    initLabel.putClientProperty("html.disable", true);
+    initLabel.setText("Ty");
+    initLabel.setBorder(BorderFactory.createEmptyBorder());
+    initLabel.setFont(getFont());
+    initLabel.setBackground(Color.red);
+    textPanel.add(
+        initLabel,
+        new GridConstraints(
+            1,
+            0,
+            1,
+            1,
+            GridConstraints.ANCHOR_EAST,
+            GridConstraints.FILL_VERTICAL,
+            GridConstraints.SIZEPOLICY_CAN_GROW | GridConstraints.SIZEPOLICY_CAN_SHRINK,
+            GridConstraints.SIZEPOLICY_CAN_GROW | GridConstraints.SIZEPOLICY_CAN_SHRINK,
+            new Dimension(0, 0),
+            null,
+            null,
+            0,
+            false));
+
+    right.add(
+        new Spacer(),
+        new GridConstraints(
+            0,
+            1,
+            1,
+            1,
+            GridConstraints.ANCHOR_CENTER,
+            GridConstraints.FILL_VERTICAL,
+            GridConstraints.SIZEPOLICY_FIXED,
+            GridConstraints.SIZEPOLICY_WANT_GROW,
+            null,
+            null,
+            null,
+            0,
+            false));
+    right.add(
+        new Spacer(),
+        new GridConstraints(
+            2,
+            1,
+            1,
+            1,
+            GridConstraints.ANCHOR_CENTER,
+            GridConstraints.FILL_VERTICAL,
+            GridConstraints.SIZEPOLICY_FIXED,
+            GridConstraints.SIZEPOLICY_WANT_GROW,
+            null,
+            null,
+            null,
+            0,
+            false));
+
     validate();
   }
 
@@ -145,19 +305,20 @@ public class InitiativeListCellRenderer extends JPanel
   @Override
   public Component getListCellRendererComponent(
       JList list, TokenInitiative ti, int index, boolean isSelected, boolean cellHasFocus) {
-
     setOpaque(false);
 
     // Set the background by type
     Token token = null;
-    if (ti != null) token = ti.getToken();
+    if (ti != null) {
+      token = ti.getToken();
+    }
     if (token == null) { // Can happen when deleting a token before all events have propagated
       currentIndicator.setIcon(null);
       name.setText(null);
       name.setIcon(null);
       setBorder(UNSELECTED_BORDER);
       return this;
-    } // endif
+    }
 
     var labelRenderFactory = new FlatImageLabelFactory();
     backgroundFlatImageLabel = labelRenderFactory.getMapImageLabel(token);
@@ -178,17 +339,29 @@ public class InitiativeListCellRenderer extends JPanel
       currentIndicator.setIcon(CURRENT_INDICATOR_ICON);
     } else {
       currentIndicator.setIcon(null);
-    } // endif
+    }
 
     // Get the name string, add the state if displayed, then get the icon if needed
     boolean initStateSecondLine = panel.isInitStateSecondLine() && panel.isShowInitState();
-    String sName = (initStateSecondLine ? "<html>" : "") + ti.getToken().getName();
+
+    var nameHtml = new StringBuilder(ti.getToken().getName());
     if (MapTool.getFrame().getInitiativePanel().hasGMPermission()
         && token.getGMName() != null
-        && token.getGMName().trim().length() != 0) sName += " (" + token.getGMName().trim() + ")";
-    if (panel.isShowInitState() && ti.getState() != null)
-      sName += (initStateSecondLine ? "<br>" : " = ") + ti.getState();
-    if (initStateSecondLine) sName += "</html>";
+        && !StringUtil.isEmpty(token.getGMName())) {
+      nameHtml.append(" (").append(token.getGMName().trim()).append(")");
+    }
+
+    initLabel.setText("");
+    if (panel.isShowInitState() && ti.getState() != null) {
+      if (initStateSecondLine) {
+        initLabel.setText(ti.getState());
+      } else {
+        nameHtml.append(" = ").append(ti.getState());
+      }
+    }
+
+    name.setText(nameHtml.toString());
+
     Icon icon = null;
     if (panel.isShowTokens()) {
       icon = ti.getDisplayIcon();
@@ -196,73 +369,80 @@ public class InitiativeListCellRenderer extends JPanel
         icon = new InitiativeListIcon(ti);
         ti.setDisplayIcon(icon);
         ti.setTokenVisibleWhenIconUpdated(token.isVisible());
-      } // endif
-    } // endif
-    name.setText(sName);
-    name.setIcon(icon);
+      }
+    }
+
+    var rightLayout = (GridLayoutManager) right.getLayout();
+    var textLayout = (GridLayoutManager) textPanel.getLayout();
 
     // Align it properly
-    var alignment = ti.isHolding() ? SwingConstants.LEFT : SwingConstants.RIGHT;
-    name.setHorizontalTextPosition(alignment);
-    MigLayout layout = (MigLayout) getLayout();
-    //
-    if (alignment == SwingConstants.RIGHT) {
-      layout.setComponentConstraints(name, "align left");
+    var iconConstraints = rightLayout.getConstraintsForComponent(iconLabel);
+    var textConstraints = rightLayout.getConstraintsForComponent(textPanel);
+    var nameConstraints = textLayout.getConstraintsForComponent(name);
+    var initConstraints = textLayout.getConstraintsForComponent(initLabel);
+    iconLabel.setIcon(icon);
+    iconLabel.setVisible(true);
+    if (ti.isHolding()) {
+      iconConstraints.setColumn(2);
+
+      textConstraints.setAnchor(GridConstraints.ANCHOR_EAST);
+      nameConstraints.setAnchor(GridConstraints.ANCHOR_EAST);
+      initConstraints.setAnchor(GridConstraints.ANCHOR_EAST);
     } else {
-      layout.setComponentConstraints(name, "align right");
-    } // endif
+      iconConstraints.setColumn(0);
+
+      textConstraints.setAnchor(GridConstraints.ANCHOR_WEST);
+      nameConstraints.setAnchor(GridConstraints.ANCHOR_WEST);
+      initConstraints.setAnchor(GridConstraints.ANCHOR_WEST);
+    }
 
     // Selected?
     if (isSelected) {
       setBorder(SELECTED_BORDER);
     } else {
       setBorder(UNSELECTED_BORDER);
-    } // endif
+    }
+
+    setSize(list.getWidth(), getPreferredSize().height);
+    setMinimumSize(getSize());
+    setMaximumSize(getSize());
+    setPreferredSize(getSize());
+
+    validate();
+    doLayout();
+
     return this;
   }
 
-  /*---------------------------------------------------------------------------------------------
-   * NameLabel Inner Class
-   *-------------------------------------------------------------------------------------------*/
+  @Override
+  protected void paintComponent(Graphics g) {
+    var rightBounds = right.getBounds();
+    var rightInsets = right.getInsets();
+    var iconBounds = iconLabel.getBounds();
+    var textBounds = textPanel.getBounds();
 
-  /**
-   * This label contains the sized background image for the name component.
-   *
-   * @author Jay
-   */
-  public class NameLabel extends JLabel {
+    var bounds = new Rectangle();
+    bounds.x = Math.min(iconBounds.x, textBounds.x);
+    bounds.y = textBounds.y;
+    bounds.width =
+        Math.max(textBounds.x + textBounds.width, iconBounds.x + iconBounds.width) - bounds.x;
+    bounds.height = textBounds.height;
 
-    /**
-     * @see javax.swing.JComponent#paintComponent(java.awt.Graphics)
-     */
-    @Override
-    protected void paintComponent(Graphics g) {
-      boolean initStateSecondLine = panel.isInitStateSecondLine() && panel.isShowInitState();
-      Dimension s = name.getSize();
-      int th = (textHeight + 2) * (initStateSecondLine ? 2 : 1);
-      // render an image label with set dimensions and without text
-      backgroundFlatImageLabel.render((Graphics2D) g, 0, (s.height - th) / 2, s.width, th, "");
-      super.paintComponent(g);
-    }
+    bounds.x += rightBounds.x;
+    bounds.y += rightBounds.y;
 
-    /**
-     * @see javax.swing.JComponent#getPreferredSize()
-     */
-    @Override
-    public Dimension getPreferredSize() {
-      boolean initStateSecondLine = panel.isInitStateSecondLine() && panel.isShowInitState();
-      Dimension s = super.getPreferredSize();
-      int th = textHeight * (initStateSecondLine ? 2 : 1);
-      Insets insets = getInsets();
-      if (getIcon() != null) th = Math.max(th, getIcon().getIconHeight());
-      s.height = th + insets.top + insets.bottom;
-      return s;
-    }
+    // render an image label with set dimensions and without text
+    backgroundFlatImageLabel.render(
+        (Graphics2D) g,
+        // TODO Add in padding.
+        bounds.x - rightInsets.left,
+        bounds.y - rightInsets.top,
+        bounds.width + (rightInsets.left + rightInsets.right),
+        bounds.height + (rightInsets.top + rightInsets.bottom),
+        "");
+
+    super.paintComponent(g);
   }
-
-  /*---------------------------------------------------------------------------------------------
-   * InitiativeListIcon Inner Class
-   *-------------------------------------------------------------------------------------------*/
 
   /**
    * An icon that will show a token image and all of the states as needed.
@@ -297,7 +477,7 @@ public class InitiativeListCellRenderer extends JPanel
         stateTokenImage = scaleImage();
       } else {
         textTokenImage = scaleImage();
-      } // endif
+      }
     }
 
     /**
@@ -363,18 +543,22 @@ public class InitiativeListCellRenderer extends JPanel
         g2d.draw(new Rectangle2D.Double(x, y, ICON_SIZE, ICON_SIZE));
         g2d.setStroke(oldStroke);
         g.setColor(oldColor);
-      } // endif
+      }
 
       // Paint the icon, is that all that's needed?
       if (panel.isShowTokenStates() && getImage() != stateTokenImage) {
         if (stateTokenImage == null) stateTokenImage = scaleImage();
         setImage(stateTokenImage);
       } else if (!panel.isShowTokenStates() && getImage() != textTokenImage) {
-        if (textTokenImage == null) textTokenImage = scaleImage();
+        if (textTokenImage == null) {
+          textTokenImage = scaleImage();
+        }
         setImage(textTokenImage);
-      } // endif
+      }
       super.paintIcon(c, g, x, y);
-      if (!panel.isShowTokenStates()) return;
+      if (!panel.isShowTokenStates()) {
+        return;
+      }
 
       // Paint all the states
       g.translate(x, y);
@@ -386,15 +570,19 @@ public class InitiativeListCellRenderer extends JPanel
         if (stateSet instanceof AbstractTokenOverlay
             || overlay == null
             || !overlay.showPlayer(token, MapTool.getPlayer())
-            || overlay.isMouseover()) continue;
+            || overlay.isMouseover()) {
+          continue;
+        }
         overlay.paintOverlay((Graphics2D) g, token, bounds, stateSet);
-      } // endfor
+      }
       for (String bar : MapTool.getCampaign().getTokenBarsMap().keySet()) {
         Object barSet = token.getState(bar);
         BarTokenOverlay overlay = MapTool.getCampaign().getTokenBarsMap().get(bar);
-        if (overlay == null || !overlay.showPlayer(token, MapTool.getPlayer())) continue;
+        if (overlay == null || !overlay.showPlayer(token, MapTool.getPlayer())) {
+          continue;
+        }
         overlay.paintOverlay((Graphics2D) g, token, bounds, barSet);
-      } // endfor
+      }
       g.setClip(old);
       g.translate(-x, -y);
     }
