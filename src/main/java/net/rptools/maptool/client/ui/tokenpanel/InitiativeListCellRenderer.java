@@ -148,6 +148,7 @@ public class InitiativeListCellRenderer extends JPanel
 
     right = new JPanel();
     right.setOpaque(false);
+    // The third column is for moving the icon there for holding tokens.
     right.setLayout(new GridLayoutManager(3, 3, new Insets(2, 7, 0, 0), 4, 0, false, false));
     right.setBorder(BorderFactory.createEmptyBorder(0, 3, 0, 4));
     add(
@@ -167,7 +168,8 @@ public class InitiativeListCellRenderer extends JPanel
             0,
             false));
 
-    textPanel = new JPanel(new GridLayoutManager(2, 1, new Insets(3, 0, 1, 0), 0, 0, false, true));
+    // The second column is for moving the initiative state there if not on the second line.
+    textPanel = new JPanel(new GridLayoutManager(2, 2, new Insets(3, 0, 1, 0), 0, 0, false, false));
     // textPanel.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
     textPanel.setOpaque(false);
     right.add(
@@ -226,7 +228,7 @@ public class InitiativeListCellRenderer extends JPanel
             1,
             GridConstraints.ANCHOR_EAST,
             GridConstraints.FILL_VERTICAL,
-            GridConstraints.SIZEPOLICY_CAN_GROW | GridConstraints.SIZEPOLICY_CAN_SHRINK,
+            GridConstraints.SIZEPOLICY_CAN_GROW | GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
             GridConstraints.SIZEPOLICY_CAN_GROW | GridConstraints.SIZEPOLICY_CAN_SHRINK,
             new Dimension(0, 0),
             null,
@@ -307,6 +309,9 @@ public class InitiativeListCellRenderer extends JPanel
       JList list, TokenInitiative ti, int index, boolean isSelected, boolean cellHasFocus) {
     setOpaque(false);
 
+    var rightLayout = (GridLayoutManager) right.getLayout();
+    var textLayout = (GridLayoutManager) textPanel.getLayout();
+
     // Set the background by type
     Token token = null;
     if (ti != null) {
@@ -351,14 +356,23 @@ public class InitiativeListCellRenderer extends JPanel
       nameHtml.append(" (").append(token.getGMName().trim()).append(")");
     }
 
-    initLabel.setText("");
+    var initText = " ";
     if (panel.isShowInitState() && ti.getState() != null) {
+      initText = ti.getState();
+
+      var initConstraints = textLayout.getConstraintsForComponent(initLabel);
       if (initStateSecondLine) {
-        initLabel.setText(ti.getState());
+        initConstraints.setRow(1);
+        initConstraints.setColumn(0);
+          initConstraints.setAnchor(GridConstraints.ANCHOR_CENTER);
       } else {
-        nameHtml.append(" = ").append(ti.getState());
+        initConstraints.setRow(0);
+        initConstraints.setColumn(1);
+        initConstraints.setAnchor(GridConstraints.ANCHOR_EAST);
+        initText = " = " + initText;
       }
     }
+    initLabel.setText(initText);
 
     name.setText(nameHtml.toString());
 
@@ -371,9 +385,6 @@ public class InitiativeListCellRenderer extends JPanel
         ti.setTokenVisibleWhenIconUpdated(token.isVisible());
       }
     }
-
-    var rightLayout = (GridLayoutManager) right.getLayout();
-    var textLayout = (GridLayoutManager) textPanel.getLayout();
 
     // Align it properly
     var iconConstraints = rightLayout.getConstraintsForComponent(iconLabel);
