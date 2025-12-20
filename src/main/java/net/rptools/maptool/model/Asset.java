@@ -84,6 +84,8 @@ public final class Asset {
     PDF(false, "pdf", Asset::createPDFAsset),
     /** MapTool Drop In Library */
     MTLIB(false, "mtlib", Asset::createMTLibAsset),
+    /** Exported token in RPTok file */
+    RPTOK(false, Token.FILE_EXTENSION, Asset::createRPTokAsset),
     /** The {@code Asset} is not a supported type. */
     INVALID(false, "", Asset::createInvalidAssetType);
 
@@ -185,6 +187,9 @@ public final class Asset {
                 if (filename != null && !filename.isEmpty()) {
                   if (AddOnLibraryImporter.isAssetFileAddonLibrary(filename)) {
                     yield Type.MTLIB;
+                  }
+                  if (Token.isTokenFile(filename)) {
+                    yield Type.RPTOK;
                   }
                 }
                 yield Type.INVALID;
@@ -448,6 +453,17 @@ public final class Asset {
    */
   public static Asset createHTMLAsset(String name, byte[] data) {
     return new Asset(null, name, data, Type.HTML, Type.HTML.getDefaultExtension(), false);
+  }
+
+  /**
+   * Creates a MapTool Token {@code Asset}.
+   *
+   * @param name The name of the {@code Asset}.
+   * @param data the data for the {@code Asset}.
+   * @return the MapTool Token {@code Asset}.
+   */
+  static Asset createRPTokAsset(String name, byte[] data) {
+    return new Asset(null, name, data, Type.RPTOK, Type.RPTOK.getDefaultExtension(), false);
   }
 
   /**

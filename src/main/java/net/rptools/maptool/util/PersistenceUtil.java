@@ -728,9 +728,26 @@ public class PersistenceUtil {
    * @throws IOException If an I/O error occurs during the loading process.
    */
   public static Token loadToken(URL url) throws IOException {
+    // TODO Rewrite in terms of loadToken(InputStream).
     // Create a temporary file from the downloaded URL
     File newFile = new File(PackedFile.getTmpDir(), new GUID() + ".url");
     FileUtils.copyURLToFile(url, newFile);
+    Token token = loadToken(newFile);
+    newFile.delete();
+    return token;
+  }
+
+  /**
+   * Loads a Token object from the specified URL.
+   *
+   * @param stream The stream from which to load the Token.
+   * @return The loaded Token object, or null if the URL is not valid.
+   * @throws IOException If an I/O error occurs during the loading process.
+   */
+  public static Token loadToken(InputStream stream) throws IOException {
+    // Create a temporary file from the downloaded URL
+    File newFile = new File(PackedFile.getTmpDir(), new GUID() + ".url");
+    FileUtils.copyToFile(stream, newFile);
     Token token = loadToken(newFile);
     newFile.delete();
     return token;

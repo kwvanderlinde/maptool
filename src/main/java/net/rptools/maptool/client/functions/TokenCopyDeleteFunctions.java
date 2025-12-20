@@ -16,10 +16,15 @@ package net.rptools.maptool.client.functions;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolUtil;
@@ -32,8 +37,11 @@ import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.TokenFootprint;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
+import net.rptools.maptool.model.library.Library;
+import net.rptools.maptool.model.library.LibraryManager;
 import net.rptools.maptool.util.AssetResolver;
 import net.rptools.maptool.util.FunctionUtil;
+import net.rptools.maptool.util.PersistenceUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
@@ -46,12 +54,12 @@ public class TokenCopyDeleteFunctions extends AbstractFunction {
   private static final String COPY_FUNC = "copyToken";
   private static final String REMOVE_FUNC = "removeToken";
 
+  private static final String LOAD_TOKEN_FUNC = "loadToken";
   private static final String CREATE_TOKEN_FUNC = "createToken";
-
   private static final String CREATE_TOKENS_FUNC = "createTokens";
 
   private TokenCopyDeleteFunctions() {
-    super(1, 4, COPY_FUNC, REMOVE_FUNC, CREATE_TOKEN_FUNC, CREATE_TOKENS_FUNC);
+    super(1, 4, COPY_FUNC, REMOVE_FUNC, LOAD_TOKEN_FUNC, CREATE_TOKEN_FUNC, CREATE_TOKENS_FUNC);
   }
 
   public static TokenCopyDeleteFunctions getInstance() {
@@ -87,6 +95,17 @@ public class TokenCopyDeleteFunctions extends AbstractFunction {
       return deleteToken(token);
     }
 
+    if (functionName.equalsIgnoreCase(LOAD_TOKEN_FUNC)) {
+      FunctionUtil.checkNumberParam(functionName, parameters, 2, 3);
+      var namespace = parameters.get(0).toString();
+      var libraryFilePath = parameters.get(1).toString();
+      var vals =
+          parameters.size() >= 3
+              ? FunctionUtil.paramAsJsonObject(functionName, parameters, 2)
+              : new JsonObject();
+      return loadToken((MapToolVariableResolver) resolver, namespace, libraryFilePath, vals);
+    }
+
     if (functionName.equalsIgnoreCase(CREATE_TOKEN_FUNC)) {
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
       JsonObject vals = FunctionUtil.paramAsJsonObject(functionName, parameters, 0);
@@ -105,6 +124,44 @@ public class TokenCopyDeleteFunctions extends AbstractFunction {
     }
 
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));
+  }
+
+  private String loadToken(
+      MapToolVariableResolver resolver, String namespace, String libraryFilePath, JsonObject vals)
+      throws ParserException {
+    var libraryManager = new LibraryManager();
+
+    Optional<Library> maybeLibrary = libraryManager.getLibrary(namespace);
+    Token token;
+    if (maybeLibrary.isPresent()) {
+      var library = maybeLibrary.get();
+
+      try {
+        var url = new URI("lib", library.getNamespace().get(), libraryFilePath, null).toURL();
+        // TODO Can we just try to read `url`? Will it resolve to the Library file?
+        var stream = library.read(url).get();
+        token = PersistenceUtil.loadToken(stream);
+      } catch (IOException | URISyntaxException | ExecutionException | InterruptedException e) {
+        throw new ParserException(
+            I18N.getText("macro.function.tokenCopyDelete.noTokenFile", namespace, libraryFilePath));
+      }
+    } else {
+      throw new ParserException(I18N.getText("library.error.notFound", namespace));
+    }
+
+    token.imported();
+    // Give the token a new ID and generally make it as clean as possible.
+    token = new Token(token, false);
+
+    Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
+
+    // setTokenValues() handles the naming of the new token and must be called even if
+    // nothing was passed for the updates parameter (newVals).
+    setTokenValues(token, vals, zone, resolver);
+
+    MapTool.serverCommand().putToken(zone.getId(), token);
+
+    return token.getId().toString();
   }
 
   private String createToken(MapToolVariableResolver resolver, JsonObject vals)
