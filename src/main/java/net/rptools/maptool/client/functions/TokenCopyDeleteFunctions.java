@@ -27,7 +27,6 @@ import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.CellPoint;
-import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Grid;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.TokenFootprint;
@@ -126,18 +125,8 @@ public class TokenCopyDeleteFunctions extends AbstractFunction {
     }
 
     Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
-    List<Token> allTokens = zone.getAllTokens();
     Token t = new Token(name, new MD5Key(tokenImage));
 
-    // Make sure the exposedAreaGUID stays unique
-    if (allTokens != null) {
-      for (Token tok : allTokens) {
-        GUID tea = tok.getExposedAreaGUID();
-        if (tea != null && tea.equals(t.getExposedAreaGUID())) {
-          t.setExposedAreaGUID(new GUID());
-        }
-      }
-    }
     // setTokenValues() handles the naming of the new token and must be called even if
     // nothing was passed for the updates parameter (newVals).
     setTokenValues(t, vals, zone, resolver);
@@ -174,19 +163,9 @@ public class TokenCopyDeleteFunctions extends AbstractFunction {
 
     Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
     List<String> newTokens = new ArrayList<>(nCopies);
-    List<Token> allTokens = zone.getAllTokens();
     for (int i = 0; i < nCopies; i++) {
       Token t = new Token(token);
 
-      // Make sure the exposedAreaGUID stays unique
-      if (allTokens != null) {
-        for (Token tok : allTokens) {
-          GUID tea = tok.getExposedAreaGUID();
-          if (tea != null && tea.equals(t.getExposedAreaGUID())) {
-            t.setExposedAreaGUID(new GUID());
-          }
-        }
-      }
       // setTokenValues() handles the naming of the new token and must be called even if
       // nothing was passed for the updates parameter (newVals).
       setTokenValues(t, newVals, zone, res);

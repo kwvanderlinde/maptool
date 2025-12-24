@@ -901,18 +901,6 @@ public class AppActions {
       CellPoint cellPoint = grid.convert(destination);
       destination = grid.convert(cellPoint);
     }
-    // Create a set of all tokenExposedAreaGUID's to make searching by GUID much
-    // faster.
-    Set<GUID> allTokensSet = null;
-    {
-      List<Token> allTokensList = zone.getAllTokens();
-      if (!allTokensList.isEmpty()) {
-        allTokensSet = new HashSet<GUID>(allTokensList.size());
-        for (Token token : allTokensList) {
-          allTokensSet.add(token.getExposedAreaGUID());
-        }
-      }
-    }
     List<Token> tokenList = new ArrayList<Token>(tokenCopySet);
     tokenList.sort(Token.COMPARE_BY_ZORDER);
     List<String> failedPaste = new ArrayList<String>(tokenList.size());
@@ -923,19 +911,6 @@ public class AppActions {
       if (!unchanged.equals(token.getAnchor())) {
         token.setAnchor(
             (int) (token.getAnchorX() * sizeRatio), (int) (token.getAnchorY() * sizeRatio));
-      }
-      // need this here to get around times when a token is copied and pasted into the
-      // same zone, such as a framework "template"
-      if (allTokensSet != null && allTokensSet.contains(token.getExposedAreaGUID())) {
-        GUID guid = new GUID();
-        token.setExposedAreaGUID(guid);
-        ExposedAreaMetaData meta = zone.getExposedAreaMetaData(guid);
-        // 'meta' references the object already stored in the zone's HashMap (it was
-        // created if
-        // necessary).
-        meta.addToExposedAreaHistory(meta.getExposedAreaHistory());
-        MapTool.serverCommand()
-            .updateExposedAreaMeta(zone.getId(), token.getExposedAreaGUID(), meta);
       }
 
       ZonePoint tokenOffset;

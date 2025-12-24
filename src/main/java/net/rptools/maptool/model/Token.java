@@ -95,7 +95,7 @@ public class Token implements Cloneable {
   private static final int OWNER_TYPE_LIST = 0;
 
   private boolean beingImpersonated = false;
-  private GUID exposedAreaGUID = new GUID();
+  private @Nonnull GUID exposedAreaGUID = new GUID();
 
   /** The stat sheet properties for the token. */
   @Nullable private StatSheetProperties statSheet;
@@ -392,6 +392,7 @@ public class Token implements Cloneable {
     this(token);
     if (keepId) {
       this.setId(token.getId());
+      this.setExposedAreaGUID(token.getExposedAreaGUID());
     }
   }
 
@@ -494,8 +495,6 @@ public class Token implements Cloneable {
     speechMap.putAll(token.speechMap);
     imageAssetMap.putAll(token.imageAssetMap);
     sizeMap.putAll(token.sizeMap);
-
-    exposedAreaGUID = token.exposedAreaGUID;
 
     heroLabData = token.heroLabData;
     tokenOpacity = token.tokenOpacity;
@@ -2742,14 +2741,14 @@ public class Token implements Cloneable {
   /**
    * @param exposedAreaGUID the exposedAreaGUID to set
    */
-  public void setExposedAreaGUID(GUID exposedAreaGUID) {
+  public void setExposedAreaGUID(@Nonnull GUID exposedAreaGUID) {
     this.exposedAreaGUID = exposedAreaGUID;
   }
 
   /**
    * @return the exposedAreaGUID
    */
-  public GUID getExposedAreaGUID() {
+  public @Nonnull GUID getExposedAreaGUID() {
     return exposedAreaGUID;
   }
 
