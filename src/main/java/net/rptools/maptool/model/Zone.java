@@ -359,7 +359,7 @@ public class Zone {
   /** Token list ordered by Z. */
   private final List<Token> tokenOrderedList = new LinkedList<Token>();
 
-  private InitiativeList initiativeList = new InitiativeList(this);
+  private @Nonnull InitiativeList initiativeList = new InitiativeList(this);
 
   /** The global exposed area. */
   private Area exposedArea = new Area();
@@ -608,41 +608,39 @@ public class Zone {
       }
     }
 
-    if (!zone.labels.isEmpty()) {
-      for (GUID guid : zone.labels.keySet()) {
-        this.putLabel(new Label(zone.labels.get(guid)));
-      }
+    for (var entry : zone.labels.entrySet()) {
+      this.labels.put(entry.getKey(), new Label(entry.getValue()));
     }
-    exposedAreaMeta = new HashMap<GUID, ExposedAreaMetaData>(zone.exposedAreaMeta.size() * 4 / 3);
 
     // Copy the tokens, save a map between old and new for the initiative list.
-    if (zone.initiativeList == null) {
-      zone.initiativeList = new InitiativeList(zone);
-    }
     Object[][] saveInitiative = new Object[zone.initiativeList.getSize()][2];
     initiativeList.setZone(null);
 
-    if (zone.tokenMap != null && !zone.tokenMap.isEmpty()) {
-      for (GUID oldGUID : zone.tokenMap.keySet()) {
-        Token old = zone.tokenMap.get(oldGUID);
-        Token token = new Token(old, keepIds); // keep old ids at server start
-        if (old.getExposedAreaGUID() != null) {
-          GUID guid = new GUID();
-          token.setExposedAreaGUID(guid);
-          // Update the TEA on the new map, since we have the Token object available...
-          ExposedAreaMetaData eamd = zone.getExposedAreaMetaData(old.getExposedAreaGUID());
-          if (eamd != null) {
-            exposeArea(eamd.getExposedAreaHistory(), token);
-          }
-        }
-        putToken(token);
-        List<Integer> list = zone.initiativeList.indexOf(old);
-        for (Integer index : list) {
-          saveInitiative[index][0] = token;
-          saveInitiative[index][1] = zone.initiativeList.getTokenInitiative(index);
-        }
+    for (GUID oldGUID : zone.tokenMap.keySet()) {
+      Token old = zone.tokenMap.get(oldGUID);
+      Token token = new Token(old, keepIds); // keep old ids at server start
+
+      // This new zone is independent of the existing zone, so the token can keep this ID
+      token.setExposedAreaGUID(old.getExposedAreaGUID());
+
+      tokenMap.put(token.getId(), token);
+      tokenOrderedList.add(token);
+
+      List<Integer> list = zone.initiativeList.indexOf(old);
+      for (Integer index : list) {
+        saveInitiative[index][0] = token;
+        saveInitiative[index][1] = zone.initiativeList.getTokenInitiative(index);
       }
     }
+    tokenOrderedList.sort(TOKEN_Z_ORDER_COMPARATOR);
+
+    // Copy all exposure
+    exposedAreaMeta = new HashMap<GUID, ExposedAreaMetaData>(zone.exposedAreaMeta.size() * 4 / 3);
+    for (var entry : zone.exposedAreaMeta.entrySet()) {
+      exposedAreaMeta.put(
+          entry.getKey(), new ExposedAreaMetaData(entry.getValue().getExposedAreaHistory()));
+    }
+
     // Set the initiative list using the newly create tokens.
     // We also have to work around old campaign issues where there may be empty positions in the
     // initiative list
@@ -2103,6 +2101,11 @@ public class Zone {
         token.setZOrder(z++);
       }
     }
+
+    if (initiativeList == null) {
+      initiativeList = new InitiativeList(this);
+    }
+
     // Transient "undo" field added in 1.3.b88
     // This will be true; it's just in case we decide to make it persistent in the future
     if (undo == null) {
