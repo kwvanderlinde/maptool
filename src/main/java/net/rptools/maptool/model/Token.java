@@ -396,6 +396,9 @@ public class Token implements Cloneable {
     }
   }
 
+  // TODO The better pattern would be for the copy constructor to copy all fields (including the
+  //  `id` and `exposedAreaGUID`), while `Token(Token, boolean)` would overwrite the IDs if needed.
+
   /**
    * Constructor from another token. The token id is not kept.
    *
