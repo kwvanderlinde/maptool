@@ -15,10 +15,15 @@
 package net.rptools.maptool.client.functions;
 
 import com.google.gson.JsonObject;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
@@ -33,7 +38,10 @@ import net.rptools.maptool.model.InvalidGUIDException;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZoneFactory;
 import net.rptools.maptool.model.drawing.DrawablePaint;
+import net.rptools.maptool.model.library.Library;
+import net.rptools.maptool.model.library.LibraryManager;
 import net.rptools.maptool.util.FunctionUtil;
+import net.rptools.maptool.util.PersistenceUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
@@ -63,6 +71,7 @@ public class MapFunctions extends AbstractFunction {
         "setMapDisplayName",
         "copyMap",
         "createMap",
+        "loadMap",
         "getMapName",
         "setMapSelectButton",
         "getMapVision",
@@ -180,6 +189,39 @@ public class MapFunctions extends AbstractFunction {
       MapTool.serverCommand().putZone(newMap);
       return newMap.getName();
 
+    } else if ("loadMap".equalsIgnoreCase(functionName)) {
+      FunctionUtil.blockUntrustedMacro(functionName);
+      FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
+
+      var namespace = parameters.get(0).toString();
+      var libraryFilePath = parameters.get(1).toString();
+
+      var libraryManager = new LibraryManager();
+      Optional<Library> maybeLibrary = libraryManager.getLibrary(namespace);
+      Zone zone;
+      if (maybeLibrary.isPresent()) {
+        var library = maybeLibrary.get();
+
+        try {
+          var url = new URI("lib", library.getNamespace().get(), libraryFilePath, null).toURL();
+          // TODO Can we just try to read `url`? Will it resolve to the Library file?
+          var stream = library.read(url).get();
+          var persisted = PersistenceUtil.loadMap(stream);
+          zone = persisted.zone;
+        } catch (IOException | URISyntaxException | ExecutionException | InterruptedException e) {
+          // TODO Different i18n key.
+          throw new ParserException(
+              I18N.getText(
+                  "macro.function.tokenCopyDelete.noTokenFile", namespace, libraryFilePath));
+        }
+      } else {
+        throw new ParserException(I18N.getText("library.error.notFound", namespace));
+      }
+
+      MapTool.addZone(zone, false);
+      MapTool.serverCommand().putZone(zone);
+
+      return zone.getId();
     } else if ("createMap".equalsIgnoreCase(functionName)) {
       FunctionUtil.blockUntrustedMacro(functionName);
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);

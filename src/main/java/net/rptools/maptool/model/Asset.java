@@ -86,6 +86,8 @@ public final class Asset {
     MTLIB(false, "mtlib", Asset::createMTLibAsset),
     /** Exported token in RPTok file */
     RPTOK(false, Token.FILE_EXTENSION, Asset::createRPTokAsset),
+    /** Exported map in RPMap file */
+    RPMAP(false, "rpmap", Asset::createRPMapAsset),
     /** The {@code Asset} is not a supported type. */
     INVALID(false, "", Asset::createInvalidAssetType);
 
@@ -190,6 +192,9 @@ public final class Asset {
                   }
                   if (Token.isTokenFile(filename)) {
                     yield Type.RPTOK;
+                  }
+                  if (filename.toLowerCase().endsWith(".rpmap")) {
+                    yield Type.RPMAP;
                   }
                 }
                 yield Type.INVALID;
@@ -464,6 +469,17 @@ public final class Asset {
    */
   static Asset createRPTokAsset(String name, byte[] data) {
     return new Asset(null, name, data, Type.RPTOK, Type.RPTOK.getDefaultExtension(), false);
+  }
+
+  /**
+   * Creates a MapTool Zone {@code Asset}.
+   *
+   * @param name The name of the {@code Asset}.
+   * @param data the data for the {@code Asset}.
+   * @return the MapTool Zone {@code Asset}.
+   */
+  static Asset createRPMapAsset(String name, byte[] data) {
+    return new Asset(null, name, data, Type.RPMAP, Type.RPMAP.getDefaultExtension(), false);
   }
 
   /**

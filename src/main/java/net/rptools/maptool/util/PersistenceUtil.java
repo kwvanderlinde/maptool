@@ -352,6 +352,15 @@ public class PersistenceUtil {
     return persistedMap;
   }
 
+  public static PersistedMap loadMap(InputStream stream) throws IOException {
+    // Create a temporary file from the downloaded URL
+    File newFile = new File(PackedFile.getTmpDir(), new GUID() + ".rpmap");
+    FileUtils.copyToFile(stream, newFile);
+    PersistedMap map = loadMap(newFile);
+    newFile.delete();
+    return map;
+  }
+
   /**
    * Determines whether the incoming map name is unique. If it is, it's returned as-is. If it's not
    * unique, a newly generated name is returned.
