@@ -22,6 +22,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.ImageObserver;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -90,6 +91,13 @@ public class ZoneViewModel {
     }
   }
 
+  public enum RenderLayer {
+    AboveBoard,
+    AboveGrid,
+    AboveLights,
+    AboveFog,
+  }
+
   public final Zone zone;
 
   // region These are updated externally.
@@ -132,7 +140,8 @@ public class ZoneViewModel {
 
   // endregion
 
-  private final List<Entity> entitiesInZOrder = new ArrayList<>();
+  private final EnumMap<RenderLayer, List<Entity>> entitiesInZOrder =
+      CollectionUtil.newFilledEnumMap(RenderLayer.class, l -> new ArrayList<>());
 
   public ZoneViewModel(Zone zone, ZoneView zoneView, SelectionModel selectionModel) {
     this.zone = zone;
@@ -326,8 +335,9 @@ public class ZoneViewModel {
   /** Updates {@link #entitiesInZOrder} based on everything else. */
   private void updateEntities() {
     // TODO Reuse existing entity objects if possible.
-    entitiesInZOrder.clear();
+    entitiesInZOrder.values().forEach(List::clear);
 
+    var list = entitiesInZOrder.get(RenderLayer.AboveBoard);
     if (isBoardEnabled()) {
       // TODO Represent the board as an entity.
     }
@@ -341,12 +351,14 @@ public class ZoneViewModel {
 
     // TODO Insert a special entity to get the grid rendered.
 
+    list = entitiesInZOrder.get(RenderLayer.AboveGrid);
     if (shouldRenderLayer(Zone.Layer.OBJECT)) {
       // TODO Object tokens as entities
     }
 
     // TODO Represent lights, lumens, auras, and darkness as entities.
 
+    list = entitiesInZOrder.get(RenderLayer.AboveLights);
     if (shouldRenderLayer(Zone.Layer.TOKEN)) {
       // TODO Token drawables as entities
 
@@ -362,6 +374,7 @@ public class ZoneViewModel {
 
     // TODO Fog as entities
 
+    list = entitiesInZOrder.get(RenderLayer.AboveFog);
     if (shouldRenderLayer(Zone.Layer.TOKEN)) {
       // TODO VBL tokens as entities (again)
 
