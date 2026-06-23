@@ -39,6 +39,7 @@ import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.entities.Entity;
 import net.rptools.maptool.client.events.RepaintZoneRequested;
 import net.rptools.maptool.client.events.ZoneLoaded;
 import net.rptools.maptool.client.ui.Scale;
@@ -130,6 +131,8 @@ public class ZoneViewModel {
   private final List<Point2D> lightPositions = new ArrayList<>();
 
   // endregion
+
+  private final List<Entity> entitiesInZOrder = new ArrayList<>();
 
   public ZoneViewModel(Zone zone, ZoneView zoneView, SelectionModel selectionModel) {
     this.zone = zone;
@@ -315,9 +318,64 @@ public class ZoneViewModel {
     updateTokenStacks();
     updateVisibleTokens();
     updateLightPosition();
+    updateEntities();
   }
 
   // What follows are "systems".
+
+  /** Updates {@link #entitiesInZOrder} based on everything else. */
+  private void updateEntities() {
+    // TODO Reuse existing entity objects if possible.
+    entitiesInZOrder.clear();
+
+    if (isBoardEnabled()) {
+      // TODO Represent the board as an entity.
+    }
+    if (shouldRenderLayer(Zone.Layer.BACKGROUND)) {
+      // TODO Background drawables as entities
+      // TODO Background tokens as entities
+    }
+    if (shouldRenderLayer(Zone.Layer.OBJECT)) {
+      // TODO Object drawables as entities
+    }
+
+    // TODO Insert a special entity to get the grid rendered.
+
+    if (shouldRenderLayer(Zone.Layer.OBJECT)) {
+      // TODO Object tokens as entities
+    }
+
+    // TODO Represent lights, lumens, auras, and darkness as entities.
+
+    if (shouldRenderLayer(Zone.Layer.TOKEN)) {
+      // TODO Token drawables as entities
+
+      if (shouldRenderLayer(Zone.Layer.GM)) {
+        // TODO GM drawables as entities
+        // TODO GM tokens as entities
+      }
+
+      // TODO Token tokens as entities
+
+      // TODO Unowned movement as entities
+    }
+
+    // TODO Fog as entities
+
+    if (shouldRenderLayer(Zone.Layer.TOKEN)) {
+      // TODO VBL tokens as entities (again)
+
+      // TODO Figure tokens as entities (again)
+
+      // TODO Owned movement as entities
+
+      // TODO "Renderables", i.e., labels
+    }
+
+    // TODO Next comes overlays, which I don't think require entities descriptions.
+    //  By the same token, lights and fog should not be entities either, we just need a way to
+    //  identify where in the order to put them during rendering.
+  }
 
   /** Updates {@link #isUsingGdxRenderer}. */
   private void updateIsUsingGdxRenderer() {
