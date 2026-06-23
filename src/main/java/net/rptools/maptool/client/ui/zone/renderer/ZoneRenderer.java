@@ -118,7 +118,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   private BufferedImage backBuffer;
   private boolean drawBackground = true;
   private boolean boardChanged = true;
-  private boolean boardEnabled = true;
   private Scale lastZoneScale;
   private Area visibleScreenArea;
   private final List<ItemRenderer> itemRenderList = new LinkedList<>();
@@ -131,7 +130,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
   private ZonePoint previousZonePoint;
 
-  private final EnumSet<Layer> disabledLayers = EnumSet.noneOf(Layer.class);
   private final GridRenderer gridRenderer;
   private final HaloRenderer haloRenderer;
   private final TokenRenderer tokenRenderer;
@@ -734,23 +732,17 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   }
 
   public void restoreLayers() {
-    boardEnabled = true;
+    viewModel.restoreLayers();
     boardChanged = true;
-
-    disabledLayers.clear();
   }
 
   public void disableBoard() {
-    boardEnabled = false;
+    viewModel.disableBoard();
     boardChanged = true;
   }
 
   public void disableLayer(Layer layer) {
-    disabledLayers.add(layer);
-  }
-
-  public boolean shouldRenderLayer(Layer layer, PlayerView view) {
-    return !disabledLayers.contains(layer) && (layer.isVisibleToPlayers() || view.isGMView());
+    viewModel.disableLayer(layer);
   }
 
   /**
@@ -834,12 +826,12 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     timer.stop("calcs-1");
 
     // Rendering pipeline
-    if (boardEnabled) {
+    if (viewModel.isBoardEnabled()) {
       timer.start("board");
       renderBoard(g2d, view);
       timer.stop("board");
     }
-    if (shouldRenderLayer(Zone.Layer.BACKGROUND, view)) {
+    if (viewModel.shouldRenderLayer(Zone.Layer.BACKGROUND)) {
       List<DrawnElement> drawables = zone.getDrawnElements(Layer.BACKGROUND);
 
       timer.start("drawableBackground");
@@ -853,7 +845,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         timer.stop("tokensBackground");
       }
     }
-    if (shouldRenderLayer(Zone.Layer.OBJECT, view)) {
+    if (viewModel.shouldRenderLayer(Zone.Layer.OBJECT)) {
       // Drawables on the object layer are always below the grid, and...
       List<DrawnElement> drawables = zone.getDrawnElements(Layer.OBJECT);
 
@@ -866,7 +858,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     gridRenderer.renderGrid(g2d, view);
     timer.stop("grid");
 
-    if (shouldRenderLayer(Zone.Layer.OBJECT, view)) {
+    if (viewModel.shouldRenderLayer(Zone.Layer.OBJECT)) {
       // ... Images on the object layer are always ABOVE the grid.
       List<Token> stamps = zone.getTokensOnLayer(Layer.OBJECT, false);
       if (!stamps.isEmpty()) {
@@ -875,7 +867,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         timer.stop("tokensStamp");
       }
     }
-    if (shouldRenderLayer(Zone.Layer.TOKEN, view)) {
+    if (viewModel.shouldRenderLayer(Zone.Layer.TOKEN)) {
       this.lightsRenderer.renderLights(g2d, view);
       this.lumensRenderer.render(g2d, view);
       this.lightsRenderer.renderAuras(g2d, view);
@@ -904,14 +896,14 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
      *   <li>Render Token-layer tokens
      * </ol>
      */
-    if (shouldRenderLayer(Zone.Layer.TOKEN, view)) {
+    if (viewModel.shouldRenderLayer(Zone.Layer.TOKEN)) {
       List<DrawnElement> drawables = zone.getDrawnElements(Layer.TOKEN);
 
       timer.start("drawableTokens");
       renderDrawableOverlay(g2d, drawableRenderers.get(Layer.TOKEN), view, drawables);
       timer.stop("drawableTokens");
 
-      if (shouldRenderLayer(Zone.Layer.GM, view)) {
+      if (viewModel.shouldRenderLayer(Zone.Layer.GM)) {
         drawables = zone.getDrawnElements(Layer.GM);
 
         timer.start("drawableGM");
@@ -943,7 +935,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     this.fogRenderer.render(g2d, view);
 
-    if (shouldRenderLayer(Zone.Layer.TOKEN, view)) {
+    if (viewModel.shouldRenderLayer(Zone.Layer.TOKEN)) {
       // Jamz: If there is fog or vision we may need to re-render vision-blocking type tokens
       // For example. this allows a "door" stamp to block vision but still allow you to see the
       // door.
@@ -993,7 +985,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     timer.stop("renderCoordinates");
 
     timer.start("lightSourceIconOverlay.paintOverlay");
-    if (shouldRenderLayer(Zone.Layer.TOKEN, view)
+    if (viewModel.shouldRenderLayer(Zone.Layer.TOKEN)
         && view.isGMView()
         && AppState.isShowLightSources()) {
       lightSourceIconOverlay.paintOverlay(this, g2d);

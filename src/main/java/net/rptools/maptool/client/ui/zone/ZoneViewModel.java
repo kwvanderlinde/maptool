@@ -22,6 +22,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.ImageObserver;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -92,6 +93,8 @@ public class ZoneViewModel {
 
   // region These are updated externally.
 
+  private boolean boardEnabled = true;
+  private final EnumSet<Zone.Layer> disabledLayers = EnumSet.noneOf(Zone.Layer.class);
   private @Nonnull Zone.Layer activeLayer = Zone.Layer.getDefaultPlayerLayer();
   private Scale zoneScale = new Scale();
   private final ZoneView zoneView;
@@ -156,6 +159,31 @@ public class ZoneViewModel {
    */
   public Optional<String> getLoadingStatus() {
     return Optional.ofNullable(loadingProgress);
+  }
+
+  public void restoreLayers() {
+    boardEnabled = true;
+    disabledLayers.clear();
+  }
+
+  public void disableBoard() {
+    boardEnabled = false;
+  }
+
+  public boolean isBoardEnabled() {
+    return boardEnabled;
+  }
+
+  public void disableLayer(Zone.Layer layer) {
+    disabledLayers.add(layer);
+  }
+
+  public boolean isLayerEnabled(Zone.Layer layer) {
+    return !disabledLayers.contains(layer);
+  }
+
+  public boolean shouldRenderLayer(Zone.Layer layer) {
+    return isLayerEnabled(layer) && (layer.isVisibleToPlayers() || playerView.isGMView());
   }
 
   public Scale getZoneScale() {
