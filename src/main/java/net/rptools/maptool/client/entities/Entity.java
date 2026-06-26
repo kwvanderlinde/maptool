@@ -16,14 +16,23 @@ package net.rptools.maptool.client.entities;
 
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
+import java.util.List;
+import javax.annotation.Nullable;
 
 public final class Entity {
   private final Point2D position;
   private final Rectangle2D bounds;
+  private final List<Component> components = new ArrayList<>();
 
   public Entity(Point2D position) {
+    this(position, new Rectangle2D.Double(position.getX(), position.getY(), 0, 0));
+  }
+
+  public Entity(Point2D position, Rectangle2D bounds) {
     this.position = new Point2D.Double(position.getX(), position.getY());
-    this.bounds = new Rectangle2D.Double(this.position.getX(), this.position.getY(), 0, 0);
+    this.bounds =
+        new Rectangle2D.Double(bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight());
   }
 
   public Point2D getPosition() {
@@ -33,5 +42,18 @@ public final class Entity {
   public Rectangle2D getBounds() {
     return new Rectangle2D.Double(
         bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight());
+  }
+
+  public <T extends Component> @Nullable T getComponent(Class<T> type) {
+    for (var component : components) {
+      if (type.isInstance(component)) {
+        return type.cast(component);
+      }
+    }
+    return null;
+  }
+
+  public void addComponent(Component component) {
+    this.components.add(component);
   }
 }
