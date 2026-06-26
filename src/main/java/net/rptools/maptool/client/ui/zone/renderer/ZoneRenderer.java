@@ -42,6 +42,7 @@ import net.rptools.lib.CollectionUtil;
 import net.rptools.lib.MD5Key;
 import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.*;
+import net.rptools.maptool.client.entities.SpriteComponent;
 import net.rptools.maptool.client.events.RepaintZoneRequested;
 import net.rptools.maptool.client.functions.TokenMoveFunctions;
 import net.rptools.maptool.client.swing.GenericDialog;
@@ -130,6 +131,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
   private ZonePoint previousZonePoint;
 
+  private final RenderHelper renderHelper;
   private final GridRenderer gridRenderer;
   private final HaloRenderer haloRenderer;
   private final TokenRenderer tokenRenderer;
@@ -158,13 +160,13 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     this.zone = zone;
     this.selectionModel = new SelectionModel(zone);
     this.zoneView = new ZoneView(zone);
-    this.viewModel = new ZoneViewModel(zone, zoneView, selectionModel);
+    this.viewModel = new ZoneViewModel(zone, zoneView, selectionModel, this);
 
     drawableRenderers =
         CollectionUtil.newFilledEnumMap(
             Zone.Layer.class, layer -> new PartitionedDrawableRenderer(zone));
 
-    var renderHelper = new RenderHelper(this, tempBufferPool);
+    this.renderHelper = new RenderHelper(this, tempBufferPool);
     this.gridRenderer = new GridRenderer(this);
     this.haloRenderer = new HaloRenderer(renderHelper, MapTool.getCampaign(), zone);
     this.tokenRenderer = new TokenRenderer(renderHelper, zone);
@@ -838,13 +840,42 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       renderDrawableOverlay(g2d, drawableRenderers.get(Layer.BACKGROUND), view, drawables);
       timer.stop("drawableBackground");
 
-      List<Token> background = zone.getTokensOnLayer(Layer.BACKGROUND, false);
+      List<Token> background = List.of(); // zone.getTokensOnLayer(Layer.BACKGROUND, false);
       if (!background.isEmpty()) {
         timer.start("tokensBackground");
-        renderTokens(g2d, background, view);
+        renderTokens(g2d, background, view, false);
         timer.stop("tokensBackground");
       }
     }
+    for (var entity : viewModel.entitiesInZOrder.get(ZoneViewModel.RenderLayer.AboveBoard)) {
+      renderHelper.render(
+          g2d,
+          worldG -> {
+            var sprite = entity.getComponent(SpriteComponent.class);
+            if (sprite != null) {
+              var g3 = worldG;
+              try {
+                g3.setComposite(AlphaComposite.SrcOver.derive((float) sprite.opacity()));
+
+                var image = ImageManager.getImage(sprite.imageAsset(), this);
+                g3.drawImage(image, sprite.transform(), this);
+
+                g3.setComposite(AlphaComposite.SrcOver);
+                g3.setPaint(Color.blue);
+                g3.fill(
+                    new Ellipse2D.Double(
+                        entity.getPosition().getX() - 3.,
+                        entity.getPosition().getY() - 3.,
+                        6.,
+                        6.));
+                g3.draw(entity.getBounds());
+              } finally {
+                g3.dispose();
+              }
+            }
+          });
+    }
+
     if (viewModel.shouldRenderLayer(Zone.Layer.OBJECT)) {
       // Drawables on the object layer are always below the grid, and...
       List<DrawnElement> drawables = zone.getDrawnElements(Layer.OBJECT);
@@ -863,7 +894,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       List<Token> stamps = zone.getTokensOnLayer(Layer.OBJECT, false);
       if (!stamps.isEmpty()) {
         timer.start("tokensStamp");
-        renderTokens(g2d, stamps, view);
+        renderTokens(g2d, stamps, view, false);
         timer.stop("tokensStamp");
       }
     }
@@ -913,14 +944,14 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         List<Token> stamps = zone.getTokensOnLayer(Layer.GM, false);
         if (!stamps.isEmpty()) {
           timer.start("tokensGM");
-          renderTokens(g2d, stamps, view);
+          renderTokens(g2d, stamps, view, false);
           timer.stop("tokensGM");
         }
       }
       List<Token> tokens = zone.getTokensOnLayer(Layer.TOKEN, false);
       if (!tokens.isEmpty()) {
         timer.start("tokens");
-        renderTokens(g2d, tokens, view);
+        renderTokens(g2d, tokens, view, false);
         timer.stop("tokens");
       }
       timer.start("unowned movement");
@@ -1666,10 +1697,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    */
   private List<ZoneViewModel.TokenPosition> getTokenPositions(Zone.Layer layer) {
     return viewModel.getTokenPositionsForLayer(layer);
-  }
-
-  protected void renderTokens(Graphics2D g, List<Token> tokenList, PlayerView view) {
-    renderTokens(g, tokenList, view, false);
   }
 
   protected void renderTokens(

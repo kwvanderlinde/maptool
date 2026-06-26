@@ -14,11 +14,13 @@
  */
 package net.rptools.maptool.client.ui.zone;
 
+import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,6 +36,7 @@ import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import net.rptools.lib.CodeTimer;
 import net.rptools.lib.CollectionUtil;
 import net.rptools.lib.MD5Key;
 import net.rptools.lib.StringUtil;
@@ -41,6 +44,7 @@ import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.entities.Entity;
+import net.rptools.maptool.client.entities.SpriteComponent;
 import net.rptools.maptool.client.events.RepaintZoneRequested;
 import net.rptools.maptool.client.events.ZoneLoaded;
 import net.rptools.maptool.client.ui.Scale;
@@ -55,6 +59,7 @@ import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.util.GraphicsUtil;
 import net.rptools.maptool.util.ImageManager;
+import net.rptools.maptool.util.TokenUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,7 +103,8 @@ public class ZoneViewModel {
     AboveFog,
   }
 
-  public final Zone zone;
+  private final Zone zone;
+  private final ImageObserver imageObserver;
 
   // region These are updated externally.
 
@@ -140,13 +146,15 @@ public class ZoneViewModel {
 
   // endregion
 
-  private final EnumMap<RenderLayer, List<Entity>> entitiesInZOrder =
+  public final EnumMap<RenderLayer, List<Entity>> entitiesInZOrder =
       CollectionUtil.newFilledEnumMap(RenderLayer.class, l -> new ArrayList<>());
 
-  public ZoneViewModel(Zone zone, ZoneView zoneView, SelectionModel selectionModel) {
+  public ZoneViewModel(
+      Zone zone, ZoneView zoneView, SelectionModel selectionModel, ImageObserver imageObserver) {
     this.zone = zone;
     this.zoneView = zoneView;
     this.selectionModel = selectionModel;
+    this.imageObserver = imageObserver;
   }
 
   public void repaintNeeded() {
@@ -344,6 +352,8 @@ public class ZoneViewModel {
     if (shouldRenderLayer(Zone.Layer.BACKGROUND)) {
       // TODO Background drawables as entities
       // TODO Background tokens as entities
+      compositeTokensAsEntities(
+          Zone.Layer.BACKGROUND, zone.getTokensOnLayer(Zone.Layer.BACKGROUND, false), list);
     }
     if (shouldRenderLayer(Zone.Layer.OBJECT)) {
       // TODO Object drawables as entities
@@ -388,6 +398,128 @@ public class ZoneViewModel {
     // TODO Next comes overlays, which I don't think require entities descriptions.
     //  By the same token, lights and fog should not be entities either, we just need a way to
     //  identify where in the order to put them during rendering.
+  }
+
+  private void compositeTokensAsEntities(
+      Zone.Layer layer, List<Token> tokens, List<Entity> output) {
+    var timer = CodeTimer.get();
+    // TODO Sprites need to potentially be clipped. Should we add this to the SpriteComponent, or
+    //  somehow instruct the renderer to bound a set of operations by a clip? The latter would be
+    //  more efficient as we could set once, do operations, then continue.
+
+    // Note: original used layer.supportsVision() instead of isTokenLayer(), but that was mistaken.
+    var considerClipping =
+        !playerView.isGMView() && zoneView.isUsingVision() && layer.isTokenLayer();
+    for (var token : tokens) {
+      TokenPosition position;
+      timer.start("token-list-1");
+      try {
+        // TODO Properly support figures and always visible tokens.
+        final var figuresOnly = false;
+        if (figuresOnly
+            && !(token.getShape() == Token.TokenShape.FIGURE || token.isAlwaysVisible())) {
+          continue;
+        }
+        if (layer.isStampLayer() && isTokenMoving(token.getId())) {
+          // Stamps do not use a "ghost" when being dragged.
+          continue;
+        }
+        position = getTokenPositions().get(token.getId());
+        if (position == null) {
+          // Unknown token?
+          continue;
+        }
+        if (!getVisibleTokens(layer).contains(token.getId())) {
+          // Token not on screen or otherwise not visible.
+          continue;
+        }
+      } finally {
+        timer.stop("token-list-1");
+      }
+
+      // TODO Use the token's canonical position.
+      var entity =
+          new Entity(
+              new Point2D.Double(
+                  position.footprintBounds().getCenterX(), position.footprintBounds().getCenterY()),
+              position.footprintBounds().getBounds2D());
+      output.add(entity);
+      if (considerClipping && isTokenInNeedOfClipping(position, playerView)) {
+        // TODO How to represent the clip?
+      } else {
+        // TODO How to represent the not-clip?
+      }
+
+      // TODO Output the token's last path if available.
+
+      MD5Key tokenImageId = token.getImageAssetId();
+      // TODO I hate that we need the resolved image just to figure out bounds and such.
+      BufferedImage image = ImageManager.getImage(tokenImageId, imageObserver);
+
+      // Update the token dimensions. TODO Gross. The token's width/height aren't even used
+      //  rendering, are they?
+      if (token.getIsFlippedIso() && zone.getGrid().getType().isIsometric()) {
+        int newSize = (image.getWidth() + image.getHeight());
+        token.setWidth(newSize);
+        token.setHeight(newSize / 2);
+      }
+
+      // TODO Output the token's halo.
+
+      // Use opacity to indicate that token is moving
+      var opacity = token.getTokenOpacity() * (isTokenMoving(token.getId()) ? 0.5 : 1.0);
+      // TODO Transform should be relative to the entity's canonical position.
+      var imageTransform =
+          TokenUtil.getRenderTransform(
+              zone,
+              token,
+              new Dimension(image.getWidth(), image.getHeight()),
+              position.footprintBounds());
+      entity.addComponent(new SpriteComponent(tokenImageId, imageTransform, opacity));
+
+      // TODO Output the token's states and bars.
+
+      // TODO Output the token's facing arrow
+
+      // TODO If on the active layer:
+      //  1. Tokens need selection boxes, drawn above other tokens on the same layer.
+      //  2. Tokens need labels, drawn above everything else regardless of layer.
+    }
+  }
+
+  private boolean isTokenInNeedOfClipping(TokenPosition position, PlayerView view) {
+    // Can view everything or zone is not using vision => no clipping needed
+    if (view.isGMView() || !zoneView.isUsingVision()) {
+      return false;
+    }
+
+    var visibleArea = getVisibleArea();
+    if (visibleArea.isEmpty()) {
+      // No clipping if there is no visible area.
+      return false;
+    }
+
+    var tokenCellArea = position.transformedBounds();
+
+    // If the token is a figure and its center is visible then no clipping
+    if (position.token().getShape() == Token.TokenShape.FIGURE
+        && zone.getGrid().checkCenterRegion(tokenCellArea.getBounds(), visibleArea)) {
+      return false;
+    }
+
+    // Jamz: Always Visible tokens will get rendered fully to place on top of FoW
+    // if we can see a portion of the stamp/token, defaults to 2/9ths, don't clip at all
+    if (position.token().isAlwaysVisible()
+        && zone.getGrid()
+            .checkRegion(
+                tokenCellArea.getBounds(),
+                visibleArea,
+                position.token().getAlwaysVisibleTolerance())) {
+      return false;
+    }
+
+    // clipping needed
+    return true;
   }
 
   /** Updates {@link #isUsingGdxRenderer}. */
