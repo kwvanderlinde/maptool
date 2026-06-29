@@ -408,6 +408,8 @@ public class ZoneViewModel {
     //  more efficient as we could set once, do operations, then continue.
 
     // Note: original used layer.supportsVision() instead of isTokenLayer(), but that was mistaken.
+    // Tokens can be clipped to the visible area. But stamps will never be clipped since they count
+    // as "part of the map". FoW might cover them afterward, but here we won't clip them.
     var considerClipping =
         !playerView.isGMView() && zoneView.isUsingVision() && layer.isTokenLayer();
     for (var token : tokens) {
