@@ -37,7 +37,7 @@ import net.rptools.maptool.util.MessageUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class ToolbarPanel extends JToolBar {
+public final class ToolbarPanel extends JToolBar {
 
   private static final Logger log = LogManager.getLogger(ToolbarPanel.class);
 

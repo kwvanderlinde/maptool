@@ -32,7 +32,7 @@ import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
 
-public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
+public class TopologyTool<StateT> extends AbstractDrawingLikeTool {
   private final boolean isFilled;
   private final Strategy<StateT> strategy;
   private final TopologyModeSelectionPanel topologyModeSelectionPanel;

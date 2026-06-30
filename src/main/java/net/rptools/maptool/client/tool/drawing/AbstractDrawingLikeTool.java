@@ -47,11 +47,11 @@ public abstract class AbstractDrawingLikeTool extends DefaultTool implements Zon
     return tooltipKey;
   }
 
-  protected void setIsEraser(boolean eraser) {
+  protected final void setIsEraser(boolean eraser) {
     isEraser = eraser;
   }
 
-  protected boolean isEraser() {
+  protected final boolean isEraser() {
     return isEraser;
   }
 

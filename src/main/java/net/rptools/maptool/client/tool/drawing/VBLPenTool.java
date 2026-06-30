@@ -24,7 +24,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
-import java.awt.geom.Path2D;
+import java.awt.geom.Line2D;
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -51,6 +51,7 @@ import net.rptools.maptool.model.ZonePoint;
  * TopologyModeSelectionPanel} for layer selection.
  *
  * <p><b>Interactions:</b>
+ *
  * <ul>
  *   <li>LClick+Drag: Incremental draw/erase.
  *   <li>Shift: Toggle Eraser mode (real-time indicator update).
@@ -63,7 +64,6 @@ public final class VBLPenTool extends AbstractDrawingLikeTool {
   private static final RadiusPanel RADIUS_PANEL = new RadiusPanel();
 
   private ZonePoint lastPoint;
-  private boolean shiftDown;
 
   public VBLPenTool(TopologyModeSelectionPanel modePanel) {
     super("tool.vblpen.instructions", "tool.vblpen.tooltip");
@@ -93,14 +93,9 @@ public final class VBLPenTool extends AbstractDrawingLikeTool {
   @Override
   protected void resetTool() {
     lastPoint = null;
-    shiftDown = false;
+    setIsEraser(false);
     renderer.repaint();
     super.resetTool();
-  }
-
-  @Override
-  protected boolean isEraser() {
-    return shiftDown;
   }
 
   @Override
@@ -111,7 +106,7 @@ public final class VBLPenTool extends AbstractDrawingLikeTool {
   @Override
   public void keyPressed(KeyEvent e) {
     if (e.getKeyCode() == KeyEvent.VK_SHIFT) {
-      shiftDown = true;
+      setIsEraser(true);
       renderer.repaint();
     }
     super.keyPressed(e);
@@ -120,7 +115,7 @@ public final class VBLPenTool extends AbstractDrawingLikeTool {
   @Override
   public void keyReleased(KeyEvent e) {
     if (e.getKeyCode() == KeyEvent.VK_SHIFT) {
-      shiftDown = false;
+      setIsEraser(false);
       renderer.repaint();
     }
     super.keyReleased(e);
@@ -166,7 +161,7 @@ public final class VBLPenTool extends AbstractDrawingLikeTool {
   @Override
   public void mousePressed(MouseEvent e) {
     if (SwingUtilities.isLeftMouseButton(e)) {
-      shiftDown = e.isShiftDown();
+      setIsEraser(isEraser(e));
       lastPoint = getPoint(e);
       addPointToTopology(lastPoint);
       renderer.repaint();
@@ -178,7 +173,7 @@ public final class VBLPenTool extends AbstractDrawingLikeTool {
   public void mouseDragged(MouseEvent e) {
     if (lastPoint != null && SwingUtilities.isLeftMouseButton(e)) {
       cancelMapDrag();
-      shiftDown = e.isShiftDown();
+      setIsEraser(isEraser(e));
       ZonePoint point = getPoint(e);
       if (!point.equals(lastPoint)) {
         addPointToTopology(point);
@@ -193,7 +188,7 @@ public final class VBLPenTool extends AbstractDrawingLikeTool {
   @Override
   public void mouseReleased(MouseEvent e) {
     if (lastPoint != null && SwingUtilities.isLeftMouseButton(e)) {
-      shiftDown = e.isShiftDown();
+      setIsEraser(isEraser(e));
       lastPoint = null;
       renderer.repaint();
     }
@@ -203,7 +198,7 @@ public final class VBLPenTool extends AbstractDrawingLikeTool {
   @Override
   public void mouseMoved(MouseEvent e) {
     super.mouseMoved(e);
-    shiftDown = e.isShiftDown();
+    setIsEraser(isEraser(e));
     renderer.repaint(); // Repaint to update the pen preview.
   }
 
@@ -226,22 +221,15 @@ public final class VBLPenTool extends AbstractDrawingLikeTool {
 
   private void addPointToTopology(ZonePoint point) {
     int thickness = AppStatePersisted.getVblPenRadius();
-    double radius = thickness / 2.0;
 
-    Path2D segmentPath = new Path2D.Double();
-    Ellipse2D circle =
-        new Ellipse2D.Double(point.x - radius, point.y - radius, thickness, thickness);
-    segmentPath.append(circle, false);
+    var previous = lastPoint == null ? point : lastPoint;
+    var line =
+        new Line2D.Double(
+            previous.x, previous.y,
+            point.x, point.y);
 
-    if (lastPoint != null) {
-      BasicStroke stroke =
-          new BasicStroke(thickness, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
-      Path2D line = new Path2D.Double();
-      line.moveTo(lastPoint.x, lastPoint.y);
-      line.lineTo(point.x, point.y);
-      segmentPath.append(stroke.createStrokedShape(line), false);
-    }
-    submit(segmentPath);
+    BasicStroke stroke = new BasicStroke(thickness, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
+    submit(stroke.createStrokedShape(line));
   }
 
   private static class RadiusPanel extends JPanel {
