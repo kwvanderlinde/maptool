@@ -32,6 +32,7 @@ import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
 import javax.swing.border.BevelBorder;
+import net.rptools.lib.GeometryUtil;
 import net.rptools.maptool.client.AppStatePersisted;
 import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
@@ -241,7 +242,10 @@ public final class VBLPenTool extends AbstractDrawingLikeTool {
             point.x, point.y);
 
     BasicStroke stroke = new BasicStroke(thickness, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
-    currentArea.add(new Area(stroke.createStrokedShape(line)));
+    var shape = stroke.createStrokedShape(line);
+    var flattenedShape = GeometryUtil.pathIteratorToPath(shape.getPathIterator(null, 1.));
+
+    currentArea.add(new Area(flattenedShape));
 
     lastPoint = point;
   }
