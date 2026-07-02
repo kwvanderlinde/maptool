@@ -19,8 +19,9 @@ import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.macro.Macro;
 import net.rptools.maptool.client.macro.MacroContext;
 import net.rptools.maptool.client.macro.MacroDefinition;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
+import net.rptools.maptool.client.ui.zone.ZoneViewModel;
 import net.rptools.maptool.language.I18N;
+import net.rptools.maptool.model.drawing.DrawableNoise;
 
 @MacroDefinition(
     name = "texturenoise",
@@ -34,25 +35,28 @@ public class TextureNoise implements Macro {
 
   @Override
   public void execute(MacroContext context, String macro, MapToolMacroContext executionContext) {
-    ZoneRenderer zr = MapTool.getFrame().getCurrentZoneRenderer();
-    if (macro.length() == 0) {
-      if (zr.isBgTextureNoiseFilterOn()) {
+    ZoneViewModel viewModel = MapTool.getFrame().getCurrentZoneRenderer().getViewModel();
+
+    if (macro.isEmpty()) {
+      var noise = viewModel.getNoise();
+      if (noise != null) {
         MapTool.addLocalMessage(
-            I18N.getText("texturenoise.currentValsOn", zr.getNoiseAlpha(), zr.getNoiseSeed()));
+            I18N.getText(
+                "texturenoise.currentValsOn", noise.getNoiseAlpha(), noise.getNoiseSeed()));
       } else {
         I18N.getText("texturenoise.currentValsOff");
       }
       MapTool.addLocalMessage(I18N.getText("texturenoise.usage"));
     } else {
-      String args[] = macro.split("\\s+");
+      String[] args = macro.split("\\s+");
 
       if ("off".equalsIgnoreCase(args[0])) {
-        zr.setBgTextureNoiseFilterOn(false);
+        viewModel.setNoise(null);
         return;
       }
 
       if ("on".equalsIgnoreCase(args[0])) {
-        zr.setBgTextureNoiseFilterOn(true);
+        viewModel.setNoise(new DrawableNoise());
         return;
       }
 
@@ -65,12 +69,15 @@ public class TextureNoise implements Macro {
       }
 
       // Changing noise values so make sure it is on.
-      if (!zr.isBgTextureNoiseFilterOn()) {
-        zr.setBgTextureNoiseFilterOn(true);
+      var noise = viewModel.getNoise();
+      if (noise == null) {
+        noise = new DrawableNoise();
+        viewModel.setNoise(noise);
       }
+
       long seed;
       if (args.length == 1) {
-        seed = zr.getNoiseSeed();
+        seed = noise.getNoiseSeed();
       } else {
         try {
           seed = Long.parseLong(args[1]);
@@ -80,7 +87,7 @@ public class TextureNoise implements Macro {
         }
       }
 
-      zr.setNoiseValues(seed, alpha);
+      noise.setNoiseValues(seed, alpha);
     }
   }
 }

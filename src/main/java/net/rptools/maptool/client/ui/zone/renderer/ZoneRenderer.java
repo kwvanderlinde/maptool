@@ -28,6 +28,7 @@ import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
 import java.awt.geom.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
@@ -42,6 +43,7 @@ import net.rptools.lib.CollectionUtil;
 import net.rptools.lib.MD5Key;
 import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.*;
+import net.rptools.maptool.client.entities.BoardComponent;
 import net.rptools.maptool.client.entities.SpriteComponent;
 import net.rptools.maptool.client.events.RepaintZoneRequested;
 import net.rptools.maptool.client.functions.TokenMoveFunctions;
@@ -85,12 +87,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
   private final ZoneViewModel viewModel;
 
-  /** Noise for mask on repeating tiles. */
-  private DrawableNoise noise = null;
-
-  /** Is the noise filter on for disrupting pattens in background tiled textures. */
-  private boolean bgTextureNoiseFilterOn = false;
-
   private static LightSourceIconOverlay lightSourceIconOverlay = new LightSourceIconOverlay();
 
   /** The zone the ZoneRenderer was built from. */
@@ -116,10 +112,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   private @Nonnull Zone.Layer activeLayer = Layer.getDefaultPlayerLayer();
 
   private BufferedImage miniImage;
-  private BufferedImage backBuffer;
-  private boolean drawBackground = true;
-  private boolean boardChanged = true;
-  private Scale lastZoneScale;
   private Area visibleScreenArea;
   private final List<ItemRenderer> itemRenderList = new LinkedList<>();
   private PlayerView lastView;
@@ -735,16 +727,59 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
   public void restoreLayers() {
     viewModel.restoreLayers();
-    boardChanged = true;
   }
 
   public void disableBoard() {
     viewModel.disableBoard();
-    boardChanged = true;
   }
 
   public void disableLayer(Layer layer) {
     viewModel.disableLayer(layer);
+  }
+
+  private Paint resolveAwtPaint(
+      net.rptools.maptool.client.entities.Paint paint,
+      double offsetX,
+      double offsetY,
+      double scale,
+      ImageObserver... observers) {
+    var timer = CodeTimer.get();
+    timer.start("resolvePaint");
+    try {
+      return switch (paint) {
+        case net.rptools.maptool.client.entities.Paint.Color color -> {
+          yield new Color(color.argb8888(), true);
+        }
+        case net.rptools.maptool.client.entities.Paint.Texture texture -> {
+          BufferedImage image = ImageManager.getImage(texture.assetId(), observers);
+          if (image == ImageManager.TRANSFERING_IMAGE) {
+            log.warn("Paint asset://{} not resolved", texture.assetId());
+          }
+          yield new TexturePaint(
+              image,
+              new Rectangle2D.Double(
+                  offsetX,
+                  offsetY,
+                  image.getWidth() * scale * texture.imageScale(),
+                  image.getHeight() * scale * texture.imageScale()));
+        }
+      };
+    } finally {
+      timer.stop("resolvePaint");
+    }
+  }
+
+  private Paint resolveAwtPaint(
+      net.rptools.maptool.client.entities.Paint paint,
+      Scale zoneScale,
+      ImageObserver... observers) {
+    return resolveAwtPaint(
+        paint, zoneScale.getOffsetX(), zoneScale.getOffsetY(), zoneScale.getScale(), observers);
+  }
+
+  private java.awt.Paint resolveAwtPaint(
+      net.rptools.maptool.client.entities.Paint paint, ImageObserver... observers) {
+    return resolveAwtPaint(paint, 0, 0, 1, observers);
   }
 
   /**
@@ -773,7 +808,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     g2d = (Graphics2D) g2d.create();
 
-    Rectangle viewRect = new Rectangle(getSize().width, getSize().height);
+    final Dimension size = getSize();
+    Rectangle viewRect = new Rectangle(size.width, size.height);
 
     g2d.setFont(AppStyle.labelFont);
     SwingUtil.useAntiAliasing(g2d);
@@ -828,11 +864,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     timer.stop("calcs-1");
 
     // Rendering pipeline
-    if (viewModel.isBoardEnabled()) {
-      timer.start("board");
-      renderBoard(g2d, view);
-      timer.stop("board");
-    }
     if (viewModel.shouldRenderLayer(Zone.Layer.BACKGROUND)) {
       List<DrawnElement> drawables = zone.getDrawnElements(Layer.BACKGROUND);
 
@@ -848,12 +879,30 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       }
     }
     for (var entity : viewModel.entitiesInZOrder.get(ZoneViewModel.RenderLayer.AboveBoard)) {
+      var board = entity.getComponent(BoardComponent.class);
+      if (board != null) {
+        var g3 = (Graphics2D) g2d.create();
+        try {
+          g3.setPaint(resolveAwtPaint(board.paint(), viewModel.getZoneScale(), this));
+          g3.fillRect(0, 0, size.width, size.height);
+
+          if (board.noise() != null) {
+            g3.setComposite(AlphaComposite.SrcOver.derive(board.noise().getNoiseAlpha()));
+            g3.setPaint(board.noise().getPaint(viewModel.getZoneScale()));
+            g3.fillRect(0, 0, size.width, size.height);
+          }
+
+        } finally {
+          g3.dispose();
+        }
+      }
+
       renderHelper.render(
           g2d,
           worldG -> {
             var sprite = entity.getComponent(SpriteComponent.class);
             if (sprite != null) {
-              var g3 = worldG;
+              var g3 = (Graphics2D) worldG.create();
               try {
                 g3.setComposite(AlphaComposite.SrcOver.derive((float) sprite.opacity()));
 
@@ -1076,64 +1125,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             zoneScale.getOffsetX(), zoneScale.getOffsetY(), getSize().width, getSize().height);
 
     renderer.renderDrawables(g, drawnElements, viewport, viewModel.getZoneScale().getScale());
-  }
-
-  protected void renderBoard(Graphics2D g, PlayerView view) {
-    Dimension size = getSize();
-    if (backBuffer == null
-        || backBuffer.getWidth() != size.width
-        || backBuffer.getHeight() != size.height) {
-      backBuffer = new BufferedImage(size.width, size.height, Transparency.OPAQUE);
-      drawBackground = true;
-    }
-    Scale scale = viewModel.getZoneScale();
-    if (!Objects.equals(lastZoneScale, scale)) {
-      drawBackground = true;
-    }
-    if (boardChanged) {
-      drawBackground = true;
-      boardChanged = false;
-    }
-    if (drawBackground) {
-      Graphics2D bbg = backBuffer.createGraphics();
-      bbg.setComposite(AlphaComposite.SrcOver);
-      AppPreferences.renderQuality.get().setRenderingHints(bbg);
-
-      // Background texture
-      Paint paint = zone.getBackgroundPaint().getPaint(scale, this);
-      bbg.setPaint(paint);
-      bbg.fillRect(0, 0, size.width, size.height);
-
-      // Only apply the noise if the feature is on and the background a textured paint
-      if (bgTextureNoiseFilterOn && paint instanceof TexturePaint) {
-        var noiseG = (Graphics2D) bbg.create();
-        try {
-          noiseG.setComposite(AlphaComposite.SrcOver.derive(noise.getNoiseAlpha()));
-          noiseG.setPaint(noise.getPaint(scale));
-          noiseG.fillRect(0, 0, size.width, size.height);
-        } finally {
-          noiseG.dispose();
-        }
-      }
-
-      // Map
-      if (zone.getMapAssetId() != null) {
-        BufferedImage mapImage = ImageManager.getImage(zone.getMapAssetId(), this);
-        double scaleFactor = viewModel.getZoneScale().getScale();
-        bbg.drawImage(
-            mapImage,
-            scale.getOffsetX() + (int) (zone.getBoardX() * scaleFactor),
-            scale.getOffsetY() + (int) (zone.getBoardY() * scaleFactor),
-            (int) (mapImage.getWidth() * scaleFactor * zone.getImageScaleX()),
-            (int) (mapImage.getHeight() * scaleFactor * zone.getImageScaleY()),
-            null);
-      }
-      bbg.dispose();
-      drawBackground = false;
-    }
-    lastZoneScale = scale;
-
-    g.drawImage(backBuffer, 0, 0, this);
   }
 
   public Set<SelectionSet> getOwnedMovementSet(PlayerView view) {
@@ -2606,7 +2597,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       return;
     }
 
-    this.boardChanged = true;
     repaintDebouncer.dispatch();
   }
 
@@ -2699,61 +2689,5 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     } catch (Exception ignored) {
     }
     return c;
-  }
-
-  /**
-   * Returns the alpha level used to apply the noise to background repeating textures.
-   *
-   * @return the alpha level used to apply the noise.
-   */
-  public float getNoiseAlpha() {
-    return noise.getNoiseAlpha();
-  }
-
-  /**
-   * Returns the seed value used to generate the noise that is applied to the background repeating
-   * images.
-   *
-   * @return the seed value used to generate the noise.
-   */
-  public long getNoiseSeed() {
-    return noise.getNoiseSeed();
-  }
-
-  /**
-   * Sets the seed value and alpha level used for the noise applied to repeating background
-   * textures.
-   *
-   * @param seed The seed value used to generate the noise to be applied.
-   * @param alpha The alpha level to apply the noise.
-   */
-  public void setNoiseValues(long seed, float alpha) {
-    noise.setNoiseValues(seed, alpha);
-    drawBackground = true;
-  }
-
-  /**
-   * Returns if the setting for applying background noise to textures is on or off.
-   *
-   * @return <code>true</code> if noise will be applied to repeating background textures, otherwise
-   *     <code>false</code>
-   */
-  public boolean isBgTextureNoiseFilterOn() {
-    return bgTextureNoiseFilterOn;
-  }
-
-  /**
-   * Turn on / off application of noise to repeated background textures.
-   *
-   * @param on <code>true</code> to turn on, <code>false</code> to turn off.
-   */
-  public void setBgTextureNoiseFilterOn(boolean on) {
-    bgTextureNoiseFilterOn = on;
-    drawBackground = true;
-    if (on) {
-      noise = new DrawableNoise();
-    } else {
-      noise = null;
-    }
   }
 }

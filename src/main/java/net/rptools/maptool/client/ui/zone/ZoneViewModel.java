@@ -43,7 +43,9 @@ import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.entities.BoardComponent;
 import net.rptools.maptool.client.entities.Entity;
+import net.rptools.maptool.client.entities.Paint;
 import net.rptools.maptool.client.entities.SpriteComponent;
 import net.rptools.maptool.client.events.RepaintZoneRequested;
 import net.rptools.maptool.client.events.ZoneLoaded;
@@ -56,6 +58,7 @@ import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.LightSource;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.drawing.DrawableNoise;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.util.GraphicsUtil;
 import net.rptools.maptool.util.ImageManager;
@@ -115,6 +118,7 @@ public class ZoneViewModel {
   private final ZoneView zoneView;
   private final SelectionModel selectionModel;
   private final List<GUID> highlightCommonMacros = new ArrayList<>();
+  private @Nullable DrawableNoise noise = null;
 
   // endregion
 
@@ -218,6 +222,14 @@ public class ZoneViewModel {
       repaintNeeded();
       // TODO Should we be calling renderer.maybeForcePlayersView() here?
     }
+  }
+
+  public @Nullable DrawableNoise getNoise() {
+    return noise;
+  }
+
+  public void setNoise(@Nullable DrawableNoise noise) {
+    this.noise = noise;
   }
 
   public Rectangle2D getViewport() {
@@ -347,7 +359,29 @@ public class ZoneViewModel {
 
     var list = entitiesInZOrder.get(RenderLayer.AboveBoard);
     if (isBoardEnabled()) {
-      // TODO Represent the board as an entity.
+      // TODO Give the board bounds that cover the viewport.
+      var boardEntity = new Entity(new Point2D.Double(0, 0));
+      boardEntity.addComponent(new BoardComponent(Paint.of(zone.getBackgroundPaint()), noise));
+      list.add(boardEntity);
+
+      if (zone.getMapAssetId() != null) {
+        // Image is needed to calculate bounds, otherwise we could skip this lookup here.
+        var mapImage = ImageManager.getImage(zone.getMapAssetId(), imageObserver);
+
+        var mapEntity =
+            new Entity(
+                new Point2D.Double(zone.getBoardX(), zone.getBoardY()),
+                new Rectangle2D.Double(
+                    zone.getBoardX(),
+                    zone.getBoardY(),
+                    mapImage.getWidth() * zone.getImageScaleX(),
+                    mapImage.getHeight() * zone.getImageScaleY()));
+        var transform = new AffineTransform();
+        transform.translate(zone.getBoardX(), zone.getBoardY());
+        transform.scale(zone.getImageScaleX(), zone.getImageScaleY());
+        mapEntity.addComponent(new SpriteComponent(zone.getMapAssetId(), transform, 1.));
+        list.add(mapEntity);
+      }
     }
     if (shouldRenderLayer(Zone.Layer.BACKGROUND)) {
       // TODO Background drawables as entities
