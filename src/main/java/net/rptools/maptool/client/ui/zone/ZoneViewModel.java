@@ -357,10 +357,12 @@ public class ZoneViewModel {
     // TODO Reuse existing entity objects if possible.
     entitiesInZOrder.values().forEach(List::clear);
 
+    var viewport = getViewport();
     var list = entitiesInZOrder.get(RenderLayer.AboveBoard);
     if (isBoardEnabled()) {
       // TODO Give the board bounds that cover the viewport.
-      var boardEntity = new Entity(new Point2D.Double(0, 0));
+      var boardEntity =
+          new Entity(new Point2D.Double(viewport.getCenterX(), viewport.getCenterY()), viewport);
       boardEntity.addComponent(new BoardComponent(Paint.of(zone.getBackgroundPaint()), noise));
       list.add(boardEntity);
 

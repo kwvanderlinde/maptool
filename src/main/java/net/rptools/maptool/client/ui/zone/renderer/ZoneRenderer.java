@@ -908,20 +908,17 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
                 var image = ImageManager.getImage(sprite.imageAsset(), this);
                 g3.drawImage(image, sprite.transform(), this);
-
-                g3.setComposite(AlphaComposite.SrcOver);
-                g3.setPaint(Color.blue);
-                g3.fill(
-                    new Ellipse2D.Double(
-                        entity.getPosition().getX() - 3.,
-                        entity.getPosition().getY() - 3.,
-                        6.,
-                        6.));
-                g3.draw(entity.getBounds());
               } finally {
                 g3.dispose();
               }
             }
+
+            worldG.setComposite(AlphaComposite.SrcOver);
+            worldG.setPaint(Color.blue);
+            worldG.fill(
+                new Ellipse2D.Double(
+                    entity.getPosition().getX() - 3., entity.getPosition().getY() - 3., 6., 6.));
+            worldG.draw(entity.getBounds());
           });
     }
 
