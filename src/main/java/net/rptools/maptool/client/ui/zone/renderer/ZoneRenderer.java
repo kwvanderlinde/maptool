@@ -864,20 +864,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     timer.stop("calcs-1");
 
     // Rendering pipeline
-    if (viewModel.shouldRenderLayer(Zone.Layer.BACKGROUND)) {
-      List<DrawnElement> drawables = zone.getDrawnElements(Layer.BACKGROUND);
-
-      timer.start("drawableBackground");
-      renderDrawableOverlay(g2d, drawableRenderers.get(Layer.BACKGROUND), view, drawables);
-      timer.stop("drawableBackground");
-
-      List<Token> background = List.of(); // zone.getTokensOnLayer(Layer.BACKGROUND, false);
-      if (!background.isEmpty()) {
-        timer.start("tokensBackground");
-        renderTokens(g2d, background, view, false);
-        timer.stop("tokensBackground");
-      }
-    }
     for (var entity : viewModel.entitiesInZOrder.get(ZoneViewModel.RenderLayer.AboveBoard)) {
       var board = entity.getComponent(BoardComponent.class);
       if (board != null) {
@@ -920,6 +906,21 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
                     entity.getPosition().getX() - 3., entity.getPosition().getY() - 3., 6., 6.));
             worldG.draw(entity.getBounds());
           });
+    }
+
+    if (viewModel.shouldRenderLayer(Zone.Layer.BACKGROUND)) {
+      List<DrawnElement> drawables = zone.getDrawnElements(Layer.BACKGROUND);
+
+      timer.start("drawableBackground");
+      renderDrawableOverlay(g2d, drawableRenderers.get(Layer.BACKGROUND), view, drawables);
+      timer.stop("drawableBackground");
+
+      List<Token> background = List.of(); // zone.getTokensOnLayer(Layer.BACKGROUND, false);
+      if (!background.isEmpty()) {
+        timer.start("tokensBackground");
+        renderTokens(g2d, background, view, false);
+        timer.stop("tokensBackground");
+      }
     }
 
     if (viewModel.shouldRenderLayer(Zone.Layer.OBJECT)) {
