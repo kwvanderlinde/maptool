@@ -150,6 +150,7 @@ public class ZoneViewModel {
 
   // endregion
 
+  // TODO Layers should be unnecessary. Just represent the grid as a component on an entity, etc.
   public final EnumMap<RenderLayer, List<Entity>> entitiesInZOrder =
       CollectionUtil.newFilledEnumMap(RenderLayer.class, l -> new ArrayList<>());
 
@@ -399,7 +400,8 @@ public class ZoneViewModel {
 
     list = entitiesInZOrder.get(RenderLayer.AboveGrid);
     if (shouldRenderLayer(Zone.Layer.OBJECT)) {
-      // TODO Object tokens as entities
+      compositeTokensAsEntities(
+          Zone.Layer.OBJECT, zone.getTokensOnLayer(Zone.Layer.OBJECT, false), list);
     }
 
     // TODO Represent lights, lumens, auras, and darkness as entities.
@@ -446,7 +448,7 @@ public class ZoneViewModel {
     // Note: original used layer.supportsVision() instead of isTokenLayer(), but that was mistaken.
     // Tokens can be clipped to the visible area. But stamps will never be clipped since they count
     // as "part of the map". FoW might cover them afterward, but here we won't clip them.
-    var considerClipping =
+    var softFowClippingEnabled =
         !playerView.isGMView() && zoneView.isUsingVision() && layer.isTokenLayer();
     for (var token : tokens) {
       TokenPosition position;
@@ -482,8 +484,9 @@ public class ZoneViewModel {
                   position.footprintBounds().getCenterX(), position.footprintBounds().getCenterY()),
               position.footprintBounds().getBounds2D());
       output.add(entity);
-      if (considerClipping && isTokenInNeedOfClipping(position, playerView)) {
+      if (softFowClippingEnabled && isTokenInNeedOfClipping(position, playerView)) {
         // TODO How to represent the clip?
+        // TODO Clip to visible area and cell bounds (though I don't like the latter).
       } else {
         // TODO How to represent the not-clip?
       }

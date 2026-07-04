@@ -44,6 +44,7 @@ import net.rptools.lib.MD5Key;
 import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.*;
 import net.rptools.maptool.client.entities.BoardComponent;
+import net.rptools.maptool.client.entities.Entity;
 import net.rptools.maptool.client.entities.SpriteComponent;
 import net.rptools.maptool.client.events.RepaintZoneRequested;
 import net.rptools.maptool.client.functions.TokenMoveFunctions;
@@ -865,47 +866,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     // Rendering pipeline
     for (var entity : viewModel.entitiesInZOrder.get(ZoneViewModel.RenderLayer.AboveBoard)) {
-      var board = entity.getComponent(BoardComponent.class);
-      if (board != null) {
-        var g3 = (Graphics2D) g2d.create();
-        try {
-          g3.setPaint(resolveAwtPaint(board.paint(), viewModel.getZoneScale(), this));
-          g3.fillRect(0, 0, size.width, size.height);
-
-          if (board.noise() != null) {
-            g3.setComposite(AlphaComposite.SrcOver.derive(board.noise().getNoiseAlpha()));
-            g3.setPaint(board.noise().getPaint(viewModel.getZoneScale()));
-            g3.fillRect(0, 0, size.width, size.height);
-          }
-
-        } finally {
-          g3.dispose();
-        }
-      }
-
-      renderHelper.render(
-          g2d,
-          worldG -> {
-            var sprite = entity.getComponent(SpriteComponent.class);
-            if (sprite != null) {
-              var g3 = (Graphics2D) worldG.create();
-              try {
-                g3.setComposite(AlphaComposite.SrcOver.derive((float) sprite.opacity()));
-
-                var image = ImageManager.getImage(sprite.imageAsset(), this);
-                g3.drawImage(image, sprite.transform(), this);
-              } finally {
-                g3.dispose();
-              }
-            }
-
-            worldG.setComposite(AlphaComposite.SrcOver);
-            worldG.setPaint(Color.blue);
-            worldG.fill(
-                new Ellipse2D.Double(
-                    entity.getPosition().getX() - 3., entity.getPosition().getY() - 3., 6., 6.));
-            worldG.draw(entity.getBounds());
-          });
+      renderEntity(g2d, entity);
     }
 
     if (viewModel.shouldRenderLayer(Zone.Layer.BACKGROUND)) {
@@ -915,12 +876,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       renderDrawableOverlay(g2d, drawableRenderers.get(Layer.BACKGROUND), view, drawables);
       timer.stop("drawableBackground");
 
-      List<Token> background = List.of(); // zone.getTokensOnLayer(Layer.BACKGROUND, false);
-      if (!background.isEmpty()) {
-        timer.start("tokensBackground");
-        renderTokens(g2d, background, view, false);
-        timer.stop("tokensBackground");
-      }
+      // Background stamps used to be drawn here.
     }
 
     if (viewModel.shouldRenderLayer(Zone.Layer.OBJECT)) {
@@ -936,15 +892,12 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     gridRenderer.renderGrid(g2d, view);
     timer.stop("grid");
 
-    if (viewModel.shouldRenderLayer(Zone.Layer.OBJECT)) {
-      // ... Images on the object layer are always ABOVE the grid.
-      List<Token> stamps = zone.getTokensOnLayer(Layer.OBJECT, false);
-      if (!stamps.isEmpty()) {
-        timer.start("tokensStamp");
-        renderTokens(g2d, stamps, view, false);
-        timer.stop("tokensStamp");
-      }
+    // Object stamps used to be drawn here.
+
+    for (var entity : viewModel.entitiesInZOrder.get(ZoneViewModel.RenderLayer.AboveGrid)) {
+      renderEntity(g2d, entity);
     }
+
     if (viewModel.shouldRenderLayer(Zone.Layer.TOKEN)) {
       this.lightsRenderer.renderLights(g2d, view);
       this.lumensRenderer.render(g2d, view);
@@ -1071,6 +1024,53 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     timer.stop("lightSourceIconOverlay.paintOverlay");
 
     debugRenderer.renderShapes(g2d, Arrays.asList(shape, shape2, shape3, shape4));
+  }
+
+  // TODO May want to render individually known components so an entity can span multiple z-orders.
+  private void renderEntity(Graphics2D g2d, Entity entity) {
+    final Dimension size = getSize();
+
+    var board = entity.getComponent(BoardComponent.class);
+    if (board != null) {
+      var g3 = (Graphics2D) g2d.create();
+      try {
+        g3.setPaint(resolveAwtPaint(board.paint(), viewModel.getZoneScale(), this));
+        g3.fillRect(0, 0, size.width, size.height);
+
+        if (board.noise() != null) {
+          g3.setComposite(AlphaComposite.SrcOver.derive(board.noise().getNoiseAlpha()));
+          g3.setPaint(board.noise().getPaint(viewModel.getZoneScale()));
+          g3.fillRect(0, 0, size.width, size.height);
+        }
+
+      } finally {
+        g3.dispose();
+      }
+    }
+
+    renderHelper.render(
+        g2d,
+        worldG -> {
+          var sprite = entity.getComponent(SpriteComponent.class);
+          if (sprite != null) {
+            var g3 = (Graphics2D) worldG.create();
+            try {
+              g3.setComposite(AlphaComposite.SrcOver.derive((float) sprite.opacity()));
+
+              var image = ImageManager.getImage(sprite.imageAsset(), this);
+              g3.drawImage(image, sprite.transform(), this);
+            } finally {
+              g3.dispose();
+            }
+          }
+
+          worldG.setComposite(AlphaComposite.SrcOver);
+          worldG.setPaint(Color.blue);
+          worldG.fill(
+              new Ellipse2D.Double(
+                  entity.getPosition().getX() - 3., entity.getPosition().getY() - 3., 6., 6.));
+          worldG.draw(entity.getBounds());
+        });
   }
 
   private void delayRendering(ItemRenderer renderer) {
