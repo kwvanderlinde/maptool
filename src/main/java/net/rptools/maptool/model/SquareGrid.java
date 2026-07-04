@@ -413,7 +413,7 @@ public class SquareGrid extends Grid {
               (int) (col + offX), bounds.y, (int) (col + offX), bounds.y + bounds.height),
           false);
     }
-    GridRenderer.drawGridShape(g, path);
+    GridRenderer.drawGridShape(zoneScale, getSize(), g, path);
   }
 
   public ZonePoint getCenterPoint(CellPoint cellPoint) {

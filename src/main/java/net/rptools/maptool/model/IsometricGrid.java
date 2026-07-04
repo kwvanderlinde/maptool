@@ -416,7 +416,7 @@ public class IsometricGrid extends Grid {
         path.append(drawHatch(zoneScale, (int) (col + offX), (int) (row + offY)), false);
       }
     }
-    GridRenderer.drawGridShape(g, path);
+    GridRenderer.drawGridShape(zoneScale, getSize(), g, path);
   }
 
   private Shape drawHatch(Scale zoneScale, int x, int y) {

@@ -19,18 +19,17 @@ import com.google.common.eventbus.Subscribe;
 import java.awt.*;
 import net.rptools.lib.image.ImageUtil;
 import net.rptools.maptool.client.AppState;
+import net.rptools.maptool.client.ui.Scale;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.zones.GridChanged;
 
 public class GridRenderer {
-  private final ZoneRenderer renderer;
-  private Zone zone;
-  private static float gridLineWeight;
-  private static float scale;
-  private static float baseWidth = 2f;
   private static Color[] gridColours;
+
+  private final ZoneRenderer renderer;
+  private final Zone zone;
   private int baseColourInt = -1;
 
   GridRenderer(ZoneRenderer renderer) {
@@ -43,8 +42,7 @@ public class GridRenderer {
   @SuppressWarnings("unused")
   @Subscribe
   private void onGridChanged(GridChanged event) {
-    if (event.zone() != null) {
-      this.zone = event.zone();
+    if (event.zone() == zone) {
       setGridColours();
     }
   }
@@ -66,7 +64,11 @@ public class GridRenderer {
         };
   }
 
-  public static void drawGridShape(Graphics2D g, Shape shape) {
+  public static void drawGridShape(Scale zoneScale, int gridSize, Graphics2D g, Shape shape) {
+    final var gridLineWeight = AppState.getGridLineWeight();
+    final var scale = (float) zoneScale.getScale();
+    final var baseWidth = gridSize / 50f;
+
     if (scale > 0.49f) {
       for (int i = 3; i > -1; i--) {
         g.setColor(gridColours[i]);
@@ -97,9 +99,7 @@ public class GridRenderer {
             < ZoneRendererConstants.MIN_GRID_SIZE) {
       return;
     }
-    gridLineWeight = AppState.getGridLineWeight();
-    scale = (float) renderer.getViewModel().getZoneScale().getScale();
-    baseWidth = zone.getGrid().getSize() / 50f;
+
     if (gridColours == null) {
       setGridColours();
     }

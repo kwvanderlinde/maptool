@@ -376,7 +376,7 @@ public abstract class HexGrid extends Grid {
       double incr = 2 * scaledEdgeLength + 2 * scaledEdgeProjection;
       for (double u = start; u < end; u += incr) {
         setGridDrawTranslation(g, u + offsetU, v);
-        GridRenderer.drawGridShape(g, scaledHex);
+        GridRenderer.drawGridShape(zoneScale, getSize(), g, scaledHex);
         setGridDrawTranslation(g, -(u + offsetU), -v);
       }
     }
