@@ -35,10 +35,10 @@ import org.apache.logging.log4j.Logger;
 
 public class GridRenderer {
   private static final Logger log = LogManager.getLogger(GridRenderer.class);
-  private static Color[] gridColours;
 
   private final ZoneRenderer renderer;
   private final Zone zone;
+  private Color[] gridColours;
   private int baseColourInt = -1;
 
   GridRenderer(ZoneRenderer renderer) {
@@ -73,7 +73,7 @@ public class GridRenderer {
         };
   }
 
-  private static void drawGridShape(Scale zoneScale, int gridSize, Graphics2D g, Shape shape) {
+  private void drawGridShape(Scale zoneScale, int gridSize, Graphics2D g, Shape shape) {
     final var gridLineWeight = AppState.getGridLineWeight();
     final var scale = (float) zoneScale.getScale();
     final var baseWidth = gridSize / 50f;
@@ -221,7 +221,7 @@ public class GridRenderer {
 
         g.translate(translateX, translateY);
 
-        GridRenderer.drawGridShape(zoneScale, grid.getSize(), g, scaledHex);
+        drawGridShape(zoneScale, grid.getSize(), g, scaledHex);
 
         // Undo the translation.
         g.translate(-translateX, -translateY);
