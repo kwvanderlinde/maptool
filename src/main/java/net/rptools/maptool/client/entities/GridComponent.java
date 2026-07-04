@@ -16,6 +16,7 @@ package net.rptools.maptool.client.entities;
 
 import net.rptools.maptool.model.Grid;
 
+// TODO Make GridRenderer render a GridComponent instead of a full Grid.
 public record GridComponent(
     Grid.GridType type, double primarySize, double secondarySize, double offsetX, double offsetY)
     implements Component {}
