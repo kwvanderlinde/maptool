@@ -15,7 +15,6 @@
 package net.rptools.maptool.client.ui.zone.renderer;
 
 import com.github.weisj.jsvg.util.ColorUtil;
-import com.google.common.eventbus.Subscribe;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
@@ -27,9 +26,7 @@ import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.ui.Scale;
 import net.rptools.maptool.client.ui.zone.PlayerView;
-import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.*;
-import net.rptools.maptool.model.zones.GridChanged;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -38,48 +35,31 @@ public class GridRenderer {
 
   private final ZoneRenderer renderer;
   private final Zone zone;
-  private Color[] gridColours;
-  private int baseColourInt = -1;
 
   GridRenderer(ZoneRenderer renderer) {
-    new MapToolEventBus().getMainEventBus().register(this);
     this.renderer = renderer;
     this.zone = renderer.getZone();
-    setGridColours();
   }
 
-  @SuppressWarnings("unused")
-  @Subscribe
-  private void onGridChanged(GridChanged event) {
-    if (event.zone() == zone) {
-      setGridColours();
-    }
+  private static Color[] getGridColours(int gridColourInt) {
+    Color gc = new Color(gridColourInt);
+    Color contrast = new Color(ImageUtil.negativeColourInt(gridColourInt));
+    return new Color[] {
+      gc,
+      ColorUtil.withAlpha(gc, 0.14f),
+      ColorUtil.withAlpha(contrast, 0.04f),
+      ColorUtil.withAlpha(contrast, 0.05f)
+    };
   }
 
-  private void setGridColours() {
-    int gridColourInt = zone.getGridColor();
-    if (this.baseColourInt == gridColourInt) {
-      return;
-    }
-    this.baseColourInt = gridColourInt;
-    Color gc = new Color(baseColourInt);
-    Color contrast = new Color(ImageUtil.negativeColourInt(baseColourInt));
-    gridColours =
-        new Color[] {
-          gc,
-          ColorUtil.withAlpha(gc, 0.14f),
-          ColorUtil.withAlpha(contrast, 0.04f),
-          ColorUtil.withAlpha(contrast, 0.05f)
-        };
-  }
-
-  private void drawGridShape(Scale zoneScale, int gridSize, Graphics2D g, Shape shape) {
+  private void drawGridShape(
+      Scale zoneScale, int gridSize, Color[] gridColours, Graphics2D g, Shape shape) {
     final var gridLineWeight = AppState.getGridLineWeight();
     final var scale = (float) zoneScale.getScale();
     final var baseWidth = gridSize / 50f;
 
-    if (scale > 0.49f) {
-      for (int i = 3; i > -1; i--) {
+    if (scale > 0.49f && gridColours.length > 1) {
+      for (int i = gridColours.length - 1; i > -1; i--) {
         g.setColor(gridColours[i]);
         g.setStroke(
             new BasicStroke(
@@ -114,15 +94,13 @@ public class GridRenderer {
       return;
     }
 
-    if (gridColours == null) {
-      setGridColours();
-    }
+    var gridColours = getGridColours(zone.getGridColor());
 
     var bounds = new Rectangle(0, 0, renderer.getWidth(), renderer.getHeight());
     switch (grid) {
-      case SquareGrid squareGrid -> draw(g, squareGrid, bounds);
-      case HexGrid hexGrid -> draw(g, hexGrid, bounds);
-      case IsometricGrid isometricGrid -> draw(g, isometricGrid, bounds);
+      case SquareGrid squareGrid -> draw(g, squareGrid, gridColours, bounds);
+      case HexGrid hexGrid -> draw(g, hexGrid, gridColours, bounds);
+      case IsometricGrid isometricGrid -> draw(g, isometricGrid, gridColours, bounds);
       case GridlessGrid gridlessGrid -> {
         /* Nothing to do */
       }
@@ -155,7 +133,7 @@ public class GridRenderer {
     }
   }
 
-  private void draw(Graphics2D g, SquareGrid grid, Rectangle bounds) {
+  private void draw(Graphics2D g, SquareGrid grid, Color[] gridColours, Rectangle bounds) {
     var size = grid.getSize();
     var zoneScale = renderer.getViewModel().getZoneScale();
     double scale = zoneScale.getScale();
@@ -181,10 +159,10 @@ public class GridRenderer {
               (int) (col + offX), bounds.y, (int) (col + offX), bounds.y + bounds.height),
           false);
     }
-    drawGridShape(zoneScale, size, g, path);
+    drawGridShape(zoneScale, size, gridColours, g, path);
   }
 
-  private void draw(Graphics2D g, HexGrid grid, Rectangle bounds) {
+  private void draw(Graphics2D g, HexGrid grid, Color[] gridColours, Rectangle bounds) {
     var isHorizontal = grid.getType() == Grid.GridType.HexHorizontal;
     var zoneScale = renderer.getViewModel().getZoneScale();
     var scale = zoneScale.getScale();
@@ -220,7 +198,7 @@ public class GridRenderer {
 
         g.translate(translateX, translateY);
 
-        drawGridShape(zoneScale, grid.getSize(), g, scaledHex);
+        drawGridShape(zoneScale, grid.getSize(), gridColours, g, scaledHex);
 
         // Undo the translation.
         g.translate(-translateX, -translateY);
@@ -248,7 +226,7 @@ public class GridRenderer {
     return hex;
   }
 
-  private void draw(Graphics2D g, IsometricGrid grid, Rectangle bounds) {
+  private void draw(Graphics2D g, IsometricGrid grid, Color[] gridColours, Rectangle bounds) {
     var size = grid.getSize();
     var zoneScale = renderer.getViewModel().getZoneScale();
     double scale = zoneScale.getScale();
@@ -278,7 +256,7 @@ public class GridRenderer {
         path.append(drawIsoHatch(zoneScale, size, (int) (col + offX), (int) (row + offY)), false);
       }
     }
-    drawGridShape(zoneScale, size, g, path);
+    drawGridShape(zoneScale, size, gridColours, g, path);
   }
 
   private Shape drawIsoHatch(Scale zoneScale, int gridSize, int x, int y) {
