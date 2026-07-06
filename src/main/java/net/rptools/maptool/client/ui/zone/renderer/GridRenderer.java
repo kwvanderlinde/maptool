@@ -85,10 +85,6 @@ public class GridRenderer {
   }
 
   public void renderGrid(Graphics2D g, GridComponent gridComponent) {
-    if (!AppState.isShowGrid()) {
-      return;
-    }
-
     var grid = zone.getGrid();
     var zoneScale = renderer.getViewModel().getZoneScale();
 

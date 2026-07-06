@@ -398,8 +398,7 @@ public class ZoneViewModel {
       // TODO Object drawables as entities
     }
 
-    {
-      // TODO Only if AppState.isShowGrid
+    if (AppState.isShowGrid()) {
       var grid = zone.getGrid();
       var gridEntity =
           new Entity(new Point2D.Double(viewport.getCenterX(), viewport.getCenterY()), viewport);
