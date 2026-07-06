@@ -110,8 +110,7 @@ public class GridRenderer {
     var grid = zone.getGrid();
     var zoneScale = renderer.getViewModel().getZoneScale();
 
-    if (!AppState.isShowGrid()
-        || grid.getSize() * zoneScale.getScale() < ZoneRendererConstants.MIN_GRID_SIZE) {
+    if (grid.getSize() * zoneScale.getScale() < ZoneRendererConstants.MIN_GRID_SIZE) {
       return;
     }
 
