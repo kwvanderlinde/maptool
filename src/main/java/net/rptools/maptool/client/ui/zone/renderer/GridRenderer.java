@@ -23,6 +23,7 @@ import javax.swing.SwingUtilities;
 import net.rptools.lib.image.ImageUtil;
 import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.ScreenPoint;
+import net.rptools.maptool.client.entities.GridComponent;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.ui.Scale;
 import net.rptools.maptool.client.ui.zone.PlayerView;
@@ -53,17 +54,17 @@ public class GridRenderer {
   }
 
   private void drawGridShape(
-      Scale zoneScale, int gridSize, Color[] gridColours, Graphics2D g, Shape shape) {
+      Scale zoneScale, double gridSize, Color[] gridColours, Graphics2D g, Shape shape) {
     final var gridLineWeight = AppState.getGridLineWeight();
     final var scale = (float) zoneScale.getScale();
-    final var baseWidth = gridSize / 50f;
+    final var baseWidth = gridSize / 50.;
 
     if (scale > 0.49f && gridColours.length > 1) {
       for (int i = gridColours.length - 1; i > -1; i--) {
         g.setColor(gridColours[i]);
         g.setStroke(
             new BasicStroke(
-                baseWidth * (i + 1) * 0.5f * gridLineWeight * scale,
+                (float) (baseWidth * (i + 1) * 0.5 * gridLineWeight * scale),
                 BasicStroke.CAP_ROUND,
                 BasicStroke.JOIN_MITER));
         g.draw(shape);
@@ -72,17 +73,18 @@ public class GridRenderer {
       g.setColor(gridColours[0]);
       g.setStroke(
           new BasicStroke(
-              Math.clamp(
-                  baseWidth * gridLineWeight * scale,
-                  baseWidth * gridLineWeight * 0.15f,
-                  baseWidth * gridLineWeight * 0.25f),
+              (float)
+                  Math.clamp(
+                      baseWidth * gridLineWeight * scale,
+                      baseWidth * gridLineWeight * 0.15,
+                      baseWidth * gridLineWeight * 0.25),
               BasicStroke.CAP_ROUND,
               BasicStroke.JOIN_MITER));
       g.draw(shape);
     }
   }
 
-  public void renderGrid(Graphics2D g, PlayerView view) {
+  public void renderGrid(Graphics2D g, GridComponent gridComponent) {
     if (!AppState.isShowGrid()) {
       return;
     }
@@ -97,16 +99,12 @@ public class GridRenderer {
     var gridColours = getGridColours(zone.getGridColor());
 
     var bounds = new Rectangle(0, 0, renderer.getWidth(), renderer.getHeight());
-    switch (grid) {
-      case SquareGrid squareGrid -> draw(g, squareGrid, gridColours, bounds);
-      case HexGrid hexGrid -> draw(g, hexGrid, gridColours, bounds);
-      case IsometricGrid isometricGrid -> draw(g, isometricGrid, gridColours, bounds);
-      case GridlessGrid gridlessGrid -> {
-        /* Nothing to do */
-      }
-      default -> {
-        log.error("Unknown grid type: {}", grid.getClass());
-      }
+    switch (gridComponent.type()) {
+      case Square -> drawSquare(g, gridComponent, gridColours, bounds);
+      case HexVertical -> drawHex(g, gridComponent, false, gridColours, bounds);
+      case HexHorizontal -> drawHex(g, gridComponent, true, gridColours, bounds);
+      case Isometric -> drawIso(g, gridComponent, gridColours, bounds);
+      case None -> {}
     }
   }
 
@@ -133,16 +131,16 @@ public class GridRenderer {
     }
   }
 
-  private void draw(Graphics2D g, SquareGrid grid, Color[] gridColours, Rectangle bounds) {
-    var size = grid.getSize();
+  private void drawSquare(Graphics2D g, GridComponent grid, Color[] gridColours, Rectangle bounds) {
+    var size = grid.primarySize();
     var zoneScale = renderer.getViewModel().getZoneScale();
     double scale = zoneScale.getScale();
     double scaledSize = size * scale;
 
     g.setColor(new Color(zone.getGridColor()));
 
-    int offX = (int) (zoneScale.getOffsetX() % scaledSize + grid.getOffsetX() * scale);
-    int offY = (int) (zoneScale.getOffsetY() % scaledSize + grid.getOffsetY() * scale);
+    int offX = (int) (zoneScale.getOffsetX() % scaledSize + grid.offsetX() * scale);
+    int offY = (int) (zoneScale.getOffsetY() % scaledSize + grid.offsetY() * scale);
 
     int startCol = (int) ((int) (bounds.x / scaledSize) * scaledSize);
     int startRow = (int) ((int) (bounds.y / scaledSize) * scaledSize);
@@ -162,18 +160,27 @@ public class GridRenderer {
     drawGridShape(zoneScale, size, gridColours, g, path);
   }
 
-  private void draw(Graphics2D g, HexGrid grid, Color[] gridColours, Rectangle bounds) {
-    var isHorizontal = grid.getType() == Grid.GridType.HexHorizontal;
+  private void drawHex(
+      Graphics2D g,
+      GridComponent grid,
+      boolean isHorizontal,
+      Color[] gridColours,
+      Rectangle bounds) {
     var zoneScale = renderer.getViewModel().getZoneScale();
     var scale = zoneScale.getScale();
-    var scaledMinorRadius = grid.getMinorRadius() * scale;
-    var scaledEdgeLength = grid.getEdgeLength() * scale;
-    var scaledEdgeProjection = grid.getEdgeProjection() * scale;
+    var scaledMinorRadius = grid.primarySize() / 2. * scale;
+    var scaledEdgeLength = grid.secondarySize() / 2. * scale;
+    var scaledEdgeProjection = scaledEdgeLength / 2.;
     var scaledHex =
         createHexHalfShape(isHorizontal, scaledMinorRadius, scaledEdgeProjection, scaledEdgeLength);
 
-    int offU = grid.getOffU(zoneScale);
-    int offV = grid.getOffV(zoneScale);
+    var offX = zoneScale.getOffsetX() + grid.offsetX() * zoneScale.getScale();
+    var offY = zoneScale.getOffsetY() + grid.offsetY() * zoneScale.getScale();
+    int offU = (int) (isHorizontal ? offY : offX);
+    int offV = (int) (isHorizontal ? offX : offY);
+    var boundsU = isHorizontal ? bounds.getHeight() : bounds.getWidth();
+    var boundsV = isHorizontal ? bounds.getWidth() : bounds.getHeight();
+
     int count = 0;
 
     Object oldAntiAlias = SwingUtil.useAntiAliasing(g);
@@ -181,7 +188,7 @@ public class GridRenderer {
     g.setStroke(new BasicStroke(AppState.getGridLineWeight()));
 
     for (double v = offV % (scaledMinorRadius * 2) - (scaledMinorRadius * 2);
-        v < grid.getSizeV(bounds.getSize());
+        v < boundsV;
         v += scaledMinorRadius) {
       double offsetU = (int) ((count & 1) == 0 ? 0 : -(scaledEdgeProjection + scaledEdgeLength));
       count++;
@@ -189,8 +196,7 @@ public class GridRenderer {
       double start =
           offU % (2 * scaledEdgeLength + 2 * scaledEdgeProjection)
               - (2 * scaledEdgeLength + 2 * scaledEdgeProjection);
-      double end =
-          grid.getSizeU(bounds.getSize()) + 2 * scaledEdgeLength + 2 * scaledEdgeProjection;
+      double end = boundsU + 2 * scaledEdgeLength + 2 * scaledEdgeProjection;
       double incr = 2 * scaledEdgeLength + 2 * scaledEdgeProjection;
       for (double u = start; u < end; u += incr) {
         var translateX = isHorizontal ? v : u + offsetU;
@@ -198,7 +204,7 @@ public class GridRenderer {
 
         g.translate(translateX, translateY);
 
-        drawGridShape(zoneScale, grid.getSize(), gridColours, g, scaledHex);
+        drawGridShape(zoneScale, grid.primarySize(), gridColours, g, scaledHex);
 
         // Undo the translation.
         g.translate(-translateX, -translateY);
@@ -226,8 +232,8 @@ public class GridRenderer {
     return hex;
   }
 
-  private void draw(Graphics2D g, IsometricGrid grid, Color[] gridColours, Rectangle bounds) {
-    var size = grid.getSize();
+  private void drawIso(Graphics2D g, GridComponent grid, Color[] gridColours, Rectangle bounds) {
+    var size = grid.primarySize();
     var zoneScale = renderer.getViewModel().getZoneScale();
     double scale = zoneScale.getScale();
     double gridSize = size * scale;
@@ -235,8 +241,8 @@ public class GridRenderer {
     double isoWidth = size * 2 * scale;
     Path2D path = new Path2D.Double();
 
-    int offX = (int) (zoneScale.getOffsetX() % isoWidth + grid.getOffsetX() * scale);
-    int offY = (int) (zoneScale.getOffsetY() % gridSize + grid.getOffsetY() * scale);
+    int offX = (int) (zoneScale.getOffsetX() % isoWidth + grid.offsetX() * scale);
+    int offY = (int) (zoneScale.getOffsetY() % gridSize + grid.offsetY() * scale);
 
     int startCol = (int) ((int) (bounds.x / isoWidth) * isoWidth);
     int startRow = (int) ((int) (bounds.y / gridSize) * gridSize);
@@ -259,7 +265,7 @@ public class GridRenderer {
     drawGridShape(zoneScale, size, gridColours, g, path);
   }
 
-  private Shape drawIsoHatch(Scale zoneScale, int gridSize, int x, int y) {
+  private Shape drawIsoHatch(Scale zoneScale, double gridSize, int x, int y) {
     double isoWidth = gridSize * zoneScale.getScale();
     int hatchSize = isoWidth > 10 ? (int) isoWidth / 8 : 2;
     Path2D path = new Path2D.Double();

@@ -45,6 +45,7 @@ import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.entities.BoardComponent;
 import net.rptools.maptool.client.entities.Entity;
+import net.rptools.maptool.client.entities.GridComponent;
 import net.rptools.maptool.client.entities.Paint;
 import net.rptools.maptool.client.entities.SpriteComponent;
 import net.rptools.maptool.client.events.RepaintZoneRequested;
@@ -55,6 +56,7 @@ import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.AssetManager;
 import net.rptools.maptool.model.AttachedLightSource;
 import net.rptools.maptool.model.GUID;
+import net.rptools.maptool.model.HexGrid;
 import net.rptools.maptool.model.LightSource;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
@@ -396,7 +398,20 @@ public class ZoneViewModel {
       // TODO Object drawables as entities
     }
 
-    // TODO Insert a special entity to get the grid rendered.
+    {
+      // TODO Only if AppState.isShowGrid
+      var grid = zone.getGrid();
+      var gridEntity =
+          new Entity(new Point2D.Double(viewport.getCenterX(), viewport.getCenterY()), viewport);
+      gridEntity.addComponent(
+          new GridComponent(
+              grid.getType(),
+              grid.getSize(),
+              grid instanceof HexGrid hexGrid ? hexGrid.getSecondDimension() : grid.getSize(),
+              grid.getOffsetX(),
+              grid.getOffsetY()));
+      list.add(gridEntity);
+    }
 
     list = entitiesInZOrder.get(RenderLayer.AboveGrid);
     if (shouldRenderLayer(Zone.Layer.OBJECT)) {

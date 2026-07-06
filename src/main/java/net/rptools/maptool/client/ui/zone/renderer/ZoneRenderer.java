@@ -45,6 +45,7 @@ import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.*;
 import net.rptools.maptool.client.entities.BoardComponent;
 import net.rptools.maptool.client.entities.Entity;
+import net.rptools.maptool.client.entities.GridComponent;
 import net.rptools.maptool.client.entities.SpriteComponent;
 import net.rptools.maptool.client.events.RepaintZoneRequested;
 import net.rptools.maptool.client.functions.TokenMoveFunctions;
@@ -887,10 +888,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       renderDrawableOverlay(g2d, drawableRenderers.get(Layer.OBJECT), view, drawables);
       timer.stop("drawableObjects");
     }
-    timer.start("grid");
-
-    gridRenderer.renderGrid(g2d, view);
-    timer.stop("grid");
 
     // Object stamps used to be drawn here.
 
@@ -1046,6 +1043,11 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       } finally {
         g3.dispose();
       }
+    }
+
+    var grid = entity.getComponent(GridComponent.class);
+    if (grid != null) {
+      gridRenderer.renderGrid(g2d, grid);
     }
 
     renderHelper.render(
