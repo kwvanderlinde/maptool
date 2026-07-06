@@ -1937,11 +1937,13 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
   }
 
   public void hideFullScreenTools() {
-    if (!fullScreenToolsShown) return;
+    if (!fullScreenToolsShown) {
+      return;
+    }
 
     toolbarPanel.add(toolbarPanel.getOptionPanel(), toolbarPanel.getOptionsPanelIndex());
 
-    JToggleButton buttons[] = {
+    JToggleButton[] buttons = {
       toolbarPanel.getTopologyButton(), toolbarPanel.getFogButton(),
       toolbarPanel.getTemplateButton(), toolbarPanel.getDrawButton(),
       toolbarPanel.getPointerGroupButton()
@@ -1974,7 +1976,6 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
       return;
     }
     hideFullScreenTools();
-
     rendererBorderPanel.add(zoneRendererPanel);
     setJMenuBar(menuBar);
     menuBar.setVisible(true);
@@ -1987,6 +1988,39 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
   public static class FullScreenFrame extends JFrame {
     public FullScreenFrame() {
       setUndecorated(true);
+      addWindowListener(
+          new WindowListener() {
+            private boolean exitOnClose = false;
+
+            @Override
+            public void windowOpened(WindowEvent e) {}
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+              // Only called when closing due to user interaction, not by switching out of
+              // fullscreen mode.
+              exitOnClose = true;
+            }
+
+            @Override
+            public void windowClosed(WindowEvent e) {
+              if (exitOnClose) {
+                System.exit(0);
+              }
+            }
+
+            @Override
+            public void windowIconified(WindowEvent e) {}
+
+            @Override
+            public void windowDeiconified(WindowEvent e) {}
+
+            @Override
+            public void windowActivated(WindowEvent e) {}
+
+            @Override
+            public void windowDeactivated(WindowEvent e) {}
+          });
     }
   }
 
