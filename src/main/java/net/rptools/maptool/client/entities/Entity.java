@@ -44,16 +44,31 @@ public final class Entity {
         bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight());
   }
 
-  public <T extends Component> @Nullable T getComponent(Class<T> type) {
+  private int findComponent(Class<?> type) {
+    int i = 0;
     for (var component : components) {
       if (type.isInstance(component)) {
-        return type.cast(component);
+        return i;
       }
+      ++i;
     }
-    return null;
+    return -1;
   }
 
-  public void addComponent(Component component) {
-    this.components.add(component);
+  public <T extends Record & Component> @Nullable T getComponent(Class<T> type) {
+    var index = findComponent(type);
+    if (index < 0) {
+      return null;
+    }
+    return type.cast(components.get(index));
+  }
+
+  public <T extends Record & Component> void setComponent(T component) {
+    var index = findComponent(component.getClass());
+    if (index < 0) {
+      components.add(component);
+    } else {
+      components.set(index, component);
+    }
   }
 }
