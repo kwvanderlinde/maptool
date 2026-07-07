@@ -45,6 +45,7 @@ import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.entities.BoardComponent;
 import net.rptools.maptool.client.entities.Entity;
+import net.rptools.maptool.client.entities.EntityId;
 import net.rptools.maptool.client.entities.GridComponent;
 import net.rptools.maptool.client.entities.Paint;
 import net.rptools.maptool.client.entities.SpriteComponent;
@@ -152,6 +153,7 @@ public class ZoneViewModel {
 
   // endregion
 
+  public final EntityManager entityManager = new EntityManager();
   // TODO Layers should be unnecessary. Just represent the grid as a component on an entity, etc.
   public final EnumMap<RenderLayer, List<Entity>> entitiesInZOrder =
       CollectionUtil.newFilledEnumMap(RenderLayer.class, l -> new ArrayList<>());
@@ -363,28 +365,31 @@ public class ZoneViewModel {
     var viewport = getViewport();
     var list = entitiesInZOrder.get(RenderLayer.AboveBoard);
     if (isBoardEnabled()) {
-      // TODO Give the board bounds that cover the viewport.
-      var boardEntity =
-          new Entity(new Point2D.Double(viewport.getCenterX(), viewport.getCenterY()), viewport);
-      boardEntity.addComponent(new BoardComponent(Paint.of(zone.getBackgroundPaint()), noise));
+      var boardEntity = entityManager.getBoardEntity();
+      boardEntity.getPosition().setLocation(viewport.getCenterX(), viewport.getCenterY());
+      boardEntity.getBounds().setRect(viewport);
+
+      boardEntity.setComponent(new BoardComponent(Paint.of(zone.getBackgroundPaint()), noise));
       list.add(boardEntity);
 
       if (zone.getMapAssetId() != null) {
         // Image is needed to calculate bounds, otherwise we could skip this lookup here.
         var mapImage = ImageManager.getImage(zone.getMapAssetId(), imageObserver);
 
-        var mapEntity =
-            new Entity(
-                new Point2D.Double(zone.getBoardX(), zone.getBoardY()),
-                new Rectangle2D.Double(
-                    zone.getBoardX(),
-                    zone.getBoardY(),
-                    mapImage.getWidth() * zone.getImageScaleX(),
-                    mapImage.getHeight() * zone.getImageScaleY()));
+        var mapEntity = entityManager.getMapEntity();
+        mapEntity.getPosition().setLocation(zone.getBoardX(), zone.getBoardY());
+        mapEntity
+            .getBounds()
+            .setFrame(
+                zone.getBoardX(),
+                zone.getBoardY(),
+                mapImage.getWidth() * zone.getImageScaleX(),
+                mapImage.getHeight() * zone.getImageScaleY());
+
         var transform = new AffineTransform();
         transform.translate(zone.getBoardX(), zone.getBoardY());
         transform.scale(zone.getImageScaleX(), zone.getImageScaleY());
-        mapEntity.addComponent(new SpriteComponent(zone.getMapAssetId(), transform, 1.));
+        mapEntity.setComponent(new SpriteComponent(zone.getMapAssetId(), transform, 1.));
         list.add(mapEntity);
       }
     }
@@ -400,9 +405,10 @@ public class ZoneViewModel {
 
     if (AppState.isShowGrid()) {
       var grid = zone.getGrid();
-      var gridEntity =
-          new Entity(new Point2D.Double(viewport.getCenterX(), viewport.getCenterY()), viewport);
-      gridEntity.addComponent(
+      var gridEntity = entityManager.getGridEntity();
+      gridEntity.getPosition().setLocation(viewport.getCenterX(), viewport.getCenterY());
+      gridEntity.getBounds().setRect(viewport);
+      gridEntity.setComponent(
           new GridComponent(
               grid.getType(),
               grid.getSize(),
@@ -454,6 +460,8 @@ public class ZoneViewModel {
 
   private void compositeTokensAsEntities(
       Zone.Layer layer, List<Token> tokens, List<Entity> output) {
+    // TODO React to token events (TokenCreated, etc) to remove tokens from ECS?
+
     var timer = CodeTimer.get();
     // TODO Sprites need to potentially be clipped. Should we add this to the SpriteComponent, or
     //  somehow instruct the renderer to bound a set of operations by a clip? The latter would be
@@ -492,12 +500,14 @@ public class ZoneViewModel {
       }
 
       // TODO Use the token's canonical position.
-      var entity =
-          new Entity(
-              new Point2D.Double(
-                  position.footprintBounds().getCenterX(), position.footprintBounds().getCenterY()),
-              position.footprintBounds().getBounds2D());
+      var entity = entityManager.ensureEntityFor(new EntityId(EntityId.Kind.Token, token.getId()));
+      entity
+          .getPosition()
+          .setLocation(
+              position.footprintBounds().getCenterX(), position.footprintBounds().getCenterY());
+      entity.getBounds().setRect(position.footprintBounds().getBounds2D());
       output.add(entity);
+
       if (softFowClippingEnabled && isTokenInNeedOfClipping(position, playerView)) {
         // TODO How to represent the clip?
         // TODO Clip to visible area and cell bounds (though I don't like the latter).
@@ -530,7 +540,7 @@ public class ZoneViewModel {
               token,
               new Dimension(image.getWidth(), image.getHeight()),
               position.footprintBounds());
-      entity.addComponent(new SpriteComponent(tokenImageId, imageTransform, opacity));
+      entity.setComponent(new SpriteComponent(tokenImageId, imageTransform, opacity));
 
       // TODO Output the token's states and bars.
 
