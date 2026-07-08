@@ -34,11 +34,19 @@ public class EntityManager {
   private final Entity board;
   private final Entity map;
   private final Entity grid;
+  private final Entity backgroundDrawables;
+  private final Entity objectDrawables;
+  private final Entity gmDrawables;
+  private final Entity tokenDrawables;
 
   public EntityManager() {
     board = new Entity(new Point2D.Double(0, 0));
     map = new Entity(new Point2D.Double(0, 0));
     grid = new Entity(new Point2D.Double(0, 0));
+    backgroundDrawables = new Entity(new Point2D.Double(0, 0));
+    objectDrawables = new Entity(new Point2D.Double(0, 0));
+    gmDrawables = new Entity(new Point2D.Double(0, 0));
+    tokenDrawables = new Entity(new Point2D.Double(0, 0));
   }
 
   public Entity ensureEntityFor(EntityId domainId) {
@@ -63,5 +71,21 @@ public class EntityManager {
 
   public Entity getGridEntity() {
     return grid;
+  }
+
+  public Entity getBackgroundDrawables() {
+    return backgroundDrawables;
+  }
+
+  public Entity getObjectDrawables() {
+    return objectDrawables;
+  }
+
+  public Entity getGmDrawables() {
+    return gmDrawables;
+  }
+
+  public Entity getTokenDrawables() {
+    return tokenDrawables;
   }
 }

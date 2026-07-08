@@ -44,7 +44,12 @@ import net.rptools.lib.MD5Key;
 import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.*;
 import net.rptools.maptool.client.entities.BoardComponent;
+import net.rptools.maptool.client.entities.BorderShapeComponent;
+import net.rptools.maptool.client.entities.DecorationShapeComponent;
+import net.rptools.maptool.client.entities.DrawableSetComponent;
 import net.rptools.maptool.client.entities.Entity;
+import net.rptools.maptool.client.entities.EraserComponent;
+import net.rptools.maptool.client.entities.FilledShapeComponent;
 import net.rptools.maptool.client.entities.GridComponent;
 import net.rptools.maptool.client.entities.SpriteComponent;
 import net.rptools.maptool.client.events.RepaintZoneRequested;
@@ -871,22 +876,13 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     }
 
     if (viewModel.shouldRenderLayer(Zone.Layer.BACKGROUND)) {
-      List<DrawnElement> drawables = zone.getDrawnElements(Layer.BACKGROUND);
-
-      timer.start("drawableBackground");
-      renderDrawableOverlay(g2d, drawableRenderers.get(Layer.BACKGROUND), view, drawables);
-      timer.stop("drawableBackground");
+      // Background drawables used to be drawn here.
 
       // Background stamps used to be drawn here.
     }
 
     if (viewModel.shouldRenderLayer(Zone.Layer.OBJECT)) {
-      // Drawables on the object layer are always below the grid, and...
-      List<DrawnElement> drawables = zone.getDrawnElements(Layer.OBJECT);
-
-      timer.start("drawableObjects");
-      renderDrawableOverlay(g2d, drawableRenderers.get(Layer.OBJECT), view, drawables);
-      timer.stop("drawableObjects");
+      // Object drawables used to be drawn here.
     }
 
     // Object stamps used to be drawn here.
@@ -902,6 +898,10 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     }
 
     darknessRenderer.render(g2d, view);
+
+    for (var entity : viewModel.entitiesInZOrder.get(ZoneViewModel.RenderLayer.AboveLights)) {
+      renderEntity(g2d, entity);
+    }
 
     /*
      * The following sections used to handle rendering of the Hidden (i.e. "GM") layer followed by
@@ -925,18 +925,10 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
      * </ol>
      */
     if (viewModel.shouldRenderLayer(Zone.Layer.TOKEN)) {
-      List<DrawnElement> drawables = zone.getDrawnElements(Layer.TOKEN);
-
-      timer.start("drawableTokens");
-      renderDrawableOverlay(g2d, drawableRenderers.get(Layer.TOKEN), view, drawables);
-      timer.stop("drawableTokens");
+      // Token drawables used to be drawn here.
 
       if (viewModel.shouldRenderLayer(Zone.Layer.GM)) {
-        drawables = zone.getDrawnElements(Layer.GM);
-
-        timer.start("drawableGM");
-        renderDrawableOverlay(g2d, drawableRenderers.get(Layer.GM), view, drawables);
-        timer.stop("drawableGM");
+        // GM drawables used to be drawn here.
 
         List<Token> stamps = zone.getTokensOnLayer(Layer.GM, false);
         if (!stamps.isEmpty()) {
@@ -1050,6 +1042,11 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       gridRenderer.renderGrid(g2d, grid);
     }
 
+    var drawableSet = entity.getComponent(DrawableSetComponent.class);
+    if (drawableSet != null) {
+      renderDrawables(g2d, drawableSet.drawables());
+    }
+
     renderHelper.render(
         g2d,
         worldG -> {
@@ -1073,6 +1070,81 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
                   entity.getPosition().getX() - 3., entity.getPosition().getY() - 3., 6., 6.));
           worldG.draw(entity.getBounds());
         });
+  }
+
+  private GraphicsConfiguration configuration =
+      GraphicsEnvironment.getLocalGraphicsEnvironment()
+          .getDefaultScreenDevice()
+          .getDefaultConfiguration();
+
+  private void renderDrawables(Graphics2D g, List<Entity> drawables) {
+    // TODO Pool the buffered images
+    var image =
+        configuration.createCompatibleImage(getWidth(), getHeight(), Transparency.TRANSLUCENT);
+    var imageG = image.createGraphics();
+    imageG.setClip(new Rectangle(0, 0, getWidth(), getHeight()));
+    var originalImageGTransform = imageG.getTransform();
+
+    for (var entity : drawables) {
+      var group = entity.getComponent(DrawableSetComponent.class);
+      if (group != null) {
+        imageG.setTransform(originalImageGTransform);
+        renderDrawables(imageG, group.drawables());
+      }
+
+      imageG.setTransform(viewModel.getZoneScale().toScreenTransform());
+
+      var fill = entity.getComponent(FilledShapeComponent.class);
+      if (fill != null) {
+        var g3 = (Graphics2D) imageG.create();
+        try {
+          g3.setComposite(AlphaComposite.SrcOver.derive((float) fill.opacity()));
+          g3.setPaint(resolveAwtPaint(fill.paint()));
+          g3.fill(fill.shape());
+        } finally {
+          g3.dispose();
+        }
+      }
+
+      var border = entity.getComponent(BorderShapeComponent.class);
+      if (border != null) {
+        var g3 = (Graphics2D) imageG.create();
+        try {
+          g3.setComposite(AlphaComposite.SrcOver.derive((float) border.opacity()));
+          g3.setPaint(resolveAwtPaint(border.paint()));
+          g3.setStroke(border.stroke());
+          g3.draw(border.shape());
+        } finally {
+          g3.dispose();
+        }
+      }
+
+      var decoration = entity.getComponent(DecorationShapeComponent.class);
+      if (decoration != null) {
+        var g3 = (Graphics2D) imageG.create();
+        try {
+          g3.setComposite(AlphaComposite.SrcOver.derive((float) decoration.opacity()));
+          g3.setPaint(resolveAwtPaint(decoration.paint()));
+          g3.setStroke(decoration.stroke());
+          g3.draw(decoration.shape());
+        } finally {
+          g3.dispose();
+        }
+      }
+
+      var eraser = entity.getComponent(EraserComponent.class);
+      if (eraser != null) {
+        var g3 = (Graphics2D) imageG.create();
+        try {
+          g3.setComposite(AlphaComposite.Clear);
+          g3.fill(eraser.area());
+        } finally {
+          g3.dispose();
+        }
+      }
+    }
+
+    g.drawImage(image, 0, 0, this);
   }
 
   private void delayRendering(ItemRenderer renderer) {
@@ -1115,16 +1187,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       timer.stop("labels-1.1");
     }
     timer.stop("labels-1");
-  }
-
-  protected void renderDrawableOverlay(
-      Graphics g, DrawableRenderer renderer, PlayerView view, List<DrawnElement> drawnElements) {
-    var zoneScale = viewModel.getZoneScale();
-    Rectangle viewport =
-        new Rectangle(
-            zoneScale.getOffsetX(), zoneScale.getOffsetY(), getSize().width, getSize().height);
-
-    renderer.renderDrawables(g, drawnElements, viewport, viewModel.getZoneScale().getScale());
   }
 
   public Set<SelectionSet> getOwnedMovementSet(PlayerView view) {

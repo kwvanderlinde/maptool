@@ -16,6 +16,7 @@ package net.rptools.maptool.client.ui.zone;
 
 import java.awt.Dimension;
 import java.awt.Image;
+import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
@@ -44,8 +45,13 @@ import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.entities.BoardComponent;
+import net.rptools.maptool.client.entities.BorderShapeComponent;
+import net.rptools.maptool.client.entities.DecorationShapeComponent;
+import net.rptools.maptool.client.entities.DrawableSetComponent;
 import net.rptools.maptool.client.entities.Entity;
 import net.rptools.maptool.client.entities.EntityId;
+import net.rptools.maptool.client.entities.EraserComponent;
+import net.rptools.maptool.client.entities.FilledShapeComponent;
 import net.rptools.maptool.client.entities.GridComponent;
 import net.rptools.maptool.client.entities.Paint;
 import net.rptools.maptool.client.entities.SpriteComponent;
@@ -61,7 +67,10 @@ import net.rptools.maptool.model.HexGrid;
 import net.rptools.maptool.model.LightSource;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.drawing.AbstractTemplate;
 import net.rptools.maptool.model.drawing.DrawableNoise;
+import net.rptools.maptool.model.drawing.DrawablesGroup;
+import net.rptools.maptool.model.drawing.DrawnElement;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.util.GraphicsUtil;
 import net.rptools.maptool.util.ImageManager;
@@ -359,7 +368,8 @@ public class ZoneViewModel {
 
   /** Updates {@link #entitiesInZOrder} based on everything else. */
   private void updateEntities() {
-    // TODO Reuse existing entity objects if possible.
+    // TODO Update all entities, but only add to `list` if they need to be rendered.
+
     entitiesInZOrder.values().forEach(List::clear);
 
     var viewport = getViewport();
@@ -394,13 +404,17 @@ public class ZoneViewModel {
       }
     }
     if (shouldRenderLayer(Zone.Layer.BACKGROUND)) {
-      // TODO Background drawables as entities
-      // TODO Background tokens as entities
+      var entity = entityManager.getBackgroundDrawables();
+      compositeDrawablesAsEntities(entity, zone.getDrawnElements(Zone.Layer.BACKGROUND));
+      list.add(entity);
+
       compositeTokensAsEntities(
           Zone.Layer.BACKGROUND, zone.getTokensOnLayer(Zone.Layer.BACKGROUND, false), list);
     }
     if (shouldRenderLayer(Zone.Layer.OBJECT)) {
-      // TODO Object drawables as entities
+      var entity = entityManager.getObjectDrawables();
+      compositeDrawablesAsEntities(entity, zone.getDrawnElements(Zone.Layer.OBJECT));
+      list.add(entity);
     }
 
     if (AppState.isShowGrid()) {
@@ -426,12 +440,41 @@ public class ZoneViewModel {
 
     // TODO Represent lights, lumens, auras, and darkness as entities.
 
+    /*
+     * The following sections used to handle rendering of the Hidden (i.e. "GM") layer followed by
+     * the Token layer. The problem was that we want all drawables to appear below all tokens, and
+     * the old configuration performed the rendering in the following order:
+     *
+     * <ol>
+     *   <li>Render Hidden-layer tokens
+     *   <li>Render Hidden-layer drawables
+     *   <li>Render Token-layer drawables
+     *   <li>Render Token-layer tokens
+     * </ol>
+     *
+     * That's fine for players, but clearly wrong if the view is for the GM. We now use:
+     *
+     * <ol>
+     *   <li>Render Token-layer drawables // Player-drawn images shouldn't obscure GM's images?
+     *   <li>Render Hidden-layer drawables // GM could always use "View As Player" if needed?
+     *   <li>Render Hidden-layer tokens
+     *   <li>Render Token-layer tokens
+     * </ol>
+     */
     list = entitiesInZOrder.get(RenderLayer.AboveLights);
     if (shouldRenderLayer(Zone.Layer.TOKEN)) {
-      // TODO Token drawables as entities
+      {
+        var entity = entityManager.getTokenDrawables();
+        compositeDrawablesAsEntities(entity, zone.getDrawnElements(Zone.Layer.TOKEN));
+        list.add(entity);
+      }
 
       if (shouldRenderLayer(Zone.Layer.GM)) {
-        // TODO GM drawables as entities
+        {
+          var entity = entityManager.getGmDrawables();
+          compositeDrawablesAsEntities(entity, zone.getDrawnElements(Zone.Layer.GM));
+          list.add(entity);
+        }
         // TODO GM tokens as entities
       }
 
@@ -458,9 +501,110 @@ public class ZoneViewModel {
     //  identify where in the order to put them during rendering.
   }
 
+  private void compositeDrawablesAsEntities(Entity parentEntity, List<DrawnElement> drawnElements) {
+    // TODO Only keep child entities that intersect the viewport.
+
+    var childEntities = new ArrayList<Entity>();
+    for (var element : drawnElements) {
+      var drawable = element.getDrawable();
+      var pen = element.getPen();
+      var drawingBounds = drawable.getBounds(zone).getBounds2D();
+
+      var entity =
+          entityManager.ensureEntityFor(
+              new EntityId(EntityId.Kind.Drawing, element.getDrawable().getId()));
+
+      if (pen.getPaint() != null) {
+        var thickness = pen.getThickness();
+        drawingBounds.setRect(
+            drawingBounds.getMinX() - thickness,
+            drawingBounds.getMinY() - thickness,
+            drawingBounds.getWidth() + 2 * thickness,
+            drawingBounds.getHeight() + 2 * thickness);
+      }
+      entity.getPosition().setLocation(drawingBounds.getCenterX(), drawingBounds.getCenterY());
+      entity.getBounds().setRect(drawingBounds);
+
+      if (drawable instanceof DrawablesGroup group) {
+        // Not a regular drawable
+        entity.removeComponent(EraserComponent.class);
+        entity.removeComponent(BorderShapeComponent.class);
+        entity.removeComponent(DecorationShapeComponent.class);
+
+        if (!group.getDrawableList().isEmpty()) {
+          compositeDrawablesAsEntities(entity, group.getDrawableList());
+          childEntities.add(entity);
+        }
+      } else {
+        childEntities.add(entity);
+
+        // Not a group.
+        entity.removeComponent(DrawableSetComponent.class);
+
+        var stroke = pen.getStroke();
+        var area = pen.getBackgroundPaint() == null ? null : drawable.getArea(zone);
+        Shape border = pen.getPaint() == null ? null : drawable.getBorder(zone);
+        Shape decorations =
+            (pen.getPaint() == null || !(drawable instanceof AbstractTemplate template))
+                ? null
+                : template.getDecorationsToStroke(zone);
+
+        // TODO Reuse any existing components. Will only be important once we need to potentially
+        //  remesh things for GDX.
+        if (pen.isEraser()) {
+          entity.removeComponent(FilledShapeComponent.class);
+          entity.removeComponent(BorderShapeComponent.class);
+          entity.removeComponent(DecorationShapeComponent.class);
+
+          var combinedArea = area == null ? new Area() : area;
+          if (border != null) {
+            combinedArea = new Area(combinedArea);
+            combinedArea.add(new Area(stroke.createStrokedShape(border)));
+          }
+          entity.setComponent(new EraserComponent(combinedArea));
+        } else {
+          entity.removeComponent(EraserComponent.class);
+
+          var fillOpacity = pen.getOpacity();
+          if (drawable instanceof AbstractTemplate) {
+            fillOpacity *= AbstractTemplate.DEFAULT_BG_ALPHA;
+          }
+
+          if (area == null) {
+            entity.removeComponent(FilledShapeComponent.class);
+          } else {
+            entity.setComponent(
+                new FilledShapeComponent(area, Paint.of(pen.getBackgroundPaint()), fillOpacity));
+          }
+          if (border == null) {
+            entity.removeComponent(BorderShapeComponent.class);
+          } else {
+            entity.setComponent(
+                new BorderShapeComponent(
+                    border, Paint.of(pen.getPaint()), stroke, pen.getOpacity()));
+          }
+          if (decorations == null) {
+            entity.removeComponent(DecorationShapeComponent.class);
+          } else {
+            entity.setComponent(
+                new DecorationShapeComponent(
+                    decorations, Paint.of(pen.getPaint()), stroke, pen.getOpacity()));
+          }
+        }
+      }
+    }
+
+    if (!childEntities.isEmpty()) {
+      parentEntity.setComponent(new DrawableSetComponent(childEntities));
+    }
+  }
+
   private void compositeTokensAsEntities(
       Zone.Layer layer, List<Token> tokens, List<Entity> output) {
     // TODO React to token events (TokenCreated, etc) to remove tokens from ECS?
+    // TODO Even though we update all tokens, don't add them to `output` if they are not on-screen.
+    //  Would be nice if paths still get rendered even if the token is off-screen, though. But
+    //  that's an existing bug to fix.
 
     var timer = CodeTimer.get();
     // TODO Sprites need to potentially be clipped. Should we add this to the SpriteComponent, or
