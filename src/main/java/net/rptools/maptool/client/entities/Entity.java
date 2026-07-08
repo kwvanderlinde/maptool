@@ -25,6 +25,7 @@ public final class Entity {
   private final Rectangle2D bounds;
   private final List<Component> components = new ArrayList<>();
 
+  // TODO Not all entities need bounds (e.g., grid, board, etc). So make that a component.
   public Entity(Point2D position) {
     this(position, new Rectangle2D.Double(position.getX(), position.getY(), 0, 0));
   }
@@ -36,12 +37,11 @@ public final class Entity {
   }
 
   public Point2D getPosition() {
-    return new Point2D.Double(position.getX(), position.getY());
+    return position;
   }
 
   public Rectangle2D getBounds() {
-    return new Rectangle2D.Double(
-        bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight());
+    return bounds;
   }
 
   private int findComponent(Class<?> type) {
@@ -69,6 +69,13 @@ public final class Entity {
       components.add(component);
     } else {
       components.set(index, component);
+    }
+  }
+
+  public <T extends Record & Component> void removeComponent(Class<T> type) {
+    var index = findComponent(type);
+    if (index >= 0) {
+      components.remove(index);
     }
   }
 }
