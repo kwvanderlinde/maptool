@@ -1018,57 +1018,83 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   // TODO May want to render individually known components so an entity can span multiple z-orders.
   private void renderEntity(Graphics2D g2d, Entity entity) {
     final Dimension size = getSize();
+    final CodeTimer timer = CodeTimer.get();
 
-    var board = entity.getComponent(BoardComponent.class);
-    if (board != null) {
-      var g3 = (Graphics2D) g2d.create();
-      try {
-        g3.setPaint(resolveAwtPaint(board.paint(), viewModel.getZoneScale(), this));
-        g3.fillRect(0, 0, size.width, size.height);
-
-        if (board.noise() != null) {
-          g3.setComposite(AlphaComposite.SrcOver.derive(board.noise().getNoiseAlpha()));
-          g3.setPaint(board.noise().getPaint(viewModel.getZoneScale()));
+    timer.start("board");
+    try {
+      var board = entity.getComponent(BoardComponent.class);
+      if (board != null) {
+        var g3 = (Graphics2D) g2d.create();
+        try {
+          g3.setPaint(resolveAwtPaint(board.paint(), viewModel.getZoneScale(), this));
           g3.fillRect(0, 0, size.width, size.height);
+
+          if (board.noise() != null) {
+            g3.setComposite(AlphaComposite.SrcOver.derive(board.noise().getNoiseAlpha()));
+            g3.setPaint(board.noise().getPaint(viewModel.getZoneScale()));
+            g3.fillRect(0, 0, size.width, size.height);
+          }
+
+        } finally {
+          g3.dispose();
         }
-
-      } finally {
-        g3.dispose();
       }
+    } finally {
+      timer.stop("board");
     }
 
-    var grid = entity.getComponent(GridComponent.class);
-    if (grid != null) {
-      gridRenderer.renderGrid(g2d, grid);
+    timer.start("grid");
+    try {
+      var grid = entity.getComponent(GridComponent.class);
+      if (grid != null) {
+        gridRenderer.renderGrid(g2d, grid);
+      }
+    } finally {
+      timer.stop("grid");
     }
 
-    var drawableSet = entity.getComponent(DrawableSetComponent.class);
-    if (drawableSet != null) {
-      renderDrawables(g2d, drawableSet.drawables());
+    timer.start("drawables");
+    try {
+      var drawableSet = entity.getComponent(DrawableSetComponent.class);
+      if (drawableSet != null) {
+        renderDrawables(g2d, drawableSet.drawables());
+      }
+    } finally {
+      timer.stop("drawables");
     }
 
     renderHelper.render(
         g2d,
         worldG -> {
-          var sprite = entity.getComponent(SpriteComponent.class);
-          if (sprite != null) {
-            var g3 = (Graphics2D) worldG.create();
-            try {
-              g3.setComposite(AlphaComposite.SrcOver.derive((float) sprite.opacity()));
+          timer.start("sprites");
+          try {
+            var sprite = entity.getComponent(SpriteComponent.class);
+            if (sprite != null) {
+              var g3 = (Graphics2D) worldG.create();
+              try {
+                g3.setComposite(AlphaComposite.SrcOver.derive((float) sprite.opacity()));
 
-              var image = ImageManager.getImage(sprite.imageAsset(), this);
-              g3.drawImage(image, sprite.transform(), this);
-            } finally {
-              g3.dispose();
+                var image = ImageManager.getImage(sprite.imageAsset(), this);
+                g3.drawImage(image, sprite.transform(), this);
+              } finally {
+                g3.dispose();
+              }
             }
+          } finally {
+            timer.stop("sprites");
           }
 
-          worldG.setComposite(AlphaComposite.SrcOver);
-          worldG.setPaint(Color.blue);
-          worldG.fill(
-              new Ellipse2D.Double(
-                  entity.getPosition().getX() - 3., entity.getPosition().getY() - 3., 6., 6.));
-          worldG.draw(entity.getBounds());
+          timer.start("debug-bounds");
+          try {
+            worldG.setComposite(AlphaComposite.SrcOver);
+            worldG.setPaint(Color.blue);
+            worldG.fill(
+                new Ellipse2D.Double(
+                    entity.getPosition().getX() - 3., entity.getPosition().getY() - 3., 6., 6.));
+            worldG.draw(entity.getBounds());
+          } finally {
+            timer.stop("debug-bounds");
+          }
         });
   }
 
