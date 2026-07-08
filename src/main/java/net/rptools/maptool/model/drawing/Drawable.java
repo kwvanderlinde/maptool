@@ -15,8 +15,10 @@
 package net.rptools.maptool.model.drawing;
 
 import java.awt.Graphics2D;
+import java.awt.Shape;
 import java.awt.geom.Area;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.server.proto.drawing.DrawableDto;
@@ -34,6 +36,11 @@ public interface Drawable {
 
   @Nonnull
   Area getArea(Zone zone);
+
+  default @Nullable Shape getBorder(Zone zone) {
+    // For most drawings, we can stroke the same shape as we would fill.
+    return getArea(zone);
+  }
 
   GUID getId();
 

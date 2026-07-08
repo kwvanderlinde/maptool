@@ -14,11 +14,20 @@
  */
 package net.rptools.maptool.model.drawing;
 
+import com.google.common.collect.Iterables;
 import com.google.protobuf.StringValue;
+import java.awt.Shape;
+import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.ToIntBiFunction;
+import javax.annotation.Nullable;
 import net.rptools.maptool.model.CellPoint;
 import net.rptools.maptool.model.GUID;
+import net.rptools.maptool.model.Grid;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.server.proto.drawing.DrawableDto;
@@ -49,6 +58,11 @@ public class WallTemplate extends LineTemplate {
   @Override
   public Drawable copy() {
     return new WallTemplate(this);
+  }
+
+  @Override
+  public @Nullable Shape getBorder(Zone zone) {
+    return getBorderAsShape(zone.getGrid());
   }
 
   /**
@@ -126,5 +140,112 @@ public class WallTemplate extends LineTemplate {
     drawable.setPath(cellpoints);
 
     return drawable;
+  }
+
+  private Shape getBorderAsShape(Grid grid) {
+    var leftPath = new Path2D.Double();
+
+    var vertex = getVertex();
+    var path = getPath();
+    if (vertex == null || path == null) {
+      return leftPath;
+    }
+
+    var gridSize = grid.getSize();
+
+    // All we have to do is extend the border on the left as we go from the start to the end, then
+    // turn around and come back.
+    // Note: only square grids are properly supported.
+
+    var thereAndBackAgain = Iterables.concat(path, path.reversed().subList(1, path.size()));
+    var it = thereAndBackAgain.iterator();
+
+    if (!it.hasNext()) {
+      // No points in the path. An empty shape will suffice.
+      return leftPath;
+    }
+
+    CellPoint first = it.next();
+    Point2D.Double previousPoint =
+        new Point2D.Double(vertex.x + first.x * gridSize, vertex.y + first.y * gridSize);
+
+    if (!it.hasNext()) {
+      // Only a single cell in the path. Can return a basic rectangle instead of a path.
+      return new Rectangle2D.Double(previousPoint.getX(), previousPoint.getY(), gridSize, gridSize);
+    }
+    CellPoint current = it.next();
+
+    // Note the arrangement of directions is increasing clockwise.
+    // So adding 1 == right turn, and subtracting 1 == left turn.
+    final var EAST = 0b00;
+    final var SOUTH = 0b01;
+    final var WEST = 0b10;
+    final var NORTH = 0b11;
+
+    ToIntBiFunction<CellPoint, CellPoint> determineHeading =
+        (from, to) -> {
+          // Because the cells are adjacent, the heading can only be horizontal or vertical.
+          int x = Integer.compare(to.x, from.x);
+          if (x < 0) {
+            return WEST;
+          }
+          if (x > 0) {
+            return EAST;
+          }
+
+          int y = Integer.compare(to.y, from.y);
+          if (y < 0) {
+            return NORTH;
+          }
+          return SOUTH;
+        };
+    Consumer<Integer> advancePath =
+        heading -> {
+          var northSouth = (heading & 0b01) != 0;
+          var sign = (heading & 0b10) != 0 ? -1 : 1;
+
+          var deltaX = northSouth ? 0 : sign;
+          var deltaY = northSouth ? sign : 0;
+
+          previousPoint.setLocation(
+              previousPoint.getX() + gridSize * deltaX, previousPoint.getY() + gridSize * deltaY);
+          leftPath.lineTo(previousPoint.getX(), previousPoint.getY());
+        };
+
+    // To start, we need to know which way we are heading. Also need to adjust the starting point to
+    // be at one of the other cell corners depending on that heading.
+    int heading = determineHeading.applyAsInt(first, current);
+    // Now adjust which corner we're at if needed.
+    if (heading == SOUTH || heading == WEST) {
+      previousPoint.x += gridSize;
+    }
+    if (heading == NORTH || heading == WEST) {
+      previousPoint.y += gridSize;
+    }
+    leftPath.moveTo(previousPoint.getX(), previousPoint.getY());
+
+    // Take one step in the current heading to handle the first cell.
+    advancePath.accept(heading);
+    while (it.hasNext()) {
+      CellPoint next = it.next();
+
+      var newHeading = determineHeading.applyAsInt(current, next);
+
+      // Test each heading starting with a left turn and going clockwise until we find `newHeading`.
+      // Each heading we rule out is another segment and turn we h ave to make.
+      heading = (heading - 1) & 0b11;
+      while (heading != newHeading) {
+        heading = (heading + 1) & 0b11;
+        advancePath.accept(heading);
+      }
+
+      current = next;
+    }
+    // Handle the last cell by taking one final step in the current heading.
+    advancePath.accept(heading);
+
+    leftPath.closePath();
+
+    return leftPath;
   }
 }
