@@ -43,11 +43,14 @@ import net.rptools.lib.MD5Key;
 import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.*;
 import net.rptools.maptool.client.entities.BoardComponent;
+import net.rptools.maptool.client.entities.ClipType;
 import net.rptools.maptool.client.entities.DirtyComponent;
 import net.rptools.maptool.client.entities.DrawableSetComponent;
 import net.rptools.maptool.client.entities.Entity;
 import net.rptools.maptool.client.entities.GridComponent;
-import net.rptools.maptool.client.entities.SpriteComponent;
+import net.rptools.maptool.client.entities.MapComponent;
+import net.rptools.maptool.client.entities.Sprite;
+import net.rptools.maptool.client.entities.TokenComponent;
 import net.rptools.maptool.client.events.RepaintZoneRequested;
 import net.rptools.maptool.client.functions.TokenMoveFunctions;
 import net.rptools.maptool.client.swing.GenericDialog;
@@ -1088,18 +1091,17 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           timer.start("sprites");
           try {
             entity
-                .getComponent(SpriteComponent.class)
+                .getComponent(MapComponent.class)
                 .ifPresent(
-                    sprite -> {
-                      var g3 = (Graphics2D) worldG.create();
-                      try {
-                        g3.setComposite(AlphaComposite.SrcOver.derive((float) sprite.opacity()));
+                    map -> {
+                      renderSprite(worldG, map.sprite(), ClipType.NoClipping);
+                    });
 
-                        var image = ImageManager.getImage(sprite.imageAsset(), this);
-                        g3.drawImage(image, sprite.transform(), this);
-                      } finally {
-                        g3.dispose();
-                      }
+            entity
+                .getComponent(TokenComponent.class)
+                .ifPresent(
+                    tokenImage -> {
+                      renderSprite(worldG, tokenImage.sprite(), tokenImage.clipType());
                     });
           } finally {
             timer.stop("sprites");
@@ -1117,6 +1119,19 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             timer.stop("debug-bounds");
           }
         });
+  }
+
+  private void renderSprite(Graphics2D g, Sprite sprite, ClipType clip) {
+    // TODO Act on the clip.
+    var g2 = (Graphics2D) g.create();
+    try {
+      g2.setComposite(AlphaComposite.SrcOver.derive((float) sprite.opacity()));
+
+      var image = ImageManager.getImage(sprite.imageAsset(), this);
+      g2.drawImage(image, sprite.transform(), this);
+    } finally {
+      g2.dispose();
+    }
   }
 
   private void delayRendering(ItemRenderer renderer) {

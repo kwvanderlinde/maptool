@@ -53,9 +53,11 @@ import net.rptools.maptool.client.entities.Entity;
 import net.rptools.maptool.client.entities.EraserComponent;
 import net.rptools.maptool.client.entities.FilledShapeComponent;
 import net.rptools.maptool.client.entities.GridComponent;
+import net.rptools.maptool.client.entities.MapComponent;
 import net.rptools.maptool.client.entities.ModelEntityId;
 import net.rptools.maptool.client.entities.Paint;
-import net.rptools.maptool.client.entities.SpriteComponent;
+import net.rptools.maptool.client.entities.Sprite;
+import net.rptools.maptool.client.entities.TokenComponent;
 import net.rptools.maptool.client.events.RepaintZoneRequested;
 import net.rptools.maptool.client.events.ZoneLoaded;
 import net.rptools.maptool.client.ui.Scale;
@@ -380,10 +382,10 @@ public class ZoneViewModel {
       var boardEntity = entityManager.getBoardEntity();
       boardEntity.getPosition().setLocation(viewport.getCenterX(), viewport.getCenterY());
       boardEntity.getBounds().setRect(viewport);
-
       boardEntity.setComponent(new BoardComponent(Paint.of(zone.getBackgroundPaint()), noise));
       list.add(boardEntity);
 
+      Sprite mapSprite = null;
       if (zone.getMapAssetId() != null) {
         // Image is needed to calculate bounds, otherwise we could skip this lookup here.
         var mapImage = ImageManager.getImage(zone.getMapAssetId(), imageObserver);
@@ -401,8 +403,7 @@ public class ZoneViewModel {
         var transform = new AffineTransform();
         transform.translate(zone.getBoardX(), zone.getBoardY());
         transform.scale(zone.getImageScaleX(), zone.getImageScaleY());
-        mapEntity.setComponent(
-            new SpriteComponent(zone.getMapAssetId(), transform, 1., ClipType.NoClipping));
+        mapEntity.setComponent(new MapComponent(new Sprite(zone.getMapAssetId(), transform, 1.)));
         list.add(mapEntity);
       }
     }
@@ -693,7 +694,8 @@ public class ZoneViewModel {
               token,
               new Dimension(image.getWidth(), image.getHeight()),
               position.footprintBounds());
-      entity.setComponent(new SpriteComponent(tokenImageId, imageTransform, opacity, clipType));
+      entity.setComponent(
+          new TokenComponent(new Sprite(tokenImageId, imageTransform, opacity), clipType));
 
       // TODO Output the token's states and bars.
 
