@@ -21,6 +21,13 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 public final class Entity {
+  private static long previousId = 0;
+
+  private static long createId() {
+    return ++previousId;
+  }
+
+  private final long id;
   private final Point2D position;
   private final Rectangle2D bounds;
   private final List<Component> components = new ArrayList<>();
@@ -31,9 +38,14 @@ public final class Entity {
   }
 
   public Entity(Point2D position, Rectangle2D bounds) {
+    this.id = createId();
     this.position = new Point2D.Double(position.getX(), position.getY());
     this.bounds =
         new Rectangle2D.Double(bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight());
+  }
+
+  public long getId() {
+    return id;
   }
 
   public Point2D getPosition() {

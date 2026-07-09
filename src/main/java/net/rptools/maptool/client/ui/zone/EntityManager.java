@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.Nullable;
 import net.rptools.maptool.client.entities.Entity;
-import net.rptools.maptool.client.entities.EntityId;
+import net.rptools.maptool.client.entities.ModelEntityId;
 
 public class EntityManager {
   // TODO Deprecate and remove this.
@@ -30,7 +30,8 @@ public class EntityManager {
     AboveFog,
   }
 
-  private final Map<EntityId, Entity> domainIdsToEcs = new HashMap<>();
+  private final Map<ModelEntityId, Entity> domainIdsToEcs = new HashMap<>();
+  private final Map<Long, Entity> allKnownEntities = new HashMap<>();
   private final Entity board;
   private final Entity map;
   private final Entity grid;
@@ -49,16 +50,22 @@ public class EntityManager {
     tokenDrawables = new Entity(new Point2D.Double(0, 0));
   }
 
-  public Entity ensureEntityFor(EntityId domainId) {
-    return domainIdsToEcs.computeIfAbsent(
-        domainId,
-        id -> {
-          return new Entity(new Point2D.Double(0, 0));
-        });
+  private Entity createEntity() {
+    var entity = new Entity(new Point2D.Double(0, 0));
+    allKnownEntities.put(entity.getId(), entity);
+    return entity;
   }
 
-  public @Nullable Entity destroyEntity(EntityId domainId) {
-    return domainIdsToEcs.remove(domainId);
+  public Entity ensureEntityFor(ModelEntityId domainId) {
+    return domainIdsToEcs.computeIfAbsent(domainId, id -> createEntity());
+  }
+
+  public @Nullable Entity destroyEntity(ModelEntityId domainId) {
+    var entity = domainIdsToEcs.remove(domainId);
+    if (entity != null) {
+      allKnownEntities.remove(entity.getId());
+    }
+    return entity;
   }
 
   public Entity getBoardEntity() {

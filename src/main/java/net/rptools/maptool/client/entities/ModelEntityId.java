@@ -16,7 +16,7 @@ package net.rptools.maptool.client.entities;
 
 import net.rptools.maptool.model.GUID;
 
-public record EntityId(Kind kind, GUID id) {
+public record ModelEntityId(Kind kind, GUID id) {
   public enum Kind {
     Token,
     Drawing

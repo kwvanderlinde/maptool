@@ -49,10 +49,10 @@ import net.rptools.maptool.client.entities.BorderShapeComponent;
 import net.rptools.maptool.client.entities.DecorationShapeComponent;
 import net.rptools.maptool.client.entities.DrawableSetComponent;
 import net.rptools.maptool.client.entities.Entity;
-import net.rptools.maptool.client.entities.EntityId;
 import net.rptools.maptool.client.entities.EraserComponent;
 import net.rptools.maptool.client.entities.FilledShapeComponent;
 import net.rptools.maptool.client.entities.GridComponent;
+import net.rptools.maptool.client.entities.ModelEntityId;
 import net.rptools.maptool.client.entities.Paint;
 import net.rptools.maptool.client.entities.SpriteComponent;
 import net.rptools.maptool.client.events.RepaintZoneRequested;
@@ -512,7 +512,7 @@ public class ZoneViewModel {
 
       var entity =
           entityManager.ensureEntityFor(
-              new EntityId(EntityId.Kind.Drawing, element.getDrawable().getId()));
+              new ModelEntityId(ModelEntityId.Kind.Drawing, element.getDrawable().getId()));
 
       if (pen.getPaint() != null) {
         var thickness = pen.getThickness();
@@ -644,7 +644,8 @@ public class ZoneViewModel {
       }
 
       // TODO Use the token's canonical position.
-      var entity = entityManager.ensureEntityFor(new EntityId(EntityId.Kind.Token, token.getId()));
+      var entity =
+          entityManager.ensureEntityFor(new ModelEntityId(ModelEntityId.Kind.Token, token.getId()));
       entity
           .getPosition()
           .setLocation(
