@@ -18,7 +18,8 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
-import javax.annotation.Nullable;
+import java.util.Optional;
+import org.jspecify.annotations.NonNull;
 
 public final class Entity {
   private static long previousId = 0;
@@ -67,12 +68,12 @@ public final class Entity {
     return -1;
   }
 
-  public <T extends Record & Component> @Nullable T getComponent(Class<T> type) {
+  public <T extends Record & Component> Optional<@NonNull T> getComponent(Class<T> type) {
     var index = findComponent(type);
     if (index < 0) {
-      return null;
+      return Optional.empty();
     }
-    return type.cast(components.get(index));
+    return Optional.of(type.cast(components.get(index)));
   }
 
   public <T extends Record & Component> void setComponent(T component) {

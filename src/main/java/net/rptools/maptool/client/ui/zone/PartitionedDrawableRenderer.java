@@ -222,9 +222,23 @@ public class PartitionedDrawableRenderer implements DrawableRenderer {
     int x = gridx * CHUNK_SIZE;
     int y = gridy * CHUNK_SIZE;
 
-    // TODO Move these variables into the loop, right?
-    BufferedImage image = null;
-    Graphics2D g = null;
+    final BufferedImage image;
+    final Graphics2D g;
+    timer.start("createChunk:CreateChunk");
+    try {
+      image = getNewChunk();
+      g = image.createGraphics();
+      g.setClip(0, 0, CHUNK_SIZE, CHUNK_SIZE);
+
+      g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+      AffineTransform af = new AffineTransform();
+      af.translate(-x, -y);
+      af.scale(scale, scale);
+      g.setTransform(af);
+    } finally {
+      timer.stop("createChunk:CreateChunk");
+    }
 
     for (Entity entity : component.drawables()) {
 
@@ -248,85 +262,77 @@ public class PartitionedDrawableRenderer implements DrawableRenderer {
       }
       timer.stop("createChunk:BoundsCheck");
 
-      // TODO This image and transform is not used for groups, so move its creation to after groups.
-      timer.start("createChunk:CreateChunk");
-      if (image == null) {
-        image = getNewChunk();
-        g = image.createGraphics();
-        g.setClip(0, 0, CHUNK_SIZE, CHUNK_SIZE);
-
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-        AffineTransform af = new AffineTransform();
-        af.translate(-x, -y);
-        af.scale(scale, scale);
-        g.setTransform(af);
-      }
-      timer.stop("createChunk:CreateChunk");
-
-      var group = entity.getComponent(DrawableSetComponent.class);
-      if (group != null) {
-        BufferedImage groupImage = createChunk(group, gridx, gridy, scale);
-        Graphics2D g2 = image.createGraphics();
-        g2.drawImage(groupImage, 0, 0, CHUNK_SIZE, CHUNK_SIZE, null);
-        g2.dispose();
-      }
+      entity
+          .getComponent(DrawableSetComponent.class)
+          .ifPresent(
+              group -> {
+                BufferedImage groupImage = createChunk(group, gridx, gridy, scale);
+                Graphics2D g2 = image.createGraphics();
+                g2.drawImage(groupImage, 0, 0, CHUNK_SIZE, CHUNK_SIZE, null);
+                g2.dispose();
+              });
 
       timer.start("createChunk:Draw");
-      var fill = entity.getComponent(FilledShapeComponent.class);
-      if (fill != null) {
-        var g2 = (Graphics2D) g.create();
-        try {
-          g2.setComposite(AlphaComposite.SrcOver.derive((float) fill.opacity()));
-          g2.setPaint(paintResolver.apply(fill.paint()));
-          g2.fill(fill.shape());
-        } finally {
-          g2.dispose();
-        }
-      }
+      entity
+          .getComponent(FilledShapeComponent.class)
+          .ifPresent(
+              fill -> {
+                var g2 = (Graphics2D) g.create();
+                try {
+                  g2.setComposite(AlphaComposite.SrcOver.derive((float) fill.opacity()));
+                  g2.setPaint(paintResolver.apply(fill.paint()));
+                  g2.fill(fill.shape());
+                } finally {
+                  g2.dispose();
+                }
+              });
 
-      var border = entity.getComponent(BorderShapeComponent.class);
-      if (border != null) {
-        var g2 = (Graphics2D) g.create();
-        try {
-          g2.setComposite(AlphaComposite.SrcOver.derive((float) border.opacity()));
-          g2.setPaint(paintResolver.apply(border.paint()));
-          g2.setStroke(border.stroke());
-          g2.draw(border.shape());
-        } finally {
-          g2.dispose();
-        }
-      }
+      entity
+          .getComponent(BorderShapeComponent.class)
+          .ifPresent(
+              border -> {
+                var g2 = (Graphics2D) g.create();
+                try {
+                  g2.setComposite(AlphaComposite.SrcOver.derive((float) border.opacity()));
+                  g2.setPaint(paintResolver.apply(border.paint()));
+                  g2.setStroke(border.stroke());
+                  g2.draw(border.shape());
+                } finally {
+                  g2.dispose();
+                }
+              });
 
-      var decoration = entity.getComponent(DecorationShapeComponent.class);
-      if (decoration != null) {
-        var g2 = (Graphics2D) g.create();
-        try {
-          g2.setComposite(AlphaComposite.SrcOver.derive((float) decoration.opacity()));
-          g2.setPaint(paintResolver.apply(decoration.paint()));
-          g2.setStroke(decoration.stroke());
-          g2.draw(decoration.shape());
-        } finally {
-          g2.dispose();
-        }
-      }
+      entity
+          .getComponent(DecorationShapeComponent.class)
+          .ifPresent(
+              decoration -> {
+                var g2 = (Graphics2D) g.create();
+                try {
+                  g2.setComposite(AlphaComposite.SrcOver.derive((float) decoration.opacity()));
+                  g2.setPaint(paintResolver.apply(decoration.paint()));
+                  g2.setStroke(decoration.stroke());
+                  g2.draw(decoration.shape());
+                } finally {
+                  g2.dispose();
+                }
+              });
 
-      var eraser = entity.getComponent(EraserComponent.class);
-      if (eraser != null) {
-        var g2 = (Graphics2D) g.create();
-        try {
-          g2.setComposite(AlphaComposite.Clear);
-          g2.fill(eraser.area());
-        } finally {
-          g2.dispose();
-        }
-      }
+      entity
+          .getComponent(EraserComponent.class)
+          .ifPresent(
+              eraser -> {
+                var g2 = (Graphics2D) g.create();
+                try {
+                  g2.setComposite(AlphaComposite.Clear);
+                  g2.fill(eraser.area());
+                } finally {
+                  g2.dispose();
+                }
+              });
 
       timer.stop("createChunk:Draw");
     }
-    if (g != null) {
-      g.dispose();
-    }
+    g.dispose();
     return image;
   }
 

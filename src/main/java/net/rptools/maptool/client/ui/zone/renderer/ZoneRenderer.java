@@ -1018,56 +1018,66 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     timer.start("board");
     try {
-      var board = entity.getComponent(BoardComponent.class);
-      if (board != null) {
-        var g3 = (Graphics2D) g2d.create();
-        try {
-          g3.setPaint(resolveAwtPaint(board.paint(), viewModel.getZoneScale(), this));
-          g3.fillRect(0, 0, size.width, size.height);
+      entity
+          .getComponent(BoardComponent.class)
+          .ifPresent(
+              board -> {
+                var g3 = (Graphics2D) g2d.create();
+                try {
+                  g3.setPaint(resolveAwtPaint(board.paint(), viewModel.getZoneScale(), this));
+                  g3.fillRect(0, 0, size.width, size.height);
 
-          if (board.noise() != null) {
-            g3.setComposite(AlphaComposite.SrcOver.derive(board.noise().getNoiseAlpha()));
-            g3.setPaint(board.noise().getPaint(viewModel.getZoneScale()));
-            g3.fillRect(0, 0, size.width, size.height);
-          }
+                  if (board.noise() != null) {
+                    g3.setComposite(AlphaComposite.SrcOver.derive(board.noise().getNoiseAlpha()));
+                    g3.setPaint(board.noise().getPaint(viewModel.getZoneScale()));
+                    g3.fillRect(0, 0, size.width, size.height);
+                  }
 
-        } finally {
-          g3.dispose();
-        }
-      }
+                } finally {
+                  g3.dispose();
+                }
+              });
     } finally {
       timer.stop("board");
     }
 
     timer.start("grid");
     try {
-      var grid = entity.getComponent(GridComponent.class);
-      if (grid != null) {
-        gridRenderer.renderGrid(g2d, grid);
-      }
+      entity
+          .getComponent(GridComponent.class)
+          .ifPresent(
+              grid -> {
+                gridRenderer.renderGrid(g2d, grid);
+              });
     } finally {
       timer.stop("grid");
     }
 
     timer.start("drawables");
     try {
-      var drawableSet = entity.getComponent(DrawableSetComponent.class);
-      if (drawableSet != null) {
-        var renderer =
-            drawableRenderers.computeIfAbsent(
-                entity.getId(), id -> new PartitionedDrawableRenderer(this::resolveAwtPaint));
-        if (entity.getComponent(DirtyComponent.class) != null) {
-          renderer.setDirty();
-        }
-        // TODO Why can't
-        renderer.renderDrawables(
-            g2d,
-            drawableSet,
-            new Rectangle(
-                zoneScale.getOffsetX(), zoneScale.getOffsetY(), getSize().width, getSize().height),
-            zoneScale.getScale());
-        entity.removeComponent(DirtyComponent.class);
-      }
+      entity
+          .getComponent(DrawableSetComponent.class)
+          .ifPresent(
+              drawableSet -> {
+                var renderer =
+                    drawableRenderers.computeIfAbsent(
+                        entity.getId(),
+                        id -> new PartitionedDrawableRenderer(this::resolveAwtPaint));
+                if (entity.getComponent(DirtyComponent.class).isPresent()) {
+                  renderer.setDirty();
+                }
+                // TODO Why can't
+                renderer.renderDrawables(
+                    g2d,
+                    drawableSet,
+                    new Rectangle(
+                        zoneScale.getOffsetX(),
+                        zoneScale.getOffsetY(),
+                        getSize().width,
+                        getSize().height),
+                    zoneScale.getScale());
+                entity.removeComponent(DirtyComponent.class);
+              });
     } finally {
       timer.stop("drawables");
     }
@@ -1077,18 +1087,20 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         worldG -> {
           timer.start("sprites");
           try {
-            var sprite = entity.getComponent(SpriteComponent.class);
-            if (sprite != null) {
-              var g3 = (Graphics2D) worldG.create();
-              try {
-                g3.setComposite(AlphaComposite.SrcOver.derive((float) sprite.opacity()));
+            entity
+                .getComponent(SpriteComponent.class)
+                .ifPresent(
+                    sprite -> {
+                      var g3 = (Graphics2D) worldG.create();
+                      try {
+                        g3.setComposite(AlphaComposite.SrcOver.derive((float) sprite.opacity()));
 
-                var image = ImageManager.getImage(sprite.imageAsset(), this);
-                g3.drawImage(image, sprite.transform(), this);
-              } finally {
-                g3.dispose();
-              }
-            }
+                        var image = ImageManager.getImage(sprite.imageAsset(), this);
+                        g3.drawImage(image, sprite.transform(), this);
+                      } finally {
+                        g3.dispose();
+                      }
+                    });
           } finally {
             timer.stop("sprites");
           }
