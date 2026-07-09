@@ -14,12 +14,19 @@
  */
 package net.rptools.maptool.client.ui.zone;
 
+import com.google.common.eventbus.Subscribe;
 import java.awt.geom.Point2D;
 import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.Nullable;
+import net.rptools.maptool.client.entities.DirtyComponent;
 import net.rptools.maptool.client.entities.Entity;
 import net.rptools.maptool.client.entities.ModelEntityId;
+import net.rptools.maptool.events.MapToolEventBus;
+import net.rptools.maptool.model.GUID;
+import net.rptools.maptool.model.zones.DrawableAdded;
+import net.rptools.maptool.model.zones.DrawableChanged;
+import net.rptools.maptool.model.zones.DrawableRemoved;
 
 public class EntityManager {
   // TODO Deprecate and remove this.
@@ -30,6 +37,7 @@ public class EntityManager {
     AboveFog,
   }
 
+  private final GUID zoneId;
   private final Map<ModelEntityId, Entity> domainIdsToEcs = new HashMap<>();
   private final Map<Long, Entity> allKnownEntities = new HashMap<>();
   private final Entity board;
@@ -40,7 +48,8 @@ public class EntityManager {
   private final Entity gmDrawables;
   private final Entity tokenDrawables;
 
-  public EntityManager() {
+  public EntityManager(GUID zoneId) {
+    this.zoneId = zoneId;
     board = new Entity(new Point2D.Double(0, 0));
     map = new Entity(new Point2D.Double(0, 0));
     grid = new Entity(new Point2D.Double(0, 0));
@@ -48,6 +57,8 @@ public class EntityManager {
     objectDrawables = new Entity(new Point2D.Double(0, 0));
     gmDrawables = new Entity(new Point2D.Double(0, 0));
     tokenDrawables = new Entity(new Point2D.Double(0, 0));
+
+    new MapToolEventBus().getMainEventBus().register(this);
   }
 
   private Entity createEntity() {
@@ -94,5 +105,62 @@ public class EntityManager {
 
   public Entity getTokenDrawables() {
     return tokenDrawables;
+  }
+
+  @Subscribe
+  private void onDrawableAdded(DrawableAdded event) {
+    if (!zoneId.equals(event.zone().getId())) {
+      return;
+    }
+
+    var layerEntity =
+        switch (event.drawnElement().getDrawable().getLayer()) {
+          case TOKEN -> tokenDrawables;
+          case GM -> gmDrawables;
+          case OBJECT -> objectDrawables;
+          case BACKGROUND -> backgroundDrawables;
+        };
+
+    layerEntity.setComponent(new DirtyComponent());
+  }
+
+  @Subscribe
+  private void onDrawableAdded(DrawableRemoved event) {
+    if (!zoneId.equals(event.zone().getId())) {
+      return;
+    }
+
+    var layerEntity =
+        switch (event.drawnElement().getDrawable().getLayer()) {
+          case TOKEN -> tokenDrawables;
+          case GM -> gmDrawables;
+          case OBJECT -> objectDrawables;
+          case BACKGROUND -> backgroundDrawables;
+        };
+
+    layerEntity.setComponent(new DirtyComponent());
+  }
+
+  @Subscribe
+  private void onDrawableAdded(DrawableChanged event) {
+    if (!zoneId.equals(event.zone().getId())) {
+      return;
+    }
+
+    var layerEntity =
+        switch (event.drawnElement().getDrawable().getLayer()) {
+          case TOKEN -> tokenDrawables;
+          case GM -> gmDrawables;
+          case OBJECT -> objectDrawables;
+          case BACKGROUND -> backgroundDrawables;
+        };
+
+    layerEntity.setComponent(new DirtyComponent());
+  }
+
+  public void revalidate() {
+    for (var entity : allKnownEntities.values()) {
+      entity.removeComponent(DirtyComponent.class);
+    }
   }
 }

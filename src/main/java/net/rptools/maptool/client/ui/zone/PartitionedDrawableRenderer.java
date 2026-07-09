@@ -16,7 +16,6 @@ package net.rptools.maptool.client.ui.zone;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
-import java.awt.Composite;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
@@ -26,28 +25,30 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.*;
+import java.util.function.Function;
 import net.rptools.lib.CodeTimer;
 import net.rptools.lib.image.ImageUtil;
 import net.rptools.maptool.client.DeveloperOptions;
-import net.rptools.maptool.model.Zone;
-import net.rptools.maptool.model.drawing.Drawable;
-import net.rptools.maptool.model.drawing.DrawablesGroup;
-import net.rptools.maptool.model.drawing.DrawnElement;
-import net.rptools.maptool.model.drawing.Pen;
+import net.rptools.maptool.client.entities.BorderShapeComponent;
+import net.rptools.maptool.client.entities.DecorationShapeComponent;
+import net.rptools.maptool.client.entities.DrawableSetComponent;
+import net.rptools.maptool.client.entities.Entity;
+import net.rptools.maptool.client.entities.EraserComponent;
+import net.rptools.maptool.client.entities.FilledShapeComponent;
+import net.rptools.maptool.client.entities.Paint;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /** */
 public class PartitionedDrawableRenderer implements DrawableRenderer {
-  private static Logger log = LogManager.getLogger(PartitionedDrawableRenderer.class);
+  private static final Logger log = LogManager.getLogger(PartitionedDrawableRenderer.class);
   private static boolean messageLogged = false;
 
   private static final int CHUNK_SIZE = 256;
-  private static List<BufferedImage> unusedChunkList = new LinkedList<BufferedImage>();
+  private static final List<BufferedImage> unusedChunkList = new LinkedList<>();
 
-  private final Zone zone;
-  private final Set<String> noImageSet = new HashSet<String>();
-  private final List<Tuple> chunkList = new LinkedList<Tuple>();
+  private final Set<String> noImageSet = new HashSet<>();
+  private final List<Tuple> chunkList = new LinkedList<>();
   private int maxChunks;
 
   private double lastScale;
@@ -58,8 +59,10 @@ public class PartitionedDrawableRenderer implements DrawableRenderer {
 
   private boolean dirty = false;
 
-  public PartitionedDrawableRenderer(Zone zone) {
-    this.zone = zone;
+  private final Function<Paint, java.awt.Paint> paintResolver;
+
+  public PartitionedDrawableRenderer(Function<Paint, java.awt.Paint> paintResolver) {
+    this.paintResolver = paintResolver;
   }
 
   public void flush() {
@@ -81,7 +84,7 @@ public class PartitionedDrawableRenderer implements DrawableRenderer {
   }
 
   public void renderDrawables(
-      Graphics g, List<DrawnElement> drawableList, Rectangle viewport, double scale) {
+      Graphics g, DrawableSetComponent component, Rectangle viewport, double scale) {
     CodeTimer.using(
         "Renderer",
         timer -> {
@@ -89,8 +92,11 @@ public class PartitionedDrawableRenderer implements DrawableRenderer {
           timer.setEnabled(false);
 
           // NOTHING TO DO
-          if (drawableList == null || drawableList.isEmpty()) {
-            if (dirty) flush();
+          if (component.drawables().isEmpty()) {
+            // TODO Why not check `dirty` || `lastScale != scale` first?
+            if (dirty) {
+              flush();
+            }
             return;
           }
           // View changed ?
@@ -127,7 +133,7 @@ public class PartitionedDrawableRenderer implements DrawableRenderer {
               }
               Tuple chunk = findChunk(chunkList, key);
               if (chunk == null) {
-                chunk = new Tuple(key, createChunk(drawableList, cellX, cellY, scale));
+                chunk = new Tuple(key, createChunk(component, cellX, cellY, scale));
 
                 if (chunk.image == null) {
                   noImageSet.add(key);
@@ -210,26 +216,21 @@ public class PartitionedDrawableRenderer implements DrawableRenderer {
   }
 
   private BufferedImage createChunk(
-      List<DrawnElement> drawableList, int gridx, int gridy, double scale) {
+      DrawableSetComponent component, int gridx, int gridy, double scale) {
     final var timer = CodeTimer.get();
 
     int x = gridx * CHUNK_SIZE;
     int y = gridy * CHUNK_SIZE;
 
+    // TODO Move these variables into the loop, right?
     BufferedImage image = null;
-    Composite oldComposite = null;
     Graphics2D g = null;
 
-    for (DrawnElement element : drawableList) {
-      timer.start("createChunk:calculate");
-      Drawable drawable = element.getDrawable();
-      Rectangle drawableBounds = drawable.getBounds(zone);
-      if (drawableBounds == null) {
-        timer.stop("createChunk:calculate");
-        continue;
-      }
+    for (Entity entity : component.drawables()) {
 
-      Rectangle2D drawnBounds = new Rectangle(drawableBounds);
+      timer.start("createChunk:calculate");
+
+      Rectangle2D drawnBounds = entity.getBounds();
       Rectangle2D chunkBounds =
           new Rectangle(
               (int) (gridx * (CHUNK_SIZE / scale)),
@@ -238,13 +239,6 @@ public class PartitionedDrawableRenderer implements DrawableRenderer {
               (int) (CHUNK_SIZE / scale));
 
       // Handle pen size
-      Pen pen = element.getPen();
-      int penSize = (int) (pen.getThickness() / 2 + 1);
-      drawnBounds.setRect(
-          drawnBounds.getX() - penSize,
-          drawnBounds.getY() - penSize,
-          drawnBounds.getWidth() + pen.getThickness(),
-          drawnBounds.getHeight() + pen.getThickness());
       timer.stop("createChunk:calculate");
 
       timer.start("createChunk:BoundsCheck");
@@ -254,12 +248,12 @@ public class PartitionedDrawableRenderer implements DrawableRenderer {
       }
       timer.stop("createChunk:BoundsCheck");
 
+      // TODO This image and transform is not used for groups, so move its creation to after groups.
       timer.start("createChunk:CreateChunk");
       if (image == null) {
         image = getNewChunk();
         g = image.createGraphics();
         g.setClip(0, 0, CHUNK_SIZE, CHUNK_SIZE);
-        oldComposite = g.getComposite();
 
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
@@ -270,19 +264,64 @@ public class PartitionedDrawableRenderer implements DrawableRenderer {
       }
       timer.stop("createChunk:CreateChunk");
 
-      if (pen.getOpacity() != 1) {
-        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, pen.getOpacity()));
-      }
-
-      timer.start("createChunk:Draw");
-      if (drawable instanceof DrawablesGroup) {
-        DrawablesGroup dg = (DrawablesGroup) drawable;
-        BufferedImage groupImage = createChunk(dg.getDrawableList(), gridx, gridy, scale);
+      var group = entity.getComponent(DrawableSetComponent.class);
+      if (group != null) {
+        BufferedImage groupImage = createChunk(group, gridx, gridy, scale);
         Graphics2D g2 = image.createGraphics();
         g2.drawImage(groupImage, 0, 0, CHUNK_SIZE, CHUNK_SIZE, null);
         g2.dispose();
-      } else drawable.draw(zone, g, pen);
-      g.setComposite(oldComposite);
+      }
+
+      timer.start("createChunk:Draw");
+      var fill = entity.getComponent(FilledShapeComponent.class);
+      if (fill != null) {
+        var g2 = (Graphics2D) g.create();
+        try {
+          g2.setComposite(AlphaComposite.SrcOver.derive((float) fill.opacity()));
+          g2.setPaint(paintResolver.apply(fill.paint()));
+          g2.fill(fill.shape());
+        } finally {
+          g2.dispose();
+        }
+      }
+
+      var border = entity.getComponent(BorderShapeComponent.class);
+      if (border != null) {
+        var g2 = (Graphics2D) g.create();
+        try {
+          g2.setComposite(AlphaComposite.SrcOver.derive((float) border.opacity()));
+          g2.setPaint(paintResolver.apply(border.paint()));
+          g2.setStroke(border.stroke());
+          g2.draw(border.shape());
+        } finally {
+          g2.dispose();
+        }
+      }
+
+      var decoration = entity.getComponent(DecorationShapeComponent.class);
+      if (decoration != null) {
+        var g2 = (Graphics2D) g.create();
+        try {
+          g2.setComposite(AlphaComposite.SrcOver.derive((float) decoration.opacity()));
+          g2.setPaint(paintResolver.apply(decoration.paint()));
+          g2.setStroke(decoration.stroke());
+          g2.draw(decoration.shape());
+        } finally {
+          g2.dispose();
+        }
+      }
+
+      var eraser = entity.getComponent(EraserComponent.class);
+      if (eraser != null) {
+        var g2 = (Graphics2D) g.create();
+        try {
+          g2.setComposite(AlphaComposite.Clear);
+          g2.fill(eraser.area());
+        } finally {
+          g2.dispose();
+        }
+      }
+
       timer.stop("createChunk:Draw");
     }
     if (g != null) {
@@ -292,7 +331,7 @@ public class PartitionedDrawableRenderer implements DrawableRenderer {
   }
 
   private BufferedImage getNewChunk() {
-    BufferedImage image = null;
+    BufferedImage image;
     if (unusedChunkList.size() > 0) {
       image = unusedChunkList.remove(0);
       ImageUtil.clearImage(image);

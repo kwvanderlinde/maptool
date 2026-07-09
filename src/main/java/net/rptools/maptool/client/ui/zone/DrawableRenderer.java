@@ -16,16 +16,32 @@ package net.rptools.maptool.client.ui.zone;
 
 import java.awt.Graphics;
 import java.awt.Rectangle;
-import java.util.List;
-import net.rptools.maptool.model.drawing.DrawnElement;
+import net.rptools.maptool.client.entities.DrawableSetComponent;
 
 /** */
 public interface DrawableRenderer {
+  /**
+   * Renders the drawables in {@code component}.
+   *
+   * <p>For performance, the rendering is cached and will only be invalidated if {@link #setDirty()}
+   * has been called since the previous call to {@code renderDrawables()} on this renderer.
+   *
+   * @param g The graphics context to render to.
+   * @param component The container of drawble entities to render.
+   * @param viewport The bounds of the renderer.
+   * @param scale The scale at which the zone is currently displayed.
+   */
+  void renderDrawables(
+      Graphics g, DrawableSetComponent component, Rectangle viewport, double scale);
 
-  public void renderDrawables(
-      Graphics g, List<DrawnElement> drawableList, Rectangle viewport, double scale);
+  /** Invalidates cached render results. */
+  void flush();
 
-  public void flush();
-
-  public void setDirty();
+  /**
+   * Marks the renderer as dirty.
+   *
+   * <p>This causes {@link #flush()} to automatically be called the next time {@link
+   * #renderDrawables(Graphics, DrawableSetComponent, Rectangle, double)} is called.
+   */
+  void setDirty();
 }

@@ -162,7 +162,7 @@ public class ZoneViewModel {
 
   // endregion
 
-  public final EntityManager entityManager = new EntityManager();
+  public final EntityManager entityManager;
   // TODO Layers should be unnecessary. Just represent the grid as a component on an entity, etc.
   public final EnumMap<RenderLayer, List<Entity>> entitiesInZOrder =
       CollectionUtil.newFilledEnumMap(RenderLayer.class, l -> new ArrayList<>());
@@ -173,6 +173,7 @@ public class ZoneViewModel {
     this.zoneView = zoneView;
     this.selectionModel = selectionModel;
     this.imageObserver = imageObserver;
+    this.entityManager = new EntityManager(zone.getId());
   }
 
   public void repaintNeeded() {
@@ -514,6 +515,7 @@ public class ZoneViewModel {
           entityManager.ensureEntityFor(
               new ModelEntityId(ModelEntityId.Kind.Drawing, element.getDrawable().getId()));
 
+      // TODO For groups, union all child bounds. For non-groups, use the pen-based logic.
       if (pen.getPaint() != null) {
         var thickness = pen.getThickness();
         drawingBounds.setRect(

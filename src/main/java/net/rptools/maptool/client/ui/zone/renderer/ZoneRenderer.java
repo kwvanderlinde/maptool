@@ -39,17 +39,13 @@ import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import net.rptools.lib.CodeTimer;
-import net.rptools.lib.CollectionUtil;
 import net.rptools.lib.MD5Key;
 import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.*;
 import net.rptools.maptool.client.entities.BoardComponent;
-import net.rptools.maptool.client.entities.BorderShapeComponent;
-import net.rptools.maptool.client.entities.DecorationShapeComponent;
+import net.rptools.maptool.client.entities.DirtyComponent;
 import net.rptools.maptool.client.entities.DrawableSetComponent;
 import net.rptools.maptool.client.entities.Entity;
-import net.rptools.maptool.client.entities.EraserComponent;
-import net.rptools.maptool.client.entities.FilledShapeComponent;
 import net.rptools.maptool.client.entities.GridComponent;
 import net.rptools.maptool.client.entities.SpriteComponent;
 import net.rptools.maptool.client.events.RepaintZoneRequested;
@@ -105,7 +101,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   /** Manages the selected tokens on the zone. */
   private final SelectionModel selectionModel;
 
-  private final Map<Zone.Layer, DrawableRenderer> drawableRenderers;
+  private final Map<Long, DrawableRenderer> drawableRenderers;
   private final List<ZoneOverlay> overlayList = new ArrayList<>();
   private final List<LabelLocation> labelLocationList = new LinkedList<>();
   private final Map<GUID, SelectionSet> selectionSetMap = new HashMap<>();
@@ -161,9 +157,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     this.zoneView = new ZoneView(zone);
     this.viewModel = new ZoneViewModel(zone, zoneView, selectionModel, this);
 
-    drawableRenderers =
-        CollectionUtil.newFilledEnumMap(
-            Zone.Layer.class, layer -> new PartitionedDrawableRenderer(zone));
+    drawableRenderers = new HashMap<>();
 
     this.renderHelper = new RenderHelper(this, tempBufferPool);
     this.gridRenderer = new GridRenderer(this);
@@ -868,11 +862,13 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       timer.stop("createTransformedArea");
     }
 
+    var zoneScale = viewModel.getZoneScale();
+
     timer.stop("calcs-1");
 
     // Rendering pipeline
     for (var entity : viewModel.entitiesInZOrder.get(ZoneViewModel.RenderLayer.AboveBoard)) {
-      renderEntity(g2d, entity);
+      renderEntity(g2d, entity, zoneScale);
     }
 
     if (viewModel.shouldRenderLayer(Zone.Layer.BACKGROUND)) {
@@ -888,7 +884,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     // Object stamps used to be drawn here.
 
     for (var entity : viewModel.entitiesInZOrder.get(ZoneViewModel.RenderLayer.AboveGrid)) {
-      renderEntity(g2d, entity);
+      renderEntity(g2d, entity, zoneScale);
     }
 
     if (viewModel.shouldRenderLayer(Zone.Layer.TOKEN)) {
@@ -900,7 +896,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     darknessRenderer.render(g2d, view);
 
     for (var entity : viewModel.entitiesInZOrder.get(ZoneViewModel.RenderLayer.AboveLights)) {
-      renderEntity(g2d, entity);
+      renderEntity(g2d, entity, zoneScale);
     }
 
     /*
@@ -1016,7 +1012,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   }
 
   // TODO May want to render individually known components so an entity can span multiple z-orders.
-  private void renderEntity(Graphics2D g2d, Entity entity) {
+  private void renderEntity(Graphics2D g2d, Entity entity, Scale zoneScale) {
     final Dimension size = getSize();
     final CodeTimer timer = CodeTimer.get();
 
@@ -1057,7 +1053,20 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     try {
       var drawableSet = entity.getComponent(DrawableSetComponent.class);
       if (drawableSet != null) {
-        renderDrawables(g2d, drawableSet.drawables());
+        var renderer =
+            drawableRenderers.computeIfAbsent(
+                entity.getId(), id -> new PartitionedDrawableRenderer(this::resolveAwtPaint));
+        if (entity.getComponent(DirtyComponent.class) != null) {
+          renderer.setDirty();
+        }
+        // TODO Why can't
+        renderer.renderDrawables(
+            g2d,
+            drawableSet,
+            new Rectangle(
+                zoneScale.getOffsetX(), zoneScale.getOffsetY(), getSize().width, getSize().height),
+            zoneScale.getScale());
+        entity.removeComponent(DirtyComponent.class);
       }
     } finally {
       timer.stop("drawables");
@@ -1096,81 +1105,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             timer.stop("debug-bounds");
           }
         });
-  }
-
-  private GraphicsConfiguration configuration =
-      GraphicsEnvironment.getLocalGraphicsEnvironment()
-          .getDefaultScreenDevice()
-          .getDefaultConfiguration();
-
-  private void renderDrawables(Graphics2D g, List<Entity> drawables) {
-    // TODO Pool the buffered images
-    var image =
-        configuration.createCompatibleImage(getWidth(), getHeight(), Transparency.TRANSLUCENT);
-    var imageG = image.createGraphics();
-    imageG.setClip(new Rectangle(0, 0, getWidth(), getHeight()));
-    var originalImageGTransform = imageG.getTransform();
-
-    for (var entity : drawables) {
-      var group = entity.getComponent(DrawableSetComponent.class);
-      if (group != null) {
-        imageG.setTransform(originalImageGTransform);
-        renderDrawables(imageG, group.drawables());
-      }
-
-      imageG.setTransform(viewModel.getZoneScale().toScreenTransform());
-
-      var fill = entity.getComponent(FilledShapeComponent.class);
-      if (fill != null) {
-        var g3 = (Graphics2D) imageG.create();
-        try {
-          g3.setComposite(AlphaComposite.SrcOver.derive((float) fill.opacity()));
-          g3.setPaint(resolveAwtPaint(fill.paint()));
-          g3.fill(fill.shape());
-        } finally {
-          g3.dispose();
-        }
-      }
-
-      var border = entity.getComponent(BorderShapeComponent.class);
-      if (border != null) {
-        var g3 = (Graphics2D) imageG.create();
-        try {
-          g3.setComposite(AlphaComposite.SrcOver.derive((float) border.opacity()));
-          g3.setPaint(resolveAwtPaint(border.paint()));
-          g3.setStroke(border.stroke());
-          g3.draw(border.shape());
-        } finally {
-          g3.dispose();
-        }
-      }
-
-      var decoration = entity.getComponent(DecorationShapeComponent.class);
-      if (decoration != null) {
-        var g3 = (Graphics2D) imageG.create();
-        try {
-          g3.setComposite(AlphaComposite.SrcOver.derive((float) decoration.opacity()));
-          g3.setPaint(resolveAwtPaint(decoration.paint()));
-          g3.setStroke(decoration.stroke());
-          g3.draw(decoration.shape());
-        } finally {
-          g3.dispose();
-        }
-      }
-
-      var eraser = entity.getComponent(EraserComponent.class);
-      if (eraser != null) {
-        var g3 = (Graphics2D) imageG.create();
-        try {
-          g3.setComposite(AlphaComposite.Clear);
-          g3.fill(eraser.area());
-        } finally {
-          g3.dispose();
-        }
-      }
-    }
-
-    g.drawImage(image, 0, 0, this);
   }
 
   private void delayRendering(ItemRenderer renderer) {
@@ -2655,16 +2589,11 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     onTopologyChanged();
   }
 
-  private void markDrawableLayerDirty(Layer layer) {
-    drawableRenderers.get(layer).setDirty();
-  }
-
   @Subscribe
   private void onDrawableAdded(DrawableAdded event) {
     if (event.zone() != this.zone) {
       return;
     }
-    markDrawableLayerDirty(event.drawnElement().getDrawable().getLayer());
     MapTool.getFrame().updateTokenTree(); // for any event
     repaintDebouncer.dispatch();
   }
@@ -2674,7 +2603,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     if (event.zone() != this.zone) {
       return;
     }
-    markDrawableLayerDirty(event.drawnElement().getDrawable().getLayer());
     MapTool.getFrame().updateTokenTree(); // for any event
     repaintDebouncer.dispatch();
   }
