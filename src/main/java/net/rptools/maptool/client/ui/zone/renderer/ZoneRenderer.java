@@ -871,7 +871,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     // Rendering pipeline
     for (var entity : viewModel.entitiesInZOrder.get(ZoneViewModel.RenderLayer.AboveBoard)) {
-      renderEntity(g2d, entity, zoneScale);
+      renderEntity(view, g2d, entity, zoneScale);
     }
 
     if (viewModel.shouldRenderLayer(Zone.Layer.BACKGROUND)) {
@@ -887,7 +887,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     // Object stamps used to be drawn here.
 
     for (var entity : viewModel.entitiesInZOrder.get(ZoneViewModel.RenderLayer.AboveGrid)) {
-      renderEntity(g2d, entity, zoneScale);
+      renderEntity(view, g2d, entity, zoneScale);
     }
 
     if (viewModel.shouldRenderLayer(Zone.Layer.TOKEN)) {
@@ -899,7 +899,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     darknessRenderer.render(g2d, view);
 
     for (var entity : viewModel.entitiesInZOrder.get(ZoneViewModel.RenderLayer.AboveLights)) {
-      renderEntity(g2d, entity, zoneScale);
+      renderEntity(view, g2d, entity, zoneScale);
     }
 
     /*
@@ -929,19 +929,11 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       if (viewModel.shouldRenderLayer(Zone.Layer.GM)) {
         // GM drawables used to be drawn here.
 
-        List<Token> stamps = zone.getTokensOnLayer(Layer.GM, false);
-        if (!stamps.isEmpty()) {
-          timer.start("tokensGM");
-          renderTokens(g2d, stamps, view, false);
-          timer.stop("tokensGM");
-        }
+        // GM tokens used to be drawn here.
       }
-      List<Token> tokens = zone.getTokensOnLayer(Layer.TOKEN, false);
-      if (!tokens.isEmpty()) {
-        timer.start("tokens");
-        renderTokens(g2d, tokens, view, false);
-        timer.stop("tokens");
-      }
+
+      // Token tokens used to be drawn here.
+
       timer.start("unowned movement");
       showBlockedMoves(g2d, view, getUnOwnedMovementSet(view));
       timer.stop("unowned movement");
@@ -1015,7 +1007,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   }
 
   // TODO May want to render individually known components so an entity can span multiple z-orders.
-  private void renderEntity(Graphics2D g2d, Entity entity, Scale zoneScale) {
+  private void renderEntity(PlayerView view, Graphics2D g2d, Entity entity, Scale zoneScale) {
     final Dimension size = getSize();
     final CodeTimer timer = CodeTimer.get();
 
@@ -1094,14 +1086,16 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
                 .getComponent(MapComponent.class)
                 .ifPresent(
                     map -> {
-                      renderSprite(worldG, map.sprite(), ClipType.NoClipping);
+                      renderSprite(view, worldG, map.sprite(), ClipType.NoClipping);
                     });
 
             entity
                 .getComponent(TokenComponent.class)
                 .ifPresent(
                     tokenImage -> {
-                      renderSprite(worldG, tokenImage.sprite(), tokenImage.clipType());
+                      renderSprite(view, worldG, tokenImage.sprite(), tokenImage.clipType());
+
+                      // TODO Render paths, states, and whatnot
                     });
           } finally {
             timer.stop("sprites");
@@ -1121,10 +1115,21 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         });
   }
 
-  private void renderSprite(Graphics2D g, Sprite sprite, ClipType clip) {
+  private void renderSprite(PlayerView view, Graphics2D g, Sprite sprite, ClipType clip) {
     // TODO Act on the clip.
     var g2 = (Graphics2D) g.create();
     try {
+      var clipArea =
+          switch (clip) {
+            case NoClipping -> null;
+            case ClearArea -> zoneView.getVisibility(view).clearArea();
+            case VisibleArea -> zoneView.getVisibility(view).visibleArea();
+            case ExposedArea -> zoneView.getVisibility(view).exposedArea();
+          };
+      if (clipArea != null) {
+        g2.clip(clipArea);
+      }
+
       g2.setComposite(AlphaComposite.SrcOver.derive((float) sprite.opacity()));
 
       var image = ImageManager.getImage(sprite.imageAsset(), this);

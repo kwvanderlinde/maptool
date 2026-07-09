@@ -479,11 +479,12 @@ public class ZoneViewModel {
           compositeDrawablesAsEntities(entity, zone.getDrawnElements(Zone.Layer.GM));
           list.add(entity);
         }
-        // TODO GM tokens as entities
+
+        compositeTokensAsEntities(Zone.Layer.GM, zone.getTokensOnLayer(Zone.Layer.GM, false), list);
       }
 
       compositeTokensAsEntities(
-          Zone.Layer.OBJECT, zone.getTokensOnLayer(Zone.Layer.OBJECT, false), list);
+          Zone.Layer.TOKEN, zone.getTokensOnLayer(Zone.Layer.TOKEN, false), list);
 
       // TODO Unowned movement as entities
     }
@@ -661,11 +662,12 @@ public class ZoneViewModel {
 
       ClipType clipType;
       if (softFowClippingEnabled && isTokenInNeedOfClipping(position, playerView)) {
-        // TODO How to represent the clip?
-        // TODO Clip to visible area and cell bounds (though I don't like the latter).
+        // TODO Also need to clip to cell bounds. How to do that?
+        //  By the way, I hate that we have to do this. We should really separate out figure tokens.
+        //  And always-visible tokens should not be subject to this constraint unless they are also
+        //  figures on an ISO grid.
         clipType = ClipType.VisibleArea;
       } else {
-        // TODO How to represent the not-clip?
         clipType = ClipType.NoClipping;
       }
 
