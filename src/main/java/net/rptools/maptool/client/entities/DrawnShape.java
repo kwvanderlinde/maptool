@@ -14,8 +14,10 @@
  */
 package net.rptools.maptool.client.entities;
 
-import java.awt.BasicStroke;
-import java.awt.Shape;
+import javax.annotation.Nullable;
 
-public record DecorationShapeComponent(Shape shape, Paint paint, BasicStroke stroke, double opacity)
-    implements Component {}
+public record DrawnShape(
+    java.awt.Shape shape,
+    @Nullable Fill fill,
+    @Nullable Stroke stroke,
+    @Nullable Stroke decoration) {}

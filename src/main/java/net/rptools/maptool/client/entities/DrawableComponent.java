@@ -14,6 +14,8 @@
  */
 package net.rptools.maptool.client.entities;
 
-import java.awt.Shape;
+import javax.annotation.Nullable;
 
-public record FilledShapeComponent(Shape shape, Paint paint, double opacity) implements Component {}
+public record DrawableComponent(
+    @Nullable Fill fill, @Nullable Stroke border, @Nullable Stroke decoration)
+    implements Component {}

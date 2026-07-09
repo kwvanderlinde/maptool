@@ -19,6 +19,7 @@ import java.awt.Image;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
+import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
@@ -41,22 +42,23 @@ import net.rptools.lib.CodeTimer;
 import net.rptools.lib.CollectionUtil;
 import net.rptools.lib.MD5Key;
 import net.rptools.lib.StringUtil;
+import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.entities.BoardComponent;
-import net.rptools.maptool.client.entities.BorderShapeComponent;
 import net.rptools.maptool.client.entities.ClipType;
-import net.rptools.maptool.client.entities.DecorationShapeComponent;
+import net.rptools.maptool.client.entities.DrawableComponent;
 import net.rptools.maptool.client.entities.DrawableSetComponent;
 import net.rptools.maptool.client.entities.Entity;
 import net.rptools.maptool.client.entities.EraserComponent;
-import net.rptools.maptool.client.entities.FilledShapeComponent;
+import net.rptools.maptool.client.entities.Fill;
 import net.rptools.maptool.client.entities.GridComponent;
 import net.rptools.maptool.client.entities.MapComponent;
 import net.rptools.maptool.client.entities.ModelEntityId;
 import net.rptools.maptool.client.entities.Paint;
 import net.rptools.maptool.client.entities.Sprite;
+import net.rptools.maptool.client.entities.Stroke;
 import net.rptools.maptool.client.entities.TokenComponent;
 import net.rptools.maptool.client.events.RepaintZoneRequested;
 import net.rptools.maptool.client.events.ZoneLoaded;
@@ -534,9 +536,8 @@ public class ZoneViewModel {
 
       if (drawable instanceof DrawablesGroup group) {
         // Not a regular drawable
+        entity.removeComponent(DrawableComponent.class);
         entity.removeComponent(EraserComponent.class);
-        entity.removeComponent(BorderShapeComponent.class);
-        entity.removeComponent(DecorationShapeComponent.class);
 
         if (!group.getDrawableList().isEmpty()) {
           compositeDrawablesAsEntities(entity, group.getDrawableList());
@@ -559,9 +560,7 @@ public class ZoneViewModel {
         // TODO Reuse any existing components. Will only be important once we need to potentially
         //  remesh things for GDX.
         if (pen.isEraser()) {
-          entity.removeComponent(FilledShapeComponent.class);
-          entity.removeComponent(BorderShapeComponent.class);
-          entity.removeComponent(DecorationShapeComponent.class);
+          entity.removeComponent(DrawableComponent.class);
 
           var combinedArea = area == null ? new Area() : area;
           if (border != null) {
@@ -577,26 +576,17 @@ public class ZoneViewModel {
             fillOpacity *= AbstractTemplate.DEFAULT_BG_ALPHA;
           }
 
-          if (area == null) {
-            entity.removeComponent(FilledShapeComponent.class);
-          } else {
-            entity.setComponent(
-                new FilledShapeComponent(area, Paint.of(pen.getBackgroundPaint()), fillOpacity));
-          }
-          if (border == null) {
-            entity.removeComponent(BorderShapeComponent.class);
-          } else {
-            entity.setComponent(
-                new BorderShapeComponent(
-                    border, Paint.of(pen.getPaint()), stroke, pen.getOpacity()));
-          }
-          if (decorations == null) {
-            entity.removeComponent(DecorationShapeComponent.class);
-          } else {
-            entity.setComponent(
-                new DecorationShapeComponent(
-                    decorations, Paint.of(pen.getPaint()), stroke, pen.getOpacity()));
-          }
+          Fill fill =
+              area == null ? null : new Fill(area, Paint.of(pen.getBackgroundPaint()), fillOpacity);
+          Stroke borderStroke =
+              border == null
+                  ? null
+                  : new Stroke(border, Paint.of(pen.getPaint()), stroke, pen.getOpacity());
+          Stroke decorationStroke =
+              decorations == null
+                  ? null
+                  : new Stroke(decorations, Paint.of(pen.getPaint()), stroke, pen.getOpacity());
+          entity.setComponent(new DrawableComponent(fill, borderStroke, decorationStroke));
         }
       }
     }
@@ -702,6 +692,32 @@ public class ZoneViewModel {
       // TODO Output the token's states and bars.
 
       // TODO Output the token's facing arrow
+      // Facing arrow
+      if (token.hasFacing()
+          && (AppPreferences.forceFacingArrow.get()
+              || (token.getShape() == Token.TokenShape.TOP_DOWN)
+              || (token.getShape() == Token.TokenShape.FIGURE && token.getHasImageTable()))) {
+        // TODO Only need to build this once.
+        var unitArrow = new Path2D.Double();
+        {
+          double tailX = -0.25;
+          double dovetailX = -0.15;
+          double tailY = .35;
+
+          unitArrow = new Path2D.Double();
+          unitArrow.moveTo(0, 0);
+          unitArrow.lineTo(tailX, -tailY);
+          unitArrow.lineTo(dovetailX, 0);
+          unitArrow.lineTo(tailX, tailY);
+          unitArrow.closePath();
+        }
+
+        final var isIsometric = zone.getGrid().getType().isIsometric();
+        int angle = Math.floorMod(token.getFacing() + (isIsometric ? 45 : 0), 360);
+        AffineTransform transform =
+                // TODO Get footprint bounds from the TokenPosition.
+                buildArrowTransform(token.getShape(), token.getFootprintBounds(zone), angle, isIsometric);
+      }
 
       // TODO If on the active layer:
       //  1. Tokens need selection boxes, drawn above other tokens on the same layer.

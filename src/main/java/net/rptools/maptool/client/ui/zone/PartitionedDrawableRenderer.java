@@ -29,12 +29,10 @@ import java.util.function.Function;
 import net.rptools.lib.CodeTimer;
 import net.rptools.lib.image.ImageUtil;
 import net.rptools.maptool.client.DeveloperOptions;
-import net.rptools.maptool.client.entities.BorderShapeComponent;
-import net.rptools.maptool.client.entities.DecorationShapeComponent;
+import net.rptools.maptool.client.entities.DrawableComponent;
 import net.rptools.maptool.client.entities.DrawableSetComponent;
 import net.rptools.maptool.client.entities.Entity;
 import net.rptools.maptool.client.entities.EraserComponent;
-import net.rptools.maptool.client.entities.FilledShapeComponent;
 import net.rptools.maptool.client.entities.Paint;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -273,45 +271,36 @@ public class PartitionedDrawableRenderer implements DrawableRenderer {
               });
 
       timer.start("createChunk:Draw");
-      entity
-          .getComponent(FilledShapeComponent.class)
-          .ifPresent(
-              fill -> {
-                var g2 = (Graphics2D) g.create();
-                try {
-                  g2.setComposite(AlphaComposite.SrcOver.derive((float) fill.opacity()));
-                  g2.setPaint(paintResolver.apply(fill.paint()));
-                  g2.fill(fill.shape());
-                } finally {
-                  g2.dispose();
-                }
-              });
 
       entity
-          .getComponent(BorderShapeComponent.class)
+          .getComponent(DrawableComponent.class)
           .ifPresent(
-              border -> {
+              drawable -> {
                 var g2 = (Graphics2D) g.create();
                 try {
-                  g2.setComposite(AlphaComposite.SrcOver.derive((float) border.opacity()));
-                  g2.setPaint(paintResolver.apply(border.paint()));
-                  g2.setStroke(border.stroke());
-                  g2.draw(border.shape());
-                } finally {
-                  g2.dispose();
-                }
-              });
+                  var fill = drawable.fill();
+                  if (fill != null) {
+                    g2.setComposite(AlphaComposite.SrcOver.derive((float) fill.opacity()));
+                    g2.setPaint(paintResolver.apply(fill.paint()));
+                    g2.fill(fill.shape());
+                  }
 
-      entity
-          .getComponent(DecorationShapeComponent.class)
-          .ifPresent(
-              decoration -> {
-                var g2 = (Graphics2D) g.create();
-                try {
-                  g2.setComposite(AlphaComposite.SrcOver.derive((float) decoration.opacity()));
-                  g2.setPaint(paintResolver.apply(decoration.paint()));
-                  g2.setStroke(decoration.stroke());
-                  g2.draw(decoration.shape());
+                  var border = drawable.border();
+                  if (border != null) {
+                    g2.setComposite(AlphaComposite.SrcOver.derive((float) border.opacity()));
+                    g2.setPaint(paintResolver.apply(border.paint()));
+                    g2.setStroke(border.stroke());
+                    g2.draw(border.shape());
+                  }
+
+                  var decoration = drawable.decoration();
+                  if (decoration != null) {
+                    g2.setComposite(AlphaComposite.SrcOver.derive((float) decoration.opacity()));
+                    g2.setPaint(paintResolver.apply(decoration.paint()));
+                    g2.setStroke(decoration.stroke());
+                    g2.draw(decoration.shape());
+                  }
+
                 } finally {
                   g2.dispose();
                 }

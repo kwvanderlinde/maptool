@@ -17,5 +17,4 @@ package net.rptools.maptool.client.entities;
 import java.awt.BasicStroke;
 import java.awt.Shape;
 
-public record BorderShapeComponent(Shape shape, Paint paint, BasicStroke stroke, double opacity)
-    implements Component {}
+public record Stroke(Shape shape, Paint paint, BasicStroke stroke, double opacity) {}
