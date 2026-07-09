@@ -14,9 +14,9 @@
  */
 package net.rptools.maptool.client.entities;
 
-import java.awt.geom.AffineTransform;
-import net.rptools.lib.MD5Key;
-
-public record SpriteComponent(
-    MD5Key imageAsset, AffineTransform transform, double opacity, ClipType clipType)
-    implements Component {}
+public enum ClipType {
+  NoClipping,
+  ClearArea,
+  VisibleArea,
+  ExposedArea;
+}

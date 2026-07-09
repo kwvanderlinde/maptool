@@ -46,6 +46,7 @@ import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.entities.BoardComponent;
 import net.rptools.maptool.client.entities.BorderShapeComponent;
+import net.rptools.maptool.client.entities.ClipType;
 import net.rptools.maptool.client.entities.DecorationShapeComponent;
 import net.rptools.maptool.client.entities.DrawableSetComponent;
 import net.rptools.maptool.client.entities.Entity;
@@ -400,7 +401,8 @@ public class ZoneViewModel {
         var transform = new AffineTransform();
         transform.translate(zone.getBoardX(), zone.getBoardY());
         transform.scale(zone.getImageScaleX(), zone.getImageScaleY());
-        mapEntity.setComponent(new SpriteComponent(zone.getMapAssetId(), transform, 1.));
+        mapEntity.setComponent(
+            new SpriteComponent(zone.getMapAssetId(), transform, 1., ClipType.NoClipping));
         list.add(mapEntity);
       }
     }
@@ -479,7 +481,8 @@ public class ZoneViewModel {
         // TODO GM tokens as entities
       }
 
-      // TODO Token tokens as entities
+      compositeTokensAsEntities(
+          Zone.Layer.OBJECT, zone.getTokensOnLayer(Zone.Layer.OBJECT, false), list);
 
       // TODO Unowned movement as entities
     }
@@ -655,11 +658,14 @@ public class ZoneViewModel {
       entity.getBounds().setRect(position.footprintBounds().getBounds2D());
       output.add(entity);
 
+      ClipType clipType;
       if (softFowClippingEnabled && isTokenInNeedOfClipping(position, playerView)) {
         // TODO How to represent the clip?
         // TODO Clip to visible area and cell bounds (though I don't like the latter).
+        clipType = ClipType.VisibleArea;
       } else {
         // TODO How to represent the not-clip?
+        clipType = ClipType.NoClipping;
       }
 
       // TODO Output the token's last path if available.
@@ -687,7 +693,7 @@ public class ZoneViewModel {
               token,
               new Dimension(image.getWidth(), image.getHeight()),
               position.footprintBounds());
-      entity.setComponent(new SpriteComponent(tokenImageId, imageTransform, opacity));
+      entity.setComponent(new SpriteComponent(tokenImageId, imageTransform, opacity, clipType));
 
       // TODO Output the token's states and bars.
 
