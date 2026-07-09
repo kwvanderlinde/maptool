@@ -408,6 +408,11 @@ public class ZoneViewModel {
    * {@link #visibleTokensByLayer}
    */
   private void updateMarkerList() {
+    // TODO Mark markers with a Marker component so we don't need to maintain a separate list.
+    //  In fact we don't even strictly need a list. What we want to do is to be able to query
+    //  entities by a point (so some spatial partitioning, KDTree or the like) and grab the topmost
+    //  one with a matching compnoent.
+
     var isGM = playerView.isGMView();
 
     markerList.clear();
