@@ -37,7 +37,7 @@ message ServerPolicyDto {
 message CampaignDto {
   string id = 1;
   string name = 2;
-  google.protobuf.BoolValue has_used_fog_toolbar = 3;
+  bool has_used_fog_toolbar = 3;
   CampaignPropertiesDto properties = 4;
   LocationDto export_location = 5;
   map<string, bool> export_settings = 6;

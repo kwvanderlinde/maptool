@@ -14,11 +14,9 @@
  */
 package net.rptools.maptool.model;
 
-import com.google.protobuf.BoolValue;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -41,35 +39,34 @@ import net.rptools.maptool.server.proto.CampaignDto;
  * images that will appear on it (and also campaign macro buttons).
  */
 public class Campaign implements Serializable {
-  private GUID id = new GUID();
+  private @Nonnull GUID id;
 
   /** The {@link Zone}s that make up this {@code Campaign}. */
-  private final Map<GUID, Zone> zones =
-      Collections.synchronizedMap(new LinkedHashMap<GUID, Zone>());
+  private @Nonnull Map<GUID, Zone> zones;
 
-  private String name; // the name of the campaign, to be displayed in the MapToolFrame title bar
+  private @Nonnull String
+      name; // the name of the campaign, to be displayed in the MapToolFrame title bar
 
   // Static data isn't written to the campaign file when saved; these two fields hold the output
   // location and type, and the
   // settings of all JToggleButton objects (JRadioButtons and JCheckBoxes).
-  private Location exportLocation;
+  private @Nullable Location exportLocation;
   // the state of each checkbox/radiobutton for the Export>ScreenshotAs dialog
-  private Map<String, Boolean> exportSettings = new HashMap<>();
+  private @Nonnull Map<String, Boolean> exportSettings;
 
-  private @Nonnull CampaignProperties campaignProperties = new CampaignProperties();
-  private transient boolean isBeingSerialized;
+  private @Nonnull CampaignProperties campaignProperties;
 
   // campaign macro button properties. these are saved along with the campaign.
   // as of 1.3b32
-  private List<MacroButtonProperties> macroButtonProperties;
+  private @Nonnull List<MacroButtonProperties> macroButtonProperties;
   // need to have a counter for additions to macroButtonProperties array
   // otherwise deletions/insertions from/to that array will go out of sync
-  private int macroButtonLastIndex = 0;
-  private int gmMacroButtonLastIndex = 0;
+  private int macroButtonLastIndex;
+  private int gmMacroButtonLastIndex;
 
   // campaign GM macro button properties. these are saved along with the campaign.
   // as of 1.5.6
-  private List<MacroButtonProperties> gmMacroButtonProperties;
+  private @Nonnull List<MacroButtonProperties> gmMacroButtonProperties;
 
   // DEPRECATED: As of 1.3b20 these are now in campaignProperties, but are here for backward
   // compatibility
@@ -85,7 +82,7 @@ public class Campaign implements Serializable {
    * This flag indicates whether the manual fog tools have been used in this campaign while a server
    * is not running. See {@link ToolbarPanel} for details.
    *
-   * <p>
+   * <p>Non-null outside of {@link #readResolve().
    *
    * <ul>
    *   <li>null - server never started for this campaign
@@ -93,17 +90,87 @@ public class Campaign implements Serializable {
    *   <li>true - server started and IndividualFog == on
    * </ul>
    */
-  private Boolean hasUsedFogToolbar = null;
+  private @Nonnull Boolean hasUsedFogToolbar;
 
   /** When a player connects to a server, this will be the map they are sent to at first. */
-  private @Nullable GUID landingMapId = null;
+  private @Nullable GUID landingMapId;
+
+  private transient boolean isBeingSerialized;
+
+  // Primary constructor
+  private Campaign(
+      @Nonnull GUID id,
+      @Nonnull String name,
+      @Nullable GUID landingMapId,
+      boolean hasUsedFogToolbar,
+      @Nonnull CampaignProperties campaignProperties,
+      @Nullable Location exportLocation,
+      @Nonnull Map<String, Boolean> exportSettings,
+      int macroButtonLastIndex,
+      int gmMacroButtonLastIndex,
+      @Nonnull List<MacroButtonProperties> macroButtonProperties,
+      @Nonnull List<MacroButtonProperties> gmMacroButtonProperties,
+      @Nonnull List<Zone> zones) {
+    this.id = id;
+    this.name = name;
+    this.landingMapId = landingMapId;
+    this.hasUsedFogToolbar = hasUsedFogToolbar;
+    this.campaignProperties = campaignProperties;
+    this.exportLocation = exportLocation;
+    this.exportSettings = new HashMap<>();
+    this.exportSettings.putAll(exportSettings);
+    this.macroButtonLastIndex = macroButtonLastIndex;
+    this.gmMacroButtonLastIndex = gmMacroButtonLastIndex;
+    this.macroButtonProperties = macroButtonProperties;
+    this.gmMacroButtonProperties = gmMacroButtonProperties;
+
+    /*
+     * Don't forget that since these are new zones AND new tokens created here from the old one,
+     * if you have any data that needs to transfer over you will need to manually copy it
+     * as is done below for the campaign properties and macro buttons. Iteration over a synchronized
+     *  map must lock the map.
+     */
+    this.zones = Collections.synchronizedMap(new LinkedHashMap<>());
+    for (var zone : zones) {
+      this.zones.put(zone.getId(), zone);
+    }
+  }
 
   public Campaign() {
-    name = "Default";
-    macroButtonLastIndex = 0;
-    gmMacroButtonLastIndex = 0;
-    macroButtonProperties = new ArrayList<MacroButtonProperties>();
-    gmMacroButtonProperties = new ArrayList<MacroButtonProperties>();
+    this(
+        new GUID(),
+        "Default",
+        null,
+        false,
+        new CampaignProperties(),
+        null,
+        Map.of(),
+        0,
+        0,
+        List.of(),
+        List.of(),
+        List.of());
+  }
+
+  /**
+   * Create a new campaign with an old campaign's properties.
+   *
+   * @param campaign The campaign to copy from.
+   */
+  public Campaign(Campaign campaign) {
+    this(
+        campaign.id,
+        campaign.name,
+        campaign.landingMapId,
+        campaign.hasUsedFogToolbar,
+        new CampaignProperties(campaign.campaignProperties),
+        campaign.exportLocation,
+        campaign.exportSettings,
+        campaign.macroButtonLastIndex,
+        campaign.gmMacroButtonLastIndex,
+        new ArrayList<>(campaign.macroButtonProperties),
+        new ArrayList<>(campaign.gmMacroButtonProperties),
+        campaign.zones.values().stream().map(z -> new Zone(z, true)).toList());
   }
 
   public void setLandingMapId(@Nullable GUID zoneId) {
@@ -117,66 +184,39 @@ public class Campaign implements Serializable {
 
   @Serial
   private Object readResolve() {
-    if (exportSettings == null) {
-      exportSettings = new HashMap<>();
-    }
-
-    if (campaignProperties == null) {
-      campaignProperties = new CampaignProperties();
-    }
+    var props = Objects.requireNonNullElseGet(campaignProperties, CampaignProperties::new);
+    // region Move deprecated fields into campaign properties.
     if (tokenTypeMap != null) {
-      campaignProperties.setTokenTypeMap(tokenTypeMap);
-      tokenTypeMap = null;
+      props.setTokenTypeMap(tokenTypeMap);
     }
     if (remoteRepositoryList != null) {
-      campaignProperties.setRemoteRepositoryList(remoteRepositoryList);
-      remoteRepositoryList = null;
+      props.setRemoteRepositoryList(remoteRepositoryList);
     }
     if (lightSourcesMap != null) {
-      campaignProperties.setLightSources(CategorizedLights.copyOf(lightSourcesMap));
-      lightSourcesMap = null;
+      props.setLightSources(CategorizedLights.copyOf(lightSourcesMap));
     }
     if (lookupTableMap != null) {
-      campaignProperties.setLookupTableMap(lookupTableMap);
-      lookupTableMap = null;
+      props.setLookupTableMap(lookupTableMap);
     }
+    // endregion
 
-    return this;
+    return new Campaign(
+        id,
+        name,
+        landingMapId,
+        hasUsedFogToolbar != null && hasUsedFogToolbar,
+        props,
+        exportLocation,
+        Objects.requireNonNullElseGet(exportSettings, HashMap::new),
+        macroButtonLastIndex,
+        gmMacroButtonLastIndex,
+        Objects.requireNonNullElseGet(macroButtonProperties, List::of),
+        Objects.requireNonNullElseGet(gmMacroButtonProperties, List::of),
+        new ArrayList<>(zones.values()));
   }
 
   public List<String> getRemoteRepositoryList() {
     return campaignProperties.getRemoteRepositoryList();
-  }
-
-  /**
-   * Create a new campaign with an old campaign's properties.
-   *
-   * @param campaign The campaign to copy from.
-   */
-  public Campaign(Campaign campaign) {
-    id = campaign.getId();
-    name = campaign.getName();
-    landingMapId = campaign.landingMapId;
-
-    /*
-     * Don't forget that since these are new zones AND new tokens created here from the old one,
-     * if you have any data that needs to transfer over you will need to manually copy it
-     * as is done below for the campaign properties and macro buttons. Iteration over a synchronized
-     *  map must lock the map.
-     */
-    Map<GUID, Zone> zonesToCopy;
-    synchronized (zones) {
-      zonesToCopy = new LinkedHashMap<>(campaign.zones);
-    }
-    for (Entry<GUID, Zone> entry : zonesToCopy.entrySet()) {
-      Zone copy = new Zone(entry.getValue(), true);
-      zones.put(copy.getId(), copy);
-    }
-    campaignProperties = new CampaignProperties(campaign.campaignProperties);
-    macroButtonProperties =
-        new ArrayList<MacroButtonProperties>(campaign.getMacroButtonPropertiesArray());
-    gmMacroButtonProperties =
-        new ArrayList<MacroButtonProperties>(campaign.getGmMacroButtonPropertiesArray());
   }
 
   public GUID getId() {
@@ -418,7 +458,7 @@ public class Campaign implements Serializable {
    * @return <code>true</code> if IF feature has ever been used; <code>false</code> otherwise
    */
   public boolean hasUsedFogToolbar() {
-    return hasUsedFogToolbar != null && hasUsedFogToolbar;
+    return hasUsedFogToolbar;
   }
 
   public void setHasUsedFogToolbar(boolean b) {
@@ -449,10 +489,6 @@ public class Campaign implements Serializable {
    * @return the Campaign macros
    */
   public List<MacroButtonProperties> getMacroButtonPropertiesArray() {
-    if (macroButtonProperties == null) {
-      // macroButtonProperties is null if you are loading an old campaign file < 1.3b32
-      macroButtonProperties = new ArrayList<MacroButtonProperties>();
-    }
     return macroButtonProperties;
   }
 
@@ -471,10 +507,6 @@ public class Campaign implements Serializable {
    * @return the GM macros
    */
   public List<MacroButtonProperties> getGmMacroButtonPropertiesArray() {
-    if (gmMacroButtonProperties == null) {
-      // gmMacroButtonProperties is null if you are loading an old campaign file < 1.5.6
-      gmMacroButtonProperties = new ArrayList<MacroButtonProperties>();
-    }
     return gmMacroButtonProperties;
   }
 
@@ -620,7 +652,7 @@ public class Campaign implements Serializable {
    * @return Getter for initiativeOwnerPermissions
    */
   public boolean isInitiativeOwnerPermissions() {
-    return campaignProperties != null && campaignProperties.isInitiativeOwnerPermissions();
+    return campaignProperties.isInitiativeOwnerPermissions();
   }
 
   /**
@@ -634,7 +666,7 @@ public class Campaign implements Serializable {
    * @return Getter for initiativeMovementLock
    */
   public boolean isInitiativeMovementLock() {
-    return campaignProperties != null && campaignProperties.isInitiativeMovementLock();
+    return campaignProperties.isInitiativeMovementLock();
   }
 
   /**
@@ -645,7 +677,7 @@ public class Campaign implements Serializable {
   }
 
   public boolean isInitiativeUseReverseSort() {
-    return campaignProperties != null && campaignProperties.isInitiativeUseReverseSort();
+    return campaignProperties.isInitiativeUseReverseSort();
   }
 
   public void setInitiativeUseReverseSort(boolean initiativeUseReverseSort) {
@@ -653,7 +685,7 @@ public class Campaign implements Serializable {
   }
 
   public boolean isInitiativePanelButtonsDisabled() {
-    return campaignProperties != null && campaignProperties.isInitiativePanelButtonsDisabled();
+    return campaignProperties.isInitiativePanelButtonsDisabled();
   }
 
   public void setInitiativePanelButtonsDisabled(boolean disabled) {
@@ -667,11 +699,11 @@ public class Campaign implements Serializable {
     return getCampaignProperties().getCharacterSheets();
   }
 
-  public Location getExportLocation() {
+  public @Nullable Location getExportLocation() {
     return exportLocation;
   }
 
-  public void setExportLocation(Location exportLocation) {
+  public void setExportLocation(@Nullable Location exportLocation) {
     this.exportLocation = exportLocation;
   }
 
@@ -689,29 +721,23 @@ public class Campaign implements Serializable {
   }
 
   public static Campaign fromDto(CampaignDto dto) {
-    var campaign = new Campaign();
-    campaign.id = GUID.valueOf(dto.getId());
-    campaign.name = dto.getName();
-    campaign.landingMapId = dto.hasLandingMapId() ? GUID.valueOf(dto.getLandingMapId()) : null;
-    campaign.hasUsedFogToolbar =
-        dto.hasHasUsedFogToolbar() ? dto.getHasUsedFogToolbar().getValue() : null;
-    campaign.campaignProperties = CampaignProperties.fromDto(dto.getProperties());
-    campaign.exportLocation =
-        dto.hasExportLocation() ? Location.fromDto(dto.getExportLocation()) : null;
-    campaign.exportSettings.putAll(dto.getExportSettingsMap());
-    campaign.macroButtonLastIndex = dto.getMacroButtonLastIndex();
-    campaign.gmMacroButtonLastIndex = dto.getGmMacroButtonLastIndex();
-    campaign.macroButtonProperties =
+    return new Campaign(
+        GUID.valueOf(dto.getId()),
+        dto.getName(),
+        dto.hasLandingMapId() ? GUID.valueOf(dto.getLandingMapId()) : null,
+        dto.getHasUsedFogToolbar(),
+        CampaignProperties.fromDto(dto.getProperties()),
+        dto.hasExportLocation() ? Location.fromDto(dto.getExportLocation()) : null,
+        dto.getExportSettingsMap(),
+        dto.getMacroButtonLastIndex(),
+        dto.getGmMacroButtonLastIndex(),
         dto.getMacroButtonPropertiesList().stream()
             .map(MacroButtonProperties::fromDto)
-            .collect(Collectors.toList());
-    campaign.gmMacroButtonProperties =
+            .collect(Collectors.toList()),
         dto.getGmMacroButtonPropertiesList().stream()
             .map(MacroButtonProperties::fromDto)
-            .collect(Collectors.toList());
-    var zoneList = dto.getZonesList().stream().map(Zone::fromDto).toList();
-    zoneList.forEach(z -> campaign.zones.put(z.getId(), z));
-    return campaign;
+            .collect(Collectors.toList()),
+        dto.getZonesList().stream().map(Zone::fromDto).toList());
   }
 
   public CampaignDto toDto() {
@@ -721,9 +747,7 @@ public class Campaign implements Serializable {
     if (landingMapId != null) {
       dto.setLandingMapId(landingMapId.toString());
     }
-    if (hasUsedFogToolbar != null) {
-      dto.setHasUsedFogToolbar(BoolValue.of(hasUsedFogToolbar));
-    }
+    dto.setHasUsedFogToolbar(hasUsedFogToolbar);
     dto.setProperties(campaignProperties.toDto());
     if (exportLocation != null) {
       dto.setExportLocation(exportLocation.toDto());
@@ -736,13 +760,10 @@ public class Campaign implements Serializable {
             .map(MacroButtonProperties::toDto)
             .collect(Collectors.toList()));
     dto.addAllZones(zones.values().stream().map(Zone::toDto).collect(Collectors.toList()));
-    // gmMacroButtonProperties is null if you are loading an old campaign file < 1.5.6
-    if (gmMacroButtonProperties != null) {
-      dto.addAllGmMacroButtonProperties(
-          gmMacroButtonProperties.stream()
-              .map(MacroButtonProperties::toDto)
-              .collect(Collectors.toList()));
-    }
+    dto.addAllGmMacroButtonProperties(
+        gmMacroButtonProperties.stream()
+            .map(MacroButtonProperties::toDto)
+            .collect(Collectors.toList()));
     return dto.build();
   }
 
