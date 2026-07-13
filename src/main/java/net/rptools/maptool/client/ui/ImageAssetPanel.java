@@ -209,10 +209,10 @@ public class ImageAssetPanel extends JPanel implements DropTargetListener {
     dtde.acceptDrop(dtde.getDropAction());
 
     List<Object> assets = TransferableHelper.getAsset(dtde.getTransferable());
-    if (assets == null || assets.isEmpty() || !(assets.get(0) instanceof Asset)) {
+    if (assets.isEmpty() || !(assets.getFirst() instanceof Asset asset)) {
       return;
     }
-    setImageId(((Asset) assets.get(0)).getMD5Key());
+    setImageId(asset.getMD5Key());
   }
 
   public void dropActionChanged(DropTargetDragEvent dtde) {}

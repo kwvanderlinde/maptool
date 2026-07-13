@@ -179,11 +179,11 @@ public class TransferableHelper extends TransferHandler {
    * obtained.
    *
    * @param transferable the {@link Transferable} from the drop event.
-   * @return A list of assets transferred or {@code null} if it could not be obtained from transfer.
+   * @return A list of assets transferred. If no assets could be obtained from {@code transferable},
+   *     and empty list.
    */
-  @SuppressWarnings("unchecked")
   public static List<Object> getAsset(Transferable transferable) {
-    List<Object> assets = new ArrayList<Object>();
+    final var assets = new ArrayList<Object>();
     try {
       Object o = null;
       // This *really* should be done using either the Strategy or Template patterns. Sigh.
@@ -198,7 +198,7 @@ public class TransferableHelper extends TransferHandler {
         o = handleTransferableAssetReference(transferable);
       }
 
-      /**
+      /*
        * Check for all InputStream types first?
        *
        * <p>This would allow an application to give us a data stream instead of, for example, a URL.
@@ -231,7 +231,9 @@ public class TransferableHelper extends TransferHandler {
         List<URL> list = textURIListToFileList(data);
         if (!list.isEmpty()) {
           List<Object> urls = handleURLList(list);
-          if (!urls.isEmpty()) o = urls;
+          if (!urls.isEmpty()) {
+            o = urls;
+          }
         }
       }
 
@@ -243,7 +245,9 @@ public class TransferableHelper extends TransferHandler {
         List<URL> list = new FileTransferableHandler().getTransferObject(transferable);
         if (!list.isEmpty()) {
           List<Object> urls = handleURLList(list);
-          if (!urls.isEmpty()) o = urls;
+          if (!urls.isEmpty()) {
+            o = urls;
+          }
         }
       }
 
@@ -277,15 +281,15 @@ public class TransferableHelper extends TransferHandler {
         o = handleImage(url, "URL_FLAVOR_PLAIN", transferable);
       }
       if (o != null) {
-        if (o instanceof List<?>) assets = (List<Object>) o;
-        else assets.add(o);
+        if (o instanceof List<?> list) {
+          assets.addAll(list);
+        } else {
+          assets.add(o);
+        }
       }
     } catch (Exception e) {
       MapTool.showError("TransferableHelper.error.unrecognizedAsset", e); // $NON-NLS-1$
-      return null;
-    }
-    if (assets == null || assets.isEmpty()) {
-      return null;
+      return List.of();
     }
     for (Object working : assets) {
       if (working instanceof Asset asset) {
@@ -507,7 +511,7 @@ public class TransferableHelper extends TransferHandler {
     if (log.isInfoEnabled()) whichOnesWork(t);
 
     List<Object> assets = getAsset(t);
-    if (assets != null) {
+    if (!assets.isEmpty()) {
       tokens = new ArrayList<Token>(assets.size());
       configureTokens = new ArrayList<Boolean>(assets.size());
       for (Object working : assets) {
@@ -544,22 +548,21 @@ public class TransferableHelper extends TransferHandler {
           configureTokens.add(false);
         }
       }
-    } else {
-      if (t.isDataFlavorSupported(TransferableToken.dataFlavor)) {
-        try {
-          // Make a copy so that it gets a new unique GUID
-          tokens =
-              Collections.singletonList(
-                  new Token((Token) t.getTransferData(TransferableToken.dataFlavor)));
-          // A token from the Resource Library is already fully configured.
-          configureTokens = Collections.singletonList(Boolean.FALSE);
-        } catch (Exception e) {
-          log.error("while using TransferableToken.dataFlavor", e); // $NON-NLS-1$
-        }
-      } else {
-        MapTool.showWarning("TransferableHelper.warning.badObject"); // $NON-NLS-1$
+    } else if (t.isDataFlavorSupported(TransferableToken.dataFlavor)) {
+      try {
+        // Make a copy so that it gets a new unique GUID
+        tokens =
+            Collections.singletonList(
+                new Token((Token) t.getTransferData(TransferableToken.dataFlavor)));
+        // A token from the Resource Library is already fully configured.
+        configureTokens = Collections.singletonList(Boolean.FALSE);
+      } catch (Exception e) {
+        log.error("while using TransferableToken.dataFlavor", e); // $NON-NLS-1$
       }
+    } else {
+      MapTool.showWarning("TransferableHelper.warning.badObject"); // $NON-NLS-1$
     }
+
     return tokens != null;
   }
 
