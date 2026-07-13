@@ -17,10 +17,7 @@ package net.rptools.maptool.client.tool.boardtool;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.geom.Point2D;
 import java.text.ParseException;
 import java.util.Map;
@@ -343,28 +340,6 @@ public class BoardTool extends DefaultTool {
       updateGUI();
       zone.setBoardPosition(boardPosition);
     }
-  }
-
-  ////
-  // ACTIONS
-  private class UpdateBoardListener implements KeyListener, ChangeListener, FocusListener {
-    public void keyPressed(KeyEvent e) {}
-
-    public void keyReleased(KeyEvent e) {
-      copyControlPanelToBoard();
-    }
-
-    public void keyTyped(KeyEvent e) {}
-
-    public void stateChanged(ChangeEvent e) {
-      copyControlPanelToBoard();
-    }
-
-    public void focusLost(FocusEvent e) {
-      copyControlPanelToBoard();
-    }
-
-    public void focusGained(FocusEvent e) {}
   }
 
   private void enforceButtonRules() {
