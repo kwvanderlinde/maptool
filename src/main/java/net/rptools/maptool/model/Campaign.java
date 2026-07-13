@@ -443,6 +443,11 @@ public class Campaign implements Serializable {
         return true;
       }
     }
+
+    if (getCampaignProperties().getAllImageAssets().contains(key)) {
+      return true;
+    }
+
     return false;
   }
 
