@@ -743,6 +743,8 @@ public class PersistenceUtil {
    * @param pakFile The packed file containing the assets
    * @throws IOException If an I/O error occurs while loading the assets
    */
+  // TODO Require a containing Campaign to be passed along. This will allow the asset tracker to be
+  //  updated.
   private static void loadAssets(Collection<MD5Key> assetIds, PackedFile pakFile)
       throws IOException {
     // Special handling of assets: XML file to describe the Asset, but binary file for the image

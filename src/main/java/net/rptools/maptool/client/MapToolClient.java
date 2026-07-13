@@ -14,6 +14,7 @@
  */
 package net.rptools.maptool.client;
 
+import com.google.common.eventbus.Subscribe;
 import java.awt.EventQueue;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -34,6 +35,7 @@ import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.CampaignFactory;
+import net.rptools.maptool.model.campaign.AssetAdded;
 import net.rptools.maptool.model.campaign.CampaignManager;
 import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.model.player.Player;
@@ -119,6 +121,9 @@ public class MapToolClient {
             this.conn.addMessageHandler(new ClientMessageHandler(this));
           }
         });
+
+    // TODO This means we need to deregister on closing.
+    new MapToolEventBus().getMainEventBus().register(this);
   }
 
   /** Creates a client for a local server, whether personal or hosted. */
@@ -352,6 +357,15 @@ public class MapToolClient {
     public void run() {
       log.debug("HeartBeatTask(…, {})#run()", name);
       serverCommand.heartbeat(name);
+    }
+  }
+
+  @Subscribe
+  private void onAssetAdded(AssetAdded event) {
+    if (campaign == event.campaign() && localServer == null) {
+      // TODO Would it not be prudent to notify the server that this particular client ID has the
+      //  asset? That way, we can avoid a transfer if the server already has the asset.
+      serverCommand.putAsset(event.asset());
     }
   }
 }

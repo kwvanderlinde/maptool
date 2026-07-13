@@ -294,6 +294,9 @@ public class TransferableHelper extends TransferHandler {
     for (Object working : assets) {
       if (working instanceof Asset asset) {
         if (!asset.getMD5Key().equals(AssetManager.BAD_ASSET_LOCATION_KEY)) {
+          // TODO Not legitimate. Needs to be added to the campaign which decides whether to upload.
+          //  Indeed, whichever place adds the token should be uploading the assets. This handler
+          //  should just load the data, really.
           MapToolUtil.uploadAsset(asset);
         }
       }

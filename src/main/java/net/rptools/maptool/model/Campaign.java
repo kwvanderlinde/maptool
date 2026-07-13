@@ -97,6 +97,8 @@ public class Campaign implements Serializable {
 
   private transient boolean isBeingSerialized;
 
+  private transient AssetTracker assetTracker;
+
   // Primary constructor
   private Campaign(
       @Nonnull GUID id,
@@ -134,6 +136,8 @@ public class Campaign implements Serializable {
     for (var zone : zones) {
       this.zones.put(zone.getId(), zone);
     }
+
+    this.assetTracker = new AssetTracker(this);
   }
 
   public Campaign() {
@@ -429,6 +433,10 @@ public class Campaign implements Serializable {
    */
   public void removeZone(GUID id) {
     zones.remove(id);
+  }
+
+  public AssetTracker getAssetTracker() {
+    return assetTracker;
   }
 
   public boolean containsAsset(MD5Key key) {
