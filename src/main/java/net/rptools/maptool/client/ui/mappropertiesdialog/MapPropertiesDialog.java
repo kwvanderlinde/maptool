@@ -205,10 +205,7 @@ public class MapPropertiesDialog extends JDialog {
     MapToolUtil.uploadTexture(backgroundPaint);
     MapToolUtil.uploadTexture(fogPaint);
     if (mapAsset != null) {
-      AssetManager.putAsset(mapAsset);
-      if (!MapTool.isHostingServer()) {
-        MapTool.serverCommand().putAsset(mapAsset);
-      }
+      MapToolUtil.uploadAsset(mapAsset);
     }
     copyUIToZone();
     status = Status.OK;

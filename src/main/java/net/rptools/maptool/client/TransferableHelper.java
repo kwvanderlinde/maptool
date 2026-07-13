@@ -290,12 +290,7 @@ public class TransferableHelper extends TransferHandler {
     for (Object working : assets) {
       if (working instanceof Asset asset) {
         if (!asset.getMD5Key().equals(AssetManager.BAD_ASSET_LOCATION_KEY)) {
-          if (!AssetManager.hasAsset(asset)) {
-            AssetManager.putAsset(asset);
-          }
-          if (!MapTool.getCampaign().containsAsset(asset.getMD5Key())) {
-            MapTool.serverCommand().putAsset(asset);
-          }
+          MapToolUtil.uploadAsset(asset);
         }
       }
     }

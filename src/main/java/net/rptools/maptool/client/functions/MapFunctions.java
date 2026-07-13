@@ -286,10 +286,7 @@ public class MapFunctions extends AbstractFunction {
         }
         final var mapAsset = AssetManager.getAsset(mapAssetKey);
         if (mapAsset != null) {
-          AssetManager.putAsset(mapAsset);
-          if (!MapTool.isHostingServer()) {
-            MapTool.serverCommand().putAsset(mapAsset);
-          }
+          MapToolUtil.uploadAsset(mapAsset);
         }
 
         newMap.setMapAssetId(mapAssetKey);

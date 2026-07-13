@@ -940,9 +940,7 @@ public class EditTokenDialog extends AbeillePanel<Token> {
     /* PORTRAIT */
     if (getPortraitPanel().getImageId() != null) {
       /* Make sure the server has the image */
-      if (!MapTool.getCampaign().containsAsset(getPortraitPanel().getImageId())) {
-        MapTool.serverCommand().putAsset(AssetManager.getAsset(getPortraitPanel().getImageId()));
-      }
+      MapToolUtil.uploadAsset(AssetManager.getAsset(getPortraitPanel().getImageId()));
     }
     token.setPortraitImage(getPortraitPanel().getImageId());
 
