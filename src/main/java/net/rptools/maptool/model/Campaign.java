@@ -432,6 +432,8 @@ public class Campaign implements Serializable {
   }
 
   public boolean containsAsset(MD5Key key) {
+    // TODO What about lookup tables, states, bars, and other non-zone assets?
+
     Collection<Zone> zonesToCheck;
     synchronized (zones) { // iteration over synchronized map must lock the map
       zonesToCheck = zones.values();

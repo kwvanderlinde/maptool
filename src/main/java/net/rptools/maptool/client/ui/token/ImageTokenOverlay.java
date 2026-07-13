@@ -51,6 +51,9 @@ public final class ImageTokenOverlay extends AbstractImageTokenOverlay {
 
   @Override
   public void paintOverlay(Graphics2D g, Token token, Rectangle bounds) {
+    // TODO In all these overlay implementations, should use ImageManager#getImage() with an
+    //  ImageObserver to repaint on image availability. Using #getImageAndWait() is terrible on slow
+    //  connections the first time a state needs to be loaded.
     BufferedImage image = ImageManager.getImageAndWait(getAssetId());
 
     var imageBounds = new Rectangle2D.Double(0, 0, image.getWidth(), image.getHeight());
