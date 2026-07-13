@@ -431,10 +431,6 @@ public class Campaign implements Serializable {
     zones.remove(id);
   }
 
-  public boolean containsAsset(Asset asset) {
-    return containsAsset(asset.getMD5Key());
-  }
-
   public boolean containsAsset(MD5Key key) {
     Collection<Zone> zonesToCheck;
     synchronized (zones) { // iteration over synchronized map must lock the map
