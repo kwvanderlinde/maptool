@@ -33,6 +33,7 @@ import net.rptools.maptool.model.InvalidGUIDException;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZoneFactory;
 import net.rptools.maptool.model.drawing.DrawablePaint;
+import net.rptools.maptool.model.drawing.DrawableTexturePaint;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
@@ -275,7 +276,9 @@ public class MapFunctions extends AbstractFunction {
 
         final var paint =
             FunctionUtil.getPaintFromString(config.getAsJsonPrimitive(property).getAsString());
-        MapToolUtil.uploadTexture(paint);
+        if (paint instanceof DrawableTexturePaint texture) {
+          campaign.getAssetTracker().putAsset(texture.getAsset());
+        }
         entry.getValue().accept(paint);
       }
 
@@ -288,7 +291,7 @@ public class MapFunctions extends AbstractFunction {
         }
         final var mapAsset = AssetManager.getAsset(mapAssetKey);
         if (mapAsset != null) {
-          MapToolUtil.uploadAsset(mapAsset);
+          campaign.getAssetTracker().putAsset(mapAsset);
         }
 
         newMap.setMapAssetId(mapAssetKey);

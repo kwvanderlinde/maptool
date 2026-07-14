@@ -51,6 +51,7 @@ import net.rptools.maptool.model.IsometricGrid;
 import net.rptools.maptool.model.SquareGrid;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.drawing.DrawablePaint;
+import net.rptools.maptool.model.drawing.DrawableTexturePaint;
 import net.rptools.maptool.util.ImageManager;
 
 public class MapPropertiesDialog extends JDialog {
@@ -204,10 +205,14 @@ public class MapPropertiesDialog extends JDialog {
 
   private void accept() {
     // Push the assets to the server
-    MapToolUtil.uploadTexture(backgroundPaint);
-    MapToolUtil.uploadTexture(fogPaint);
+    if (backgroundPaint instanceof DrawableTexturePaint texture) {
+      campaign.getAssetTracker().putAsset(texture.getAsset());
+    }
+    if (fogPaint instanceof DrawableTexturePaint texture) {
+      campaign.getAssetTracker().putAsset(texture.getAsset());
+    }
     if (mapAsset != null) {
-      MapToolUtil.uploadAsset(mapAsset);
+      campaign.getAssetTracker().putAsset(mapAsset);
     }
     copyUIToZone();
     status = Status.OK;
