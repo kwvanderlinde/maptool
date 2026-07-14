@@ -42,7 +42,6 @@ import javax.swing.filechooser.FileFilter;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.AppConstants;
 import net.rptools.maptool.client.AppPreferences;
-import net.rptools.maptool.client.MapToolUtil;
 import net.rptools.maptool.client.swing.AbeillePanel;
 import net.rptools.maptool.client.swing.ColorWell;
 import net.rptools.maptool.client.ui.PreviewPanelFileChooser;
@@ -55,6 +54,7 @@ import net.rptools.maptool.client.ui.token.SingleImageBarTokenOverlay;
 import net.rptools.maptool.client.ui.token.TwoImageBarTokenOverlay;
 import net.rptools.maptool.client.ui.token.TwoToneBarTokenOverlay;
 import net.rptools.maptool.language.I18N;
+import net.rptools.maptool.model.AssetManager;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.CampaignProperties;
 import net.rptools.maptool.util.ImageManager;
@@ -733,7 +733,9 @@ public class TokenBarController
       overlay.setOrder(i);
       states.put(overlay.getName(), overlay);
 
-      MapToolUtil.uploadAssetIds(overlay.getAssetIds());
+      overlay.getAssetIds().stream()
+          .map(AssetManager::getAsset)
+          .forEach(campaign.getAssetTracker()::putAsset);
     }
     campaign.getTokenBarsMap().clear();
     campaign.getTokenBarsMap().putAll(states);

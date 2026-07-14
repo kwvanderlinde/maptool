@@ -33,6 +33,7 @@ import net.rptools.maptool.client.ui.token.TriangleTokenOverlay;
 import net.rptools.maptool.client.ui.token.XTokenOverlay;
 import net.rptools.maptool.client.ui.token.YieldTokenOverlay;
 import net.rptools.maptool.language.I18N;
+import net.rptools.maptool.model.AssetManager;
 import net.rptools.maptool.model.drawing.AbstractTemplate.Quadrant;
 
 /**
@@ -85,8 +86,10 @@ public class AddTokenStateMacro implements Macro {
     String param1 = tokens.length > 2 ? tokens[PARAM_1] : null;
     String param2 = tokens.length > 3 ? tokens[PARAM_2] : null;
 
+    var campaign = MapTool.getCampaign();
+
     // Check for a duplicate name
-    if (MapTool.getCampaign().getTokenStatesMap().get(name) != null) {
+    if (campaign.getTokenStatesMap().get(name) != null) {
       MapTool.addLocalMessage(I18N.getText("addtokenstate.exists"));
       return;
     } // endif
@@ -118,8 +121,11 @@ public class AddTokenStateMacro implements Macro {
       MapTool.addLocalMessage(e.getMessage());
       return;
     }
-    MapToolUtil.uploadAssetIds(tokenOverlay.getAssetIds());
-    MapTool.getCampaign().getTokenStatesMap().put(tokenOverlay.getName(), tokenOverlay);
+
+    tokenOverlay.getAssetIds().stream()
+        .map(AssetManager::getAsset)
+        .forEach(campaign.getAssetTracker()::putAsset);
+    campaign.getTokenStatesMap().put(tokenOverlay.getName(), tokenOverlay);
 
     MapTool.addLocalMessage(I18N.getText("addtokenstate.added", tokenOverlay.getName()));
   }

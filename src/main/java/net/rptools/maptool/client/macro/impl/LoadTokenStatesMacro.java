@@ -23,12 +23,12 @@ import java.util.List;
 import javax.swing.JFileChooser;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolMacroContext;
-import net.rptools.maptool.client.MapToolUtil;
 import net.rptools.maptool.client.macro.Macro;
 import net.rptools.maptool.client.macro.MacroContext;
 import net.rptools.maptool.client.macro.MacroDefinition;
 import net.rptools.maptool.client.ui.token.BooleanTokenOverlay;
 import net.rptools.maptool.language.I18N;
+import net.rptools.maptool.model.AssetManager;
 
 /**
  * Load the token states from a file.
@@ -67,14 +67,18 @@ public class LoadTokenStatesMacro implements Macro {
       return;
     } // endif
 
+    var campaign = MapTool.getCampaign();
+
     // Read the serialized set of states
     try {
       XMLDecoder decoder = new XMLDecoder(new BufferedInputStream(new FileInputStream(aliasFile)));
       List<BooleanTokenOverlay> overlays = (List<BooleanTokenOverlay>) decoder.readObject();
       decoder.close();
       for (BooleanTokenOverlay overlay : overlays) {
-        MapToolUtil.uploadAssetIds(overlay.getAssetIds());
-        MapTool.getCampaign().getTokenStatesMap().put(overlay.getName(), overlay);
+        overlay.getAssetIds().stream()
+            .map(AssetManager::getAsset)
+            .forEach(campaign.getAssetTracker()::putAsset);
+        campaign.getTokenStatesMap().put(overlay.getName(), overlay);
       } // endfor
       MapTool.addLocalMessage(I18N.getText("loadtokenstates.loaded", overlays.size()));
     } catch (FileNotFoundException e) {
