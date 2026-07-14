@@ -35,7 +35,6 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellRenderer;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.MapToolUtil;
 import net.rptools.maptool.client.swing.AbeillePanel;
 import net.rptools.maptool.client.swing.ButtonKind;
 import net.rptools.maptool.client.swing.GenericDialog;
@@ -268,10 +267,13 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
         return false;
       }
 
+      // TODO The row should keep a reference to the Asset, not merely the ID.
       MD5Key image = null;
       if (row.getImageId() != null && !row.getImageId().isEmpty()) {
         image = new MD5Key(row.getImageId());
-        MapToolUtil.uploadAsset(AssetManager.getAsset(image));
+
+        var asset = AssetManager.getAsset(image);
+        MapTool.getCampaign().getAssetTracker().putAsset(asset);
       }
 
       var entry = new LookupEntry(min, max, row.getValue(), image);
@@ -307,7 +309,8 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
       }
     }
     // This will add it if it is new
-    MapToolUtil.uploadAsset(AssetManager.getAsset(tableImageAssetPanel.getImageId()));
+    var tableImageAsset = AssetManager.getAsset(tableImageAssetPanel.getImageId());
+    MapTool.getCampaign().getAssetTracker().putAsset(tableImageAsset);
     MapTool.serverCommand().putLookupTable(lookupTable);
 
     return true;
