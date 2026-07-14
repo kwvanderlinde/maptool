@@ -757,10 +757,12 @@ public class ClientMessageHandler implements MessageHandler {
   private void handle(PutZoneMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          Zone zone = Zone.fromDto(msg.getZone());
-          client.getCampaign().putZone(zone);
+          var campaign = client.getCampaign();
 
-          var renderer = ZoneRendererFactory.newRenderer(zone);
+          Zone zone = Zone.fromDto(msg.getZone());
+          campaign.putZone(zone);
+
+          var renderer = ZoneRendererFactory.newRenderer(campaign, zone);
           MapTool.getFrame().addZoneRenderer(renderer);
           if (MapTool.getFrame().getCurrentZoneRenderer() == null && zone.isVisible()) {
             MapTool.getFrame().setCurrentZoneRenderer(renderer);

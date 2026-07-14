@@ -964,7 +964,7 @@ public class MapTool {
     // Install new campaign
     ZoneRenderer currRenderer = null;
     for (Zone zone : campaign.getZones()) {
-      ZoneRenderer renderer = ZoneRendererFactory.newRenderer(zone);
+      ZoneRenderer renderer = ZoneRendererFactory.newRenderer(campaign, zone);
       clientFrame.addZoneRenderer(renderer);
       if (defaultZone != null && defaultZone.getId().equals(zone.getId())) {
         currRenderer = renderer;
@@ -1169,9 +1169,9 @@ public class MapTool {
     if (getCampaign() == campaign) {
       // Show the new zone
       if (changeZone) {
-        clientFrame.setCurrentZoneRenderer(ZoneRendererFactory.newRenderer(zone));
+        clientFrame.setCurrentZoneRenderer(ZoneRendererFactory.newRenderer(campaign, zone));
       } else {
-        getFrame().getZoneRenderers().add(ZoneRendererFactory.newRenderer(zone));
+        getFrame().getZoneRenderers().add(ZoneRendererFactory.newRenderer(campaign, zone));
       }
     }
   }

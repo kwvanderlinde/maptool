@@ -92,6 +92,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
   private static LightSourceIconOverlay lightSourceIconOverlay = new LightSourceIconOverlay();
 
+  private final Campaign campaign;
+
   /** The zone the ZoneRenderer was built from. */
   protected final Zone zone;
 
@@ -153,10 +155,15 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    *
    * @param zone the zone of the ZoneRenderer
    */
-  public ZoneRenderer(Zone zone) {
+  public ZoneRenderer(Campaign campaign, Zone zone) {
+    if (campaign == null) {
+      throw new IllegalArgumentException("Campaign cannot be null");
+    }
     if (zone == null) {
       throw new IllegalArgumentException("Zone cannot be null");
     }
+
+    this.campaign = campaign;
     this.zone = zone;
     this.selectionModel = new SelectionModel(zone);
     this.zoneView = new ZoneView(zone);

@@ -15,17 +15,19 @@
 package net.rptools.maptool.client.ui.zone.renderer;
 
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.Zone;
 
 public class ZoneRendererFactory {
   /**
    * Create a new ZoneRenderer from a zone.
    *
+   * @param campaign the campaign containing the zone
    * @param zone the Zone.
    * @return the new {@link ZoneRenderer}
    */
-  public static ZoneRenderer newRenderer(Zone zone) {
-    ZoneRenderer renderer = new ZoneRenderer(zone);
+  public static ZoneRenderer newRenderer(Campaign campaign, Zone zone) {
+    ZoneRenderer renderer = new ZoneRenderer(campaign, zone);
     if (MapTool.getFrame() != null) {
       renderer.addOverlay(MapTool.getFrame().getPointerOverlay());
     }
