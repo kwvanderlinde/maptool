@@ -2403,7 +2403,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           log.error("Could not find image for asset: " + id);
           continue;
         }
-        MapToolUtil.uploadAsset(asset);
+        campaign.getAssetTracker().putAsset(asset);
       }
       // Set all macros to "Allow players to edit macro", because the macros are not trusted
       if (!isGM) {
