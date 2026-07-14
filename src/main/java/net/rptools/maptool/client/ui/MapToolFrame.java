@@ -108,6 +108,7 @@ import net.rptools.maptool.model.drawing.DrawablePaint;
 import net.rptools.maptool.model.drawing.DrawableTexturePaint;
 import net.rptools.maptool.model.drawing.DrawnElement;
 import net.rptools.maptool.model.drawing.Pen;
+import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.util.ImageManager;
 import org.apache.commons.collections4.map.LinkedMap;
 import org.apache.commons.lang3.ArrayUtils;
@@ -760,10 +761,13 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
    * @param zr the ZoneRenderer of the token
    */
   public void showTokenPropertiesDialog(Token token, ZoneRenderer zr) {
+    Campaign campaign = MapTool.getCampaign();
+    LocalPlayer player = MapTool.getPlayer();
+
     if (token != null && zr != null) {
-      if (MapTool.getPlayer().isGM() || !MapTool.getServerPolicy().isTokenEditorLocked()) {
+      if (player.isGM() || !MapTool.getServerPolicy().isTokenEditorLocked()) {
         EditTokenDialog dialog = MapTool.getFrame().getTokenPropertiesDialog();
-        dialog.showDialog(token);
+        dialog.showDialog(campaign, zr.getZone(), token);
         if (dialog.isTokenSaved()) {
           // Checks if the map still exists. Fixes #1646.
           if (getZoneRenderers().contains(zr) && zr.getZone().getToken(token.getId()) != null) {
