@@ -1129,36 +1129,36 @@ public class MapTool {
     return gms;
   }
 
-  public static void removeZone(Zone zone) {
+  public static void removeZone(Campaign campaign, Zone zone) {
     MapTool.serverCommand().removeZone(zone.getId());
     MapTool.getFrame().removeZoneRenderer(MapTool.getFrame().getZoneRenderer(zone.getId()));
-    MapTool.getCampaign().removeZone(zone.getId());
+    campaign.removeZone(zone.getId());
 
     // Now we have fire off adding the tokens in the zone
     new MapToolEventBus().getMainEventBus().post(new TokensRemoved(zone, zone.getAllTokens()));
     new MapToolEventBus().getMainEventBus().post(new ZoneRemoved(zone));
   }
 
-  public static void addZone(Zone zone) {
-    addZone(zone, true);
+  public static void addZone(Campaign campaign, Zone zone) {
+    addZone(campaign, zone, true);
   }
 
-  public static void addZone(Zone zone, boolean changeZone) {
+  public static void addZone(Campaign campaign, Zone zone, boolean changeZone) {
     Zone zoneToRemove = null;
-    if (getCampaign().getZones().size() == 1) {
+    if (campaign.getZones().size() == 1) {
       // Remove the default map
-      Zone singleZone = getCampaign().getZones().get(0);
+      Zone singleZone = campaign.getZones().get(0);
       if (ZoneFactory.DEFAULT_MAP_NAME.equals(singleZone.getName()) && singleZone.isEmpty()) {
         zoneToRemove = singleZone;
       }
     }
-    getCampaign().putZone(zone);
+    campaign.putZone(zone);
     serverCommand().putZone(zone);
 
     // Now that clients know about the new zone, we can delete the single empty zone. Otherwise
     // clients would not have anything to switch to, and they would get all confused.
     if (zoneToRemove != null) {
-      removeZone(zoneToRemove);
+      removeZone(campaign, zoneToRemove);
       changeZone = true;
     }
 
@@ -1166,11 +1166,13 @@ public class MapTool {
     // Now we have fire off adding the tokens in the zone
     new MapToolEventBus().getMainEventBus().post(new TokensAdded(zone, zone.getAllTokens()));
 
-    // Show the new zone
-    if (changeZone) {
-      clientFrame.setCurrentZoneRenderer(ZoneRendererFactory.newRenderer(zone));
-    } else {
-      getFrame().getZoneRenderers().add(ZoneRendererFactory.newRenderer(zone));
+    if (getCampaign() == campaign) {
+      // Show the new zone
+      if (changeZone) {
+        clientFrame.setCurrentZoneRenderer(ZoneRendererFactory.newRenderer(zone));
+      } else {
+        getFrame().getZoneRenderers().add(ZoneRendererFactory.newRenderer(zone));
+      }
     }
   }
 

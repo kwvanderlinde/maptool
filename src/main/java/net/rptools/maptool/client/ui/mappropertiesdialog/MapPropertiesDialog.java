@@ -40,6 +40,7 @@ import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.AssetManager;
+import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.Grid;
 import net.rptools.maptool.model.Grid.GridType;
 import net.rptools.maptool.model.GridFactory;
@@ -73,6 +74,7 @@ public class MapPropertiesDialog extends JDialog {
   private Asset mapAsset;
   private DrawablePaint fogPaint;
 
+  private Campaign campaign;
   private Zone zone;
   private PaintChooser paintChooser;
 
@@ -276,7 +278,8 @@ public class MapPropertiesDialog extends JDialog {
     return formPanel.getComboBox("aStarRoundingOptionsComboBox");
   }
 
-  public void setZone(Zone zone) {
+  public void setZone(Campaign campaign, Zone zone) {
+    this.campaign = campaign;
     this.zone = zone;
     copyZoneToUI();
   }

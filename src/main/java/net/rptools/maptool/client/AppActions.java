@@ -1270,6 +1270,7 @@ public class AppActions {
 
         @Override
         protected void executeAction(@Nonnull ZoneRenderer renderer) {
+          Campaign campaign = MapTool.getCampaign();
           Zone zone = renderer.getZone();
           // XXX Perhaps ask the user if the copied map should have its GEA and/or TEA
           // cleared? An
@@ -1281,7 +1282,7 @@ public class AppActions {
           if (zoneName != null) {
             Zone zoneCopy = new Zone(zone);
             zoneCopy.setName(zoneName);
-            MapTool.addZone(zoneCopy);
+            MapTool.addZone(campaign, zoneCopy);
           }
         }
       };
@@ -1299,7 +1300,8 @@ public class AppActions {
           if (!MapTool.confirm("msg.confirm.removeZone")) {
             return;
           }
-          MapTool.removeZone(renderer.getZone());
+          Campaign campaign = MapTool.getCampaign();
+          MapTool.removeZone(campaign, renderer.getZone());
         }
       };
 
@@ -2663,13 +2665,14 @@ public class AppActions {
         @Override
         protected void executeAction() {
           boolean isConnected = !MapTool.isHostingServer() && !MapTool.isPersonalServer();
+          Campaign campaign = MapTool.getCampaign();
           JFileChooser chooser = new MapPreviewFileChooser();
           chooser.setDialogTitle(I18N.getText("msg.title.loadMap"));
           chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
           chooser.setFileFilter(MapTool.getFrame().getMapFileFilter());
 
           if (chooser.showOpenDialog(MapTool.getFrame()) == JFileChooser.APPROVE_OPTION) {
-            new MapLoader(chooser.getSelectedFile()).execute();
+            new MapLoader(campaign, chooser.getSelectedFile()).execute();
           }
         }
       };
@@ -2686,6 +2689,7 @@ public class AppActions {
         @Override
         protected void executeAction() {
           boolean isConnected = !MapTool.isHostingServer() && !MapTool.isPersonalServer();
+          Campaign campaign = MapTool.getCampaign();
           JFileChooser chooser = new MapPreviewFileChooser();
           chooser.setDialogTitle(I18N.getText("action.import.dungeondraft.dialog.title"));
           chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -2694,7 +2698,7 @@ public class AppActions {
           if (chooser.showOpenDialog(MapTool.getFrame()) == JFileChooser.APPROVE_OPTION) {
             File ddFile = chooser.getSelectedFile();
             try {
-              new DungeonDraftImporter(ddFile).importVTT();
+              new DungeonDraftImporter(campaign, ddFile).importVTT();
             } catch (IOException ioException) {
               MapTool.showError("dungeondraft.import.ioError", ioException);
             }
@@ -2720,9 +2724,11 @@ public class AppActions {
 
   private static class MapLoader extends SwingWorker<PersistedMap, String> {
 
+    private Campaign campaign;
     private File mapFile;
 
-    public MapLoader(File mapFile) {
+    public MapLoader(Campaign campaign, File mapFile) {
+      this.campaign = campaign;
       this.mapFile = mapFile;
     }
 
@@ -2752,7 +2758,7 @@ public class AppActions {
             map.zone.clearExposedArea(false);
           }
         }
-        MapTool.addZone(map.zone);
+        MapTool.addZone(campaign, map.zone);
 
       } catch (Exception ioe) {
         MapTool.showError(ioe.getMessage(), ioe);
@@ -2854,11 +2860,12 @@ public class AppActions {
 
     @Override
     protected void executeAction() {
+      Campaign campaign = MapTool.getCampaign();
       Zone zone = ZoneFactory.createZone();
       zone.setBackgroundPaint(new DrawableTexturePaint(asset.getMD5Key()));
       zone.setName(asset.getName());
 
-      MapTool.addZone(zone);
+      MapTool.addZone(campaign, zone);
     }
   }
 
@@ -2872,15 +2879,16 @@ public class AppActions {
 
         @Override
         protected void executeAction() {
+          Campaign campaign = MapTool.getCampaign();
           Zone zone = ZoneFactory.createZone();
           MapPropertiesDialog newMapDialog =
               MapPropertiesDialog.createMapPropertiesDialog(MapTool.getFrame());
-          newMapDialog.setZone(zone);
+          newMapDialog.setZone(campaign, zone);
 
           newMapDialog.setVisible(true);
 
           if (newMapDialog.getStatus() == MapPropertiesDialog.Status.OK) {
-            MapTool.addZone(zone);
+            MapTool.addZone(campaign, zone);
           }
         }
       };
@@ -2895,10 +2903,11 @@ public class AppActions {
 
         @Override
         protected void executeAction(@Nonnull ZoneRenderer renderer) {
+          Campaign campaign = MapTool.getCampaign();
           Zone zone = renderer.getZone();
           MapPropertiesDialog newMapDialog =
               MapPropertiesDialog.createMapPropertiesDialog(MapTool.getFrame());
-          newMapDialog.setZone(zone);
+          newMapDialog.setZone(campaign, zone);
           newMapDialog.setVisible(true);
 
           MapTool.serverCommand().removeZone(zone.getId());

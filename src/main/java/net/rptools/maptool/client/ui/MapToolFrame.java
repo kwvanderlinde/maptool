@@ -98,6 +98,7 @@ import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Asset;
+import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
@@ -1489,6 +1490,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
           }
 
           private void createZone(Asset asset) {
+            Campaign campaign = MapTool.getCampaign();
             Zone zone = ZoneFactory.createZone();
             zone.setName(asset.getName());
             BufferedImage image = ImageManager.getImageAndWait(asset.getMD5Key());
@@ -1502,11 +1504,11 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
             }
             MapPropertiesDialog newMapDialog =
                 MapPropertiesDialog.createMapPropertiesDialog(MapTool.getFrame());
-            newMapDialog.setZone(zone);
+            newMapDialog.setZone(campaign, zone);
             newMapDialog.setVisible(true);
 
             if (newMapDialog.getStatus() == MapPropertiesDialog.Status.OK) {
-              MapTool.addZone(zone);
+              MapTool.addZone(campaign, zone);
             }
           }
         });

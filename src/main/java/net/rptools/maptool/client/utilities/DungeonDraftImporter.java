@@ -43,6 +43,7 @@ import net.rptools.maptool.client.ui.uvtt.UvttLineOfSightPromptDialog;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.AssetManager;
+import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Grid;
 import net.rptools.maptool.model.Light;
@@ -75,6 +76,8 @@ public class DungeonDraftImporter {
 
   /** The image of the map in the vtt file. */
   public static final String VTT_FIELD_IMAGE = "image";
+
+  private final Campaign campaign;
 
   /** The file containing the dungeondraft VTT export. */
   private final File dungeonDraftFile;
@@ -121,7 +124,8 @@ public class DungeonDraftImporter {
    *
    * @param ddFile the file to import.
    */
-  public DungeonDraftImporter(File ddFile) {
+  public DungeonDraftImporter(Campaign campaign, File ddFile) {
+    this.campaign = campaign;
     dungeonDraftFile = ddFile;
   }
 
@@ -181,7 +185,7 @@ public class DungeonDraftImporter {
 
     MapPropertiesDialog dialog =
         MapPropertiesDialog.createMapPropertiesImportDialog(MapTool.getFrame());
-    dialog.setZone(zone);
+    dialog.setZone(campaign, zone);
     dialog.forcePixelsPerCell(pixelsPerCell);
     dialog.forceGridType(Grid.GridType.Square);
     dialog.forceMap(asset);
@@ -328,7 +332,7 @@ public class DungeonDraftImporter {
     }
 
     // If everything has been successful, we can add the zone to the campaign.
-    MapTool.addZone(zone);
+    MapTool.addZone(campaign, zone);
   }
 
   private Point2D vblPoint(JsonObject pointJson, double pixelsPerCell) {

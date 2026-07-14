@@ -77,6 +77,8 @@ public class MapFunctions extends AbstractFunction {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
+    var campaign = MapTool.getCampaign();
+
     if (functionName.equalsIgnoreCase("getCurrentMapID")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 0);
       ZoneRenderer currentZR = MapTool.getFrame().getCurrentZoneRenderer();
@@ -89,7 +91,7 @@ public class MapFunctions extends AbstractFunction {
       final var mapName = parameters.get(0).toString();
       final var delim = parameters.size() < 2 ? "," : parameters.get(1).toString();
       final var zoneIds =
-          MapTool.getCampaign().getZones().stream()
+          campaign.getZones().stream()
               .filter(zone -> mapName.equals(zone.getName()))
               .map(Zone::getId)
               .map(GUID::toString)
@@ -176,7 +178,7 @@ public class MapFunctions extends AbstractFunction {
       Zone oldMap = FunctionUtil.getZoneRenderer(functionName, oldMapNameOrId).getZone();
       Zone newMap = new Zone(oldMap);
       newMap.setName(newName);
-      MapTool.addZone(newMap, false);
+      MapTool.addZone(campaign, newMap, false);
       MapTool.serverCommand().putZone(newMap);
       return newMap.getName();
 
@@ -292,7 +294,7 @@ public class MapFunctions extends AbstractFunction {
         newMap.setMapAssetId(mapAssetKey);
       }
 
-      MapTool.addZone(newMap, false);
+      MapTool.addZone(campaign, newMap, false);
       return newMap.getId();
     } else if ("getVisibleMapIDs".equalsIgnoreCase(functionName)
         || "getAllMapIDs".equalsIgnoreCase(functionName)) {
