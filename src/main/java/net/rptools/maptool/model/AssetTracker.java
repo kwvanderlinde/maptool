@@ -50,8 +50,15 @@ public class AssetTracker {
   }
 
   public void putAsset(Asset asset) {
+    if (asset == null) {
+      // Nothing to be done.
+      return;
+    }
+
     var previous = assetMap.putIfAbsent(asset.getMD5Key(), asset);
     if (previous == null) {
+      // This is a new asset.
+
       // Make sure the global asset manager knows about it.
       if (!AssetManager.hasAsset(asset.getMD5Key())) {
         AssetManager.putAsset(asset);
