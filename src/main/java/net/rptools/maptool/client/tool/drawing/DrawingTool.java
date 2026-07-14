@@ -24,8 +24,8 @@ import java.awt.geom.Path2D;
 import javax.annotation.Nullable;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.MapToolUtil;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
+import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.Drawable;
@@ -143,6 +143,7 @@ public final class DrawingTool<StateT> extends AbstractDrawingLikeTool {
       return;
     }
 
+    Campaign campaign = getCampaign();
     Zone zone = getZone();
     var drawable = toDrawable(shape);
     if (drawable.getBounds(zone) == null) {
@@ -156,8 +157,8 @@ public final class DrawingTool<StateT> extends AbstractDrawingLikeTool {
     }
 
     // Send new textures
-    MapToolUtil.uploadTexture(pen.getPaint());
-    MapToolUtil.uploadTexture(pen.getBackgroundPaint());
+    campaign.getAssetTracker().putAssetsFrom(pen.getPaint());
+    campaign.getAssetTracker().putAssetsFrom(pen.getBackgroundPaint());
 
     // Tell the local/server to render the drawable.
     MapTool.serverCommand().draw(zone.getId(), pen, drawable);

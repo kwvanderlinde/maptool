@@ -579,6 +579,10 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     repaintDebouncer.dispatch();
   }
 
+  public Campaign getCampaign() {
+    return campaign;
+  }
+
   /**
    * @return the Zone
    */

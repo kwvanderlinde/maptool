@@ -29,6 +29,7 @@ import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.tool.layerselectiondialog.LayerSelectionDialog;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
+import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.CellPoint;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Token;
@@ -111,6 +112,10 @@ public abstract class DefaultTool extends Tool
 
   protected void repaintZone() {
     renderer.repaint();
+  }
+
+  protected Campaign getCampaign() {
+    return renderer.getCampaign();
   }
 
   protected Zone getZone() {

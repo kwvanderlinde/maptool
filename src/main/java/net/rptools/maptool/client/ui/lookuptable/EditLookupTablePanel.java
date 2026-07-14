@@ -271,9 +271,7 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
       MD5Key image = null;
       if (row.getImageId() != null && !row.getImageId().isEmpty()) {
         image = new MD5Key(row.getImageId());
-
-        var asset = AssetManager.getAsset(image);
-        MapTool.getCampaign().getAssetTracker().putAsset(asset);
+        MapTool.getCampaign().getAssetTracker().putAsset(AssetManager.getAsset(image));
       }
 
       var entry = new LookupEntry(min, max, row.getValue(), image);
@@ -309,8 +307,9 @@ public class EditLookupTablePanel extends AbeillePanel<LookupTable> {
       }
     }
     // This will add it if it is new
-    var tableImageAsset = AssetManager.getAsset(tableImageAssetPanel.getImageId());
-    MapTool.getCampaign().getAssetTracker().putAsset(tableImageAsset);
+    MapTool.getCampaign()
+        .getAssetTracker()
+        .putAsset(AssetManager.getAsset(tableImageAssetPanel.getImageId()));
     MapTool.serverCommand().putLookupTable(lookupTable);
 
     return true;

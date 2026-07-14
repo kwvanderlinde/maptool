@@ -33,8 +33,6 @@ import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.AssetManager;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
-import net.rptools.maptool.model.drawing.DrawablePaint;
-import net.rptools.maptool.model.drawing.DrawableTexturePaint;
 
 public class MapToolUtil {
   private static final Random RAND = new SecureRandom();
@@ -273,16 +271,6 @@ public class MapToolUtil {
       if (asset != null) {
         uploadAsset(asset);
       }
-    }
-  }
-
-  public static void uploadTexture(DrawablePaint paint) {
-    if (paint == null) {
-      return;
-    }
-    if (paint instanceof DrawableTexturePaint) {
-      Asset asset = ((DrawableTexturePaint) paint).getAsset();
-      uploadAsset(asset);
     }
   }
 

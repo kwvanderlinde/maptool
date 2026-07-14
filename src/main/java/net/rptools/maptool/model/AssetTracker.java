@@ -21,6 +21,8 @@ import javax.annotation.Nullable;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.campaign.AssetAdded;
+import net.rptools.maptool.model.drawing.DrawablePaint;
+import net.rptools.maptool.model.drawing.DrawableTexturePaint;
 
 /**
  * Keeps track of which assets a campaign owns.
@@ -49,7 +51,7 @@ public class AssetTracker {
     return assetMap.getOrDefault(key, null);
   }
 
-  public void putAsset(Asset asset) {
+  public void putAsset(@Nullable Asset asset) {
     if (asset == null) {
       // Nothing to be done.
       return;
@@ -68,6 +70,22 @@ public class AssetTracker {
       //  tighten this up by not requiring the event bus?
       //  Honestly, I'd like to adopt reactive streams.
       new MapToolEventBus().getMainEventBus().post(new AssetAdded(campaign, asset));
+    }
+  }
+
+  /**
+   * A convenience method for calling {@link #putAsset(Asset)} with the assets from a {@link
+   * DrawablePaint}.
+   *
+   * @param paint The paint to pull assets from.
+   */
+  public void putAssetsFrom(@Nullable DrawablePaint paint) {
+    if (paint == null) {
+      return;
+    }
+
+    if (paint instanceof DrawableTexturePaint texturePaint) {
+      putAsset(texturePaint.getAsset());
     }
   }
 

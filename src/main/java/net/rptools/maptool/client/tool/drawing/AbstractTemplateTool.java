@@ -20,7 +20,6 @@ import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.MapToolUtil;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.tool.DefaultTool;
 import net.rptools.maptool.client.ui.zone.ZoneOverlay;
@@ -131,6 +130,7 @@ public abstract class AbstractTemplateTool extends DefaultTool implements ZoneOv
    */
   protected void completeDrawable(Pen pen, Drawable drawable) {
     var zone = getZone();
+    var campaign = getCampaign();
 
     if (!hasPaint(pen)) {
       return;
@@ -145,8 +145,8 @@ public abstract class AbstractTemplateTool extends DefaultTool implements ZoneOv
     }
 
     // Send new textures
-    MapToolUtil.uploadTexture(pen.getPaint());
-    MapToolUtil.uploadTexture(pen.getBackgroundPaint());
+    campaign.getAssetTracker().putAssetsFrom(pen.getPaint());
+    campaign.getAssetTracker().putAssetsFrom(pen.getBackgroundPaint());
 
     // Tell the local/server to render the drawable.
     MapTool.serverCommand().draw(zone.getId(), pen, drawable);
