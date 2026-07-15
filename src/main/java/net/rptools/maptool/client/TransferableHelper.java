@@ -47,6 +47,7 @@ import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.library.LibraryManager;
 import net.rptools.maptool.model.library.addon.AddOnLibraryImporter;
 import net.rptools.maptool.util.PersistenceUtil;
+import net.rptools.maptool.util.PersistenceUtil.LoadResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tika.mime.MediaType;
@@ -210,21 +211,15 @@ public class TransferableHelper extends TransferHandler {
        * which of those to actually use?
        */
 
-      // LOCAL FILESYSTEM
-      // Used by Linux when files are dragged from the desktop. Other systems don't use this so
-      // we're safe
-      // checking for it first.
-      // (Except Mac OS X 10.11 does appear to use it now, but textURIListToFileList() will fail as
-      // the URIs can't
-      // be converted
-      // to URLs. This is why we check for the empty 'list' -- if it's empty, we can't use this
-      // conversion and we
-      // want 'o' to be
-      // null for the following checks.)
-      // Note that "text/uri-list" is considered a JRE bug and it should be converting the event
-      // into
-      // "text/x-java-file-list", but
-      // until it does...
+      /* LOCAL FILESYSTEM
+       * Used by Linux when files are dragged from the desktop. Other systems don't use this so
+       * we're safe checking for it first.
+       * (Except Mac OS X 10.11 does appear to use it now, but textURIListToFileList() will fail as
+       * the URIs can't be converted to URLs. This is why we check for the empty 'list' -- if it's
+       * empty, we can't use this conversion and we want 'o' to be null for the following checks.)
+       * Note that "text/uri-list" is considered a JRE bug and it should be converting the event
+       * into "text/x-java-file-list", but until it does...
+       */
       if (o == null && transferable.isDataFlavorSupported(URI_LIST_FLAVOR)) {
         log.info("Selected: {}", URI_LIST_FLAVOR);
         String data = (String) transferable.getTransferData(URI_LIST_FLAVOR);
@@ -365,8 +360,10 @@ public class TransferableHelper extends TransferHandler {
           // will strip out anything in the List that isn't an Asset anyway...
           var result = PersistenceUtil.loadToken(url);
           assets.add(result.loaded());
-          // TODO Totally don't know if this is in any way legitimate.
+          // TODO This is not legitimate as it results in a token being created for the image, along
+          //  with the loaded token itself.
           assets.addAll(result.assets());
+          assets.add(result);
         } else if (AddOnLibraryImporter.isAddOnLibrary(url.getPath())) {
           Asset temp = AssetManager.createAsset(url, Type.MTLIB);
           if (temp != null) { // `null' means no image available
@@ -453,10 +450,10 @@ public class TransferableHelper extends TransferHandler {
   }
 
   /** The tokens to be loaded onto the renderer when we get a point */
-  List<Token> tokens;
+  private List<LoadResult<Token>> tokens;
 
   /** Whether or not each token needs additional configuration (set footprint, guess shape). */
-  List<Boolean> configureTokens;
+  private List<Boolean> configureTokens;
 
   /**
    * Retrieves a list of DataFlavors from the passed in Transferable, then tries to actually
@@ -517,7 +514,7 @@ public class TransferableHelper extends TransferHandler {
 
     List<Object> assets = getAsset(t);
     if (!assets.isEmpty()) {
-      tokens = new ArrayList<Token>(assets.size());
+      tokens = new ArrayList<LoadResult<Token>>(assets.size());
       configureTokens = new ArrayList<Boolean>(assets.size());
       for (Object working : assets) {
         if (working instanceof Asset asset) {
@@ -542,13 +539,15 @@ public class TransferableHelper extends TransferHandler {
             }
           } else {
             Token token = new Token(asset.getName(), asset.getMD5Key());
-            tokens.add(token);
+            tokens.add(new LoadResult<>(token, List.of(asset)));
             // A token from an image asset needs additional configuration.
             configureTokens.add(true);
           }
-        } else if (working instanceof Token) {
-          Token token = new Token((Token) working);
-          tokens.add(token);
+        } else if (working instanceof LoadResult<?> result) {
+          if (result.loaded() instanceof Token token) {
+            // Make a copy so that it gets a new unique GUID
+            tokens.add(new LoadResult<>(new Token(token), result.assets()));
+          }
           // A token from an .rptok file is already fully configured.
           configureTokens.add(false);
         }
@@ -556,9 +555,11 @@ public class TransferableHelper extends TransferHandler {
     } else if (t.isDataFlavorSupported(TransferableToken.dataFlavor)) {
       try {
         // Make a copy so that it gets a new unique GUID
+        // TODO We need the list of assets from this flavor as well.
         tokens =
             Collections.singletonList(
-                new Token((Token) t.getTransferData(TransferableToken.dataFlavor)));
+                new LoadResult<>(
+                    new Token((Token) t.getTransferData(TransferableToken.dataFlavor)), List.of()));
         // A token from the Resource Library is already fully configured.
         configureTokens = Collections.singletonList(Boolean.FALSE);
       } catch (Exception e) {
