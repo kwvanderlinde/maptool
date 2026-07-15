@@ -14,13 +14,15 @@
  */
 package net.rptools.maptool.model;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nullable;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.events.MapToolEventBus;
-import net.rptools.maptool.model.campaign.AssetAdded;
+import net.rptools.maptool.model.campaign.AssetsAdded;
 import net.rptools.maptool.model.drawing.DrawablePaint;
 import net.rptools.maptool.model.drawing.DrawableTexturePaint;
 
@@ -31,7 +33,7 @@ import net.rptools.maptool.model.drawing.DrawableTexturePaint;
  * the asset cache. It merely holds loaded assets specific to a campaign. It will, however, ensure
  * that all of its assets are added to the {@link AssetManager}.
  *
- * <p>When adding new assets, an {@link AssetAdded} event is emitted. This is handled elsewhere to
+ * <p>When adding new assets, an {@link AssetsAdded} event is emitted. This is handled elsewhere to
  * upload the assets to the server.
  *
  * <p>Eventually, this should act as the source of truth for which assets belong in the campaign.
@@ -56,25 +58,8 @@ public class AssetTracker {
   }
 
   public void putAsset(@Nullable Asset asset) {
-    if (asset == null) {
-      // Nothing to be done.
-      return;
-    }
-
-    var previous = assetMap.putIfAbsent(asset.getMD5Key(), asset);
-    if (previous == null) {
-      // This is a new asset.
-
-      // Make sure the global asset manager knows about it.
-      // TODO If the asset manager does know about, use the asset manager's version (deduplicate)?
-      if (!AssetManager.hasAsset(asset.getMD5Key())) {
-        AssetManager.putAsset(asset);
-      }
-
-      // TODO Handled in MapToolClient#onAssetAdded() for uploading to the server if needed. Can we
-      //  tighten this up by not requiring the event bus?
-      //  Honestly, I'd like to adopt reactive streams.
-      new MapToolEventBus().getMainEventBus().post(new AssetAdded(campaign, asset));
+    if (asset != null) {
+      putAllAssets(List.of(asset));
     }
   }
 
@@ -92,6 +77,35 @@ public class AssetTracker {
     if (paint instanceof DrawableTexturePaint texturePaint) {
       putAsset(texturePaint.getAsset());
     }
+  }
+
+  public void putAllAssets(Collection<Asset> assets) {
+    var newAssets = new ArrayList<Asset>();
+    for (var asset : assets) {
+      if (asset == null) {
+        continue;
+      }
+
+      var previous = assetMap.putIfAbsent(asset.getMD5Key(), asset);
+      if (previous != null) {
+        // Asset is already known.
+        continue;
+      }
+
+      // This is a new asset.
+      // Make sure the global asset manager knows about it.
+      // TODO If the asset manager does know about, use the asset manager's version (deduplicate)?
+      if (!AssetManager.hasAsset(asset.getMD5Key())) {
+        AssetManager.putAsset(asset);
+      }
+
+      newAssets.add(asset);
+    }
+
+    // TODO Handled in MapToolClient#onAssetAdded() for uploading to the server if needed. Can we
+    //  tighten this up by not requiring the event bus?
+    //  Honestly, I'd like to adopt reactive streams.
+    new MapToolEventBus().getMainEventBus().post(new AssetsAdded(campaign, newAssets));
   }
 
   public void garbageCollect(Collection<MD5Key> liveAssets) {

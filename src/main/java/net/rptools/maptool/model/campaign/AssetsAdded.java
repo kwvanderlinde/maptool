@@ -14,7 +14,8 @@
  */
 package net.rptools.maptool.model.campaign;
 
+import java.util.List;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.Campaign;
 
-public record AssetAdded(Campaign campaign, Asset asset) {}
+public record AssetsAdded(Campaign campaign, List<Asset> assets) {}

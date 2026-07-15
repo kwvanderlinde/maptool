@@ -35,7 +35,7 @@ import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.CampaignFactory;
-import net.rptools.maptool.model.campaign.AssetAdded;
+import net.rptools.maptool.model.campaign.AssetsAdded;
 import net.rptools.maptool.model.campaign.CampaignManager;
 import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.model.player.Player;
@@ -361,7 +361,7 @@ public class MapToolClient {
   }
 
   @Subscribe
-  private void onAssetAdded(AssetAdded event) {
+  private void onAssetsAdded(AssetsAdded event) {
     if (campaign == event.campaign() && localServer == null) {
       // TODO Would it not be prudent to notify the server that this particular client ID has the
       //  asset? That way, we can avoid a transfer if the server already has the asset.
@@ -371,7 +371,9 @@ public class MapToolClient {
       //  1. If, when loaded, all campaign assets are present on the server.
       //  2. And, whenever an asset is added to the campaign, AssetAdded is emitted for it,
       //  3. Then at all times (save latency) the server  has all assets.
-      serverCommand.putAsset(event.asset());
+      for (var asset : event.assets()) {
+        serverCommand.putAsset(asset);
+      }
     }
   }
 }
