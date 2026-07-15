@@ -40,6 +40,7 @@ import net.rptools.maptool.model.zones.TokensChanged;
 import net.rptools.maptool.model.zones.TokensRemoved;
 import net.rptools.maptool.util.threads.ThreadExecutionHelper;
 
+// TODO This should be part of a `Campaign`, reflecting `Campaign` state (tokens).
 /** Class that represents Lib:Token libraries. */
 public class LibraryTokenManager {
 
@@ -89,7 +90,7 @@ public class LibraryTokenManager {
     public void tokensAdded(TokensAdded event) {
       SwingUtilities.invokeLater(
           () -> {
-            addTokens(
+            LibraryTokenManager.this.addLibraryTokens(
                 event.tokens().stream()
                     .filter(t -> t.getName().toLowerCase().startsWith("lib:"))
                     .map(LibraryToken::new)
@@ -128,7 +129,15 @@ public class LibraryTokenManager {
     }
   }
 
-  private void addTokens(Collection<LibraryToken> libs) {
+  public void addTokens(Collection<Token> tokens) {
+    this.addLibraryTokens(
+        tokens.stream()
+            .filter(f -> f.getName().toLowerCase().startsWith("lib:"))
+            .map(LibraryToken::new)
+            .toList());
+  }
+
+  private void addLibraryTokens(Collection<LibraryToken> libs) {
     libs.forEach(
         l -> {
           String name = l.getName().join();
@@ -150,7 +159,7 @@ public class LibraryTokenManager {
           GUID id = l.getId();
           var old = libraryTokens.values().stream().filter(l2 -> id.equals(l2.getId())).findFirst();
           old.ifPresent(libraryToken -> removeTokens(List.of(libraryToken.getNamespace().join())));
-          addTokens(List.of(l));
+          this.addLibraryTokens(List.of(l));
         });
   }
 
@@ -162,7 +171,7 @@ public class LibraryTokenManager {
             tokens.addAll(
                 zone.getTokensFiltered(f -> f.getName().toLowerCase().startsWith("lib:")));
           }
-          addTokens(tokens.stream().map(LibraryToken::new).toList());
+          this.addLibraryTokens(tokens.stream().map(LibraryToken::new).toList());
           new MapToolEventBus().getMainEventBus().register(tokenEventListener);
         });
   }

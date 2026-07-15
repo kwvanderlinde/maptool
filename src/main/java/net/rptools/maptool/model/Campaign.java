@@ -27,6 +27,7 @@ import net.rptools.maptool.client.ui.ToolbarPanel;
 import net.rptools.maptool.client.ui.macrobuttons.panels.AbstractMacroPanel;
 import net.rptools.maptool.client.ui.token.BarTokenOverlay;
 import net.rptools.maptool.client.ui.token.BooleanTokenOverlay;
+import net.rptools.maptool.model.library.token.LibraryTokenManager;
 import net.rptools.maptool.model.sheet.stats.StatSheetProperties;
 import net.rptools.maptool.server.proto.CampaignDto;
 
@@ -99,6 +100,8 @@ public class Campaign implements Serializable {
 
   private transient AssetTracker assetTracker;
 
+  private transient LibraryTokenManager libraryTokenManager;
+
   // Primary constructor
   private Campaign(
       @Nonnull GUID id,
@@ -138,6 +141,12 @@ public class Campaign implements Serializable {
     }
 
     this.assetTracker = new AssetTracker(this);
+    this.libraryTokenManager = new LibraryTokenManager(/*this*/ );
+
+    // Register library tokens
+    for (var zone : getZones()) {
+      libraryTokenManager.addTokens(zone.getAllTokens());
+    }
   }
 
   public Campaign() {
@@ -437,6 +446,10 @@ public class Campaign implements Serializable {
 
   public AssetTracker getAssetTracker() {
     return assetTracker;
+  }
+
+  public LibraryTokenManager getLibraryTokenManager() {
+    return libraryTokenManager;
   }
 
   public boolean containsAsset(MD5Key key) {

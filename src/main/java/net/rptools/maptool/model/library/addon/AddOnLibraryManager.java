@@ -31,6 +31,7 @@ import net.rptools.maptool.model.library.proto.AddOnLibraryDto;
 import net.rptools.maptool.model.library.proto.AddOnLibraryListDto;
 import net.rptools.maptool.model.library.proto.AddOnLibraryListDto.AddOnLibraryEntryDto;
 
+// TODO This should be part of a `Campaign`.
 /** Class for managing {@link AddOnLibrary} objects. */
 public class AddOnLibraryManager {
 
