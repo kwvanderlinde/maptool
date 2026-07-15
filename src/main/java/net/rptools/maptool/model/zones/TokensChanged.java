@@ -18,4 +18,4 @@ import java.util.List;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
 
-public record TokensChanged(Zone zone, List<Token> tokens) {}
+public record TokensChanged(Zone zone, List<Token> tokens) implements ZoneEvent {}

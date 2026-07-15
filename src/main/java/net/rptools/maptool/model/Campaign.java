@@ -14,6 +14,10 @@
  */
 package net.rptools.maptool.model;
 
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.observers.SafeObserver;
+import io.reactivex.rxjava3.subjects.PublishSubject;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
@@ -29,6 +33,11 @@ import net.rptools.maptool.client.ui.token.BarTokenOverlay;
 import net.rptools.maptool.client.ui.token.BooleanTokenOverlay;
 import net.rptools.maptool.model.library.token.LibraryTokenManager;
 import net.rptools.maptool.model.sheet.stats.StatSheetProperties;
+import net.rptools.maptool.model.zones.CampaignEvent;
+import net.rptools.maptool.model.zones.TokenEdited;
+import net.rptools.maptool.model.zones.TokensAdded;
+import net.rptools.maptool.model.zones.TokensChanged;
+import net.rptools.maptool.model.zones.TokensRemoved;
 import net.rptools.maptool.server.proto.CampaignDto;
 
 /**
@@ -102,6 +111,10 @@ public class Campaign implements Serializable {
 
   private transient LibraryTokenManager libraryTokenManager;
 
+  private transient Map<GUID, Disposable> zoneSubscriptions;
+
+  private transient PublishSubject<CampaignEvent> onCampaignEvent;
+
   // Primary constructor
   private Campaign(
       @Nonnull GUID id,
@@ -116,6 +129,9 @@ public class Campaign implements Serializable {
       @Nonnull List<MacroButtonProperties> macroButtonProperties,
       @Nonnull List<MacroButtonProperties> gmMacroButtonProperties,
       @Nonnull List<Zone> zones) {
+    this.assetTracker = new AssetTracker(this);
+    this.libraryTokenManager = new LibraryTokenManager(/*this*/ );
+
     this.id = id;
     this.name = name;
     this.landingMapId = landingMapId;
@@ -129,23 +145,19 @@ public class Campaign implements Serializable {
     this.macroButtonProperties = macroButtonProperties;
     this.gmMacroButtonProperties = gmMacroButtonProperties;
 
+    this.onCampaignEvent = PublishSubject.create();
+    this.zoneSubscriptions = new HashMap<>();
+
+    this.zones = Collections.synchronizedMap(new LinkedHashMap<>());
+
     /*
      * Don't forget that since these are new zones AND new tokens created here from the old one,
      * if you have any data that needs to transfer over you will need to manually copy it
      * as is done below for the campaign properties and macro buttons. Iteration over a synchronized
      *  map must lock the map.
      */
-    this.zones = Collections.synchronizedMap(new LinkedHashMap<>());
     for (var zone : zones) {
-      this.zones.put(zone.getId(), zone);
-    }
-
-    this.assetTracker = new AssetTracker(this);
-    this.libraryTokenManager = new LibraryTokenManager(/*this*/ );
-
-    // Register library tokens
-    for (var zone : getZones()) {
-      libraryTokenManager.addTokens(zone.getAllTokens());
+      putZone(zone);
     }
   }
 
@@ -185,6 +197,31 @@ public class Campaign implements Serializable {
         new ArrayList<>(campaign.gmMacroButtonProperties),
         campaign.zones.values().stream().map(z -> new Zone(z, true)).toList());
   }
+
+  private void onTokensAdded(TokensAdded event) {
+    // Ensure tokens are recognized as libraries if needed.
+    libraryTokenManager.addTokens(event.tokens());
+  }
+
+  private void onTokensRemoved(TokensRemoved event) {
+    libraryTokenManager.removeTokens(event.tokens());
+  }
+
+  private void onTokensChanged(TokensChanged event) {
+    libraryTokenManager.changeTokens(event.tokens());
+  }
+
+  private void onTokenEdited(TokenEdited event) {
+    libraryTokenManager.changeTokens(Collections.singleton(event.token()));
+  }
+
+  // region Events
+
+  public Observable<CampaignEvent> onCampaignEvent() {
+    return onCampaignEvent;
+  }
+
+  // endregion
 
   public void setLandingMapId(@Nullable GUID zoneId) {
     // Doesn't really matter if it belongs to {@link #zones}, that can be checked at lookup time.
@@ -429,10 +466,22 @@ public class Campaign implements Serializable {
    */
   public void putZone(Zone zone) {
     zones.put(zone.getId(), zone);
+
+    var existing = zoneSubscriptions.remove(zone.getId());
+    if (existing != null) {
+      existing.dispose();
+    }
+
+    zoneSubscriptions.put(
+        zone.getId(), zone.onZoneEvent().subscribeWith(new SafeObserver<>(this.onCampaignEvent)));
+
+    // Register the zone's library tokens that already exist.
+    onTokensAdded(new TokensAdded(zone, zone.getAllTokens()));
   }
 
   public void removeAllZones() {
     zones.clear();
+    zoneSubscriptions.values().forEach(Disposable::dispose);
   }
 
   /**
@@ -442,6 +491,11 @@ public class Campaign implements Serializable {
    */
   public void removeZone(GUID id) {
     zones.remove(id);
+
+    var existing = zoneSubscriptions.remove(id);
+    if (existing != null) {
+      existing.dispose();
+    }
   }
 
   public AssetTracker getAssetTracker() {

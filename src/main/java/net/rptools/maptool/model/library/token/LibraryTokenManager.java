@@ -90,11 +90,7 @@ public class LibraryTokenManager {
     public void tokensAdded(TokensAdded event) {
       SwingUtilities.invokeLater(
           () -> {
-            LibraryTokenManager.this.addLibraryTokens(
-                event.tokens().stream()
-                    .filter(t -> t.getName().toLowerCase().startsWith("lib:"))
-                    .map(LibraryToken::new)
-                    .toList());
+            addTokens(event.tokens());
           });
     }
 
@@ -102,11 +98,7 @@ public class LibraryTokenManager {
     public void tokensRemoved(TokensRemoved event) {
       SwingUtilities.invokeLater(
           () -> {
-            removeTokens(
-                event.tokens().stream()
-                    .filter(t -> t.getName().toLowerCase().startsWith("lib:"))
-                    .map(t -> LibraryToken.namespaceForName(t.getName()))
-                    .toList());
+            removeTokens(event.tokens());
           });
     }
 
@@ -114,11 +106,7 @@ public class LibraryTokenManager {
     public void tokensChanged(TokensChanged event) {
       SwingUtilities.invokeLater(
           () -> {
-            changeTokens(
-                event.tokens().stream()
-                    .filter(t -> t.getName().toLowerCase().startsWith("lib:"))
-                    .map(LibraryToken::new)
-                    .toList());
+            changeTokens(event.tokens());
           });
     }
 
@@ -137,6 +125,22 @@ public class LibraryTokenManager {
             .toList());
   }
 
+  public void removeTokens(Collection<Token> tokens) {
+    this.removeTokensByNamespace(
+        tokens.stream()
+            .filter(t -> t.getName().toLowerCase().startsWith("lib:"))
+            .map(t -> LibraryToken.namespaceForName(t.getName()))
+            .toList());
+  }
+
+  public void changeTokens(Collection<Token> tokens) {
+    changeLibraryTokens(
+        tokens.stream()
+            .filter(t -> t.getName().toLowerCase().startsWith("lib:"))
+            .map(LibraryToken::new)
+            .toList());
+  }
+
   private void addLibraryTokens(Collection<LibraryToken> libs) {
     libs.forEach(
         l -> {
@@ -148,17 +152,18 @@ public class LibraryTokenManager {
         });
   }
 
-  private void removeTokens(Collection<String> namespaces) {
+  private void removeTokensByNamespace(Collection<String> namespaces) {
     namespaces.forEach(libraryTokens::remove);
   }
 
-  private void changeTokens(Collection<LibraryToken> libs) {
+  private void changeLibraryTokens(Collection<LibraryToken> libs) {
     libs.forEach(
         l -> {
           // name may have changed so we need to search by id
           GUID id = l.getId();
           var old = libraryTokens.values().stream().filter(l2 -> id.equals(l2.getId())).findFirst();
-          old.ifPresent(libraryToken -> removeTokens(List.of(libraryToken.getNamespace().join())));
+          old.ifPresent(
+              libraryToken -> removeTokensByNamespace(List.of(libraryToken.getNamespace().join())));
           this.addLibraryTokens(List.of(l));
         });
   }

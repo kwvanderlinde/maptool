@@ -144,6 +144,8 @@ reflections = { group = "org.reflections", name = "reflections", version = "0.10
 yasb = { group = "yasb", name = "yasb", version = "0.2-21012007" }
 # For map noise
 noiselib = { group = "com.github.cwisniew", name = "NoiseLib", version = "1.0.0" }
+# For event streams
+rxjava = { group = "io.reactivex.rxjava3", name = "rxjava", version = "3.1.12" }
 
 # JS support for macros
 graalvm-js = { group = "org.graalvm.js", name = "js", version.ref = "graalvm-js" }

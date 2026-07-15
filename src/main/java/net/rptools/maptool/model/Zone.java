@@ -16,6 +16,8 @@ package net.rptools.maptool.model;
 
 import com.google.common.collect.Iterables;
 import com.google.protobuf.StringValue;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.subjects.PublishSubject;
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -70,6 +72,7 @@ import net.rptools.maptool.model.zones.TokensAdded;
 import net.rptools.maptool.model.zones.TokensChanged;
 import net.rptools.maptool.model.zones.TokensRemoved;
 import net.rptools.maptool.model.zones.WallTopologyChanged;
+import net.rptools.maptool.model.zones.ZoneEvent;
 import net.rptools.maptool.model.zones.ZoneLightingChanged;
 import net.rptools.maptool.server.Mapper;
 import net.rptools.maptool.server.proto.ZoneDto;
@@ -429,6 +432,7 @@ public class Zone {
   private transient boolean exposeFogAtWaypoints;
   private transient UndoPerZone undo;
   private transient Map<String, Integer> tokenNumberCache;
+  private transient PublishSubject<ZoneEvent> onZoneEvent = PublishSubject.create();
 
   /** Primary constructor */
   private Zone(
@@ -698,6 +702,14 @@ public class Zone {
     initiativeList.setRound(zone.initiativeList.getRound());
     initiativeList.setHideNPC(zone.initiativeList.isHideNPC());
   }
+
+  // region Events
+
+  public Observable<ZoneEvent> onZoneEvent() {
+    return onZoneEvent;
+  }
+
+  // endregion
 
   public void setBackgroundPaint(DrawablePaint paint) {
     backgroundPaint = paint;

@@ -17,4 +17,5 @@ package net.rptools.maptool.model.zones;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
 
-public record TokenEdited(Zone zone, Token token) {}
+// TODO Is this really any different than `TokensAdded` with a singleton list?
+public record TokenEdited(Zone zone, Token token) implements ZoneEvent {}

@@ -14,8 +14,4 @@
  */
 package net.rptools.maptool.model.zones;
 
-import java.util.List;
-import net.rptools.maptool.model.Token;
-import net.rptools.maptool.model.Zone;
-
-public record TokensRemoved(Zone zone, List<Token> tokens) implements ZoneEvent {}
+public interface ZoneEvent extends CampaignEvent {}
