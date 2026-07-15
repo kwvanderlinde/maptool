@@ -764,11 +764,15 @@ public class PersistenceUtil {
     boolean fixRequired = "1.3.b64".equals(progVersion);
 
     for (MD5Key key : assetIds) {
-      if (key == null) continue;
+      if (key == null) {
+        continue;
+      }
 
-      if (!AssetManager.hasAsset(key)) {
+      var asset = AssetManager.getAsset(key);
+      if (asset != null) {
+        loadedAssets.add(asset);
+      } else {
         String pathname = ASSET_DIR + key;
-        Asset asset = null;
         if (fixRequired) {
           try (InputStream is = pakFile.getFileAsInputStream(pathname)) {
             asset =
