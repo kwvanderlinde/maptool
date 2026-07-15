@@ -38,10 +38,7 @@ import net.rptools.lib.MD5Key;
 import net.rptools.lib.StringUtil;
 import net.rptools.lib.image.ImageUtil;
 import net.rptools.lib.transferable.FileTransferableHandler;
-import net.rptools.lib.transferable.GroupTokenTransferData;
 import net.rptools.lib.transferable.ImageTransferableHandler;
-import net.rptools.lib.transferable.MapToolTokenTransferData;
-import net.rptools.lib.transferable.TokenTransferData;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.Asset.Type;
@@ -123,9 +120,6 @@ public class TransferableHelper extends TransferHandler {
     DataFlavor.javaFileListFlavor,
     URI_LIST_FLAVOR,
     TransferableToken.dataFlavor,
-    MapToolTokenTransferData.MAP_TOOL_TOKEN_LIST_FLAVOR, // Is this appropriate?
-    // never used herein...
-    GroupTokenTransferData.GROUP_TOKEN_LIST_FLAVOR,
   };
 
   // @formatter:on
@@ -428,43 +422,6 @@ public class TransferableHelper extends TransferHandler {
     return (Asset) transferable.getTransferData(TransferableAsset.dataFlavor);
   }
 
-  /**
-   * Get the tokens from a token list data flavor.
-   *
-   * @param transferable The data that was dropped.
-   * @return The tokens from the data or <code>null</code> if this isn't the proper data type.
-   */
-  @SuppressWarnings("unchecked")
-  public static List<Token> getTokens(Transferable transferable) {
-    List<Token> tokens = null;
-    try {
-      Object df = transferable.getTransferData(GroupTokenTransferData.GROUP_TOKEN_LIST_FLAVOR);
-      List<TokenTransferData> tokenMaps = (List<TokenTransferData>) df;
-      tokens = new ArrayList<Token>();
-      for (Object object : tokenMaps) {
-        if (!(object instanceof TokenTransferData)) continue;
-        TokenTransferData td = (TokenTransferData) object;
-        if (td.getName() == null || td.getName().trim().length() == 0 || td.getToken() == null)
-          continue;
-        tokens.add(new Token(td));
-      } // endfor
-      if (tokens.size() != tokenMaps.size()) {
-        final int missingTokens = tokenMaps.size() - tokens.size();
-        final String message =
-            I18N.getText(
-                "TransferableHelper.warning.tokensAddedAndExcluded",
-                tokens.size(), // $NON-NLS-1$
-                missingTokens);
-        SwingUtilities.invokeLater(() -> MapTool.showWarning(message));
-      } // endif
-    } catch (IOException e) {
-      MapTool.showError("TransferableHelper.error.ioException", e); // $NON-NLS-1$
-    } catch (UnsupportedFlavorException e) {
-      MapTool.showError("TransferableHelper.error.unsupportedFlavorException", e); // $NON-NLS-1$
-    }
-    return tokens;
-  }
-
   public static boolean isSupportedAssetFlavor(Transferable transferable) {
     return transferable.isDataFlavorSupported(TransferableAsset.dataFlavor)
         || transferable.isDataFlavorSupported(TransferableAssetReference.dataFlavor)
@@ -474,8 +431,7 @@ public class TransferableHelper extends TransferHandler {
   }
 
   public static boolean isSupportedTokenFlavor(Transferable transferable) {
-    return transferable.isDataFlavorSupported(GroupTokenTransferData.GROUP_TOKEN_LIST_FLAVOR)
-        || transferable.isDataFlavorSupported(TransferableToken.dataFlavor);
+    return transferable.isDataFlavorSupported(TransferableToken.dataFlavor);
   }
 
   /**
@@ -604,13 +560,6 @@ public class TransferableHelper extends TransferHandler {
           configureTokens = Collections.singletonList(Boolean.FALSE);
         } catch (Exception e) {
           log.error("while using TransferableToken.dataFlavor", e); // $NON-NLS-1$
-        }
-      } else if (t.isDataFlavorSupported(GroupTokenTransferData.GROUP_TOKEN_LIST_FLAVOR)) {
-        tokens = getTokens(t);
-        // Tokens from Init Tool all need to be configured.
-        configureTokens = new ArrayList<Boolean>(tokens.size());
-        for (int i = 0; i < tokens.size(); i++) {
-          configureTokens.add(true);
         }
       } else {
         MapTool.showWarning("TransferableHelper.warning.badObject"); // $NON-NLS-1$
