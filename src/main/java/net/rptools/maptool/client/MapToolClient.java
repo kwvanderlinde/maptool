@@ -365,6 +365,12 @@ public class MapToolClient {
     if (campaign == event.campaign() && localServer == null) {
       // TODO Would it not be prudent to notify the server that this particular client ID has the
       //  asset? That way, we can avoid a transfer if the server already has the asset.
+      //  I.e., tell the server "get asset X from client Y". Then the server responds with a
+      //  GetAssetMsg (or equivalent) to the given client.
+      //  Meh, this will only get called when the campaign gains an asset. By induction:
+      //  1. If, when loaded, all campaign assets are present on the server.
+      //  2. And, whenever an asset is added to the campaign, AssetAdded is emitted for it,
+      //  3. Then at all times (save latency) the server  has all assets.
       serverCommand.putAsset(event.asset());
     }
   }

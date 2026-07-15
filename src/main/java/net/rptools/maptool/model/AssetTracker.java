@@ -27,8 +27,12 @@ import net.rptools.maptool.model.drawing.DrawableTexturePaint;
 /**
  * Keeps track of which assets a campaign owns.
  *
- * <p>When adding new assets, the assets are pushed to the server (unless we are running on the
- * server).
+ * <p>Unlike the {@link AssetManager}, this is not a global set of assets, nor does it understand
+ * the asset cache. It merely holds loaded assets specific to a campaign. It will, however, ensure
+ * that all of its assets are added to the {@link AssetManager}.
+ *
+ * <p>When adding new assets, an {@link AssetAdded} event is emitted. This is handled elsewhere to
+ * upload the assets to the server.
  *
  * <p>Eventually, this should act as the source of truth for which assets belong in the campaign.
  */
@@ -62,6 +66,7 @@ public class AssetTracker {
       // This is a new asset.
 
       // Make sure the global asset manager knows about it.
+      // TODO If the asset manager does know about, use the asset manager's version (deduplicate)?
       if (!AssetManager.hasAsset(asset.getMD5Key())) {
         AssetManager.putAsset(asset);
       }
