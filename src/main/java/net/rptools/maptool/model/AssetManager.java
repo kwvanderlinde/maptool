@@ -219,6 +219,11 @@ public class AssetManager {
    *
    * @param asset Asset to add to cache
    */
+  // TODO :fingerwag: If you want to be legitimate, don't call this. Instead, add to the current
+  //  campaign's asset tracker.
+  //  That's almost always true. A couple time we may need to do otherwise. But I would propose that
+  //  we ought not add an asset to the AssetManager until it is added to the campaign. Even if we
+  //  use `Asset` to represent it (e.g., the Quick Map options), don't add to the AssetManager.
   public static void putAsset(Asset asset) {
 
     if (asset == null || asset.getMD5Key().equals(BAD_ASSET_LOCATION_KEY)) {
