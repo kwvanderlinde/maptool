@@ -16,15 +16,20 @@ package net.rptools.maptool.client;
 
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
+import java.util.List;
+import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.Token;
 
 public class TransferableToken implements Transferable {
   public static final DataFlavor dataFlavor = new DataFlavor(Token.class, "Token");
 
   private Token token;
+  private List<Asset> assets;
 
-  public TransferableToken(Token token) {
+  public TransferableToken(Token token, List<Asset> assets) {
     this.token = token;
+    // TODO Consume the list of assets somewhere so they can be added to the campaign.
+    this.assets = assets;
   }
 
   public Object getTransferData(DataFlavor flavor) {

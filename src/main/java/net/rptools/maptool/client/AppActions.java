@@ -87,6 +87,7 @@ import net.rptools.maptool.model.player.Player.Role;
 import net.rptools.maptool.server.ServerConfig;
 import net.rptools.maptool.server.ServerPolicy;
 import net.rptools.maptool.util.*;
+import net.rptools.maptool.util.PersistenceUtil.LoadResult;
 import net.rptools.maptool.util.PersistenceUtil.PersistedCampaign;
 import net.rptools.maptool.util.PersistenceUtil.PersistedMap;
 import org.apache.commons.io.FileUtils;
@@ -2414,8 +2415,8 @@ public class AppActions {
         campaign.campaign.setName(AppState.getCampaignName()); // Update campaign name
 
         MapTool.serverCommand().setCampaign(campaign.campaign);
-
         MapTool.setCampaign(campaign.campaign, campaign.currentZoneId);
+
         ZoneRenderer current = MapTool.getFrame().getCurrentZoneRenderer();
         if (current != null) {
           Scale scale = campaign.currentView == null ? new Scale() : campaign.currentView;
@@ -2722,7 +2723,7 @@ public class AppActions {
     }
   }
 
-  private static class MapLoader extends SwingWorker<PersistedMap, String> {
+  private static class MapLoader extends SwingWorker<LoadResult<PersistedMap>, String> {
 
     private Campaign campaign;
     private File mapFile;
@@ -2733,7 +2734,7 @@ public class AppActions {
     }
 
     @Override
-    protected PersistedMap doInBackground() throws Exception {
+    protected LoadResult<PersistedMap> doInBackground() throws Exception {
       publish(I18N.getText("msg.info.mapLoading"));
       return PersistenceUtil.loadMap(mapFile);
     }
@@ -2744,8 +2745,10 @@ public class AppActions {
       MapTool.getFrame().hideGlassPane();
 
       try {
-        PersistedMap map = get();
+        var result = get();
+        PersistedMap map = result.loaded();
         AppPreferences.loadDirectory.set(mapFile.getParentFile());
+
         if ((map.zone.getExposedArea() != null && !map.zone.getExposedArea().isEmpty())
             || (map.zone.getExposedAreaMetaData() != null
                 && !map.zone.getExposedAreaMetaData().isEmpty())) {
@@ -2758,8 +2761,10 @@ public class AppActions {
             map.zone.clearExposedArea(false);
           }
         }
-        MapTool.addZone(campaign, map.zone);
 
+        // Make sure all the zone's assets are owned by the campaign.
+        campaign.getAssetTracker().putAllAssets(result.assets());
+        MapTool.addZone(campaign, map.zone);
       } catch (Exception ioe) {
         MapTool.showError(ioe.getMessage(), ioe);
       }

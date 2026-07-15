@@ -363,8 +363,10 @@ public class TransferableHelper extends TransferHandler {
           // Loading the token causes the assets to be added to the AssetManager
           // so it doesn't need to be added to our List here. In fact, getAsset()
           // will strip out anything in the List that isn't an Asset anyway...
-          Token token = PersistenceUtil.loadToken(url);
-          assets.add(token);
+          var result = PersistenceUtil.loadToken(url);
+          assets.add(result.loaded());
+          // TODO Totally don't know if this is in any way legitimate.
+          assets.addAll(result.assets());
         } else if (AddOnLibraryImporter.isAddOnLibrary(url.getPath())) {
           Asset temp = AssetManager.createAsset(url, Type.MTLIB);
           if (temp != null) { // `null' means no image available

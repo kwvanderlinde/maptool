@@ -282,6 +282,7 @@ public class LookupTablePanel extends AbeillePanel<LookupTableImagePanelModel> {
     getImportButton()
         .addActionListener(
             e -> {
+              var campaign = MapTool.getCampaign();
               JFileChooser chooser = MapTool.getFrame().getLoadTableFileChooser();
               if (chooser.showOpenDialog(MapTool.getFrame()) != JFileChooser.APPROVE_OPTION) {
                 return;
@@ -289,15 +290,21 @@ public class LookupTablePanel extends AbeillePanel<LookupTableImagePanelModel> {
               final File selectedFile = chooser.getSelectedFile();
               EventQueue.invokeLater(
                   () -> {
-                    Map<String, LookupTable> lookupTables =
-                        MapTool.getCampaign().getLookupTableMap();
-                    LookupTable newTable = PersistenceUtil.loadTable(selectedFile);
+                    Map<String, LookupTable> lookupTables = campaign.getLookupTableMap();
+                    var result = PersistenceUtil.loadTable(selectedFile);
+                    // TODO result could be null. Was never handled before, though.
+                    var newTable = result.loaded();
                     boolean alreadyExists = lookupTables.keySet().contains(newTable.getName());
                     if (alreadyExists
                         && !MapTool.confirm(
                             "LookupTablePanel.confirm.import", newTable.getName())) {
                       return;
                     }
+
+                    // TODO Make a note in the commit message that we have a performance win here by
+                    //  not uploading assets in cases where the table is already known and the user
+                    //  does not want to overwrite it.
+                    campaign.getAssetTracker().putAllAssets(result.assets());
                     MapTool.serverCommand().putLookupTable(newTable);
                     imagePanel.clearSelection();
                     refreshStructure();

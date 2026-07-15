@@ -176,8 +176,8 @@ public class ImageFileImagePanelModel implements ImagePanelModel {
 
     File file = fileList.get(index);
     if (file.getName().toLowerCase().endsWith(Token.FILE_EXTENSION)) {
-      Token token = PersistenceUtil.loadToken(file);
-      return new TransferableToken(token);
+      var result = PersistenceUtil.loadToken(file);
+      return result == null ? null : new TransferableToken(result.loaded(), result.assets());
     }
 
     if (dir instanceof AssetDirectory || dir instanceof PdfAsDirectory) {

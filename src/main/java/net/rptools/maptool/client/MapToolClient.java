@@ -303,6 +303,11 @@ public class MapToolClient {
 
   public void setCampaign(Campaign campaign) {
     this.campaign = campaign;
+
+    // Make sure all campaign assets can be pushed to the server.
+    new MapToolEventBus()
+        .getMainEventBus()
+        .post(new AssetsAdded(campaign, campaign.getAssetTracker().getAllAssets()));
   }
 
   private void onDisconnect(Connection connection) {

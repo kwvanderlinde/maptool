@@ -87,6 +87,8 @@ import org.apache.logging.log4j.Logger;
 
 /** This class provides utility methods for persistence operations in the application. */
 public class PersistenceUtil {
+  public record LoadResult<T>(T loaded, List<Asset> assets) {}
+
   /**
    * The log variable is an instance of the Logger class provided by the
    * LogManager.getLogger(PersistenceUtil.class) method. The Logger class is used for logging
@@ -309,47 +311,46 @@ public class PersistenceUtil {
    *     valid.
    * @throws IOException If an error occurs while loading the map.
    */
-  public static PersistedMap loadMap(File mapFile) throws IOException {
-    PersistedMap persistedMap = null;
-
+  public static LoadResult<PersistedMap> loadMap(File mapFile) throws IOException {
     try (PackedFile pakFile = new PackedFile(mapFile)) {
 
       // Sanity check
       String progVersion = (String) pakFile.getProperty(PROP_VERSION);
-      if (!versionCheck(progVersion)) return null;
+      if (!versionCheck(progVersion)) {
+        return null;
+      }
 
       Object o = pakFile.getContent();
-      if (o instanceof PersistedMap) {
-        persistedMap = (PersistedMap) o;
-
-        // Now load up any images that we need
-        loadAssets(persistedMap.assetMap.keySet(), pakFile);
-
-        // FJE We only want the token's graphical data, so loop through all tokens and
-        // destroy all properties and macros. Keep some fields, though. Since that type
-        // of object editing doesn't belong here, we just call Token.imported() and let
-        // that method Do The Right Thing.
-        for (Token token : persistedMap.zone.getAllTokens()) {
-          token.imported();
-        }
-        Zone z = persistedMap.zone;
-        String n = fixupZoneName(z.getName());
-        z.setName(n);
-        z.imported(); // Resets creation timestamp and init panel, among other things
-        z.optimize(); // Collapses overlaid or redundant drawables
-
-        // Make sure the imported zone is as fresh as possible (new IDs all the way down).
-        persistedMap.zone = new Zone(z, false);
-      } else {
+      if (!(o instanceof PersistedMap persistedMap)) {
         throw new IOException(
             I18N.getText("PersistenceUtil.warn.importWrongFileType", o.getClass().getSimpleName()));
       }
+
+      // Now load up any images that we need
+      var loadedAssets = loadAssets(persistedMap.assetMap.keySet(), pakFile);
+
+      // FJE We only want the token's graphical data, so loop through all tokens and
+      // destroy all properties and macros. Keep some fields, though. Since that type
+      // of object editing doesn't belong here, we just call Token.imported() and let
+      // that method Do The Right Thing.
+      for (Token token : persistedMap.zone.getAllTokens()) {
+        token.imported();
+      }
+      Zone z = persistedMap.zone;
+      String n = fixupZoneName(z.getName());
+      z.setName(n);
+      z.imported(); // Resets creation timestamp and init panel, among other things
+      z.optimize(); // Collapses overlaid or redundant drawables
+
+      // Make sure the imported zone is as fresh as possible (new IDs all the way down).
+      persistedMap.zone = new Zone(z, false);
+
+      return new LoadResult<>(persistedMap, loadedAssets);
     } catch (ConversionException ce) {
       throw new IOException(I18N.getText("PersistenceUtil.error.mapVersion"), ce);
     } catch (IOException ioe) {
       throw new IOException(I18N.getText("PersistenceUtil.error.mapRead"), ioe);
     }
-    return persistedMap;
   }
 
   /**
@@ -575,7 +576,9 @@ public class PersistenceUtil {
         // Now load up any images that we need
         // Note that the values are all placeholders
         Set<MD5Key> allAssetIds = persistedCampaign.assetMap.keySet();
-        loadAssets(allAssetIds, pakFile);
+        var loadedAssets = loadAssets(allAssetIds, pakFile);
+        persistedCampaign.campaign.getAssetTracker().putAllAssets(loadedAssets);
+
         for (Zone zone : persistedCampaign.campaign.getZones()) {
           zone.optimize();
         }
@@ -701,8 +704,7 @@ public class PersistenceUtil {
    * @note if there is an error loading the token, the token then a message is displayed to the user
    *     and null is returned.
    */
-  public static Token loadToken(File file) {
-    Token token = null;
+  public static LoadResult<Token> loadToken(File file) {
     try (PackedFile pakFile = new PackedFile(file)) {
       pakFile.setModelVersionManager(tokenVersionManager);
 
@@ -710,14 +712,17 @@ public class PersistenceUtil {
       String progVersion = (String) pakFile.getProperty(PROP_VERSION);
       if (!versionCheck(progVersion)) return null;
 
-      token = (Token) pakFile.getContent(progVersion);
-      loadAssets(token.getAllImageAssets(), pakFile);
+      var token = (Token) pakFile.getContent(progVersion);
+      var loadedAssets = loadAssets(token.getAllImageAssets(), pakFile);
+
+      return new LoadResult<>(token, loadedAssets);
     } catch (ConversionException ce) {
       MapTool.showError("PersistenceUtil.error.tokenVersion", ce);
+      return null;
     } catch (IOException ioe) {
       MapTool.showError("PersistenceUtil.error.tokenRead", ioe);
+      return null;
     }
-    return token;
   }
 
   /**
@@ -727,13 +732,15 @@ public class PersistenceUtil {
    * @return The loaded Token object, or null if the URL is not valid.
    * @throws IOException If an I/O error occurs during the loading process.
    */
-  public static Token loadToken(URL url) throws IOException {
+  public static LoadResult<Token> loadToken(URL url) throws IOException {
     // Create a temporary file from the downloaded URL
     File newFile = new File(PackedFile.getTmpDir(), new GUID() + ".url");
-    FileUtils.copyURLToFile(url, newFile);
-    Token token = loadToken(newFile);
-    newFile.delete();
-    return token;
+    try {
+      FileUtils.copyURLToFile(url, newFile);
+      return loadToken(newFile);
+    } finally {
+      newFile.delete();
+    }
   }
 
   /**
@@ -743,9 +750,7 @@ public class PersistenceUtil {
    * @param pakFile The packed file containing the assets
    * @throws IOException If an I/O error occurs while loading the assets
    */
-  // TODO Require a containing Campaign to be passed along. This will allow the asset tracker to be
-  //  updated.
-  private static void loadAssets(Collection<MD5Key> assetIds, PackedFile pakFile)
+  private static List<Asset> loadAssets(Collection<MD5Key> assetIds, PackedFile pakFile)
       throws IOException {
     // Special handling of assets: XML file to describe the Asset, but binary file for the image
     // data
@@ -753,7 +758,7 @@ public class PersistenceUtil {
 
     String campaignVersion = (String) pakFile.getProperty(PROP_CAMPAIGN_VERSION);
     String progVersion = (String) pakFile.getProperty(PROP_VERSION);
-    List<Asset> addToServer = new ArrayList<Asset>(assetIds.size());
+    List<Asset> loadedAssets = new ArrayList<Asset>(assetIds.size());
 
     // FJE: Ugly fix for a bug I introduced in b64. :(
     boolean fixRequired = "1.3.b64".equals(progVersion);
@@ -809,28 +814,11 @@ public class PersistenceUtil {
             continue;
           }
         }
-        AssetManager.putAsset(asset);
-        addToServer.add(asset);
+        loadedAssets.add(asset);
       }
     }
-    if (!addToServer.isEmpty()) {
-      // Isn't this the same as (MapTool.getServer() == null) ? And won't there always
-      // be a server? Even if we don't start one explicitly, MapTool keeps a server
-      // running in the background all the time (called a "personal server") so that the rest
-      // of the code is consistent with regard to client<->server operations...
-      boolean server = !MapTool.isHostingServer() && !MapTool.isPersonalServer();
-      if (server) {
-        if (MapTool.isDevelopment())
-          MapTool.showInformation(
-              "Please report this:  (!isHostingServer() && !isPersonalServer()) == true");
-        // If we are remotely installing this token, we'll need to send the image data to the
-        // server.
-        for (Asset asset : addToServer) {
-          MapTool.serverCommand().putAsset(asset);
-        }
-      }
-      addToServer.clear();
-    }
+
+    return loadedAssets;
   }
 
   /**
@@ -1052,35 +1040,39 @@ public class PersistenceUtil {
     return okay;
   }
 
-  public static CampaignProperties loadCampaignProperties(File file) {
+  public static LoadResult<CampaignProperties> loadCampaignProperties(File file) {
     try (PackedFile pakFile = new PackedFile(file)) {
       String progVersion = (String) pakFile.getProperty(PROP_VERSION);
-      if (!versionCheck(progVersion)) return null;
-      CampaignProperties props = null;
+      if (!versionCheck(progVersion)) {
+        return null;
+      }
       try {
-        props = (CampaignProperties) pakFile.getContent();
-        loadAssets(props.getAllImageAssets(), pakFile);
+        var props = (CampaignProperties) pakFile.getContent();
+        var loadedAssets = loadAssets(props.getAllImageAssets(), pakFile);
+        return new LoadResult<>(props, loadedAssets);
       } catch (ConversionException ce) {
         MapTool.showError(I18N.getText("PersistenceUtil.error.campaignPropertiesVersion"), ce);
+        return null;
       } catch (IOException ioe) {
         MapTool.showError(I18N.getText("PersistenceUtil.error.campaignPropertiesRead"), ioe);
+        return null;
       } catch (ClassCastException cce) {
         MapTool.showWarning(
             I18N.getText(
                 "PersistenceUtil.warn.campaignProperties.importWrongFileType",
                 pakFile.getContent().getClass().getSimpleName()));
+        return null;
       }
-      return props;
     } catch (IOException e) {
       try {
         // Some OSes won't allow a file to be opened twice (ugh). But we're okay here since
         // try-with-resources ensures that .close() was already called by this point.
-        return loadLegacyCampaignProperties(file);
+        return new LoadResult<>(loadLegacyCampaignProperties(file), List.of());
       } catch (IOException ioe) {
         MapTool.showError("PersistenceUtil.error.campaignPropertiesLegacy", ioe);
+        return null;
       }
     }
-    return null;
   }
 
   public static void saveCampaignProperties(Campaign campaign, File file) throws IOException {
@@ -1267,7 +1259,7 @@ public class PersistenceUtil {
     return table;
   }
 
-  public static LookupTable loadTable(File file) {
+  public static LoadResult<LookupTable> loadTable(File file) {
 
     try {
       try (PackedFile pakFile = new PackedFile(file)) {
@@ -1276,14 +1268,14 @@ public class PersistenceUtil {
         if (!versionCheck(progVersion)) return null;
 
         LookupTable lookupTable = (LookupTable) pakFile.getContent();
-        loadAssets(lookupTable.getAllAssetIds(), pakFile);
-        return lookupTable;
+        var loadedAssets = loadAssets(lookupTable.getAllAssetIds(), pakFile);
+        return new LoadResult<>(lookupTable, loadedAssets);
       } catch (ConversionException ce) {
         MapTool.showError("PersistenceUtil.error.tableVersion", ce);
       }
     } catch (IOException e) {
       try {
-        return loadLegacyTable(file);
+        return new LoadResult<>(loadLegacyTable(file), List.of());
       } catch (IOException ioe) {
         MapTool.showError("PersistenceUtil.error.tableRead", ioe);
       }

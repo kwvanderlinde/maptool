@@ -14,6 +14,7 @@
  */
 package net.rptools.maptool.model;
 
+import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -47,6 +48,10 @@ public class AssetTracker {
 
   public AssetTracker(Campaign campaign) {
     this.campaign = campaign;
+  }
+
+  public List<Asset> getAllAssets() {
+    return ImmutableList.copyOf(assetMap.values());
   }
 
   public boolean hasAsset(MD5Key key) {

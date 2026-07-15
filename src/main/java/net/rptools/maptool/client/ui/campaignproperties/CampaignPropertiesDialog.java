@@ -324,6 +324,8 @@ public class CampaignPropertiesDialog extends AbeillePanel<CampaignPropertiesDia
 
   private final ActionListener importListener =
       e -> {
+        // TODO The dialog as a whole should have a campaign when bound.
+        var campaign = MapTool.getCampaign();
         JFileChooser chooser = MapTool.getFrame().getLoadPropsFileChooser();
 
         if (chooser.showOpenDialog(MapTool.getFrame()) != JFileChooser.APPROVE_OPTION) return;
@@ -331,10 +333,11 @@ public class CampaignPropertiesDialog extends AbeillePanel<CampaignPropertiesDia
         final File selectedFile = chooser.getSelectedFile();
         EventQueue.invokeLater(
             () -> {
-              CampaignProperties properties = PersistenceUtil.loadCampaignProperties(selectedFile);
-              if (properties != null) {
-                MapTool.getCampaign().mergeCampaignProperties(properties);
-                copyCampaignToUI(properties);
+              var result = PersistenceUtil.loadCampaignProperties(selectedFile);
+              if (result != null) {
+                campaign.getAssetTracker().putAllAssets(result.assets());
+                campaign.mergeCampaignProperties(result.loaded());
+                copyCampaignToUI(result.loaded());
               }
             });
       };
@@ -402,14 +405,17 @@ public class CampaignPropertiesDialog extends AbeillePanel<CampaignPropertiesDia
 
         @Override
         public void actionPerformed(ActionEvent e) {
+          // TODO The dialog as a whole should have a campaign when bound.
+          var campaign = MapTool.getCampaign();
+
           File selectedFile = getSelectedPropertyFile();
           EventQueue.invokeLater(
               () -> {
-                CampaignProperties properties =
-                    PersistenceUtil.loadCampaignProperties(selectedFile);
-                if (properties != null) {
-                  MapTool.getCampaign().mergeCampaignProperties(properties);
-                  copyCampaignToUI(properties);
+                var result = PersistenceUtil.loadCampaignProperties(selectedFile);
+                if (result != null) {
+                  campaign.getAssetTracker().putAllAssets(result.assets());
+                  campaign.mergeCampaignProperties(result.loaded());
+                  copyCampaignToUI(result.loaded());
                 }
               });
         }
