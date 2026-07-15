@@ -21,7 +21,6 @@ import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.Token;
 
 public class TransferableToken implements Transferable {
-  // TODO Any consumers of this data flavor need to consume assets as well.
   public static final DataFlavor dataFlavor = new DataFlavor(Token.class, "Token");
 
   private Token token;
