@@ -14,6 +14,7 @@
  */
 package net.rptools.maptool.model;
 
+import com.google.common.collect.Iterables;
 import com.google.protobuf.StringValue;
 import java.awt.Color;
 import java.awt.Point;
@@ -22,9 +23,11 @@ import java.awt.geom.Area;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.swing.*;
+import net.rptools.lib.CollectionUtil;
 import net.rptools.lib.GeometryUtil;
 import net.rptools.lib.MD5Key;
 import net.rptools.lib.StringUtil;
@@ -69,7 +72,6 @@ import net.rptools.maptool.model.zones.TokensRemoved;
 import net.rptools.maptool.model.zones.WallTopologyChanged;
 import net.rptools.maptool.model.zones.ZoneLightingChanged;
 import net.rptools.maptool.server.Mapper;
-import net.rptools.maptool.server.proto.DrawnElementListDto;
 import net.rptools.maptool.server.proto.ZoneDto;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -319,8 +321,7 @@ public class Zone {
   public static final DrawablePaint DEFAULT_FOG = new DrawableColorPaint(Color.black);
 
   private long creationTime = System.currentTimeMillis();
-
-  private GUID id = new GUID(); // Ideally would be 'final', but that complicates imported()
+  private GUID id;
 
   private Grid grid;
   private int gridColor = Color.black.getRGB();
@@ -329,8 +330,8 @@ public class Zone {
 
   private int tokenVisionDistance = DEFAULT_TOKEN_VISION_DISTANCE;
 
-  private double unitsPerCell = DEFAULT_UNITS_PER_CELL;
-  private AStarRoundingOptions aStarRounding = AStarRoundingOptions.NONE;
+  private double unitsPerCell;
+  private AStarRoundingOptions aStarRounding;
 
   // region Keeping these for serialization only. Otherwise, use {@link #drawablesByLayer} instead.
   @Deprecated private @Nonnull LinkedList<DrawnElement> drawables = new LinkedList<DrawnElement>();
@@ -348,25 +349,24 @@ public class Zone {
   // Contains the above lists, but in an easily accessible map.
   private transient @Nonnull Map<Layer, LinkedList<DrawnElement>> drawablesByLayer;
 
-  private final Map<GUID, Label> labels = new LinkedHashMap<GUID, Label>();
+  private final Map<GUID, Label> labels;
 
   /** Map each token GUID to the corresponding token. */
-  private final Map<GUID, Token> tokenMap = new HashMap<GUID, Token>();
-
-  /** Map each token GUID to its exposed area metadata */
-  private Map<GUID, ExposedAreaMetaData> exposedAreaMeta = new HashMap<GUID, ExposedAreaMetaData>();
+  private final Map<GUID, Token> tokenMap;
 
   /** Token list ordered by Z. */
-  private final List<Token> tokenOrderedList = new LinkedList<Token>();
+  private final List<Token> tokenOrderedList;
 
-  private InitiativeList initiativeList = new InitiativeList(this);
+  /** Map each token GUID to its exposed area metadata */
+  private final Map<GUID, ExposedAreaMetaData> exposedAreaMeta;
 
   /** The global exposed area. */
-  private Area exposedArea = new Area();
+  private Area exposedArea;
+
+  private InitiativeList initiativeList;
 
   private boolean hasFog;
   private DrawablePaint fogPaint;
-  private transient UndoPerZone undo;
 
   // region Topology masks
 
@@ -374,24 +374,24 @@ public class Zone {
    * The Wall VBL topology of the zone. Does not include token Wall VBL. Should really be called
    * wallVbl.
    */
-  private Area topology = new Area();
+  private Area topology;
 
   /** The Hill VBL topology of the zone. Does not include token Hill VBL. */
-  private Area hillVbl = new Area();
+  private Area hillVbl;
 
   /** The Pit VBL topology of the zone. Does not include token Pit VBL. */
-  private Area pitVbl = new Area();
+  private Area pitVbl;
 
   /** The Cover VBL topology of the zone. Does not include token Cover VBL. */
-  private Area coverVbl = new Area();
+  private Area coverVbl;
 
   /** The MBL topology of the zone. Does not include token MBL. Should really be called mbl. */
-  private Area topologyTerrain = new Area();
+  private Area topologyTerrain;
 
   // endregion
 
   // The new take on topology.
-  private WallTopology walls = new WallTopology();
+  private WallTopology walls;
 
   // The 'board' layer, at the very bottom of the layer stack.
   // Itself has two sub-layers:
@@ -399,7 +399,7 @@ public class Zone {
   // The bottom one is either an infinitely tiling texture or a color.
   private DrawablePaint backgroundPaint;
   private MD5Key mapAsset;
-  private Point boardPosition = new Point(0, 0);
+  private Point boardPosition;
 
   /**
    * @deprecated This is a rendering concern and so has been removed from the model.
@@ -411,26 +411,26 @@ public class Zone {
    */
   @Deprecated private boolean boardChanged = false;
 
-  // Lee: adding extra property to determine FoW exposure method
-  // Jamz: Changed to transient to allow backwards compatibility of campaign
-  // files & changed default to on
-  private transient boolean exposeFogAtWaypoints = false;
-
   private String name;
-  private String playerAlias;
+  private @Nullable String playerAlias;
   private boolean isVisible;
 
   /** The VisionType of the zone. OFF, DAY or NIGHT. */
-  private VisionType visionType = VisionType.OFF;
+  private VisionType visionType;
 
-  private LightingStyle lightingStyle = LightingStyle.OVERTOP;
+  private LightingStyle lightingStyle;
 
-  private TokenSelection tokenSelection = TokenSelection.ALL;
+  private TokenSelection tokenSelection;
 
   // These are transitionary properties, very soon the width and height won't matter
   private int height;
   private int width;
 
+  // Lee: adding extra property to determine FoW exposure method
+  // Jamz: Changed to transient to allow backwards compatibility of campaign
+  // files & changed default to on
+  private transient boolean exposeFogAtWaypoints;
+  private transient UndoPerZone undo;
   private transient Map<String, Integer> tokenNumberCache;
 
   {
@@ -441,8 +441,273 @@ public class Zone {
     drawablesByLayer.put(Layer.BACKGROUND, backgroundDrawables);
   }
 
+  /** Primary constructor */
+  private Zone(
+      long creationTime,
+      GUID id,
+      String name,
+      @Nullable String playerAlias,
+      boolean isVisible,
+      Grid grid,
+      int gridColor,
+      float imageScaleX,
+      float imageScaleY,
+      int tokenVisionDistance,
+      double unitsPerCell,
+      AStarRoundingOptions aStarRounding,
+      Collection<DrawnElement> drawnElements,
+      Collection<Label> labels,
+      Collection<Token> tokens,
+      Map<GUID, ExposedAreaMetaData> exposedAreaMeta,
+      Area exposedArea,
+      boolean hasFog,
+      DrawablePaint fogPaint,
+      Map<TopologyType, Area> maskTopologies,
+      WallTopology walls,
+      DrawablePaint backgroundPaint,
+      @Nullable MD5Key mapAsset,
+      Point boardPosition,
+      VisionType visionType,
+      LightingStyle lightingStyle,
+      TokenSelection tokenSelection,
+      @Nullable InitiativeList initiativeList) {
+
+    this.creationTime = creationTime;
+    this.id = id;
+    this.name = name;
+    this.playerAlias = playerAlias;
+    this.isVisible = isVisible;
+    this.grid = grid;
+    this.grid.setZone(this);
+    this.gridColor = gridColor;
+    this.imageScaleX = imageScaleX;
+    this.imageScaleY = imageScaleY;
+    this.tokenVisionDistance = tokenVisionDistance;
+    this.unitsPerCell = unitsPerCell;
+    this.aStarRounding = aStarRounding;
+
+    this.drawables = new LinkedList<>();
+    this.gmDrawables = new LinkedList<>();
+    this.objectDrawables = new LinkedList<>();
+    this.backgroundDrawables = new LinkedList<>();
+    this.drawablesByLayer =
+        CollectionUtil.newFilledEnumMap(
+            Layer.class,
+            l ->
+                switch (l) {
+                  case TOKEN -> this.drawables;
+                  case GM -> this.gmDrawables;
+                  case OBJECT -> this.objectDrawables;
+                  case BACKGROUND -> this.backgroundDrawables;
+                });
+
+    this.labels = new LinkedHashMap<>();
+    this.tokenMap = new HashMap<>();
+    this.tokenOrderedList = new LinkedList<>();
+    this.exposedAreaMeta = new HashMap<>();
+    this.exposedAreaMeta.putAll(exposedAreaMeta);
+    this.exposedArea = exposedArea;
+
+    this.hasFog = hasFog;
+    this.fogPaint = fogPaint;
+
+    this.initiativeList =
+        Objects.requireNonNullElseGet(initiativeList, () -> new InitiativeList(this));
+
+    this.topology =
+        Objects.requireNonNullElseGet(maskTopologies.get(TopologyType.WALL_VBL), Area::new);
+    this.hillVbl =
+        Objects.requireNonNullElseGet(maskTopologies.get(TopologyType.HILL_VBL), Area::new);
+    this.pitVbl =
+        Objects.requireNonNullElseGet(maskTopologies.get(TopologyType.PIT_VBL), Area::new);
+    this.coverVbl =
+        Objects.requireNonNullElseGet(maskTopologies.get(TopologyType.COVER_VBL), Area::new);
+    this.topologyTerrain =
+        Objects.requireNonNullElseGet(maskTopologies.get(TopologyType.MBL), Area::new);
+    this.walls = walls;
+
+    this.backgroundPaint = backgroundPaint;
+    this.mapAsset = mapAsset;
+    this.boardPosition = boardPosition;
+
+    this.visionType = visionType;
+    this.lightingStyle = lightingStyle;
+    this.tokenSelection = tokenSelection;
+
+    this.width = 0;
+    this.height = 0;
+
+    this.exposeFogAtWaypoints = false;
+    this.undo = new UndoPerZone(this);
+    this.tokenNumberCache = new HashMap<>();
+
+    for (var drawnElement : drawnElements) {
+      this.drawablesByLayer.get(drawnElement.getDrawable().getLayer()).add(drawnElement);
+    }
+
+    for (var label : labels) {
+      this.labels.put(label.getId(), label);
+    }
+
+    for (var token : tokens) {
+      tokenMap.put(token.getId(), token);
+      tokenOrderedList.add(token);
+      tokenOrderedList.sort(TOKEN_Z_ORDER_COMPARATOR);
+    }
+  }
+
   public Zone() {
-    undo = new UndoPerZone(this); // registers as ModelChangeListener for drawables...
+    this(
+        System.currentTimeMillis(),
+        new GUID(),
+        "", /* TODO Anything better for a default name? */
+        null,
+        false,
+        new GridlessGrid(),
+        Color.black.getRGB(),
+        1,
+        1,
+        DEFAULT_TOKEN_VISION_DISTANCE,
+        DEFAULT_UNITS_PER_CELL,
+        AStarRoundingOptions.NONE,
+        List.<DrawnElement>of(),
+        List.<Label>of(),
+        List.<Token>of(),
+        Map.<GUID, ExposedAreaMetaData>of(),
+        new Area(),
+        false,
+        DEFAULT_FOG,
+        Map.<TopologyType, Area>of(),
+        new WallTopology(),
+        new DrawableColorPaint(Color.black),
+        (MD5Key) null,
+        new Point(0, 0),
+        VisionType.OFF,
+        LightingStyle.OVERTOP,
+        TokenSelection.ALL,
+        (InitiativeList) null);
+  }
+
+  /**
+   * Create a new zone with old zone's properties and with new token ids.
+   *
+   * <p>JFJ 2010-10-27 Don't forget that since there are new zones AND new tokens created here from
+   * the old one being passed in, if you have any data that needs to transfer over, you will need to
+   * manually copy it as is done below for various items.
+   *
+   * @param zone The zone to copy.
+   */
+  public Zone(Zone zone) {
+    this(zone, false);
+  }
+
+  /**
+   * Create a new zone with old zone's properties.
+   *
+   * @param zone The zone to copy from.
+   * @param keepIds Should the token ids stay the same.
+   */
+  public Zone(Zone zone, boolean keepIds) {
+    // Note: this diverges from the original implementation in that we do not generate FogChanged
+    // events or account for server settings for fog. Instead, we just copy it.
+    this(
+        keepIds ? zone.creationTime : System.currentTimeMillis(),
+        keepIds ? zone.getId() : new GUID(),
+        zone.name,
+        zone.playerAlias,
+        zone.isVisible,
+        zone.grid.copy(),
+        zone.gridColor,
+        zone.imageScaleX,
+        zone.imageScaleY,
+        zone.tokenVisionDistance,
+        zone.unitsPerCell,
+        zone.aStarRounding,
+        StreamSupport.stream(Iterables.concat(zone.drawablesByLayer.values()).spliterator(), false)
+            .map(
+                de -> {
+                  var copy = new DrawnElement(de);
+                  if (!keepIds) {
+                    copy.getDrawable().setId(new GUID());
+                  }
+                  return copy;
+                })
+            .toList(),
+        zone.labels.values().stream().map(Label::new).toList(),
+        List.<Token>of(), // We will fill this in afterward.
+        new HashMap<GUID, ExposedAreaMetaData>(), // We will fill this in afterward.
+        new Area(zone.exposedArea),
+        zone.hasFog,
+        zone.fogPaint,
+        Map.<TopologyType, Area>of(
+            TopologyType.WALL_VBL, new Area(zone.topology),
+            TopologyType.HILL_VBL, new Area(zone.hillVbl),
+            TopologyType.PIT_VBL, new Area(zone.pitVbl),
+            TopologyType.COVER_VBL, new Area(zone.coverVbl),
+            TopologyType.MBL, new Area(zone.topologyTerrain)),
+        new WallTopology(zone.walls),
+        zone.backgroundPaint,
+        zone.mapAsset,
+        new Point(zone.boardPosition),
+        zone.visionType,
+        zone.lightingStyle,
+        zone.tokenSelection,
+        null);
+
+    // Copy the tokens, exposed areas, and initiative.
+    var newTokens = new ArrayList<Token>();
+    Object[][] saveInitiative = new Object[zone.initiativeList.getSize()][2];
+    // Stop events for now? TODO Is this what it means?
+    initiativeList.setZone(null);
+    for (var oldToken : zone.tokenMap.values()) {
+      var token = new Token(oldToken, keepIds);
+      newTokens.add(token);
+
+      var oldExposedAreaGuid = token.getExposedAreaGUID();
+      var newExposedAreaGuid = new GUID();
+      token.setExposedAreaGUID(newExposedAreaGuid);
+      var eamd = zone.exposedAreaMeta.get(oldExposedAreaGuid);
+      if (eamd != null) {
+        this.exposedAreaMeta.put(
+            newExposedAreaGuid, new ExposedAreaMetaData(eamd.getExposedAreaHistory()));
+      }
+
+      List<Integer> list = zone.initiativeList.indexOf(oldToken);
+      for (Integer index : list) {
+        saveInitiative[index][0] = token;
+        saveInitiative[index][1] = zone.initiativeList.getTokenInitiative(index);
+      }
+    }
+
+    putTokens(newTokens);
+
+    // Set the initiative list using the newly create tokens.
+    // We also have to work around old campaign issues where there may be empty positions in the
+    // initiative list
+    int newCurrent = -1;
+    int oldCurrent = zone.initiativeList.getCurrent();
+    if (saveInitiative.length > 0) {
+      int newInd = 0;
+      for (int i = 0; i < saveInitiative.length; i++) {
+        Token token = (Token) saveInitiative[i][0];
+        if (token != null) {
+          initiativeList.insertToken(newInd, token);
+          TokenInitiative ti = initiativeList.getTokenInitiative(newInd);
+          TokenInitiative oldti = (TokenInitiative) saveInitiative[i][1];
+          ti.setHolding(oldti.isHolding());
+          ti.setState(oldti.getState());
+          if (oldCurrent == i) {
+            newCurrent = newInd;
+          }
+          newInd++;
+        }
+      }
+    }
+    // Enable events again
+    initiativeList.setZone(this);
+    initiativeList.setCurrent(newCurrent);
+    initiativeList.setRound(zone.initiativeList.getRound());
+    initiativeList.setHideNPC(zone.initiativeList.isHideNPC());
   }
 
   public void setBackgroundPaint(DrawablePaint paint) {
@@ -548,140 +813,6 @@ public class Zone {
     return fogPaint != null ? fogPaint : DEFAULT_FOG;
   }
 
-  /**
-   * Create a new zone with old zone's properties and with new token ids.
-   *
-   * <p>JFJ 2010-10-27 Don't forget that since there are new zones AND new tokens created here from
-   * the old one being passed in, if you have any data that needs to transfer over, you will need to
-   * manually copy it as is done below for various items.
-   *
-   * @param zone The zone to copy.
-   */
-  public Zone(Zone zone) {
-    this(zone, false);
-  }
-
-  /**
-   * Create a new zone with old zone's properties.
-   *
-   * @param zone The zone to copy from.
-   * @param keepIds Should the token ids stay the same.
-   */
-  public Zone(Zone zone, boolean keepIds) {
-    if (keepIds) {
-      this.id = zone.getId();
-      this.creationTime = zone.creationTime;
-    }
-
-    backgroundPaint = zone.backgroundPaint;
-    mapAsset = zone.mapAsset;
-    fogPaint = zone.fogPaint;
-    visionType = zone.visionType;
-    lightingStyle = zone.lightingStyle;
-
-    undo = new UndoPerZone(this); // Undo/redo manager isn't copied
-    setName(zone.getName());
-
-    grid = zone.grid.copy();
-    grid.setZone(this);
-
-    gridColor = zone.gridColor;
-    unitsPerCell = zone.unitsPerCell;
-    tokenVisionDistance = zone.tokenVisionDistance;
-    imageScaleX = zone.imageScaleX;
-    imageScaleY = zone.imageScaleY;
-    playerAlias = zone.playerAlias;
-
-    for (final var entry : drawablesByLayer.entrySet()) {
-      final var otherDrawables = zone.drawablesByLayer.get(entry.getKey());
-      final var thisDrawables = entry.getValue();
-
-      for (final var element : otherDrawables) {
-        final var copy = new DrawnElement(element);
-        if (!keepIds) {
-          copy.getDrawable().setId(new GUID());
-        }
-        thisDrawables.add(copy);
-      }
-    }
-
-    if (!zone.labels.isEmpty()) {
-      for (GUID guid : zone.labels.keySet()) {
-        this.putLabel(new Label(zone.labels.get(guid)));
-      }
-    }
-    exposedAreaMeta = new HashMap<GUID, ExposedAreaMetaData>(zone.exposedAreaMeta.size() * 4 / 3);
-
-    // Copy the tokens, save a map between old and new for the initiative list.
-    if (zone.initiativeList == null) {
-      zone.initiativeList = new InitiativeList(zone);
-    }
-    Object[][] saveInitiative = new Object[zone.initiativeList.getSize()][2];
-    initiativeList.setZone(null);
-
-    if (zone.tokenMap != null && !zone.tokenMap.isEmpty()) {
-      for (GUID oldGUID : zone.tokenMap.keySet()) {
-        Token old = zone.tokenMap.get(oldGUID);
-        Token token = new Token(old, keepIds); // keep old ids at server start
-        if (old.getExposedAreaGUID() != null) {
-          GUID guid = new GUID();
-          token.setExposedAreaGUID(guid);
-          // Update the TEA on the new map, since we have the Token object available...
-          ExposedAreaMetaData eamd = zone.getExposedAreaMetaData(old.getExposedAreaGUID());
-          if (eamd != null) {
-            exposeArea(eamd.getExposedAreaHistory(), token);
-          }
-        }
-        putToken(token);
-        List<Integer> list = zone.initiativeList.indexOf(old);
-        for (Integer index : list) {
-          saveInitiative[index][0] = token;
-          saveInitiative[index][1] = zone.initiativeList.getTokenInitiative(index);
-        }
-      }
-    }
-    // Set the initiative list using the newly create tokens.
-    // We also have to work around old campaign issues where there may be empty positions in the
-    // initiative list
-    int newCurrent = -1;
-    int oldCurrent = zone.initiativeList.getCurrent();
-    if (saveInitiative.length > 0) {
-      int newInd = 0;
-      for (int i = 0; i < saveInitiative.length; i++) {
-        Token token = (Token) saveInitiative[i][0];
-        if (token != null) {
-          initiativeList.insertToken(newInd, token);
-          TokenInitiative ti = initiativeList.getTokenInitiative(newInd);
-          TokenInitiative oldti = (TokenInitiative) saveInitiative[i][1];
-          ti.setHolding(oldti.isHolding());
-          ti.setState(oldti.getState());
-          if (oldCurrent == i) {
-            newCurrent = newInd;
-          }
-          newInd++;
-        }
-      }
-    }
-    initiativeList.setZone(this);
-    initiativeList.setCurrent(newCurrent);
-    initiativeList.setRound(zone.initiativeList.getRound());
-    initiativeList.setHideNPC(zone.initiativeList.isHideNPC());
-
-    boardPosition = (Point) zone.boardPosition.clone();
-    exposedArea = (Area) zone.exposedArea.clone();
-
-    topology = new Area(zone.topology);
-    hillVbl = new Area(zone.hillVbl);
-    pitVbl = new Area(zone.pitVbl);
-    coverVbl = new Area(zone.coverVbl);
-    topologyTerrain = new Area(zone.topologyTerrain);
-    walls = new WallTopology(zone.walls);
-
-    aStarRounding = zone.aStarRounding;
-    isVisible = zone.isVisible;
-    hasFog = zone.hasFog;
-  }
-
   public GUID getId() {
     return id;
   }
@@ -694,20 +825,14 @@ public class Zone {
     initiativeList.clearModel();
   }
 
+  @Deprecated
   public int getHeight() {
     return height;
   }
 
-  public void setHeight(int height) {
-    this.height = height;
-  }
-
+  @Deprecated
   public int getWidth() {
     return width;
-  }
-
-  public void setWidth(int width) {
-    this.width = width;
   }
 
   public boolean isVisible() {
@@ -1087,7 +1212,7 @@ public class Zone {
    * @param globalOnly should the exposed area of all tokens be also cleared?
    */
   public void clearExposedArea(boolean globalOnly) {
-    exposedArea = new Area();
+    exposedArea.reset();
     if (!globalOnly) {
       exposedAreaMeta.clear();
     }
@@ -1522,7 +1647,7 @@ public class Zone {
    * @param tokens List of Tokens to be added to this zone
    */
   @Deprecated
-  public void putTokens(List<Token> tokens) {
+  public void putTokens(Collection<Token> tokens) {
     Collection<Token> values = tokenMap.values();
 
     List<Token> addedTokens = new LinkedList<Token>(tokens);
@@ -1838,9 +1963,6 @@ public class Zone {
   }
 
   public int findFreeNumber(String tokenBaseName, boolean checkDm) {
-    if (tokenNumberCache == null) {
-      tokenNumberCache = new HashMap<String, Integer>();
-    }
     Integer _lastUsed = tokenNumberCache.get(tokenBaseName);
 
     int lastUsed;
@@ -2045,47 +2167,79 @@ public class Zone {
   // Backward compatibility
   @SuppressWarnings("ConstantConditions")
   protected Object readResolve() {
-    if (tokenVisionDistance == 0) {
-      // 1.3b19
-      tokenVisionDistance = DEFAULT_TOKEN_VISION_DISTANCE;
+    var allDrawables = new ArrayList<DrawnElement>();
+    if (backgroundDrawables != null) {
+      allDrawables.addAll(backgroundDrawables);
+    }
+    if (objectDrawables != null) {
+      allDrawables.addAll(objectDrawables);
+    }
+    if (gmDrawables != null) {
+      allDrawables.addAll(gmDrawables);
+    }
+    if (drawables != null) {
+      allDrawables.addAll(drawables);
     }
 
-    if ("".equals(playerAlias) || name.equals(playerAlias)) {
-      // Don't keep redundant player aliases around. The display name will default to the name if
-      // no player alias is set.
-      playerAlias = null;
-    }
+    var result =
+        new Zone(
+            // TODO Fill this in.
+            creationTime,
+            id,
+            name,
+            // Don't keep redundant player aliases around. The display name will default to the name
+            // if
+            // no player alias is set.
+            "".equals(playerAlias) || name.equals(playerAlias) ? null : playerAlias,
+            isVisible,
+            grid,
+            gridColor,
+            imageScaleX,
+            imageScaleY,
+            // 1.3b19
+            tokenVisionDistance == 0 ? DEFAULT_TOKEN_VISION_DISTANCE : tokenVisionDistance,
+            unitsPerCell,
+            Objects.requireNonNullElse(aStarRounding, AStarRoundingOptions.NONE),
+            allDrawables,
+            labels.values(),
+            tokenMap.values(),
+            // 1.3b76 -> 1.3b77
+            // adding the exposed area for Individual FOW
+            Objects.requireNonNullElseGet(exposedAreaMeta, HashMap::new),
+            exposedArea,
+            hasFog,
+            fogPaint,
+            Map.<TopologyType, Area>of(
+                TopologyType.WALL_VBL, Objects.requireNonNullElseGet(topology, Area::new),
+                TopologyType.HILL_VBL, Objects.requireNonNullElseGet(hillVbl, Area::new),
+                TopologyType.PIT_VBL, Objects.requireNonNullElseGet(pitVbl, Area::new),
+                TopologyType.COVER_VBL, Objects.requireNonNullElseGet(coverVbl, Area::new),
+                TopologyType.MBL, Objects.requireNonNullElseGet(topologyTerrain, Area::new)),
+            Objects.requireNonNullElseGet(walls, WallTopology::new),
+            backgroundPaint,
+            mapAsset,
+            // 1.3b70 -> 1.3b71
+            Objects.requireNonNullElseGet(boardPosition, () -> new Point(0, 0)),
+            // 1.3b47 -> 1.3b48
+            Objects.requireNonNullElseGet(
+                visionType,
+                () -> {
+                  if (!getTokensFiltered(Token::hasLightSources).isEmpty()) {
+                    return VisionType.NIGHT;
+                  } else if (topology != null && !topology.isEmpty()) {
+                    return VisionType.DAY;
+                  } else {
+                    return VisionType.OFF;
+                  }
+                }),
+            Objects.requireNonNullElse(lightingStyle, LightingStyle.OVERTOP),
+            Objects.requireNonNullElse(tokenSelection, TokenSelection.ALL),
+            initiativeList);
 
-    grid.setZone(this);
-
-    // 1.3b76 -> 1.3b77
-    // adding the exposed area for Individual FOW
-    if (exposedAreaMeta == null) {
-      exposedAreaMeta = new HashMap<GUID, ExposedAreaMetaData>();
-    }
-    // 1.3b70 -> 1.3b71
-    if (boardPosition == null) {
-      boardPosition = new Point(0, 0);
-    }
-
-    // 1.3b47 -> 1.3b48
-    if (visionType == null) {
-      if (getTokensFiltered(Token::hasLightSources).size() > 0) {
-        visionType = VisionType.NIGHT;
-      } else if (topology != null && !topology.isEmpty()) {
-        visionType = VisionType.DAY;
-
-      } else {
-        visionType = VisionType.OFF;
-      }
-    }
-    if (lightingStyle == null) {
-      lightingStyle = LightingStyle.OVERTOP;
-    }
     // Look for the bizarre z-ordering disappearing trick
     boolean foundZero = false;
     boolean fixZOrder = false;
-    for (Token token : tokenOrderedList) {
+    for (Token token : result.tokenOrderedList) {
       if (token.getZOrder() == 0) {
         if (foundZero) {
           fixZOrder = true;
@@ -2096,70 +2250,18 @@ public class Zone {
     }
     if (fixZOrder) {
       int z = 0;
-      for (Token token : tokenOrderedList) {
+      for (Token token : result.tokenOrderedList) {
         token.setZOrder(z++);
       }
     }
-    // Transient "undo" field added in 1.3.b88
-    // This will be true; it's just in case we decide to make it persistent in the future
-    if (undo == null) {
-      undo = new UndoPerZone(this);
-    }
 
-    if (hillVbl == null) {
-      hillVbl = new Area();
-    }
-    if (pitVbl == null) {
-      pitVbl = new Area();
-    }
-    if (coverVbl == null) {
-      coverVbl = new Area();
-    }
-    // Movement Blocking Layer
-    if (topologyTerrain == null) {
-      topologyTerrain = new Area();
-    }
-
-    if (aStarRounding == null) {
-      aStarRounding = AStarRoundingOptions.NONE;
-    }
-
-    if (tokenSelection == null) {
-      tokenSelection = TokenSelection.ALL;
-    }
-
-    if (drawables == null) {
-      drawables = new LinkedList<>();
-    }
-    if (gmDrawables == null) {
-      gmDrawables = new LinkedList<>();
-    }
-    if (objectDrawables == null) {
-      objectDrawables = new LinkedList<>();
-    }
-    if (backgroundDrawables == null) {
-      backgroundDrawables = new LinkedList<>();
-    }
-    drawablesByLayer = new EnumMap<>(Layer.class);
-    drawablesByLayer.put(Layer.TOKEN, drawables);
-    drawablesByLayer.put(Layer.GM, gmDrawables);
-    drawablesByLayer.put(Layer.OBJECT, objectDrawables);
-    drawablesByLayer.put(Layer.BACKGROUND, backgroundDrawables);
-
-    if (walls == null) {
-      walls = new WallTopology();
-    }
-
-    return this;
+    return result;
   }
 
   /**
    * @return the exposedAreaMeta.
    */
   public Map<GUID, ExposedAreaMetaData> getExposedAreaMetaData() {
-    if (exposedAreaMeta == null) {
-      exposedAreaMeta = new HashMap<GUID, ExposedAreaMetaData>();
-    }
     return exposedAreaMeta;
   }
 
@@ -2186,9 +2288,6 @@ public class Zone {
    * @param meta the exposed metadata
    */
   public void setExposedAreaMetaData(GUID tokenExposedAreaGUID, ExposedAreaMetaData meta) {
-    if (exposedAreaMeta == null) {
-      exposedAreaMeta = new HashMap<GUID, ExposedAreaMetaData>();
-    }
     exposedAreaMeta.put(tokenExposedAreaGUID, meta);
     new MapToolEventBus().getMainEventBus().post(new FogChanged(this));
   }
@@ -2212,65 +2311,47 @@ public class Zone {
   }
 
   public static Zone fromDto(ZoneDto dto) {
-    var zone = new Zone();
-    zone.creationTime = dto.getCreationTime();
-    zone.id = GUID.valueOf(dto.getId());
-    zone.grid = Grid.fromDto(dto.getGrid());
-    zone.grid.setZone(zone);
-    zone.gridColor = dto.getGridColor();
-    zone.imageScaleX = dto.getImageScaleX();
-    zone.imageScaleY = dto.getImageScaleY();
-    zone.tokenVisionDistance = dto.getTokenVisionDistance();
-    zone.unitsPerCell = dto.getUnitsPerCell();
-    zone.aStarRounding = AStarRoundingOptions.valueOf(dto.getAStarRounding().name());
-
-    dto.getDrawablesMap()
-        .forEach(
-            (layerName, listDto) -> {
-              var list = zone.drawablesByLayer.get(Layer.valueOf(layerName));
-              listDto.getDrawnElementsList().stream().map(DrawnElement::fromDto).forEach(list::add);
-            });
-
-    dto.getLabelsList().stream()
-        .map(d -> Label.fromDto(d))
-        .forEach(l -> zone.labels.put(l.getId(), l));
-    dto.getTokensList().stream()
-        .map(t -> Token.fromDto(t))
-        .forEach(
-            t -> {
-              zone.tokenMap.put(t.getId(), t);
-              zone.tokenOrderedList.add(t);
-            });
-    zone.tokenOrderedList.sort(TOKEN_Z_ORDER_COMPARATOR);
+    var exposedAreaMetaMap = new HashMap<GUID, ExposedAreaMetaData>();
     dto.getExposedAreaMetaMap()
         .forEach(
             (id, area) ->
-                zone.exposedAreaMeta.put(
+                exposedAreaMetaMap.put(
                     GUID.valueOf(id), new ExposedAreaMetaData(Mapper.map(area))));
-    zone.initiativeList = InitiativeList.fromDto(dto.getInitiative());
-    zone.exposedArea = Mapper.map(dto.getExposedArea());
-    zone.hasFog = dto.getHasFog();
-    zone.fogPaint = DrawablePaint.fromDto(dto.getFogPaint());
-    zone.topology = Mapper.map(dto.getTopology());
-    zone.hillVbl = Mapper.map(dto.getHillVbl());
-    zone.pitVbl = Mapper.map(dto.getPitVbl());
-    zone.coverVbl = Mapper.map(dto.getCoverVbl());
-    zone.topologyTerrain = Mapper.map(dto.getTopologyTerrain());
-    zone.walls = WallTopology.fromDto(dto.getWalls());
-    zone.backgroundPaint = DrawablePaint.fromDto(dto.getBackgroundPaint());
-    zone.mapAsset = dto.hasMapAsset() ? new MD5Key(dto.getMapAsset().getValue()) : null;
-    zone.boardPosition.x = dto.getBoardPosition().getX();
-    zone.boardPosition.y = dto.getBoardPosition().getY();
-    zone.name = dto.getName();
-    zone.playerAlias = dto.hasPlayerAlias() ? dto.getPlayerAlias().getValue() : null;
-    zone.isVisible = dto.getIsVisible();
-    zone.visionType = VisionType.valueOf(dto.getVisionType().name());
-    zone.lightingStyle = LightingStyle.valueOf(dto.getLightingStyle().name());
-    zone.tokenSelection = TokenSelection.valueOf(dto.getTokenSelection().name());
-    zone.height = dto.getHeight();
-    zone.width = dto.getWidth();
 
-    return zone;
+    return new Zone(
+        dto.getCreationTime(),
+        GUID.valueOf(dto.getId()),
+        dto.getName(),
+        dto.hasPlayerAlias() ? dto.getPlayerAlias().getValue() : null,
+        dto.getIsVisible(),
+        Grid.fromDto(dto.getGrid()),
+        dto.getGridColor(),
+        dto.getImageScaleX(),
+        dto.getImageScaleY(),
+        dto.getTokenVisionDistance(),
+        dto.getUnitsPerCell(),
+        AStarRoundingOptions.valueOf(dto.getAStarRounding().name()),
+        dto.getDrawablesList().stream().map(DrawnElement::fromDto).toList(),
+        dto.getLabelsList().stream().map(Label::fromDto).toList(),
+        dto.getTokensList().stream().map(Token::fromDto).toList(),
+        exposedAreaMetaMap,
+        Mapper.map(dto.getExposedArea()),
+        dto.getHasFog(),
+        DrawablePaint.fromDto(dto.getFogPaint()),
+        Map.<TopologyType, Area>of(
+            TopologyType.WALL_VBL, Mapper.map(dto.getTopology()),
+            TopologyType.HILL_VBL, Mapper.map(dto.getHillVbl()),
+            TopologyType.PIT_VBL, Mapper.map(dto.getPitVbl()),
+            TopologyType.COVER_VBL, Mapper.map(dto.getCoverVbl()),
+            TopologyType.MBL, Mapper.map(dto.getTopologyTerrain())),
+        WallTopology.fromDto(dto.getWalls()),
+        DrawablePaint.fromDto(dto.getBackgroundPaint()),
+        dto.hasMapAsset() ? new MD5Key(dto.getMapAsset().getValue()) : null,
+        new Point(dto.getBoardPosition().getX(), dto.getBoardPosition().getY()),
+        VisionType.valueOf(dto.getVisionType().name()),
+        LightingStyle.valueOf(dto.getLightingStyle().name()),
+        TokenSelection.valueOf(dto.getTokenSelection().name()),
+        InitiativeList.fromDto(dto.getInitiative()));
   }
 
   public ZoneDto toDto() {
@@ -2291,14 +2372,10 @@ public class Zone {
 
     drawablesByLayer.forEach(
         (layer, drawables) ->
-            dto.putDrawables(
-                layer.name(),
-                DrawnElementListDto.newBuilder()
-                    .addAllDrawnElements(drawables.stream().map(de -> de.toDto()).toList())
-                    .build()));
+            dto.addAllDrawables(drawables.stream().map(DrawnElement::toDto).toList()));
 
-    dto.addAllLabels(labels.values().stream().map(l -> l.toDto()).collect(Collectors.toList()));
-    dto.addAllTokens(tokenMap.values().stream().map(t -> t.toDto()).collect(Collectors.toList()));
+    dto.addAllLabels(labels.values().stream().map(Label::toDto).collect(Collectors.toList()));
+    dto.addAllTokens(tokenMap.values().stream().map(Token::toDto).collect(Collectors.toList()));
     exposedAreaMeta.forEach(
         (id, area) -> {
           if (id == null) {
@@ -2329,8 +2406,7 @@ public class Zone {
     dto.setVisionType(ZoneDto.VisionTypeDto.valueOf(visionType.name()));
     dto.setLightingStyle(ZoneDto.LightingStyleDto.valueOf(lightingStyle.name()));
     dto.setTokenSelection(ZoneDto.TokenSelectionDto.valueOf(tokenSelection.name()));
-    dto.setHeight(height);
-    dto.setWidth(width);
+
     return dto.build();
   }
 }

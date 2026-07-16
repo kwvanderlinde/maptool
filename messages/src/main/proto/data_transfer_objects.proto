@@ -600,10 +600,6 @@ message LabelDto {
   int32 border_arc = 12;
 }
 
-message DrawnElementListDto {
-  repeated DrawnElementDto drawnElements = 1;
-}
-
 message ZoneDto {
   enum TokenSelectionDto {
     PC = 0;
@@ -634,7 +630,7 @@ message ZoneDto {
   int32 token_vision_distance = 7;
   double units_per_cell = 8;
   AStarRoundingOptionsDto a_star_rounding = 9;
-  map<string, DrawnElementListDto> drawables = 11;
+  repeated DrawnElementDto drawables = 11;
   repeated LabelDto labels = 15;
   repeated TokenDto tokens = 16;
   map<string, AreaDto> exposed_area_meta = 17;
@@ -657,8 +653,6 @@ message ZoneDto {
   VisionTypeDto vision_type = 34;
   LightingStyleDto lighting_style = 35;
   TokenSelectionDto token_selection = 36;
-  int32 height = 37;
-  int32 width = 38;
 }
 
 message InitiativeListDto {
