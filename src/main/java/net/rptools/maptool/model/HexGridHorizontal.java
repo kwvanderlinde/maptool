@@ -57,6 +57,19 @@ public final class HexGridHorizontal extends HexGrid {
 
   private static final Map<Integer, Area> gridShapeCache = new ConcurrentHashMap<>();
 
+  public HexGridHorizontal() {
+    super();
+  }
+
+  public HexGridHorizontal(HexGridHorizontal other) {
+    super(other);
+  }
+
+  @Override
+  public HexGridHorizontal copy() {
+    return new HexGridHorizontal(this);
+  }
+
   @Override
   public GridType getType() {
     return GridType.HexHorizontal;

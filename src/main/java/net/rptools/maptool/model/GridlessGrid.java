@@ -53,6 +53,19 @@ public class GridlessGrid extends Grid {
         }
       };
 
+  public GridlessGrid() {
+    super();
+  }
+
+  public GridlessGrid(GridlessGrid other) {
+    super(other);
+  }
+
+  @Override
+  public GridlessGrid copy() {
+    return new GridlessGrid(this);
+  }
+
   @Override
   public GridType getType() {
     return GridType.None;

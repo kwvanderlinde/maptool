@@ -40,6 +40,19 @@ public final class IsometricGrid extends Grid {
   private static final BufferedImage pathHighlight =
       RessourceManager.getImage(Images.GRID_BORDER_ISOMETRIC);
 
+  public IsometricGrid() {
+    super();
+  }
+
+  public IsometricGrid(IsometricGrid other) {
+    super(other);
+  }
+
+  @Override
+  public IsometricGrid copy() {
+    return new IsometricGrid(this);
+  }
+
   @Override
   public GridType getType() {
     return GridType.Isometric;

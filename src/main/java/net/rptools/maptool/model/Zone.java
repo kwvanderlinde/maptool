@@ -582,12 +582,9 @@ public class Zone {
     undo = new UndoPerZone(this); // Undo/redo manager isn't copied
     setName(zone.getName());
 
-    try {
-      grid = (Grid) zone.grid.clone();
-      grid.setZone(this);
-    } catch (CloneNotSupportedException cnse) {
-      MapTool.showError("Trying to copy the zone's grid; no grid assigned", cnse);
-    }
+    grid = zone.grid.copy();
+    grid.setZone(this);
+
     gridColor = zone.gridColor;
     unitsPerCell = zone.unitsPerCell;
     tokenVisionDistance = zone.tokenVisionDistance;

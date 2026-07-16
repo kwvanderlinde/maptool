@@ -823,11 +823,7 @@ public class AppActions {
        * cell distances.
        */
       Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
-      try {
-        gridCopiedFrom = (Grid) zone.getGrid().clone();
-      } catch (CloneNotSupportedException e) {
-        MapTool.showError("This can't happen as all grids MUST implement Cloneable!", e);
-      }
+      gridCopiedFrom = zone.getGrid().copy();
       int x = topLeft.getX();
       int y = topLeft.getY();
       for (Token token : tokenCopySet) {

@@ -67,6 +67,19 @@ public final class SquareGrid extends Grid {
         }
       };
 
+  public SquareGrid() {
+    super();
+  }
+
+  public SquareGrid(SquareGrid other) {
+    super(other);
+  }
+
+  @Override
+  public SquareGrid copy() {
+    return new SquareGrid(this);
+  }
+
   @Override
   public GridType getType() {
     return GridType.Square;

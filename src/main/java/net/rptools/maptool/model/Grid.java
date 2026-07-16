@@ -177,6 +177,8 @@ public abstract class Grid implements Cloneable {
     return this;
   }
 
+  public abstract Grid copy();
+
   public abstract GridType getType();
 
   protected synchronized Map<Integer, Area> getGridShapeCache() {
@@ -307,11 +309,6 @@ public abstract class Grid implements Cloneable {
 
   public boolean useMetric() {
     return false; // only square & iso use metrics
-  }
-
-  @Override
-  public Object clone() throws CloneNotSupportedException {
-    return super.clone();
   }
 
   /**

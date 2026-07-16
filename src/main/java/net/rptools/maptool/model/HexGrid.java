@@ -70,6 +70,21 @@ public abstract class HexGrid extends Grid {
   protected static final BufferedImage pathHighlight =
       RessourceManager.getImage(Images.GRID_BORDER_HEX);
 
+  public HexGrid() {
+    super();
+  }
+
+  public HexGrid(HexGrid other) {
+    super(other);
+    this.hexRatio = other.hexRatio;
+
+    // Update internal variables to agree with the new dimensions.
+    var size = getSize();
+    minorRadius = size / 2.;
+    edgeLength = minorRadius / hexRatio;
+    edgeProjection = edgeLength / 2;
+  }
+
   @Override
   public Point2D.Double getCenterOffset() {
     return new Point2D.Double(0, 0);
