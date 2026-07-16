@@ -31,6 +31,7 @@ import net.rptools.maptool.client.ui.ToolbarPanel;
 import net.rptools.maptool.client.ui.macrobuttons.panels.AbstractMacroPanel;
 import net.rptools.maptool.client.ui.token.BarTokenOverlay;
 import net.rptools.maptool.client.ui.token.BooleanTokenOverlay;
+import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.library.token.LibraryTokenManager;
 import net.rptools.maptool.model.sheet.stats.StatSheetProperties;
 import net.rptools.maptool.model.zones.CampaignEvent;
@@ -38,6 +39,7 @@ import net.rptools.maptool.model.zones.TokenEdited;
 import net.rptools.maptool.model.zones.TokensAdded;
 import net.rptools.maptool.model.zones.TokensChanged;
 import net.rptools.maptool.model.zones.TokensRemoved;
+import net.rptools.maptool.model.zones.ZoneAdded;
 import net.rptools.maptool.server.proto.CampaignDto;
 
 /**
@@ -113,7 +115,7 @@ public class Campaign implements Serializable {
 
   private transient Map<GUID, Disposable> zoneSubscriptions;
 
-  private transient PublishSubject<CampaignEvent> onCampaignEvent;
+  private transient PublishSubject<CampaignEvent> campaignEvents;
 
   // Primary constructor
   private Campaign(
@@ -145,7 +147,9 @@ public class Campaign implements Serializable {
     this.macroButtonProperties = macroButtonProperties;
     this.gmMacroButtonProperties = gmMacroButtonProperties;
 
-    this.onCampaignEvent = PublishSubject.create();
+    this.campaignEvents = PublishSubject.create();
+    this.campaignEvents.subscribe(this::onCampaignEvent);
+
     this.zoneSubscriptions = new HashMap<>();
 
     this.zones = Collections.synchronizedMap(new LinkedHashMap<>());
@@ -198,27 +202,33 @@ public class Campaign implements Serializable {
         campaign.zones.values().stream().map(z -> new Zone(z, true)).toList());
   }
 
-  private void onTokensAdded(TokensAdded event) {
-    // Ensure tokens are recognized as libraries if needed.
-    libraryTokenManager.addTokens(event.tokens());
-  }
+  private void onCampaignEvent(CampaignEvent event) {
+    switch (event) {
+      case TokensAdded tokensAdded -> {
+        libraryTokenManager.addTokens(tokensAdded.tokens());
+      }
+      case TokensRemoved tokensRemoved -> {
+        libraryTokenManager.removeTokens(tokensRemoved.tokens());
+      }
+      case TokensChanged tokensChanged -> {
+        libraryTokenManager.changeTokens(tokensChanged.tokens());
+      }
+      case TokenEdited tokenEdited -> {
+        libraryTokenManager.changeTokens(Collections.singleton(tokenEdited.token()));
+      }
+      default -> {
+        /* Not a problem. */
+      }
+    }
 
-  private void onTokensRemoved(TokensRemoved event) {
-    libraryTokenManager.removeTokens(event.tokens());
-  }
-
-  private void onTokensChanged(TokensChanged event) {
-    libraryTokenManager.changeTokens(event.tokens());
-  }
-
-  private void onTokenEdited(TokenEdited event) {
-    libraryTokenManager.changeTokens(Collections.singleton(event.token()));
+    // TODO This is merely fallback behaviour. We want to get rid of the event bus.
+    new MapToolEventBus().getMainEventBus().post(event);
   }
 
   // region Events
 
-  public Observable<CampaignEvent> onCampaignEvent() {
-    return onCampaignEvent;
+  public Observable<CampaignEvent> campaignEvents() {
+    return campaignEvents;
   }
 
   // endregion
@@ -473,10 +483,14 @@ public class Campaign implements Serializable {
     }
 
     zoneSubscriptions.put(
-        zone.getId(), zone.onZoneEvent().subscribeWith(new SafeObserver<>(this.onCampaignEvent)));
+        zone.getId(), zone.onZoneEvent().subscribeWith(new SafeObserver<>(this.campaignEvents)));
 
-    // Register the zone's library tokens that already exist.
-    onTokensAdded(new TokensAdded(zone, zone.getAllTokens()));
+    campaignEvents.onNext(new ZoneAdded(zone));
+
+    var tokens = zone.getAllTokens();
+    if (!tokens.isEmpty()) {
+      campaignEvents.onNext(new TokensAdded(zone, tokens));
+    }
   }
 
   public void removeAllZones() {

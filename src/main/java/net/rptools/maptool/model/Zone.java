@@ -17,6 +17,8 @@ package net.rptools.maptool.model;
 import com.google.common.collect.Iterables;
 import com.google.protobuf.StringValue;
 import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.observers.SafeObserver;
 import io.reactivex.rxjava3.subjects.PublishSubject;
 import java.awt.Color;
 import java.awt.Point;
@@ -433,6 +435,7 @@ public class Zone {
   private transient UndoPerZone undo;
   private transient Map<String, Integer> tokenNumberCache;
   private transient PublishSubject<ZoneEvent> onZoneEvent = PublishSubject.create();
+  private transient Map<GUID, Disposable> tokenDisposables = new HashMap<>();
 
   /** Primary constructor */
   private Zone(
@@ -1606,9 +1609,22 @@ public class Zone {
    * @param token the Token to be added to this zone
    */
   public void putToken(Token token) {
+    // TODO this even gets called for dragging a token. Oh the humanity!
+
     boolean newToken = !tokenMap.containsKey(token.getId());
 
     tokenMap.put(token.getId(), token);
+
+    var existing = tokenDisposables.get(token.getId());
+    if (existing != null) {
+      existing.dispose();
+    }
+    tokenDisposables.put(
+        token.getId(),
+        token
+            .changes()
+            .map(o -> new TokensChanged(this, List.of(token)))
+            .subscribeWith(new SafeObserver<>(onZoneEvent)));
 
     // LATER: optimize this
     tokenOrderedList.remove(token);
@@ -1618,8 +1634,6 @@ public class Zone {
     ZoneEvent event =
         newToken ? new TokensAdded(this, List.of(token)) : new TokensChanged(this, List.of(token));
     onZoneEvent.onNext(event);
-    // TODO This is transitional. Get rid of it ASAP.
-    new MapToolEventBus().getMainEventBus().post(event);
   }
 
   /**
@@ -1643,8 +1657,11 @@ public class Zone {
    *
    * @param tokens List of Tokens to be added to this zone
    */
+  // TODO Why is this deprecated? Bulk operations beat singular operations every time.
   @Deprecated
   public void putTokens(Collection<Token> tokens) {
+    // TODO Register to each added token.
+
     Collection<Token> values = tokenMap.values();
 
     List<Token> addedTokens = new LinkedList<Token>(tokens);
@@ -1674,13 +1691,7 @@ public class Zone {
    * @param id the id of the token
    */
   public void removeToken(GUID id) {
-    Token token = tokenMap.remove(id);
-    if (token != null) {
-      tokenOrderedList.remove(token);
-      new MapToolEventBus()
-          .getMainEventBus()
-          .post(new TokensRemoved(this, Collections.singletonList(token)));
-    }
+    removeTokens(List.of(id));
   }
 
   /**
@@ -1693,6 +1704,12 @@ public class Zone {
     if (ids != null) {
       for (GUID id : ids) {
         Token token = tokenMap.remove(id);
+
+        var disposable = tokenDisposables.remove(id);
+        if (disposable != null) {
+          disposable.dispose();
+        }
+
         if (token != null) {
           tokenOrderedList.remove(token);
           removedTokens.add(token);

@@ -21,6 +21,8 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.protobuf.Int32Value;
 import com.google.protobuf.StringValue;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.subjects.PublishSubject;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Image;
@@ -377,6 +379,8 @@ public class Token implements Cloneable {
 
   private boolean allowURIAccess = false;
 
+  private transient PublishSubject<Object> changes = PublishSubject.create();
+
   /**
    * Constructor from another token, with the option to keep the token id
    *
@@ -516,6 +520,10 @@ public class Token implements Cloneable {
     }
 
     propertyType = MapTool.getCampaign().getCampaignProperties().getDefaultTokenPropertyType();
+  }
+
+  public Observable<Object> changes() {
+    return changes;
   }
 
   /**
@@ -2473,6 +2481,8 @@ public class Token implements Cloneable {
       };
 
   protected Object readResolve() {
+    changes = PublishSubject.create();
+
     // FJE: If the propertyMap field has something in it, it could be:
     // a pre-1.3b66 token that contains a HashMap<?,?>, or
     // a pre-1.3b78 token that actually has the CaseInsensitiveHashMap<?>.
