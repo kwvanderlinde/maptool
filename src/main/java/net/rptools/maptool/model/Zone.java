@@ -334,20 +334,17 @@ public class Zone {
   private AStarRoundingOptions aStarRounding;
 
   // region Keeping these for serialization only. Otherwise, use {@link #drawablesByLayer} instead.
-  @Deprecated private @Nonnull LinkedList<DrawnElement> drawables = new LinkedList<DrawnElement>();
+  @Deprecated private final @Nonnull LinkedList<DrawnElement> drawables;
 
-  @Deprecated
-  private @Nonnull LinkedList<DrawnElement> gmDrawables = new LinkedList<DrawnElement>();
+  @Deprecated private final @Nonnull LinkedList<DrawnElement> gmDrawables;
 
-  @Deprecated
-  private @Nonnull LinkedList<DrawnElement> objectDrawables = new LinkedList<DrawnElement>();
+  @Deprecated private final @Nonnull LinkedList<DrawnElement> objectDrawables;
 
-  @Deprecated
-  private @Nonnull LinkedList<DrawnElement> backgroundDrawables = new LinkedList<DrawnElement>();
+  @Deprecated private final @Nonnull LinkedList<DrawnElement> backgroundDrawables;
 
   // endregion
   // Contains the above lists, but in an easily accessible map.
-  private transient @Nonnull Map<Layer, LinkedList<DrawnElement>> drawablesByLayer;
+  private final transient @Nonnull Map<Layer, LinkedList<DrawnElement>> drawablesByLayer;
 
   private final Map<GUID, Label> labels;
 
@@ -361,7 +358,7 @@ public class Zone {
   private final Map<GUID, ExposedAreaMetaData> exposedAreaMeta;
 
   /** The global exposed area. */
-  private Area exposedArea;
+  private final Area exposedArea;
 
   private InitiativeList initiativeList;
 
@@ -374,19 +371,19 @@ public class Zone {
    * The Wall VBL topology of the zone. Does not include token Wall VBL. Should really be called
    * wallVbl.
    */
-  private Area topology;
+  private final Area topology;
 
   /** The Hill VBL topology of the zone. Does not include token Hill VBL. */
-  private Area hillVbl;
+  private final Area hillVbl;
 
   /** The Pit VBL topology of the zone. Does not include token Pit VBL. */
-  private Area pitVbl;
+  private final Area pitVbl;
 
   /** The Cover VBL topology of the zone. Does not include token Cover VBL. */
-  private Area coverVbl;
+  private final Area coverVbl;
 
   /** The MBL topology of the zone. Does not include token MBL. Should really be called mbl. */
-  private Area topologyTerrain;
+  private final Area topologyTerrain;
 
   // endregion
 
@@ -432,14 +429,6 @@ public class Zone {
   private transient boolean exposeFogAtWaypoints;
   private transient UndoPerZone undo;
   private transient Map<String, Integer> tokenNumberCache;
-
-  {
-    drawablesByLayer = new EnumMap<>(Layer.class);
-    drawablesByLayer.put(Layer.TOKEN, drawables);
-    drawablesByLayer.put(Layer.GM, gmDrawables);
-    drawablesByLayer.put(Layer.OBJECT, objectDrawables);
-    drawablesByLayer.put(Layer.BACKGROUND, backgroundDrawables);
-  }
 
   /** Primary constructor */
   private Zone(
