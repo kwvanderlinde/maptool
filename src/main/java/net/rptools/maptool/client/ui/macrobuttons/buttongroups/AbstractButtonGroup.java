@@ -29,6 +29,7 @@ import java.awt.dnd.DropTargetListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -145,7 +146,7 @@ public abstract class AbstractButtonGroup extends JPanel
   }
 
   public void setPropertiesList(List<MacroButtonProperties> propertiesList) {
-    this.propertiesList = propertiesList;
+    this.propertiesList = new ArrayList<>(propertiesList);
   }
 
   public String getMacroGroup() {
