@@ -1615,15 +1615,11 @@ public class Zone {
     tokenOrderedList.add(token);
     tokenOrderedList.sort(TOKEN_Z_ORDER_COMPARATOR);
 
-    if (newToken) {
-      new MapToolEventBus()
-          .getMainEventBus()
-          .post(new TokensAdded(this, Collections.singletonList(token)));
-    } else {
-      new MapToolEventBus()
-          .getMainEventBus()
-          .post(new TokensChanged(this, Collections.singletonList(token)));
-    }
+    ZoneEvent event =
+        newToken ? new TokensAdded(this, List.of(token)) : new TokensChanged(this, List.of(token));
+    onZoneEvent.onNext(event);
+    // TODO This is transitional. Get rid of it ASAP.
+    new MapToolEventBus().getMainEventBus().post(event);
   }
 
   /**
