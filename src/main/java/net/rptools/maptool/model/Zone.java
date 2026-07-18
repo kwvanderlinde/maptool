@@ -325,8 +325,8 @@ public class Zone {
 
   public static final DrawablePaint DEFAULT_FOG = new DrawableColorPaint(Color.black);
 
-  private long creationTime = System.currentTimeMillis();
-  private GUID id;
+  private final long creationTime;
+  private final GUID id;
 
   private Grid grid;
   private int gridColor = Color.black.getRGB();
