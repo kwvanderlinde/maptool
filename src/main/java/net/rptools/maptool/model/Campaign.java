@@ -369,6 +369,23 @@ public class Campaign implements Serializable {
   }
 
   /**
+   * Return the {@link Zone} with the given true name.
+   *
+   * @param name the name to look for
+   * @return the {@code Zone} matching {@code name}, or {@code null} if there is no such zone.
+   */
+  public Optional<Zone> getZoneByName(String name) {
+    synchronized (zones) {
+      for (Zone zone : zones.values()) {
+        if (name.equals(zone.getName())) {
+          return Optional.of(zone);
+        }
+      }
+    }
+    return Optional.empty();
+  }
+
+  /**
    * Create an entry for the given <code>Zone</code> in the map, using <code>zone</code>'s {@link
    * Zone#getId()} method.
    *
