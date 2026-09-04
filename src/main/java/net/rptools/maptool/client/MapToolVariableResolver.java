@@ -103,7 +103,7 @@ public class MapToolVariableResolver implements VariableResolver {
   private boolean autoPrompt;
 
   public MapToolVariableResolver(@Nullable Token tokenInContext) {
-    this(tokenInContext, null);
+    this(tokenInContext, MapTool.getClient().getCurrentZone().orElse(null));
   }
 
   public MapToolVariableResolver(@Nullable Token tokenInContext, @Nullable Zone zoneInContext) {
