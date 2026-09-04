@@ -215,7 +215,7 @@ public abstract class AbstractAStarWalker extends AbstractZoneWalker {
     // Render VBL to Geometry class once and store.
     // Note: zoneRenderer will be null if map is not visible to players.
     Area newFowExposedArea = new Area();
-    final var zoneRenderer = MapTool.getFrame().getZoneRenderer(zone);
+    final var zoneRenderer = MapTool.getFrame().getZoneRenderer(zone.getId());
     if (zoneRenderer != null) {
       final var zoneView = zoneRenderer.getZoneView();
 
