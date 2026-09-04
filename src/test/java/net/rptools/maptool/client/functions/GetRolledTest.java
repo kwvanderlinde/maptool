@@ -125,9 +125,9 @@ public class GetRolledTest {
     token.saveMacro(macro);
 
     MapToolVariableResolver resolver = new MapToolVariableResolver(token);
-    parser.parseExpression(resolver, token, "defineFunction('testUDF', 'testUDF@TOKEN')", false);
+    parser.parseExpression(resolver, "defineFunction('testUDF', 'testUDF@TOKEN')", false);
 
-    Result result = parser.parseExpression(resolver, token, "testUDF()", false);
+    Result result = parser.parseExpression(resolver, "testUDF()", false);
     JsonObject json = (JsonObject) result.getValue();
     int roll1 = json.get("rolls_1").getAsInt();
     int roll2 = json.get("rolls_2").getAsInt();
@@ -154,14 +154,14 @@ public class GetRolledTest {
     token.saveMacro(macro);
 
     MapToolVariableResolver resolver = new MapToolVariableResolver(token);
-    parser.parseExpression(resolver, token, "defineFunction('testUDF', 'testUDF@TOKEN')", false);
+    parser.parseExpression(resolver, "defineFunction('testUDF', 'testUDF@TOKEN')", false);
 
     mostRecentRolls = parser.parseExpression("2d6", false).getRolled();
     allRollsSoFar.addAll(mostRecentRolls);
     verifyNewRolls(2, mostRecentRolls);
     verifyAllRolls(2, allRollsSoFar);
 
-    Result result = parser.parseExpression(resolver, token, "testUDF()", false);
+    Result result = parser.parseExpression(resolver, "testUDF()", false);
     JsonObject json = (JsonObject) result.getValue();
     assertEquals(
         0,
@@ -195,14 +195,10 @@ public class GetRolledTest {
     List<Integer> allRollsSoFar = new ArrayList<>();
 
     MapToolVariableResolver resolver = new MapToolVariableResolver(null);
-    parser.parseExpression(resolver, null, "vNames = json.append('', 'henchman1')", false);
+    parser.parseExpression(resolver, "vNames = json.append('', 'henchman1')", false);
     parser.parseExpression(
-        resolver,
-        null,
-        "vStats = json.append('', 'Str', 'Dex', 'Con', 'Wis', 'Int', 'Cha')",
-        false);
-    Result result =
-        parser.parseExpression(resolver, null, "json.objrolls(vNames, vStats, '3d6')", false);
+        resolver, "vStats = json.append('', 'Str', 'Dex', 'Con', 'Wis', 'Int', 'Cha')", false);
+    Result result = parser.parseExpression(resolver, "json.objrolls(vNames, vStats, '3d6')", false);
     mostRecentRolls = result.getRolled();
     allRollsSoFar.addAll(mostRecentRolls);
     verifyNewRolls(18, mostRecentRolls);
@@ -226,7 +222,6 @@ public class GetRolledTest {
     String result =
         parser.parseLine(
             resolver,
-            token,
             "[h: 1d6]\n[h, macro('testMacro@TOKEN'):'']\n[r: macro.return]",
             new MapToolMacroContext("test", loc, true));
     JsonObject json =
@@ -249,7 +244,7 @@ public class GetRolledTest {
   public void testExec() throws ParserException {
     String result =
         parser.parseLine(
-            null, String.format("[h: 3d4]\n[r: execMacro(\"%s\")]", UDF_CONTENTS), null);
+            (Token) null, String.format("[h: 3d4]\n[r: execMacro(\"%s\")]", UDF_CONTENTS), null);
     JsonObject json =
         JSONMacroFunctions.getInstance().asJsonElement(result.trim()).getAsJsonObject();
     assertEquals(
@@ -269,7 +264,7 @@ public class GetRolledTest {
   public void testEvalMacro() throws ParserException {
     String result =
         parser.parseLine(
-            null, String.format("[h: 4d6]\n[r: evalMacro(\"%s\")]", UDF_CONTENTS), null);
+            (Token) null, String.format("[h: 4d6]\n[r: evalMacro(\"%s\")]", UDF_CONTENTS), null);
     JsonObject json =
         JSONMacroFunctions.getInstance().asJsonElement(result.trim()).getAsJsonObject();
     assertEquals(
