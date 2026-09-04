@@ -352,22 +352,29 @@ public class ClientMessageHandler implements MessageHandler {
           boolean visible = msg.getIsVisible();
 
           var zone = client.getCampaign().getZone(zoneGUID);
-          zone.setVisible(visible);
-          ZoneRenderer currentRenderer = MapTool.getFrame().getCurrentZoneRenderer();
+          if (zone != null) {
+            zone.setVisible(visible);
+          }
+
+          Zone currentZone = client.getCurrentZone().orElse(null);
           if (!visible
               && !client.getPlayer().isGM()
-              && currentRenderer != null
-              && currentRenderer.getZone().getId().equals(zoneGUID)) {
+              && currentZone != null
+              && currentZone.getId().equals(zoneGUID)) {
             Collection<GUID> AllTokenIDs = new ArrayList<>();
-            for (Token token : currentRenderer.getZone().getAllTokens()) {
+            for (Token token : currentZone.getAllTokens()) {
               AllTokenIDs.add(token.getId());
             }
-            currentRenderer.getSelectionModel().removeTokensFromSelection(AllTokenIDs);
-            MapTool.getFrame().setCurrentZoneRenderer(null);
+
+            var currentRenderer = MapTool.getFrame().getZoneRenderer(currentZone.getId());
+            if (currentRenderer != null) {
+              currentRenderer.getSelectionModel().removeTokensFromSelection(AllTokenIDs);
+            }
+            client.setCurrentZone(null);
           }
-          if (visible && currentRenderer == null) {
-            currentRenderer = MapTool.getFrame().getZoneRenderer(zoneGUID);
-            MapTool.getFrame().setCurrentZoneRenderer(currentRenderer);
+          if (visible && currentZone == null) {
+            currentZone = client.getCampaign().getZone(zoneGUID);
+            client.setCurrentZone(currentZone);
           }
           MapTool.getFrame().getZoneMiniMapPanel().flush();
           MapTool.getFrame().refresh();
@@ -722,12 +729,13 @@ public class ClientMessageHandler implements MessageHandler {
     EventQueue.invokeLater(
         () -> {
           Zone zone = Zone.fromDto(msg.getZone());
+          // TODO This should issue a ZoneAdded event that MapToolFrame could subscribe to. Then we
+          //  would not have to manually add the renderer below.
           client.getCampaign().putZone(zone);
 
-          var renderer = ZoneRendererFactory.newRenderer(zone);
-          MapTool.getFrame().addZoneRenderer(renderer);
-          if (MapTool.getFrame().getCurrentZoneRenderer() == null && zone.isVisible()) {
-            MapTool.getFrame().setCurrentZoneRenderer(renderer);
+          MapTool.getFrame().addZoneRenderer(ZoneRendererFactory.newRenderer(zone));
+          if (client.getCurrentZone().isEmpty() && zone.isVisible()) {
+            client.setCurrentZone(zone);
           }
 
           new MapToolEventBus().getMainEventBus().post(new ZoneAdded(zone));
@@ -902,12 +910,12 @@ public class ClientMessageHandler implements MessageHandler {
     EventQueue.invokeLater(
         () -> {
           var zoneGUID = GUID.valueOf(msg.getZoneGuid());
-          ZoneRenderer renderer = MapTool.getFrame().getZoneRenderer(zoneGUID);
+          var zone = client.getCampaign().getZone(zoneGUID);
 
-          if (renderer != null
-              && renderer != MapTool.getFrame().getCurrentZoneRenderer()
-              && (renderer.getZone().isVisible() || client.getPlayer().isGM())) {
-            MapTool.getFrame().setCurrentZoneRenderer(renderer);
+          if (zone != null
+              && zone != client.getCurrentZone().orElse(null)
+              && (zone.isVisible() || client.getPlayer().isGM())) {
+            client.setCurrentZone(zone);
           }
         });
   }
