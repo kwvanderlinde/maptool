@@ -428,14 +428,19 @@ public class FindTokenFunctions extends AbstractFunction {
       }
     }
     ZoneRenderer zoneRenderer;
+    Zone zone;
     String mapName;
     if (!jobj.has("mapName")) {
       mapName = null; // set to null so findToken searches the current map
-      zoneRenderer = MapTool.getFrame().getCurrentZoneRenderer();
+      zone = MapTool.getClient().getCurrentZone().orElse(null);
+      if (zone == null) {
+        throw new ParserException(
+            I18N.getText("macro.function.map.none", nameOnly ? "getTokenNames" : "getTokens"));
+      }
     } else {
       mapName = jobj.get("mapName").getAsString();
-      zoneRenderer = MapTool.getFrame().getZoneRenderer(mapName);
-      if (zoneRenderer == null) {
+      zone = MapTool.getCampaign().getZoneByName(mapName).orElse(null);
+      if (zone == null) {
         throw new ParserException(
             I18N.getText(
                 "macro.function.moveTokenMap.unknownMap",
@@ -443,7 +448,7 @@ public class FindTokenFunctions extends AbstractFunction {
                 mapName));
       }
     }
-    Zone zone = zoneRenderer.getZone();
+    zoneRenderer = MapTool.getFrame().getZoneRenderer(zone.getId());
     allTokens = zone.getTokensFiltered(new LayerFilter(layers));
     List<Token> tokenList = new ArrayList<Token>(allTokens.size());
     tokenList.addAll(allTokens);

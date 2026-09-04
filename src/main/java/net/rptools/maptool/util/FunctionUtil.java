@@ -181,10 +181,13 @@ public class FunctionUtil {
         throw new ParserException(I18N.getText(KEY_NO_PERM, functionName));
       }
       token = FindTokenFunctions.findToken(id, map);
+      // TODO FindTokenFunctions.findToken() should return a result type that gives the reason for
+      //  the failed lookup. We should not have to infer it after the fact.
+      // TODO Move common token lookup into FunctionUtil, don't hide it in a macro function class.
       if (token == null) {
         if (map == null) {
           throw new ParserException(I18N.getText(KEY_UNKNOWN_TOKEN, functionName, id));
-        } else if (MapTool.getFrame().getZoneRenderer(map) == null) {
+        } else if (MapTool.getCampaign().getZoneByName(map).isEmpty()) {
           throw new ParserException(I18N.getText(KEY_UNKNOWN_MAP, functionName, map));
         } else {
           throw new ParserException(I18N.getText(KEY_UNKNOWN_TOKEN_ON_MAP, functionName, id, map));
@@ -197,6 +200,34 @@ public class FunctionUtil {
       }
     }
     return token;
+  }
+
+  /**
+   * Gets the ZoneRender from the specified index or returns the current ZoneRender. This method
+   * will check the list size before trying to retrieve the token so it is safe to use for functions
+   * that have the map as an optional argument.
+   *
+   * @param functionName the function name (used for generating exception messages).
+   * @param param the parameters for the function
+   * @param indexMap the index to find the map name or ID at. If -1, use current map instead.
+   * @return the ZoneRenderer.
+   * @throws ParserException if the map cannot be found
+   */
+  public static @Nonnull Zone getZoneFromParam(
+      String functionName, List<Object> param, int indexMap) throws ParserException {
+    String map = indexMap >= 0 && param.size() > indexMap ? param.get(indexMap).toString() : null;
+
+    Zone zone;
+    if (map == null) {
+      zone = MapTool.getClient().getCurrentZone().orElse(null);
+      if (zone == null) {
+        throw new ParserException(I18N.getText("macro.function.map.none", functionName));
+      }
+    } else {
+      zone = getZone(functionName, map);
+    }
+
+    return zone;
   }
 
   /**
@@ -236,20 +267,40 @@ public class FunctionUtil {
    * @return the ZoneRenderer.
    * @throws ParserException if the map cannot be found
    */
-  public static @Nonnull ZoneRenderer getZoneRenderer(String functionName, String map)
-      throws ParserException {
+  public static @Nonnull Zone getZone(String functionName, String map) throws ParserException {
+    Zone zone;
     if (!GUID.isNotGUID(map)) {
       try {
-        final var zr = MapTool.getFrame().getZoneRenderer(GUID.valueOf(map));
-        if (zr != null) {
-          return zr;
+        zone = MapTool.getCampaign().getZone(GUID.valueOf(map));
+        if (zone != null) {
+          return zone;
         }
       } catch (InvalidGUIDException ignored) {
         // Wasn't a GUID after all. Fall back to looking up by name.
       }
     }
 
-    ZoneRenderer zoneRenderer = MapTool.getFrame().getZoneRenderer(map);
+    // Fallback to trying the value as a name instead of a guid.
+    zone = MapTool.getCampaign().getZoneByName(map).orElse(null);
+
+    if (zone == null) {
+      throw new ParserException(I18N.getText(KEY_UNKNOWN_MAP, functionName, map));
+    }
+    return zone;
+  }
+
+  /**
+   * Gets the ZoneRender with the given name, throwing a ParserException if it does not exist.
+   *
+   * @param functionName the function name (used for generating exception messages).
+   * @param map the name or ID of the map
+   * @return the ZoneRenderer.
+   * @throws ParserException if the map cannot be found
+   */
+  public static @Nonnull ZoneRenderer getZoneRenderer(String functionName, String map)
+      throws ParserException {
+    Zone zone = getZone(functionName, map);
+    ZoneRenderer zoneRenderer = MapTool.getFrame().getZoneRenderer(zone.getId());
     if (zoneRenderer == null) {
       throw new ParserException(I18N.getText(KEY_UNKNOWN_MAP, functionName, map));
     }
