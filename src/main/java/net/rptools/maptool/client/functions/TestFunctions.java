@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.MapToolVariableResolver;
@@ -96,21 +95,31 @@ public class TestFunctions extends AbstractFunction {
   }
 
   private String runTests() {
-    Set<Token> tokens = new HashSet<>();
-    Set<GUID> tokenIds = MapTool.getFrame().getCurrentZoneRenderer().getSelectedTokenSet();
-    if (!tokenIds.isEmpty()) {
-      for (GUID tokenId : tokenIds) {
-        Token token = MapTool.getFrame().getCurrentZoneRenderer().getZone().getToken(tokenId);
-        tokens.add(token);
-      }
-    } else {
-      tokens.addAll(MapTool.getFrame().getCurrentZoneRenderer().getZone().getAllTokens());
+    var currentZone = MapTool.getClient().getCurrentZone().orElse(null);
+    if (currentZone == null) {
+      // No tokens to get. Go through the formalities
+      return runTests(Set.of());
     }
 
-    tokens =
-        tokens.stream()
-            .filter(t -> t.getName().toLowerCase().startsWith("test:"))
-            .collect(Collectors.toSet());
+    // Only run tests on selected tokens. If none are selected, run on all tokens.
+    Set<GUID> tokenIds = new HashSet<>();
+    var currentRenderer = MapTool.getFrame().getZoneRenderer(currentZone.getId());
+    if (currentRenderer != null) {
+      tokenIds.addAll(currentRenderer.getSelectedTokenSet());
+    }
+
+    Set<Token> tokens = new HashSet<>();
+    if (!tokenIds.isEmpty()) {
+      for (GUID tokenId : tokenIds) {
+        Token token = currentZone.getToken(tokenId);
+        if (token != null) {
+          tokens.add(token);
+        }
+      }
+    } else {
+      tokens.addAll(currentZone.getAllTokens());
+    }
+    tokens.removeIf(t -> !t.getName().toLowerCase().startsWith("test:"));
 
     return runTests(tokens);
   }
