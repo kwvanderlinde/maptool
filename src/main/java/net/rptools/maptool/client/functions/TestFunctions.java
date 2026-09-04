@@ -21,15 +21,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.ui.macrobuttons.panels.SelectionPanel;
+import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.MacroButtonProperties;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
@@ -88,29 +89,31 @@ public class TestFunctions extends AbstractFunction {
         return "";
       case "test.run":
         testDepth++;
-        String res = runTests();
+
+        ZoneRenderer currentZoneRenderer =
+            FunctionUtil.getCurrentZoneRenderer(functionName, resolver);
+        String res = runTests(currentZoneRenderer.getZone(), currentZoneRenderer);
         testDepth--;
         return res;
     }
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));
   }
 
-  private String runTests() {
+  private String runTests(Zone zone, ZoneRenderer renderer) {
+    // Only run tests on selected tokens. If none are selected, run on all tokens.
     Set<Token> tokens = new HashSet<>();
-    Set<GUID> tokenIds = MapTool.getFrame().getCurrentZoneRenderer().getSelectedTokenSet();
+    Set<GUID> tokenIds = renderer.getSelectedTokenSet();
     if (!tokenIds.isEmpty()) {
       for (GUID tokenId : tokenIds) {
-        Token token = MapTool.getFrame().getCurrentZoneRenderer().getZone().getToken(tokenId);
-        tokens.add(token);
+        Token token = zone.getToken(tokenId);
+        if (token != null) {
+          tokens.add(token);
+        }
       }
     } else {
-      tokens.addAll(MapTool.getFrame().getCurrentZoneRenderer().getZone().getAllTokens());
+      tokens.addAll(zone.getAllTokens());
     }
-
-    tokens =
-        tokens.stream()
-            .filter(t -> t.getName().toLowerCase().startsWith("test:"))
-            .collect(Collectors.toSet());
+    tokens.removeIf(t -> !t.getName().toLowerCase().startsWith("test:"));
 
     return runTests(tokens);
   }
