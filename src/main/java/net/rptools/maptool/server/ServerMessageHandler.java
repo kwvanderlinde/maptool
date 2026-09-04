@@ -115,7 +115,6 @@ public class ServerMessageHandler implements MessageHandler {
                 SET_BOARD_MSG,
                 RESTORE_ZONE_VIEW_MSG,
                 SET_LIVE_TYPING_LABEL_MSG,
-                SET_TOKEN_LOCATION_MSG,
                 START_TOKEN_MOVE_MSG,
                 STOP_TOKEN_MOVE_MSG,
                 TOGGLE_TOKEN_MOVE_WAYPOINT_MSG,

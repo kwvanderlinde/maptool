@@ -238,12 +238,6 @@ message SetServerPolicyMsg {
   ServerPolicyDto policy = 1;
 }
 
-message SetTokenLocationMsg {
-  string zone_guid = 1;
-  string token_guid = 2;
-  IntPointDto location = 3;
-}
-
 message SetVisionTypeMsg {
   string zone_guid = 1;
   ZoneDto.VisionTypeDto vision = 2;

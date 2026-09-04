@@ -41,10 +41,8 @@ import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.AssetManager;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.CampaignProperties;
-import net.rptools.maptool.model.CellPoint;
 import net.rptools.maptool.model.ExposedAreaMetaData;
 import net.rptools.maptool.model.GUID;
-import net.rptools.maptool.model.Grid;
 import net.rptools.maptool.model.InitiativeList;
 import net.rptools.maptool.model.InitiativeList.TokenInitiative;
 import net.rptools.maptool.model.Label;
@@ -140,7 +138,6 @@ public class ClientMessageHandler implements MessageHandler {
         case SET_CAMPAIGN_LANDING_MAP_MSG -> handle(msg.getSetCampaignLandingMapMsg());
         case SET_FOW_MSG -> handle(msg.getSetFowMsg());
         case SET_LIVE_TYPING_LABEL_MSG -> handle(msg.getSetLiveTypingLabelMsg());
-        case SET_TOKEN_LOCATION_MSG -> handle(msg.getSetTokenLocationMsg());
         case SET_VISION_TYPE_MSG -> handle(msg.getSetVisionTypeMsg());
         case SET_ZONE_GRID_SIZE_MSG -> handle(msg.getSetZoneGridSizeMsg());
         case SET_ZONE_HAS_FOW_MSG -> handle(msg.getSetZoneHasFowMsg());
@@ -574,39 +571,6 @@ public class ClientMessageHandler implements MessageHandler {
               MapTool.getFrame().getCurrentZoneRenderer().getZoneView().flush();
             }
             MapTool.getFrame().refresh();
-          }
-        });
-  }
-
-  private void handle(SetTokenLocationMsg msg) {
-    EventQueue.invokeLater(
-        () -> {
-          // Only the table should process this
-          if (client.getPlayer().getName().equalsIgnoreCase("Table")) {
-            var zoneGUID = GUID.valueOf(msg.getZoneGuid());
-            var keyToken = GUID.valueOf(msg.getTokenGuid());
-
-            // This X,Y is the where the center of the token needs to be placed in
-            // relation to the screen. So 0,0 would be top left which means only 1/4
-            // of token would be drawn. 1024,768 would be lower right (on my table).
-            var x = msg.getLocation().getX();
-            var y = msg.getLocation().getY();
-
-            // Get the zone
-            var zone = client.getCampaign().getZone(zoneGUID);
-            // Get the token
-            var token = zone.getToken(keyToken);
-
-            Grid grid = zone.getGrid();
-            // Convert the X/Y to the screen point
-            var renderer = MapTool.getFrame().getZoneRenderer(zone);
-            CellPoint newPoint = renderer.getCellAt(new ScreenPoint(x, y));
-            ZonePoint zp2 = grid.convert(newPoint);
-
-            token.setX(zp2.x);
-            token.setY(zp2.y);
-
-            client.getServerCommand().putToken(zoneGUID, token);
           }
         });
   }
