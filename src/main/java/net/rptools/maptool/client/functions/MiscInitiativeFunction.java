@@ -66,7 +66,7 @@ public class MiscInitiativeFunction extends AbstractFunction {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> args)
       throws ParserException {
-    InitiativeList list = MapTool.getFrame().getCurrentZoneRenderer().getZone().getInitiativeList();
+    InitiativeList list = FunctionUtil.getCurrentZone(functionName, resolver).getInitiativeList();
     InitiativePanel ip = MapTool.getFrame().getInitiativePanel();
     if (functionName.equalsIgnoreCase("nextInitiative")) {
       if (!MapTool.getParser().isMacroTrusted()) {

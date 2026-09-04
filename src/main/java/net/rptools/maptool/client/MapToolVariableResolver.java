@@ -292,11 +292,18 @@ public class MapToolVariableResolver implements VariableResolver {
       }
     } else {
       if (name.equals(INITIATIVE_CURRENT)) {
-        if (!MapTool.getFrame().getInitiativePanel().hasGMPermission())
+        if (!MapTool.getFrame().getInitiativePanel().hasGMPermission()) {
           throw new ParserException(I18N.getText("lineParser.onlyGMCanGet", INITIATIVE_CURRENT));
-        return CurrentInitiativeFunction.getCurrentInitiative();
+        }
+        if (zoneInContext == null) {
+          return "";
+        }
+        return CurrentInitiativeFunction.getCurrentInitiative(zoneInContext);
       } else if (name.equals(INITIATIVE_ROUND)) {
-        return InitiativeRoundFunction.getInitiativeRound();
+        if (zoneInContext == null) {
+          return "";
+        }
+        return InitiativeRoundFunction.getInitiativeRound(zoneInContext);
       } // endif
     }
 
@@ -432,14 +439,19 @@ public class MapToolVariableResolver implements VariableResolver {
       TokenInitHoldFunction.setInitiativeHold(tokenInContext, set);
       return;
     } else if (varname.equals(INITIATIVE_CURRENT)) {
-      if (!MapTool.getFrame().getInitiativePanel().hasGMPermission())
+      if (!MapTool.getFrame().getInitiativePanel().hasGMPermission()) {
         throw new ParserException(I18N.getText("lineParser.onlyGMCanSet", INITIATIVE_CURRENT));
-      CurrentInitiativeFunction.setCurrentInitiative(value);
+      }
+      if (zoneInContext != null) {
+        CurrentInitiativeFunction.setCurrentInitiative(zoneInContext, value);
+      }
       return;
     } else if (varname.equals(INITIATIVE_ROUND)) {
       if (!MapTool.getFrame().getInitiativePanel().hasGMPermission())
         throw new ParserException(I18N.getText("lineParser.onlyGMCanSet", INITIATIVE_ROUND));
-      InitiativeRoundFunction.setInitiativeRound(value);
+      if (zoneInContext != null) {
+        InitiativeRoundFunction.setInitiativeRound(zoneInContext, value);
+      }
       return;
     }
     variables.put(varname, value);

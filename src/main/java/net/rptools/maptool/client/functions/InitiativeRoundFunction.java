@@ -19,6 +19,8 @@ import java.util.List;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.InitiativeList;
+import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
@@ -51,13 +53,13 @@ public class InitiativeRoundFunction extends AbstractFunction {
       Parser parser, VariableResolver resolver, String functionName, List<Object> args)
       throws ParserException {
     if (functionName.equalsIgnoreCase("getInitiativeRound")) {
-      return getInitiativeRound();
+      return getInitiativeRound(FunctionUtil.getCurrentZone(functionName, resolver));
     } else if ("setInitiativeRound".equalsIgnoreCase(functionName)) {
       if (args.size() != 1)
         throw new ParserException(I18N.getText("macro.function.setinitiativeRound.oneParam"));
       if (MapTool.getParser().isMacroTrusted()
           || MapTool.getFrame().getInitiativePanel().hasGMPermission()) {
-        setInitiativeRound(args.get(0));
+        setInitiativeRound(FunctionUtil.getCurrentZone(functionName, resolver), args.get(0));
         return args.get(0);
       } else {
         throw new ParserException(I18N.getText("macro.function.initiative.mustBeGM", functionName));
@@ -71,8 +73,8 @@ public class InitiativeRoundFunction extends AbstractFunction {
    *
    * @return The initiative round
    */
-  public static Object getInitiativeRound() {
-    InitiativeList list = MapTool.getFrame().getCurrentZoneRenderer().getZone().getInitiativeList();
+  public static Object getInitiativeRound(Zone zone) {
+    InitiativeList list = zone.getInitiativeList();
     return new BigDecimal(list.getRound());
   }
 
@@ -81,8 +83,8 @@ public class InitiativeRoundFunction extends AbstractFunction {
    *
    * @param value New value for the round.
    */
-  public static void setInitiativeRound(Object value) {
-    InitiativeList list = MapTool.getFrame().getCurrentZoneRenderer().getZone().getInitiativeList();
+  public static void setInitiativeRound(Zone zone, Object value) {
+    InitiativeList list = zone.getInitiativeList();
     list.setRound(getInt(value));
   }
 

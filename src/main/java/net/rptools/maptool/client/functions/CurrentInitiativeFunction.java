@@ -19,6 +19,8 @@ import java.util.List;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.InitiativeList;
+import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
@@ -58,16 +60,19 @@ public class CurrentInitiativeFunction extends AbstractFunction {
         throw new ParserException(I18N.getText("macro.function.initiative.mustBeGM", functionName));
     }
 
+    var zone = FunctionUtil.getCurrentZone(functionName, resolver);
+
     if (functionName.equalsIgnoreCase("getCurrentInitiative")) {
-      return getCurrentInitiative();
+      return getCurrentInitiative(zone);
     } else if (functionName.equalsIgnoreCase("setCurrentInitiative")) {
-      if (args.size() != 1)
+      if (args.size() != 1) {
         throw new ParserException(I18N.getText("macro.function.initiative.oneParam", functionName));
-      setCurrentInitiative(args.get(0));
+      }
+      setCurrentInitiative(zone, args.get(0));
       return args.get(0);
     } else if (functionName.equalsIgnoreCase("getInitiativeToken")) {
-      return getInitiativeToken();
-    } // endif
+      return getInitiativeToken(zone);
+    }
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));
   }
 
@@ -76,8 +81,8 @@ public class CurrentInitiativeFunction extends AbstractFunction {
    *
    * @return The current initiative
    */
-  public static Object getInitiativeToken() {
-    InitiativeList list = MapTool.getFrame().getCurrentZoneRenderer().getZone().getInitiativeList();
+  public static String getInitiativeToken(Zone zone) {
+    InitiativeList list = zone.getInitiativeList();
     int index = list.getCurrent();
     return index != -1 ? list.getToken(index).getId().toString() : "";
   }
@@ -87,8 +92,8 @@ public class CurrentInitiativeFunction extends AbstractFunction {
    *
    * @return The current initiative
    */
-  public static Object getCurrentInitiative() {
-    InitiativeList list = MapTool.getFrame().getCurrentZoneRenderer().getZone().getInitiativeList();
+  public static BigDecimal getCurrentInitiative(Zone zone) {
+    InitiativeList list = zone.getInitiativeList();
     return new BigDecimal(list.getCurrent());
   }
 
@@ -97,8 +102,8 @@ public class CurrentInitiativeFunction extends AbstractFunction {
    *
    * @param value New value for the round.
    */
-  public static void setCurrentInitiative(Object value) {
-    InitiativeList list = MapTool.getFrame().getCurrentZoneRenderer().getZone().getInitiativeList();
+  public static void setCurrentInitiative(Zone zone, Object value) {
+    InitiativeList list = zone.getInitiativeList();
     list.setCurrent(InitiativeRoundFunction.getInt(value));
   }
 }
