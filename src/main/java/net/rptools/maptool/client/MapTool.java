@@ -962,19 +962,16 @@ public class MapTool {
     }
 
     // Install new campaign
-    ZoneRenderer currRenderer = null;
     for (Zone zone : campaign.getZones()) {
       ZoneRenderer renderer = ZoneRendererFactory.newRenderer(zone);
       clientFrame.addZoneRenderer(renderer);
-      if (defaultZone != null && defaultZone.getId().equals(zone.getId())) {
-        currRenderer = renderer;
-      }
+
       new MapToolEventBus().getMainEventBus().post(new ZoneAdded(zone));
       // Now we have fire off adding the tokens in the zone
       new MapToolEventBus().getMainEventBus().post(new TokensAdded(zone, zone.getAllTokens()));
     }
 
-    clientFrame.setCurrentZoneRenderer(currRenderer);
+    client.setCurrentZone(defaultZone);
     clientFrame.getInitiativePanel().setOwnerPermissions(campaign.isInitiativeOwnerPermissions());
     clientFrame.getInitiativePanel().setMovementLock(campaign.isInitiativeMovementLock());
     clientFrame.getInitiativePanel().setInitUseReverseSort(campaign.isInitiativeUseReverseSort());
@@ -1166,11 +1163,10 @@ public class MapTool {
     // Now we have fire off adding the tokens in the zone
     new MapToolEventBus().getMainEventBus().post(new TokensAdded(zone, zone.getAllTokens()));
 
-    // Show the new zone
+    clientFrame.addZoneRenderer(ZoneRendererFactory.newRenderer(zone));
+    // Possibly show the new zone
     if (changeZone) {
-      clientFrame.setCurrentZoneRenderer(ZoneRendererFactory.newRenderer(zone));
-    } else {
-      getFrame().getZoneRenderers().add(ZoneRendererFactory.newRenderer(zone));
+      client.setCurrentZone(zone);
     }
   }
 
