@@ -165,7 +165,7 @@ public class ZoneViewModel {
   public void setZoneScale(Scale scale) {
     if (!this.zoneScale.equals(scale)) {
       this.zoneScale = scale;
-      MapTool.getFrame().getZoneRenderer(zone).invalidateCurrentViewCache();
+      MapTool.getFrame().getZoneRenderer(zone.getId()).invalidateCurrentViewCache();
       MapTool.getFrame().getZoomStatusBar().update();
       repaintNeeded();
       // TODO Should we be calling renderer.maybeForcePlayersView() here?
@@ -308,7 +308,7 @@ public class ZoneViewModel {
 
     ImageObserver observer =
         Objects.requireNonNullElseGet(
-            MapTool.getFrame().getZoneRenderer(this.zone),
+            MapTool.getFrame().getZoneRenderer(zone.getId()),
             () -> (ImageObserver) (img, infoflags, x, y, width, height) -> false);
 
     // Get a list of all the assets in the zone
@@ -355,7 +355,7 @@ public class ZoneViewModel {
 
   /** Updates {@link #viewport} based on {@link #zoneScale}. */
   private void updateViewport() {
-    var renderer = MapTool.getFrame().getZoneRenderer(this.zone);
+    var renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
     if (renderer == null) {
       // No viewport.
       viewport.setFrame(0, 0, 0, 0);
@@ -530,7 +530,7 @@ public class ZoneViewModel {
   private void updateMovingTokens() {
     movingTokens.clear();
 
-    var renderer = MapTool.getFrame().getZoneRenderer(this.zone);
+    var renderer = MapTool.getFrame().getZoneRenderer(zone.getId());
     if (renderer == null) {
       return;
     }

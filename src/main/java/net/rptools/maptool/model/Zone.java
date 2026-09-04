@@ -884,7 +884,8 @@ public class Zone {
     // Token is visible, and there is fog
     Rectangle tokenSize = token.getFootprintBounds(this);
     Area combined = new Area(exposedArea);
-    PlayerView view = MapTool.getFrame().getZoneRenderer(this).getPlayerView();
+    // TODO Inject PlayerView as a parameter.
+    PlayerView view = MapTool.getFrame().getZoneRenderer(this.id).getPlayerView();
     if (MapTool.getServerPolicy().isUseIndividualFOW() && getVisionType() != VisionType.OFF) {
       // Jamz: Lets change the logic a bit looking for ownerships
       if (view.isUsingTokenView()) {

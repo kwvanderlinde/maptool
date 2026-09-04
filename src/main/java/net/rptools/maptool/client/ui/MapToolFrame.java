@@ -1771,22 +1771,6 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
   }
 
   /**
-   * Return the first ZoneRender for which the zone is the same as the passed zone (should be only
-   * one).
-   *
-   * @param zone the zone.
-   * @return the ZoneRenderer.
-   */
-  public ZoneRenderer getZoneRenderer(Zone zone) {
-    for (ZoneRenderer renderer : zoneRendererList) {
-      if (zone == renderer.getZone()) {
-        return renderer;
-      }
-    }
-    return null;
-  }
-
-  /**
    * Return the first ZoneRender for which the zone has the zoneGUID (should be only one).
    *
    * @param zoneGUID the zoneGUID of the zone.
