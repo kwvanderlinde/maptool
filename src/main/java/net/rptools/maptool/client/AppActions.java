@@ -438,7 +438,7 @@ public class AppActions {
           if (name != null) {
             zone.setName(name);
             MapTool.serverCommand().renameZone(zone.getId(), name);
-            MapTool.getFrame().setCurrentZoneRenderer(renderer);
+            MapTool.getClient().setCurrentZone(zone);
           }
         }
       };
@@ -2254,7 +2254,7 @@ public class AppActions {
    */
   public static void disconnectFromServer() {
     // hide map so player doesn't get a brief GM view
-    MapTool.getFrame().setCurrentZoneRenderer(null);
+    MapTool.getClient().setCurrentZone(null);
 
     Campaign campaign;
     if (MapTool.isHostingServer()) {
@@ -2908,7 +2908,7 @@ public class AppActions {
 
           MapTool.serverCommand().removeZone(zone.getId());
           MapTool.serverCommand().putZone(zone);
-          MapTool.getFrame().setCurrentZoneRenderer(renderer);
+          MapTool.getClient().setCurrentZone(zone);
         }
       };
 

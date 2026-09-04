@@ -113,8 +113,8 @@ public class MapFunctions extends AbstractFunction {
       FunctionUtil.blockUntrustedMacro(functionName);
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
       String mapNameOrId = parameters.get(0).toString();
-      final var zr = FunctionUtil.getZoneRenderer(functionName, mapNameOrId);
-      MapTool.getFrame().setCurrentZoneRenderer(zr);
+      final var zone = FunctionUtil.getZone(functionName, mapNameOrId);
+      MapTool.getClient().setCurrentZone(zone);
       return mapNameOrId;
 
     } else if ("getMapVisible".equalsIgnoreCase(functionName)) {
@@ -140,11 +140,12 @@ public class MapFunctions extends AbstractFunction {
       FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
       String mapNameOrId = parameters.get(0).toString();
       String newMapName = parameters.get(1).toString();
-      Zone zone = FunctionUtil.getZoneRenderer(functionName, mapNameOrId).getZone();
+      Zone zone = FunctionUtil.getZone(functionName, mapNameOrId);
       zone.setName(newMapName);
       MapTool.serverCommand().renameZone(zone.getId(), newMapName);
-      if (zone == MapTool.getFrame().getCurrentZoneRenderer().getZone()) {
-        MapTool.getFrame().setCurrentZoneRenderer(MapTool.getFrame().getCurrentZoneRenderer());
+      // Force an update. TODO We can do better! A no-op should not be needed to signal this.
+      if (zone == MapTool.getClient().getCurrentZone().orElse(null)) {
+        MapTool.getClient().setCurrentZone(zone);
       }
       return zone.getName();
 
@@ -162,8 +163,9 @@ public class MapFunctions extends AbstractFunction {
       zone.setPlayerAlias(newMapDisplayName);
 
       MapTool.serverCommand().changeZoneDispName(zone.getId(), newMapDisplayName);
-      if (zone == MapTool.getFrame().getCurrentZoneRenderer().getZone()) {
-        MapTool.getFrame().setCurrentZoneRenderer(MapTool.getFrame().getCurrentZoneRenderer());
+      // Force an update. TODO We can do better! A no-op should not be needed to signal this.
+      if (zone == MapTool.getClient().getCurrentZone().orElse(null)) {
+        MapTool.getClient().setCurrentZone(zone);
       }
 
       return zone.getDisplayName();

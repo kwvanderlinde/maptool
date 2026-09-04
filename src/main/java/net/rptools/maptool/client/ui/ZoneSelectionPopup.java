@@ -27,6 +27,7 @@ import net.rptools.maptool.client.ui.theme.Icons;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
+import net.rptools.maptool.model.Zone;
 
 public class ZoneSelectionPopup extends JScrollPopupMenu {
 
@@ -89,9 +90,11 @@ public class ZoneSelectionPopup extends JScrollPopupMenu {
 
   private static class ZoneItem extends JCheckBoxMenuItem implements ActionListener {
 
-    private ZoneRenderer renderer;
+    private final Zone zone;
+    private final ZoneRenderer renderer;
 
     ZoneItem(ZoneRenderer renderer) {
+      this.zone = renderer.getZone();
       this.renderer = renderer;
       String name = renderer.getZone().toString();
       if ("".equals(name)) {
@@ -119,12 +122,12 @@ public class ZoneSelectionPopup extends JScrollPopupMenu {
     public void actionPerformed(ActionEvent e) {
 
       // Set current zone renderer if new
-      if (MapTool.getFrame().getCurrentZoneRenderer() != renderer) {
-        MapTool.getFrame().setCurrentZoneRenderer(renderer);
+      if (MapTool.getClient().getCurrentZone().orElse(null) != zone) {
+        MapTool.getClient().setCurrentZone(zone);
         MapTool.getFrame().refresh();
 
         if (AppState.isPlayerViewLinked() && MapTool.getPlayer().isGM()) {
-          MapTool.serverCommand().enforceZone(renderer.getZone().getId());
+          MapTool.serverCommand().enforceZone(zone.getId());
           renderer.forcePlayersView();
         }
       }
