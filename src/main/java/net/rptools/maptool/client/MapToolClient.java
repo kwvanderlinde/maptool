@@ -21,6 +21,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -34,6 +35,7 @@ import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.CampaignFactory;
+import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.campaign.CampaignManager;
 import net.rptools.maptool.model.player.LocalPlayer;
 import net.rptools.maptool.model.player.Player;
@@ -300,6 +302,22 @@ public class MapToolClient {
     this.campaign = campaign;
   }
 
+  public Optional<Zone> getCurrentZone() {
+    // TODO Move "current zone" management into MapToolClient.
+    var renderer = MapTool.getFrame().getCurrentZoneRenderer();
+    if (renderer == null) {
+      return Optional.empty();
+    }
+    return Optional.of(renderer.getZone());
+  }
+
+  public void setCurrentZone(@Nullable Zone zone) {
+    // TODO Move "current zone" management into MapToolClient.
+    // TODO Look up by Zone ID
+    var renderer = zone == null ? null : MapTool.getFrame().getZoneRenderer(zone.getId());
+    MapTool.getFrame().setCurrentZoneRenderer(renderer);
+  }
+
   private void onDisconnect(Connection connection) {
     /*
      * Three main cases:
@@ -332,7 +350,7 @@ public class MapToolClient {
             MapTool.showError(errorMessage);
 
             // hide map so player doesn't get a brief GM view
-            MapTool.getFrame().setCurrentZoneRenderer(null);
+            setCurrentZone(null);
             MapTool.getFrame().getToolbarPanel().getMapselect().setVisible(true);
             MapTool.getFrame().getAssetPanel().enableAssets();
             new CampaignManager().clearCampaignData();
