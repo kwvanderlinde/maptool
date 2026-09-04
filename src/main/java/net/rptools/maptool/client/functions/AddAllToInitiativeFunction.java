@@ -62,8 +62,10 @@ public class AddAllToInitiativeFunction extends AbstractFunction {
       if (!MapTool.getFrame().getInitiativePanel().hasGMPermission())
         throw new ParserException(I18N.getText("macro.function.initiative.mustBeGM", functionName));
     }
+    var zone = FunctionUtil.getCurrentZone(functionName, resolver);
+
     // Check for duplicates flag
-    InitiativeList list = MapTool.getFrame().getCurrentZoneRenderer().getZone().getInitiativeList();
+    InitiativeList list = zone.getInitiativeList();
     boolean allowDuplicates = false;
     if (!args.isEmpty()) {
       allowDuplicates = FunctionUtil.getBooleanValue(args.get(0));
