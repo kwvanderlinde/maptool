@@ -21,6 +21,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import java.math.BigDecimal;
 import java.util.*;
+import javax.annotation.Nullable;
 import javax.swing.JOptionPane;
 import net.rptools.CaseInsensitiveHashMap;
 import net.rptools.lib.StringUtil;
@@ -96,11 +97,11 @@ public class MapToolVariableResolver implements VariableResolver {
 
   private List<Runnable> delayedActionList;
 
-  private Token tokenInContext;
+  private @Nullable Token tokenInContext;
 
   private boolean autoPrompt;
 
-  public MapToolVariableResolver(Token tokenInContext) {
+  public MapToolVariableResolver(@Nullable Token tokenInContext) {
     this.tokenInContext = tokenInContext;
     autoPrompt = true;
     // Set the default macro.args to "" so that it is always present.
@@ -185,8 +186,18 @@ public class MapToolVariableResolver implements VariableResolver {
    *
    * @return the token in context
    */
-  public Token getTokenInContext() {
+  public @Nullable Token getTokenInContext() {
     return tokenInContext;
+  }
+
+  /**
+   * Sets the token that is in context for this variable resolver. You will only ever need to call
+   * this method if you want to change the in context token mid macro.
+   *
+   * @param token The new token in context.
+   */
+  public void setTokenIncontext(@Nullable Token token) {
+    tokenInContext = token;
   }
 
   @Override
@@ -424,15 +435,5 @@ public class MapToolVariableResolver implements VariableResolver {
     }
 
     return false;
-  }
-
-  /**
-   * Sets the token that is in context for this variable resolver. You will only ever need to call
-   * this method if you want to change the in context token mid macro.
-   *
-   * @param token The new token in context.
-   */
-  public void setTokenIncontext(Token token) {
-    tokenInContext = token;
   }
 }
