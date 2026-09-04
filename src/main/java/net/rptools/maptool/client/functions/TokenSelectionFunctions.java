@@ -23,7 +23,6 @@ import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
 import net.rptools.maptool.client.ui.zone.SelectionModel;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Token;
@@ -54,10 +53,15 @@ public class TokenSelectionFunctions extends AbstractFunction {
     if (!MapTool.getParser().isMacroTrusted()) {
       throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
     }
+
+    var renderer = FunctionUtil.getCurrentZoneRenderer(functionName, resolver);
+    var zone = renderer.getZone();
+    SelectionModel selectionModel = renderer.getSelectionModel();
+
     if (functionName.equalsIgnoreCase("selectTokens")) {
-      selectTokens(parameters);
+      selectTokens(zone, selectionModel, renderer.getActiveLayer(), parameters);
     } else if (functionName.equalsIgnoreCase("deselectTokens")) {
-      deselectTokens(parameters);
+      deselectTokens(zone, selectionModel, parameters);
     } else {
       throw new ParserException(
           I18N.getText("macro.function.general.unknownFunction", functionName));
@@ -65,11 +69,8 @@ public class TokenSelectionFunctions extends AbstractFunction {
     return BigDecimal.ONE;
   }
 
-  private void deselectTokens(List<Object> parameters) throws ParserException {
-    ZoneRenderer zr = MapTool.getFrame().getCurrentZoneRenderer();
-    Zone zone = zr.getZone();
-    SelectionModel selectionModel = zr.getSelectionModel();
-
+  private void deselectTokens(Zone zone, SelectionModel selectionModel, List<Object> parameters)
+      throws ParserException {
     if (parameters == null || parameters.isEmpty()) {
       // Deselect all currently selected tokens
       selectionModel.replaceSelection(Collections.emptyList());
@@ -127,18 +128,16 @@ public class TokenSelectionFunctions extends AbstractFunction {
     }
   }
 
-  private void selectTokens(List<Object> parameters) throws ParserException {
-    ZoneRenderer zr = MapTool.getFrame().getCurrentZoneRenderer();
-    Zone zone = zr.getZone();
-    SelectionModel selectionModel = zr.getSelectionModel();
-
+  private void selectTokens(
+      Zone zone, SelectionModel selectionModel, Zone.Layer activeLayer, List<Object> parameters)
+      throws ParserException {
     final var newSelection = new ArrayList<GUID>();
     final boolean replaceSelection;
 
     if (parameters == null || parameters.isEmpty()) {
       replaceSelection = true;
       // Select all tokens
-      List<Token> allTokens = zone.getTokensOnLayer(zr.getActiveLayer());
+      List<Token> allTokens = zone.getTokensOnLayer(activeLayer);
       if (allTokens != null) {
         for (Token t : allTokens) {
           GUID tid = t.getId();
