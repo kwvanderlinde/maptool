@@ -1808,9 +1808,10 @@ public class AppActions {
           MapTool.serverCommand().setCampaign(campaign);
 
           ImageManager.flush();
-          MapTool.getFrame()
-              .setCurrentZoneRenderer(
-                  MapTool.getFrame().getZoneRenderer(campaign.getZones().get(0)));
+
+          var allZones = campaign.getZones();
+          var startingZone = allZones.isEmpty() ? null : allZones.getFirst();
+          MapTool.getClient().setCurrentZone(startingZone);
         }
       };
 
