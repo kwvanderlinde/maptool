@@ -16,8 +16,9 @@ package net.rptools.maptool.client.functions;
 
 import java.util.List;
 import net.rptools.maptool.client.AppState;
-import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
+import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
@@ -45,14 +46,25 @@ public class TextLabelFunctions extends AbstractFunction {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
+    ZoneRenderer zoneRenderer;
+    try {
+      zoneRenderer = FunctionUtil.getCurrentZoneRenderer(functionName, resolver);
+    } catch (ParserException e) {
+      zoneRenderer = null;
+    }
+
     switch (functionName) {
       case "showTextLabels":
         AppState.setShowTextLabels(true);
-        MapTool.getFrame().getCurrentZoneRenderer().repaint();
+        if (zoneRenderer != null) {
+          zoneRenderer.repaint();
+        }
         return "";
       case "hideTextLabels":
         AppState.setShowTextLabels(false);
-        MapTool.getFrame().getCurrentZoneRenderer().repaint();
+        if (zoneRenderer != null) {
+          zoneRenderer.repaint();
+        }
         return "";
       case "getTextLabelStatus":
         return AppState.getShowTextLabels() ? "show" : "hide";
