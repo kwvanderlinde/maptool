@@ -98,11 +98,17 @@ public class MapToolVariableResolver implements VariableResolver {
   private List<Runnable> delayedActionList;
 
   private @Nullable Token tokenInContext;
+  private @Nullable Zone zoneInContext;
 
   private boolean autoPrompt;
 
   public MapToolVariableResolver(@Nullable Token tokenInContext) {
+    this(tokenInContext, null);
+  }
+
+  public MapToolVariableResolver(@Nullable Token tokenInContext, @Nullable Zone zoneInContext) {
     this.tokenInContext = tokenInContext;
+    this.zoneInContext = zoneInContext;
     autoPrompt = true;
     // Set the default macro.args to "" so that it is always present.
     try {
@@ -198,6 +204,25 @@ public class MapToolVariableResolver implements VariableResolver {
    */
   public void setTokenIncontext(@Nullable Token token) {
     tokenInContext = token;
+  }
+
+  /**
+   * Gets the zone in context.
+   *
+   * @return the zone in context
+   */
+  public Optional<Zone> getZoneInContext() {
+    return Optional.ofNullable(zoneInContext);
+  }
+
+  /**
+   * Sets the zone that is in context for this variable resolver. You will only ever need to call
+   * this method if you want to change the in context zone mid macro.
+   *
+   * @param zone The new zone in context.
+   */
+  public void setZoneIncontext(@Nullable Zone zone) {
+    zoneInContext = zone;
   }
 
   @Override
