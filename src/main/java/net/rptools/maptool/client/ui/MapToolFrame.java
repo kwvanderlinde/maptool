@@ -1802,21 +1802,6 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
   }
 
   /**
-   * Return the first ZoneRender for which the zone has the zoneName (could be multiples).
-   *
-   * @param zoneName the name of the zone.
-   * @return the ZoneRenderer.
-   */
-  public ZoneRenderer getZoneRenderer(final String zoneName) {
-    for (ZoneRenderer renderer : zoneRendererList) {
-      if (zoneName.equals(renderer.getZone().getName())) {
-        return renderer;
-      }
-    }
-    return null;
-  }
-
-  /**
    * Get the paintDrawingMeasurements for this MapToolClient.
    *
    * @return Returns the current value of paintDrawingMeasurements.

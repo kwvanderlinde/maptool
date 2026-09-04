@@ -21,6 +21,7 @@ import net.rptools.maptool.client.script.javascript.*;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.Zone;
 import org.graalvm.polyglot.HostAccess;
 
 public class JSAPITokens implements MapToolJSAPIInterface {
@@ -31,21 +32,19 @@ public class JSAPITokens implements MapToolJSAPIInterface {
 
   @HostAccess.Export
   public List<Object> getMapTokens() {
-    return getMapTokens(MapTool.getFrame().getCurrentZoneRenderer());
+    return MapTool.getClient().getCurrentZone().map(this::getMapTokens).orElse(List.of());
   }
 
   @HostAccess.Export
   public List<Object> getMapTokens(String zoneName) {
-
-    return getMapTokens(MapTool.getFrame().getZoneRenderer(zoneName));
+    return MapTool.getCampaign().getZoneByName(zoneName).map(this::getMapTokens).orElse(List.of());
   }
 
-  public List<Object> getMapTokens(ZoneRenderer zr) {
-    final List<Object> tokens = new ArrayList<>();
+  public List<Object> getMapTokens(Zone zone) {
+    final var tokens = new ArrayList<>();
     boolean trusted = JSScriptEngine.inTrustedContext();
     String playerId = MapTool.getPlayer().getName();
-    zr.getZone()
-        .getAllTokens()
+    zone.getAllTokens()
         .forEach(
             (t -> {
               if (trusted || t.isOwner(playerId)) {
@@ -60,9 +59,9 @@ public class JSAPITokens implements MapToolJSAPIInterface {
   public JSAPIToken getTokenByName(String tokenName) {
     boolean trusted = JSScriptEngine.inTrustedContext();
     String playerId = MapTool.getPlayer().getName();
-    for (ZoneRenderer z : MapTool.getFrame().getZoneRenderers()) {
-      if (trusted || z.getZone().isVisible()) {
-        Token t = z.getZone().getTokenByName(tokenName);
+    for (Zone z : MapTool.getCampaign().getZones()) {
+      if (trusted || z.isVisible()) {
+        Token t = z.getTokenByName(tokenName);
         if (t != null && (trusted || t.isOwner(playerId))) {
           return new JSAPIToken(t);
         }
@@ -73,8 +72,14 @@ public class JSAPITokens implements MapToolJSAPIInterface {
 
   @HostAccess.Export
   public List<JSAPIToken> getSelectedTokens() {
-    List<Token> tokens = MapTool.getFrame().getCurrentZoneRenderer().getSelectedTokensList();
-    List<JSAPIToken> out_tokens = new ArrayList<JSAPIToken>();
+    List<Token> tokens =
+        MapTool.getClient()
+            .getCurrentZone()
+            .map(Zone::getId)
+            .map(MapTool.getFrame()::getZoneRenderer)
+            .map(ZoneRenderer::getSelectedTokensList)
+            .orElse(List.of());
+    var out_tokens = new ArrayList<JSAPIToken>();
     for (Token token : tokens) {
       out_tokens.add(new JSAPIToken(token));
     }
@@ -83,8 +88,14 @@ public class JSAPITokens implements MapToolJSAPIInterface {
 
   @HostAccess.Export
   public JSAPIToken getSelected() {
-    List<Token> tokens = MapTool.getFrame().getCurrentZoneRenderer().getSelectedTokensList();
-    if (tokens.size() > 0) {
+    List<Token> tokens =
+        MapTool.getClient()
+            .getCurrentZone()
+            .map(Zone::getId)
+            .map(MapTool.getFrame()::getZoneRenderer)
+            .map(ZoneRenderer::getSelectedTokensList)
+            .orElse(List.of());
+    if (!tokens.isEmpty()) {
       return new JSAPIToken(tokens.get(0));
     }
     return null;
@@ -92,21 +103,19 @@ public class JSAPITokens implements MapToolJSAPIInterface {
 
   @HostAccess.Export
   public JSAPIToken getTokenByID(String uuid) {
-    JSAPIToken token = null;
-    Token findToken =
-        MapTool.getFrame().getCurrentZoneRenderer().getZone().getToken(new GUID(uuid));
-    if (findToken != null) {
-      token = new JSAPIToken(findToken);
-      token.setMap(MapTool.getFrame().getCurrentZoneRenderer().getZone());
-    } else {
-      List<ZoneRenderer> zrenderers = MapTool.getFrame().getZoneRenderers();
-      for (ZoneRenderer zr : zrenderers) {
-        findToken = zr.getZone().resolveToken(uuid);
-        if (findToken != null) {
-          token = new JSAPIToken(findToken);
-          token.setMap(zr.getZone());
-          break;
-        }
+    // Start by checking the current map.
+    JSAPIToken token = getMapTokenByID(uuid);
+    if (token != null) {
+      return token;
+    }
+
+    // Fallback to checking all maps.
+    for (Zone zone : MapTool.getCampaign().getZones()) {
+      var findToken = zone.resolveToken(uuid);
+      if (findToken != null) {
+        token = new JSAPIToken(findToken);
+        token.setMap(zone);
+        break;
       }
     }
     if (token != null
@@ -118,13 +127,18 @@ public class JSAPITokens implements MapToolJSAPIInterface {
 
   @HostAccess.Export
   public JSAPIToken getMapTokenByID(String uuid) {
+    var currentZone = MapTool.getClient().getCurrentZone().orElse(null);
+    if (currentZone == null) {
+      return null;
+    }
+
     JSAPIToken token = null;
-    Token findToken =
-        MapTool.getFrame().getCurrentZoneRenderer().getZone().getToken(new GUID(uuid));
+    Token findToken = currentZone.getToken(new GUID(uuid));
     if (findToken != null
-        && (JSScriptEngine.inTrustedContext() || token.isOwner(MapTool.getPlayer().getName()))) {
+        && (JSScriptEngine.inTrustedContext()
+            || findToken.isOwner(MapTool.getPlayer().getName()))) {
       token = new JSAPIToken(findToken);
-      token.setMap(MapTool.getFrame().getCurrentZoneRenderer().getZone());
+      token.setMap(currentZone);
     }
     return token;
   }
