@@ -56,7 +56,6 @@ message Message {
     SetCampaignNameMsg set_campaign_name_msg = 40;
     SetFowMsg set_fow_msg = 41;
     SetLiveTypingLabelMsg set_live_typing_label_msg = 42;
-    SetTokenLocationMsg set_token_location_msg = 43;
     SetServerPolicyMsg set_server_policy_msg = 44;
     SetVisionTypeMsg set_vision_type_msg = 45;
     SetZoneGridSizeMsg set_zone_grid_size_msg = 46;
