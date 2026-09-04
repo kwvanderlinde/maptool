@@ -103,9 +103,7 @@ public class TokenHaloFunctions extends AbstractFunction {
         String show = parameters.getFirst().toString();
         AppState.setShowTokenHalos(!Objects.equals(show, "0"));
       }
-      if (MapTool.getFrame().getCurrentZoneRenderer() != null) {
-        MapTool.getFrame().getCurrentZoneRenderer().repaint();
-      }
+      MapTool.getFrame().refresh();
       return AppState.isShowTokenHalos();
     }
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));
