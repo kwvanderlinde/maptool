@@ -136,19 +136,20 @@ public class TokenLocationFunctions extends AbstractFunction {
     }
     if (functionName.equalsIgnoreCase("goto")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
-      return gotoLoc(resolver, parameters);
+      return gotoLoc(functionName, resolver, parameters);
     }
     if (functionName.equalsIgnoreCase("moveToken")) {
       FunctionUtil.checkNumberParam("moveToken", parameters, 2, 4);
-      return moveToken(resolver, parameters);
+      var zone = FunctionUtil.getCurrentZone(functionName, resolver);
+      return moveToken(zone, resolver, parameters);
     }
     if (functionName.equalsIgnoreCase("moveTokenToMap")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 2, 5);
-      return tokenMoveMap(true, parameters);
+      return tokenMoveMap(FunctionUtil.getCurrentZone(functionName, resolver), true, parameters);
     }
     if (functionName.equalsIgnoreCase("moveTokenFromMap")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 2, 5);
-      return tokenMoveMap(false, parameters);
+      return tokenMoveMap(FunctionUtil.getCurrentZone(functionName, resolver), false, parameters);
     }
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));
   }
@@ -161,7 +162,8 @@ public class TokenLocationFunctions extends AbstractFunction {
    * @return a message detailing the number of tokens moved.
    * @throws ParserException if the parameters are invalid, or the token is already on the map.
    */
-  private String tokenMoveMap(boolean fromCurrentMap, List<Object> args) throws ParserException {
+  private String tokenMoveMap(Zone currentZone, boolean fromCurrentMap, List<Object> args)
+      throws ParserException {
     String functionName = fromCurrentMap ? "moveTokenToMap" : "moveTokenFromMap";
     Object tokenString = args.get(0);
     String map = (String) args.get(1);
@@ -183,10 +185,10 @@ public class TokenLocationFunctions extends AbstractFunction {
     Zone fromZone;
 
     if (fromCurrentMap) {
-      fromZone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
+      fromZone = currentZone;
       toZone = zone;
     } else {
-      toZone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
+      toZone = currentZone;
       fromZone = zone;
     }
     if (fromZone.equals(toZone)) {
@@ -225,7 +227,11 @@ public class TokenLocationFunctions extends AbstractFunction {
             .append("<br>");
       }
     }
-    MapTool.getFrame().getCurrentZoneRenderer().flushLight();
+
+    var renderer = MapTool.getFrame().getZoneRenderer(currentZone.getId());
+    if (renderer != null) {
+      renderer.flushLight();
+    }
     MapTool.getFrame().refresh();
 
     return sb.toString();
@@ -403,7 +409,7 @@ public class TokenLocationFunctions extends AbstractFunction {
       if (units) {
         return distance;
       } else {
-        return distance / getDistancePerCell();
+        return distance / zone.getUnitsPerCell();
       }
     } else {
       double targetX, targetY;
@@ -527,12 +533,12 @@ public class TokenLocationFunctions extends AbstractFunction {
    *     </code> (false)
    * @return the ZonePoint of the coordinates.
    */
-  public static ZonePoint getZonePoint(int x, int y, boolean units) {
+  public static ZonePoint getZonePoint(Zone zone, int x, int y, boolean units) {
     ZonePoint zp;
     if (units) {
       zp = new ZonePoint(x, y);
     } else {
-      Grid grid = MapTool.getFrame().getCurrentZoneRenderer().getZone().getGrid();
+      Grid grid = zone.getGrid();
       CellPoint cp = new CellPoint(x, y);
       zp = grid.convert(cp);
     }
@@ -544,7 +550,7 @@ public class TokenLocationFunctions extends AbstractFunction {
    *
    * @param args the arguments to the function.
    */
-  private static String moveToken(VariableResolver resolver, List<Object> args)
+  private static String moveToken(Zone zone, VariableResolver resolver, List<Object> args)
       throws ParserException {
     int x = FunctionUtil.paramAsInteger("moveToken", args, 0, false);
     int y = FunctionUtil.paramAsInteger("moveToken", args, 1, false);
@@ -558,7 +564,7 @@ public class TokenLocationFunctions extends AbstractFunction {
       x -= offset.x;
       y -= offset.y;
     }
-    ZonePoint zp = getZonePoint(x, y, useDistance);
+    ZonePoint zp = getZonePoint(zone, x, y, useDistance);
     MapTool.serverCommand().updateTokenProperty(token, Token.Update.setXY, zp.x, zp.y);
     return "";
   }
@@ -570,16 +576,17 @@ public class TokenLocationFunctions extends AbstractFunction {
    * @return an empty string.
    * @throws ParserException if an error occurs.
    */
-  private String gotoLoc(VariableResolver resolver, List<Object> args) throws ParserException {
-    var renderer = MapTool.getFrame().getCurrentZoneRenderer();
+  private String gotoLoc(String functionName, VariableResolver resolver, List<Object> args)
+      throws ParserException {
+    var renderer = FunctionUtil.getCurrentZoneRenderer(functionName, resolver);
 
     ZonePoint point;
     if (args.size() < 2) {
-      Token token = FunctionUtil.getTokenFromParam(resolver, "goto", args, 0, -1);
+      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, args, 0, -1);
       point = new ZonePoint(token.getX(), token.getY());
     } else {
-      var x = FunctionUtil.paramAsInteger("goto", args, 0, false);
-      var y = FunctionUtil.paramAsInteger("goto", args, 1, false);
+      var x = FunctionUtil.paramAsInteger(functionName, args, 0, false);
+      var y = FunctionUtil.paramAsInteger(functionName, args, 1, false);
       point = renderer.getZone().getGrid().convert(new CellPoint(x, y));
     }
     renderer
@@ -591,15 +598,6 @@ public class TokenLocationFunctions extends AbstractFunction {
                 .centeredOn(point.x, point.y, renderer.getSize()));
 
     return "";
-  }
-
-  /**
-   * Gets the distance for one cell on the current map.
-   *
-   * @return the distance for each cell.
-   */
-  private double getDistancePerCell() {
-    return MapTool.getFrame().getCurrentZoneRenderer().getZone().getUnitsPerCell();
   }
 
   /**

@@ -77,8 +77,8 @@ public class TokenCopyDeleteFunctions extends AbstractFunction {
       } else {
         newVals = new JsonObject();
       }
-
-      return copyTokens((MapToolVariableResolver) resolver, token, nCopies, newVals);
+      Zone zone = FunctionUtil.getCurrentZone(functionName, resolver);
+      return copyTokens(zone, (MapToolVariableResolver) resolver, token, nCopies, newVals);
     }
 
     if (functionName.equalsIgnoreCase(REMOVE_FUNC)) {
@@ -91,16 +91,18 @@ public class TokenCopyDeleteFunctions extends AbstractFunction {
     if (functionName.equalsIgnoreCase(CREATE_TOKEN_FUNC)) {
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
       JsonObject vals = FunctionUtil.paramAsJsonObject(functionName, parameters, 0);
-      return createToken((MapToolVariableResolver) resolver, vals);
+      Zone zone = FunctionUtil.getCurrentZone(functionName, resolver);
+      return createToken(zone, (MapToolVariableResolver) resolver, vals);
     }
 
     if (functionName.equalsIgnoreCase(CREATE_TOKENS_FUNC)) {
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
       JsonArray vals = FunctionUtil.paramAsJsonArray(functionName, parameters, 0);
+      Zone zone = FunctionUtil.getCurrentZone(functionName, resolver);
       var tokenIds = new JsonArray();
       for (int i = 0; i < vals.size(); i++) {
         tokenIds.add(
-            createToken((MapToolVariableResolver) resolver, vals.get(i).getAsJsonObject()));
+            createToken(zone, (MapToolVariableResolver) resolver, vals.get(i).getAsJsonObject()));
       }
       return tokenIds;
     }
@@ -108,7 +110,7 @@ public class TokenCopyDeleteFunctions extends AbstractFunction {
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));
   }
 
-  private String createToken(MapToolVariableResolver resolver, JsonObject vals)
+  private String createToken(Zone zone, MapToolVariableResolver resolver, JsonObject vals)
       throws ParserException {
 
     if (!vals.has("name")) {
@@ -125,7 +127,6 @@ public class TokenCopyDeleteFunctions extends AbstractFunction {
       tokenImage = asset.get().toString();
     }
 
-    Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
     List<Token> allTokens = zone.getAllTokens();
     Token t = new Token(name, new MD5Key(tokenImage));
 
@@ -169,10 +170,9 @@ public class TokenCopyDeleteFunctions extends AbstractFunction {
    * @param res the MapToolVariableResolver
    */
   private Object copyTokens(
-      MapToolVariableResolver res, Token token, int nCopies, JsonObject newVals)
+      Zone zone, MapToolVariableResolver res, Token token, int nCopies, JsonObject newVals)
       throws ParserException {
 
-    Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
     List<String> newTokens = new ArrayList<>(nCopies);
     List<Token> allTokens = zone.getAllTokens();
     for (int i = 0; i < nCopies; i++) {
@@ -367,7 +367,7 @@ public class TokenCopyDeleteFunctions extends AbstractFunction {
     }
 
     if (tokenMoved) {
-      ZonePoint zp = TokenLocationFunctions.getZonePoint(x, y, useDistance);
+      ZonePoint zp = TokenLocationFunctions.getZonePoint(zone, x, y, useDistance);
       token.setX(zp.x);
       token.setY(zp.y);
     }
