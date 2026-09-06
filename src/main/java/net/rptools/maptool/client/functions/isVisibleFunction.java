@@ -23,6 +23,7 @@ import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
@@ -50,7 +51,7 @@ public class isVisibleFunction extends AbstractFunction {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> param)
       throws ParserException {
-    ZoneRenderer zr = MapTool.getFrame().getCurrentZoneRenderer();
+    ZoneRenderer zr = FunctionUtil.getCurrentZoneRenderer(functionName, resolver);
     Token token = null;
 
     // If there is more than two parameters (x,y) then the third parameter is the token
