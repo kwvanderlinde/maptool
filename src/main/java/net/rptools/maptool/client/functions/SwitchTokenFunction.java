@@ -20,6 +20,7 @@ import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
@@ -48,7 +49,7 @@ public class SwitchTokenFunction extends AbstractFunction {
           I18N.getText(
               "macro.function.general.notEnoughParam", functionName, 1, parameters.size()));
     }
-    Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
+    Zone zone = FunctionUtil.getCurrentZone(functionName, resolver);
     Token token = zone.resolveToken(parameters.get(0).toString());
     if (token == null) {
       throw new ParserException(
