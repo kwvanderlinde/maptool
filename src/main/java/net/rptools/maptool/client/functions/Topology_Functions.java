@@ -31,12 +31,12 @@ import java.util.function.BiConsumer;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.client.ui.zone.vbl.TokenVBL;
 import net.rptools.maptool.client.ui.zone.vbl.TokenVBL.JTS_SimplifyMethodType;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
@@ -177,8 +177,6 @@ public class Topology_Functions extends AbstractFunction {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
-    ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
-
     if (functionName.equalsIgnoreCase("drawVBL")
         || functionName.equalsIgnoreCase("eraseVBL")
         || functionName.equalsIgnoreCase("drawHillVBL")
@@ -189,13 +187,15 @@ public class Topology_Functions extends AbstractFunction {
         || functionName.equalsIgnoreCase("eraseCoverVBL")
         || functionName.equalsIgnoreCase("drawMBL")
         || functionName.equalsIgnoreCase("eraseMBL")) {
-      childEvaluateDrawEraseTopology(functionName, parameters);
+      childEvaluateDrawEraseTopology(
+          FunctionUtil.getCurrentZone(functionName, resolver), functionName, parameters);
     } else if (functionName.equalsIgnoreCase("getVBL")
         || functionName.equalsIgnoreCase("getHillVBL")
         || functionName.equalsIgnoreCase("getPitVBL")
         || functionName.equalsIgnoreCase("getCoverVBL")
         || functionName.equalsIgnoreCase("getMBL")) {
-      return childEvaluateGetTopology(functionName, parameters);
+      return childEvaluateGetTopology(
+          FunctionUtil.getCurrentZone(functionName, resolver), functionName, parameters);
     } else if (functionName.equalsIgnoreCase("getTokenVBL")
         || functionName.equalsIgnoreCase("getTokenHillVBL")
         || functionName.equalsIgnoreCase("getTokenPitVBL")
@@ -216,7 +216,8 @@ public class Topology_Functions extends AbstractFunction {
         || functionName.equalsIgnoreCase("transferPitVBL")
         || functionName.equalsIgnoreCase("transferCoverVBL")
         || functionName.equalsIgnoreCase("transferMBL")) {
-      childEvaluateTransferTopology(resolver, functionName, parameters);
+      childEvaluateTransferTopology(
+          FunctionUtil.getCurrentZone(functionName, resolver), resolver, functionName, parameters);
     } else {
       throw new ParserException(
           I18N.getText("macro.function.general.unknownFunction", functionName));
@@ -225,9 +226,8 @@ public class Topology_Functions extends AbstractFunction {
     return "";
   }
 
-  private void childEvaluateDrawEraseTopology(String functionName, List<Object> parameters)
-      throws ParserException {
-    ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
+  private void childEvaluateDrawEraseTopology(
+      Zone zone, String functionName, List<Object> parameters) throws ParserException {
     boolean erase = false;
     if (parameters.size() != 1) {
       throw new ParserException(
@@ -293,15 +293,13 @@ public class Topology_Functions extends AbstractFunction {
             default -> null;
           };
       if (newArea != null) {
-        MapTool.serverCommand()
-            .updateMaskTopology(renderer.getZone(), newArea, erase, topologyType);
+        MapTool.serverCommand().updateMaskTopology(zone, newArea, erase, topologyType);
       }
     }
   }
 
-  private Object childEvaluateGetTopology(String functionName, List<Object> parameters)
+  private Object childEvaluateGetTopology(Zone zone, String functionName, List<Object> parameters)
       throws ParserException {
-    ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
     Zone.TopologyType topologyType;
     if (functionName.equalsIgnoreCase("getVBL")) {
       topologyType = Zone.TopologyType.WALL_VBL;
@@ -353,7 +351,7 @@ public class Topology_Functions extends AbstractFunction {
     Area topologyArea = new Area();
     for (int i = 0; i < topologyArray.size(); i++) {
       JsonObject topologyObject = topologyArray.get(i).getAsJsonObject();
-      Area tempTopologyArea = getMaskTopology(renderer, topologyObject, topologyType, functionName);
+      Area tempTopologyArea = getMaskTopology(zone, topologyObject, topologyType, functionName);
       topologyArea.add(tempTopologyArea);
     }
 
@@ -522,7 +520,7 @@ public class Topology_Functions extends AbstractFunction {
   }
 
   private void childEvaluateTransferTopology(
-      VariableResolver resolver, String functionName, List<Object> parameters)
+      Zone zone, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
     Token token = null;
 
@@ -593,7 +591,6 @@ public class Topology_Functions extends AbstractFunction {
       }
     }
 
-    Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
     if (topologyFromToken) {
       var newMapTopology = token.getTransformedMaskTopology(zone, topologyType);
       if (newMapTopology != null) {
@@ -1059,7 +1056,7 @@ public class Topology_Functions extends AbstractFunction {
    * Get the required parameters needed from the JSON to get/set topology within a defined
    * rectangle.
    *
-   * @param renderer Reference to the ZoneRenderer
+   * @param zone The zone to get topology from
    * @param topologyObject JsonObject containing all the coordinates and values needed to draw a
    *     rectangle.
    * @param topologyType The topology type to operate on.
@@ -1067,10 +1064,7 @@ public class Topology_Functions extends AbstractFunction {
    * @throws ParserException If the minimum required parameters are not present in the JSON.
    */
   private Area getMaskTopology(
-      ZoneRenderer renderer,
-      JsonObject topologyObject,
-      Zone.TopologyType topologyType,
-      String funcname)
+      Zone zone, JsonObject topologyObject, Zone.TopologyType topologyType, String funcname)
       throws ParserException {
     // Required Parameters
     String requiredParms[] = {"x", "y", "w", "h"};
@@ -1154,7 +1148,6 @@ public class Topology_Functions extends AbstractFunction {
     }
 
     // Note: when multiple modes are requested, the overlap between each topology is returned.
-    var zone = renderer.getZone();
     var topology = zone.getMaskTopology(topologyType);
     area.intersect(topology);
 
