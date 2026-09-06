@@ -387,6 +387,10 @@ public class FindTokenFunctions extends AbstractFunction {
       return getTokenList(
           (MapToolVariableResolver) resolver, nameOnly, delim, parameters.get(1).toString());
     }
+    if (zoneRenderer == null) {
+      zoneRenderer = FunctionUtil.getCurrentZoneRenderer(functionName, resolver);
+    }
+
     return getTokens(
         (MapToolVariableResolver) resolver, findType, nameOnly, delim, findArgs, zoneRenderer);
   }
@@ -762,7 +766,7 @@ public class FindTokenFunctions extends AbstractFunction {
         guid = MapTool.getFrame().getImpersonatePanel().getTokenId();
         if (guid != null) {
           // Searches all maps to find impersonated token
-          t = findToken(guid);
+          t = findToken(zone, guid);
         }
         if (t != null) {
           tokenList = getTokensFiltered(Collections.singletonList(t), originalList, match);
@@ -833,9 +837,6 @@ public class FindTokenFunctions extends AbstractFunction {
       ZoneRenderer zoneRenderer)
       throws ParserException {
     ArrayList<String> values = new ArrayList<String>();
-    if (zoneRenderer == null) {
-      zoneRenderer = MapTool.getFrame().getCurrentZoneRenderer();
-    }
     Zone zone = zoneRenderer.getZone();
     List<Token> tokens =
         getTokenList(resolver, findType, findArgs, true, zone.getAllTokens(), zoneRenderer);
@@ -884,8 +885,10 @@ public class FindTokenFunctions extends AbstractFunction {
       return null;
     }
     if (zoneNameOrId == null || zoneNameOrId.length() == 0) {
-      ZoneRenderer zr = MapTool.getFrame().getCurrentZoneRenderer();
-      return zr == null ? null : zr.getZone().resolveToken(identifier);
+      return MapTool.getClient()
+          .getCurrentZone()
+          .flatMap(z -> Optional.ofNullable(z.resolveToken(identifier)))
+          .orElse(null);
     } else {
       if (!GUID.isNotGUID(zoneNameOrId)) {
         try {
@@ -927,8 +930,10 @@ public class FindTokenFunctions extends AbstractFunction {
       return null;
     }
     if (zoneName == null || zoneName.length() == 0) {
-      ZoneRenderer zr = MapTool.getFrame().getCurrentZoneRenderer();
-      return zr == null ? null : zr.getZone().getToken(guid);
+      return MapTool.getClient()
+          .getCurrentZone()
+          .flatMap(z -> Optional.ofNullable(z.getToken(guid)))
+          .orElse(null);
     } else {
       List<ZoneRenderer> zrenderers = MapTool.getFrame().getZoneRenderers();
       for (ZoneRenderer zr : zrenderers) {
@@ -950,8 +955,7 @@ public class FindTokenFunctions extends AbstractFunction {
    * @param identifier to check for
    * @return the token
    */
-  public static Token findToken(final GUID identifier) {
-    final Zone currentZone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
+  public static Token findToken(final Zone currentZone, final GUID identifier) {
     Token token = currentZone.getToken(identifier);
     if (token == null) {
       final List<ZoneRenderer> zrenderers = MapTool.getFrame().getZoneRenderers();
