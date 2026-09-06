@@ -202,6 +202,27 @@ public class FunctionUtil {
     return token;
   }
 
+  public static @Nonnull Zone getCurrentZone(String functionName, VariableResolver variableResolver)
+      throws ParserException {
+    if (variableResolver instanceof MapToolVariableResolver mtResolver) {
+      var current = mtResolver.getZoneInContext();
+      if (current.isPresent()) {
+        return current.get();
+      }
+    }
+    throw new ParserException(I18N.getText("macro.function.map.none", functionName));
+  }
+
+  public static @Nonnull ZoneRenderer getCurrentZoneRenderer(
+      String functionName, VariableResolver variableResolver) throws ParserException {
+    var zone = getCurrentZone(functionName, variableResolver);
+    var zoneRenderer = MapTool.getFrame().getZoneRenderer(zone.getId());
+    if (zoneRenderer == null) {
+      throw new ParserException(I18N.getText("macro.function.map.none", functionName));
+    }
+    return zoneRenderer;
+  }
+
   /**
    * Gets the ZoneRender from the specified index or returns the current ZoneRender. This method
    * will check the list size before trying to retrieve the token so it is safe to use for functions
