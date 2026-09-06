@@ -78,11 +78,7 @@ public class MapFunctions extends AbstractFunction {
       throws ParserException {
     if (functionName.equalsIgnoreCase("getCurrentMapID")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 0);
-      ZoneRenderer currentZR = MapTool.getFrame().getCurrentZoneRenderer();
-      if (currentZR == null) {
-        throw new ParserException(I18N.getText("macro.function.map.none", functionName));
-      }
-      return currentZR.getZone().getId().toString();
+      return FunctionUtil.getCurrentZone(functionName, resolver).getId().toString();
     } else if (functionName.equalsIgnoreCase("getMapIDs")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
       final var mapName = parameters.get(0).toString();
@@ -96,11 +92,7 @@ public class MapFunctions extends AbstractFunction {
       return FunctionUtil.delimitedResult(delim, zoneIds);
     } else if (functionName.equalsIgnoreCase("getCurrentMapName")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 0);
-      ZoneRenderer currentZR = MapTool.getFrame().getCurrentZoneRenderer();
-      if (currentZR == null) {
-        throw new ParserException(I18N.getText("macro.function.map.none", functionName));
-      }
-      return currentZR.getZone().getName();
+      return FunctionUtil.getCurrentZone(functionName, resolver).getName();
 
     } else if (functionName.equalsIgnoreCase("getMapDisplayName")) {
       FunctionUtil.blockUntrustedMacro(functionName);
@@ -400,15 +392,14 @@ public class MapFunctions extends AbstractFunction {
     } else if ("setMapVision".equalsIgnoreCase(functionName)) {
       FunctionUtil.blockUntrustedMacro(functionName);
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
-      Zone currentZR = MapTool.getFrame().getCurrentZoneRenderer().getZone();
-      if (currentZR == null) {
-        throw new ParserException(I18N.getText("macro.function.map.none", functionName));
-      }
+      Zone currentZone = FunctionUtil.getCurrentZone(functionName, resolver);
       switch (parameters.get(0).toString().toLowerCase()) {
-        case "off" -> MapTool.serverCommand().setVisionType(currentZR.getId(), Zone.VisionType.OFF);
-        case "day" -> MapTool.serverCommand().setVisionType(currentZR.getId(), Zone.VisionType.DAY);
+        case "off" ->
+            MapTool.serverCommand().setVisionType(currentZone.getId(), Zone.VisionType.OFF);
+        case "day" ->
+            MapTool.serverCommand().setVisionType(currentZone.getId(), Zone.VisionType.DAY);
         case "night" ->
-            MapTool.serverCommand().setVisionType(currentZR.getId(), Zone.VisionType.NIGHT);
+            MapTool.serverCommand().setVisionType(currentZone.getId(), Zone.VisionType.NIGHT);
         default ->
             throw new ParserException(
                 I18N.getText("macro.function.general.argumentTypeInvalid", functionName));
@@ -416,8 +407,7 @@ public class MapFunctions extends AbstractFunction {
       return "";
     } else if ("getMapVision".equalsIgnoreCase(functionName)) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 0);
-      ZoneRenderer currentZR = MapTool.getFrame().getCurrentZoneRenderer();
-      return currentZR.getZone().getVisionType().toString();
+      return FunctionUtil.getCurrentZone(functionName, resolver).getVisionType().toString();
     }
 
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));
