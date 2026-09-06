@@ -34,7 +34,6 @@ import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.client.walker.WalkerMetric;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.language.I18N;
@@ -48,6 +47,7 @@ import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.library.LibraryManager;
 import net.rptools.maptool.util.EventMacroUtil;
+import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
@@ -95,7 +95,7 @@ public class TokenMoveFunctions extends AbstractFunction {
           I18N.getText("macro.function.general.noImpersonated", functionName));
     }
     boolean useDistancePerCell = true;
-    Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
+    Zone zone = FunctionUtil.getCurrentZone(functionName, resolver);
 
     if (functionName.equalsIgnoreCase("getLastPath")) {
       BigDecimal val = null;
@@ -109,7 +109,7 @@ public class TokenMoveFunctions extends AbstractFunction {
       }
       Path<? extends AbstractPoint> path = tokenInContext.getLastPath();
 
-      List<Map<String, Integer>> pathPoints = getLastPathList(path, useDistancePerCell);
+      List<Map<String, Integer>> pathPoints = getLastPathList(zone, path, useDistancePerCell);
       return pathPointsToJSONArray(pathPoints);
     }
     if (functionName.equalsIgnoreCase("movedOverPoints")) {
@@ -129,7 +129,7 @@ public class TokenMoveFunctions extends AbstractFunction {
         if (jsonPath != null && !jsonPath.equals("")) {
           returnPoints = crossedPoints(zone, tokenInContext, points, jsonPath);
         } else {
-          pathPoints = getLastPathList(path, true);
+          pathPoints = getLastPathList(zone, path, true);
           returnPoints = crossedPoints(zone, tokenInContext, points, pathPoints);
         }
         JsonArray retVal = pathPointsToJSONArray(returnPoints);
@@ -159,11 +159,11 @@ public class TokenMoveFunctions extends AbstractFunction {
       }
 
       if (useFractionOnly) {
-        if (getMovement(tokenInContext, useFractionOnly, useTerrainModifiers).equals("0.5"))
+        if (getMovement(zone, tokenInContext, useFractionOnly, useTerrainModifiers).equals("0.5"))
           return BigDecimal.ONE;
         else return BigDecimal.ZERO;
       } else {
-        return getMovement(tokenInContext, useFractionOnly, useTerrainModifiers);
+        return getMovement(zone, tokenInContext, useFractionOnly, useTerrainModifiers);
       }
     }
     if (functionName.equalsIgnoreCase("movedOverToken")) {
@@ -187,7 +187,7 @@ public class TokenMoveFunctions extends AbstractFunction {
         if (jsonPath != null && !jsonPath.equals("")) {
           returnPoints = crossedToken(zone, tokenInContext, target, jsonPath);
         } else {
-          pathPoints = getLastPathList(path, true);
+          pathPoints = getLastPathList(zone, path, true);
           returnPoints = crossedToken(zone, tokenInContext, target, pathPoints);
         }
         JsonArray retVal = pathPointsToJSONArray(returnPoints);
@@ -383,10 +383,9 @@ public class TokenMoveFunctions extends AbstractFunction {
   }
 
   private List<Map<String, Integer>> getLastPathList(
-      final Path<? extends AbstractPoint> path, final boolean useDistancePerCell) {
+      Zone zone, final Path<? extends AbstractPoint> path, final boolean useDistancePerCell) {
     List<Map<String, Integer>> points = new ArrayList<Map<String, Integer>>();
     if (path != null) {
-      Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
       AbstractPoint zp = null;
 
       log.debug("...in getLastPathList.  Loop over each path elements");
@@ -437,14 +436,14 @@ public class TokenMoveFunctions extends AbstractFunction {
    * @return the list of tokens from the given list that have their movement rejected
    */
   public static List<Token> callForIndividualTokenMoveVetoes(
-      final Path<?> path, final List<Token> filteredTokens) {
+      Zone zone, final Path<?> path, final List<Token> filteredTokens) {
     List<Token> deniedTokens = new ArrayList<>();
     try {
       var libraries =
           new LibraryManager().getLegacyEventTargets(ON_TOKEN_MOVE_COMPLETE_CALLBACK).get();
       if (!libraries.isEmpty()) {
         String libraryNamespace = libraries.get(0).getNamespace().get();
-        List<Map<String, Integer>> pathPoints = getInstance().getLastPathList(path, true);
+        List<Map<String, Integer>> pathPoints = getInstance().getLastPathList(zone, path, true);
         JsonArray pathArr = getInstance().pathPointsToJSONArray(pathPoints);
         String pathCoordinates = pathArr.toString();
         Map<String, Object> varsToSet = new HashMap<>();
@@ -471,14 +470,12 @@ public class TokenMoveFunctions extends AbstractFunction {
   }
 
   private String getMovement(
-      final Token source, boolean returnFractionOnly, boolean useTerrainModifiers) {
+      Zone zone, final Token source, boolean returnFractionOnly, boolean useTerrainModifiers) {
     WalkerMetric metric =
         MapTool.isPersonalServer()
             ? AppPreferences.movementMetric.get()
             : MapTool.getServerPolicy().getMovementMetric();
 
-    ZoneRenderer zr = MapTool.getFrame().getCurrentZoneRenderer();
-    Zone zone = zr.getZone();
     Grid grid = zone.getGrid();
 
     List<? extends AbstractPoint> cellPath =
