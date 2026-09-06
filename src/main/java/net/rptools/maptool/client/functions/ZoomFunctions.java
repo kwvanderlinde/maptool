@@ -50,13 +50,15 @@ public class ZoomFunctions extends AbstractFunction {
       throws ParserException {
     if ("getZoom".equalsIgnoreCase(functionName)) {
       FunctionUtil.checkNumberParam(functionName, args, 0, 0);
-      var viewModel = MapTool.getFrame().getCurrentZoneRenderer().getViewModel();
+      var renderer = FunctionUtil.getCurrentZoneRenderer(functionName, resolver);
+      var viewModel = renderer.getViewModel();
       return Double.valueOf(viewModel.getZoneScale().getScale()).toString();
     }
     if ("setZoom".equalsIgnoreCase(functionName)) {
       FunctionUtil.checkNumberParam(functionName, args, 1, 1);
       double zoom = FunctionUtil.paramAsDouble(functionName, args, 0, true);
-      var renderer = MapTool.getFrame().getCurrentZoneRenderer();
+
+      var renderer = FunctionUtil.getCurrentZoneRenderer(functionName, resolver);
       var viewModel = renderer.getViewModel();
       viewModel.setZoneScale(viewModel.getZoneScale().withCenteredScale(zoom, renderer.getSize()));
       return "";
@@ -66,7 +68,9 @@ public class ZoomFunctions extends AbstractFunction {
       boolean pixels =
           args.size() > 0 ? FunctionUtil.paramAsBoolean(functionName, args, 0, true) : true;
       String delim = args.size() > 1 ? args.get(1).toString() : ",";
-      return getViewArea(pixels, delim);
+
+      var renderer = FunctionUtil.getCurrentZoneRenderer(functionName, resolver);
+      return getViewArea(renderer, pixels, delim);
     }
     if ("setViewArea".equalsIgnoreCase(functionName)) {
       FunctionUtil.checkNumberParam(functionName, args, 4, 6);
@@ -78,14 +82,18 @@ public class ZoomFunctions extends AbstractFunction {
           args.size() > 4 ? FunctionUtil.paramAsBoolean(functionName, args, 4, true) : true;
       boolean allPlayers =
           args.size() > 5 ? FunctionUtil.paramAsBoolean(functionName, args, 5, true) : false;
-      return setViewArea(x1, y1, x2, y2, pixels, allPlayers);
+
+      var renderer = FunctionUtil.getCurrentZoneRenderer(functionName, resolver);
+      return setViewArea(renderer, x1, y1, x2, y2, pixels, allPlayers);
     }
     if ("getViewCenter".equalsIgnoreCase(functionName)) {
       FunctionUtil.checkNumberParam(functionName, args, 0, 2);
       boolean pixels =
           args.size() > 0 ? FunctionUtil.paramAsBoolean(functionName, args, 0, true) : true;
       String delim = args.size() > 1 ? args.get(1).toString() : ",";
-      return getViewCenter(pixels, delim);
+
+      var renderer = FunctionUtil.getCurrentZoneRenderer(functionName, resolver);
+      return getViewCenter(renderer, pixels, delim);
     }
     if ("setZoomLock".equalsIgnoreCase(functionName)) {
       FunctionUtil.checkNumberParam(functionName, args, 1, 1);
@@ -104,9 +112,7 @@ public class ZoomFunctions extends AbstractFunction {
    * @param delim the delimiter for the return string
    * @return JSON of coordinates or String props with delim
    */
-  private static Object getViewArea(boolean pixels, String delim) {
-    ZoneRenderer zoneRenderer = MapTool.getFrame().getCurrentZoneRenderer();
-
+  private static Object getViewArea(ZoneRenderer zoneRenderer, boolean pixels, String delim) {
     int width = zoneRenderer.getWidth();
     int height = zoneRenderer.getHeight();
 
@@ -163,8 +169,13 @@ public class ZoomFunctions extends AbstractFunction {
    * @return empty string
    */
   private static String setViewArea(
-      Integer x1, Integer y1, Integer x2, Integer y2, Boolean pixels, Boolean allPlayers) {
-    ZoneRenderer zoneRenderer = MapTool.getFrame().getCurrentZoneRenderer();
+      ZoneRenderer zoneRenderer,
+      Integer x1,
+      Integer y1,
+      Integer x2,
+      Integer y2,
+      Boolean pixels,
+      Boolean allPlayers) {
     // If x & y not in pixels, use grid cell coordinates and convert to pixels
     if (!pixels) {
       Grid mapGrid = zoneRenderer.getZone().getGrid();
@@ -196,9 +207,7 @@ public class ZoomFunctions extends AbstractFunction {
    * @param delim the delimiter for the return string
    * @return JSON of coordinates or String props with delim
    */
-  private static Object getViewCenter(boolean pixels, String delim) {
-    ZoneRenderer zoneRenderer = MapTool.getFrame().getCurrentZoneRenderer();
-
+  private static Object getViewCenter(ZoneRenderer zoneRenderer, boolean pixels, String delim) {
     int width = zoneRenderer.getWidth();
     int height = zoneRenderer.getHeight();
 
