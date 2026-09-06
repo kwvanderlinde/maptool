@@ -86,7 +86,7 @@ public class getInfoFunction extends AbstractFunction {
     String infoType = param.get(0).toString();
 
     if (infoType.equalsIgnoreCase("map") || infoType.equalsIgnoreCase("zone")) {
-      return getMapInfo();
+      return getMapInfo(FunctionUtil.getCurrentZone(functionName, resolver));
     } else if (infoType.equalsIgnoreCase("client")) {
       return getClientInfo();
     } else if (infoType.equalsIgnoreCase("server")) {
@@ -127,9 +127,8 @@ public class getInfoFunction extends AbstractFunction {
    * @return The information about the map.
    * @throws ParserException when there is an error.
    */
-  private JsonObject getMapInfo() throws ParserException {
+  private JsonObject getMapInfo(Zone zone) throws ParserException {
     JsonObject minfo = new JsonObject();
-    Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
 
     if (!MapTool.getParser().isMacroTrusted() && !zone.isVisible()) {
       throw new ParserException(I18N.getText("macro.function.general.noPerm", "getInfo('map')"));
