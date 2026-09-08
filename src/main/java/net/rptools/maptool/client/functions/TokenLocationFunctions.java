@@ -25,7 +25,6 @@ import java.util.stream.Stream;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.client.walker.WalkerMetric;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.client.walker.astar.AStarSquareEuclideanWalker;
@@ -618,8 +617,7 @@ public class TokenLocationFunctions extends AbstractFunction {
    * @return all zones containing the token.
    */
   private Stream<Zone> getTokenZones(String identifier) {
-    return MapTool.getFrame().getZoneRenderers().stream()
-        .map(ZoneRenderer::getZone)
+    return MapTool.getClient().getCampaign().getZones().stream()
         .filter(zone -> zone.resolveToken(identifier) != null);
   }
 }
