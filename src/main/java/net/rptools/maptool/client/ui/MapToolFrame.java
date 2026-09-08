@@ -765,7 +765,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
         dialog.showDialog(token);
         if (dialog.isTokenSaved()) {
           // Checks if the map still exists. Fixes #1646.
-          if (getZoneRenderers().contains(zr) && zr.getZone().getToken(token.getId()) != null) {
+          if (zoneRendererList.contains(zr) && zr.getZone().getToken(token.getId()) != null) {
             MapTool.serverCommand().editToken(zr.getZone().getId(), token);
           }
         }
@@ -1697,7 +1697,7 @@ public class MapToolFrame extends DefaultDockableHolder implements WindowListene
     Zone oldZone = null;
     if (currentRenderer != null) {
       // Check if the zone still exists. Fix #1568
-      if (MapTool.getFrame().getZoneRenderers().contains(currentRenderer)) {
+      if (zoneRendererList.contains(currentRenderer)) {
         stopTokenDrag(); // if a token is being dragged, stop the drag
       }
       oldZone = currentRenderer.getZone();
