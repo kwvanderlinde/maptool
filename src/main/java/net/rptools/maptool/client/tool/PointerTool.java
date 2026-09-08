@@ -1214,7 +1214,7 @@ public class PointerTool extends DefaultTool {
       GUID guid = MapTool.getFrame().getImpersonatePanel().getTokenId();
       if (guid != null) {
         // Searches all maps to find impersonated token
-        impersonatedToken = FindTokenFunctions.findToken(guid.toString());
+        impersonatedToken = FindTokenFunctions.findToken(guid);
       }
       if (impersonatedToken != null) {
         if (impersonatedToken.getSpeechName() == null
