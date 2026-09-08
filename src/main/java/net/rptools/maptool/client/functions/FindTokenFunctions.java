@@ -757,7 +757,7 @@ public class FindTokenFunctions extends AbstractFunction {
         guid = MapTool.getFrame().getImpersonatePanel().getTokenId();
         if (guid != null) {
           // Searches all maps to find impersonated token
-          t = findToken(guid.toString());
+          t = findToken(guid);
         }
         if (t != null) {
           tokenList = getTokensFiltered(Collections.singletonList(t), originalList, match);
@@ -945,14 +945,14 @@ public class FindTokenFunctions extends AbstractFunction {
    * @param identifier to check for
    * @return the token
    */
-  public static Token findToken(final String identifier) {
+  public static Token findToken(final GUID identifier) {
     final Zone currentZone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
-    Token token = currentZone.resolveToken(identifier);
+    Token token = currentZone.getToken(identifier);
     if (token == null) {
       final List<ZoneRenderer> zrenderers = MapTool.getFrame().getZoneRenderers();
       for (final ZoneRenderer zr : zrenderers) {
         final Zone zone = zr.getZone();
-        token = zone.resolveToken(identifier);
+        token = zone.getToken(identifier);
         if (token != null) {
           return token;
         }
