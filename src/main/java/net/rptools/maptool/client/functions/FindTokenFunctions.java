@@ -956,17 +956,8 @@ public class FindTokenFunctions extends AbstractFunction {
    * @return the token
    */
   public static Token findToken(final Zone currentZone, final GUID identifier) {
-    Token token = currentZone.getToken(identifier);
-    if (token == null) {
-      final List<ZoneRenderer> zrenderers = MapTool.getFrame().getZoneRenderers();
-      for (final ZoneRenderer zr : zrenderers) {
-        final Zone zone = zr.getZone();
-        token = zone.getToken(identifier);
-        if (token != null) {
-          return token;
-        }
-      }
-    }
-    return token;
+    return FunctionUtil.searchZones(
+            currentZone, zone -> Optional.ofNullable(zone.getToken(identifier)))
+        .orElse(null);
   }
 }
