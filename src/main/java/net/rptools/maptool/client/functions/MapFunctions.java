@@ -23,7 +23,6 @@ import java.util.function.Consumer;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolUtil;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.AssetManager;
 import net.rptools.maptool.model.GUID;
@@ -106,8 +105,8 @@ public class MapFunctions extends AbstractFunction {
     } else if (functionName.equalsIgnoreCase("getMapDisplayName")) {
       FunctionUtil.blockUntrustedMacro(functionName);
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
-      final var zr = FunctionUtil.getZoneRendererFromParam(functionName, parameters, 0);
-      return zr.getZone().getDisplayName();
+      final var zone = FunctionUtil.getZoneFromParam(functionName, parameters, 0);
+      return zone.getDisplayName();
 
     } else if (functionName.equalsIgnoreCase("setCurrentMap")) {
       FunctionUtil.blockUntrustedMacro(functionName);
@@ -119,15 +118,14 @@ public class MapFunctions extends AbstractFunction {
 
     } else if ("getMapVisible".equalsIgnoreCase(functionName)) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
-      final var zr = FunctionUtil.getZoneRendererFromParam(functionName, parameters, 0);
-      return zr.getZone().isVisible() ? BigDecimal.ONE : BigDecimal.ZERO;
+      final var zone = FunctionUtil.getZoneFromParam(functionName, parameters, 0);
+      return zone.isVisible() ? BigDecimal.ONE : BigDecimal.ZERO;
 
     } else if ("setMapVisible".equalsIgnoreCase(functionName)) {
       FunctionUtil.blockUntrustedMacro(functionName);
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
       boolean visible = FunctionUtil.getBooleanValue(parameters.get(0).toString());
-      final var zr = FunctionUtil.getZoneRendererFromParam(functionName, parameters, 1);
-      final var zone = zr.getZone();
+      final var zone = FunctionUtil.getZoneFromParam(functionName, parameters, 1);
       // Set the zone and return the visibility of the current map/zone
       zone.setVisible(visible);
       MapTool.serverCommand().setZoneVisibility(zone.getId(), zone.isVisible());
@@ -154,7 +152,7 @@ public class MapFunctions extends AbstractFunction {
       String mapNameOrId = parameters.get(0).toString();
       String newMapDisplayName = parameters.get(1).toString();
 
-      Zone zone = FunctionUtil.getZoneRenderer(functionName, mapNameOrId).getZone();
+      Zone zone = FunctionUtil.getZone(functionName, mapNameOrId);
       if (newMapDisplayName.equals(zone.getDisplayName())) {
         // The name is the same, so nothing to do.
         return newMapDisplayName;
@@ -173,7 +171,7 @@ public class MapFunctions extends AbstractFunction {
       FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
       String oldMapNameOrId = parameters.get(0).toString();
       String newName = parameters.get(1).toString();
-      Zone oldMap = FunctionUtil.getZoneRenderer(functionName, oldMapNameOrId).getZone();
+      Zone oldMap = FunctionUtil.getZone(functionName, oldMapNameOrId);
       Zone newMap = new Zone(oldMap);
       newMap.setName(newName);
       MapTool.addZone(newMap, false);
@@ -309,9 +307,9 @@ public class MapFunctions extends AbstractFunction {
       }
 
       List<String> mapIds = new LinkedList<>();
-      for (ZoneRenderer zr : MapTool.getFrame().getZoneRenderers()) {
-        if (allMaps || zr.getZone().isVisible()) {
-          mapIds.add(zr.getZone().getId().toString());
+      for (Zone zone : MapTool.getClient().getCampaign().getZones()) {
+        if (allMaps || zone.isVisible()) {
+          mapIds.add(zone.getId().toString());
         }
       }
 
@@ -326,9 +324,9 @@ public class MapFunctions extends AbstractFunction {
       }
 
       List<String> mapNames = new LinkedList<>();
-      for (ZoneRenderer zr : MapTool.getFrame().getZoneRenderers()) {
-        if (allMaps || zr.getZone().isVisible()) {
-          mapNames.add(zr.getZone().getName());
+      for (Zone zone : MapTool.getClient().getCampaign().getZones()) {
+        if (allMaps || zone.isVisible()) {
+          mapNames.add(zone.getName());
         }
       }
 
@@ -345,9 +343,9 @@ public class MapFunctions extends AbstractFunction {
       }
 
       List<String> mapNames = new LinkedList<>();
-      for (ZoneRenderer zr : MapTool.getFrame().getZoneRenderers()) {
-        if (allMaps || zr.getZone().isVisible()) {
-          mapNames.add(zr.getZone().getDisplayName());
+      for (Zone zone : MapTool.getClient().getCampaign().getZones()) {
+        if (allMaps || zone.isVisible()) {
+          mapNames.add(zone.getDisplayName());
         }
       }
 
@@ -361,10 +359,10 @@ public class MapFunctions extends AbstractFunction {
       final var map = parameters.get(0).toString();
 
       // First try treat it as a map ID.
-      ZoneRenderer match = null;
+      Zone match = null;
       if (!GUID.isNotGUID(map)) {
         try {
-          match = MapTool.getFrame().getZoneRenderer(GUID.valueOf(map));
+          match = MapTool.getCampaign().getZone(GUID.valueOf(map));
         } catch (InvalidGUIDException ignored) {
           // Wasn't a GUID after all.
         }
@@ -372,15 +370,15 @@ public class MapFunctions extends AbstractFunction {
 
       if (match == null) {
         // Fall back to look up by display name.
-        for (ZoneRenderer zr : MapTool.getFrame().getZoneRenderers()) {
-          if (map.equals(zr.getZone().getDisplayName())) {
-            match = zr;
+        for (Zone zone : MapTool.getClient().getCampaign().getZones()) {
+          if (map.equals(zone.getDisplayName())) {
+            match = zone;
             break;
           }
         }
       }
       if (match != null) {
-        return match.getZone().getName();
+        return match.getName();
       }
 
       throw new ParserException(I18N.getText("macro.function.map.notFound", functionName));
