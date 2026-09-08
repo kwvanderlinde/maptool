@@ -14,6 +14,8 @@
  */
 package net.rptools.maptool.util;
 
+import static net.rptools.parser.function.Function.UNLIMITED_PARAMETERS;
+
 import com.google.gson.*;
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -22,7 +24,9 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.swing.*;
@@ -43,7 +47,6 @@ import net.rptools.maptool.model.drawing.DrawableTexturePaint;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
-import net.rptools.parser.function.Function;
 
 /**
  * Provides static methods to help handle macro functions.
@@ -146,7 +149,7 @@ public class FunctionUtil {
     } else {
       if (size < min)
         throw new ParserException(I18N.getText(KEY_NOT_ENOUGH_PARAM, functionName, min, size));
-      if (size > max && max != Function.UNLIMITED_PARAMETERS)
+      if (size > max && max != UNLIMITED_PARAMETERS)
         throw new ParserException(I18N.getText(KEY_TOO_MANY_PARAM, functionName, max, size));
     }
   }
@@ -817,6 +820,27 @@ public class FunctionUtil {
     }
 
     return new MD5Key(id);
+  }
+
+  public static <T> Optional<T> searchZones(
+      @Nullable Zone currentZone, Function<Zone, Optional<T>> selector) {
+    Optional<T> result = Optional.empty();
+
+    // First try the current zone.
+    if (currentZone != null) {
+      result = selector.apply(currentZone);
+    }
+    // Fallback to other zones if not found.
+    if (result.isEmpty()) {
+      for (var zone : MapTool.getClient().getCampaign().getZones()) {
+        result = selector.apply(zone);
+        if (result.isPresent()) {
+          break;
+        }
+      }
+    }
+
+    return result;
   }
 
   /**
