@@ -34,7 +34,6 @@ import net.rptools.maptool.client.ui.htmlframe.HTMLDialog;
 import net.rptools.maptool.client.ui.htmlframe.HTMLFrame;
 import net.rptools.maptool.client.ui.htmlframe.HTMLOverlayManager;
 import net.rptools.maptool.client.ui.token.*;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
@@ -287,8 +286,7 @@ public class getInfoFunction extends AbstractFunction {
       String versionProperty,
       String unknownVersionText) {
     JsonObject libInfo = new JsonObject();
-    for (ZoneRenderer zr : MapTool.getFrame().getZoneRenderers()) {
-      Zone zone = zr.getZone();
+    for (Zone zone : MapTool.getClient().getCampaign().getZones()) {
       for (Token token : zone.getAllTokens()) {
         if (token.getName().toLowerCase().startsWith(prefix)) {
           if (token.getProperty(versionProperty) != null) {
