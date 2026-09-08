@@ -32,6 +32,7 @@ import net.rptools.maptool.client.ui.macrobuttons.buttons.MacroButtonPrefs;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.server.proto.MacroButtonPropertiesDto;
+import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.ParserException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -569,19 +570,10 @@ public class MacroButtonProperties implements Comparable<MacroButtonProperties> 
   }
 
   public Token getToken() {
-    Token token = MapTool.getFrame().getCurrentZoneRenderer().getZone().getToken(this.tokenId);
-
-    // If token not in current map, look for token in other maps.
-    if (token == null) {
-      List<ZoneRenderer> zrenderers = MapTool.getFrame().getZoneRenderers();
-      for (ZoneRenderer zr : zrenderers) {
-        token = zr.getZone().getToken(this.tokenId);
-        if (token != null) {
-          break;
-        }
-      }
-    }
-    return token;
+    return FunctionUtil.searchZones(
+            MapTool.getClient().getCurrentZone().orElse(null),
+            z -> Optional.ofNullable(z.getToken(this.tokenId)))
+        .orElse(null);
   }
 
   public void setTokenId(Token token) {
