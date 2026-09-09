@@ -158,7 +158,7 @@ public class Zone {
      * @param name The name to look up. In addition to the constant names, can also be "HIDDEN".
      *     Must be uppercase or it will not match anything.
      * @return The layer matching {@code name}.
-     * @throws java.lang.IllegalArgumentException If {@code name} does not name a layer.
+     * @throws IllegalArgumentException If {@code name} does not name a layer.
      */
     public static Layer getByName(String name) throws IllegalArgumentException {
       if (name.equals("HIDDEN")) {
@@ -191,7 +191,10 @@ public class Zone {
      * @return {@code true} if {@code Token} instances on this layer are considered tokens.
      */
     public boolean isTokenLayer() {
-      return this == TOKEN;
+      return switch (this) {
+        case TOKEN -> true;
+        case GM, OBJECT, BACKGROUND -> false;
+      };
     }
 
     /**
@@ -203,7 +206,10 @@ public class Zone {
      * @return {@code true} if {@code Token} instances on this layer are considered stamps.
      */
     public boolean isStampLayer() {
-      return this != TOKEN;
+      return switch (this) {
+        case TOKEN -> false;
+        case GM, OBJECT, BACKGROUND -> true;
+      };
     }
 
     /**
@@ -214,14 +220,20 @@ public class Zone {
      * @return {@code true} if {@code Token} instances on this layer can be considered markers.
      */
     public boolean isMarkerLayer() {
-      return this != TOKEN;
+      return switch (this) {
+        case TOKEN -> false;
+        case GM, OBJECT, BACKGROUND -> true;
+      };
     }
 
     /**
      * @return {@code true} if players are allowed to have this layer as their active layer.
      */
     public boolean isPlayerLayer() {
-      return this == TOKEN;
+      return switch (this) {
+        case TOKEN -> true;
+        case GM, OBJECT, BACKGROUND -> false;
+      };
     }
 
     /**
@@ -229,21 +241,30 @@ public class Zone {
      *     players.
      */
     public boolean isVisibleToPlayers() {
-      return this != GM;
+      return switch (this) {
+        case GM -> false;
+        case TOKEN, OBJECT, BACKGROUND -> true;
+      };
     }
 
     /**
      * @return {@code true} if a walker can be used when dragging tokens on this layer.
      */
     public boolean supportsWalker() {
-      return this == TOKEN;
+      return switch (this) {
+        case TOKEN -> true;
+        case GM, OBJECT, BACKGROUND -> false;
+      };
     }
 
     /**
      * @return {@code true} if vision and FoW is supported on this layer.
      */
     public boolean supportsVision() {
-      return this == TOKEN;
+      return switch (this) {
+        case TOKEN -> true;
+        case GM, OBJECT, BACKGROUND -> false;
+      };
     }
 
     /**
@@ -254,7 +275,10 @@ public class Zone {
      *     to their center rather than their corner.
      */
     public boolean isSnapToGridAtCenter() {
-      return this != BACKGROUND;
+      return switch (this) {
+        case TOKEN, GM, OBJECT -> true;
+        case BACKGROUND -> false;
+      };
     }
 
     /**
@@ -266,7 +290,10 @@ public class Zone {
      * @return {@code true} if key-based drags should be ended each step.
      */
     public boolean oneStepKeyDrag() {
-      return this == BACKGROUND;
+      return switch (this) {
+        case TOKEN, GM, OBJECT -> false;
+        case BACKGROUND -> true;
+      };
     }
 
     /**
@@ -274,7 +301,10 @@ public class Zone {
      *     image.
      */
     public boolean supportsGuessingTokenShape() {
-      return this == TOKEN;
+      return switch (this) {
+        case TOKEN -> true;
+        case GM, OBJECT, BACKGROUND -> false;
+      };
     }
   }
 
