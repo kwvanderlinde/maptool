@@ -132,6 +132,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   private ZonePoint previousZonePoint;
 
   private final EnumSet<Layer> disabledLayers = EnumSet.noneOf(Layer.class);
+  private final RenderHelper renderHelper;
   private final GridRenderer gridRenderer;
   private final HaloRenderer haloRenderer;
   private final TokenRenderer tokenRenderer;
@@ -166,7 +167,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         CollectionUtil.newFilledEnumMap(
             Zone.Layer.class, layer -> new PartitionedDrawableRenderer(zone));
 
-    var renderHelper = new RenderHelper(this, tempBufferPool);
+    this.renderHelper = new RenderHelper(this, tempBufferPool);
     this.gridRenderer = new GridRenderer(this);
     this.haloRenderer = new HaloRenderer(renderHelper, MapTool.getCampaign(), zone);
     this.tokenRenderer = new TokenRenderer(renderHelper, zone);
@@ -941,7 +942,122 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       renderLabels(g2d, view);
     }
 
-    this.fogRenderer.render(g2d, view);
+    if (shouldRenderLayer(Layer.FOG, view) && zone.hasFog()) {
+      var visibility = zoneView.getVisibility(view);
+      Area softFogArea = visibility.softFogArea();
+      Area clearArea = visibility.clearArea();
+
+      // Start by rendering the soft fog to a buffer.
+      try (var softFogHandle = tempBufferPool.acquire();
+          var hardFogHandle = tempBufferPool.acquire()) {
+        var softFogBuffer = softFogHandle.get();
+        final var clip = g2d.getClip();
+        final var softFogBufferG2d = softFogBuffer.createGraphics();
+        // Keep the clip to avoid rendering more than we have to.
+        softFogBufferG2d.setClip(g2d.getClip());
+
+        // Soft fog is a translucent gray ...
+        timer.start("FogRenderer-renderFog:softFow");
+        try {
+          softFogBufferG2d.setComposite(AlphaComposite.Src);
+          softFogBufferG2d.setColor(new Color(0, 0, 0, AppPreferences.fogOverlayOpacity.get()));
+          softFogBufferG2d.fill(clip.getBounds2D());
+        } finally {
+          timer.stop("FogRenderer-renderFog:softFow");
+        }
+        // ... with drawings on top ...
+        timer.start("FogRenderer-renderFog:softFowDrawings");
+        try {
+          softFogBufferG2d.setComposite(AlphaComposite.SrcOver);
+          renderDrawableOverlay(
+              softFogBufferG2d,
+              drawableRenderers.get(Layer.FOG),
+              view,
+              zone.getDrawnElements(Layer.FOG));
+        } finally {
+          timer.stop("FogRenderer-renderFog:softFowDrawings");
+        }
+        // ... and with stamps on top of those.
+        timer.start("FogRenderer-renderFog:softFowStamps");
+        try {
+          softFogBufferG2d.setComposite(AlphaComposite.SrcOver);
+          List<Token> fog = zone.getTokensOnLayer(Layer.FOG, false);
+          renderTokens(softFogBufferG2d, fog, view);
+        } finally {
+          timer.stop("FogRenderer-renderFog:softFowStamps");
+        }
+
+        // Soft fog must not include the area currently visible
+        timer.start("FogRenderer-renderFog:exposedArea");
+        try {
+          renderHelper.render(
+              softFogBufferG2d,
+              worldG -> {
+                if (!clearArea.isEmpty()) {
+                  // Now fill in the visible area.
+                  worldG.setComposite(AlphaComposite.Clear);
+                  worldG.fill(clearArea);
+                }
+              });
+        } finally {
+          timer.stop("FogRenderer-renderFog:exposedArea");
+        }
+
+        timer.start("FogRenderer-renderFog:hardFow");
+        var hardFogBuffer = hardFogHandle.get();
+        final var hardFogBufferG2d = hardFogBuffer.createGraphics();
+        // Keep the clip to avoid rendering more than we have to.
+        hardFogBufferG2d.setClip(g2d.getClip());
+        final var hardFogOpacity = view.isGMView() ? 0.6f : 1.0f;
+        hardFogBufferG2d.setPaint(zone.getFogPaint().getPaint());
+
+        // Start by rendering hard fog as solid black.
+        hardFogBufferG2d.setComposite(AlphaComposite.Src);
+        hardFogBufferG2d.setPaint(Color.BLACK);
+        hardFogBufferG2d.fill(clip.getBounds2D());
+        renderHelper.render(
+            hardFogBufferG2d,
+            worldG -> {
+              worldG.setComposite(AlphaComposite.Clear);
+              worldG.fill(softFogArea);
+              worldG.fill(clearArea);
+            });
+
+        // The hard fog buffer is now a stencil. Stamp it out from the soft fog.
+        softFogBufferG2d.setComposite(AlphaComposite.DstOut);
+        softFogBufferG2d.drawImage(hardFogBuffer, 0, 0, this);
+
+        // Finish up the soft fog by adding an outline between the clear area and soft fog.
+        renderHelper.render(
+            softFogBufferG2d,
+            worldG -> {
+              worldG.setComposite(AlphaComposite.Src);
+              // Keep the line a consistent thickness
+              worldG.setStroke(new BasicStroke(1 / (float) worldG.getTransform().getScaleX()));
+              worldG.setPaint(Color.BLACK);
+              worldG.draw(clearArea);
+            });
+
+        // Now fill in the hard fog paint.
+        renderHelper.render(
+            hardFogBufferG2d,
+            worldG -> {
+              // JFJ .derive() fixes the GM exposed area view.
+              worldG.setComposite(AlphaComposite.SrcIn.derive(hardFogOpacity));
+              worldG.setPaint(zone.getFogPaint().getPaint());
+              worldG.fill(worldG.getClip().getBounds2D());
+            });
+        timer.stop("FogRenderer-renderFog:hardFow");
+
+        // TODO Dispose of hard and soft G2d at this point.
+
+        timer.start("FogRenderer-renderFog:blit");
+        // Draw soft fog then hard fog onto map.
+        g2d.drawImage(softFogBuffer, 0, 0, this);
+        g2d.drawImage(hardFogBuffer, 0, 0, this);
+        timer.stop("FogRenderer-renderFog:blit");
+      }
+    }
 
     if (shouldRenderLayer(Zone.Layer.TOKEN, view)) {
       // Jamz: If there is fog or vision we may need to re-render vision-blocking type tokens
