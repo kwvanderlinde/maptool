@@ -1684,6 +1684,11 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
   protected void renderTokens(
       Graphics2D g, List<Token> tokenList, PlayerView view, boolean figuresOnly) {
+    if (tokenList.isEmpty()) {
+      // Nothing to do, really.
+      return;
+    }
+
     final var timer = CodeTimer.get();
 
     Graphics2D clippedG = g;
