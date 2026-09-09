@@ -2323,7 +2323,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             token.setSnapToScale(false);
           }
           break;
-        case BACKGROUND:
+        case BACKGROUND, FOG:
           token.setShape(Token.TokenShape.TOP_DOWN);
 
           token.setSnapToScale(!AppPreferences.backgroundsStartFreesize.get());

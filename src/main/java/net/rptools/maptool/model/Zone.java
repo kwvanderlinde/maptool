@@ -124,6 +124,7 @@ public class Zone {
 
   /** The type of layer (TOKEN, GM, OBJECT or BACKGROUND). */
   public enum Layer {
+    FOG(),
     TOKEN(),
     GM(),
     OBJECT(),
@@ -193,7 +194,7 @@ public class Zone {
     public boolean isTokenLayer() {
       return switch (this) {
         case TOKEN -> true;
-        case GM, OBJECT, BACKGROUND -> false;
+        case GM, OBJECT, BACKGROUND, FOG -> false;
       };
     }
 
@@ -208,7 +209,7 @@ public class Zone {
     public boolean isStampLayer() {
       return switch (this) {
         case TOKEN -> false;
-        case GM, OBJECT, BACKGROUND -> true;
+        case GM, OBJECT, BACKGROUND, FOG -> true;
       };
     }
 
@@ -221,7 +222,7 @@ public class Zone {
      */
     public boolean isMarkerLayer() {
       return switch (this) {
-        case TOKEN -> false;
+        case TOKEN, FOG -> false;
         case GM, OBJECT, BACKGROUND -> true;
       };
     }
@@ -232,7 +233,7 @@ public class Zone {
     public boolean isPlayerLayer() {
       return switch (this) {
         case TOKEN -> true;
-        case GM, OBJECT, BACKGROUND -> false;
+        case GM, OBJECT, BACKGROUND, FOG -> false;
       };
     }
 
@@ -243,7 +244,7 @@ public class Zone {
     public boolean isVisibleToPlayers() {
       return switch (this) {
         case GM -> false;
-        case TOKEN, OBJECT, BACKGROUND -> true;
+        case TOKEN, OBJECT, BACKGROUND, FOG -> true;
       };
     }
 
@@ -253,7 +254,7 @@ public class Zone {
     public boolean supportsWalker() {
       return switch (this) {
         case TOKEN -> true;
-        case GM, OBJECT, BACKGROUND -> false;
+        case GM, OBJECT, BACKGROUND, FOG -> false;
       };
     }
 
@@ -263,7 +264,7 @@ public class Zone {
     public boolean supportsVision() {
       return switch (this) {
         case TOKEN -> true;
-        case GM, OBJECT, BACKGROUND -> false;
+        case GM, OBJECT, BACKGROUND, FOG -> false;
       };
     }
 
@@ -277,7 +278,7 @@ public class Zone {
     public boolean isSnapToGridAtCenter() {
       return switch (this) {
         case TOKEN, GM, OBJECT -> true;
-        case BACKGROUND -> false;
+        case BACKGROUND, FOG -> false;
       };
     }
 
@@ -292,7 +293,7 @@ public class Zone {
     public boolean oneStepKeyDrag() {
       return switch (this) {
         case TOKEN, GM, OBJECT -> false;
-        case BACKGROUND -> true;
+        case BACKGROUND, FOG -> true;
       };
     }
 
@@ -303,7 +304,7 @@ public class Zone {
     public boolean supportsGuessingTokenShape() {
       return switch (this) {
         case TOKEN -> true;
-        case GM, OBJECT, BACKGROUND -> false;
+        case GM, OBJECT, FOG, BACKGROUND -> false;
       };
     }
   }
@@ -363,6 +364,9 @@ public class Zone {
   private AStarRoundingOptions aStarRounding = AStarRoundingOptions.NONE;
 
   // region Keeping these for serialization only. Otherwise, use {@link #drawablesByLayer} instead.
+  @Deprecated
+  private @Nonnull LinkedList<DrawnElement> fogDrawables = new LinkedList<DrawnElement>();
+
   @Deprecated private @Nonnull LinkedList<DrawnElement> drawables = new LinkedList<DrawnElement>();
 
   @Deprecated
@@ -465,6 +469,7 @@ public class Zone {
 
   {
     drawablesByLayer = new EnumMap<>(Layer.class);
+    drawablesByLayer.put(Layer.FOG, fogDrawables);
     drawablesByLayer.put(Layer.TOKEN, drawables);
     drawablesByLayer.put(Layer.GM, gmDrawables);
     drawablesByLayer.put(Layer.OBJECT, objectDrawables);
@@ -2161,6 +2166,9 @@ public class Zone {
       tokenSelection = TokenSelection.ALL;
     }
 
+    if (fogDrawables == null) {
+      fogDrawables = new LinkedList<>();
+    }
     if (drawables == null) {
       drawables = new LinkedList<>();
     }
@@ -2174,6 +2182,7 @@ public class Zone {
       backgroundDrawables = new LinkedList<>();
     }
     drawablesByLayer = new EnumMap<>(Layer.class);
+    drawablesByLayer.put(Layer.FOG, fogDrawables);
     drawablesByLayer.put(Layer.TOKEN, drawables);
     drawablesByLayer.put(Layer.GM, gmDrawables);
     drawablesByLayer.put(Layer.OBJECT, objectDrawables);
