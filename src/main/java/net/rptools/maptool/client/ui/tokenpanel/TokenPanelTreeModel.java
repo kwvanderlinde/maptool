@@ -19,10 +19,12 @@ import java.awt.EventQueue;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.swing.JTree;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
@@ -70,14 +72,20 @@ public class TokenPanelTreeModel implements TreeModel {
 
     // It would be useful to have this list be static, but it's really not that big of a memory
     // footprint
-    filterList.add(new NPCTokenFilter());
-    filterList.add(new PlayerTokenFilter());
-
+    var playerLayers = new ArrayList<Zone.Layer>();
     for (final var layer : Zone.Layer.values()) {
-      if (layer.isStampLayer()) {
+      if (layer.isPlayerLayer()) {
+        playerLayers.add(layer);
+      } else {
         filterList.add(new AdminLayerFilter(layer));
       }
     }
+    if (!playerLayers.isEmpty()) {
+      // Put "players" and "npcs" first.
+      filterList.addFirst(new PlayerTokenFilter(playerLayers));
+      filterList.addFirst(new NPCTokenFilter(playerLayers));
+    }
+
     filterList.add(new LightSourceFilter());
 
     new MapToolEventBus().getMainEventBus().register(this);
@@ -282,12 +290,19 @@ public class TokenPanelTreeModel implements TreeModel {
    * </ol>
    */
   private static class PlayerTokenFilter extends TokenFilter {
-    public PlayerTokenFilter() {
+    private final Set<Zone.Layer> layers;
+
+    public PlayerTokenFilter(List<Zone.Layer> layers) {
       super(new View("PLAYERS"));
+      this.layers = EnumSet.noneOf(Zone.Layer.class);
+      this.layers.addAll(layers);
     }
 
     @Override
     public boolean test(Token token) {
+      if (!this.layers.contains(token.getLayer())) {
+        return false;
+      }
       if (token.getType() != Token.Type.PC) {
         return false;
       }
@@ -330,13 +345,20 @@ public class TokenPanelTreeModel implements TreeModel {
    * </ol>
    */
   private static class NPCTokenFilter extends TokenFilter {
-    public NPCTokenFilter() {
+    private final Set<Zone.Layer> layers;
+
+    public NPCTokenFilter(List<Zone.Layer> layers) {
       super(new View("NPCS"));
+      this.layers = EnumSet.noneOf(Zone.Layer.class);
+      this.layers.addAll(layers);
     }
 
     @Override
     public boolean test(Token token) {
-      if (!token.getLayer().isTokenLayer() || token.getType() != Token.Type.NPC) {
+      if (!this.layers.contains(token.getLayer())) {
+        return false;
+      }
+      if (token.getType() != Token.Type.NPC) {
         return false;
       }
       if (MapTool.getPlayer().isGM()) {
