@@ -985,8 +985,10 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
               renderHelper.render(
                   bufferG,
                   worldG -> {
-                    worldG.setComposite(AlphaComposite.Src);
-                    worldG.setColor(new Color(0, 0, 0, AppPreferences.fogOverlayOpacity.get()));
+                    // Using DstIn means we use the color from the hard fog, but the alpha from the
+                    // soft fog.
+                    worldG.setComposite(AlphaComposite.DstIn.derive(AppPreferences.fogOverlayOpacity.get() / 255.f));
+                    worldG.setColor(Color.BLACK);
                     worldG.fill(softFogArea);
                   });
             } finally {
