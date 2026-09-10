@@ -961,19 +961,21 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             renderHelper.render(
                 bufferG,
                 worldG -> {
-                  worldG.setComposite(AlphaComposite.Src.derive(hardFogOpacity));
+                  worldG.setComposite(AlphaComposite.Src);
                   worldG.setPaint(zone.getFogPaint().getPaint());
                   worldG.fill(worldG.getClip().getBounds2D());
                 });
-            // TODO We could keep the Src composite, or reverse the rendering order with a SrcOut or
-            //  something to creatively combine the fog texture with drawings and tokens. But this
-            // is
-            //  easier to keep track of, and is only confusing in the case of partial transparency.
+
             bufferG.setComposite(AlphaComposite.SrcOver);
             renderDrawableOverlay(
                 bufferG, drawableRenderers.get(Layer.FOG), view, zone.getDrawnElements(Layer.FOG));
-            List<Token> fog = zone.getTokensOnLayer(Layer.FOG, false);
-            renderTokens(bufferG, fog, view);
+            renderTokens(bufferG, zone.getTokensOnLayer(Layer.FOG, false), view);
+
+            // The buffer is now filled with hard fog at maximum capacity. GMs should have a reduced
+            // opacity so they can see what is going on.
+            bufferG.setComposite(AlphaComposite.DstIn.derive(hardFogOpacity));
+            bufferG.setColor(Color.WHITE);
+            bufferG.fill(bufferG.getClip().getBounds2D());
           } finally {
             timer.stop("FogRenderer-renderFog:hardFow");
           }
