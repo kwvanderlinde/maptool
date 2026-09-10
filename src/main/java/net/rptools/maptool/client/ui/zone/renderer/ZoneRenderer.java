@@ -958,24 +958,23 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           try {
             // Start by drawing the hard fog. This includes the fog texture, then the fog layer.
             final var hardFogOpacity = view.isGMView() ? 0.6f : 1.0f;
-            renderHelper.render(bufferG, worldG -> {
-              worldG.setComposite(AlphaComposite.Src.derive(hardFogOpacity));
-              worldG.setPaint(zone.getFogPaint().getPaint());
-              worldG.fill(worldG.getClip().getBounds2D());
-            });
+            renderHelper.render(
+                bufferG,
+                worldG -> {
+                  worldG.setComposite(AlphaComposite.Src.derive(hardFogOpacity));
+                  worldG.setPaint(zone.getFogPaint().getPaint());
+                  worldG.fill(worldG.getClip().getBounds2D());
+                });
             // TODO We could keep the Src composite, or reverse the rendering order with a SrcOut or
-            //  something to creatively combine the fog texture with drawings and tokens. But this is
+            //  something to creatively combine the fog texture with drawings and tokens. But this
+            // is
             //  easier to keep track of, and is only confusing in the case of partial transparency.
             bufferG.setComposite(AlphaComposite.SrcOver);
             renderDrawableOverlay(
-                    bufferG,
-                    drawableRenderers.get(Layer.FOG),
-                    view,
-                    zone.getDrawnElements(Layer.FOG));
+                bufferG, drawableRenderers.get(Layer.FOG), view, zone.getDrawnElements(Layer.FOG));
             List<Token> fog = zone.getTokensOnLayer(Layer.FOG, false);
             renderTokens(bufferG, fog, view);
-          }
-          finally {
+          } finally {
             timer.stop("FogRenderer-renderFog:hardFow");
           }
 
@@ -983,13 +982,14 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           if (!softFogArea.isEmpty()) {
             timer.start("FogRenderer-renderFog:softFow");
             try {
-              renderHelper.render(bufferG, worldG -> {
-                worldG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC));
-                worldG.setColor(new Color(0, 0, 0, AppPreferences.fogOverlayOpacity.get()));
-                worldG.fill(softFogArea);
-              });
-            }
-            finally {
+              renderHelper.render(
+                  bufferG,
+                  worldG -> {
+                    worldG.setComposite(AlphaComposite.Src);
+                    worldG.setColor(new Color(0, 0, 0, AppPreferences.fogOverlayOpacity.get()));
+                    worldG.fill(softFogArea);
+                  });
+            } finally {
               timer.stop("FogRenderer-renderFog:softFow");
             }
           }
@@ -998,36 +998,39 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           if (!clearArea.isEmpty()) {
             timer.start("FogRenderer-renderFog:exposedArea");
             try {
-              renderHelper.render(bufferG, worldG -> {
-                worldG.setComposite(AlphaComposite.getInstance(AlphaComposite.CLEAR));
-                worldG.fill(clearArea);
-              });
-            }
-            finally {
+              renderHelper.render(
+                  bufferG,
+                  worldG -> {
+                    worldG.setComposite(AlphaComposite.Clear);
+                    worldG.fill(clearArea);
+                  });
+            } finally {
               timer.stop("FogRenderer-renderFog:exposedArea");
             }
           }
 
           // Finally, outline the boundary between soft fog and visible area, if there is one.
 
-          // If there is no boundary between soft fog and visible area, there is no need for an outline.
+          // If there is no boundary between soft fog and visible area, there is no need for an
+          // outline.
           if (!softFogArea.isEmpty() && !clearArea.isEmpty()) {
             timer.start("FogRenderer-renderFog:outline");
             try {
-              renderHelper.render(bufferG, worldG -> {
-                worldG.setComposite(AlphaComposite.Src);
-                // Keep the line a consistent thickness
-                worldG.setStroke(new BasicStroke(1 / (float) worldG.getTransform().getScaleX()));
-                worldG.setColor(Color.BLACK);
-                worldG.draw(clearArea);
-              });
-            }
-            finally {
+              renderHelper.render(
+                  bufferG,
+                  worldG -> {
+                    worldG.setComposite(AlphaComposite.Src);
+                    // Keep the line a consistent thickness
+                    worldG.setStroke(
+                        new BasicStroke(1 / (float) worldG.getTransform().getScaleX()));
+                    worldG.setColor(Color.BLACK);
+                    worldG.draw(clearArea);
+                  });
+            } finally {
               timer.stop("FogRenderer-renderFog:outline");
             }
           }
-        }
-        finally {
+        } finally {
           bufferG.dispose();
         }
 
