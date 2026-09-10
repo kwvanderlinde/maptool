@@ -995,16 +995,16 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
           // Show a border at the edges of the soft fog.
           renderHelper.render(
-                  bufferG,
-                  worldG -> {
-                    worldG.setColor(Color.BLACK);
-                    worldG.setComposite(AlphaComposite.DstOver.derive(25.5f / 255.f));
-                    for (int i = 20; i > 0; --i) {
-                      worldG.setStroke(
-                              new BasicStroke((float) i /* / (float) worldG.getTransform().getScaleX()*/));
-                      worldG.draw(softFogArea);
-                    }
-                  });
+              bufferG,
+              worldG -> {
+                worldG.setColor(Color.BLACK);
+                for (int i = 5; i > 0; --i) {
+                  worldG.setComposite(AlphaComposite.DstOver.derive((6 - i) * 15.f / 255.f));
+                  worldG.setStroke(
+                      new BasicStroke((float) (6 * i) / (float) worldG.getTransform().getScaleX()));
+                  worldG.draw(softFogArea);
+                }
+              });
 
           // Clear out the visible area from the soft and hard fog.
           if (!clearArea.isEmpty()) {
