@@ -947,115 +947,92 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       Area softFogArea = visibility.softFogArea();
       Area clearArea = visibility.clearArea();
 
-      // Start by rendering the soft fog to a buffer.
-      try (var softFogHandle = tempBufferPool.acquire();
-          var hardFogHandle = tempBufferPool.acquire()) {
-        var softFogBuffer = softFogHandle.get();
-        final var clip = g2d.getClip();
-        final var softFogBufferG2d = softFogBuffer.createGraphics();
-        // Keep the clip to avoid rendering more than we have to.
-        softFogBufferG2d.setClip(g2d.getClip());
-
-        // Soft fog is a translucent gray ...
-        timer.start("FogRenderer-renderFog:softFow");
+      try (var handle = tempBufferPool.acquire()) {
+        var buffer = handle.get();
+        final var bufferG = buffer.createGraphics();
         try {
-          softFogBufferG2d.setComposite(AlphaComposite.Src);
-          softFogBufferG2d.setColor(new Color(0, 0, 0, AppPreferences.fogOverlayOpacity.get()));
-          softFogBufferG2d.fill(clip.getBounds2D());
-        } finally {
-          timer.stop("FogRenderer-renderFog:softFow");
-        }
-        // ... with drawings on top ...
-        timer.start("FogRenderer-renderFog:softFowDrawings");
-        try {
-          softFogBufferG2d.setComposite(AlphaComposite.SrcOver);
-          renderDrawableOverlay(
-              softFogBufferG2d,
-              drawableRenderers.get(Layer.FOG),
-              view,
-              zone.getDrawnElements(Layer.FOG));
-        } finally {
-          timer.stop("FogRenderer-renderFog:softFowDrawings");
-        }
-        // ... and with stamps on top of those.
-        timer.start("FogRenderer-renderFog:softFowStamps");
-        try {
-          softFogBufferG2d.setComposite(AlphaComposite.SrcOver);
-          List<Token> fog = zone.getTokensOnLayer(Layer.FOG, false);
-          renderTokens(softFogBufferG2d, fog, view);
-        } finally {
-          timer.stop("FogRenderer-renderFog:softFowStamps");
-        }
+          // Keep the clip to avoid rendering more than we have to.
+          bufferG.setClip(g2d.getClip());
 
-        // Soft fog must not include the area currently visible
-        timer.start("FogRenderer-renderFog:exposedArea");
-        try {
-          renderHelper.render(
-              softFogBufferG2d,
-              worldG -> {
-                if (!clearArea.isEmpty()) {
-                  // Now fill in the visible area.
-                  worldG.setComposite(AlphaComposite.Clear);
-                  worldG.fill(clearArea);
-                }
-              });
-        } finally {
-          timer.stop("FogRenderer-renderFog:exposedArea");
-        }
-
-        timer.start("FogRenderer-renderFog:hardFow");
-        var hardFogBuffer = hardFogHandle.get();
-        final var hardFogBufferG2d = hardFogBuffer.createGraphics();
-        // Keep the clip to avoid rendering more than we have to.
-        hardFogBufferG2d.setClip(g2d.getClip());
-        final var hardFogOpacity = view.isGMView() ? 0.6f : 1.0f;
-        hardFogBufferG2d.setPaint(zone.getFogPaint().getPaint());
-
-        // Start by rendering hard fog as solid black.
-        hardFogBufferG2d.setComposite(AlphaComposite.Src);
-        hardFogBufferG2d.setPaint(Color.BLACK);
-        hardFogBufferG2d.fill(clip.getBounds2D());
-        renderHelper.render(
-            hardFogBufferG2d,
-            worldG -> {
-              worldG.setComposite(AlphaComposite.Clear);
-              worldG.fill(softFogArea);
-              worldG.fill(clearArea);
-            });
-
-        // The hard fog buffer is now a stencil. Stamp it out from the soft fog.
-        softFogBufferG2d.setComposite(AlphaComposite.DstOut);
-        softFogBufferG2d.drawImage(hardFogBuffer, 0, 0, this);
-
-        // Finish up the soft fog by adding an outline between the clear area and soft fog.
-        renderHelper.render(
-            softFogBufferG2d,
-            worldG -> {
-              worldG.setComposite(AlphaComposite.Src);
-              // Keep the line a consistent thickness
-              worldG.setStroke(new BasicStroke(1 / (float) worldG.getTransform().getScaleX()));
-              worldG.setPaint(Color.BLACK);
-              worldG.draw(clearArea);
-            });
-
-        // Now fill in the hard fog paint.
-        renderHelper.render(
-            hardFogBufferG2d,
-            worldG -> {
-              // JFJ .derive() fixes the GM exposed area view.
-              worldG.setComposite(AlphaComposite.SrcIn.derive(hardFogOpacity));
+          timer.start("FogRenderer-renderFog:hardFow");
+          try {
+            // Start by drawing the hard fog. This includes the fog texture, then the fog layer.
+            final var hardFogOpacity = view.isGMView() ? 0.6f : 1.0f;
+            renderHelper.render(bufferG, worldG -> {
+              worldG.setComposite(AlphaComposite.Src.derive(hardFogOpacity));
               worldG.setPaint(zone.getFogPaint().getPaint());
               worldG.fill(worldG.getClip().getBounds2D());
             });
-        timer.stop("FogRenderer-renderFog:hardFow");
+            // TODO We could keep the Src composite, or reverse the rendering order with a SrcOut or
+            //  something to creatively combine the fog texture with drawings and tokens. But this is
+            //  easier to keep track of, and is only confusing in the case of partial transparency.
+            bufferG.setComposite(AlphaComposite.SrcOver);
+            renderDrawableOverlay(
+                    bufferG,
+                    drawableRenderers.get(Layer.FOG),
+                    view,
+                    zone.getDrawnElements(Layer.FOG));
+            List<Token> fog = zone.getTokensOnLayer(Layer.FOG, false);
+            renderTokens(bufferG, fog, view);
+          }
+          finally {
+            timer.stop("FogRenderer-renderFog:hardFow");
+          }
 
-        // TODO Dispose of hard and soft G2d at this point.
+          // Behold, the buffer is filled with hard fog. Replace some with soft fog.
+          if (!softFogArea.isEmpty()) {
+            timer.start("FogRenderer-renderFog:softFow");
+            try {
+              renderHelper.render(bufferG, worldG -> {
+                worldG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC));
+                worldG.setColor(new Color(0, 0, 0, AppPreferences.fogOverlayOpacity.get()));
+                worldG.fill(softFogArea);
+              });
+            }
+            finally {
+              timer.stop("FogRenderer-renderFog:softFow");
+            }
+          }
 
-        timer.start("FogRenderer-renderFog:blit");
-        // Draw soft fog then hard fog onto map.
-        g2d.drawImage(softFogBuffer, 0, 0, this);
-        g2d.drawImage(hardFogBuffer, 0, 0, this);
-        timer.stop("FogRenderer-renderFog:blit");
+          // Clear out the visible area from the soft and hard fog.
+          if (!clearArea.isEmpty()) {
+            timer.start("FogRenderer-renderFog:exposedArea");
+            try {
+              renderHelper.render(bufferG, worldG -> {
+                worldG.setComposite(AlphaComposite.getInstance(AlphaComposite.CLEAR));
+                worldG.fill(clearArea);
+              });
+            }
+            finally {
+              timer.stop("FogRenderer-renderFog:exposedArea");
+            }
+          }
+
+          // Finally, outline the boundary between soft fog and visible area, if there is one.
+
+          // If there is no boundary between soft fog and visible area, there is no need for an outline.
+          if (!softFogArea.isEmpty() && !clearArea.isEmpty()) {
+            timer.start("FogRenderer-renderFog:outline");
+            try {
+              renderHelper.render(bufferG, worldG -> {
+                worldG.setComposite(AlphaComposite.Src);
+                // Keep the line a consistent thickness
+                worldG.setStroke(new BasicStroke(1 / (float) worldG.getTransform().getScaleX()));
+                worldG.setColor(Color.BLACK);
+                worldG.draw(clearArea);
+              });
+            }
+            finally {
+              timer.stop("FogRenderer-renderFog:outline");
+            }
+          }
+        }
+        finally {
+          bufferG.dispose();
+        }
+
+        // Blit the soft fog buffer down.
+        g2d.drawImage(buffer, 0, 0, this);
       }
     }
 
