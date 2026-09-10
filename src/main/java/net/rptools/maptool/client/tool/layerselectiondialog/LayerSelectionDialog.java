@@ -55,8 +55,13 @@ public class LayerSelectionDialog extends JPanel {
     if (list == null) {
       list = panel.getList("layerList");
 
+      int firstPlayerLayerIndex = -1;
       DefaultListModel<Zone.Layer> model = new DefaultListModel<>();
       for (Zone.Layer layer : layerList) {
+        if (layer.isPlayerLayer() && firstPlayerLayerIndex < 0) {
+          firstPlayerLayerIndex = model.size();
+        }
+
         model.addElement(layer);
       }
 
@@ -70,7 +75,9 @@ public class LayerSelectionDialog extends JPanel {
 
             fireViewSelectionChange();
           });
-      list.setSelectedIndex(0);
+      if (firstPlayerLayerIndex >= 0) {
+        list.setSelectedIndex(firstPlayerLayerIndex);
+      }
     }
 
     return list;
