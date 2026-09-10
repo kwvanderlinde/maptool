@@ -957,7 +957,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           timer.start("FogRenderer-renderFog:hardFow");
           try {
             // Start by drawing the hard fog. This includes the fog texture, then the fog layer.
-            final var hardFogOpacity = view.isGMView() ? 0.6f : 1.0f;
             renderHelper.render(
                 bufferG,
                 worldG -> {
@@ -970,12 +969,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             renderDrawableOverlay(
                 bufferG, drawableRenderers.get(Layer.FOG), view, zone.getDrawnElements(Layer.FOG));
             renderTokens(bufferG, zone.getTokensOnLayer(Layer.FOG, false), view);
-
-            // The buffer is now filled with hard fog at maximum capacity. GMs should have a reduced
-            // opacity so they can see what is going on.
-            bufferG.setComposite(AlphaComposite.DstIn.derive(hardFogOpacity));
-            bufferG.setColor(Color.WHITE);
-            bufferG.fill(bufferG.getClip().getBounds2D());
           } finally {
             timer.stop("FogRenderer-renderFog:hardFow");
           }
@@ -987,13 +980,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
               renderHelper.render(
                   bufferG,
                   worldG -> {
-                    // Add a bit of a soft border to differentiate
-                    worldG.setComposite(AlphaComposite.Src);
-                    worldG.setColor(Color.BLACK);
-                    worldG.setStroke(
-                        new BasicStroke(4.f / (float) worldG.getTransform().getScaleX()));
-                    worldG.draw(softFogArea);
-
                     // Using DstIn means we use the color from the hard fog, but the alpha from the
                     // soft fog.
                     worldG.setComposite(
@@ -1006,6 +992,19 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
               timer.stop("FogRenderer-renderFog:softFow");
             }
           }
+
+          // Show a border at the edges of the soft fog.
+          renderHelper.render(
+                  bufferG,
+                  worldG -> {
+                    worldG.setColor(Color.BLACK);
+                    worldG.setComposite(AlphaComposite.DstOver.derive(25.5f / 255.f));
+                    for (int i = 20; i > 0; --i) {
+                      worldG.setStroke(
+                              new BasicStroke((float) i /* / (float) worldG.getTransform().getScaleX()*/));
+                      worldG.draw(softFogArea);
+                    }
+                  });
 
           // Clear out the visible area from the soft and hard fog.
           if (!clearArea.isEmpty()) {
@@ -1022,7 +1021,14 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
             }
           }
 
-          // Finally, outline the boundary between soft fog and visible area, if there is one.
+          // The buffer now contains the hard fog and soft fog are their full capacity.
+
+          // For DMs, decrease fog opacity so they can actually see what is going on.
+          if (view.isGMView()) {
+            bufferG.setComposite(AlphaComposite.DstIn.derive(0.6f));
+            bufferG.setColor(Color.WHITE);
+            bufferG.fill(bufferG.getClip().getBounds2D());
+          }
 
           // If there is no boundary between soft fog and visible area, there is no need for an
           // outline.
