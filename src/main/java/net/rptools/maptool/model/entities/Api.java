@@ -12,10 +12,13 @@
  * <http://www.gnu.org/licenses/> and specifically the Affero license
  * text at <http://www.gnu.org/licenses/agpl.html>.
  */
-package net.rptools.maptool.model.entities.components;
+package net.rptools.maptool.model.entities;
 
-import com.badlogic.ashley.core.Component;
-import net.rptools.maptool.model.GUID;
+import com.badlogic.ashley.core.Entity;
 import org.jspecify.annotations.NonNull;
 
-public record LocalId(@NonNull GUID id) implements Component {}
+public interface Api {
+  default void afterSpawn(@NonNull Entity entity) {}
+
+  default void beforeDestroy(@NonNull Entity entity) {}
+}

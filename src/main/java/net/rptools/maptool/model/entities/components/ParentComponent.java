@@ -15,7 +15,7 @@
 package net.rptools.maptool.model.entities.components;
 
 import com.badlogic.ashley.core.Component;
-import net.rptools.maptool.model.GUID;
+import com.badlogic.ashley.core.Entity;
 import org.jspecify.annotations.NonNull;
 
-public record LocalId(@NonNull GUID id) implements Component {}
+public record ParentComponent(@NonNull Entity parent) implements Component {}

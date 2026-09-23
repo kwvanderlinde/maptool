@@ -15,7 +15,9 @@
 package net.rptools.maptool.model.entities.components;
 
 import com.badlogic.ashley.core.Component;
-import net.rptools.maptool.model.GUID;
-import org.jspecify.annotations.NonNull;
+import com.badlogic.ashley.core.Entity;
+import com.badlogic.gdx.utils.Array;
 
-public record LocalId(@NonNull GUID id) implements Component {}
+public class ChildBufferComponent implements Component {
+  public final Array<Entity> children = new Array<>();
+}

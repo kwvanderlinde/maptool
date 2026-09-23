@@ -16,7 +16,9 @@ package net.rptools.maptool.model.entities;
 
 import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.entities.components.LocalId;
@@ -30,8 +32,16 @@ public class EntityManager {
   /** The parent of all entities. */
   private final Entity mapEntity;
 
+  // region APIs
+
+  private final List<Api> apis;
+  private final ParentageApi parentageApi;
+
+  // endregion
+
   public EntityManager() {
     this.world = new Engine();
+
     this.entitiesByLocalId = new HashMap<>();
 
     // The map entity gets a special ID for easy recognition.
@@ -39,6 +49,9 @@ public class EntityManager {
     var mapEntityId = GUID.zero();
     this.entitiesByLocalId.put(mapEntityId, mapEntity);
     this.world.addEntity(mapEntity);
+
+    this.apis = new ArrayList<>();
+    this.apis.add(this.parentageApi = new ParentageApi());
   }
 
   private GUID claimLocalId() {
@@ -76,6 +89,10 @@ public class EntityManager {
     entitiesByLocalId.put(entityId, entity);
     world.addEntity(entity);
 
+    for (var api : apis) {
+      api.afterSpawn(entity);
+    }
+
     return entity;
   }
 
@@ -89,7 +106,16 @@ public class EntityManager {
       throw new IllegalArgumentException("Duplicate LocalID: " + idComp.id());
     }
 
+    /*
+     * TODO How do we import parentage information? Particular since the parent entity might not yet
+     *  exist, particularly during campaign deserialization.
+     */
+
     world.addEntity(entity);
+
+    for (var api : apis) {
+      api.afterSpawn(entity);
+    }
   }
 
   public void destroy(Entity entity) {
@@ -99,7 +125,15 @@ public class EntityManager {
       return;
     }
 
+    for (var api : apis.reversed()) {
+      api.beforeDestroy(entity);
+    }
+
     world.removeEntity(entity);
     entitiesByLocalId.remove(localId.id());
+  }
+
+  public ParentageApi getParentageApi() {
+    return parentageApi;
   }
 }
