@@ -26,17 +26,49 @@ public class ParentageApi implements Api {
   private final ComponentMapper<ChildBufferComponent> childMapper =
       ComponentMapper.getFor(ChildBufferComponent.class);
 
-  public void setParentTo(@NonNull Entity child, @NonNull Entity parent) {
-    // In case the child is already parented...
+  public Entity getParent(@NonNull Entity entity) {
+    var parentComponent = parentMapper.get(entity);
+    return parentComponent == null ? null : parentComponent.parent();
+  }
+
+  /**
+   * Checks if {@code possibleAncestor} is an ancestor of {@code child} (including if they are the
+   * same).
+   *
+   * @param entity
+   * @param possibleAncestor
+   * @return
+   */
+  public boolean isAncestorOf(@NonNull Entity possibleAncestor, @NonNull Entity entity) {
+    var current = entity;
+    while (current != null) {
+      if (current == possibleAncestor) {
+        return true;
+      }
+
+      current = getParent(current);
+    }
+
+    return false;
+  }
+
+  public void setParentTo(@NonNull Entity child, @NonNull Entity newParent) {
+    // First, ensure we have no cycles.
+    if (isAncestorOf(child, newParent)) {
+      throw new IllegalArgumentException("Parent change would create a cycle.");
+    }
+
+    // In case the child is already parented, we need to update the original parent.
     removeParentFrom(child);
 
-    child.add(new ParentComponent(parent));
+    // Now we can properly add the new parent.
+    child.add(new ParentComponent(newParent));
 
     // Make sure the parent entity has a child buffer ready to go.
-    var buffer = childMapper.get(parent);
+    var buffer = childMapper.get(newParent);
     if (buffer == null) {
       buffer = new ChildBufferComponent();
-      parent.add(buffer);
+      newParent.add(buffer);
     }
 
     // Make sure the parent knows about the child.
@@ -46,15 +78,14 @@ public class ParentageApi implements Api {
   }
 
   public void removeParentFrom(@NonNull Entity child) {
-    var parentComponent = parentMapper.get(child);
-    if (parentComponent == null) {
+    var parent = getParent(child);
+    if (parent == null) {
       // No parentage.
       return;
     }
-    var parentEntity = parentComponent.parent();
 
     // Unregister the child from the parent.
-    var buffer = childMapper.get(parentEntity);
+    var buffer = childMapper.get(parent);
     if (buffer != null) {
       buffer.children.removeValue(child, true);
     }
