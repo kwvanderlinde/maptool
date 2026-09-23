@@ -30,12 +30,28 @@ public class GUID implements Serializable, Comparable<GUID> {
 
   // NOTE: THIS CAN NEVER BE CHANGED, OR IT WILL AFFECT ALL THINGS THAT PREVIOUSLY USED IT
   public static final int GUID_BUCKETS = 100;
+
   // NOTE: THIS CAN NEVER BE CHANGED, OR IT WILL AFFECT ALL THINGS THAT PREVIOUSLY USED IT
+
+  public static GUID random() {
+    return new GUID();
+  }
+
+  public static GUID zero() {
+    return new GUID(new byte[16]);
+  }
 
   private final byte[] baGUID;
 
   // Cache of the hashCode for a GUID
   private transient int hash;
+
+  private GUID(byte[] data) {
+    assert data != null;
+    assert data.length == GUID_LENGTH;
+
+    this.baGUID = data;
+  }
 
   public GUID() {
     this.baGUID = generateGUID();
@@ -146,7 +162,7 @@ public class GUID implements Serializable, Comparable<GUID> {
    *
    * @return a byte[]
    */
-  public static byte[] generateGUID() throws InvalidGUIDException {
+  private static byte[] generateGUID() throws InvalidGUIDException {
     String newGUID = UUID.randomUUID().toString().replaceAll("-", "");
 
     while (StringUtils.isNumeric(newGUID)) {
