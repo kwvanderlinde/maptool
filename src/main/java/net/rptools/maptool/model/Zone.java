@@ -19,6 +19,8 @@ import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.Area;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -47,6 +49,8 @@ import net.rptools.maptool.model.drawing.DrawablesGroup;
 import net.rptools.maptool.model.drawing.DrawnElement;
 import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.model.entities.EntityManager;
+import net.rptools.maptool.model.entities.components.PlacementComponent;
+import net.rptools.maptool.model.entities.components.PogComponent;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.tokens.TokenMacroChanged;
 import net.rptools.maptool.model.tokens.TokenPanelChanged;
@@ -444,6 +448,11 @@ public class Zone {
     drawablesByLayer.put(Layer.BACKGROUND, backgroundDrawables);
 
     entityManager = new EntityManager();
+
+    var exampleEntity = entityManager.spawn();
+    exampleEntity.add(
+        new PlacementComponent(new Point2D.Double(25, 50), new Rectangle2D.Double(0, 0, 100, 100)));
+    exampleEntity.add(new PogComponent(new MD5Key("87f4e9bfa4f1f3db250b57b3599fa4e9"), 0.5));
   }
 
   public Zone() {
