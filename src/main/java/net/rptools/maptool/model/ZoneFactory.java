@@ -44,7 +44,7 @@ public class ZoneFactory {
 
     File grassImage =
         new File(AppUtil.getAppHome("resource/Default/Textures").getAbsolutePath() + "/Grass.png");
-    if (!grassImage.exists()) {
+    if (true || !grassImage.exists()) {
       log.warn(
           "Unable to load the default background texture: file {} does not exist",
           grassImage.getPath());

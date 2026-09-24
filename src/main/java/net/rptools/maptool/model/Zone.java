@@ -14,11 +14,18 @@
  */
 package net.rptools.maptool.model;
 
+import com.badlogic.ashley.core.Component;
+import com.badlogic.ashley.core.ComponentMapper;
+import com.badlogic.ashley.core.Entity;
+import com.badlogic.ashley.core.Family;
 import com.google.protobuf.StringValue;
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -28,6 +35,7 @@ import javax.swing.*;
 import net.rptools.lib.GeometryUtil;
 import net.rptools.lib.MD5Key;
 import net.rptools.lib.StringUtil;
+import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.tool.drawing.UndoPerZone;
@@ -47,6 +55,14 @@ import net.rptools.maptool.model.drawing.DrawablesGroup;
 import net.rptools.maptool.model.drawing.DrawnElement;
 import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.model.entities.EntityManager;
+import net.rptools.maptool.model.entities.components.CameraComponent;
+import net.rptools.maptool.model.entities.components.GridComponent;
+import net.rptools.maptool.model.entities.components.LayoutComponent;
+import net.rptools.maptool.model.entities.components.LocalTransformComponent;
+import net.rptools.maptool.model.entities.components.ParentComponent;
+import net.rptools.maptool.model.entities.components.PlacementComponent;
+import net.rptools.maptool.model.entities.components.PogComponent;
+import net.rptools.maptool.model.entities.components.WorldTransformComponent;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.tokens.TokenMacroChanged;
 import net.rptools.maptool.model.tokens.TokenPanelChanged;
@@ -435,6 +451,14 @@ public class Zone {
   private transient Map<String, Integer> tokenNumberCache;
 
   private transient EntityManager entityManager;
+  private transient Entity cameraEntity;
+  private transient Entity mapEntity;
+  private transient Entity rootEntity;
+  private transient Entity exampleEntity;
+  private transient Entity exampleEntity2;
+  private transient Entity exampleEntity3;
+  private transient Entity exampleEntity4;
+  private transient Entity exampleEntity5;
 
   {
     drawablesByLayer = new EnumMap<>(Layer.class);
@@ -444,14 +468,241 @@ public class Zone {
     drawablesByLayer.put(Layer.BACKGROUND, backgroundDrawables);
 
     entityManager = new EntityManager();
+
+    /*
+     * Idea:
+     * - Map is an entity
+     * - Grid is a separate entity with the map as its parent. Normally placed at (0, 0), but can be
+     *   adjusted just like the current grid.
+     * - Similarly, MapImage is a bounded entity, and Board is a repeating entity also placed
+     *   relative to the root Map entity.
+     */
+
+    {
+      cameraEntity = entityManager.spawn();
+      cameraEntity.add(new PlacementComponent(new Point2D.Double(0., 0.), 0., 1.));
+      cameraEntity.add(new CameraComponent(new AffineTransform()));
+      // A nice showcase, but camera rotation is not very practical until tooling recognizes it.
+      // cameraEntity.add(new Trajectory(0.3));
+    }
+
+    {
+      var hudEntity = entityManager.spawn();
+      hudEntity.add(new LayoutComponent(new Rectangle2D.Double(-30, -30, 60, 60)));
+      hudEntity.add(new PlacementComponent(new Point2D.Double(50, 50), 0., 1.));
+      hudEntity.add(new PogComponent(new MD5Key("88bd0bda291744ad75ff12ca0ab73c9e"), 1.0));
+      entityManager.getParentageApi().setParentTo(hudEntity, cameraEntity);
+    }
+
+    {
+      mapEntity = entityManager.spawn();
+      mapEntity.add(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
+    }
+
+    {
+      var gridEntity = entityManager.spawn();
+      entityManager.getParentageApi().setParentTo(gridEntity, mapEntity);
+      gridEntity.add(new GridComponent(GridComponent.Type.Square, 100, 100, Color.black, 1.));
+      gridEntity.add(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
+    }
+
+    {
+      rootEntity = entityManager.spawn();
+      rootEntity.add(new LayoutComponent(new Rectangle2D.Double(-5, -5, 10, 10)));
+      rootEntity.add(new PlacementComponent(new Point2D.Double(500, 500), 0., 1.));
+      rootEntity.add(new Trajectory(0.5));
+      entityManager.getParentageApi().setParentTo(rootEntity, mapEntity);
+    }
+
+    {
+      exampleEntity = entityManager.spawn();
+      exampleEntity.add(new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)));
+      exampleEntity.add(new PlacementComponent(new Point2D.Double(50, 50), 0., 1.));
+      exampleEntity.add(new Trajectory(0.75));
+      exampleEntity.add(new PogComponent(new MD5Key("87f4e9bfa4f1f3db250b57b3599fa4e9"), 0.15));
+      entityManager.getParentageApi().setParentTo(exampleEntity, rootEntity);
+    }
+
+    {
+      exampleEntity2 = entityManager.spawn();
+      exampleEntity2.add(new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)));
+      exampleEntity2.add(new PlacementComponent(new Point2D.Double(-50, -50), 0., 1.));
+      exampleEntity2.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
+      exampleEntity2.add(new Trajectory(1.5));
+      entityManager.getParentageApi().setParentTo(exampleEntity2, exampleEntity);
+    }
+
+    {
+      exampleEntity3 = entityManager.spawn();
+      exampleEntity3.add(new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)));
+      exampleEntity3.add(new PlacementComponent(new Point2D.Double(50, -50), 0., 1.));
+      exampleEntity3.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
+      exampleEntity3.add(new Trajectory(1.5));
+      entityManager.getParentageApi().setParentTo(exampleEntity3, exampleEntity);
+    }
+
+    {
+      exampleEntity4 = entityManager.spawn();
+      exampleEntity4.add(new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)));
+      exampleEntity4.add(new PlacementComponent(new Point2D.Double(50, 50), 0., 1.));
+      exampleEntity4.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
+      exampleEntity4.add(new Trajectory(1.5));
+      entityManager.getParentageApi().setParentTo(exampleEntity4, exampleEntity);
+    }
+
+    {
+      exampleEntity5 = entityManager.spawn();
+      exampleEntity5.add(new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)));
+      exampleEntity5.add(new PlacementComponent(new Point2D.Double(-50, 50), 0., 1.));
+      exampleEntity5.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
+      exampleEntity5.add(new Trajectory(1.5));
+      entityManager.getParentageApi().setParentTo(exampleEntity5, exampleEntity);
+    }
+
+    SwingUtilities.invokeLater(() -> this.renderLoop(System.nanoTime()));
   }
+
+  private record Trajectory(double radiansPerSecond) implements Component {}
 
   public Zone() {
     undo = new UndoPerZone(this); // registers as ModelChangeListener for drawables...
   }
 
+  private void renderLoop(long previousTime) {
+    var time = System.nanoTime();
+    var delta = (time - previousTime) / 1_000_000_000.;
+
+    var renderer = MapTool.getFrame().getZoneRenderer(id);
+    if (renderer != null) {
+      update(renderer, delta);
+      renderer.repaint();
+    }
+    SwingUtilities.invokeLater(() -> this.renderLoop(time));
+  }
+
+  private void update(ZoneRenderer renderer, double delta) {
+    var scale = renderer.getViewModel().getZoneScale();
+    var cameraFamily = Family.all(CameraComponent.class, PlacementComponent.class).get();
+
+    // region Import model data into entities
+    // Camera
+    {
+      // The camera is contravariant. uses a special inverse to determine the coordinate system.
+      for (var entity : entityManager.getEngine().getEntitiesFor(cameraFamily)) {
+        var placement = entity.getComponent(PlacementComponent.class);
+        entity.add(
+            new PlacementComponent(
+                new Point2D.Double(
+                    -scale.getOffsetX() / scale.getScale(), -scale.getOffsetY() / scale.getScale()),
+                placement.rotation(),
+                1 / scale.getScale()));
+      }
+    }
+
+    // Grid
+    {
+      var gridFamily = Family.all(GridComponent.class).get();
+      var gridEntities = entityManager.getEngine().getEntitiesFor(gridFamily);
+      for (var gridEntity : gridEntities) {
+        var type =
+            switch (grid.getType()) {
+              case Square -> GridComponent.Type.Square;
+              case Isometric -> GridComponent.Type.Isometric;
+              case HexVertical -> GridComponent.Type.HexFlatTop;
+              case HexHorizontal -> GridComponent.Type.HexPointyTop;
+              case None -> GridComponent.Type.Gridless;
+            };
+
+        gridEntity.add(
+            new GridComponent(
+                type,
+                grid.getSize(),
+                grid.getSecondDimension(),
+                new Color(gridColor, false),
+                AppState.getGridLineWeight() / scale.getScale()));
+        gridEntity.add(
+            new PlacementComponent(
+                new Point2D.Double(grid.getOffsetX(), grid.getOffsetY()), 0., 1.));
+      }
+    }
+
+    // endregion
+
+    var trajectoryFamily = Family.all(Trajectory.class, PlacementComponent.class).get();
+    var trajectoryMapper = ComponentMapper.getFor(Trajectory.class);
+    var placementMapper = ComponentMapper.getFor(PlacementComponent.class);
+    for (var entity : entityManager.getEngine().getEntitiesFor(trajectoryFamily)) {
+      var trajectory = trajectoryMapper.get(entity);
+      var placement = placementMapper.get(entity);
+      if (trajectory != null && placement != null) {
+        placement =
+            new PlacementComponent(
+                placement.position(),
+                placement.rotation() + trajectory.radiansPerSecond * delta,
+                placement.scale());
+        entity.add(placement);
+      }
+    }
+
+    var localTransformableFamily = Family.all(PlacementComponent.class).get();
+    for (var entity : entityManager.getEngine().getEntitiesFor(localTransformableFamily)) {
+      var placement = entity.getComponent(PlacementComponent.class);
+      if (placement == null) {
+        continue;
+      }
+
+      var localTransform = new AffineTransform();
+      localTransform.translate(placement.position().getX(), placement.position().getY());
+      localTransform.rotate(placement.rotation());
+      localTransform.scale(placement.scale(), placement.scale());
+      entity.add(new LocalTransformComponent(localTransform));
+    }
+
+    var worldTransformableFamily = Family.all(LocalTransformComponent.class).get();
+    for (var entity : entityManager.getEngine().getEntitiesFor(worldTransformableFamily)) {
+      var localTransform = entity.getComponent(LocalTransformComponent.class);
+      if (localTransform == null) {
+        continue;
+      }
+
+      var worldTransform = new AffineTransform(localTransform.transform());
+
+      var parent = entity.getComponent(ParentComponent.class);
+      if (parent != null) {
+        var parentTransform = parent.parent().getComponent(WorldTransformComponent.class);
+        if (parentTransform != null) {
+          worldTransform.preConcatenate(parentTransform.transform());
+        }
+      }
+
+      entity.add(new WorldTransformComponent(worldTransform));
+    }
+
+    {
+      // The camera is contravariant. uses a special inverse to determine the coordinate system.
+      for (var entity : entityManager.getEngine().getEntitiesFor(cameraFamily)) {
+        var placement = entity.getComponent(PlacementComponent.class);
+
+        // Set up the contravariant transform as the camera-induced coordinate system.
+        var transform = new AffineTransform();
+        transform.rotate(-placement.rotation());
+        transform.scale(1. / placement.scale(), 1. / placement.scale());
+        transform.translate(-placement.position().getX(), -placement.position().getY());
+        entity.add(new CameraComponent(transform));
+      }
+    }
+  }
+
   public EntityManager getEntityManager() {
     return entityManager;
+  }
+
+  public Entity getMapEntity() {
+    return mapEntity;
+  }
+
+  public Entity getCameraEntity() {
+    return cameraEntity;
   }
 
   public void setBackgroundPaint(DrawablePaint paint) {
