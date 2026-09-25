@@ -450,6 +450,10 @@ public class Zone {
     undo = new UndoPerZone(this); // registers as ModelChangeListener for drawables...
   }
 
+  public EntityManager getEntityManager() {
+    return entityManager;
+  }
+
   public void setBackgroundPaint(DrawablePaint paint) {
     backgroundPaint = paint;
   }

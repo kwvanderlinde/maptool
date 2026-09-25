@@ -14,6 +14,7 @@
  */
 package net.rptools.maptool.client.ui.zone.renderer;
 
+import com.badlogic.ashley.core.ComponentMapper;
 import com.google.common.eventbus.Subscribe;
 import java.awt.*;
 import java.awt.Rectangle;
@@ -66,6 +67,8 @@ import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.Label;
 import net.rptools.maptool.model.Zone.Layer;
 import net.rptools.maptool.model.drawing.*;
+import net.rptools.maptool.model.entities.components.PlacementComponent;
+import net.rptools.maptool.model.entities.components.PogComponent;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.zones.*;
 import net.rptools.maptool.util.GraphicsUtil;
@@ -980,6 +983,47 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     }
 
     this.visionOverlayRenderer.render(g2d, view, tokenUnderMouse);
+
+    // region Entities!
+
+    var placementMapper = ComponentMapper.getFor(PlacementComponent.class);
+    var pogMapper = ComponentMapper.getFor(PogComponent.class);
+    // TODO Eventually we should have AffineTransform per entity, so entities can pin themselves to
+    //  the frame (for a HUD) or similar.
+    renderHelper.render(
+        g2d,
+        worldG -> {
+          for (var entity : zone.getEntityManager().getAllEntities()) {
+            var placement = placementMapper.get(entity);
+            if (placement != null) {
+              var pog = pogMapper.get(entity);
+              if (pog != null) {
+                var image = ImageManager.getImage(pog.asset(), this);
+
+                var transform = new AffineTransform();
+                transform.scale(
+                    placement.bounds().getWidth() / image.getWidth(),
+                    placement.bounds().getHeight() / image.getHeight());
+                transform.translate(placement.bounds().getX(), placement.bounds().getY());
+
+                worldG.setComposite(AlphaComposite.SrcOver.derive((float) pog.opacity()));
+                worldG.drawImage(image, transform, this);
+              }
+
+              // Debug rendering
+              worldG.setPaint(Color.blue);
+              worldG.setStroke(new BasicStroke(2.f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+              if (placement.bounds().getWidth() > 0 && placement.bounds().getHeight() > 0) {
+                worldG.draw(placement.bounds());
+              }
+              worldG.fill(
+                  new Ellipse2D.Double(
+                      placement.position().getX() - 2.5, placement.position().getY() - 2.5, 5, 5));
+            }
+          }
+        });
+
+    // endregion
 
     timer.start("overlays");
     for (ZoneOverlay overlay : overlayList) {

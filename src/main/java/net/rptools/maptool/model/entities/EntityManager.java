@@ -16,6 +16,7 @@ package net.rptools.maptool.model.entities;
 
 import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
+import com.badlogic.ashley.utils.ImmutableArray;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -75,6 +76,10 @@ public class EntityManager {
 
   public Entity getMapEntity() {
     return mapEntity;
+  }
+
+  public ImmutableArray<Entity> getAllEntities() {
+    return world.getEntities();
   }
 
   public Entity getByLocalId(GUID id) {
