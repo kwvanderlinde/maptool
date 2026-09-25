@@ -14,10 +14,12 @@
  */
 package net.rptools.maptool.model;
 
+import com.badlogic.ashley.core.Entity;
 import com.google.protobuf.StringValue;
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -49,8 +51,11 @@ import net.rptools.maptool.model.drawing.DrawablesGroup;
 import net.rptools.maptool.model.drawing.DrawnElement;
 import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.model.entities.EntityManager;
+import net.rptools.maptool.model.entities.components.LocalTransformComponent;
+import net.rptools.maptool.model.entities.components.ParentComponent;
 import net.rptools.maptool.model.entities.components.PlacementComponent;
 import net.rptools.maptool.model.entities.components.PogComponent;
+import net.rptools.maptool.model.entities.components.WorldTransformComponent;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.tokens.TokenMacroChanged;
 import net.rptools.maptool.model.tokens.TokenPanelChanged;
@@ -439,6 +444,8 @@ public class Zone {
   private transient Map<String, Integer> tokenNumberCache;
 
   private transient EntityManager entityManager;
+  private transient Entity exampleEntity;
+  private transient Entity exampleEntity2;
 
   {
     drawablesByLayer = new EnumMap<>(Layer.class);
@@ -449,14 +456,105 @@ public class Zone {
 
     entityManager = new EntityManager();
 
-    var exampleEntity = entityManager.spawn();
-    exampleEntity.add(
-        new PlacementComponent(new Point2D.Double(25, 50), new Rectangle2D.Double(0, 0, 100, 100)));
-    exampleEntity.add(new PogComponent(new MD5Key("87f4e9bfa4f1f3db250b57b3599fa4e9"), 0.5));
+    {
+      var placement =
+          new PlacementComponent(
+              new Point2D.Double(225, 250), 0., new Rectangle2D.Double(200, 200, 100, 100));
+      var transform = new AffineTransform();
+      transform.translate(placement.bounds().getCenterX(), placement.bounds().getCenterY());
+      transform.scale(placement.bounds().getWidth(), placement.bounds().getHeight());
+      transform.rotate(placement.rotation());
+
+      exampleEntity = entityManager.spawn();
+      exampleEntity.add(placement);
+      exampleEntity.add(new PogComponent(new MD5Key("87f4e9bfa4f1f3db250b57b3599fa4e9"), 0.5));
+
+      exampleEntity.add(new LocalTransformComponent(transform));
+    }
+
+    {
+      var placement =
+          new PlacementComponent(
+              new Point2D.Double(100, 100), 0., new Rectangle2D.Double(100, 100, 50, 50));
+      var transform = new AffineTransform();
+      transform.translate(placement.bounds().getCenterX(), placement.bounds().getCenterY());
+      transform.scale(placement.bounds().getWidth(), placement.bounds().getHeight());
+      transform.rotate(placement.rotation());
+
+      exampleEntity2 = entityManager.spawn();
+      exampleEntity2.add(placement);
+      exampleEntity2.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.5));
+      entityManager.getParentageApi().setParentTo(exampleEntity2, exampleEntity);
+
+      exampleEntity2.add(new LocalTransformComponent(transform));
+    }
+
+    SwingUtilities.invokeLater(this::renderLoop);
   }
 
   public Zone() {
     undo = new UndoPerZone(this); // registers as ModelChangeListener for drawables...
+  }
+
+  private void renderLoop() {
+    var renderer = MapTool.getFrame().getCurrentZoneRenderer();
+    if (renderer != null) {
+      renderer.repaint();
+    }
+
+    if (true) {
+      var placement = exampleEntity.getComponent(PlacementComponent.class);
+      if (placement != null) {
+        placement =
+            new PlacementComponent(
+                placement.position(), placement.rotation() + 0.01, placement.bounds());
+        exampleEntity.add(placement);
+      }
+    }
+    if (true) {
+      var placement = exampleEntity2.getComponent(PlacementComponent.class);
+      if (placement != null) {
+        placement =
+            new PlacementComponent(
+                placement.position(), placement.rotation() + 0.01, placement.bounds());
+        exampleEntity2.add(placement);
+      }
+    }
+
+    var entitiesTopological = List.of(exampleEntity, exampleEntity2);
+    for (var entity : entitiesTopological) {
+      var placement = entity.getComponent(PlacementComponent.class);
+      if (placement == null) {
+        continue;
+      }
+
+      var transform = new AffineTransform();
+      transform.translate(placement.bounds().getCenterX(), placement.bounds().getCenterY());
+      transform.rotate(placement.rotation());
+      transform.translate(-placement.bounds().getCenterX(), -placement.bounds().getCenterY());
+      entity.add(new LocalTransformComponent(transform));
+    }
+
+    for (var entity : entitiesTopological) {
+      var localTransform = entity.getComponent(LocalTransformComponent.class);
+      if (localTransform == null) {
+        continue;
+      }
+
+      var worldTransform = new AffineTransform(localTransform.transform());
+
+      var parent = entity.getComponent(ParentComponent.class);
+      if (parent != null) {
+        var parentTransform = parent.parent().getComponent(WorldTransformComponent.class);
+        if (parentTransform != null) {
+          worldTransform.preConcatenate(parentTransform.transform());
+        }
+      }
+
+      entity.add(new WorldTransformComponent(worldTransform));
+    }
+
+    SwingUtilities.invokeLater(this::renderLoop);
   }
 
   public EntityManager getEntityManager() {
