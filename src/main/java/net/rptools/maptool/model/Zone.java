@@ -475,7 +475,7 @@ public class Zone {
     {
       var placement =
           new PlacementComponent(
-              new Point2D.Double(100, 100), 0., new Rectangle2D.Double(100, 100, 50, 50));
+              new Point2D.Double(125, 125), 0., new Rectangle2D.Double(100, 100, 50, 50));
       var transform = new AffineTransform();
       transform.translate(placement.bounds().getCenterX(), placement.bounds().getCenterY());
       transform.scale(placement.bounds().getWidth(), placement.bounds().getHeight());
