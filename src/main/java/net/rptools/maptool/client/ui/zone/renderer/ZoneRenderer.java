@@ -1000,10 +1000,13 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           for (var entity : zone.getEntityManager().getAllEntities()) {
             var entityG = (Graphics2D) worldG.create();
 
-            var placement = placementMapper.get(entity);
-            var localTransform = localXformMapper.get(entity);
             var worldTransform = worldXformMapper.get(entity);
-            if (placement != null && worldTransform != null) {
+            if (worldTransform != null) {
+              entityG.transform(worldTransform.transform());
+            }
+
+            var placement = placementMapper.get(entity);
+            if (placement != null) {
               var pog = pogMapper.get(entity);
               if (pog != null) {
                 var image = ImageManager.getImage(pog.asset(), this);
@@ -1014,15 +1017,11 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
                     placement.bounds().getWidth() / image.getWidth(),
                     placement.bounds().getHeight() / image.getHeight());
 
-                // Full transform is determined by the world transform
-                transform.preConcatenate(worldTransform.transform());
-
                 entityG.setComposite(AlphaComposite.SrcOver.derive((float) pog.opacity()));
                 entityG.drawImage(image, transform, this);
               }
 
               // Debug rendering
-              entityG.transform(worldTransform.transform());
               entityG.setPaint(Color.blue);
               entityG.setStroke(
                   new BasicStroke(2.f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
