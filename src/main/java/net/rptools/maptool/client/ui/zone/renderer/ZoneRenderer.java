@@ -998,6 +998,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         g2d,
         worldG -> {
           for (var entity : zone.getEntityManager().getAllEntities()) {
+            var entityG = (Graphics2D) worldG.create();
+
             var placement = placementMapper.get(entity);
             var localTransform = localXformMapper.get(entity);
             var worldTransform = worldXformMapper.get(entity);
@@ -1015,18 +1017,19 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
                 // Full transform is determined by the world transform
                 transform.preConcatenate(worldTransform.transform());
 
-                worldG.setComposite(AlphaComposite.SrcOver.derive((float) pog.opacity()));
-                worldG.drawImage(image, transform, this);
+                entityG.setComposite(AlphaComposite.SrcOver.derive((float) pog.opacity()));
+                entityG.drawImage(image, transform, this);
               }
 
               // Debug rendering
-              worldG.transform(worldTransform.transform());
-              worldG.setPaint(Color.blue);
-              worldG.setStroke(new BasicStroke(2.f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+              entityG.transform(worldTransform.transform());
+              entityG.setPaint(Color.blue);
+              entityG.setStroke(
+                  new BasicStroke(2.f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
               if (placement.bounds().getWidth() > 0 && placement.bounds().getHeight() > 0) {
-                worldG.draw(placement.bounds());
+                entityG.draw(placement.bounds());
               }
-              worldG.fill(
+              entityG.fill(
                   new Ellipse2D.Double(
                       placement.position().getX() - 2.5, placement.position().getY() - 2.5, 5, 5));
             }
