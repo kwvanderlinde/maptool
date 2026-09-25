@@ -15,8 +15,6 @@
 package net.rptools.maptool.model.entities.components;
 
 import com.badlogic.ashley.core.Component;
-import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
+import java.awt.geom.AffineTransform;
 
-public record PlacementComponent(Point2D position, double rotation, Rectangle2D bounds)
-    implements Component {}
+public record WorldTransformComponent(AffineTransform transform) implements Component {}

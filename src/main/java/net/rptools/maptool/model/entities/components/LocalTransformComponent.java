@@ -15,8 +15,14 @@
 package net.rptools.maptool.model.entities.components;
 
 import com.badlogic.ashley.core.Component;
-import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
+import java.awt.geom.AffineTransform;
 
-public record PlacementComponent(Point2D position, double rotation, Rectangle2D bounds)
-    implements Component {}
+/**
+ * The transformation required to place an entity relative to its parent.
+ *
+ * <p>The transform is whatever it takes to convert from a normalized box ([-0.5, 0.5] x [0.5, 0.5])
+ * the final position.
+ *
+ * @param transform
+ */
+public record LocalTransformComponent(AffineTransform transform) implements Component {}

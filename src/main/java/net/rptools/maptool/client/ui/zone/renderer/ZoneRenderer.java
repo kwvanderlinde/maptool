@@ -67,8 +67,10 @@ import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.Label;
 import net.rptools.maptool.model.Zone.Layer;
 import net.rptools.maptool.model.drawing.*;
+import net.rptools.maptool.model.entities.components.LocalTransformComponent;
 import net.rptools.maptool.model.entities.components.PlacementComponent;
 import net.rptools.maptool.model.entities.components.PogComponent;
+import net.rptools.maptool.model.entities.components.WorldTransformComponent;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.zones.*;
 import net.rptools.maptool.util.GraphicsUtil;
@@ -988,6 +990,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     var placementMapper = ComponentMapper.getFor(PlacementComponent.class);
     var pogMapper = ComponentMapper.getFor(PogComponent.class);
+    var localXformMapper = ComponentMapper.getFor(LocalTransformComponent.class);
+    var worldXformMapper = ComponentMapper.getFor(WorldTransformComponent.class);
     // TODO Eventually we should have AffineTransform per entity, so entities can pin themselves to
     //  the frame (for a HUD) or similar.
     renderHelper.render(
@@ -995,22 +999,28 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         worldG -> {
           for (var entity : zone.getEntityManager().getAllEntities()) {
             var placement = placementMapper.get(entity);
-            if (placement != null) {
+            var localTransform = localXformMapper.get(entity);
+            var worldTransform = worldXformMapper.get(entity);
+            if (placement != null && worldTransform != null) {
               var pog = pogMapper.get(entity);
               if (pog != null) {
                 var image = ImageManager.getImage(pog.asset(), this);
 
                 var transform = new AffineTransform();
+                transform.translate(placement.bounds().getX(), placement.bounds().getY());
                 transform.scale(
                     placement.bounds().getWidth() / image.getWidth(),
                     placement.bounds().getHeight() / image.getHeight());
-                transform.translate(placement.bounds().getX(), placement.bounds().getY());
+
+                // Full transform is determined by the world transform
+                transform.preConcatenate(worldTransform.transform());
 
                 worldG.setComposite(AlphaComposite.SrcOver.derive((float) pog.opacity()));
                 worldG.drawImage(image, transform, this);
               }
 
               // Debug rendering
+              worldG.transform(worldTransform.transform());
               worldG.setPaint(Color.blue);
               worldG.setStroke(new BasicStroke(2.f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
               if (placement.bounds().getWidth() > 0 && placement.bounds().getHeight() > 0) {
