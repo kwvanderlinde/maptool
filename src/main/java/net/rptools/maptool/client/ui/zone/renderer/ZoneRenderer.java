@@ -132,6 +132,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   private ZonePoint previousZonePoint;
 
   private final EnumSet<Layer> disabledLayers = EnumSet.noneOf(Layer.class);
+  private final RenderHelper renderHelper;
   private final GridRenderer gridRenderer;
   private final HaloRenderer haloRenderer;
   private final TokenRenderer tokenRenderer;
@@ -166,7 +167,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         CollectionUtil.newFilledEnumMap(
             Zone.Layer.class, layer -> new PartitionedDrawableRenderer(zone));
 
-    var renderHelper = new RenderHelper(this, tempBufferPool);
+    this.renderHelper = new RenderHelper(this, tempBufferPool);
     this.gridRenderer = new GridRenderer(this);
     this.haloRenderer = new HaloRenderer(renderHelper, MapTool.getCampaign(), zone);
     this.tokenRenderer = new TokenRenderer(renderHelper, zone);
