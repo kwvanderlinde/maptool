@@ -55,6 +55,10 @@ public class EntityManager {
     this.apis.add(this.parentageApi = new ParentageApi());
   }
 
+  public Engine getEngine() {
+    return world;
+  }
+
   private GUID claimLocalId() {
     GUID entityId = GUID.random();
 
