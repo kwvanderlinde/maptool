@@ -54,6 +54,7 @@ import net.rptools.maptool.model.drawing.DrawablesGroup;
 import net.rptools.maptool.model.drawing.DrawnElement;
 import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.model.entities.EntityManager;
+import net.rptools.maptool.model.entities.components.LayoutComponent;
 import net.rptools.maptool.model.entities.components.LocalTransformComponent;
 import net.rptools.maptool.model.entities.components.ParentComponent;
 import net.rptools.maptool.model.entities.components.PlacementComponent;
@@ -463,64 +464,62 @@ public class Zone {
 
     entityManager = new EntityManager();
 
+    /*
+     * Idea:
+     * - Map is an entity
+     * - Grid is a separate entity with the map as its parent. Normally placed at (0, 0), but can be
+     *   adjusted just like the current grid.
+     * - Similarly, MapImage is a bounded entity, and Board is a repeating entity also placed
+     *   relative to the root Map entity.
+     */
+
     {
       rootEntity = entityManager.spawn();
-      rootEntity.add(
-          new PlacementComponent(
-              new Point2D.Double(500, 500), 0., new Rectangle2D.Double(-5, -5, 10, 10)));
+      rootEntity.add(new LayoutComponent(new Rectangle2D.Double(-5, -5, 10, 10)));
+      rootEntity.add(new PlacementComponent(new Point2D.Double(500, 500), 0.));
       rootEntity.add(new Trajectory(0.5));
     }
 
     {
-      var placement =
-          new PlacementComponent(
-              new Point2D.Double(50, 50), 0., new Rectangle2D.Double(-50, -50, 100, 100));
       exampleEntity = entityManager.spawn();
-      exampleEntity.add(placement);
+      exampleEntity.add(new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)));
+      exampleEntity.add(new PlacementComponent(new Point2D.Double(50, 50), 0.));
       exampleEntity.add(new Trajectory(0.75));
       exampleEntity.add(new PogComponent(new MD5Key("87f4e9bfa4f1f3db250b57b3599fa4e9"), 0.15));
       entityManager.getParentageApi().setParentTo(exampleEntity, rootEntity);
     }
 
     {
-      var placement =
-          new PlacementComponent(
-              new Point2D.Double(-50, -50), 0., new Rectangle2D.Double(-25, -25, 50, 50));
       exampleEntity2 = entityManager.spawn();
-      exampleEntity2.add(placement);
+      exampleEntity2.add(new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)));
+      exampleEntity2.add(new PlacementComponent(new Point2D.Double(-50, -50), 0.));
       exampleEntity2.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity2.add(new Trajectory(1.5));
       entityManager.getParentageApi().setParentTo(exampleEntity2, exampleEntity);
     }
 
     {
-      var placement =
-          new PlacementComponent(
-              new Point2D.Double(50, -50), 0., new Rectangle2D.Double(-25, -25, 50, 50));
       exampleEntity3 = entityManager.spawn();
-      exampleEntity3.add(placement);
+      exampleEntity3.add(new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)));
+      exampleEntity3.add(new PlacementComponent(new Point2D.Double(50, -50), 0.));
       exampleEntity3.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity3.add(new Trajectory(1.5));
       entityManager.getParentageApi().setParentTo(exampleEntity3, exampleEntity);
     }
 
     {
-      var placement =
-          new PlacementComponent(
-              new Point2D.Double(50, 50), 0., new Rectangle2D.Double(-25, -25, 50, 50));
       exampleEntity4 = entityManager.spawn();
-      exampleEntity4.add(placement);
+      exampleEntity4.add(new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)));
+      exampleEntity4.add(new PlacementComponent(new Point2D.Double(50, 50), 0.));
       exampleEntity4.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity4.add(new Trajectory(1.5));
       entityManager.getParentageApi().setParentTo(exampleEntity4, exampleEntity);
     }
 
     {
-      var placement =
-          new PlacementComponent(
-              new Point2D.Double(-50, 50), 0., new Rectangle2D.Double(-25, -25, 50, 50));
       exampleEntity5 = entityManager.spawn();
-      exampleEntity5.add(placement);
+      exampleEntity5.add(new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)));
+      exampleEntity5.add(new PlacementComponent(new Point2D.Double(-50, 50), 0.));
       exampleEntity5.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity5.add(new Trajectory(1.5));
       entityManager.getParentageApi().setParentTo(exampleEntity5, exampleEntity);
@@ -550,43 +549,6 @@ public class Zone {
   }
 
   private void update(double delta) {
-    var entitiesTopological =
-        List.of(exampleEntity, exampleEntity2, exampleEntity3, exampleEntity4, exampleEntity5);
-
-    if (false) {
-      var placement = rootEntity.getComponent(PlacementComponent.class);
-      if (placement != null) {
-        placement =
-            new PlacementComponent(
-                placement.position(), placement.rotation() + 0.5 * delta, placement.bounds());
-        rootEntity.add(placement);
-      }
-    }
-    if (false) {
-      var placement = exampleEntity.getComponent(PlacementComponent.class);
-      if (placement != null) {
-        placement =
-            new PlacementComponent(
-                placement.position(), placement.rotation() + 0.75 * delta, placement.bounds());
-        exampleEntity.add(placement);
-      }
-    }
-    if (false) {
-      for (var entity : entitiesTopological) {
-        if (entity == exampleEntity) {
-          continue;
-        }
-
-        var placement = entity.getComponent(PlacementComponent.class);
-        if (placement != null) {
-          placement =
-              new PlacementComponent(
-                  placement.position(), placement.rotation() + 1.5 * delta, placement.bounds());
-          entity.add(placement);
-        }
-      }
-    }
-
     var trajectoryFamily = Family.all(Trajectory.class, PlacementComponent.class).get();
     var trajectoryMapper = ComponentMapper.getFor(Trajectory.class);
     var placementMapper = ComponentMapper.getFor(PlacementComponent.class);
@@ -596,9 +558,7 @@ public class Zone {
       if (trajectory != null && placement != null) {
         placement =
             new PlacementComponent(
-                placement.position(),
-                placement.rotation() + trajectory.radiansPerSecond * delta,
-                placement.bounds());
+                placement.position(), placement.rotation() + trajectory.radiansPerSecond * delta);
         entity.add(placement);
       }
     }
