@@ -14,7 +14,10 @@
  */
 package net.rptools.maptool.model;
 
+import com.badlogic.ashley.core.Component;
+import com.badlogic.ashley.core.ComponentMapper;
 import com.badlogic.ashley.core.Entity;
+import com.badlogic.ashley.core.Family;
 import com.google.protobuf.StringValue;
 import java.awt.Color;
 import java.awt.Point;
@@ -444,6 +447,7 @@ public class Zone {
   private transient Map<String, Integer> tokenNumberCache;
 
   private transient EntityManager entityManager;
+  private transient Entity rootEntity;
   private transient Entity exampleEntity;
   private transient Entity exampleEntity2;
   private transient Entity exampleEntity3;
@@ -460,91 +464,72 @@ public class Zone {
     entityManager = new EntityManager();
 
     {
+      rootEntity = entityManager.spawn();
+      rootEntity.add(
+          new PlacementComponent(
+              new Point2D.Double(500, 500), 0.75, new Rectangle2D.Double(-50, -50, 100, 100)));
+      rootEntity.add(new Trajectory(0.5));
+    }
+
+    {
       var placement =
           new PlacementComponent(
               new Point2D.Double(250, 250), 0., new Rectangle2D.Double(-50, -50, 100, 100));
-      var transform = new AffineTransform();
-      transform.translate(placement.bounds().getCenterX(), placement.bounds().getCenterY());
-      transform.scale(placement.bounds().getWidth(), placement.bounds().getHeight());
-      transform.rotate(placement.rotation());
-
       exampleEntity = entityManager.spawn();
       exampleEntity.add(placement);
+      exampleEntity.add(new Trajectory(0.75));
       exampleEntity.add(new PogComponent(new MD5Key("87f4e9bfa4f1f3db250b57b3599fa4e9"), 0.5));
-
-      exampleEntity.add(new LocalTransformComponent(transform));
+      entityManager.getParentageApi().setParentTo(exampleEntity, rootEntity);
     }
 
     {
       var placement =
           new PlacementComponent(
               new Point2D.Double(-50, -50), 0., new Rectangle2D.Double(-25, -25, 50, 50));
-      var transform = new AffineTransform();
-      transform.translate(placement.bounds().getCenterX(), placement.bounds().getCenterY());
-      transform.scale(placement.bounds().getWidth(), placement.bounds().getHeight());
-      transform.rotate(placement.rotation());
-
       exampleEntity2 = entityManager.spawn();
       exampleEntity2.add(placement);
       exampleEntity2.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.5));
+      exampleEntity2.add(new Trajectory(1.5));
       entityManager.getParentageApi().setParentTo(exampleEntity2, exampleEntity);
-
-      exampleEntity2.add(new LocalTransformComponent(transform));
     }
 
     {
       var placement =
           new PlacementComponent(
               new Point2D.Double(50, -50), 0., new Rectangle2D.Double(-25, -25, 50, 50));
-      var transform = new AffineTransform();
-      transform.translate(placement.bounds().getCenterX(), placement.bounds().getCenterY());
-      transform.scale(placement.bounds().getWidth(), placement.bounds().getHeight());
-      transform.rotate(placement.rotation());
-
       exampleEntity3 = entityManager.spawn();
       exampleEntity3.add(placement);
       exampleEntity3.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.5));
+      exampleEntity3.add(new Trajectory(1.5));
       entityManager.getParentageApi().setParentTo(exampleEntity3, exampleEntity);
-
-      exampleEntity3.add(new LocalTransformComponent(transform));
     }
 
     {
       var placement =
           new PlacementComponent(
               new Point2D.Double(50, 50), 0., new Rectangle2D.Double(-25, -25, 50, 50));
-      var transform = new AffineTransform();
-      transform.translate(placement.bounds().getCenterX(), placement.bounds().getCenterY());
-      transform.scale(placement.bounds().getWidth(), placement.bounds().getHeight());
-      transform.rotate(placement.rotation());
-
       exampleEntity4 = entityManager.spawn();
       exampleEntity4.add(placement);
       exampleEntity4.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.5));
+      exampleEntity4.add(new Trajectory(1.5));
       entityManager.getParentageApi().setParentTo(exampleEntity4, exampleEntity);
-
-      exampleEntity4.add(new LocalTransformComponent(transform));
     }
 
     {
       var placement =
           new PlacementComponent(
               new Point2D.Double(-50, 50), 0., new Rectangle2D.Double(-25, -25, 50, 50));
-      var transform = new AffineTransform();
-      transform.translate(placement.bounds().getCenterX(), placement.bounds().getCenterY());
-      transform.scale(placement.bounds().getWidth(), placement.bounds().getHeight());
-      transform.rotate(placement.rotation());
-
       exampleEntity5 = entityManager.spawn();
       exampleEntity5.add(placement);
       exampleEntity5.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.5));
+      exampleEntity5.add(new Trajectory(1.5));
       entityManager.getParentageApi().setParentTo(exampleEntity5, exampleEntity);
-
-      exampleEntity5.add(new LocalTransformComponent(transform));
     }
 
     SwingUtilities.invokeLater(() -> this.renderLoop(System.nanoTime()));
   }
+
+  private record Trajectory(double radiansPerSecond) implements Component {}
 
   public Zone() {
     undo = new UndoPerZone(this); // registers as ModelChangeListener for drawables...
@@ -568,7 +553,16 @@ public class Zone {
     var entitiesTopological =
         List.of(exampleEntity, exampleEntity2, exampleEntity3, exampleEntity4, exampleEntity5);
 
-    if (true) {
+    if (false) {
+      var placement = rootEntity.getComponent(PlacementComponent.class);
+      if (placement != null) {
+        placement =
+            new PlacementComponent(
+                placement.position(), placement.rotation() + 0.5 * delta, placement.bounds());
+        rootEntity.add(placement);
+      }
+    }
+    if (false) {
       var placement = exampleEntity.getComponent(PlacementComponent.class);
       if (placement != null) {
         placement =
@@ -577,7 +571,7 @@ public class Zone {
         exampleEntity.add(placement);
       }
     }
-    if (true) {
+    if (false) {
       for (var entity : entitiesTopological) {
         if (entity == exampleEntity) {
           continue;
@@ -593,20 +587,37 @@ public class Zone {
       }
     }
 
-    for (var entity : entitiesTopological) {
+    var trajectoryFamily = Family.all(Trajectory.class, PlacementComponent.class).get();
+    var trajectoryMapper = ComponentMapper.getFor(Trajectory.class);
+    var placementMapper = ComponentMapper.getFor(PlacementComponent.class);
+    for (var entity : entityManager.getEngine().getEntitiesFor(trajectoryFamily)) {
+      var trajectory = trajectoryMapper.get(entity);
+      var placement = placementMapper.get(entity);
+      if (trajectory != null && placement != null) {
+        placement = new PlacementComponent(
+                placement.position(),
+                placement.rotation() + trajectory.radiansPerSecond * delta,
+                placement.bounds()
+        );
+        entity.add(placement);
+      }
+    }
+
+    var localTransformableFamily = Family.all(PlacementComponent.class).get();
+    for (var entity : entityManager.getEngine().getEntitiesFor(localTransformableFamily)) {
       var placement = entity.getComponent(PlacementComponent.class);
       if (placement == null) {
         continue;
       }
 
-      var transform = new AffineTransform();
-      transform.translate(placement.position().getX(), placement.position().getY());
-      transform.rotate(placement.rotation());
-      // transform.translate(-placement.bounds().getCenterX(), -placement.bounds().getCenterY());
-      entity.add(new LocalTransformComponent(transform));
+      var localTransform = new AffineTransform();
+      localTransform.translate(placement.position().getX(), placement.position().getY());
+      localTransform.rotate(placement.rotation());
+      entity.add(new LocalTransformComponent(localTransform));
     }
 
-    for (var entity : entitiesTopological) {
+    var worldTransformableFamily = Family.all(LocalTransformComponent.class).get();
+    for (var entity : entityManager.getEngine().getEntitiesFor(worldTransformableFamily)) {
       var localTransform = entity.getComponent(LocalTransformComponent.class);
       if (localTransform == null) {
         continue;
