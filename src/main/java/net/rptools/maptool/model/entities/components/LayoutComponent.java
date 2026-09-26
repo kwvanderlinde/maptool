@@ -20,10 +20,10 @@ import java.awt.geom.Rectangle2D;
 /**
  * Defines an entity is what could be called "model space".
  *
- * <p>In this space, the entity is positioned at (0, 0). Other components, like
- * {@link PlacementComponent} define how to transform the entity, particularly by moving its origin
- * and axis. For most entities, this means the bounds should be symmetrical around (0, 0), but that
- * is not a hard requirement.
+ * <p>In this space, the entity is positioned at (0, 0). Other components, like {@link
+ * PlacementComponent} define how to transform the entity, particularly by moving its origin and
+ * axis. For most entities, this means the bounds should be symmetrical around (0, 0), but that is
+ * not a hard requirement.
  *
  * <p>This allows defining the fundamental layout properties of the entity without worrying about it
  * location or other transformations on the map.

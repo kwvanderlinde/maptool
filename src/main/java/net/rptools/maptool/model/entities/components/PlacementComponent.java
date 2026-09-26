@@ -22,5 +22,7 @@ import java.awt.geom.Point2D;
  *
  * @param position The position of the entity's origin relative to its parent.
  * @param rotation The rotation of the entity around its own origin.
+ * @param scale The scale of the entity around its own origin.
  */
-public record PlacementComponent(Point2D position, double rotation) implements Component {}
+public record PlacementComponent(Point2D position, double rotation, double scale)
+    implements Component {}
