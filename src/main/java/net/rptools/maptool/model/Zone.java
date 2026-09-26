@@ -448,6 +448,7 @@ public class Zone {
   private transient Map<String, Integer> tokenNumberCache;
 
   private transient EntityManager entityManager;
+  private transient Entity mapEntity;
   private transient Entity rootEntity;
   private transient Entity exampleEntity;
   private transient Entity exampleEntity2;
@@ -474,16 +475,22 @@ public class Zone {
      */
 
     {
+      mapEntity = entityManager.spawn();
+      mapEntity.add(new PlacementComponent(new Point2D.Double(500, 500), 0., 1.));
+    }
+
+    {
       rootEntity = entityManager.spawn();
       rootEntity.add(new LayoutComponent(new Rectangle2D.Double(-5, -5, 10, 10)));
-      rootEntity.add(new PlacementComponent(new Point2D.Double(500, 500), 0.));
+      rootEntity.add(new PlacementComponent(new Point2D.Double(500, 500), 0., 1.));
       rootEntity.add(new Trajectory(0.5));
+      entityManager.getParentageApi().setParentTo(rootEntity, mapEntity);
     }
 
     {
       exampleEntity = entityManager.spawn();
       exampleEntity.add(new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)));
-      exampleEntity.add(new PlacementComponent(new Point2D.Double(50, 50), 0.));
+      exampleEntity.add(new PlacementComponent(new Point2D.Double(50, 50), 0., 1.));
       exampleEntity.add(new Trajectory(0.75));
       exampleEntity.add(new PogComponent(new MD5Key("87f4e9bfa4f1f3db250b57b3599fa4e9"), 0.15));
       entityManager.getParentageApi().setParentTo(exampleEntity, rootEntity);
@@ -492,7 +499,7 @@ public class Zone {
     {
       exampleEntity2 = entityManager.spawn();
       exampleEntity2.add(new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)));
-      exampleEntity2.add(new PlacementComponent(new Point2D.Double(-50, -50), 0.));
+      exampleEntity2.add(new PlacementComponent(new Point2D.Double(-50, -50), 0., 1.));
       exampleEntity2.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity2.add(new Trajectory(1.5));
       entityManager.getParentageApi().setParentTo(exampleEntity2, exampleEntity);
@@ -501,7 +508,7 @@ public class Zone {
     {
       exampleEntity3 = entityManager.spawn();
       exampleEntity3.add(new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)));
-      exampleEntity3.add(new PlacementComponent(new Point2D.Double(50, -50), 0.));
+      exampleEntity3.add(new PlacementComponent(new Point2D.Double(50, -50), 0., 1.));
       exampleEntity3.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity3.add(new Trajectory(1.5));
       entityManager.getParentageApi().setParentTo(exampleEntity3, exampleEntity);
@@ -510,7 +517,7 @@ public class Zone {
     {
       exampleEntity4 = entityManager.spawn();
       exampleEntity4.add(new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)));
-      exampleEntity4.add(new PlacementComponent(new Point2D.Double(50, 50), 0.));
+      exampleEntity4.add(new PlacementComponent(new Point2D.Double(50, 50), 0., 1.));
       exampleEntity4.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity4.add(new Trajectory(1.5));
       entityManager.getParentageApi().setParentTo(exampleEntity4, exampleEntity);
@@ -519,7 +526,7 @@ public class Zone {
     {
       exampleEntity5 = entityManager.spawn();
       exampleEntity5.add(new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)));
-      exampleEntity5.add(new PlacementComponent(new Point2D.Double(-50, 50), 0.));
+      exampleEntity5.add(new PlacementComponent(new Point2D.Double(-50, 50), 0., 1.));
       exampleEntity5.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity5.add(new Trajectory(1.5));
       entityManager.getParentageApi().setParentTo(exampleEntity5, exampleEntity);
@@ -538,17 +545,31 @@ public class Zone {
     var time = System.nanoTime();
     var delta = (time - previousTime) / 1_000_000_000.;
 
-    update(delta);
-
-    var renderer = MapTool.getFrame().getCurrentZoneRenderer();
+    var renderer = MapTool.getFrame().getZoneRenderer(id);
     if (renderer != null) {
+      update(renderer, delta);
       renderer.repaint();
     }
-
     SwingUtilities.invokeLater(() -> this.renderLoop(time));
   }
 
-  private void update(double delta) {
+  private void update(ZoneRenderer renderer, double delta) {
+    // region Import model data into entities
+    // Map
+    {
+      var scale = renderer.getViewModel().getZoneScale();
+      var mapPlacement =
+          new PlacementComponent(
+              new Point2D.Double(scale.getOffsetX(), scale.getOffsetY()), 0., scale.getScale());
+      mapEntity.add(mapPlacement);
+      log.info(
+          "Map is at: [{}, {}] * {}",
+          mapPlacement.position().getX(),
+          mapPlacement.position().getY(),
+          mapPlacement.rotation());
+    }
+    // endregion
+
     var trajectoryFamily = Family.all(Trajectory.class, PlacementComponent.class).get();
     var trajectoryMapper = ComponentMapper.getFor(Trajectory.class);
     var placementMapper = ComponentMapper.getFor(PlacementComponent.class);
@@ -558,7 +579,9 @@ public class Zone {
       if (trajectory != null && placement != null) {
         placement =
             new PlacementComponent(
-                placement.position(), placement.rotation() + trajectory.radiansPerSecond * delta);
+                placement.position(),
+                placement.rotation() + trajectory.radiansPerSecond * delta,
+                1.);
         entity.add(placement);
       }
     }
@@ -573,6 +596,7 @@ public class Zone {
       var localTransform = new AffineTransform();
       localTransform.translate(placement.position().getX(), placement.position().getY());
       localTransform.rotate(placement.rotation());
+      localTransform.scale(placement.scale(), placement.scale());
       entity.add(new LocalTransformComponent(localTransform));
     }
 
@@ -599,6 +623,10 @@ public class Zone {
 
   public EntityManager getEntityManager() {
     return entityManager;
+  }
+
+  public Entity getMapEntity() {
+    return mapEntity;
   }
 
   public void setBackgroundPaint(DrawablePaint paint) {
