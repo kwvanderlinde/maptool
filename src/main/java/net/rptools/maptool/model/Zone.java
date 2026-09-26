@@ -467,7 +467,7 @@ public class Zone {
       rootEntity = entityManager.spawn();
       rootEntity.add(
           new PlacementComponent(
-              new Point2D.Double(500, 500), 0.75, new Rectangle2D.Double(-50, -50, 100, 100)));
+              new Point2D.Double(500, 500), 0., new Rectangle2D.Double(-50, -50, 100, 100)));
       rootEntity.add(new Trajectory(0.5));
     }
 
@@ -478,7 +478,7 @@ public class Zone {
       exampleEntity = entityManager.spawn();
       exampleEntity.add(placement);
       exampleEntity.add(new Trajectory(0.75));
-      exampleEntity.add(new PogComponent(new MD5Key("87f4e9bfa4f1f3db250b57b3599fa4e9"), 0.5));
+      exampleEntity.add(new PogComponent(new MD5Key("87f4e9bfa4f1f3db250b57b3599fa4e9"), 0.15));
       entityManager.getParentageApi().setParentTo(exampleEntity, rootEntity);
     }
 
@@ -488,7 +488,7 @@ public class Zone {
               new Point2D.Double(-50, -50), 0., new Rectangle2D.Double(-25, -25, 50, 50));
       exampleEntity2 = entityManager.spawn();
       exampleEntity2.add(placement);
-      exampleEntity2.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.5));
+      exampleEntity2.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity2.add(new Trajectory(1.5));
       entityManager.getParentageApi().setParentTo(exampleEntity2, exampleEntity);
     }
@@ -499,7 +499,7 @@ public class Zone {
               new Point2D.Double(50, -50), 0., new Rectangle2D.Double(-25, -25, 50, 50));
       exampleEntity3 = entityManager.spawn();
       exampleEntity3.add(placement);
-      exampleEntity3.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.5));
+      exampleEntity3.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity3.add(new Trajectory(1.5));
       entityManager.getParentageApi().setParentTo(exampleEntity3, exampleEntity);
     }
@@ -510,7 +510,7 @@ public class Zone {
               new Point2D.Double(50, 50), 0., new Rectangle2D.Double(-25, -25, 50, 50));
       exampleEntity4 = entityManager.spawn();
       exampleEntity4.add(placement);
-      exampleEntity4.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.5));
+      exampleEntity4.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity4.add(new Trajectory(1.5));
       entityManager.getParentageApi().setParentTo(exampleEntity4, exampleEntity);
     }
@@ -521,7 +521,7 @@ public class Zone {
               new Point2D.Double(-50, 50), 0., new Rectangle2D.Double(-25, -25, 50, 50));
       exampleEntity5 = entityManager.spawn();
       exampleEntity5.add(placement);
-      exampleEntity5.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.5));
+      exampleEntity5.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity5.add(new Trajectory(1.5));
       entityManager.getParentageApi().setParentTo(exampleEntity5, exampleEntity);
     }
@@ -594,11 +594,11 @@ public class Zone {
       var trajectory = trajectoryMapper.get(entity);
       var placement = placementMapper.get(entity);
       if (trajectory != null && placement != null) {
-        placement = new PlacementComponent(
+        placement =
+            new PlacementComponent(
                 placement.position(),
                 placement.rotation() + trajectory.radiansPerSecond * delta,
-                placement.bounds()
-        );
+                placement.bounds());
         entity.add(placement);
       }
     }
