@@ -1012,25 +1012,28 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
                 var image = ImageManager.getImage(pog.asset(), this);
 
                 var transform = new AffineTransform();
-                transform.translate(placement.bounds().getX(), placement.bounds().getY());
-                transform.scale(
-                    placement.bounds().getWidth() / image.getWidth(),
-                    placement.bounds().getHeight() / image.getHeight());
+                // 3. Scale the image out to fit the bounds.
+                transform.scale(placement.bounds().getWidth(), placement.bounds().getHeight());
+                // 2. Position it to match the bounding box in model space, centered on (0, 0).
+                transform.translate(-0.5, -0.5);
+                // 1. Normalize the image size to [0, 1]x[0, 1]
+                transform.scale(1. / image.getWidth(), 1. / image.getHeight());
 
                 entityG.setComposite(AlphaComposite.SrcOver.derive((float) pog.opacity()));
                 entityG.drawImage(image, transform, this);
               }
 
               // Debug rendering
+              entityG.setComposite(AlphaComposite.SrcOver.derive(0.75f));
               entityG.setPaint(Color.blue);
               entityG.setStroke(
                   new BasicStroke(2.f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
               if (placement.bounds().getWidth() > 0 && placement.bounds().getHeight() > 0) {
                 entityG.draw(placement.bounds());
               }
-              entityG.fill(
-                  new Ellipse2D.Double(
-                      placement.position().getX() - 2.5, placement.position().getY() - 2.5, 5, 5));
+              entityG.setPaint(Color.red);
+              // The transform moves (0, 0) to the entity position, so just draw at (0, 0)
+              entityG.fill(new Ellipse2D.Double(-2.5, -2.5, 5., 5.));
             }
           }
         });
