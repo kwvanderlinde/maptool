@@ -15,12 +15,19 @@
 package net.rptools.maptool.model.entities.components;
 
 import com.badlogic.ashley.core.Component;
-import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 
 /**
- * Defines how an entity is transformed for placement on the map.
+ * Defines an entity is what could be called "model space".
  *
- * @param position The position of the entity's origin relative to its parent.
- * @param rotation The rotation of the entity around its own origin.
+ * <p>In this space, the entity is positioned at (0, 0). Other components, like
+ * {@link PlacementComponent} define how to transform the entity, particularly by moving its origin
+ * and axis. For most entities, this means the bounds should be symmetrical around (0, 0), but that
+ * is not a hard requirement.
+ *
+ * <p>This allows defining the fundamental layout properties of the entity without worrying about it
+ * location or other transformations on the map.
+ *
+ * @param bounds The bounds of the entity without any transformation applied.
  */
-public record PlacementComponent(Point2D position, double rotation) implements Component {}
+public record LayoutComponent(Rectangle2D bounds) implements Component {}

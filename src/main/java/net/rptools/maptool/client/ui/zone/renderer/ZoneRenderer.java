@@ -67,7 +67,7 @@ import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.Label;
 import net.rptools.maptool.model.Zone.Layer;
 import net.rptools.maptool.model.drawing.*;
-import net.rptools.maptool.model.entities.components.LocalTransformComponent;
+import net.rptools.maptool.model.entities.components.LayoutComponent;
 import net.rptools.maptool.model.entities.components.PlacementComponent;
 import net.rptools.maptool.model.entities.components.PogComponent;
 import net.rptools.maptool.model.entities.components.WorldTransformComponent;
@@ -989,8 +989,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     // region Entities!
 
     var placementMapper = ComponentMapper.getFor(PlacementComponent.class);
+    var layoutMapper = ComponentMapper.getFor(LayoutComponent.class);
     var pogMapper = ComponentMapper.getFor(PogComponent.class);
-    var localXformMapper = ComponentMapper.getFor(LocalTransformComponent.class);
     var worldXformMapper = ComponentMapper.getFor(WorldTransformComponent.class);
     // TODO Eventually we should have AffineTransform per entity, so entities can pin themselves to
     //  the frame (for a HUD) or similar.
@@ -1000,21 +1000,22 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           for (var entity : zone.getEntityManager().getAllEntities()) {
             var entityG = (Graphics2D) worldG.create();
             try {
-
               var worldTransform = worldXformMapper.get(entity);
               if (worldTransform != null) {
                 entityG.transform(worldTransform.transform());
               }
 
-              var placement = placementMapper.get(entity);
-              if (placement != null) {
+              // region Pog image rendering.
+              // Pogs fill the entity bounds in the entity's local space.
+              var layout = layoutMapper.get(entity);
+              if (layout != null) {
                 var pog = pogMapper.get(entity);
                 if (pog != null) {
                   var image = ImageManager.getImage(pog.asset(), this);
 
                   var transform = new AffineTransform();
                   // 3. Scale the image out to fit the bounds.
-                  transform.scale(placement.bounds().getWidth(), placement.bounds().getHeight());
+                  transform.scale(layout.bounds().getWidth(), layout.bounds().getHeight());
                   // 2. Position it to match the bounding box in model space, centered on (0, 0).
                   transform.translate(-0.5, -0.5);
                   // 1. Normalize the image size to [0, 1]x[0, 1]
@@ -1023,24 +1024,28 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
                   entityG.setComposite(AlphaComposite.SrcOver.derive((float) pog.opacity()));
                   entityG.drawImage(image, transform, this);
                 }
+                // endregion
 
-                // Debug rendering
+                // region Debug rendering
+                // Draw the entity bounds
                 entityG.setComposite(AlphaComposite.SrcOver.derive(0.75f));
                 entityG.setPaint(Color.blue);
                 entityG.setStroke(
                     new BasicStroke(2.f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-                if (placement.bounds().getWidth() > 0 && placement.bounds().getHeight() > 0) {
-                  entityG.draw(placement.bounds());
+                if (layout.bounds().getWidth() > 0 && layout.bounds().getHeight() > 0) {
+                  entityG.draw(layout.bounds());
                 }
+                // Draw the entity origin.
                 entityG.setPaint(Color.red);
                 // The transform moves (0, 0) to the entity position, so just draw at (0, 0)
                 entityG.fill(new Ellipse2D.Double(-2.5, -2.5, 5., 5.));
 
-                // Draw up arrow.
+                // Draw up arrow for orientation.
                 entityG.setPaint(Color.green);
                 entityG.setStroke(
-                        new BasicStroke(1.f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    new BasicStroke(1.f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
                 entityG.draw(new Line2D.Double(0, 0, 0, -25));
+                // endregion
               }
             } finally {
               entityG.dispose();
