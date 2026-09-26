@@ -1035,6 +1035,12 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
                 entityG.setPaint(Color.red);
                 // The transform moves (0, 0) to the entity position, so just draw at (0, 0)
                 entityG.fill(new Ellipse2D.Double(-2.5, -2.5, 5., 5.));
+
+                // Draw up arrow.
+                entityG.setPaint(Color.green);
+                entityG.setStroke(
+                        new BasicStroke(1.f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                entityG.draw(new Line2D.Double(0, 0, 0, -25));
               }
             } finally {
               entityG.dispose();
