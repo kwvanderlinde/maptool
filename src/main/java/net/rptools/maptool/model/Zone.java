@@ -446,6 +446,9 @@ public class Zone {
   private transient EntityManager entityManager;
   private transient Entity exampleEntity;
   private transient Entity exampleEntity2;
+  private transient Entity exampleEntity3;
+  private transient Entity exampleEntity4;
+  private transient Entity exampleEntity5;
 
   {
     drawablesByLayer = new EnumMap<>(Layer.class);
@@ -459,7 +462,7 @@ public class Zone {
     {
       var placement =
           new PlacementComponent(
-              new Point2D.Double(225, 250), 0., new Rectangle2D.Double(200, 200, 100, 100));
+              new Point2D.Double(250, 250), 0., new Rectangle2D.Double(-50, -50, 100, 100));
       var transform = new AffineTransform();
       transform.translate(placement.bounds().getCenterX(), placement.bounds().getCenterY());
       transform.scale(placement.bounds().getWidth(), placement.bounds().getHeight());
@@ -475,7 +478,7 @@ public class Zone {
     {
       var placement =
           new PlacementComponent(
-              new Point2D.Double(125, 125), 0., new Rectangle2D.Double(100, 100, 50, 50));
+              new Point2D.Double(-50, -50), 0., new Rectangle2D.Double(-25, -25, 50, 50));
       var transform = new AffineTransform();
       transform.translate(placement.bounds().getCenterX(), placement.bounds().getCenterY());
       transform.scale(placement.bounds().getWidth(), placement.bounds().getHeight());
@@ -489,39 +492,107 @@ public class Zone {
       exampleEntity2.add(new LocalTransformComponent(transform));
     }
 
-    SwingUtilities.invokeLater(this::renderLoop);
+    {
+      var placement =
+          new PlacementComponent(
+              new Point2D.Double(50, -50), 0., new Rectangle2D.Double(-25, -25, 50, 50));
+      var transform = new AffineTransform();
+      transform.translate(placement.bounds().getCenterX(), placement.bounds().getCenterY());
+      transform.scale(placement.bounds().getWidth(), placement.bounds().getHeight());
+      transform.rotate(placement.rotation());
+
+      exampleEntity3 = entityManager.spawn();
+      exampleEntity3.add(placement);
+      exampleEntity3.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.5));
+      entityManager.getParentageApi().setParentTo(exampleEntity3, exampleEntity);
+
+      exampleEntity3.add(new LocalTransformComponent(transform));
+    }
+
+    {
+      var placement =
+          new PlacementComponent(
+              new Point2D.Double(50, 50), 0., new Rectangle2D.Double(-25, -25, 50, 50));
+      var transform = new AffineTransform();
+      transform.translate(placement.bounds().getCenterX(), placement.bounds().getCenterY());
+      transform.scale(placement.bounds().getWidth(), placement.bounds().getHeight());
+      transform.rotate(placement.rotation());
+
+      exampleEntity4 = entityManager.spawn();
+      exampleEntity4.add(placement);
+      exampleEntity4.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.5));
+      entityManager.getParentageApi().setParentTo(exampleEntity4, exampleEntity);
+
+      exampleEntity4.add(new LocalTransformComponent(transform));
+    }
+
+    {
+      var placement =
+          new PlacementComponent(
+              new Point2D.Double(-50, 50), 0., new Rectangle2D.Double(-25, -25, 50, 50));
+      var transform = new AffineTransform();
+      transform.translate(placement.bounds().getCenterX(), placement.bounds().getCenterY());
+      transform.scale(placement.bounds().getWidth(), placement.bounds().getHeight());
+      transform.rotate(placement.rotation());
+
+      exampleEntity5 = entityManager.spawn();
+      exampleEntity5.add(placement);
+      exampleEntity5.add(new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.5));
+      entityManager.getParentageApi().setParentTo(exampleEntity5, exampleEntity);
+
+      exampleEntity5.add(new LocalTransformComponent(transform));
+    }
+
+    SwingUtilities.invokeLater(() -> this.renderLoop(System.nanoTime()));
   }
 
   public Zone() {
     undo = new UndoPerZone(this); // registers as ModelChangeListener for drawables...
   }
 
-  private void renderLoop() {
+  private void renderLoop(long previousTime) {
+    var time = System.nanoTime();
+    var delta = (time - previousTime) / 1_000_000_000.;
+
+    update(delta);
+
     var renderer = MapTool.getFrame().getCurrentZoneRenderer();
     if (renderer != null) {
       renderer.repaint();
     }
+
+    SwingUtilities.invokeLater(() -> this.renderLoop(time));
+  }
+
+  private void update(double delta) {
+    var entitiesTopological =
+        List.of(exampleEntity, exampleEntity2, exampleEntity3, exampleEntity4, exampleEntity5);
 
     if (true) {
       var placement = exampleEntity.getComponent(PlacementComponent.class);
       if (placement != null) {
         placement =
             new PlacementComponent(
-                placement.position(), placement.rotation() + 0.01, placement.bounds());
+                placement.position(), placement.rotation() + 0.75 * delta, placement.bounds());
         exampleEntity.add(placement);
       }
     }
     if (true) {
-      var placement = exampleEntity2.getComponent(PlacementComponent.class);
-      if (placement != null) {
-        placement =
-            new PlacementComponent(
-                placement.position(), placement.rotation() + 0.01, placement.bounds());
-        exampleEntity2.add(placement);
+      for (var entity : entitiesTopological) {
+        if (entity == exampleEntity) {
+          continue;
+        }
+
+        var placement = entity.getComponent(PlacementComponent.class);
+        if (placement != null) {
+          placement =
+              new PlacementComponent(
+                  placement.position(), placement.rotation() + 1.5 * delta, placement.bounds());
+          entity.add(placement);
+        }
       }
     }
 
-    var entitiesTopological = List.of(exampleEntity, exampleEntity2);
     for (var entity : entitiesTopological) {
       var placement = entity.getComponent(PlacementComponent.class);
       if (placement == null) {
@@ -529,9 +600,9 @@ public class Zone {
       }
 
       var transform = new AffineTransform();
-      transform.translate(placement.bounds().getCenterX(), placement.bounds().getCenterY());
+      transform.translate(placement.position().getX(), placement.position().getY());
       transform.rotate(placement.rotation());
-      transform.translate(-placement.bounds().getCenterX(), -placement.bounds().getCenterY());
+      // transform.translate(-placement.bounds().getCenterX(), -placement.bounds().getCenterY());
       entity.add(new LocalTransformComponent(transform));
     }
 
@@ -553,8 +624,6 @@ public class Zone {
 
       entity.add(new WorldTransformComponent(worldTransform));
     }
-
-    SwingUtilities.invokeLater(this::renderLoop);
   }
 
   public EntityManager getEntityManager() {
