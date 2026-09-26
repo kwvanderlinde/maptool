@@ -467,14 +467,14 @@ public class Zone {
       rootEntity = entityManager.spawn();
       rootEntity.add(
           new PlacementComponent(
-              new Point2D.Double(500, 500), 0., new Rectangle2D.Double(-50, -50, 100, 100)));
+              new Point2D.Double(500, 500), 0., new Rectangle2D.Double(-5, -5, 10, 10)));
       rootEntity.add(new Trajectory(0.5));
     }
 
     {
       var placement =
           new PlacementComponent(
-              new Point2D.Double(250, 250), 0., new Rectangle2D.Double(-50, -50, 100, 100));
+              new Point2D.Double(50, 50), 0., new Rectangle2D.Double(-50, -50, 100, 100));
       exampleEntity = entityManager.spawn();
       exampleEntity.add(placement);
       exampleEntity.add(new Trajectory(0.75));
