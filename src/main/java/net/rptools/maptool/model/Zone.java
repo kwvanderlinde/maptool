@@ -54,6 +54,7 @@ import net.rptools.maptool.model.drawing.DrawablesGroup;
 import net.rptools.maptool.model.drawing.DrawnElement;
 import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.model.entities.EntityManager;
+import net.rptools.maptool.model.entities.components.CameraComponent;
 import net.rptools.maptool.model.entities.components.LayoutComponent;
 import net.rptools.maptool.model.entities.components.LocalTransformComponent;
 import net.rptools.maptool.model.entities.components.ParentComponent;
@@ -448,6 +449,7 @@ public class Zone {
   private transient Map<String, Integer> tokenNumberCache;
 
   private transient EntityManager entityManager;
+  private transient Entity cameraEntity;
   private transient Entity mapEntity;
   private transient Entity rootEntity;
   private transient Entity exampleEntity;
@@ -475,8 +477,22 @@ public class Zone {
      */
 
     {
+      cameraEntity = entityManager.spawn();
+      cameraEntity.add(new PlacementComponent(new Point2D.Double(0., 0.), 0., 1.));
+      cameraEntity.add(new CameraComponent(new AffineTransform()));
+    }
+
+    {
+      var hudEntity = entityManager.spawn();
+      hudEntity.add(new LayoutComponent(new Rectangle2D.Double(-30, -30, 60, 60)));
+      hudEntity.add(new PlacementComponent(new Point2D.Double(50, 50), 0., 1.));
+      hudEntity.add(new PogComponent(new MD5Key("88bd0bda291744ad75ff12ca0ab73c9e"), 1.0));
+      entityManager.getParentageApi().setParentTo(hudEntity, cameraEntity);
+    }
+
+    {
       mapEntity = entityManager.spawn();
-      mapEntity.add(new PlacementComponent(new Point2D.Double(500, 500), 0., 1.));
+      mapEntity.add(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
     }
 
     {
@@ -555,19 +571,26 @@ public class Zone {
 
   private void update(ZoneRenderer renderer, double delta) {
     // region Import model data into entities
-    // Map
+    // Camera
     {
+      // The camera is contravariant. uses a special inverse to determine the coordinate system.
       var scale = renderer.getViewModel().getZoneScale();
-      var mapPlacement =
-          new PlacementComponent(
-              new Point2D.Double(scale.getOffsetX(), scale.getOffsetY()), 0., scale.getScale());
-      mapEntity.add(mapPlacement);
-      log.info(
-          "Map is at: [{}, {}] * {}",
-          mapPlacement.position().getX(),
-          mapPlacement.position().getY(),
-          mapPlacement.rotation());
+      var cameraFamily = Family.all(CameraComponent.class).get();
+      for (var entity : entityManager.getEngine().getEntitiesFor(cameraFamily)) {
+        var transform = new AffineTransform();
+        transform.translate(scale.getOffsetX(), scale.getOffsetY());
+        transform.scale(scale.getScale(), scale.getScale());
+        entity.add(new CameraComponent(transform));
+
+        entity.add(
+            new PlacementComponent(
+                new Point2D.Double(
+                    -scale.getOffsetX() / scale.getScale(), -scale.getOffsetY() / scale.getScale()),
+                0.,
+                1 / scale.getScale()));
+      }
     }
+
     // endregion
 
     var trajectoryFamily = Family.all(Trajectory.class, PlacementComponent.class).get();
@@ -627,6 +650,10 @@ public class Zone {
 
   public Entity getMapEntity() {
     return mapEntity;
+  }
+
+  public Entity getCameraEntity() {
+    return cameraEntity;
   }
 
   public void setBackgroundPaint(DrawablePaint paint) {
