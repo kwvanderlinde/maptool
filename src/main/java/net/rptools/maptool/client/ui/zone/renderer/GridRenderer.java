@@ -19,6 +19,7 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
+import java.awt.geom.Rectangle2D;
 import javax.swing.SwingUtilities;
 import net.rptools.lib.image.ImageUtil;
 import net.rptools.maptool.client.AppState;
@@ -27,6 +28,7 @@ import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.ui.Scale;
 import net.rptools.maptool.client.ui.zone.PlayerView;
 import net.rptools.maptool.model.*;
+import net.rptools.maptool.model.entities.components.GridComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -53,10 +55,10 @@ public class GridRenderer {
   }
 
   private void drawGridShape(
-      Scale zoneScale, int gridSize, Color[] gridColours, Graphics2D g, Shape shape) {
+      Scale zoneScale, double gridSize, Color[] gridColours, Graphics2D g, Shape shape) {
     final var gridLineWeight = AppState.getGridLineWeight();
     final var scale = (float) zoneScale.getScale();
-    final var baseWidth = gridSize / 50f;
+    final var baseWidth = (float) (gridSize / 50);
 
     if (scale > 0.49f && gridColours.length > 1) {
       for (int i = gridColours.length - 1; i > -1; i--) {
@@ -207,7 +209,7 @@ public class GridRenderer {
     g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, oldAntiAlias);
   }
 
-  private Path2D createHexHalfShape(
+  private static Path2D createHexHalfShape(
       boolean isHorizontal, double minorRadius, double edgeProjection, double edgeLength) {
     var hex = new Path2D.Double();
     hex.moveTo(0, minorRadius);
@@ -259,9 +261,12 @@ public class GridRenderer {
     drawGridShape(zoneScale, size, gridColours, g, path);
   }
 
-  private Shape drawIsoHatch(Scale zoneScale, int gridSize, int x, int y) {
-    double isoWidth = gridSize * zoneScale.getScale();
-    int hatchSize = isoWidth > 10 ? (int) isoWidth / 8 : 2;
+  private static Shape drawIsoHatch(Scale zoneScale, double gridSize, int x, int y) {
+    return drawIsoHatch(gridSize * zoneScale.getScale(), x, y);
+  }
+
+  private static Shape drawIsoHatch(double isoHeight, double x, double y) {
+    double hatchSize = isoHeight / 8;
     Path2D path = new Path2D.Double();
     path.append(
         new Line2D.Double(x - (hatchSize * 2), y - hatchSize, x + (hatchSize * 2), y + hatchSize),
@@ -334,5 +339,153 @@ public class GridRenderer {
     }
     g.setFont(oldFont);
     SwingUtil.restoreAntiAliasing(g, oldAA);
+  }
+
+  public void renderGrid(Graphics2D g, GridComponent grid) {
+    if (!AppState.isShowGrid()) {
+      return;
+    }
+
+    var zoneScale = renderer.getViewModel().getZoneScale();
+
+    if (grid.size() * zoneScale.getScale() < ZoneRendererConstants.MIN_GRID_SIZE) {
+      return;
+    }
+
+    var gridColours = getGridColours(zone.getGridColor());
+    var bounds = g.getClip().getBounds2D();
+
+    switch (grid.type()) {
+      case Square -> renderSquareGrid(g, grid, gridColours, bounds);
+      case HexPointyTop -> renderHexGrid(g, true, grid, gridColours, bounds);
+      case HexFlatTop -> renderHexGrid(g, false, grid, gridColours, bounds);
+      case Isometric -> renderIsomatricGrid(g, grid, gridColours, bounds);
+      case Gridless -> {
+        /* Nothing to do. */
+      }
+    }
+  }
+
+  private static void renderSquareGrid(
+      Graphics2D g, GridComponent grid, Color[] gridColours, Rectangle2D bounds) {
+    Path2D path = new Path2D.Double();
+
+    {
+      // Horizontal lines
+      var sizeY = grid.size();
+      var minX = bounds.getMinX();
+      var maxX = bounds.getMaxX();
+      // Lowest multiple greater-than-or-equal to lower bound.
+      var minY = Math.ceil(bounds.getMinY() / sizeY) * sizeY;
+      var maxY = bounds.getMaxY();
+      for (double y = minY; y <= maxY; y += sizeY) {
+        path.append(new Line2D.Double(minX, y, maxX, y), false);
+      }
+    }
+    {
+      // Vertical lines
+      // Lowest multiple greater-than-or-equal to lower bound.
+      var sizeX = grid.size();
+      var minX = Math.ceil(bounds.getMinX() / sizeX) * sizeX;
+      var maxX = bounds.getMaxX();
+      var minY = bounds.getMinY();
+      var maxY = bounds.getMaxY();
+      for (double x = minX; x <= maxX; x += sizeX) {
+        path.append(new Line2D.Double(x, minY, x, maxY), false);
+      }
+    }
+
+    // TODO Fade-out grid lines with gridColours. I don't like their performance, though.
+    g.setColor(grid.color());
+    g.setStroke(
+        new BasicStroke((float) grid.thickness(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_MITER));
+    g.draw(path);
+  }
+
+  private static void renderHexGrid(
+      Graphics2D g,
+      boolean isPointyTop,
+      GridComponent grid,
+      Color[] gridColours,
+      Rectangle2D bounds) {
+    var minorRadius = grid.size() / 2.;
+    var edgeLength = grid.secondSize() / 2.;
+    var edgeProjection = edgeLength / 2.;
+
+    var hexTop = createHexHalfShape(isPointyTop, minorRadius, edgeProjection, edgeLength);
+
+    var boundsMinV = isPointyTop ? bounds.getMinX() : bounds.getMinY();
+    var boundsMaxV = isPointyTop ? bounds.getMaxX() : bounds.getMaxY();
+    var boundsMinU = isPointyTop ? bounds.getMinY() : bounds.getMinX();
+    var boundsMaxU = isPointyTop ? bounds.getMaxY() : bounds.getMaxX();
+
+    Object oldAntiAlias = SwingUtil.useAntiAliasing(g);
+    g.setColor(grid.color());
+    g.setStroke(
+        new BasicStroke((float) grid.thickness(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_MITER));
+
+    var strideU = 3 * edgeLength / 2;
+    var strideV = grid.size();
+    // Cell (0, 0) has bounds [0, 0]x[secondSize, size]. That means a bit of cell (-1, -1) is
+    // peeking at the [0, 0] corner. So the starting cell is a little less than we might expect.
+    var startCellU = (int) Math.floor((boundsMinU - edgeProjection) / strideU);
+    var startCellV =
+        (int)
+            Math.floor(
+                (boundsMinV - minorRadius - (isEven(startCellU) ? 0 : strideV / 2.)) / strideV);
+    var startU = startCellU * strideU;
+    var startV = startCellV * strideV;
+
+    // Render one column at a time.
+    var column = startCellU;
+    for (double u = startU; u < boundsMaxU; u += strideU) {
+      var isEvenColumn = isEven(column++);
+
+      for (double v = startV - (isEvenColumn ? 0 : strideV / 2); v < boundsMaxV; v += strideV) {
+        var translateX = isPointyTop ? v : u;
+        var translateY = isPointyTop ? u : v;
+
+        var oldTransform = g.getTransform();
+        try {
+          g.translate(translateX, translateY);
+          g.draw(hexTop);
+        } finally {
+          // Undo the translation.
+          g.setTransform(oldTransform);
+        }
+      }
+    }
+    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, oldAntiAlias);
+  }
+
+  private static void renderIsomatricGrid(
+      Graphics2D g, GridComponent grid, Color[] gridColours, Rectangle2D bounds) {
+
+    double isoHeight = grid.size();
+    double isoWidth = grid.size() * 2;
+    Path2D path = new Path2D.Double();
+
+    double startCol = Math.floor(bounds.getMinX() / isoWidth) * isoWidth;
+    double startRow = Math.floor(bounds.getMinY() / isoHeight) * isoHeight;
+    for (var row = startRow; row < bounds.getMaxY() + isoHeight; row += isoHeight) {
+      for (var col = startCol; col < bounds.getMaxX() + isoWidth; col += isoWidth) {
+        path.append(drawIsoHatch(isoHeight, col, row), false);
+      }
+    }
+
+    for (var row = startRow - isoHeight / 2; row < bounds.getMaxY() + isoHeight; row += isoHeight) {
+      for (var col = startCol - isoWidth / 2; col < bounds.getMaxX() + isoWidth; col += isoWidth) {
+        path.append(drawIsoHatch(isoHeight, col, row), false);
+      }
+    }
+
+    g.setColor(grid.color());
+    g.setStroke(
+        new BasicStroke((float) grid.thickness(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_MITER));
+    g.draw(path);
+  }
+
+  private static boolean isEven(int n) {
+    return (n & 1) == 0;
   }
 }

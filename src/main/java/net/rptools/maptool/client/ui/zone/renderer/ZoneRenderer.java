@@ -68,6 +68,7 @@ import net.rptools.maptool.model.Label;
 import net.rptools.maptool.model.Zone.Layer;
 import net.rptools.maptool.model.drawing.*;
 import net.rptools.maptool.model.entities.components.CameraComponent;
+import net.rptools.maptool.model.entities.components.GridComponent;
 import net.rptools.maptool.model.entities.components.LayoutComponent;
 import net.rptools.maptool.model.entities.components.PogComponent;
 import net.rptools.maptool.model.entities.components.WorldTransformComponent;
@@ -988,6 +989,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
     // region Entities!
     var layoutMapper = ComponentMapper.getFor(LayoutComponent.class);
+    var gridMapper = ComponentMapper.getFor(GridComponent.class);
     var pogMapper = ComponentMapper.getFor(PogComponent.class);
     var worldXformMapper = ComponentMapper.getFor(WorldTransformComponent.class);
     var cameraXformMapper = ComponentMapper.getFor(CameraComponent.class);
@@ -1004,6 +1006,15 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
           if (worldTransform != null) {
             entityG.transform(worldTransform.transform());
           }
+
+          // region Grid rendering
+          {
+            var grid = gridMapper.get(entity);
+            if (grid != null) {
+              gridRenderer.renderGrid(entityG, grid);
+            }
+          }
+          // endregion
 
           // region Pog image rendering.
           // Pogs fill the entity bounds in the entity's local space.
