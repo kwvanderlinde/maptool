@@ -77,6 +77,22 @@ public class RenderHelper {
     timer.stop("%s-render", timerPrefix);
   }
 
+  public void renderStupidly(Graphics2D g, Consumer<Graphics2D> render) {
+    var timer = CodeTimer.get();
+    timer.start("%s-createContext", timerPrefix);
+    g = (Graphics2D) g.create();
+    timer.stop("%s-createContext", timerPrefix);
+    try {
+      timer.start("%s-doRender", timerPrefix);
+      render.accept(g);
+    } finally {
+      timer.stop("%s-doRender", timerPrefix);
+      timer.start("%s-disposeContext", timerPrefix);
+      g.dispose();
+      timer.stop("%s-disposeContext", timerPrefix);
+    }
+  }
+
   public void render(Graphics2D g, Consumer<Graphics2D> render) {
     var timer = CodeTimer.get();
     timer.start("%s-createContext", timerPrefix);
