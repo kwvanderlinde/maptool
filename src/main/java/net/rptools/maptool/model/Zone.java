@@ -35,6 +35,7 @@ import javax.swing.*;
 import net.rptools.lib.GeometryUtil;
 import net.rptools.lib.MD5Key;
 import net.rptools.lib.StringUtil;
+import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.tool.drawing.UndoPerZone;
@@ -55,6 +56,7 @@ import net.rptools.maptool.model.drawing.DrawnElement;
 import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.model.entities.EntityManager;
 import net.rptools.maptool.model.entities.components.CameraComponent;
+import net.rptools.maptool.model.entities.components.GridComponent;
 import net.rptools.maptool.model.entities.components.LayoutComponent;
 import net.rptools.maptool.model.entities.components.LocalTransformComponent;
 import net.rptools.maptool.model.entities.components.ParentComponent;
@@ -480,6 +482,8 @@ public class Zone {
       cameraEntity = entityManager.spawn();
       cameraEntity.add(new PlacementComponent(new Point2D.Double(0., 0.), 0., 1.));
       cameraEntity.add(new CameraComponent(new AffineTransform()));
+      // A nice showcase, but camera rotation is not very practical until tooling recognizes it.
+      // cameraEntity.add(new Trajectory(0.3));
     }
 
     {
@@ -493,6 +497,13 @@ public class Zone {
     {
       mapEntity = entityManager.spawn();
       mapEntity.add(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
+    }
+
+    {
+      var gridEntity = entityManager.spawn();
+      entityManager.getParentageApi().setParentTo(gridEntity, mapEntity);
+      gridEntity.add(new GridComponent(GridComponent.Type.Square, 100, 100, Color.black, 1.));
+      gridEntity.add(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
     }
 
     {
@@ -570,24 +581,48 @@ public class Zone {
   }
 
   private void update(ZoneRenderer renderer, double delta) {
+    var scale = renderer.getViewModel().getZoneScale();
+    var cameraFamily = Family.all(CameraComponent.class, PlacementComponent.class).get();
+
     // region Import model data into entities
     // Camera
     {
       // The camera is contravariant. uses a special inverse to determine the coordinate system.
-      var scale = renderer.getViewModel().getZoneScale();
-      var cameraFamily = Family.all(CameraComponent.class).get();
       for (var entity : entityManager.getEngine().getEntitiesFor(cameraFamily)) {
-        var transform = new AffineTransform();
-        transform.translate(scale.getOffsetX(), scale.getOffsetY());
-        transform.scale(scale.getScale(), scale.getScale());
-        entity.add(new CameraComponent(transform));
-
+        var placement = entity.getComponent(PlacementComponent.class);
         entity.add(
             new PlacementComponent(
                 new Point2D.Double(
                     -scale.getOffsetX() / scale.getScale(), -scale.getOffsetY() / scale.getScale()),
-                0.,
+                placement.rotation(),
                 1 / scale.getScale()));
+      }
+    }
+
+    // Grid
+    {
+      var gridFamily = Family.all(GridComponent.class).get();
+      var gridEntities = entityManager.getEngine().getEntitiesFor(gridFamily);
+      for (var gridEntity : gridEntities) {
+        var type =
+            switch (grid.getType()) {
+              case Square -> GridComponent.Type.Square;
+              case Isometric -> GridComponent.Type.Isometric;
+              case HexVertical -> GridComponent.Type.HexFlatTop;
+              case HexHorizontal -> GridComponent.Type.HexPointyTop;
+              case None -> GridComponent.Type.Gridless;
+            };
+
+        gridEntity.add(
+            new GridComponent(
+                type,
+                grid.getSize(),
+                grid.getSecondDimension(),
+                new Color(gridColor, false),
+                AppState.getGridLineWeight() / scale.getScale()));
+        gridEntity.add(
+            new PlacementComponent(
+                new Point2D.Double(grid.getOffsetX(), grid.getOffsetY()), 0., 1.));
       }
     }
 
@@ -604,7 +639,7 @@ public class Zone {
             new PlacementComponent(
                 placement.position(),
                 placement.rotation() + trajectory.radiansPerSecond * delta,
-                1.);
+                placement.scale());
         entity.add(placement);
       }
     }
@@ -641,6 +676,24 @@ public class Zone {
       }
 
       entity.add(new WorldTransformComponent(worldTransform));
+    }
+
+    {
+      // The camera is contravariant. uses a special inverse to determine the coordinate system.
+      for (var entity : entityManager.getEngine().getEntitiesFor(cameraFamily)) {
+        var placement = entity.getComponent(PlacementComponent.class);
+
+        // Set up the contravariant transform as the camera-induced coordinate system.
+        var transform = new AffineTransform();
+        transform.rotate(-placement.rotation());
+        transform.scale(1. / placement.scale(), 1. / placement.scale());
+        transform.translate(-placement.position().getX(), -placement.position().getY());
+        entity.add(new CameraComponent(transform));
+      }
+
+      // TODO Do the same for the grid.
+      // TODO When rendering the grid entity, the stroke needs to be inversely proportional to the
+      //  scale so the line thickness is consistent regardless of zoom.
     }
   }
 
