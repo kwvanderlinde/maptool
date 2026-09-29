@@ -83,7 +83,7 @@ public class GridRenderer {
   }
 
   public void renderGrid(Graphics2D g, PlayerView view) {
-    if (!AppState.isShowGrid()) {
+    if (true || !AppState.isShowGrid()) {
       return;
     }
 
