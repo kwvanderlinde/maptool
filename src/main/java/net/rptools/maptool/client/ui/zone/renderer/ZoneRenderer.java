@@ -760,6 +760,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     return !disabledLayers.contains(layer) && (layer.isVisibleToPlayers() || view.isGMView());
   }
 
+  private long lastRenderTime = System.nanoTime();
+
   /**
    * This is the top-level method of the rendering pipeline that coordinates all other calls. {@link
    * #paintComponent(Graphics)} calls this method, then adds the two optional strings, "Map not
@@ -773,6 +775,9 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     final var timer = CodeTimer.get();
 
     timer.start("update");
+    var currentRenderTime = System.nanoTime();
+    zone.update(this, (currentRenderTime - lastRenderTime) / 1_000_000_000.);
+    lastRenderTime = currentRenderTime;
     viewModel.update();
     timer.stop("update");
 
