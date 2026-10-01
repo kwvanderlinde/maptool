@@ -690,10 +690,6 @@ public class Zone {
         transform.translate(-placement.position().getX(), -placement.position().getY());
         entity.add(new CameraComponent(transform));
       }
-
-      // TODO Do the same for the grid.
-      // TODO When rendering the grid entity, the stroke needs to be inversely proportional to the
-      //  scale so the line thickness is consistent regardless of zoom.
     }
   }
 
