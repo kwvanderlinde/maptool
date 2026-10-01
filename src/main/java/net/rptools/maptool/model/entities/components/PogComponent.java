@@ -14,6 +14,7 @@
  */
 package net.rptools.maptool.model.entities.components;
 
+import com.badlogic.ashley.core.Component;
 import net.rptools.lib.MD5Key;
 
 /** Represents an image constrained to an entity's {@link PlacementComponent}. */

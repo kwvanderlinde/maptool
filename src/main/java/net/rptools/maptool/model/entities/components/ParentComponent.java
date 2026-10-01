@@ -14,6 +14,7 @@
  */
 package net.rptools.maptool.model.entities.components;
 
+import com.badlogic.ashley.core.Component;
 import com.badlogic.ashley.core.Entity;
 import org.jspecify.annotations.NonNull;
 
