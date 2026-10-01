@@ -14,7 +14,6 @@
  */
 package net.rptools.maptool.model.entities.components;
 
-import com.badlogic.ashley.core.Component;
 import java.awt.geom.AffineTransform;
 
 public record WorldTransformComponent(AffineTransform transform) implements Component {}

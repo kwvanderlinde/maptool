@@ -14,6 +14,4 @@
  */
 package net.rptools.maptool.model.entities.components;
 
-import java.awt.geom.AffineTransform;
-
-public record CameraComponent(AffineTransform transform) implements Component {}
+public interface Component extends com.badlogic.ashley.core.Component {}
