@@ -991,12 +991,15 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       // Update loop.
       var scale = viewModel.getZoneScale();
       var placement = zone.getCameraEntity().placement.get();
-      zone.getCameraEntity().placement.set(new PlacementComponent(
-              new Point2D.Double(
-              -scale.getOffsetX() / scale.getScale(), -scale.getOffsetY() / scale.getScale()),
-              placement.rotation(),
-              1 / scale.getScale()
-      ));
+      zone.getCameraEntity()
+          .placement
+          .set(
+              new PlacementComponent(
+                  new Point2D.Double(
+                      -scale.getOffsetX() / scale.getScale(),
+                      -scale.getOffsetY() / scale.getScale()),
+                  placement.rotation(),
+                  1 / scale.getScale()));
     }
     var worldG = (Graphics2D) g2d.create();
     try {
@@ -1005,14 +1008,14 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       for (var entity : zone.getEntityManager().getAllEntities()) {
         var entityG = (Graphics2D) worldG.create();
         try {
-          var worldTransform = entity.get(WorldTransformComponent.class);
+          var worldTransform = entity.getValue(WorldTransformComponent.class);
           if (worldTransform != null) {
             entityG.transform(worldTransform.transform());
           }
 
           // region Grid rendering
           {
-            var grid = entity.get(GridComponent.class);
+            var grid = entity.getValue(GridComponent.class);
             if (grid != null) {
               gridRenderer.renderGrid(entityG, grid);
             }
@@ -1021,9 +1024,9 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
           // region Pog image rendering.
           // Pogs fill the entity bounds in the entity's local space.
-          var layout = entity.get(LayoutComponent.class);
+          var layout = entity.getValue(LayoutComponent.class);
           if (layout != null) {
-            var pog = entity.get(PogComponent.class);
+            var pog = entity.getValue(PogComponent.class);
             if (pog != null) {
               var image = ImageManager.getImage(pog.asset(), this);
 

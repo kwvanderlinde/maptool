@@ -23,8 +23,7 @@ public class Map2 extends Entity {
 
   {
     placement =
-        register(
-            PlacementComponent.class,
-            new ReactiveSource<>(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.)));
+        defineSource(
+            PlacementComponent.class, new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
   }
 }

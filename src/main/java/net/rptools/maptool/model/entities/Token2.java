@@ -22,7 +22,6 @@ import net.rptools.maptool.model.entities.components.LocalTransformComponent;
 import net.rptools.maptool.model.entities.components.PlacementComponent;
 import net.rptools.maptool.model.entities.components.PogComponent;
 import net.rptools.maptool.model.entities.components.WorldTransformComponent;
-import net.rptools.maptool.model.entities.reactive.ReactiveNode;
 import net.rptools.maptool.model.entities.reactive.ReactiveNonSource;
 import net.rptools.maptool.model.entities.reactive.ReactiveSource;
 import org.jspecify.annotations.Nullable;
@@ -36,49 +35,43 @@ public class Token2 extends Entity {
 
   {
     placement =
-        register(
-            PlacementComponent.class,
-            new ReactiveSource<>(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.)));
+        defineSource(
+            PlacementComponent.class, new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
     layout =
-        register(
-            LayoutComponent.class,
-            new ReactiveSource<>(new LayoutComponent(new Rectangle2D.Double(0, 0, 0, 0))));
+        defineSource(
+            LayoutComponent.class, new LayoutComponent(new Rectangle2D.Double(0, 0, 0, 0)));
     // TODO Pog should be downstream of image asset selection.
-    pog = register(PogComponent.class, new ReactiveSource<>(null));
+    pog = defineSource(PogComponent.class, null);
 
     localTransform =
-        register(
+        derive(
             LocalTransformComponent.class,
-            ReactiveNode.map(
-                placement,
-                placement -> {
-                  var localTransform = new AffineTransform();
-                  localTransform.translate(
-                      placement.position().getX(), placement.position().getY());
-                  localTransform.rotate(placement.rotation());
-                  localTransform.scale(placement.scale(), placement.scale());
-                  return new LocalTransformComponent(localTransform);
-                }));
-
+            placement,
+            placement -> {
+              var localTransform = new AffineTransform();
+              localTransform.translate(placement.position().getX(), placement.position().getY());
+              localTransform.rotate(placement.rotation());
+              localTransform.scale(placement.scale(), placement.scale());
+              return new LocalTransformComponent(localTransform);
+            });
     worldTransform =
-        register(
+        derive(
             WorldTransformComponent.class,
-            ReactiveNode.map(
-                localTransform,
-                localTransform -> {
-                  var worldTransform = new AffineTransform(localTransform.transform());
+            localTransform,
+            localTransform -> {
+              var worldTransform = new AffineTransform(localTransform.transform());
 
-                  // TODO Account for parentage.
-                  // var parent = entity.getComponent(ParentComponent.class);
-                  // if (parent != null) {
-                  //   var parentTransform =
-                  // parent.parent().getComponent(WorldTransformComponent.class);
-                  //   if (parentTransform != null) {
-                  //     worldTransform.preConcatenate(parentTransform.transform());
-                  //   }
-                  // }
+              // TODO Account for parentage.
+              // var parent = entity.getComponent(ParentComponent.class);
+              // if (parent != null) {
+              //   var parentTransform =
+              // parent.parent().getComponent(WorldTransformComponent.class);
+              //   if (parentTransform != null) {
+              //     worldTransform.preConcatenate(parentTransform.transform());
+              //   }
+              // }
 
-                  return new WorldTransformComponent(worldTransform);
-                }));
+              return new WorldTransformComponent(worldTransform);
+            });
   }
 }
