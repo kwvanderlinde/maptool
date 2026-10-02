@@ -54,10 +54,8 @@ import net.rptools.maptool.model.entities.EntityManager;
 import net.rptools.maptool.model.entities.components.CameraComponent;
 import net.rptools.maptool.model.entities.components.GridComponent;
 import net.rptools.maptool.model.entities.components.LayoutComponent;
-import net.rptools.maptool.model.entities.components.LocalTransformComponent;
 import net.rptools.maptool.model.entities.components.PlacementComponent;
 import net.rptools.maptool.model.entities.components.PogComponent;
-import net.rptools.maptool.model.entities.components.WorldTransformComponent;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.tokens.TokenMacroChanged;
 import net.rptools.maptool.model.tokens.TokenPanelChanged;
@@ -496,45 +494,10 @@ public class Zone {
           PlacementComponent.class, new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
     }
     {
-      exampleEntity = entityManager.spawn();
-      var placementNode =
-          exampleEntity.defineSource(
-              PlacementComponent.class, new PlacementComponent(new Point2D.Double(50, 50), 0., 1.));
-      exampleEntity.defineSource(
-          LayoutComponent.class, new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)));
-      // TODO Pog should be downstream of image asset selection.
-      exampleEntity.defineSource(
-          PogComponent.class,
-          new PogComponent(new MD5Key("87f4e9bfa4f1f3db250b57b3599fa4e9"), 0.15));
-      var localTransformNode =
-          exampleEntity.derive(
-              LocalTransformComponent.class,
-              placementNode,
-              placement -> {
-                var localTransform = new AffineTransform();
-                localTransform.translate(placement.position().getX(), placement.position().getY());
-                localTransform.rotate(placement.rotation());
-                localTransform.scale(placement.scale(), placement.scale());
-                return new LocalTransformComponent(localTransform);
-              });
-      exampleEntity.derive(
-          WorldTransformComponent.class,
-          localTransformNode,
-          localTransform -> {
-            var worldTransform = new AffineTransform(localTransform.transform());
-
-            // TODO Account for parentage.
-            // var parent = entity.getComponent(ParentComponent.class);
-            // if (parent != null) {
-            //   var parentTransform =
-            // parent.parent().getComponent(WorldTransformComponent.class);
-            //   if (parentTransform != null) {
-            //     worldTransform.preConcatenate(parentTransform.transform());
-            //   }
-            // }
-
-            return new WorldTransformComponent(worldTransform);
-          });
+      exampleEntity =
+          entityManager.spawnToken(
+              new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)),
+              new PogComponent(new MD5Key("87f4e9bfa4f1f3db250b57b3599fa4e9"), 0.15));
 
       // exampleEntity.add(new Trajectory(0.75));
       // entityManager.getParentageApi().setParentTo(exampleEntity, rootEntity);
