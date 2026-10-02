@@ -75,15 +75,13 @@ public class EntityManager {
         localTransform -> {
           var worldTransform = new AffineTransform(localTransform.transform());
 
-          // TODO Account for parentage.
-          // var parent = entity.getComponent(ParentComponent.class);
-          // if (parent != null) {
-          //   var parentTransform =
-          // parent.parent().getComponent(WorldTransformComponent.class);
-          //   if (parentTransform != null) {
-          //     worldTransform.preConcatenate(parentTransform.transform());
-          //   }
-          // }
+          var parent = entity.parent.get();
+          if (parent != null) {
+            var parentTransform = parent.parent().getValue(WorldTransformComponent.class);
+            if (parentTransform != null) {
+              worldTransform.preConcatenate(parentTransform.transform());
+            }
+          }
 
           return new WorldTransformComponent(worldTransform);
         });
