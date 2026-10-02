@@ -1,0 +1,73 @@
+/*
+ * This software Copyright by the RPTools.net development team, and
+ * licensed under the Affero GPL Version 3 or, at your option, any later
+ * version.
+ *
+ * MapTool Source Code is distributed in the hope that it will be
+ * useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * You should have received a copy of the GNU Affero General Public
+ * License * along with this source Code.  If not, please visit
+ * <https://www.gnu.org/licenses/> and specifically the Affero license
+ * text at <https://www.gnu.org/licenses/agpl.html>.
+ */
+package net.rptools.maptool.model.entities.reactive;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+public class ReactiveDag {
+  // Incremented for any root value change.
+  private long version = Long.MIN_VALUE + 1;
+
+  private final List<ReactiveSource<?>> roots = new CopyOnWriteArrayList<>();
+
+  public long bumpVersion() {
+    return ++version;
+  }
+
+  public long getVersion() {
+    return version;
+  }
+
+  public <T> ReactiveSource<T> createRoot(T initialValue) {
+    return new ReactiveSource<>(this, initialValue);
+  }
+
+  public <T1, U> ReactiveNode<U> map(ReactiveNode<T1> n1, Func1<T1, U> func) {
+    return new ReactiveNonSource<>(this, List.of(n1), () -> func.apply(n1.get()));
+  }
+
+  public <T1, T2, U> ReactiveNode<U> map(
+      ReactiveNode<T1> n1, ReactiveNode<T2> n2, Func2<T1, T2, U> func) {
+    return new ReactiveNonSource<>(this, List.of(n1, n2), () -> func.apply(n1.get(), n2.get()));
+  }
+
+  public <T1, T2, T3, U> ReactiveNode<U> map(
+      ReactiveNode<T1> n1, ReactiveNode<T2> n2, ReactiveNode<T3> n3, Func3<T1, T2, T3, U> func) {
+    return new ReactiveNonSource<>(
+        this, List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get()));
+  }
+
+  public <T1, T2, T3, T4, U> ReactiveNode<U> map(
+      ReactiveNode<T1> n1,
+      ReactiveNode<T2> n2,
+      ReactiveNode<T3> n3,
+      ReactiveNode<T4> n4,
+      Func4<T1, T2, T3, T4, U> func) {
+    return new ReactiveNonSource<>(
+        this, List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get(), n4.get()));
+  }
+
+  public <T1, T2, T3, T4, T5, U> ReactiveNode<U> map(
+      ReactiveNode<T1> n1,
+      ReactiveNode<T2> n2,
+      ReactiveNode<T3> n3,
+      ReactiveNode<T4> n4,
+      ReactiveNode<T5> n5,
+      Func5<T1, T2, T3, T4, T5, U> func) {
+    return new ReactiveNonSource<>(
+        this, List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get(), n4.get(), n5.get()));
+  }
+}
