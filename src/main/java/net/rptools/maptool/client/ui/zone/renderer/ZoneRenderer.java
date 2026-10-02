@@ -66,6 +66,7 @@ import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.Label;
 import net.rptools.maptool.model.Zone.Layer;
 import net.rptools.maptool.model.drawing.*;
+import net.rptools.maptool.model.entities.components.CameraComponent;
 import net.rptools.maptool.model.entities.components.GridComponent;
 import net.rptools.maptool.model.entities.components.LayoutComponent;
 import net.rptools.maptool.model.entities.components.PlacementComponent;
@@ -990,20 +991,25 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     {
       // Update loop.
       var scale = viewModel.getZoneScale();
-      var placement = zone.getCameraEntity().placement.get();
-      zone.getCameraEntity()
-          .placement
-          .set(
-              new PlacementComponent(
-                  new Point2D.Double(
-                      -scale.getOffsetX() / scale.getScale(),
-                      -scale.getOffsetY() / scale.getScale()),
-                  placement.rotation(),
-                  1 / scale.getScale()));
+      var placementNode = zone.getCameraEntity().getSource(PlacementComponent.class);
+      if (placementNode != null) {
+        var placement = placementNode.get();
+        var rotation = placement == null ? 0. : placement.rotation();
+
+        placementNode.set(
+            new PlacementComponent(
+                new Point2D.Double(
+                    -scale.getOffsetX() / scale.getScale(), -scale.getOffsetY() / scale.getScale()),
+                rotation,
+                1 / scale.getScale()));
+      }
     }
     var worldG = (Graphics2D) g2d.create();
     try {
-      worldG.transform(zone.getCameraEntity().camera.get().transform());
+      var camera = zone.getCameraEntity().getValue(CameraComponent.class);
+      if (camera != null) {
+        worldG.transform(camera.transform());
+      }
 
       for (var entity : zone.getEntityManager().getAllEntities()) {
         var entityG = (Graphics2D) worldG.create();

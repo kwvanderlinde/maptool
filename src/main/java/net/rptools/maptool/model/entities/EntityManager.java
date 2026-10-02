@@ -31,21 +31,10 @@ public class EntityManager {
     this.entities.add(entity);
   }
 
-  public Camera2 spawnCamera() {
-    var camera = new Camera2();
-    adopt(camera);
-    return camera;
-  }
-
-  public Token2 spawnToken() {
-    var token = new Token2();
-    adopt(token);
-    return token;
-  }
-
-  public Map2 spawnMap() {
-    var map = new Map2();
-    adopt(map);
-    return map;
+  public Entity spawn() {
+    // TODO Local ID
+    var entity = new Entity();
+    adopt(entity);
+    return entity;
   }
 }

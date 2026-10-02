@@ -27,7 +27,8 @@ import net.rptools.maptool.model.entities.reactive.ReactiveNonSource;
 import net.rptools.maptool.model.entities.reactive.ReactiveSource;
 import org.jspecify.annotations.Nullable;
 
-public abstract class Entity {
+public class Entity {
+  private final Map<Class<?>, ReactiveSource<?>> sourceComponentMap = new HashMap<>();
   private final Map<Class<?>, ReactiveNode<?>> componentMap = new HashMap<>();
 
   public final <T extends Record & Component> @Nullable T getValue(Class<T> type) {
@@ -38,19 +39,29 @@ public abstract class Entity {
     return node.get();
   }
 
-  public final <T extends Record & Component> @Nullable ReactiveNode<T> get(Class<T> type) {
-    return (ReactiveNode<T>) componentMap.get(type);
-  }
-
   private <ValueT extends Record & Component, NodeT extends ReactiveNode<ValueT>> NodeT register(
       Class<ValueT> type, NodeT node) {
     componentMap.put(type, node);
     return node;
   }
 
+  private <ValueT extends Record & Component, NodeT extends ReactiveSource<ValueT>>
+      NodeT registerSource(Class<ValueT> type, NodeT node) {
+    sourceComponentMap.put(type, node);
+    return register(type, node);
+  }
+
+  public final <T extends Record & Component> @Nullable ReactiveNode<T> get(Class<T> type) {
+    return (ReactiveNode<T>) componentMap.get(type);
+  }
+
+  public final <T extends Record & Component> @Nullable ReactiveSource<T> getSource(Class<T> type) {
+    return (ReactiveSource<T>) sourceComponentMap.get(type);
+  }
+
   public final <ValueT extends Record & Component> ReactiveSource<ValueT> defineSource(
       Class<ValueT> type, ValueT initial) {
-    return register(type, new ReactiveSource<>(initial));
+    return registerSource(type, new ReactiveSource<>(initial));
   }
 
   public final <T1, U extends Record & Component> ReactiveNonSource<U> derive(
