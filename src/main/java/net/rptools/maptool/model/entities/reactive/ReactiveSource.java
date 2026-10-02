@@ -1,0 +1,40 @@
+/*
+ * This software Copyright by the RPTools.net development team, and
+ * licensed under the Affero GPL Version 3 or, at your option, any later
+ * version.
+ *
+ * MapTool Source Code is distributed in the hope that it will be
+ * useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * You should have received a copy of the GNU Affero General Public
+ * License * along with this source Code.  If not, please visit
+ * <https://www.gnu.org/licenses/> and specifically the Affero license
+ * text at <https://www.gnu.org/licenses/agpl.html>.
+ */
+package net.rptools.maptool.model.entities.reactive;
+
+import java.util.List;
+
+public class ReactiveSource<T> extends ReactiveNode<T> {
+  ReactiveSource(ReactiveDag scope, T initialValue) {
+    super(scope);
+    this.value = initialValue;
+  }
+
+  @Override
+  public List<ReactiveNode<?>> getParents() {
+    return List.of();
+  }
+
+  @Override
+  protected T recompute() {
+    // Nothing to do. We just store a value.
+    return value;
+  }
+
+  public void set(T value) {
+    this.value = value;
+    this.version = scope.bumpVersion();
+  }
+}
