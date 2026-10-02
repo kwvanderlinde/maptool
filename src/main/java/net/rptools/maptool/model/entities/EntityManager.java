@@ -39,7 +39,6 @@ public class EntityManager {
   }
 
   public Entity spawn() {
-    // TODO Local ID
     var entity = new Entity();
     adopt(entity);
     return entity;
