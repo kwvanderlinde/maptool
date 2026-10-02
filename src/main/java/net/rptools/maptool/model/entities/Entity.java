@@ -16,7 +16,10 @@ package net.rptools.maptool.model.entities;
 
 import java.util.HashMap;
 import java.util.Map;
+import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.entities.components.Component;
+import net.rptools.maptool.model.entities.components.LocalId;
+import net.rptools.maptool.model.entities.components.ParentComponent;
 import net.rptools.maptool.model.entities.reactive.Func1;
 import net.rptools.maptool.model.entities.reactive.Func2;
 import net.rptools.maptool.model.entities.reactive.Func3;
@@ -28,8 +31,19 @@ import net.rptools.maptool.model.entities.reactive.ReactiveSource;
 import org.jspecify.annotations.Nullable;
 
 public class Entity {
-  private final Map<Class<?>, ReactiveSource<?>> sourceComponentMap = new HashMap<>();
-  private final Map<Class<?>, ReactiveNode<?>> componentMap = new HashMap<>();
+  private final Map<Class<?>, ReactiveSource<?>> sourceComponentMap;
+  private final Map<Class<?>, ReactiveNode<?>> componentMap;
+
+  public final ReactiveSource<LocalId> id;
+  public final ReactiveSource<@Nullable ParentComponent> parent;
+
+  {
+    sourceComponentMap = new HashMap<>();
+    componentMap = new HashMap<>();
+
+    id = defineSource(LocalId.class, new LocalId(GUID.random()));
+    parent = defineSource(ParentComponent.class, null);
+  }
 
   public final <T extends Record & Component> @Nullable T getValue(Class<T> type) {
     var node = get(type);
