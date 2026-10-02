@@ -18,6 +18,7 @@ import com.google.protobuf.StringValue;
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -48,14 +49,15 @@ import net.rptools.maptool.model.drawing.DrawableTexturePaint;
 import net.rptools.maptool.model.drawing.DrawablesGroup;
 import net.rptools.maptool.model.drawing.DrawnElement;
 import net.rptools.maptool.model.drawing.Pen;
-import net.rptools.maptool.model.entities.Camera2;
 import net.rptools.maptool.model.entities.Entity;
 import net.rptools.maptool.model.entities.EntityManager;
-import net.rptools.maptool.model.entities.Map2;
-import net.rptools.maptool.model.entities.Token2;
+import net.rptools.maptool.model.entities.components.CameraComponent;
+import net.rptools.maptool.model.entities.components.GridComponent;
 import net.rptools.maptool.model.entities.components.LayoutComponent;
+import net.rptools.maptool.model.entities.components.LocalTransformComponent;
 import net.rptools.maptool.model.entities.components.PlacementComponent;
 import net.rptools.maptool.model.entities.components.PogComponent;
+import net.rptools.maptool.model.entities.components.WorldTransformComponent;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.tokens.TokenMacroChanged;
 import net.rptools.maptool.model.tokens.TokenPanelChanged;
@@ -444,10 +446,10 @@ public class Zone {
   private transient Map<String, Integer> tokenNumberCache;
 
   private transient EntityManager entityManager;
-  private transient Camera2 cameraEntity;
-  private transient Map2 mapEntity;
+  private transient Entity cameraEntity;
+  private transient Entity mapEntity;
   private transient Entity rootEntity;
-  private transient Token2 exampleEntity;
+  private transient Entity exampleEntity;
   private transient Entity exampleEntity2;
   private transient Entity exampleEntity3;
   private transient Entity exampleEntity4;
@@ -464,19 +466,77 @@ public class Zone {
       entityManager = new EntityManager();
     }
     {
-      cameraEntity = entityManager.spawnCamera();
-      cameraEntity.placement.set(new PlacementComponent(new Point2D.Double(0., 0.), 0., 1.));
+      cameraEntity = entityManager.spawn();
+      var placementNode =
+          cameraEntity.defineSource(
+              PlacementComponent.class, new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
+      cameraEntity.derive(
+          CameraComponent.class,
+          placementNode,
+          placement -> {
+            var transform = new AffineTransform();
+            transform.rotate(-placement.rotation());
+            transform.scale(1. / placement.scale(), 1. / placement.scale());
+            transform.translate(-placement.position().getX(), -placement.position().getY());
+            return new CameraComponent(transform);
+          });
     }
     {
-      mapEntity = entityManager.spawnMap();
-      mapEntity.placement.set(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
+      var gridEntity = entityManager.spawn();
+      // entityManager.getParentageApi().setParentTo(gridEntity, mapEntity);
+      gridEntity.defineSource(
+          GridComponent.class,
+          new GridComponent(GridComponent.Type.Square, 100, 100, Color.black, 1.));
+      gridEntity.defineSource(
+          PlacementComponent.class, new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
     }
     {
-      exampleEntity = entityManager.spawnToken();
-      exampleEntity.layout.set(new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)));
-      exampleEntity.placement.set(new PlacementComponent(new Point2D.Double(50, 50), 0., 1.));
+      mapEntity = entityManager.spawn();
+      mapEntity.defineSource(
+          PlacementComponent.class, new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
+    }
+    {
+      exampleEntity = entityManager.spawn();
+      var placementNode =
+          exampleEntity.defineSource(
+              PlacementComponent.class, new PlacementComponent(new Point2D.Double(50, 50), 0., 1.));
+      exampleEntity.defineSource(
+          LayoutComponent.class, new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)));
+      // TODO Pog should be downstream of image asset selection.
+      exampleEntity.defineSource(
+          PogComponent.class,
+          new PogComponent(new MD5Key("87f4e9bfa4f1f3db250b57b3599fa4e9"), 0.15));
+      var localTransformNode =
+          exampleEntity.derive(
+              LocalTransformComponent.class,
+              placementNode,
+              placement -> {
+                var localTransform = new AffineTransform();
+                localTransform.translate(placement.position().getX(), placement.position().getY());
+                localTransform.rotate(placement.rotation());
+                localTransform.scale(placement.scale(), placement.scale());
+                return new LocalTransformComponent(localTransform);
+              });
+      exampleEntity.derive(
+          WorldTransformComponent.class,
+          localTransformNode,
+          localTransform -> {
+            var worldTransform = new AffineTransform(localTransform.transform());
+
+            // TODO Account for parentage.
+            // var parent = entity.getComponent(ParentComponent.class);
+            // if (parent != null) {
+            //   var parentTransform =
+            // parent.parent().getComponent(WorldTransformComponent.class);
+            //   if (parentTransform != null) {
+            //     worldTransform.preConcatenate(parentTransform.transform());
+            //   }
+            // }
+
+            return new WorldTransformComponent(worldTransform);
+          });
+
       // exampleEntity.add(new Trajectory(0.75));
-      exampleEntity.pog.set(new PogComponent(new MD5Key("87f4e9bfa4f1f3db250b57b3599fa4e9"), 0.15));
       // entityManager.getParentageApi().setParentTo(exampleEntity, rootEntity);
     }
   }
@@ -489,12 +549,8 @@ public class Zone {
     return entityManager;
   }
 
-  public Camera2 getCameraEntity() {
+  public Entity getCameraEntity() {
     return cameraEntity;
-  }
-
-  public Map2 getMapEntity() {
-    return mapEntity;
   }
 
   public void setBackgroundPaint(DrawablePaint paint) {
