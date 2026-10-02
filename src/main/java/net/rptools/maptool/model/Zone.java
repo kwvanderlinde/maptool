@@ -19,6 +19,8 @@ import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.Area;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -46,6 +48,13 @@ import net.rptools.maptool.model.drawing.DrawableTexturePaint;
 import net.rptools.maptool.model.drawing.DrawablesGroup;
 import net.rptools.maptool.model.drawing.DrawnElement;
 import net.rptools.maptool.model.drawing.Pen;
+import net.rptools.maptool.model.entities.Camera2;
+import net.rptools.maptool.model.entities.Entity;
+import net.rptools.maptool.model.entities.EntityManager;
+import net.rptools.maptool.model.entities.Token2;
+import net.rptools.maptool.model.entities.components.LayoutComponent;
+import net.rptools.maptool.model.entities.components.PlacementComponent;
+import net.rptools.maptool.model.entities.components.PogComponent;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.tokens.TokenMacroChanged;
 import net.rptools.maptool.model.tokens.TokenPanelChanged;
@@ -433,16 +442,47 @@ public class Zone {
 
   private transient Map<String, Integer> tokenNumberCache;
 
+  private transient EntityManager entityManager;
+  private transient Camera2 cameraEntity;
+  private transient Entity mapEntity;
+  private transient Entity rootEntity;
+  private transient Token2 exampleEntity;
+  private transient Entity exampleEntity2;
+  private transient Entity exampleEntity3;
+  private transient Entity exampleEntity4;
+  private transient Entity exampleEntity5;
+
   {
     drawablesByLayer = new EnumMap<>(Layer.class);
     drawablesByLayer.put(Layer.TOKEN, drawables);
     drawablesByLayer.put(Layer.GM, gmDrawables);
     drawablesByLayer.put(Layer.OBJECT, objectDrawables);
     drawablesByLayer.put(Layer.BACKGROUND, backgroundDrawables);
+
+    {
+      cameraEntity = entityManager.spawnCamera();
+      cameraEntity.placement.set(new PlacementComponent(new Point2D.Double(0., 0.), 0., 1.));
+    }
+    {
+      exampleEntity = entityManager.spawnToken();
+      exampleEntity.layout.set(new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)));
+      exampleEntity.placement.set(new PlacementComponent(new Point2D.Double(50, 50), 0., 1.));
+      // exampleEntity.add(new Trajectory(0.75));
+      exampleEntity.pog.set(new PogComponent(new MD5Key("87f4e9bfa4f1f3db250b57b3599fa4e9"), 0.15));
+      // entityManager.getParentageApi().setParentTo(exampleEntity, rootEntity);
+    }
   }
 
   public Zone() {
     undo = new UndoPerZone(this); // registers as ModelChangeListener for drawables...
+  }
+
+  public EntityManager getEntityManager() {
+    return entityManager;
+  }
+
+  public Camera2 getCameraEntity() {
+    return cameraEntity;
   }
 
   public void setBackgroundPaint(DrawablePaint paint) {
