@@ -46,6 +46,7 @@ import net.rptools.maptool.model.drawing.DrawableTexturePaint;
 import net.rptools.maptool.model.drawing.DrawablesGroup;
 import net.rptools.maptool.model.drawing.DrawnElement;
 import net.rptools.maptool.model.drawing.Pen;
+import net.rptools.maptool.model.entities.EntityManager;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.tokens.TokenMacroChanged;
 import net.rptools.maptool.model.tokens.TokenPanelChanged;
@@ -433,16 +434,24 @@ public class Zone {
 
   private transient Map<String, Integer> tokenNumberCache;
 
+  private transient EntityManager entityManager;
+
   {
     drawablesByLayer = new EnumMap<>(Layer.class);
     drawablesByLayer.put(Layer.TOKEN, drawables);
     drawablesByLayer.put(Layer.GM, gmDrawables);
     drawablesByLayer.put(Layer.OBJECT, objectDrawables);
     drawablesByLayer.put(Layer.BACKGROUND, backgroundDrawables);
+
+    entityManager = new EntityManager();
   }
 
   public Zone() {
     undo = new UndoPerZone(this); // registers as ModelChangeListener for drawables...
+  }
+
+  public EntityManager getEntityManager() {
+    return entityManager;
   }
 
   public void setBackgroundPaint(DrawablePaint paint) {
@@ -2048,6 +2057,8 @@ public class Zone {
   // Backward compatibility
   @SuppressWarnings("ConstantConditions")
   protected Object readResolve() {
+    entityManager = new EntityManager();
+
     if (tokenVisionDistance == 0) {
       // 1.3b19
       tokenVisionDistance = DEFAULT_TOKEN_VISION_DISTANCE;
