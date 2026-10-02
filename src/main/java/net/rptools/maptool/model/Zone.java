@@ -580,7 +580,7 @@ public class Zone {
     SwingUtilities.invokeLater(() -> this.renderLoop(time));
   }
 
-  public void update(ZoneRenderer renderer, double delta) {
+  private void update(ZoneRenderer renderer, double delta) {
     var scale = renderer.getViewModel().getZoneScale();
     var cameraFamily = Family.all(CameraComponent.class, PlacementComponent.class).get();
 
@@ -2413,47 +2413,6 @@ public class Zone {
 
     if (walls == null) {
       walls = new WallTopology();
-    }
-
-    {
-      cameraEntity = entityManager.spawn();
-      cameraEntity.add(new PlacementComponent(new Point2D.Double(0., 0.), 0., 1.));
-      cameraEntity.add(new CameraComponent(new AffineTransform()));
-    }
-    {
-      mapEntity = entityManager.spawn();
-      mapEntity.add(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
-    }
-    {
-      // TODO Copy in the grid instead of inventing one.
-      var gridEntity = entityManager.spawn();
-      entityManager.getParentageApi().setParentTo(gridEntity, mapEntity);
-      gridEntity.add(new GridComponent(GridComponent.Type.Square, 100, 100, Color.black, 1.));
-      gridEntity.add(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
-    }
-    {
-      for (var token : tokenOrderedList) {
-        var tokenAsEntity = token.getEntity();
-        entityManager.getEngine().addEntity(tokenAsEntity);
-
-        // TODO I hate passing this when we're technically not fully constructed, but it's late
-        //  enough that it should be fine.
-        var bounds = token.getFootprintBounds(this);
-        tokenAsEntity.add(
-            new LayoutComponent(
-                new Rectangle2D.Double(
-                    -bounds.getWidth() / 2.,
-                    -bounds.getHeight() / 2,
-                    bounds.getWidth(),
-                    bounds.getHeight())));
-        tokenAsEntity.add(
-            new PlacementComponent(
-                new Point2D.Double(
-                    bounds.getX() + bounds.getWidth() / 2, bounds.getY() + bounds.getHeight() / 2),
-                0.,
-                1.));
-        entityManager.getParentageApi().setParentTo(tokenAsEntity, mapEntity);
-      }
     }
 
     return this;

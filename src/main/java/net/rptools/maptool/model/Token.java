@@ -14,7 +14,6 @@
  */
 package net.rptools.maptool.model;
 
-import com.badlogic.ashley.core.Entity;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -392,12 +391,6 @@ public class Token implements Cloneable {
 
   private boolean allowURIAccess = false;
 
-  private transient Entity entity;
-
-  {
-    entity = new Entity();
-  }
-
   /**
    * Constructor from another token, with the option to keep the token id
    *
@@ -581,10 +574,6 @@ public class Token implements Cloneable {
       log.error("Error while defaulting sight type", e);
       sightType = MapTool.getCampaign().getCampaignProperties().getDefaultSightType();
     }
-  }
-
-  public Entity getEntity() {
-    return entity;
   }
 
   public void setHasSight(boolean hasSight) {
@@ -2637,9 +2626,6 @@ public class Token implements Cloneable {
       };
 
   protected Object readResolve() {
-    entity = new Entity();
-    // TODO Populate entity with all attributes.
-
     // FJE: If the propertyMap field has something in it, it could be:
     // a pre-1.3b66 token that contains a HashMap<?,?>, or
     // a pre-1.3b78 token that actually has the CaseInsensitiveHashMap<?>.
