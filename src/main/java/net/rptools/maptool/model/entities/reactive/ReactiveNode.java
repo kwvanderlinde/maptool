@@ -38,6 +38,10 @@ public abstract class ReactiveNode<T> {
 
   public abstract List<ReactiveNode<?>> getParents();
 
+  public ReactiveDag getScope() {
+    return scope;
+  }
+
   public T get() {
     ensureUpdated(scope.getVersion());
     return value;

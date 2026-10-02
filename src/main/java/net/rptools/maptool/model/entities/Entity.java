@@ -17,27 +17,79 @@ package net.rptools.maptool.model.entities;
 import java.util.HashMap;
 import java.util.Map;
 import net.rptools.maptool.model.entities.components.Component;
+import net.rptools.maptool.model.entities.reactive.Func1;
+import net.rptools.maptool.model.entities.reactive.Func2;
+import net.rptools.maptool.model.entities.reactive.Func3;
+import net.rptools.maptool.model.entities.reactive.Func4;
+import net.rptools.maptool.model.entities.reactive.Func5;
 import net.rptools.maptool.model.entities.reactive.ReactiveNode;
+import net.rptools.maptool.model.entities.reactive.ReactiveNonSource;
+import net.rptools.maptool.model.entities.reactive.ReactiveSource;
 import org.jspecify.annotations.Nullable;
 
 public abstract class Entity {
   private final Map<Class<?>, ReactiveNode<?>> componentMap = new HashMap<>();
 
-  public final <T extends Record & Component> @Nullable T get(Class<T> type) {
-    var node = getNode(type);
+  public final <T extends Record & Component> @Nullable T getValue(Class<T> type) {
+    var node = get(type);
     if (node == null) {
       return null;
     }
     return node.get();
   }
 
-  public final <T extends Record & Component> @Nullable ReactiveNode<T> getNode(Class<T> type) {
+  public final <T extends Record & Component> @Nullable ReactiveNode<T> get(Class<T> type) {
     return (ReactiveNode<T>) componentMap.get(type);
   }
 
-  protected final <ValueT extends Record & Component, NodeT extends ReactiveNode<ValueT>>
-      NodeT register(Class<ValueT> type, NodeT node) {
+  private <ValueT extends Record & Component, NodeT extends ReactiveNode<ValueT>> NodeT register(
+      Class<ValueT> type, NodeT node) {
     componentMap.put(type, node);
     return node;
+  }
+
+  public final <ValueT extends Record & Component> ReactiveSource<ValueT> defineSource(
+      Class<ValueT> type, ValueT initial) {
+    return register(type, new ReactiveSource<>(initial));
+  }
+
+  public final <T1, U extends Record & Component> ReactiveNonSource<U> derive(
+      Class<U> type, ReactiveNode<T1> n1, Func1<T1, U> func) {
+    return this.register(type, n1.getScope().map(n1, func));
+  }
+
+  public final <T1, T2, U extends Record & Component> ReactiveNonSource<U> derive(
+      Class<U> type, ReactiveNode<T1> n1, ReactiveNode<T2> n2, Func2<T1, T2, U> func) {
+    return this.register(type, n1.getScope().map(n1, n2, func));
+  }
+
+  public final <T1, T2, T3, U extends Record & Component> ReactiveNonSource<U> derive(
+      Class<U> type,
+      ReactiveNode<T1> n1,
+      ReactiveNode<T2> n2,
+      ReactiveNode<T3> n3,
+      Func3<T1, T2, T3, U> func) {
+    return this.register(type, n1.getScope().map(n1, n2, n3, func));
+  }
+
+  public final <T1, T2, T3, T4, U extends Record & Component> ReactiveNonSource<U> derive(
+      Class<U> type,
+      ReactiveNode<T1> n1,
+      ReactiveNode<T2> n2,
+      ReactiveNode<T3> n3,
+      ReactiveNode<T4> n4,
+      Func4<T1, T2, T3, T4, U> func) {
+    return this.register(type, n1.getScope().map(n1, n2, n3, n4, func));
+  }
+
+  public final <T1, T2, T3, T4, T5, U extends Record & Component> ReactiveNonSource<U> derive(
+      Class<U> type,
+      ReactiveNode<T1> n1,
+      ReactiveNode<T2> n2,
+      ReactiveNode<T3> n3,
+      ReactiveNode<T4> n4,
+      ReactiveNode<T5> n5,
+      Func5<T1, T2, T3, T4, T5, U> func) {
+    return this.register(type, n1.getScope().map(n1, n2, n3, n4, n5, func));
   }
 }
