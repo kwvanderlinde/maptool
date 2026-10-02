@@ -31,6 +31,7 @@ import javax.swing.*;
 import net.rptools.lib.GeometryUtil;
 import net.rptools.lib.MD5Key;
 import net.rptools.lib.StringUtil;
+import net.rptools.maptool.client.AppState;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.tool.drawing.UndoPerZone;
@@ -446,6 +447,7 @@ public class Zone {
   private transient EntityManager entityManager;
   private transient Entity cameraEntity;
   private transient Entity mapEntity;
+  private transient Entity gridEntity;
   private transient Entity rootEntity;
   private transient Entity exampleEntity;
   private transient Entity exampleEntity2;
@@ -480,7 +482,7 @@ public class Zone {
           });
     }
     {
-      var gridEntity = entityManager.spawn();
+      gridEntity = entityManager.spawn();
       // entityManager.getParentageApi().setParentTo(gridEntity, mapEntity);
       gridEntity.defineSource(
           GridComponent.class,
@@ -506,6 +508,87 @@ public class Zone {
 
   public Zone() {
     undo = new UndoPerZone(this); // registers as ModelChangeListener for drawables...
+  }
+
+  private void renderLoop(long previousTime) {
+    var time = System.nanoTime();
+    var delta = (time - previousTime) / 1_000_000_000.;
+
+    var renderer = MapTool.getFrame().getZoneRenderer(id);
+    if (renderer != null) {
+      update(renderer, delta);
+      renderer.repaint();
+    }
+    SwingUtilities.invokeLater(() -> this.renderLoop(time));
+  }
+
+  public void update(ZoneRenderer renderer, double delta) {
+    var scale = renderer.getViewModel().getZoneScale();
+
+    // region Import model data into entities
+    // Camera
+    {
+      // The camera is contravariant. uses a special inverse to determine the coordinate system.
+      // TODO Loop over all camera rather than depending on our particular one.
+      var placementNode = cameraEntity.getSource(PlacementComponent.class);
+      if (placementNode != null) {
+        var placement = placementNode.get();
+        placementNode.set(
+            new PlacementComponent(
+                new Point2D.Double(
+                    -scale.getOffsetX() / scale.getScale(), -scale.getOffsetY() / scale.getScale()),
+                placement.rotation(),
+                1 / scale.getScale()));
+      }
+    }
+
+    // Grid
+    {
+      // TODO Loop over all grid rather than depending on our particular one.
+      var gridNode = gridEntity.getSource(GridComponent.class);
+      var placementNode = gridEntity.getSource(PlacementComponent.class);
+
+      if (gridNode != null) {
+        var type =
+            switch (grid.getType()) {
+              case Square -> GridComponent.Type.Square;
+              case Isometric -> GridComponent.Type.Isometric;
+              case HexVertical -> GridComponent.Type.HexFlatTop;
+              case HexHorizontal -> GridComponent.Type.HexPointyTop;
+              case None -> GridComponent.Type.Gridless;
+            };
+        gridNode.set(
+            new GridComponent(
+                type,
+                grid.getSize(),
+                grid.getSecondDimension(),
+                new Color(gridColor, false),
+                AppState.getGridLineWeight() / scale.getScale()));
+      }
+      if (placementNode != null) {
+        placementNode.set(
+            new PlacementComponent(
+                new Point2D.Double(grid.getOffsetX(), grid.getOffsetY()), 0., 1.));
+      }
+    }
+
+    // endregion
+
+    // var trajectoryFamily = Family.all(Trajectory.class, PlacementComponent.class).get();
+    // var trajectoryMapper = ComponentMapper.getFor(Trajectory.class);
+    // var placementMapper = ComponentMapper.getFor(PlacementComponent.class);
+    // for (var entity : entityManager.getEngine().getEntitiesFor(trajectoryFamily)) {
+    //   var trajectory = trajectoryMapper.get(entity);
+    //   var placement = placementMapper.get(entity);
+    //   if (trajectory != null && placement != null) {
+    //     placement =
+    //         new PlacementComponent(
+    //             placement.position(),
+    //             placement.rotation() + trajectory.radiansPerSecond * delta,
+    //             placement.scale());
+    //     entity.add(placement);
+    //   }
+    // }
   }
 
   public EntityManager getEntityManager() {
