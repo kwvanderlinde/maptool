@@ -14,9 +14,9 @@
  */
 package net.rptools.maptool.model.entities.components;
 
-import com.badlogic.ashley.core.Entity;
-import com.badlogic.gdx.utils.Array;
+import java.util.ArrayList;
+import net.rptools.maptool.model.entities.Entity;
 
 public class ChildBufferComponent implements Component {
-  public final Array<Entity> children = new Array<>();
+  public final ArrayList<Entity> children = new ArrayList<>();
 }
