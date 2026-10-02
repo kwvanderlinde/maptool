@@ -14,7 +14,7 @@
  */
 package net.rptools.maptool.model.entities.components;
 
-import com.badlogic.ashley.core.Entity;
+import net.rptools.maptool.model.entities.Entity;
 import org.jspecify.annotations.NonNull;
 
 public record ParentComponent(@NonNull Entity parent) implements Component {}
