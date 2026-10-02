@@ -51,6 +51,7 @@ import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.model.entities.Camera2;
 import net.rptools.maptool.model.entities.Entity;
 import net.rptools.maptool.model.entities.EntityManager;
+import net.rptools.maptool.model.entities.Map2;
 import net.rptools.maptool.model.entities.Token2;
 import net.rptools.maptool.model.entities.components.LayoutComponent;
 import net.rptools.maptool.model.entities.components.PlacementComponent;
@@ -444,7 +445,7 @@ public class Zone {
 
   private transient EntityManager entityManager;
   private transient Camera2 cameraEntity;
-  private transient Entity mapEntity;
+  private transient Map2 mapEntity;
   private transient Entity rootEntity;
   private transient Token2 exampleEntity;
   private transient Entity exampleEntity2;
@@ -460,8 +461,15 @@ public class Zone {
     drawablesByLayer.put(Layer.BACKGROUND, backgroundDrawables);
 
     {
+      entityManager = new EntityManager();
+    }
+    {
       cameraEntity = entityManager.spawnCamera();
       cameraEntity.placement.set(new PlacementComponent(new Point2D.Double(0., 0.), 0., 1.));
+    }
+    {
+      mapEntity = entityManager.spawnMap();
+      mapEntity.placement.set(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
     }
     {
       exampleEntity = entityManager.spawnToken();
@@ -483,6 +491,10 @@ public class Zone {
 
   public Camera2 getCameraEntity() {
     return cameraEntity;
+  }
+
+  public Map2 getMapEntity() {
+    return mapEntity;
   }
 
   public void setBackgroundPaint(DrawablePaint paint) {
