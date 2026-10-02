@@ -66,6 +66,10 @@ import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.Label;
 import net.rptools.maptool.model.Zone.Layer;
 import net.rptools.maptool.model.drawing.*;
+import net.rptools.maptool.model.entities.components.GridComponent;
+import net.rptools.maptool.model.entities.components.LayoutComponent;
+import net.rptools.maptool.model.entities.components.PogComponent;
+import net.rptools.maptool.model.entities.components.WorldTransformComponent;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.zones.*;
 import net.rptools.maptool.util.GraphicsUtil;
@@ -980,6 +984,77 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     }
 
     this.visionOverlayRenderer.render(g2d, view, tokenUnderMouse);
+
+    // region Entities!
+    var worldG = (Graphics2D) g2d.create();
+    try {
+      worldG.transform(zone.getCameraEntity().camera.get().transform());
+
+      for (var entity : zone.getEntityManager().getAllEntities()) {
+        var entityG = (Graphics2D) worldG.create();
+        try {
+          var worldTransform = entity.get(WorldTransformComponent.class);
+          if (worldTransform != null) {
+            entityG.transform(worldTransform.transform());
+          }
+
+          // region Grid rendering
+          {
+            var grid = entity.get(GridComponent.class);
+            if (grid != null) {
+              gridRenderer.renderGrid(entityG, grid);
+            }
+          }
+          // endregion
+
+          // region Pog image rendering.
+          // Pogs fill the entity bounds in the entity's local space.
+          var layout = entity.get(LayoutComponent.class);
+          if (layout != null) {
+            var pog = entity.get(PogComponent.class);
+            if (pog != null) {
+              var image = ImageManager.getImage(pog.asset(), this);
+
+              var transform = new AffineTransform();
+              // 3. Scale the image out to fit the bounds.
+              transform.scale(layout.bounds().getWidth(), layout.bounds().getHeight());
+              // 2. Position it to match the bounding box in model space, centered on (0, 0).
+              transform.translate(-0.5, -0.5);
+              // 1. Normalize the image size to [0, 1]x[0, 1]
+              transform.scale(1. / image.getWidth(), 1. / image.getHeight());
+
+              entityG.setComposite(AlphaComposite.SrcOver.derive((float) pog.opacity()));
+              entityG.drawImage(image, transform, this);
+            }
+            // endregion
+
+            // region Debug rendering
+            // Draw the entity bounds
+            entityG.setComposite(AlphaComposite.SrcOver.derive(0.75f));
+            entityG.setPaint(Color.blue);
+            entityG.setStroke(new BasicStroke(2.f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            if (layout.bounds().getWidth() > 0 && layout.bounds().getHeight() > 0) {
+              entityG.draw(layout.bounds());
+            }
+            // Draw the entity origin.
+            entityG.setPaint(Color.red);
+            // The transform moves (0, 0) to the entity position, so just draw at (0, 0)
+            entityG.fill(new Ellipse2D.Double(-2.5, -2.5, 5., 5.));
+
+            // Draw up arrow for orientation.
+            entityG.setPaint(Color.green);
+            entityG.setStroke(new BasicStroke(1.f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            entityG.draw(new Line2D.Double(0, 0, 0, -25));
+            // endregion
+          }
+        } finally {
+          entityG.dispose();
+        }
+      }
+    } finally {
+      worldG.dispose();
+    }
+    // endregion
 
     timer.start("overlays");
     for (ZoneOverlay overlay : overlayList) {
