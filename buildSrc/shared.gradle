@@ -7,7 +7,6 @@ repositories {
     maven { url = "https://www.jetbrains.com/intellij-repository/releases" }
     maven { url = "https://cache-redirector.jetbrains.com/intellij-dependencies" }
     maven { url = "https://oss.sonatype.org/content/repositories/snapshots" }
-    maven { url = "https://oss.sonatype.org/content/repositories/releases" }
     maven { url = "https://jogamp.org/deployment/maven" }
 }
 

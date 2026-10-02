@@ -165,9 +165,6 @@ rptools-maptool-addons = { group = "com.github.RPTools", name = "maptool-builtin
 # For advanced dice roller
 rptools-dice-roller = { group = "com.github.RPTools", name = "advanced-dice-roller", version = "1.0.3" }
 
-# ECS
-libgdx-ashley = { group = "com.badlogicgames.ashley", name = "ashley", version = "1.7.4" }
-
 # Test only
 junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher", version = "1.13.4" }
 junit-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit" }
