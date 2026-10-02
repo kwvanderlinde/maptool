@@ -68,6 +68,7 @@ import net.rptools.maptool.model.Zone.Layer;
 import net.rptools.maptool.model.drawing.*;
 import net.rptools.maptool.model.entities.components.GridComponent;
 import net.rptools.maptool.model.entities.components.LayoutComponent;
+import net.rptools.maptool.model.entities.components.PlacementComponent;
 import net.rptools.maptool.model.entities.components.PogComponent;
 import net.rptools.maptool.model.entities.components.WorldTransformComponent;
 import net.rptools.maptool.model.player.Player;
@@ -986,6 +987,17 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     this.visionOverlayRenderer.render(g2d, view, tokenUnderMouse);
 
     // region Entities!
+    {
+      // Update loop.
+      var scale = viewModel.getZoneScale();
+      var placement = zone.getCameraEntity().placement.get();
+      zone.getCameraEntity().placement.set(new PlacementComponent(
+              new Point2D.Double(
+              -scale.getOffsetX() / scale.getScale(), -scale.getOffsetY() / scale.getScale()),
+              placement.rotation(),
+              1 / scale.getScale()
+      ));
+    }
     var worldG = (Graphics2D) g2d.create();
     try {
       worldG.transform(zone.getCameraEntity().camera.get().transform());
