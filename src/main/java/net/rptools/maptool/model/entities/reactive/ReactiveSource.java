@@ -17,6 +17,10 @@ package net.rptools.maptool.model.entities.reactive;
 import java.util.List;
 
 public class ReactiveSource<T> extends ReactiveNode<T> {
+  public ReactiveSource(T initialValue) {
+    this(new ReactiveDag(), initialValue);
+  }
+
   ReactiveSource(ReactiveDag scope, T initialValue) {
     super(scope);
     this.value = initialValue;

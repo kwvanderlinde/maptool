@@ -21,6 +21,10 @@ public class ReactiveNonSource<T> extends ReactiveNode<T> {
   private final List<ReactiveNode<?>> dependencies;
   private final Supplier<T> valueSupplier;
 
+  public ReactiveNonSource(List<ReactiveNode<?>> dependencies, Supplier<T> valueSupplier) {
+    this(new ReactiveDag(), dependencies, valueSupplier);
+  }
+
   ReactiveNonSource(
       ReactiveDag scope, List<ReactiveNode<?>> dependencies, Supplier<T> valueSupplier) {
     super(scope);
