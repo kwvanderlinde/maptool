@@ -57,4 +57,37 @@ public abstract class ReactiveNode<T> {
     value = recompute();
     version = globalVersion;
   }
+
+  public static <T1, U> ReactiveNonSource<U> map(ReactiveNode<T1> n1, Func1<T1, U> func) {
+    return n1.scope.map(n1, func);
+  }
+
+  public static <T1, T2, U> ReactiveNonSource<U> map(
+      ReactiveNode<T1> n1, ReactiveNode<T2> n2, Func2<T1, T2, U> func) {
+    return n1.scope.map(n1, n2, func);
+  }
+
+  public static <T1, T2, T3, U> ReactiveNonSource<U> map(
+      ReactiveNode<T1> n1, ReactiveNode<T2> n2, ReactiveNode<T3> n3, Func3<T1, T2, T3, U> func) {
+    return n1.scope.map(n1, n2, n3, func);
+  }
+
+  public static <T1, T2, T3, T4, U> ReactiveNonSource<U> map(
+      ReactiveNode<T1> n1,
+      ReactiveNode<T2> n2,
+      ReactiveNode<T3> n3,
+      ReactiveNode<T4> n4,
+      Func4<T1, T2, T3, T4, U> func) {
+    return n1.scope.map(n1, n2, n3, n4, func);
+  }
+
+  public static <T1, T2, T3, T4, T5, U> ReactiveNonSource<U> map(
+      ReactiveNode<T1> n1,
+      ReactiveNode<T2> n2,
+      ReactiveNode<T3> n3,
+      ReactiveNode<T4> n4,
+      ReactiveNode<T5> n5,
+      Func5<T1, T2, T3, T4, T5, U> func) {
+    return n1.scope.map(n1, n2, n3, n4, n5, func);
+  }
 }

@@ -46,13 +46,13 @@ public class ReactiveDag {
     return new ReactiveSource<>(this, initialValue);
   }
 
-  public <T1, U> ReactiveNode<U> map(ReactiveNode<T1> n1, Func1<T1, U> func) {
+  public <T1, U> ReactiveNonSource<U> map(ReactiveNode<T1> n1, Func1<T1, U> func) {
     mergeFrom(n1.scope);
 
     return new ReactiveNonSource<>(this, List.of(n1), () -> func.apply(n1.get()));
   }
 
-  public <T1, T2, U> ReactiveNode<U> map(
+  public <T1, T2, U> ReactiveNonSource<U> map(
       ReactiveNode<T1> n1, ReactiveNode<T2> n2, Func2<T1, T2, U> func) {
     mergeFrom(n1.scope);
     mergeFrom(n2.scope);
@@ -60,7 +60,7 @@ public class ReactiveDag {
     return new ReactiveNonSource<>(this, List.of(n1, n2), () -> func.apply(n1.get(), n2.get()));
   }
 
-  public <T1, T2, T3, U> ReactiveNode<U> map(
+  public <T1, T2, T3, U> ReactiveNonSource<U> map(
       ReactiveNode<T1> n1, ReactiveNode<T2> n2, ReactiveNode<T3> n3, Func3<T1, T2, T3, U> func) {
     mergeFrom(n1.scope);
     mergeFrom(n2.scope);
@@ -70,7 +70,7 @@ public class ReactiveDag {
         this, List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get()));
   }
 
-  public <T1, T2, T3, T4, U> ReactiveNode<U> map(
+  public <T1, T2, T3, T4, U> ReactiveNonSource<U> map(
       ReactiveNode<T1> n1,
       ReactiveNode<T2> n2,
       ReactiveNode<T3> n3,
@@ -85,7 +85,7 @@ public class ReactiveDag {
         this, List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get(), n4.get()));
   }
 
-  public <T1, T2, T3, T4, T5, U> ReactiveNode<U> map(
+  public <T1, T2, T3, T4, T5, U> ReactiveNonSource<U> map(
       ReactiveNode<T1> n1,
       ReactiveNode<T2> n2,
       ReactiveNode<T3> n3,
