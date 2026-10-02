@@ -53,6 +53,7 @@ import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.model.entities.Entity;
 import net.rptools.maptool.model.entities.EntityManager;
 import net.rptools.maptool.model.entities.components.CameraComponent;
+import net.rptools.maptool.model.entities.components.Component;
 import net.rptools.maptool.model.entities.components.GridComponent;
 import net.rptools.maptool.model.entities.components.LayoutComponent;
 import net.rptools.maptool.model.entities.components.PlacementComponent;
@@ -500,11 +501,25 @@ public class Zone {
           entityManager.spawnToken(
               new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)),
               new PogComponent(new MD5Key("87f4e9bfa4f1f3db250b57b3599fa4e9"), 0.15));
-
-      // exampleEntity.add(new Trajectory(0.75));
+      exampleEntity.defineSource(Trajectory.class, new Trajectory(0.75));
       // entityManager.getParentageApi().setParentTo(exampleEntity, rootEntity);
     }
+    {
+      exampleEntity2 =
+          entityManager.spawnToken(
+              new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)),
+              new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
+      exampleEntity2
+          .getSource(PlacementComponent.class)
+          .set(new PlacementComponent(new Point2D.Double(-50, -50), 0., 1.));
+      exampleEntity2.defineSource(Trajectory.class, new Trajectory(1.5));
+      // entityManager.getParentageApi().setParentTo(exampleEntity2, exampleEntity);
+    }
+
+    SwingUtilities.invokeLater(() -> this.renderLoop(System.nanoTime()));
   }
+
+  private record Trajectory(double radiansPerSecond) implements Component {}
 
   public Zone() {
     undo = new UndoPerZone(this); // registers as ModelChangeListener for drawables...
@@ -574,21 +589,20 @@ public class Zone {
 
     // endregion
 
-    // var trajectoryFamily = Family.all(Trajectory.class, PlacementComponent.class).get();
-    // var trajectoryMapper = ComponentMapper.getFor(Trajectory.class);
-    // var placementMapper = ComponentMapper.getFor(PlacementComponent.class);
-    // for (var entity : entityManager.getEngine().getEntitiesFor(trajectoryFamily)) {
-    //   var trajectory = trajectoryMapper.get(entity);
-    //   var placement = placementMapper.get(entity);
-    //   if (trajectory != null && placement != null) {
-    //     placement =
-    //         new PlacementComponent(
-    //             placement.position(),
-    //             placement.rotation() + trajectory.radiansPerSecond * delta,
-    //             placement.scale());
-    //     entity.add(placement);
-    //   }
-    // }
+    for (var entity : entityManager.getAllEntities()) {
+      var trajectoryNode = entity.get(Trajectory.class);
+      var placementNode = entity.getSource(PlacementComponent.class);
+      if (trajectoryNode != null && placementNode != null) {
+        var trajectory = trajectoryNode.get();
+        var placement = placementNode.get();
+        placement =
+            new PlacementComponent(
+                placement.position(),
+                placement.rotation() + trajectory.radiansPerSecond * delta,
+                placement.scale());
+        placementNode.set(placement);
+      }
+    }
   }
 
   public EntityManager getEntityManager() {
