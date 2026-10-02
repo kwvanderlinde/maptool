@@ -36,14 +36,19 @@ public class Token2 extends Entity {
 
   {
     placement =
-        register(new ReactiveSource<>(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.)));
+        register(
+            PlacementComponent.class,
+            new ReactiveSource<>(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.)));
     layout =
-        register(new ReactiveSource<>(new LayoutComponent(new Rectangle2D.Double(0, 0, 0, 0))));
+        register(
+            LayoutComponent.class,
+            new ReactiveSource<>(new LayoutComponent(new Rectangle2D.Double(0, 0, 0, 0))));
     // TODO Pog should be downstream of image asset selection.
-    pog = register(new ReactiveSource<>(null));
+    pog = register(PogComponent.class, new ReactiveSource<>(null));
 
     localTransform =
         register(
+            LocalTransformComponent.class,
             ReactiveNode.map(
                 placement,
                 placement -> {
@@ -57,6 +62,7 @@ public class Token2 extends Entity {
 
     worldTransform =
         register(
+            WorldTransformComponent.class,
             ReactiveNode.map(
                 localTransform,
                 localTransform -> {

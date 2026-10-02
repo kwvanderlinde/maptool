@@ -24,17 +24,20 @@ public abstract class Entity {
   private final Map<Class<?>, ReactiveNode<?>> componentMap = new HashMap<>();
 
   public final <T extends Record & Component> @Nullable T get(Class<T> type) {
-    var node = (ReactiveNode<T>) componentMap.get(type);
+    var node = getNode(type);
     if (node == null) {
       return null;
     }
-
     return node.get();
   }
 
+  public final <T extends Record & Component> @Nullable ReactiveNode<T> getNode(Class<T> type) {
+    return (ReactiveNode<T>) componentMap.get(type);
+  }
+
   protected final <ValueT extends Record & Component, NodeT extends ReactiveNode<ValueT>>
-      NodeT register(NodeT node) {
-    componentMap.put(node.get().getClass(), node);
+      NodeT register(Class<ValueT> type, NodeT node) {
+    componentMap.put(type, node);
     return node;
   }
 }

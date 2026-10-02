@@ -14,34 +14,17 @@
  */
 package net.rptools.maptool.model.entities;
 
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
-import net.rptools.maptool.model.entities.components.CameraComponent;
 import net.rptools.maptool.model.entities.components.PlacementComponent;
-import net.rptools.maptool.model.entities.reactive.ReactiveNode;
-import net.rptools.maptool.model.entities.reactive.ReactiveNonSource;
 import net.rptools.maptool.model.entities.reactive.ReactiveSource;
 
-public class Camera2 extends Entity {
+public class Map2 extends Entity {
   public ReactiveSource<PlacementComponent> placement;
-  public ReactiveNonSource<CameraComponent> camera;
 
   {
     placement =
         register(
             PlacementComponent.class,
             new ReactiveSource<>(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.)));
-    camera =
-        register(
-            CameraComponent.class,
-            ReactiveNode.map(
-                placement,
-                placement -> {
-                  var transform = new AffineTransform();
-                  transform.rotate(-placement.rotation());
-                  transform.scale(1. / placement.scale(), 1. / placement.scale());
-                  transform.translate(-placement.position().getX(), -placement.position().getY());
-                  return new CameraComponent(transform);
-                }));
   }
 }
