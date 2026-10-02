@@ -28,9 +28,12 @@ public class Camera2 extends Entity {
 
   {
     placement =
-        register(new ReactiveSource<>(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.)));
+        register(
+            PlacementComponent.class,
+            new ReactiveSource<>(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.)));
     camera =
         register(
+            CameraComponent.class,
             ReactiveNode.map(
                 placement,
                 placement -> {

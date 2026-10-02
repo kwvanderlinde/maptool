@@ -42,4 +42,10 @@ public class EntityManager {
     adopt(token);
     return token;
   }
+
+  public Map2 spawnMap() {
+    var map = new Map2();
+    adopt(map);
+    return map;
+  }
 }
