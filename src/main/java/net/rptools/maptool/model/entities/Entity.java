@@ -41,63 +41,30 @@ import org.jspecify.annotations.Nullable;
 public class Entity {
   public static Entity spawnCamera() {
     var cameraEntity = new Entity();
-    var placementNode =
-            cameraEntity.defineSource(
-                    PlacementComponent.class, new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
+    cameraEntity.placement.set(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
     cameraEntity.derive(
-            CameraComponent.class,
-            placementNode,
-            placement -> {
-              var transform = new AffineTransform();
-              transform.rotate(-placement.rotation());
-              transform.scale(1. / placement.scale(), 1. / placement.scale());
-              transform.translate(-placement.position().getX(), -placement.position().getY());
-              return new CameraComponent(transform);
-            });
+        CameraComponent.class,
+        cameraEntity.placement,
+        placement -> {
+          var transform = new AffineTransform();
+          transform.rotate(-placement.rotation());
+          transform.scale(1. / placement.scale(), 1. / placement.scale());
+          transform.translate(-placement.position().getX(), -placement.position().getY());
+          return new CameraComponent(transform);
+        });
     return cameraEntity;
   }
 
   public static Entity spawnToken(LayoutComponent layout, PogComponent pog) {
     var entity = new Entity();
-    var placementNode =
-        entity.defineSource(
-            PlacementComponent.class,
-            new PlacementComponent(
-                // Default to top-left being at (0, 0)
-                new Point2D.Double(
-                    layout.bounds().getWidth() / 2., layout.bounds().getHeight() / 2.),
-                0.,
-                1.));
+    entity.placement.set(
+        new PlacementComponent( // Default to top-left being at (0, 0)
+            new Point2D.Double(layout.bounds().getWidth() / 2., layout.bounds().getHeight() / 2.),
+            0.,
+            1.));
     entity.defineSource(LayoutComponent.class, layout);
     // TODO Pog should be downstream of image asset selection.
     entity.defineSource(PogComponent.class, pog);
-    var localTransformNode =
-        entity.derive(
-            LocalTransformComponent.class,
-            placementNode,
-            placement -> {
-              var localTransform = new AffineTransform();
-              localTransform.translate(placement.position().getX(), placement.position().getY());
-              localTransform.rotate(placement.rotation());
-              localTransform.scale(placement.scale(), placement.scale());
-              return new LocalTransformComponent(localTransform);
-            });
-    entity.derive(
-        WorldTransformComponent.class,
-        localTransformNode,
-        localTransform -> {
-          var worldTransform = new AffineTransform(localTransform.transform());
-
-          var parent = entity.parent.get();
-          if (parent != null) {
-            var parentTransform = parent.parent().getValue(WorldTransformComponent.class);
-            if (parentTransform != null) {
-              worldTransform.preConcatenate(parentTransform.transform());
-            }
-          }
-
-          return new WorldTransformComponent(worldTransform);
-        });
 
     return entity;
   }
@@ -107,6 +74,9 @@ public class Entity {
 
   public final ReactiveSource<LocalId> id;
   public final ReactiveSource<@Nullable ParentComponent> parent;
+  public final ReactiveSource<PlacementComponent> placement;
+  public final ReactiveNonSource<LocalTransformComponent> localTransform;
+  public final ReactiveNonSource<WorldTransformComponent> worldTransform;
 
   {
     sourceComponentMap = new HashMap<>();
@@ -114,6 +84,39 @@ public class Entity {
 
     id = defineSource(LocalId.class, new LocalId(GUID.random()));
     parent = defineSource(ParentComponent.class, null);
+    // The default placement numbrs aren't really meaningful.
+    placement =
+        defineSource(
+            PlacementComponent.class, new PlacementComponent(new Point2D.Double(0., 0.), 0., 1.));
+
+    localTransform =
+        derive(
+            LocalTransformComponent.class,
+            placement,
+            placement -> {
+              var localTransform = new AffineTransform();
+              localTransform.translate(placement.position().getX(), placement.position().getY());
+              localTransform.rotate(placement.rotation());
+              localTransform.scale(placement.scale(), placement.scale());
+              return new LocalTransformComponent(localTransform);
+            });
+    worldTransform =
+        derive(
+            WorldTransformComponent.class,
+            localTransform,
+            localTransform -> {
+              var worldTransform = new AffineTransform(localTransform.transform());
+
+              var parent = this.parent.get();
+              if (parent != null) {
+                var parentTransform = parent.parent().getValue(WorldTransformComponent.class);
+                if (parentTransform != null) {
+                  worldTransform.preConcatenate(parentTransform.transform());
+                }
+              }
+
+              return new WorldTransformComponent(worldTransform);
+            });
   }
 
   public final <T extends Record & Component> @Nullable T getValue(Class<T> type) {
