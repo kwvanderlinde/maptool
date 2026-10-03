@@ -485,7 +485,7 @@ public class Zone {
     }
     {
       gridEntity = entityManager.spawn();
-      // entityManager.getParentageApi().setParentTo(gridEntity, mapEntity);
+      gridEntity.parent.set(new ParentComponent(mapEntity));
       gridEntity.defineSource(
           GridComponent.class,
           new GridComponent(GridComponent.Type.Square, 100, 100, Color.black, 1.));
@@ -2255,6 +2255,21 @@ public class Zone {
   // Backward compatibility
   @SuppressWarnings("ConstantConditions")
   protected Object readResolve() {
+    entityManager = new EntityManager();
+    {
+      cameraEntity = Entity.spawnCamera();
+      entityManager.adopt(cameraEntity);
+    }
+    {
+      gridEntity = entityManager.spawn();
+      // entityManager.getParentageApi().setParentTo(gridEntity, mapEntity);
+      gridEntity.defineSource(
+              GridComponent.class,
+              new GridComponent(GridComponent.Type.Square, 100, 100, Color.black, 1.));
+      gridEntity.defineSource(
+              PlacementComponent.class, new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
+    }
+
     if (tokenVisionDistance == 0) {
       // 1.3b19
       tokenVisionDistance = DEFAULT_TOKEN_VISION_DISTANCE;
@@ -2358,6 +2373,21 @@ public class Zone {
 
     if (walls == null) {
       walls = new WallTopology();
+    }
+
+    for (var token : tokenMap.values()) {
+      var entity = token.getEntity();
+      entityManager.adopt(entity);
+
+      var footprint = token.getFootprintBounds(this);
+      entity.getSource(LayoutComponent.class).set(
+              new LayoutComponent(new Rectangle2D.Double(-footprint.getWidth() / 2., -footprint.getHeight() / 2., footprint.getWidth(), footprint.getHeight()))
+      );
+      entity.getSource(PlacementComponent.class).set(new PlacementComponent(
+              new Point2D.Double(footprint.getX() + footprint.getWidth() / 2, footprint.getY() + footprint.getHeight() / 2),
+              0.,
+              1.
+      ));
     }
 
     return this;

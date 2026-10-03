@@ -30,6 +30,7 @@ import java.awt.Rectangle;
 import java.awt.Transparency;
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.Serializable;
@@ -51,6 +52,8 @@ import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
+import net.rptools.maptool.model.entities.Entity;
+import net.rptools.maptool.model.entities.components.LayoutComponent;
 import net.rptools.maptool.model.sheet.stats.StatSheetProperties;
 import net.rptools.maptool.server.Mapper;
 import net.rptools.maptool.server.proto.TerrainModifierOperationDto;
@@ -391,6 +394,9 @@ public class Token implements Cloneable {
 
   private boolean allowURIAccess = false;
 
+  private transient Entity entity =
+      Entity.spawnToken(new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)), null);
+
   /**
    * Constructor from another token, with the option to keep the token id
    *
@@ -530,6 +536,10 @@ public class Token implements Cloneable {
     }
 
     propertyType = MapTool.getCampaign().getCampaignProperties().getDefaultTokenPropertyType();
+  }
+
+  public Entity getEntity() {
+    return entity;
   }
 
   /**
@@ -2733,6 +2743,9 @@ public class Token implements Cloneable {
       tokenOpacity = 1.f;
     }
     tokenOpacity = Math.max(0.f, Math.min(tokenOpacity, 1.f));
+
+    entity =
+        Entity.spawnToken(new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)), null);
 
     return this;
   }
