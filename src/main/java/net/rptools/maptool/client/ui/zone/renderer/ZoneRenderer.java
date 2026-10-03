@@ -991,18 +991,17 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     {
       // Update loop.
       var scale = viewModel.getZoneScale();
-      var placementNode = zone.getCameraEntity().getSource(PlacementComponent.class);
-      if (placementNode != null) {
-        var placement = placementNode.get();
-        var rotation = placement == null ? 0. : placement.rotation();
-
-        placementNode.set(
-            new PlacementComponent(
-                new Point2D.Double(
-                    -scale.getOffsetX() / scale.getScale(), -scale.getOffsetY() / scale.getScale()),
-                rotation,
-                1 / scale.getScale()));
-      }
+      var placement = zone.getCameraEntity().placement.get();
+      var rotation = placement == null ? 0. : placement.rotation();
+      zone.getCameraEntity()
+          .placement
+          .set(
+              new PlacementComponent(
+                  new Point2D.Double(
+                      -scale.getOffsetX() / scale.getScale(),
+                      -scale.getOffsetY() / scale.getScale()),
+                  rotation,
+                  1 / scale.getScale()));
     }
     var worldG = (Graphics2D) g2d.create();
     try {

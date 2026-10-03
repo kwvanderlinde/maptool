@@ -469,12 +469,10 @@ public class Zone {
     }
     {
       cameraEntity = entityManager.spawn();
-      var placementNode =
-          cameraEntity.defineSource(
-              PlacementComponent.class, new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
+      cameraEntity.placement.set(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
       cameraEntity.derive(
           CameraComponent.class,
-          placementNode,
+          cameraEntity.placement,
           placement -> {
             var transform = new AffineTransform();
             transform.rotate(-placement.rotation());
@@ -484,18 +482,16 @@ public class Zone {
           });
     }
     {
+      mapEntity = entityManager.spawn();
+      mapEntity.placement.set(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
+    }
+    {
       gridEntity = entityManager.spawn();
       gridEntity.parent.set(new ParentComponent(mapEntity));
       gridEntity.defineSource(
           GridComponent.class,
           new GridComponent(GridComponent.Type.Square, 100, 100, Color.black, 1.));
-      gridEntity.defineSource(
-          PlacementComponent.class, new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
-    }
-    {
-      mapEntity = entityManager.spawn();
-      mapEntity.defineSource(
-          PlacementComponent.class, new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
+      gridEntity.placement.set(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
     }
     {
       exampleEntity =
@@ -511,9 +507,7 @@ public class Zone {
           Entity.spawnToken(
               new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)),
               new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
-      exampleEntity2
-          .getSource(PlacementComponent.class)
-          .set(new PlacementComponent(new Point2D.Double(-50, -50), 0., 1.));
+      exampleEntity2.placement.set(new PlacementComponent(new Point2D.Double(-50, -50), 0., 1.));
       exampleEntity2.defineSource(Trajectory.class, new Trajectory(1.5));
       exampleEntity2.parent.set(new ParentComponent(exampleEntity));
       entityManager.adopt(exampleEntity2);
@@ -523,9 +517,7 @@ public class Zone {
           Entity.spawnToken(
               new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)),
               new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
-      exampleEntity3
-          .getSource(PlacementComponent.class)
-          .set(new PlacementComponent(new Point2D.Double(50, -50), 0., 1.));
+      exampleEntity3.placement.set(new PlacementComponent(new Point2D.Double(50, -50), 0., 1.));
       exampleEntity3.defineSource(Trajectory.class, new Trajectory(1.5));
       exampleEntity3.parent.set(new ParentComponent(exampleEntity));
       entityManager.adopt(exampleEntity3);
@@ -535,9 +527,7 @@ public class Zone {
           Entity.spawnToken(
               new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)),
               new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
-      exampleEntity4
-          .getSource(PlacementComponent.class)
-          .set(new PlacementComponent(new Point2D.Double(50, 50), 0., 1.));
+      exampleEntity4.placement.set(new PlacementComponent(new Point2D.Double(50, 50), 0., 1.));
       exampleEntity4.defineSource(Trajectory.class, new Trajectory(1.5));
       exampleEntity4.parent.set(new ParentComponent(exampleEntity));
       entityManager.adopt(exampleEntity4);
@@ -547,9 +537,7 @@ public class Zone {
           Entity.spawnToken(
               new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)),
               new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
-      exampleEntity5
-          .getSource(PlacementComponent.class)
-          .set(new PlacementComponent(new Point2D.Double(-50, 50), 0., 1.));
+      exampleEntity5.placement.set(new PlacementComponent(new Point2D.Double(-50, 50), 0., 1.));
       exampleEntity5.defineSource(Trajectory.class, new Trajectory(1.5));
       exampleEntity5.parent.set(new ParentComponent(exampleEntity));
       entityManager.adopt(exampleEntity5);
@@ -584,23 +572,19 @@ public class Zone {
     {
       // The camera is contravariant. uses a special inverse to determine the coordinate system.
       // TODO Loop over all camera rather than depending on our particular one.
-      var placementNode = cameraEntity.getSource(PlacementComponent.class);
-      if (placementNode != null) {
-        var placement = placementNode.get();
-        placementNode.set(
-            new PlacementComponent(
-                new Point2D.Double(
-                    -scale.getOffsetX() / scale.getScale(), -scale.getOffsetY() / scale.getScale()),
-                placement.rotation(),
-                1 / scale.getScale()));
-      }
+      var placement = cameraEntity.placement.get();
+      cameraEntity.placement.set(
+          new PlacementComponent(
+              new Point2D.Double(
+                  -scale.getOffsetX() / scale.getScale(), -scale.getOffsetY() / scale.getScale()),
+              placement.rotation(),
+              1 / scale.getScale()));
     }
 
     // Grid
     {
       // TODO Loop over all grid rather than depending on our particular one.
       var gridNode = gridEntity.getSource(GridComponent.class);
-      var placementNode = gridEntity.getSource(PlacementComponent.class);
 
       if (gridNode != null) {
         var type =
@@ -619,27 +603,22 @@ public class Zone {
                 new Color(gridColor, false),
                 AppState.getGridLineWeight() / scale.getScale()));
       }
-      if (placementNode != null) {
-        placementNode.set(
-            new PlacementComponent(
-                new Point2D.Double(grid.getOffsetX(), grid.getOffsetY()), 0., 1.));
-      }
+      gridEntity.placement.set(
+          new PlacementComponent(new Point2D.Double(grid.getOffsetX(), grid.getOffsetY()), 0., 1.));
     }
 
     // endregion
 
     for (var entity : entityManager.getAllEntities()) {
       var trajectoryNode = entity.get(Trajectory.class);
-      var placementNode = entity.getSource(PlacementComponent.class);
-      if (trajectoryNode != null && placementNode != null) {
+      if (trajectoryNode != null) {
         var trajectory = trajectoryNode.get();
-        var placement = placementNode.get();
-        placement =
+        var placement = entity.placement.get();
+        entity.placement.set(
             new PlacementComponent(
                 placement.position(),
                 placement.rotation() + trajectory.radiansPerSecond * delta,
-                placement.scale());
-        placementNode.set(placement);
+                placement.scale()));
       }
     }
   }
@@ -2257,17 +2236,21 @@ public class Zone {
   protected Object readResolve() {
     entityManager = new EntityManager();
     {
+      mapEntity = entityManager.spawn();
+    }
+    {
       cameraEntity = Entity.spawnCamera();
       entityManager.adopt(cameraEntity);
     }
     {
       gridEntity = entityManager.spawn();
+      gridEntity.parent.set(new ParentComponent(mapEntity));
       // entityManager.getParentageApi().setParentTo(gridEntity, mapEntity);
       gridEntity.defineSource(
-              GridComponent.class,
-              new GridComponent(GridComponent.Type.Square, 100, 100, Color.black, 1.));
-      gridEntity.defineSource(
-              PlacementComponent.class, new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
+          GridComponent.class,
+          new GridComponent(GridComponent.Type.Square, 100, 100, Color.black, 1.));
+      // TODO Read from actual grid at end of method.
+      gridEntity.placement.set(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
     }
 
     if (tokenVisionDistance == 0) {
@@ -2380,14 +2363,22 @@ public class Zone {
       entityManager.adopt(entity);
 
       var footprint = token.getFootprintBounds(this);
-      entity.getSource(LayoutComponent.class).set(
-              new LayoutComponent(new Rectangle2D.Double(-footprint.getWidth() / 2., -footprint.getHeight() / 2., footprint.getWidth(), footprint.getHeight()))
-      );
-      entity.getSource(PlacementComponent.class).set(new PlacementComponent(
-              new Point2D.Double(footprint.getX() + footprint.getWidth() / 2, footprint.getY() + footprint.getHeight() / 2),
+      entity
+          .getSource(LayoutComponent.class)
+          .set(
+              new LayoutComponent(
+                  new Rectangle2D.Double(
+                      -footprint.getWidth() / 2.,
+                      -footprint.getHeight() / 2.,
+                      footprint.getWidth(),
+                      footprint.getHeight())));
+      entity.placement.set(
+          new PlacementComponent(
+              new Point2D.Double(
+                  footprint.getX() + footprint.getWidth() / 2,
+                  footprint.getY() + footprint.getHeight() / 2),
               0.,
-              1.
-      ));
+              1.));
     }
 
     return this;
