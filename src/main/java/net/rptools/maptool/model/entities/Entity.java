@@ -14,12 +14,19 @@
  */
 package net.rptools.maptool.model.entities;
 
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.util.HashMap;
 import java.util.Map;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.entities.components.Component;
+import net.rptools.maptool.model.entities.components.LayoutComponent;
 import net.rptools.maptool.model.entities.components.LocalId;
+import net.rptools.maptool.model.entities.components.LocalTransformComponent;
 import net.rptools.maptool.model.entities.components.ParentComponent;
+import net.rptools.maptool.model.entities.components.PlacementComponent;
+import net.rptools.maptool.model.entities.components.PogComponent;
+import net.rptools.maptool.model.entities.components.WorldTransformComponent;
 import net.rptools.maptool.model.entities.reactive.Func1;
 import net.rptools.maptool.model.entities.reactive.Func2;
 import net.rptools.maptool.model.entities.reactive.Func3;
@@ -31,6 +38,51 @@ import net.rptools.maptool.model.entities.reactive.ReactiveSource;
 import org.jspecify.annotations.Nullable;
 
 public class Entity {
+  public static Entity spawnToken(LayoutComponent layout, PogComponent pog) {
+    var entity = new Entity();
+    var placementNode =
+        entity.defineSource(
+            PlacementComponent.class,
+            new PlacementComponent(
+                // Default to top-left being at (0, 0)
+                new Point2D.Double(
+                    layout.bounds().getWidth() / 2., layout.bounds().getHeight() / 2.),
+                0.,
+                1.));
+    entity.defineSource(LayoutComponent.class, layout);
+    // TODO Pog should be downstream of image asset selection.
+    entity.defineSource(PogComponent.class, pog);
+    var localTransformNode =
+        entity.derive(
+            LocalTransformComponent.class,
+            placementNode,
+            placement -> {
+              var localTransform = new AffineTransform();
+              localTransform.translate(placement.position().getX(), placement.position().getY());
+              localTransform.rotate(placement.rotation());
+              localTransform.scale(placement.scale(), placement.scale());
+              return new LocalTransformComponent(localTransform);
+            });
+    entity.derive(
+        WorldTransformComponent.class,
+        localTransformNode,
+        localTransform -> {
+          var worldTransform = new AffineTransform(localTransform.transform());
+
+          var parent = entity.parent.get();
+          if (parent != null) {
+            var parentTransform = parent.parent().getValue(WorldTransformComponent.class);
+            if (parentTransform != null) {
+              worldTransform.preConcatenate(parentTransform.transform());
+            }
+          }
+
+          return new WorldTransformComponent(worldTransform);
+        });
+
+    return entity;
+  }
+
   private final Map<Class<?>, ReactiveSource<?>> sourceComponentMap;
   private final Map<Class<?>, ReactiveNode<?>> componentMap;
 

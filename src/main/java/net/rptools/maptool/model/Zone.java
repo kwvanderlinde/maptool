@@ -499,15 +499,16 @@ public class Zone {
     }
     {
       exampleEntity =
-          entityManager.spawnToken(
+          Entity.spawnToken(
               new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)),
               new PogComponent(new MD5Key("87f4e9bfa4f1f3db250b57b3599fa4e9"), 0.15));
       exampleEntity.defineSource(Trajectory.class, new Trajectory(0.75));
       exampleEntity.parent.set(new ParentComponent(mapEntity));
+      entityManager.adopt(exampleEntity);
     }
     {
       exampleEntity2 =
-          entityManager.spawnToken(
+          Entity.spawnToken(
               new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)),
               new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity2
@@ -515,39 +516,43 @@ public class Zone {
           .set(new PlacementComponent(new Point2D.Double(-50, -50), 0., 1.));
       exampleEntity2.defineSource(Trajectory.class, new Trajectory(1.5));
       exampleEntity2.parent.set(new ParentComponent(exampleEntity));
+      entityManager.adopt(exampleEntity2);
     }
     {
       exampleEntity3 =
-              entityManager.spawnToken(
-                      new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)),
-                      new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
+          Entity.spawnToken(
+              new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)),
+              new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity3
-              .getSource(PlacementComponent.class)
-              .set(new PlacementComponent(new Point2D.Double(50, -50), 0., 1.));
+          .getSource(PlacementComponent.class)
+          .set(new PlacementComponent(new Point2D.Double(50, -50), 0., 1.));
       exampleEntity3.defineSource(Trajectory.class, new Trajectory(1.5));
       exampleEntity3.parent.set(new ParentComponent(exampleEntity));
+      entityManager.adopt(exampleEntity3);
     }
     {
       exampleEntity4 =
-              entityManager.spawnToken(
-                      new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)),
-                      new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
+          Entity.spawnToken(
+              new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)),
+              new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity4
-              .getSource(PlacementComponent.class)
-              .set(new PlacementComponent(new Point2D.Double(50, 50), 0., 1.));
+          .getSource(PlacementComponent.class)
+          .set(new PlacementComponent(new Point2D.Double(50, 50), 0., 1.));
       exampleEntity4.defineSource(Trajectory.class, new Trajectory(1.5));
       exampleEntity4.parent.set(new ParentComponent(exampleEntity));
+      entityManager.adopt(exampleEntity4);
     }
     {
       exampleEntity5 =
-              entityManager.spawnToken(
-                      new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)),
-                      new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
+          Entity.spawnToken(
+              new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)),
+              new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity5
-              .getSource(PlacementComponent.class)
-              .set(new PlacementComponent(new Point2D.Double(-50, 50), 0., 1.));
+          .getSource(PlacementComponent.class)
+          .set(new PlacementComponent(new Point2D.Double(-50, 50), 0., 1.));
       exampleEntity5.defineSource(Trajectory.class, new Trajectory(1.5));
       exampleEntity5.parent.set(new ParentComponent(exampleEntity));
+      entityManager.adopt(exampleEntity5);
     }
 
     SwingUtilities.invokeLater(() -> this.renderLoop(System.nanoTime()));
