@@ -16,7 +16,7 @@ package net.rptools.maptool.model.entities.reactive;
 
 import java.util.List;
 
-public class ReactiveSource<T> extends ReactiveNode<T> {
+public class ReactiveSource<T> extends ReactiveNode<T> implements SourceNode<T> {
   public ReactiveSource(T initialValue) {
     this(new ReactiveDag(), initialValue);
   }
@@ -27,7 +27,7 @@ public class ReactiveSource<T> extends ReactiveNode<T> {
   }
 
   @Override
-  public List<ReactiveNode<?>> getParents() {
+  public List<Node<?>> getParents() {
     return List.of();
   }
 

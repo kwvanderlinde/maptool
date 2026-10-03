@@ -25,6 +25,10 @@ public class ReactiveDag {
    * @param other The DAG to merge into this DAG.
    */
   private void mergeFrom(ReactiveDag other) {
+    if (other == null) {
+      final var i = 0; // trap
+      return;
+    }
     if (other.impl == this.impl) {
       // Already merged.
       return;
@@ -46,59 +50,60 @@ public class ReactiveDag {
     return new ReactiveSource<>(this, initialValue);
   }
 
-  public <T1, U> ReactiveNonSource<U> map(ReactiveNode<T1> n1, Func1<T1, U> func) {
-    mergeFrom(n1.scope);
+  public <T1, U> NonSourceNode<U> map(Node<T1> n1, Func1<T1, U> func) {
+    mergeFrom(n1.getScope());
 
-    return new ReactiveNonSource<>(this, List.of(n1), () -> func.apply(n1.get()));
+    return new ReactiveTransform<>(this, List.of(n1), () -> func.apply(n1.get()));
   }
 
-  public <T1, T2, U> ReactiveNonSource<U> map(
-      ReactiveNode<T1> n1, ReactiveNode<T2> n2, Func2<T1, T2, U> func) {
-    mergeFrom(n1.scope);
-    mergeFrom(n2.scope);
+  public <T1, T2, U> NonSourceNode<U> map(Node<T1> n1, Node<T2> n2, Func2<T1, T2, U> func) {
+    mergeFrom(n1.getScope());
+    mergeFrom(n2.getScope());
 
-    return new ReactiveNonSource<>(this, List.of(n1, n2), () -> func.apply(n1.get(), n2.get()));
+    return new ReactiveTransform<>(this, List.of(n1, n2), () -> func.apply(n1.get(), n2.get()));
   }
 
-  public <T1, T2, T3, U> ReactiveNonSource<U> map(
-      ReactiveNode<T1> n1, ReactiveNode<T2> n2, ReactiveNode<T3> n3, Func3<T1, T2, T3, U> func) {
-    mergeFrom(n1.scope);
-    mergeFrom(n2.scope);
-    mergeFrom(n3.scope);
+  public <T1, T2, T3, U> NonSourceNode<U> map(
+      Node<T1> n1, Node<T2> n2, Node<T3> n3, Func3<T1, T2, T3, U> func) {
+    mergeFrom(n1.getScope());
+    mergeFrom(n2.getScope());
+    mergeFrom(n3.getScope());
 
-    return new ReactiveNonSource<>(
+    return new ReactiveTransform<>(
         this, List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get()));
   }
 
-  public <T1, T2, T3, T4, U> ReactiveNonSource<U> map(
-      ReactiveNode<T1> n1,
-      ReactiveNode<T2> n2,
-      ReactiveNode<T3> n3,
-      ReactiveNode<T4> n4,
-      Func4<T1, T2, T3, T4, U> func) {
-    mergeFrom(n1.scope);
-    mergeFrom(n2.scope);
-    mergeFrom(n3.scope);
-    mergeFrom(n4.scope);
+  public <T1, T2, T3, T4, U> NonSourceNode<U> map(
+      Node<T1> n1, Node<T2> n2, Node<T3> n3, Node<T4> n4, Func4<T1, T2, T3, T4, U> func) {
+    mergeFrom(n1.getScope());
+    mergeFrom(n2.getScope());
+    mergeFrom(n3.getScope());
+    mergeFrom(n4.getScope());
 
-    return new ReactiveNonSource<>(
+    return new ReactiveTransform<>(
         this, List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get(), n4.get()));
   }
 
-  public <T1, T2, T3, T4, T5, U> ReactiveNonSource<U> map(
-      ReactiveNode<T1> n1,
-      ReactiveNode<T2> n2,
-      ReactiveNode<T3> n3,
-      ReactiveNode<T4> n4,
-      ReactiveNode<T5> n5,
+  public <T1, T2, T3, T4, T5, U> NonSourceNode<U> map(
+      Node<T1> n1,
+      Node<T2> n2,
+      Node<T3> n3,
+      Node<T4> n4,
+      Node<T5> n5,
       Func5<T1, T2, T3, T4, T5, U> func) {
-    mergeFrom(n1.scope);
-    mergeFrom(n2.scope);
-    mergeFrom(n3.scope);
-    mergeFrom(n4.scope);
-    mergeFrom(n5.scope);
+    mergeFrom(n1.getScope());
+    mergeFrom(n2.getScope());
+    mergeFrom(n3.getScope());
+    mergeFrom(n4.getScope());
+    mergeFrom(n5.getScope());
 
-    return new ReactiveNonSource<>(
+    return new ReactiveTransform<>(
         this, List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get(), n4.get(), n5.get()));
+  }
+
+  public <T, U> NonSourceNode<U> flatMap(Node<T> source, Func1<T, NonSourceNode<U>> map) {
+    mergeFrom(source.getScope());
+
+    return new ReactiveFlatMap<>(this, source, map);
   }
 }

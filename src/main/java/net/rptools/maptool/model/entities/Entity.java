@@ -28,17 +28,20 @@ import net.rptools.maptool.model.entities.components.ParentComponent;
 import net.rptools.maptool.model.entities.components.PlacementComponent;
 import net.rptools.maptool.model.entities.components.PogComponent;
 import net.rptools.maptool.model.entities.components.WorldTransformComponent;
+import net.rptools.maptool.model.entities.reactive.ConstantNode;
 import net.rptools.maptool.model.entities.reactive.Func1;
 import net.rptools.maptool.model.entities.reactive.Func2;
 import net.rptools.maptool.model.entities.reactive.Func3;
 import net.rptools.maptool.model.entities.reactive.Func4;
 import net.rptools.maptool.model.entities.reactive.Func5;
-import net.rptools.maptool.model.entities.reactive.ReactiveNode;
-import net.rptools.maptool.model.entities.reactive.ReactiveNonSource;
+import net.rptools.maptool.model.entities.reactive.Node;
+import net.rptools.maptool.model.entities.reactive.NonSourceNode;
 import net.rptools.maptool.model.entities.reactive.ReactiveSource;
 import org.jspecify.annotations.Nullable;
 
 public class Entity {
+  private static final AffineTransform IDENTITY = new AffineTransform();
+
   public static Entity spawnCamera() {
     var cameraEntity = new Entity();
     cameraEntity.placement.set(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
@@ -70,13 +73,17 @@ public class Entity {
   }
 
   private final Map<Class<?>, ReactiveSource<?>> sourceComponentMap;
-  private final Map<Class<?>, ReactiveNode<?>> componentMap;
+  private final Map<Class<?>, Node<?>> componentMap;
 
   public final ReactiveSource<LocalId> id;
-  public final ReactiveSource<@Nullable ParentComponent> parent;
   public final ReactiveSource<PlacementComponent> placement;
-  public final ReactiveNonSource<LocalTransformComponent> localTransform;
-  public final ReactiveNonSource<WorldTransformComponent> worldTransform;
+  public final NonSourceNode<LocalTransformComponent> localTransform;
+  public final NonSourceNode<WorldTransformComponent> worldTransform;
+
+  // Dynamic dependencies.
+  public final ReactiveSource<@Nullable ParentComponent> parent;
+  private final ConstantNode<WorldTransformComponent> noParentWorldTransform;
+  private Node<WorldTransformComponent> parentWorldTransform;
 
   {
     sourceComponentMap = new HashMap<>();
@@ -84,6 +91,16 @@ public class Entity {
 
     id = defineSource(LocalId.class, new LocalId(GUID.random()));
     parent = defineSource(ParentComponent.class, null);
+    noParentWorldTransform = new ConstantNode<>(new WorldTransformComponent(new AffineTransform()));
+    parentWorldTransform =
+        parent
+            .getScope()
+            .flatMap(
+                parent,
+                parent -> {
+                  return parent == null ? noParentWorldTransform : parent.parent().worldTransform;
+                });
+
     // The default placement numbrs aren't really meaningful.
     placement =
         defineSource(
@@ -104,16 +121,11 @@ public class Entity {
         derive(
             WorldTransformComponent.class,
             localTransform,
-            localTransform -> {
+            parentWorldTransform,
+            (localTransform, parentTransform) -> {
               var worldTransform = new AffineTransform(localTransform.transform());
 
-              var parent = this.parent.get();
-              if (parent != null) {
-                var parentTransform = parent.parent().getValue(WorldTransformComponent.class);
-                if (parentTransform != null) {
-                  worldTransform.preConcatenate(parentTransform.transform());
-                }
-              }
+              worldTransform.preConcatenate(parentTransform.transform());
 
               return new WorldTransformComponent(worldTransform);
             });
@@ -127,7 +139,7 @@ public class Entity {
     return node.get();
   }
 
-  private <ValueT extends Record & Component, NodeT extends ReactiveNode<ValueT>> NodeT register(
+  private <ValueT extends Record & Component, NodeT extends Node<ValueT>> NodeT register(
       Class<ValueT> type, NodeT node) {
     componentMap.put(type, node);
     return node;
@@ -139,8 +151,8 @@ public class Entity {
     return register(type, node);
   }
 
-  public final <T extends Record & Component> @Nullable ReactiveNode<T> get(Class<T> type) {
-    return (ReactiveNode<T>) componentMap.get(type);
+  public final <T extends Record & Component> @Nullable Node<T> get(Class<T> type) {
+    return (Node<T>) componentMap.get(type);
   }
 
   public final <T extends Record & Component> @Nullable ReactiveSource<T> getSource(Class<T> type) {
@@ -152,42 +164,38 @@ public class Entity {
     return registerSource(type, new ReactiveSource<>(initial));
   }
 
-  public final <T1, U extends Record & Component> ReactiveNonSource<U> derive(
-      Class<U> type, ReactiveNode<T1> n1, Func1<T1, U> func) {
+  public final <T1, U extends Record & Component> NonSourceNode<U> derive(
+      Class<U> type, Node<T1> n1, Func1<T1, U> func) {
     return this.register(type, n1.getScope().map(n1, func));
   }
 
-  public final <T1, T2, U extends Record & Component> ReactiveNonSource<U> derive(
-      Class<U> type, ReactiveNode<T1> n1, ReactiveNode<T2> n2, Func2<T1, T2, U> func) {
+  public final <T1, T2, U extends Record & Component> NonSourceNode<U> derive(
+      Class<U> type, Node<T1> n1, Node<T2> n2, Func2<T1, T2, U> func) {
     return this.register(type, n1.getScope().map(n1, n2, func));
   }
 
-  public final <T1, T2, T3, U extends Record & Component> ReactiveNonSource<U> derive(
-      Class<U> type,
-      ReactiveNode<T1> n1,
-      ReactiveNode<T2> n2,
-      ReactiveNode<T3> n3,
-      Func3<T1, T2, T3, U> func) {
+  public final <T1, T2, T3, U extends Record & Component> NonSourceNode<U> derive(
+      Class<U> type, Node<T1> n1, Node<T2> n2, Node<T3> n3, Func3<T1, T2, T3, U> func) {
     return this.register(type, n1.getScope().map(n1, n2, n3, func));
   }
 
-  public final <T1, T2, T3, T4, U extends Record & Component> ReactiveNonSource<U> derive(
+  public final <T1, T2, T3, T4, U extends Record & Component> NonSourceNode<U> derive(
       Class<U> type,
-      ReactiveNode<T1> n1,
-      ReactiveNode<T2> n2,
-      ReactiveNode<T3> n3,
-      ReactiveNode<T4> n4,
+      Node<T1> n1,
+      Node<T2> n2,
+      Node<T3> n3,
+      Node<T4> n4,
       Func4<T1, T2, T3, T4, U> func) {
     return this.register(type, n1.getScope().map(n1, n2, n3, n4, func));
   }
 
-  public final <T1, T2, T3, T4, T5, U extends Record & Component> ReactiveNonSource<U> derive(
+  public final <T1, T2, T3, T4, T5, U extends Record & Component> NonSourceNode<U> derive(
       Class<U> type,
-      ReactiveNode<T1> n1,
-      ReactiveNode<T2> n2,
-      ReactiveNode<T3> n3,
-      ReactiveNode<T4> n4,
-      ReactiveNode<T5> n5,
+      Node<T1> n1,
+      Node<T2> n2,
+      Node<T3> n3,
+      Node<T4> n4,
+      Node<T5> n5,
       Func5<T1, T2, T3, T4, T5, U> func) {
     return this.register(type, n1.getScope().map(n1, n2, n3, n4, n5, func));
   }
