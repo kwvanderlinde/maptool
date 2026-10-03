@@ -870,7 +870,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     }
     timer.start("grid");
 
-    gridRenderer.renderGrid(g2d, view);
+    // gridRenderer.renderGrid(g2d, view);
     timer.stop("grid");
 
     if (shouldRenderLayer(Zone.Layer.OBJECT, view)) {
