@@ -16,29 +16,14 @@ package net.rptools.maptool.model.entities.reactive;
 
 import java.util.List;
 
-public class ReactiveSource<T> extends ReactiveNode<T> implements SourceNode<T> {
-  public ReactiveSource(T initialValue) {
-    this(new ReactiveDag(), initialValue);
-  }
+public interface Node<T> {
+  List<Node<?>> getParents();
 
-  ReactiveSource(ReactiveDag scope, T initialValue) {
-    super(scope);
-    this.value = initialValue;
-  }
+  ReactiveDag getScope();
 
-  @Override
-  public List<Node<?>> getParents() {
-    return List.of();
-  }
+  T get();
 
-  @Override
-  protected T recompute() {
-    // Nothing to do. We just store a value.
-    return value;
-  }
-
-  public void set(T value) {
-    this.value = value;
-    this.version = scope.bumpVersion();
-  }
+  // This is a leaky part of the abstraction, so don't use it if you don't have to.
+  @Deprecated
+  void ensureUpdated(long globalVersion);
 }

@@ -16,29 +16,25 @@ package net.rptools.maptool.model.entities.reactive;
 
 import java.util.List;
 
-public class ReactiveSource<T> extends ReactiveNode<T> implements SourceNode<T> {
-  public ReactiveSource(T initialValue) {
+public class ConstantNode<T> extends ReactiveNode<T> implements NonSourceNode<T> {
+  private final T initialValue;
+
+  public ConstantNode(T initialValue) {
     this(new ReactiveDag(), initialValue);
   }
 
-  ReactiveSource(ReactiveDag scope, T initialValue) {
+  ConstantNode(ReactiveDag scope, T initialValue) {
     super(scope);
-    this.value = initialValue;
+    this.initialValue = initialValue;
+  }
+
+  @Override
+  protected T recompute() {
+    return initialValue;
   }
 
   @Override
   public List<Node<?>> getParents() {
     return List.of();
-  }
-
-  @Override
-  protected T recompute() {
-    // Nothing to do. We just store a value.
-    return value;
-  }
-
-  public void set(T value) {
-    this.value = value;
-    this.version = scope.bumpVersion();
   }
 }

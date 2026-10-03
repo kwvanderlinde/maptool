@@ -16,28 +16,23 @@ package net.rptools.maptool.model.entities.reactive;
 
 import java.util.List;
 
-public abstract class ReactiveNode<T> implements Node<T> {
+public class ReactiveFlatMap<T, U> implements NonSourceNode<U> {
   /** The parent DAG to which this node belongs. */
   protected final ReactiveDag scope;
 
-  /**
-   * The latest scope version against which this node was validated or recomputed.
-   *
-   * <p>This initial version will never be held by the scope, so always triggers an update on the
-   * first read.
-   */
   protected long version = Long.MIN_VALUE;
+  protected U value;
 
-  protected T value;
+  private final Node<T> source;
+  private final Func1<T, NonSourceNode<U>> map;
 
-  ReactiveNode(ReactiveDag scope) {
+  private NonSourceNode<U> selected;
+
+  ReactiveFlatMap(ReactiveDag scope, Node<T> source, Func1<T, NonSourceNode<U>> map) {
     this.scope = scope;
+    this.source = source;
+    this.map = map;
   }
-
-  protected abstract T recompute();
-
-  @Override
-  public abstract List<Node<?>> getParents();
 
   @Override
   public ReactiveDag getScope() {
@@ -45,7 +40,12 @@ public abstract class ReactiveNode<T> implements Node<T> {
   }
 
   @Override
-  public T get() {
+  public List<Node<?>> getParents() {
+    return List.of(source, selected);
+  }
+
+  @Override
+  public U get() {
     ensureUpdated(scope.getVersion());
     return value;
   }
@@ -53,16 +53,20 @@ public abstract class ReactiveNode<T> implements Node<T> {
   @Override
   public void ensureUpdated(long globalVersion) {
     if (version >= globalVersion) {
-      // Up to date.
       return;
     }
 
-    // TODO Non-recursive iteration would be baller.
-    for (var dependency : getParents()) {
-      dependency.ensureUpdated(globalVersion);
-    }
+    // First ensure the selector itself is current.
+    source.ensureUpdated(globalVersion);
+    T input = source.get();
 
-    value = recompute();
+    // The selected dependency may have changed.
+    selected = map.apply(input);
+
+    // Now ensure the selected node is current.
+    selected.ensureUpdated(globalVersion);
+    value = selected.get();
+
     version = globalVersion;
   }
 }

@@ -17,16 +17,15 @@ package net.rptools.maptool.model.entities.reactive;
 import java.util.List;
 import java.util.function.Supplier;
 
-public class ReactiveNonSource<T> extends ReactiveNode<T> {
-  private final List<ReactiveNode<?>> dependencies;
+public class ReactiveTransform<T> extends ReactiveNode<T> implements NonSourceNode<T> {
+  private final List<Node<?>> dependencies;
   private final Supplier<T> valueSupplier;
 
-  public ReactiveNonSource(List<ReactiveNode<?>> dependencies, Supplier<T> valueSupplier) {
+  public ReactiveTransform(List<Node<?>> dependencies, Supplier<T> valueSupplier) {
     this(new ReactiveDag(), dependencies, valueSupplier);
   }
 
-  ReactiveNonSource(
-      ReactiveDag scope, List<ReactiveNode<?>> dependencies, Supplier<T> valueSupplier) {
+  ReactiveTransform(ReactiveDag scope, List<Node<?>> dependencies, Supplier<T> valueSupplier) {
     super(scope);
     this.dependencies = dependencies;
     this.valueSupplier = valueSupplier;
@@ -38,7 +37,7 @@ public class ReactiveNonSource<T> extends ReactiveNode<T> {
   }
 
   @Override
-  public List<ReactiveNode<?>> getParents() {
+  public List<Node<?>> getParents() {
     return dependencies;
   }
 }
