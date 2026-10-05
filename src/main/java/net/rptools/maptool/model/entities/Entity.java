@@ -36,13 +36,11 @@ import net.rptools.maptool.model.entities.reactive.Func4;
 import net.rptools.maptool.model.entities.reactive.Func5;
 import net.rptools.maptool.model.entities.reactive.Node;
 import net.rptools.maptool.model.entities.reactive.NonSourceNode;
-import net.rptools.maptool.model.entities.reactive.ReactiveSource;
+import net.rptools.maptool.model.entities.reactive.ReactiveDag;
 import net.rptools.maptool.model.entities.reactive.SourceNode;
 import org.jspecify.annotations.Nullable;
 
 public class Entity {
-  private static final AffineTransform IDENTITY = new AffineTransform();
-
   public static Entity spawnCamera() {
     var cameraEntity = new Entity();
     cameraEntity.placement.set(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
@@ -73,6 +71,7 @@ public class Entity {
     return entity;
   }
 
+  private final ReactiveDag dag;
   private final Map<Class<?>, SourceNode<?>> sourceComponentMap;
   private final Map<Class<?>, Node<?>> componentMap;
 
@@ -85,6 +84,7 @@ public class Entity {
   public final SourceNode<@Nullable ParentComponent> parent;
 
   {
+    dag = new ReactiveDag();
     sourceComponentMap = new HashMap<>();
     componentMap = new HashMap<>();
 
@@ -94,13 +94,11 @@ public class Entity {
     var noParentWorldTransform =
         new ConstantNode<>(new WorldTransformComponent(new AffineTransform()));
     var parentWorldTransform =
-        parent
-            .getScope()
-            .flatMap(
-                parent,
-                parent -> {
-                  return parent == null ? noParentWorldTransform : parent.parent().worldTransform;
-                });
+        dag.flatMap(
+            parent,
+            parent -> {
+              return parent == null ? noParentWorldTransform : parent.parent().worldTransform;
+            });
 
     // The default placement numbrs aren't really meaningful.
     placement =
@@ -162,22 +160,22 @@ public class Entity {
 
   public final <ValueT extends Record & Component> SourceNode<ValueT> defineSource(
       Class<ValueT> type, ValueT initial) {
-    return registerSource(type, new ReactiveSource<>(initial));
+    return registerSource(type, dag.createSource(initial));
   }
 
   public final <T1, U extends Record & Component> NonSourceNode<U> derive(
       Class<U> type, Node<T1> n1, Func1<T1, U> func) {
-    return this.register(type, n1.getScope().map(n1, func));
+    return this.register(type, dag.map(n1, func));
   }
 
   public final <T1, T2, U extends Record & Component> NonSourceNode<U> derive(
       Class<U> type, Node<T1> n1, Node<T2> n2, Func2<T1, T2, U> func) {
-    return this.register(type, n1.getScope().map(n1, n2, func));
+    return this.register(type, dag.map(n1, n2, func));
   }
 
   public final <T1, T2, T3, U extends Record & Component> NonSourceNode<U> derive(
       Class<U> type, Node<T1> n1, Node<T2> n2, Node<T3> n3, Func3<T1, T2, T3, U> func) {
-    return this.register(type, n1.getScope().map(n1, n2, n3, func));
+    return this.register(type, dag.map(n1, n2, n3, func));
   }
 
   public final <T1, T2, T3, T4, U extends Record & Component> NonSourceNode<U> derive(
@@ -187,7 +185,7 @@ public class Entity {
       Node<T3> n3,
       Node<T4> n4,
       Func4<T1, T2, T3, T4, U> func) {
-    return this.register(type, n1.getScope().map(n1, n2, n3, n4, func));
+    return this.register(type, dag.map(n1, n2, n3, n4, func));
   }
 
   public final <T1, T2, T3, T4, T5, U extends Record & Component> NonSourceNode<U> derive(
@@ -198,6 +196,6 @@ public class Entity {
       Node<T4> n4,
       Node<T5> n5,
       Func5<T1, T2, T3, T4, T5, U> func) {
-    return this.register(type, n1.getScope().map(n1, n2, n3, n4, n5, func));
+    return this.register(type, dag.map(n1, n2, n3, n4, n5, func));
   }
 }
