@@ -82,8 +82,6 @@ public class Entity {
 
   // Dynamic dependencies.
   public final ReactiveSource<@Nullable ParentComponent> parent;
-  private final ConstantNode<WorldTransformComponent> noParentWorldTransform;
-  private Node<WorldTransformComponent> parentWorldTransform;
 
   {
     sourceComponentMap = new HashMap<>();
@@ -91,8 +89,10 @@ public class Entity {
 
     id = defineSource(LocalId.class, new LocalId(GUID.random()));
     parent = defineSource(ParentComponent.class, null);
-    noParentWorldTransform = new ConstantNode<>(new WorldTransformComponent(new AffineTransform()));
-    parentWorldTransform =
+    // Special transform to fallback to when there is no parent.
+    var noParentWorldTransform =
+        new ConstantNode<>(new WorldTransformComponent(new AffineTransform()));
+    var parentWorldTransform =
         parent
             .getScope()
             .flatMap(
