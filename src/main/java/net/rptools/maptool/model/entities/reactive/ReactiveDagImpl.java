@@ -28,7 +28,7 @@ public class ReactiveDagImpl {
    */
   private long version = Long.MIN_VALUE + 1;
 
-  private final List<ReactiveSource<?>> roots = new CopyOnWriteArrayList<>();
+  private final List<SourceNode<?>> roots = new CopyOnWriteArrayList<>();
 
   public void mergeFromAndEmpty(ReactiveDagImpl other) {
     this.version = Math.max(this.version, other.version);
