@@ -50,6 +50,10 @@ public class ReactiveDag {
     return new ReactiveSource<>(this, initialValue);
   }
 
+  public <T> NonSourceNode<T> createConstant(T value) {
+    return new ConstantNode<>(this, value);
+  }
+
   public <T1, U> NonSourceNode<U> map(Node<T1> n1, Func1<T1, U> func) {
     mergeFrom(n1.getScope());
 

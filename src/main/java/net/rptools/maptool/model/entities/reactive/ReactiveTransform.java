@@ -21,10 +21,6 @@ public class ReactiveTransform<T> extends ReactiveNode<T> implements NonSourceNo
   private final List<Node<?>> dependencies;
   private final Supplier<T> valueSupplier;
 
-  public ReactiveTransform(List<Node<?>> dependencies, Supplier<T> valueSupplier) {
-    this(new ReactiveDag(), dependencies, valueSupplier);
-  }
-
   ReactiveTransform(ReactiveDag scope, List<Node<?>> dependencies, Supplier<T> valueSupplier) {
     super(scope);
     this.dependencies = dependencies;
