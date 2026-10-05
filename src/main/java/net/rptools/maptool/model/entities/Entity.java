@@ -37,6 +37,7 @@ import net.rptools.maptool.model.entities.reactive.Func5;
 import net.rptools.maptool.model.entities.reactive.Node;
 import net.rptools.maptool.model.entities.reactive.NonSourceNode;
 import net.rptools.maptool.model.entities.reactive.ReactiveSource;
+import net.rptools.maptool.model.entities.reactive.SourceNode;
 import org.jspecify.annotations.Nullable;
 
 public class Entity {
@@ -72,16 +73,16 @@ public class Entity {
     return entity;
   }
 
-  private final Map<Class<?>, ReactiveSource<?>> sourceComponentMap;
+  private final Map<Class<?>, SourceNode<?>> sourceComponentMap;
   private final Map<Class<?>, Node<?>> componentMap;
 
-  public final ReactiveSource<LocalId> id;
-  public final ReactiveSource<PlacementComponent> placement;
+  public final SourceNode<LocalId> id;
+  public final SourceNode<PlacementComponent> placement;
   public final NonSourceNode<LocalTransformComponent> localTransform;
   public final NonSourceNode<WorldTransformComponent> worldTransform;
 
   // Dynamic dependencies.
-  public final ReactiveSource<@Nullable ParentComponent> parent;
+  public final SourceNode<@Nullable ParentComponent> parent;
 
   {
     sourceComponentMap = new HashMap<>();
@@ -145,7 +146,7 @@ public class Entity {
     return node;
   }
 
-  private <ValueT extends Record & Component, NodeT extends ReactiveSource<ValueT>>
+  private <ValueT extends Record & Component, NodeT extends SourceNode<ValueT>>
       NodeT registerSource(Class<ValueT> type, NodeT node) {
     sourceComponentMap.put(type, node);
     return register(type, node);
@@ -155,11 +156,11 @@ public class Entity {
     return (Node<T>) componentMap.get(type);
   }
 
-  public final <T extends Record & Component> @Nullable ReactiveSource<T> getSource(Class<T> type) {
-    return (ReactiveSource<T>) sourceComponentMap.get(type);
+  public final <T extends Record & Component> @Nullable SourceNode<T> getSource(Class<T> type) {
+    return (SourceNode<T>) sourceComponentMap.get(type);
   }
 
-  public final <ValueT extends Record & Component> ReactiveSource<ValueT> defineSource(
+  public final <ValueT extends Record & Component> SourceNode<ValueT> defineSource(
       Class<ValueT> type, ValueT initial) {
     return registerSource(type, new ReactiveSource<>(initial));
   }

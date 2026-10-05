@@ -46,7 +46,7 @@ public class ReactiveDag {
     return impl.getVersion();
   }
 
-  public <T> ReactiveSource<T> createRoot(T initialValue) {
+  public <T> SourceNode<T> createRoot(T initialValue) {
     return new ReactiveSource<>(this, initialValue);
   }
 
