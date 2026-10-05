@@ -19,10 +19,6 @@ import java.util.List;
 public class ConstantNode<T> extends ReactiveNode<T> implements NonSourceNode<T> {
   private final T initialValue;
 
-  public ConstantNode(T initialValue) {
-    this(new ReactiveDag(), initialValue);
-  }
-
   ConstantNode(ReactiveDag scope, T initialValue) {
     super(scope);
     this.initialValue = initialValue;

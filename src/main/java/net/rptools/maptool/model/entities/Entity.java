@@ -28,7 +28,6 @@ import net.rptools.maptool.model.entities.components.ParentComponent;
 import net.rptools.maptool.model.entities.components.PlacementComponent;
 import net.rptools.maptool.model.entities.components.PogComponent;
 import net.rptools.maptool.model.entities.components.WorldTransformComponent;
-import net.rptools.maptool.model.entities.reactive.ConstantNode;
 import net.rptools.maptool.model.entities.reactive.Func1;
 import net.rptools.maptool.model.entities.reactive.Func2;
 import net.rptools.maptool.model.entities.reactive.Func3;
@@ -91,9 +90,9 @@ public class Entity {
     id = defineSource(LocalId.class, new LocalId(GUID.random()));
     parent = defineSource(ParentComponent.class, null);
     // Special transform to fallback to when there is no parent.
-    var noParentWorldTransform =
-        new ConstantNode<>(new WorldTransformComponent(new AffineTransform()));
-    var parentWorldTransform =
+    NonSourceNode<WorldTransformComponent> noParentWorldTransform =
+        dag.createConstant(new WorldTransformComponent(new AffineTransform()));
+    NonSourceNode<WorldTransformComponent> parentWorldTransform =
         dag.flatMap(
             parent,
             parent -> {
