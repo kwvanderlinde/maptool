@@ -182,15 +182,35 @@ public class ReactiveDag {
     }
   }
 
-  private abstract class AbstractRegularNode<T> extends NonSourceNode<T> {
+  private final class ConstantNode<T> extends NonSourceNode<T> {
+    private final T initialValue;
 
-    protected abstract T recompute();
-
-    protected abstract List<Node<?>> getParents();
+    ConstantNode(T initialValue) {
+      this.initialValue = initialValue;
+    }
 
     @Override
-    public ReactiveDag getScope() {
-      return ReactiveDag.this;
+    public T get() {
+      return initialValue;
+    }
+
+    @Override
+    public void ensureUpdated(long globalVersion) {
+      // Nothing to do.
+    }
+  }
+
+  private final class TransformNode<T> extends NonSourceNode<T> {
+    private final List<Node<?>> dependencies;
+    private final Supplier<T> valueSupplier;
+
+    TransformNode(List<Node<?>> dependencies, Supplier<T> valueSupplier) {
+      this.dependencies = dependencies;
+      this.valueSupplier = valueSupplier;
+    }
+
+    private T recompute() {
+      return valueSupplier.get();
     }
 
     @Override
@@ -207,50 +227,12 @@ public class ReactiveDag {
       }
 
       // TODO Non-recursive iteration would be baller.
-      for (var dependency : getParents()) {
+      for (var dependency : dependencies) {
         dependency.ensureUpdated(globalVersion);
       }
 
       value = recompute();
       version = globalVersion;
-    }
-  }
-
-  private final class ConstantNode<T> extends AbstractRegularNode<T> {
-    private final T initialValue;
-
-    ConstantNode(T initialValue) {
-      this.initialValue = initialValue;
-    }
-
-    @Override
-    protected T recompute() {
-      return initialValue;
-    }
-
-    @Override
-    public List<Node<?>> getParents() {
-      return List.of();
-    }
-  }
-
-  private final class TransformNode<T> extends AbstractRegularNode<T> {
-    private final List<Node<?>> dependencies;
-    private final Supplier<T> valueSupplier;
-
-    TransformNode(List<Node<?>> dependencies, Supplier<T> valueSupplier) {
-      this.dependencies = dependencies;
-      this.valueSupplier = valueSupplier;
-    }
-
-    @Override
-    protected T recompute() {
-      return valueSupplier.get();
-    }
-
-    @Override
-    public List<Node<?>> getParents() {
-      return dependencies;
     }
   }
 
@@ -277,11 +259,6 @@ public class ReactiveDag {
       this.scope = scope;
       this.source = source;
       this.map = map;
-    }
-
-    @Override
-    public ReactiveDag getScope() {
-      return ReactiveDag.this;
     }
 
     @Override
