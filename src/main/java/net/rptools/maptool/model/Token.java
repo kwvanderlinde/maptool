@@ -53,6 +53,7 @@ import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.entities.Entity;
+import net.rptools.maptool.model.entities.TokenEntity;
 import net.rptools.maptool.model.entities.components.LayoutComponent;
 import net.rptools.maptool.model.sheet.stats.StatSheetProperties;
 import net.rptools.maptool.server.Mapper;
@@ -395,7 +396,7 @@ public class Token implements Cloneable {
   private boolean allowURIAccess = false;
 
   private transient Entity entity =
-      Entity.createToken(new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)), null);
+      new TokenEntity(new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)), null);
 
   /**
    * Constructor from another token, with the option to keep the token id
@@ -2744,8 +2745,7 @@ public class Token implements Cloneable {
     }
     tokenOpacity = Math.max(0.f, Math.min(tokenOpacity, 1.f));
 
-    entity =
-        Entity.createToken(new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)), null);
+    entity = new TokenEntity(new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)), null);
 
     return this;
   }

@@ -52,6 +52,7 @@ import net.rptools.maptool.model.drawing.DrawnElement;
 import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.model.entities.Entity;
 import net.rptools.maptool.model.entities.EntityManager;
+import net.rptools.maptool.model.entities.TokenEntity;
 import net.rptools.maptool.model.entities.components.CameraComponent;
 import net.rptools.maptool.model.entities.components.Component;
 import net.rptools.maptool.model.entities.components.GridComponent;
@@ -495,7 +496,7 @@ public class Zone {
     }
     {
       exampleEntity =
-          Entity.createToken(
+          new TokenEntity(
               new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)),
               new PogComponent(new MD5Key("87f4e9bfa4f1f3db250b57b3599fa4e9"), 0.15));
       exampleEntity.defineSource(Trajectory.class, new Trajectory(0.75));
@@ -504,7 +505,7 @@ public class Zone {
     }
     {
       exampleEntity2 =
-          Entity.createToken(
+          new TokenEntity(
               new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)),
               new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity2.placement.set(new PlacementComponent(new Point2D.Double(-50, -50), 0., 1.));
@@ -514,7 +515,7 @@ public class Zone {
     }
     {
       exampleEntity3 =
-          Entity.createToken(
+          new TokenEntity(
               new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)),
               new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity3.placement.set(new PlacementComponent(new Point2D.Double(50, -50), 0., 1.));
@@ -524,7 +525,7 @@ public class Zone {
     }
     {
       exampleEntity4 =
-          Entity.createToken(
+          new TokenEntity(
               new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)),
               new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity4.placement.set(new PlacementComponent(new Point2D.Double(50, 50), 0., 1.));
@@ -534,7 +535,7 @@ public class Zone {
     }
     {
       exampleEntity5 =
-          Entity.createToken(
+          new TokenEntity(
               new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)),
               new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity5.placement.set(new PlacementComponent(new Point2D.Double(-50, 50), 0., 1.));
