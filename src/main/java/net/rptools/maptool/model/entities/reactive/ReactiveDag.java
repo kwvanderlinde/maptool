@@ -69,7 +69,7 @@ public class ReactiveDag {
   }
 
   public <T> SourceNode<T> createSource(T initialValue) {
-    return new ReactiveSource<>(initialValue);
+    return new SourceNodeImpl<>(initialValue);
   }
 
   public <T> NonSourceNode<T> createConstant(T value) {
@@ -79,14 +79,14 @@ public class ReactiveDag {
   public <T1, U> NonSourceNode<U> map(Node<T1> n1, Func1<T1, U> func) {
     mergeFrom(n1.getScope());
 
-    return new ReactiveTransform<>(List.of(n1), () -> func.apply(n1.get()));
+    return new TransformNode<>(List.of(n1), () -> func.apply(n1.get()));
   }
 
   public <T1, T2, U> NonSourceNode<U> map(Node<T1> n1, Node<T2> n2, Func2<T1, T2, U> func) {
     mergeFrom(n1.getScope());
     mergeFrom(n2.getScope());
 
-    return new ReactiveTransform<>(List.of(n1, n2), () -> func.apply(n1.get(), n2.get()));
+    return new TransformNode<>(List.of(n1, n2), () -> func.apply(n1.get(), n2.get()));
   }
 
   public <T1, T2, T3, U> NonSourceNode<U> map(
@@ -95,7 +95,7 @@ public class ReactiveDag {
     mergeFrom(n2.getScope());
     mergeFrom(n3.getScope());
 
-    return new ReactiveTransform<>(List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get()));
+    return new TransformNode<>(List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get()));
   }
 
   public <T1, T2, T3, T4, U> NonSourceNode<U> map(
@@ -105,7 +105,7 @@ public class ReactiveDag {
     mergeFrom(n3.getScope());
     mergeFrom(n4.getScope());
 
-    return new ReactiveTransform<>(
+    return new TransformNode<>(
         List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get(), n4.get()));
   }
 
@@ -122,19 +122,19 @@ public class ReactiveDag {
     mergeFrom(n4.getScope());
     mergeFrom(n5.getScope());
 
-    return new ReactiveTransform<>(
+    return new TransformNode<>(
         List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get(), n4.get(), n5.get()));
   }
 
   public <T, U> NonSourceNode<U> flatMap(Node<T> source, Func1<T, NonSourceNode<U>> map) {
     mergeFrom(source.getScope());
 
-    return new ReactiveFlatMap<>(this, source, map);
+    return new FlatMapNode<>(this, source, map);
   }
 
   // region Reactive node implementations
 
-  private abstract class ReactiveNode<T> implements Node<T> {
+  private abstract class AbstractNode<T> implements Node<T> {
     /**
      * The latest scope version against which this node was validated or recomputed.
      *
@@ -178,8 +178,8 @@ public class ReactiveDag {
     }
   }
 
-  private final class ReactiveSource<T> extends ReactiveNode<T> implements SourceNode<T> {
-    ReactiveSource(T initialValue) {
+  private final class SourceNodeImpl<T> extends AbstractNode<T> implements SourceNode<T> {
+    SourceNodeImpl(T initialValue) {
       this.value = initialValue;
     }
 
@@ -200,7 +200,7 @@ public class ReactiveDag {
     }
   }
 
-  private final class ConstantNode<T> extends ReactiveNode<T> implements NonSourceNode<T> {
+  private final class ConstantNode<T> extends AbstractNode<T> implements NonSourceNode<T> {
     private final T initialValue;
 
     ConstantNode(T initialValue) {
@@ -218,11 +218,11 @@ public class ReactiveDag {
     }
   }
 
-  private final class ReactiveTransform<T> extends ReactiveNode<T> implements NonSourceNode<T> {
+  private final class TransformNode<T> extends AbstractNode<T> implements NonSourceNode<T> {
     private final List<Node<?>> dependencies;
     private final Supplier<T> valueSupplier;
 
-    ReactiveTransform(List<Node<?>> dependencies, Supplier<T> valueSupplier) {
+    TransformNode(List<Node<?>> dependencies, Supplier<T> valueSupplier) {
       this.dependencies = dependencies;
       this.valueSupplier = valueSupplier;
     }
@@ -238,7 +238,7 @@ public class ReactiveDag {
     }
   }
 
-  private final class ReactiveFlatMap<T, U> implements NonSourceNode<U> {
+  private final class FlatMapNode<T, U> implements NonSourceNode<U> {
     /** The parent DAG to which this node belongs. */
     private final ReactiveDag scope;
 
@@ -250,7 +250,7 @@ public class ReactiveDag {
 
     private NonSourceNode<U> selected;
 
-    ReactiveFlatMap(ReactiveDag scope, Node<T> source, Func1<T, NonSourceNode<U>> map) {
+    FlatMapNode(ReactiveDag scope, Node<T> source, Func1<T, NonSourceNode<U>> map) {
       this.scope = scope;
       this.source = source;
       this.map = map;
