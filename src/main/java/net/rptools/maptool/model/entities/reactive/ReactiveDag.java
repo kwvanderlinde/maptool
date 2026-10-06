@@ -251,6 +251,8 @@ public class ReactiveDag {
       if (version < globalVersion) {
         // The selected dependency may have changed, so apply the selector.
         var selected = source.ensureUpdated(globalVersion);
+        // Make sure the selected node is in the same graph.
+        getScope().mergeFrom(selected.getScope());
         // Now sure the selected node is current.
         value = selected.ensureUpdated(globalVersion);
 
