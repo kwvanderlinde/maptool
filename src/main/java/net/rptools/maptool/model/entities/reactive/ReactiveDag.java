@@ -19,74 +19,77 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
 public class ReactiveDag {
-  /** The core of the {@link ReactiveDag}, which is merely a flyweight. */
-  private static final class ReactiveDagImpl {
-    /**
-     * Incremented for any direct value change to a node.
-     *
-     * <p>Only source nodes can be directly updated, so the version can also be seen as the number
-     * of external modifications to the graph.
-     *
-     * <p>Wraparound is not a concern. Even if we increment every clock cycle on a 6 GHz processor,
-     * this will take almost 100 years to overflow.
-     */
-    private long version = Long.MIN_VALUE + 1;
+  /**
+   * Incremented for any direct value change to a node.
+   *
+   * <p>Only source nodes can be directly updated, so the version can also be seen as the number of
+   * external modifications to the graph.
+   *
+   * <p>Wraparound is not a concern. Even if we increment every clock cycle on a 6 GHz processor,
+   * this will take almost 100 years to overflow.
+   */
+  private long version = Long.MIN_VALUE + 1;
 
-    // TODO Do we actually need to know the root nodes?
-    private final List<SourceNode<?>> roots = new CopyOnWriteArrayList<>();
-  }
-
-  private ReactiveDagImpl impl = new ReactiveDagImpl();
+  private final List<Node<?>> nodes = new CopyOnWriteArrayList<>();
 
   /**
-   * Merge the content and state of {@code other} into {@code this},
+   * Merge the contents and state of {@code other} into {@code this},
    *
-   * @implNote Afterward, both {@code this} and {@code other} using the same underlying impl object.
+   * @implNote Afterward, both {@code this} will contain all the nodes from {@code other}, and
+   *     {@code other} will be empty (unless {@code other == this}, in which case this is a no-op).
    * @param other The DAG to merge into this DAG.
    */
   private void mergeFrom(ReactiveDag other) {
-    if (other.impl == this.impl) {
+    if (other == this) {
       // Already merged.
       return;
     }
 
-    // Move all nodes and state from `other` into `this`.
-    this.impl.version = Math.max(this.impl.version, other.impl.version);
-    this.impl.roots.addAll(other.impl.roots);
-    // Reset `other`.
-    other.impl.version = Long.MIN_VALUE + 1;
-    other.impl.roots.clear();
+    this.version = Math.max(this.version, other.version);
+    // The nodes from `other` must now point to `this`.
+    for (var node : other.nodes) {
+      node.scope = this;
+    }
+    // Allow discovering all those nodes as well.
+    this.nodes.addAll(other.nodes);
 
-    other.impl = this.impl;
+    // Now reset `other`.
+    other.version = Long.MIN_VALUE + 1;
+    other.nodes.clear();
   }
 
   private void bumpVersion() {
-    ++this.impl.version;
+    ++this.version;
   }
 
   private long getVersion() {
-    return impl.version;
+    return version;
+  }
+
+  private <T, NodeT extends Node<T>> NodeT adopt(NodeT node) {
+    nodes.add(node);
+    return node;
   }
 
   public <T> SourceNode<T> source(T initialValue) {
-    return new SourceNode<>(initialValue);
+    return adopt(new SourceNode<>(this, initialValue));
   }
 
   public <T> NonSourceNode<T> constant(T value) {
-    return new ConstantNode<>(value);
+    return adopt(new ConstantNode<>(this, value));
   }
 
   public <T1, U> NonSourceNode<U> map(Node<T1> n1, Func1<T1, U> func) {
     mergeFrom(n1.getScope());
 
-    return new TransformNode<>(List.of(n1), () -> func.apply(n1.get()));
+    return adopt(new TransformNode<>(this, List.of(n1), () -> func.apply(n1.get())));
   }
 
   public <T1, T2, U> NonSourceNode<U> map(Node<T1> n1, Node<T2> n2, Func2<T1, T2, U> func) {
     mergeFrom(n1.getScope());
     mergeFrom(n2.getScope());
 
-    return new TransformNode<>(List.of(n1, n2), () -> func.apply(n1.get(), n2.get()));
+    return adopt(new TransformNode<>(this, List.of(n1, n2), () -> func.apply(n1.get(), n2.get())));
   }
 
   public <T1, T2, T3, U> NonSourceNode<U> map(
@@ -95,7 +98,8 @@ public class ReactiveDag {
     mergeFrom(n2.getScope());
     mergeFrom(n3.getScope());
 
-    return new TransformNode<>(List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get()));
+    return adopt(
+        new TransformNode<>(this, List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get())));
   }
 
   public <T1, T2, T3, T4, U> NonSourceNode<U> map(
@@ -105,8 +109,9 @@ public class ReactiveDag {
     mergeFrom(n3.getScope());
     mergeFrom(n4.getScope());
 
-    return new TransformNode<>(
-        List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get(), n4.get()));
+    return adopt(
+        new TransformNode<>(
+            this, List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get(), n4.get())));
   }
 
   public <T1, T2, T3, T4, T5, U> NonSourceNode<U> map(
@@ -122,19 +127,28 @@ public class ReactiveDag {
     mergeFrom(n4.getScope());
     mergeFrom(n5.getScope());
 
-    return new TransformNode<>(
-        List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get(), n4.get(), n5.get()));
+    return adopt(
+        new TransformNode<>(
+            this,
+            List.of(n1, n2),
+            () -> func.apply(n1.get(), n2.get(), n3.get(), n4.get(), n5.get())));
   }
 
   public <T> NonSourceNode<T> flatten(Node<? extends Node<T>> nested) {
-    return new FlattenNode<>(nested);
+    return adopt(new FlattenNode<>(this, nested));
   }
 
   // region Reactive node implementations
 
-  public abstract sealed class Node<T> permits SourceNode, NonSourceNode {
+  public abstract static sealed class Node<T> permits SourceNode, NonSourceNode {
+    private ReactiveDag scope;
+
+    protected Node(ReactiveDag scope) {
+      this.scope = scope;
+    }
+
     public final ReactiveDag getScope() {
-      return ReactiveDag.this;
+      return scope;
     }
 
     public final T get() {
@@ -145,10 +159,11 @@ public class ReactiveDag {
     protected abstract T ensureUpdated(long globalVersion);
   }
 
-  public final class SourceNode<T> extends Node<T> {
+  public static final class SourceNode<T> extends Node<T> {
     private T value;
 
-    SourceNode(T initialValue) {
+    SourceNode(ReactiveDag scope, T initialValue) {
+      super(scope);
       this.value = initialValue;
     }
 
@@ -164,7 +179,7 @@ public class ReactiveDag {
     }
   }
 
-  public abstract non-sealed class NonSourceNode<T> extends Node<T> {
+  public abstract static non-sealed class NonSourceNode<T> extends Node<T> {
     /**
      * The latest DAG version against which this node was validated or recomputed.
      *
@@ -175,10 +190,15 @@ public class ReactiveDag {
 
     /** The last computed value of the node. */
     protected T value;
+
+    protected NonSourceNode(ReactiveDag dag) {
+      super(dag);
+    }
   }
 
-  private final class ConstantNode<T> extends NonSourceNode<T> {
-    ConstantNode(T initialValue) {
+  private static final class ConstantNode<T> extends NonSourceNode<T> {
+    ConstantNode(ReactiveDag dag, T initialValue) {
+      super(dag);
       this.value = initialValue;
     }
 
@@ -189,11 +209,12 @@ public class ReactiveDag {
     }
   }
 
-  private final class TransformNode<T> extends NonSourceNode<T> {
+  private static final class TransformNode<T> extends NonSourceNode<T> {
     private final List<Node<?>> dependencies;
     private final Supplier<T> valueSupplier;
 
-    TransformNode(List<Node<?>> dependencies, Supplier<T> valueSupplier) {
+    TransformNode(ReactiveDag dag, List<Node<?>> dependencies, Supplier<T> valueSupplier) {
+      super(dag);
       this.dependencies = dependencies;
       this.valueSupplier = valueSupplier;
     }
@@ -217,10 +238,11 @@ public class ReactiveDag {
     }
   }
 
-  private final class FlattenNode<T> extends NonSourceNode<T> {
+  private static final class FlattenNode<T> extends NonSourceNode<T> {
     private final Node<? extends Node<T>> source;
 
-    FlattenNode(Node<? extends Node<T>> source) {
+    FlattenNode(ReactiveDag dag, Node<? extends Node<T>> source) {
+      super(dag);
       this.source = source;
     }
 
