@@ -34,6 +34,9 @@ import net.rptools.maptool.model.entities.reactive.Func3;
 import net.rptools.maptool.model.entities.reactive.Func4;
 import net.rptools.maptool.model.entities.reactive.Func5;
 import net.rptools.maptool.model.entities.reactive.ReactiveDag;
+import net.rptools.maptool.model.entities.reactive.ReactiveDag.Node;
+import net.rptools.maptool.model.entities.reactive.ReactiveDag.NonSourceNode;
+import net.rptools.maptool.model.entities.reactive.ReactiveDag.SourceNode;
 import org.jspecify.annotations.Nullable;
 
 public class Entity {
@@ -68,16 +71,16 @@ public class Entity {
   }
 
   private final ReactiveDag dag;
-  private final Map<Class<?>, ReactiveDag.SourceNode<?>> sourceComponentMap;
-  private final Map<Class<?>, ReactiveDag.Node<?>> componentMap;
+  private final Map<Class<?>, SourceNode<?>> sourceComponentMap;
+  private final Map<Class<?>, Node<?>> componentMap;
 
-  public final ReactiveDag.SourceNode<LocalId> id;
-  public final ReactiveDag.SourceNode<PlacementComponent> placement;
-  public final ReactiveDag.NonSourceNode<LocalTransformComponent> localTransform;
-  public final ReactiveDag.NonSourceNode<WorldTransformComponent> worldTransform;
+  public final SourceNode<LocalId> id;
+  public final SourceNode<PlacementComponent> placement;
+  public final NonSourceNode<LocalTransformComponent> localTransform;
+  public final NonSourceNode<WorldTransformComponent> worldTransform;
 
   // Dynamic dependencies.
-  public final ReactiveDag.SourceNode<@Nullable ParentComponent> parent;
+  public final SourceNode<@Nullable ParentComponent> parent;
 
   {
     dag = new ReactiveDag();
@@ -134,70 +137,64 @@ public class Entity {
     return node.get();
   }
 
-  private <ValueT extends Record & Component, NodeT extends ReactiveDag.Node<ValueT>>
-      NodeT register(Class<ValueT> type, NodeT node) {
+  private <ValueT extends Record & Component, NodeT extends Node<ValueT>> NodeT register(
+      Class<ValueT> type, NodeT node) {
     componentMap.put(type, node);
     return node;
   }
 
-  private <ValueT extends Record & Component, NodeT extends ReactiveDag.SourceNode<ValueT>>
+  private <ValueT extends Record & Component, NodeT extends SourceNode<ValueT>>
       NodeT registerSource(Class<ValueT> type, NodeT node) {
     sourceComponentMap.put(type, node);
     return register(type, node);
   }
 
-  public final <T extends Record & Component> @Nullable ReactiveDag.Node<T> get(Class<T> type) {
-    return (ReactiveDag.Node<T>) componentMap.get(type);
+  public final <T extends Record & Component> @Nullable Node<T> get(Class<T> type) {
+    return (Node<T>) componentMap.get(type);
   }
 
-  public final <T extends Record & Component> @Nullable ReactiveDag.SourceNode<T> getSource(
-      Class<T> type) {
-    return (ReactiveDag.SourceNode<T>) sourceComponentMap.get(type);
+  public final <T extends Record & Component> @Nullable SourceNode<T> getSource(Class<T> type) {
+    return (SourceNode<T>) sourceComponentMap.get(type);
   }
 
-  public final <ValueT extends Record & Component> ReactiveDag.SourceNode<ValueT> defineSource(
+  public final <ValueT extends Record & Component> SourceNode<ValueT> defineSource(
       Class<ValueT> type, ValueT initial) {
     return registerSource(type, dag.source(initial));
   }
 
-  public final <T1, U extends Record & Component> ReactiveDag.NonSourceNode<U> derive(
-      Class<U> type, ReactiveDag.Node<T1> n1, Func1<T1, U> func) {
+  public final <T1, U extends Record & Component> NonSourceNode<U> derive(
+      Class<U> type, Node<T1> n1, Func1<T1, U> func) {
     return this.register(type, dag.map(n1, func));
   }
 
-  public final <T1, T2, U extends Record & Component> ReactiveDag.NonSourceNode<U> derive(
-      Class<U> type, ReactiveDag.Node<T1> n1, ReactiveDag.Node<T2> n2, Func2<T1, T2, U> func) {
+  public final <T1, T2, U extends Record & Component> NonSourceNode<U> derive(
+      Class<U> type, Node<T1> n1, Node<T2> n2, Func2<T1, T2, U> func) {
     return this.register(type, dag.map(n1, n2, func));
   }
 
-  public final <T1, T2, T3, U extends Record & Component> ReactiveDag.NonSourceNode<U> derive(
-      Class<U> type,
-      ReactiveDag.Node<T1> n1,
-      ReactiveDag.Node<T2> n2,
-      ReactiveDag.Node<T3> n3,
-      Func3<T1, T2, T3, U> func) {
+  public final <T1, T2, T3, U extends Record & Component> NonSourceNode<U> derive(
+      Class<U> type, Node<T1> n1, Node<T2> n2, Node<T3> n3, Func3<T1, T2, T3, U> func) {
     return this.register(type, dag.map(n1, n2, n3, func));
   }
 
-  public final <T1, T2, T3, T4, U extends Record & Component> ReactiveDag.NonSourceNode<U> derive(
+  public final <T1, T2, T3, T4, U extends Record & Component> NonSourceNode<U> derive(
       Class<U> type,
-      ReactiveDag.Node<T1> n1,
-      ReactiveDag.Node<T2> n2,
-      ReactiveDag.Node<T3> n3,
-      ReactiveDag.Node<T4> n4,
+      Node<T1> n1,
+      Node<T2> n2,
+      Node<T3> n3,
+      Node<T4> n4,
       Func4<T1, T2, T3, T4, U> func) {
     return this.register(type, dag.map(n1, n2, n3, n4, func));
   }
 
-  public final <T1, T2, T3, T4, T5, U extends Record & Component>
-      ReactiveDag.NonSourceNode<U> derive(
-          Class<U> type,
-          ReactiveDag.Node<T1> n1,
-          ReactiveDag.Node<T2> n2,
-          ReactiveDag.Node<T3> n3,
-          ReactiveDag.Node<T4> n4,
-          ReactiveDag.Node<T5> n5,
-          Func5<T1, T2, T3, T4, T5, U> func) {
+  public final <T1, T2, T3, T4, T5, U extends Record & Component> NonSourceNode<U> derive(
+      Class<U> type,
+      Node<T1> n1,
+      Node<T2> n2,
+      Node<T3> n3,
+      Node<T4> n4,
+      Node<T5> n5,
+      Func5<T1, T2, T3, T4, T5, U> func) {
     return this.register(type, dag.map(n1, n2, n3, n4, n5, func));
   }
 }
