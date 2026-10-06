@@ -14,12 +14,6 @@
  */
 package net.rptools.maptool.model.entities.reactive;
 
-import java.util.List;
-
 public interface SourceNode<T> extends Node<T> {
-  default List<Node<?>> getParents() {
-    return List.of();
-  }
-
   void set(T value);
 }

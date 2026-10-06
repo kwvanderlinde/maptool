@@ -14,11 +14,7 @@
  */
 package net.rptools.maptool.model.entities.reactive;
 
-import java.util.List;
-
 public interface Node<T> {
-  List<Node<?>> getParents();
-
   ReactiveDag getScope();
 
   T get();
