@@ -69,24 +69,24 @@ public class ReactiveDag {
   }
 
   public <T> SourceNode<T> createSource(T initialValue) {
-    return new ReactiveSource<>(this, initialValue);
+    return new ReactiveSource<>(initialValue);
   }
 
   public <T> NonSourceNode<T> createConstant(T value) {
-    return new ConstantNode<>(this, value);
+    return new ConstantNode<>(value);
   }
 
   public <T1, U> NonSourceNode<U> map(Node<T1> n1, Func1<T1, U> func) {
     mergeFrom(n1.getScope());
 
-    return new ReactiveTransform<>(this, List.of(n1), () -> func.apply(n1.get()));
+    return new ReactiveTransform<>(List.of(n1), () -> func.apply(n1.get()));
   }
 
   public <T1, T2, U> NonSourceNode<U> map(Node<T1> n1, Node<T2> n2, Func2<T1, T2, U> func) {
     mergeFrom(n1.getScope());
     mergeFrom(n2.getScope());
 
-    return new ReactiveTransform<>(this, List.of(n1, n2), () -> func.apply(n1.get(), n2.get()));
+    return new ReactiveTransform<>(List.of(n1, n2), () -> func.apply(n1.get(), n2.get()));
   }
 
   public <T1, T2, T3, U> NonSourceNode<U> map(
@@ -95,8 +95,7 @@ public class ReactiveDag {
     mergeFrom(n2.getScope());
     mergeFrom(n3.getScope());
 
-    return new ReactiveTransform<>(
-        this, List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get()));
+    return new ReactiveTransform<>(List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get()));
   }
 
   public <T1, T2, T3, T4, U> NonSourceNode<U> map(
@@ -107,7 +106,7 @@ public class ReactiveDag {
     mergeFrom(n4.getScope());
 
     return new ReactiveTransform<>(
-        this, List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get(), n4.get()));
+        List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get(), n4.get()));
   }
 
   public <T1, T2, T3, T4, T5, U> NonSourceNode<U> map(
@@ -124,7 +123,7 @@ public class ReactiveDag {
     mergeFrom(n5.getScope());
 
     return new ReactiveTransform<>(
-        this, List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get(), n4.get(), n5.get()));
+        List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get(), n4.get(), n5.get()));
   }
 
   public <T, U> NonSourceNode<U> flatMap(Node<T> source, Func1<T, NonSourceNode<U>> map) {
@@ -136,9 +135,6 @@ public class ReactiveDag {
   // region Reactive node implementations
 
   private abstract class ReactiveNode<T> implements Node<T> {
-    /** The parent DAG to which this node belongs. */
-    protected final ReactiveDag scope;
-
     /**
      * The latest scope version against which this node was validated or recomputed.
      *
@@ -149,10 +145,6 @@ public class ReactiveDag {
 
     protected T value;
 
-    ReactiveNode(ReactiveDag scope) {
-      this.scope = scope;
-    }
-
     protected abstract T recompute();
 
     @Override
@@ -160,13 +152,12 @@ public class ReactiveDag {
 
     @Override
     public ReactiveDag getScope() {
-      // TODO Scope is just `ReactiveDag.this`.
-      return scope;
+      return ReactiveDag.this;
     }
 
     @Override
     public T get() {
-      ensureUpdated(scope.getVersion());
+      ensureUpdated(getScope().getVersion());
       return value;
     }
 
@@ -188,8 +179,7 @@ public class ReactiveDag {
   }
 
   private final class ReactiveSource<T> extends ReactiveNode<T> implements SourceNode<T> {
-    ReactiveSource(ReactiveDag scope, T initialValue) {
-      super(scope);
+    ReactiveSource(T initialValue) {
       this.value = initialValue;
     }
 
@@ -206,15 +196,14 @@ public class ReactiveDag {
 
     public void set(T value) {
       this.value = value;
-      this.version = scope.bumpVersion();
+      this.version = getScope().bumpVersion();
     }
   }
 
   private final class ConstantNode<T> extends ReactiveNode<T> implements NonSourceNode<T> {
     private final T initialValue;
 
-    ConstantNode(ReactiveDag scope, T initialValue) {
-      super(scope);
+    ConstantNode(T initialValue) {
       this.initialValue = initialValue;
     }
 
@@ -233,8 +222,7 @@ public class ReactiveDag {
     private final List<Node<?>> dependencies;
     private final Supplier<T> valueSupplier;
 
-    ReactiveTransform(ReactiveDag scope, List<Node<?>> dependencies, Supplier<T> valueSupplier) {
-      super(scope);
+    ReactiveTransform(List<Node<?>> dependencies, Supplier<T> valueSupplier) {
       this.dependencies = dependencies;
       this.valueSupplier = valueSupplier;
     }
@@ -270,7 +258,7 @@ public class ReactiveDag {
 
     @Override
     public ReactiveDag getScope() {
-      return scope;
+      return ReactiveDag.this;
     }
 
     @Override
