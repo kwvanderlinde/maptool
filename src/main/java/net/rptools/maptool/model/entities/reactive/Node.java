@@ -21,5 +21,5 @@ public interface Node<T> {
 
   // This is a leaky part of the abstraction, so don't use it if you don't have to.
   @Deprecated
-  void ensureUpdated(long globalVersion);
+  T ensureUpdated(long globalVersion);
 }
