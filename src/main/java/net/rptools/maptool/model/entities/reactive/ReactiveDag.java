@@ -142,11 +142,12 @@ public class ReactiveDag {
       return ReactiveDag.this;
     }
 
-    public abstract T get();
+    public final T get() {
+      return ensureUpdated(getScope().getVersion());
+    }
 
     // This is a leaky part of the abstraction, so don't use it if you don't have to.
-    @Deprecated
-    public abstract T ensureUpdated(long globalVersion);
+    protected abstract T ensureUpdated(long globalVersion);
   }
 
   public final class SourceNode<T> extends Node<T> {
@@ -154,11 +155,6 @@ public class ReactiveDag {
 
     SourceNode(T initialValue) {
       this.value = initialValue;
-    }
-
-    @Override
-    public T get() {
-      return this.value;
     }
 
     public void set(T value) {
@@ -179,11 +175,6 @@ public class ReactiveDag {
 
     ConstantNode(T initialValue) {
       this.initialValue = initialValue;
-    }
-
-    @Override
-    public T get() {
-      return initialValue;
     }
 
     @Override
@@ -214,11 +205,6 @@ public class ReactiveDag {
 
     private T recompute() {
       return valueSupplier.get();
-    }
-
-    @Override
-    public T get() {
-      return ensureUpdated(getScope().getVersion());
     }
 
     @Override
@@ -253,11 +239,6 @@ public class ReactiveDag {
     FlatMapNode(Node<T> source, Func1<T, NonSourceNode<U>> map) {
       this.source = source;
       this.map = map;
-    }
-
-    @Override
-    public U get() {
-      return ensureUpdated(getScope().getVersion());
     }
 
     @Override
