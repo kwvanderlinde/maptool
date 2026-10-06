@@ -87,14 +87,14 @@ public class Entity {
     id = defineSource(LocalId.class, new LocalId(GUID.random()));
     parent = defineSource(ParentComponent.class, null);
     // Special transform to fallback to when there is no parent.
-    var noParentWorldTransform =
-        dag.createConstant(new WorldTransformComponent(new AffineTransform()));
+    var noParentWorldTransform = dag.constant(new WorldTransformComponent(new AffineTransform()));
     var parentWorldTransform =
-        dag.flatMap(
-            parent,
-            parent -> {
-              return parent == null ? noParentWorldTransform : parent.parent().worldTransform;
-            });
+        dag.flatten(
+            dag.map(
+                parent,
+                parent -> {
+                  return parent == null ? noParentWorldTransform : parent.parent().worldTransform;
+                }));
 
     // The default placement numbrs aren't really meaningful.
     placement =
@@ -157,7 +157,7 @@ public class Entity {
 
   public final <ValueT extends Record & Component> ReactiveDag.SourceNode<ValueT> defineSource(
       Class<ValueT> type, ValueT initial) {
-    return registerSource(type, dag.createSource(initial));
+    return registerSource(type, dag.source(initial));
   }
 
   public final <T1, U extends Record & Component> ReactiveDag.NonSourceNode<U> derive(

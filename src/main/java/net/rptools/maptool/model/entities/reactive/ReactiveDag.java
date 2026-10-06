@@ -64,15 +64,15 @@ public class ReactiveDag {
     ++this.impl.version;
   }
 
-  public long getVersion() {
+  private long getVersion() {
     return impl.version;
   }
 
-  public <T> SourceNode<T> createSource(T initialValue) {
+  public <T> SourceNode<T> source(T initialValue) {
     return new SourceNode<>(initialValue);
   }
 
-  public <T> NonSourceNode<T> createConstant(T value) {
+  public <T> NonSourceNode<T> constant(T value) {
     return new ConstantNode<>(value);
   }
 
@@ -124,10 +124,6 @@ public class ReactiveDag {
 
     return new TransformNode<>(
         List.of(n1, n2), () -> func.apply(n1.get(), n2.get(), n3.get(), n4.get(), n5.get()));
-  }
-
-  public <T, U> NonSourceNode<U> flatMap(Node<T> source, Func1<T, NonSourceNode<U>> map) {
-    return flatten(map(source, map));
   }
 
   public <T> NonSourceNode<T> flatten(Node<? extends Node<T>> nested) {
