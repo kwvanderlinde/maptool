@@ -19,7 +19,6 @@ import java.awt.geom.Point2D;
 import java.util.HashMap;
 import java.util.Map;
 import net.rptools.maptool.model.GUID;
-import net.rptools.maptool.model.entities.components.CameraComponent;
 import net.rptools.maptool.model.entities.components.Component;
 import net.rptools.maptool.model.entities.components.LayoutComponent;
 import net.rptools.maptool.model.entities.components.LocalId;
@@ -40,23 +39,7 @@ import net.rptools.maptool.model.entities.reactive.ReactiveDag.SourceNode;
 import org.jspecify.annotations.Nullable;
 
 public class Entity {
-  public static Entity spawnCamera() {
-    var cameraEntity = new Entity();
-    cameraEntity.placement.set(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
-    cameraEntity.derive(
-        CameraComponent.class,
-        cameraEntity.placement,
-        placement -> {
-          var transform = new AffineTransform();
-          transform.rotate(-placement.rotation());
-          transform.scale(1. / placement.scale(), 1. / placement.scale());
-          transform.translate(-placement.position().getX(), -placement.position().getY());
-          return new CameraComponent(transform);
-        });
-    return cameraEntity;
-  }
-
-  public static Entity spawnToken(LayoutComponent layout, PogComponent pog) {
+  public static Entity createToken(LayoutComponent layout, PogComponent pog) {
     var entity = new Entity();
     entity.placement.set(
         new PlacementComponent( // Default to top-left being at (0, 0)

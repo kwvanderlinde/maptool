@@ -495,7 +495,7 @@ public class Zone {
     }
     {
       exampleEntity =
-          Entity.spawnToken(
+          Entity.createToken(
               new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)),
               new PogComponent(new MD5Key("87f4e9bfa4f1f3db250b57b3599fa4e9"), 0.15));
       exampleEntity.defineSource(Trajectory.class, new Trajectory(0.75));
@@ -504,7 +504,7 @@ public class Zone {
     }
     {
       exampleEntity2 =
-          Entity.spawnToken(
+          Entity.createToken(
               new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)),
               new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity2.placement.set(new PlacementComponent(new Point2D.Double(-50, -50), 0., 1.));
@@ -514,7 +514,7 @@ public class Zone {
     }
     {
       exampleEntity3 =
-          Entity.spawnToken(
+          Entity.createToken(
               new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)),
               new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity3.placement.set(new PlacementComponent(new Point2D.Double(50, -50), 0., 1.));
@@ -524,7 +524,7 @@ public class Zone {
     }
     {
       exampleEntity4 =
-          Entity.spawnToken(
+          Entity.createToken(
               new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)),
               new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity4.placement.set(new PlacementComponent(new Point2D.Double(50, 50), 0., 1.));
@@ -534,7 +534,7 @@ public class Zone {
     }
     {
       exampleEntity5 =
-          Entity.spawnToken(
+          Entity.createToken(
               new LayoutComponent(new Rectangle2D.Double(-25, -25, 50, 50)),
               new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity5.placement.set(new PlacementComponent(new Point2D.Double(-50, 50), 0., 1.));
@@ -2239,8 +2239,7 @@ public class Zone {
       mapEntity = entityManager.spawn();
     }
     {
-      cameraEntity = Entity.spawnCamera();
-      entityManager.adopt(cameraEntity);
+      cameraEntity = entityManager.spawnCamera();
     }
     {
       gridEntity = entityManager.spawn();

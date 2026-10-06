@@ -403,7 +403,7 @@ public class Token implements Cloneable {
   private boolean allowURIAccess = false;
 
   private transient Entity entity =
-      Entity.spawnToken(new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)), null);
+      Entity.createToken(new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)), null);
 
   /**
    * Constructor from another token, with the option to keep the token id
@@ -2673,7 +2673,7 @@ public class Token implements Cloneable {
     }
 
     entity =
-        Entity.spawnToken(new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)), null);
+        Entity.createToken(new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)), null);
 
     return this;
   }

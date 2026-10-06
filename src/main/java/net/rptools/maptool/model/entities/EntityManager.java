@@ -14,11 +14,17 @@
  */
 package net.rptools.maptool.model.entities;
 
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import net.rptools.maptool.model.entities.components.CameraComponent;
+import net.rptools.maptool.model.entities.components.PlacementComponent;
+import net.rptools.maptool.model.entities.reactive.ReactiveDag;
 
 public class EntityManager {
+  private final ReactiveDag dag = new ReactiveDag();
   // TODO Z-order management.
   private final List<Entity> entities = new ArrayList<>();
 
@@ -35,5 +41,21 @@ public class EntityManager {
     var entity = new Entity();
     adopt(entity);
     return entity;
+  }
+
+  public Entity spawnCamera() {
+    var cameraEntity = spawn();
+    cameraEntity.placement.set(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
+    cameraEntity.derive(
+        CameraComponent.class,
+        cameraEntity.placement,
+        placement -> {
+          var transform = new AffineTransform();
+          transform.rotate(-placement.rotation());
+          transform.scale(1. / placement.scale(), 1. / placement.scale());
+          transform.translate(-placement.position().getX(), -placement.position().getY());
+          return new CameraComponent(transform);
+        });
+    return cameraEntity;
   }
 }
