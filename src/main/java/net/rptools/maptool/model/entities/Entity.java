@@ -36,7 +36,6 @@ import net.rptools.maptool.model.entities.reactive.Func5;
 import net.rptools.maptool.model.entities.reactive.Node;
 import net.rptools.maptool.model.entities.reactive.NonSourceNode;
 import net.rptools.maptool.model.entities.reactive.ReactiveDag;
-import net.rptools.maptool.model.entities.reactive.SourceNode;
 import org.jspecify.annotations.Nullable;
 
 public class Entity {
@@ -71,16 +70,16 @@ public class Entity {
   }
 
   private final ReactiveDag dag;
-  private final Map<Class<?>, SourceNode<?>> sourceComponentMap;
+  private final Map<Class<?>, ReactiveDag.SourceNode<?>> sourceComponentMap;
   private final Map<Class<?>, Node<?>> componentMap;
 
-  public final SourceNode<LocalId> id;
-  public final SourceNode<PlacementComponent> placement;
+  public final ReactiveDag.SourceNode<LocalId> id;
+  public final ReactiveDag.SourceNode<PlacementComponent> placement;
   public final NonSourceNode<LocalTransformComponent> localTransform;
   public final NonSourceNode<WorldTransformComponent> worldTransform;
 
   // Dynamic dependencies.
-  public final SourceNode<@Nullable ParentComponent> parent;
+  public final ReactiveDag.SourceNode<@Nullable ParentComponent> parent;
 
   {
     dag = new ReactiveDag();
@@ -143,7 +142,7 @@ public class Entity {
     return node;
   }
 
-  private <ValueT extends Record & Component, NodeT extends SourceNode<ValueT>>
+  private <ValueT extends Record & Component, NodeT extends ReactiveDag.SourceNode<ValueT>>
       NodeT registerSource(Class<ValueT> type, NodeT node) {
     sourceComponentMap.put(type, node);
     return register(type, node);
@@ -153,11 +152,11 @@ public class Entity {
     return (Node<T>) componentMap.get(type);
   }
 
-  public final <T extends Record & Component> @Nullable SourceNode<T> getSource(Class<T> type) {
-    return (SourceNode<T>) sourceComponentMap.get(type);
+  public final <T extends Record & Component> @Nullable ReactiveDag.SourceNode<T> getSource(Class<T> type) {
+    return (ReactiveDag.SourceNode<T>) sourceComponentMap.get(type);
   }
 
-  public final <ValueT extends Record & Component> SourceNode<ValueT> defineSource(
+  public final <ValueT extends Record & Component> ReactiveDag.SourceNode<ValueT> defineSource(
       Class<ValueT> type, ValueT initial) {
     return registerSource(type, dag.createSource(initial));
   }
