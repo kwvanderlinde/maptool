@@ -21,10 +21,8 @@ import java.util.Collections;
 import java.util.List;
 import net.rptools.maptool.model.entities.components.CameraComponent;
 import net.rptools.maptool.model.entities.components.PlacementComponent;
-import net.rptools.maptool.model.entities.reactive.ReactiveDag;
 
 public class EntityManager {
-  private final ReactiveDag dag = new ReactiveDag();
   // TODO Z-order management.
   private final List<Entity> entities = new ArrayList<>();
 
