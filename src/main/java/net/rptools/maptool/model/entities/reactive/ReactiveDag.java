@@ -69,7 +69,7 @@ public class ReactiveDag {
   }
 
   public <T> SourceNode<T> createSource(T initialValue) {
-    return new SourceNodeImpl<>(initialValue);
+    return new SourceNode<>(initialValue);
   }
 
   public <T> NonSourceNode<T> createConstant(T value) {
@@ -154,7 +154,8 @@ public class ReactiveDag {
     }
   }
 
-  private abstract class AbstractRegularNode<T> extends AbstractNode<T> implements NonSourceNode<T> {
+  private abstract class AbstractRegularNode<T> extends AbstractNode<T>
+      implements NonSourceNode<T> {
 
     protected abstract T recompute();
 
@@ -188,9 +189,14 @@ public class ReactiveDag {
     }
   }
 
-  private final class SourceNodeImpl<T> extends AbstractNode<T> implements SourceNode<T> {
-    SourceNodeImpl(T initialValue) {
+  public final class SourceNode<T> extends AbstractNode<T> {
+    SourceNode(T initialValue) {
       this.value = initialValue;
+    }
+
+    @Override
+    public ReactiveDag getScope() {
+      return ReactiveDag.this;
     }
 
     @Override
