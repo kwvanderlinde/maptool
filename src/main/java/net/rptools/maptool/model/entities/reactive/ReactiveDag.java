@@ -160,22 +160,12 @@ public class ReactiveDag {
     }
 
     @Override
-    public void ensureUpdated(long globalVersion) {
-      // Nothing to do except bump the version.
+    public T ensureUpdated(long globalVersion) {
+      return value;
     }
   }
 
   public abstract class NonSourceNode<T> implements Node<T> {
-    /**
-     * The latest DAG version against which this node was validated or recomputed.
-     *
-     * <p>This initial version will never be held by the scope, so always triggers an update on the
-     * first read.
-     */
-    protected long version = Long.MIN_VALUE;
-
-    protected T value;
-
     @Override
     public ReactiveDag getScope() {
       return ReactiveDag.this;
@@ -195,14 +185,25 @@ public class ReactiveDag {
     }
 
     @Override
-    public void ensureUpdated(long globalVersion) {
+    public T ensureUpdated(long globalVersion) {
       // Nothing to do.
+      return initialValue;
     }
   }
 
   private final class TransformNode<T> extends NonSourceNode<T> {
     private final List<Node<?>> dependencies;
     private final Supplier<T> valueSupplier;
+
+    /**
+     * The latest DAG version against which this node was validated or recomputed.
+     *
+     * <p>This initial version will never be held by the scope, so always triggers an update on the
+     * first read.
+     */
+    private long version = Long.MIN_VALUE;
+
+    private T value;
 
     TransformNode(List<Node<?>> dependencies, Supplier<T> valueSupplier) {
       this.dependencies = dependencies;
@@ -215,24 +216,21 @@ public class ReactiveDag {
 
     @Override
     public T get() {
-      ensureUpdated(getScope().getVersion());
-      return value;
+      return ensureUpdated(getScope().getVersion());
     }
 
     @Override
-    public void ensureUpdated(long globalVersion) {
-      if (version >= globalVersion) {
-        // Up to date.
-        return;
+    public T ensureUpdated(long globalVersion) {
+      if (version < globalVersion) {
+        for (var dependency : dependencies) {
+          var ignored = dependency.ensureUpdated(globalVersion);
+        }
+
+        value = recompute();
+        version = globalVersion;
       }
 
-      // TODO Non-recursive iteration would be baller.
-      for (var dependency : dependencies) {
-        dependency.ensureUpdated(globalVersion);
-      }
-
-      value = recompute();
-      version = globalVersion;
+      return value;
     }
   }
 
@@ -253,8 +251,6 @@ public class ReactiveDag {
     private final Node<T> source;
     private final Func1<T, NonSourceNode<U>> map;
 
-    private NonSourceNode<U> selected;
-
     FlatMapNode(ReactiveDag scope, Node<T> source, Func1<T, NonSourceNode<U>> map) {
       this.scope = scope;
       this.source = source;
@@ -263,28 +259,23 @@ public class ReactiveDag {
 
     @Override
     public U get() {
-      ensureUpdated(scope.getVersion());
-      return value;
+      return ensureUpdated(scope.getVersion());
     }
 
     @Override
-    public void ensureUpdated(long globalVersion) {
-      if (version >= globalVersion) {
-        return;
+    public U ensureUpdated(long globalVersion) {
+      if (version < globalVersion) {
+        // First ensure the source itself is current.
+        T input = source.ensureUpdated(globalVersion);
+        // The selected dependency may have changed, so apply the selector.
+        var selected = map.apply(input);
+        // Now ensure the selected node is current.
+        value = selected.ensureUpdated(globalVersion);
+
+        version = globalVersion;
       }
 
-      // First ensure the selector itself is current.
-      source.ensureUpdated(globalVersion);
-      T input = source.get();
-
-      // The selected dependency may have changed.
-      selected = map.apply(input);
-
-      // Now ensure the selected node is current.
-      selected.ensureUpdated(globalVersion);
-      value = selected.get();
-
-      version = globalVersion;
+      return value;
     }
   }
 
