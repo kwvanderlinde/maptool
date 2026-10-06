@@ -137,16 +137,23 @@ public class ReactiveDag {
   // TODO Internally to ReactiveDag, assume all `Node<T>` are actually AbstractNode<T>.
   // TODO I guess we don't really need the Node<T> interface then, do we?
 
-  public final class SourceNode<T> implements Node<T> {
+  public abstract class Node<T> {
+    public final ReactiveDag getScope() {
+      return ReactiveDag.this;
+    }
+
+    public abstract T get();
+
+    // This is a leaky part of the abstraction, so don't use it if you don't have to.
+    @Deprecated
+    public abstract T ensureUpdated(long globalVersion);
+  }
+
+  public final class SourceNode<T> extends Node<T> {
     private T value;
 
     SourceNode(T initialValue) {
       this.value = initialValue;
-    }
-
-    @Override
-    public ReactiveDag getScope() {
-      return ReactiveDag.this;
     }
 
     @Override
@@ -165,12 +172,7 @@ public class ReactiveDag {
     }
   }
 
-  public abstract class NonSourceNode<T> implements Node<T> {
-    @Override
-    public ReactiveDag getScope() {
-      return ReactiveDag.this;
-    }
-  }
+  public abstract class NonSourceNode<T> extends Node<T> {}
 
   private final class ConstantNode<T> extends NonSourceNode<T> {
     private final T initialValue;
