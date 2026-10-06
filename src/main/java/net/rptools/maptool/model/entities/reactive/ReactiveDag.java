@@ -208,6 +208,7 @@ public class ReactiveDag {
 
     public void set(T value) {
       this.value = value;
+      getScope().bumpVersion();
     }
 
     @Override
