@@ -127,9 +127,11 @@ public class ReactiveDag {
   }
 
   public <T, U> NonSourceNode<U> flatMap(Node<T> source, Func1<T, NonSourceNode<U>> map) {
-    mergeFrom(source.getScope());
+    return flatten(map(source, map));
+  }
 
-    return new FlatMapNode<>(source, map);
+  public <T> NonSourceNode<T> flatten(Node<? extends Node<T>> nested) {
+    return new FlattenNode<>(nested);
   }
 
   // region Reactive node implementations
@@ -178,9 +180,7 @@ public class ReactiveDag {
      */
     protected long version = Long.MIN_VALUE;
 
-    /**
-     * The last computed value of the node.
-     */
+    /** The last computed value of the node. */
     protected T value;
   }
 
@@ -224,23 +224,19 @@ public class ReactiveDag {
     }
   }
 
-  private final class FlatMapNode<T, U> extends NonSourceNode<U> {
-    private final Node<T> source;
-    private final Func1<T, NonSourceNode<U>> map;
+  private final class FlattenNode<T> extends NonSourceNode<T> {
+    private final Node<? extends Node<T>> source;
 
-    FlatMapNode(Node<T> source, Func1<T, NonSourceNode<U>> map) {
+    FlattenNode(Node<? extends Node<T>> source) {
       this.source = source;
-      this.map = map;
     }
 
     @Override
-    public U ensureUpdated(long globalVersion) {
+    public T ensureUpdated(long globalVersion) {
       if (version < globalVersion) {
-        // First ensure the source itself is current.
-        T input = source.ensureUpdated(globalVersion);
         // The selected dependency may have changed, so apply the selector.
-        var selected = map.apply(input);
-        // Now ensure the selected node is current.
+        var selected = source.ensureUpdated(globalVersion);
+        // Now sure the selected node is current.
         value = selected.ensureUpdated(globalVersion);
 
         version = globalVersion;
