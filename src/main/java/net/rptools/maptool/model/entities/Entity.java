@@ -20,12 +20,10 @@ import java.util.HashMap;
 import java.util.Map;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.entities.components.Component;
-import net.rptools.maptool.model.entities.components.LayoutComponent;
 import net.rptools.maptool.model.entities.components.LocalId;
 import net.rptools.maptool.model.entities.components.LocalTransformComponent;
 import net.rptools.maptool.model.entities.components.ParentComponent;
 import net.rptools.maptool.model.entities.components.PlacementComponent;
-import net.rptools.maptool.model.entities.components.PogComponent;
 import net.rptools.maptool.model.entities.components.WorldTransformComponent;
 import net.rptools.maptool.model.entities.reactive.Func1;
 import net.rptools.maptool.model.entities.reactive.Func2;
@@ -39,20 +37,6 @@ import net.rptools.maptool.model.entities.reactive.ReactiveDag.SourceNode;
 import org.jspecify.annotations.Nullable;
 
 public class Entity {
-  public static Entity createToken(LayoutComponent layout, PogComponent pog) {
-    var entity = new Entity();
-    entity.placement.set(
-        new PlacementComponent( // Default to top-left being at (0, 0)
-            new Point2D.Double(layout.bounds().getWidth() / 2., layout.bounds().getHeight() / 2.),
-            0.,
-            1.));
-    entity.defineSource(LayoutComponent.class, layout);
-    // TODO Pog should be downstream of image asset selection.
-    entity.defineSource(PogComponent.class, pog);
-
-    return entity;
-  }
-
   private final ReactiveDag dag;
   private final Map<Class<?>, SourceNode<?>> sourceComponentMap;
   private final Map<Class<?>, Node<?>> componentMap;
