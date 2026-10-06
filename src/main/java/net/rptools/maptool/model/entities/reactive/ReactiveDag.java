@@ -129,7 +129,7 @@ public class ReactiveDag {
   public <T, U> NonSourceNode<U> flatMap(Node<T> source, Func1<T, NonSourceNode<U>> map) {
     mergeFrom(source.getScope());
 
-    return new FlatMapNode<>(this, source, map);
+    return new FlatMapNode<>(source, map);
   }
 
   // region Reactive node implementations
@@ -237,9 +237,6 @@ public class ReactiveDag {
   }
 
   private final class FlatMapNode<T, U> extends NonSourceNode<U> {
-    /** The parent DAG to which this node belongs. */
-    private final ReactiveDag scope;
-
     /**
      * The latest DAG version against which this node was validated or recomputed.
      *
@@ -253,15 +250,14 @@ public class ReactiveDag {
     private final Node<T> source;
     private final Func1<T, NonSourceNode<U>> map;
 
-    FlatMapNode(ReactiveDag scope, Node<T> source, Func1<T, NonSourceNode<U>> map) {
-      this.scope = scope;
+    FlatMapNode(Node<T> source, Func1<T, NonSourceNode<U>> map) {
       this.source = source;
       this.map = map;
     }
 
     @Override
     public U get() {
-      return ensureUpdated(scope.getVersion());
+      return ensureUpdated(getScope().getVersion());
     }
 
     @Override
