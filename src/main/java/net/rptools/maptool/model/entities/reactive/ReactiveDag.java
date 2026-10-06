@@ -137,16 +137,35 @@ public class ReactiveDag {
   // TODO Internally to ReactiveDag, assume all `Node<T>` are actually AbstractNode<T>.
   // TODO I guess we don't really need the Node<T> interface then, do we?
 
-  private abstract class AbstractNode<T> implements Node<T> {
+  public final class SourceNode<T> implements Node<T> {
+    private T value;
+
+    SourceNode(T initialValue) {
+      this.value = initialValue;
+    }
 
     @Override
     public ReactiveDag getScope() {
       return ReactiveDag.this;
     }
+
+    @Override
+    public T get() {
+      return this.value;
+    }
+
+    public void set(T value) {
+      this.value = value;
+      getScope().bumpVersion();
+    }
+
+    @Override
+    public void ensureUpdated(long globalVersion) {
+      // Nothing to do except bump the version.
+    }
   }
 
-  private abstract class AbstractRegularNode<T> extends AbstractNode<T>
-      implements NonSourceNode<T> {
+  public abstract class NonSourceNode<T> implements Node<T> {
     /**
      * The latest DAG version against which this node was validated or recomputed.
      *
@@ -156,6 +175,14 @@ public class ReactiveDag {
     protected long version = Long.MIN_VALUE;
 
     protected T value;
+
+    @Override
+    public ReactiveDag getScope() {
+      return ReactiveDag.this;
+    }
+  }
+
+  private abstract class AbstractRegularNode<T> extends NonSourceNode<T> {
 
     protected abstract T recompute();
 
@@ -189,35 +216,7 @@ public class ReactiveDag {
     }
   }
 
-  public final class SourceNode<T> implements Node<T> {
-    private T value;
-
-    SourceNode(T initialValue) {
-      this.value = initialValue;
-    }
-
-    @Override
-    public ReactiveDag getScope() {
-      return ReactiveDag.this;
-    }
-
-    @Override
-    public T get() {
-      return this.value;
-    }
-
-    public void set(T value) {
-      this.value = value;
-      getScope().bumpVersion();
-    }
-
-    @Override
-    public void ensureUpdated(long globalVersion) {
-      // Nothing to do except bump the version.
-    }
-  }
-
-  private final class ConstantNode<T> extends AbstractRegularNode<T> implements NonSourceNode<T> {
+  private final class ConstantNode<T> extends AbstractRegularNode<T> {
     private final T initialValue;
 
     ConstantNode(T initialValue) {
@@ -235,7 +234,7 @@ public class ReactiveDag {
     }
   }
 
-  private final class TransformNode<T> extends AbstractRegularNode<T> implements NonSourceNode<T> {
+  private final class TransformNode<T> extends AbstractRegularNode<T> {
     private final List<Node<?>> dependencies;
     private final Supplier<T> valueSupplier;
 
@@ -255,7 +254,7 @@ public class ReactiveDag {
     }
   }
 
-  private final class FlatMapNode<T, U> extends AbstractNode<U> implements NonSourceNode<U> {
+  private final class FlatMapNode<T, U> extends NonSourceNode<U> {
     /** The parent DAG to which this node belongs. */
     private final ReactiveDag scope;
 
