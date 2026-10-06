@@ -45,10 +45,10 @@ public class ReactiveDag {
       return;
     }
 
-    this.version = Math.max(this.version, other.version);
     // The nodes from `other` must now point to `this`.
     for (var node : other.nodes) {
       node.scope = this;
+      node.resetVersion();
     }
     // Allow discovering all those nodes as well.
     this.nodes.addAll(other.nodes);
@@ -157,6 +157,8 @@ public class ReactiveDag {
 
     // This is a leaky part of the abstraction, so don't use it if you don't have to.
     protected abstract T ensureUpdated(long globalVersion);
+
+    protected void resetVersion() {}
   }
 
   public static final class SourceNode<T> extends Node<T> {
@@ -193,6 +195,11 @@ public class ReactiveDag {
 
     protected NonSourceNode(ReactiveDag dag) {
       super(dag);
+    }
+
+    @Override
+    protected void resetVersion() {
+      version = Long.MIN_VALUE;
     }
   }
 
