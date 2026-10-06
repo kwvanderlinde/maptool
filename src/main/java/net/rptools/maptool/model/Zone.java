@@ -544,6 +544,23 @@ public class Zone {
       entityManager.adopt(exampleEntity5);
     }
 
+    {
+      // Real tokens!!!!
+      var parent = new Token("parent", new MD5Key("87f4e9bfa4f1f3db250b57b3599fa4e9"));
+      var child = new Token("child", new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"));
+      // TODO This doesn't really set everything up, does it?
+      putToken(parent);
+      putToken(child);
+
+      parent.setX(200);
+      parent.setY(200);
+
+      child.setX(400);
+      child.setY(200);
+
+      child.getEntity().parent.set(new ParentComponent(parent.getEntity()));
+    }
+
     SwingUtilities.invokeLater(() -> this.renderLoop(System.nanoTime()));
   }
 
