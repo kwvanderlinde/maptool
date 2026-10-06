@@ -164,39 +164,41 @@ public class ReactiveDag {
 
     @Override
     public T ensureUpdated(long globalVersion) {
+      // Nothing to do: value only updates explicitly in `#set()`.
       return value;
     }
   }
 
-  public abstract class NonSourceNode<T> extends Node<T> {}
-
-  private final class ConstantNode<T> extends NonSourceNode<T> {
-    private final T initialValue;
-
-    ConstantNode(T initialValue) {
-      this.initialValue = initialValue;
-    }
-
-    @Override
-    public T ensureUpdated(long globalVersion) {
-      // Nothing to do.
-      return initialValue;
-    }
-  }
-
-  private final class TransformNode<T> extends NonSourceNode<T> {
-    private final List<Node<?>> dependencies;
-    private final Supplier<T> valueSupplier;
-
+  public abstract class NonSourceNode<T> extends Node<T> {
     /**
      * The latest DAG version against which this node was validated or recomputed.
      *
      * <p>This initial version will never be held by the scope, so always triggers an update on the
      * first read.
      */
-    private long version = Long.MIN_VALUE;
+    protected long version = Long.MIN_VALUE;
 
-    private T value;
+    /**
+     * The last computed value of the node.
+     */
+    protected T value;
+  }
+
+  private final class ConstantNode<T> extends NonSourceNode<T> {
+    ConstantNode(T initialValue) {
+      this.value = initialValue;
+    }
+
+    @Override
+    public T ensureUpdated(long globalVersion) {
+      // Nothing to do.
+      return this.value;
+    }
+  }
+
+  private final class TransformNode<T> extends NonSourceNode<T> {
+    private final List<Node<?>> dependencies;
+    private final Supplier<T> valueSupplier;
 
     TransformNode(List<Node<?>> dependencies, Supplier<T> valueSupplier) {
       this.dependencies = dependencies;
@@ -223,16 +225,6 @@ public class ReactiveDag {
   }
 
   private final class FlatMapNode<T, U> extends NonSourceNode<U> {
-    /**
-     * The latest DAG version against which this node was validated or recomputed.
-     *
-     * <p>This initial version will never be held by the scope, so always triggers an update on the
-     * first read.
-     */
-    private long version = Long.MIN_VALUE;
-
-    private U value;
-
     private final Node<T> source;
     private final Func1<T, NonSourceNode<U>> map;
 
