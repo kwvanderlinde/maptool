@@ -152,7 +152,8 @@ public class Entity {
     return (Node<T>) componentMap.get(type);
   }
 
-  public final <T extends Record & Component> @Nullable ReactiveDag.SourceNode<T> getSource(Class<T> type) {
+  public final <T extends Record & Component> @Nullable ReactiveDag.SourceNode<T> getSource(
+      Class<T> type) {
     return (ReactiveDag.SourceNode<T>) sourceComponentMap.get(type);
   }
 

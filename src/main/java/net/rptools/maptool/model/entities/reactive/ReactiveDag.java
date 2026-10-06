@@ -138,15 +138,6 @@ public class ReactiveDag {
   // TODO I guess we don't really need the Node<T> interface then, do we?
 
   private abstract class AbstractNode<T> implements Node<T> {
-    /**
-     * The latest DAG version against which this node was validated or recomputed.
-     *
-     * <p>This initial version will never be held by the scope, so always triggers an update on the
-     * first read.
-     */
-    protected long version = Long.MIN_VALUE;
-
-    protected T value;
 
     @Override
     public ReactiveDag getScope() {
@@ -156,6 +147,15 @@ public class ReactiveDag {
 
   private abstract class AbstractRegularNode<T> extends AbstractNode<T>
       implements NonSourceNode<T> {
+    /**
+     * The latest DAG version against which this node was validated or recomputed.
+     *
+     * <p>This initial version will never be held by the scope, so always triggers an update on the
+     * first read.
+     */
+    protected long version = Long.MIN_VALUE;
+
+    protected T value;
 
     protected abstract T recompute();
 
@@ -189,7 +189,9 @@ public class ReactiveDag {
     }
   }
 
-  public final class SourceNode<T> extends AbstractNode<T> {
+  public final class SourceNode<T> implements Node<T> {
+    private T value;
+
     SourceNode(T initialValue) {
       this.value = initialValue;
     }
@@ -206,13 +208,11 @@ public class ReactiveDag {
 
     public void set(T value) {
       this.value = value;
-      this.version = getScope().bumpVersion();
     }
 
     @Override
     public void ensureUpdated(long globalVersion) {
       // Nothing to do except bump the version.
-      this.version = globalVersion;
     }
   }
 
@@ -257,6 +257,16 @@ public class ReactiveDag {
   private final class FlatMapNode<T, U> extends AbstractNode<U> implements NonSourceNode<U> {
     /** The parent DAG to which this node belongs. */
     private final ReactiveDag scope;
+
+    /**
+     * The latest DAG version against which this node was validated or recomputed.
+     *
+     * <p>This initial version will never be held by the scope, so always triggers an update on the
+     * first read.
+     */
+    private long version = Long.MIN_VALUE;
+
+    private U value;
 
     private final Node<T> source;
     private final Func1<T, NonSourceNode<U>> map;
