@@ -60,8 +60,8 @@ public class ReactiveDag {
     other.impl = this.impl;
   }
 
-  public long bumpVersion() {
-    return ++this.impl.version;
+  private void bumpVersion() {
+    ++this.impl.version;
   }
 
   public long getVersion() {
@@ -136,10 +136,7 @@ public class ReactiveDag {
 
   // region Reactive node implementations
 
-  // TODO Internally to ReactiveDag, assume all `Node<T>` are actually AbstractNode<T>.
-  // TODO I guess we don't really need the Node<T> interface then, do we?
-
-  public abstract class Node<T> {
+  public abstract sealed class Node<T> permits SourceNode, NonSourceNode {
     public final ReactiveDag getScope() {
       return ReactiveDag.this;
     }
@@ -171,7 +168,7 @@ public class ReactiveDag {
     }
   }
 
-  public abstract class NonSourceNode<T> extends Node<T> {
+  public abstract non-sealed class NonSourceNode<T> extends Node<T> {
     /**
      * The latest DAG version against which this node was validated or recomputed.
      *
