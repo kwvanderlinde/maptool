@@ -16,6 +16,7 @@ package net.rptools.maptool.model.entities.reactive;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class ReactiveDag {
@@ -172,6 +173,10 @@ public class ReactiveDag {
     public void set(T value) {
       this.value = value;
       getScope().bumpVersion();
+    }
+
+    public void mutate(Function<T, T> mutator) {
+      this.value = mutator.apply(this.value);
     }
 
     @Override
