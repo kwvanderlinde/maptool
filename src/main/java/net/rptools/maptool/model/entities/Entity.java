@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.entities.components.Component;
-import net.rptools.maptool.model.entities.components.LocalId;
 import net.rptools.maptool.model.entities.components.LocalTransformComponent;
 import net.rptools.maptool.model.entities.components.ParentComponent;
 import net.rptools.maptool.model.entities.components.ParentReferenceComponent;
@@ -44,7 +43,7 @@ public class Entity {
 
   // TODO id can just be a static, non-reactive property. It shouldn't be able to change, so nothing
   //  should derive from it either. At the very least, make it a ConstantNode (NonSourceNode).
-  public final SourceNode<LocalId> id;
+  public final GUID id;
   public final SourceNode<PlacementComponent> placement;
   public final NonSourceNode<LocalTransformComponent> localTransform;
   public final NonSourceNode<WorldTransformComponent> worldTransform;
@@ -63,7 +62,6 @@ public class Entity {
     sourceComponentMap = new HashMap<>();
     componentMap = new HashMap<>();
 
-    id = defineSource(LocalId.class, new LocalId(GUID.random()));
     entityResolver = dag.source(new EntityResolver(dag));
     parentRef = defineSource(ParentReferenceComponent.class, null);
     parent =
@@ -122,6 +120,14 @@ public class Entity {
 
               return new WorldTransformComponent(worldTransform);
             });
+  }
+
+  public Entity() {
+    this(GUID.random());
+  }
+
+  public Entity(GUID localId) {
+    this.id = localId;
   }
 
   public final <T extends Record & Component> @Nullable T getValue(Class<T> type) {

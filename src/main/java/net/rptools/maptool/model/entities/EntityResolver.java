@@ -53,8 +53,7 @@ public class EntityResolver {
   }
 
   public @Nullable Entity add(Entity entity) {
-    var id = entity.id.get().id();
-    var oldEntity = knownEntities.put(id, entity);
+    var oldEntity = knownEntities.put(entity.id, entity);
     if (oldEntity != entity) {
       updated();
     }
