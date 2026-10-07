@@ -17,7 +17,6 @@ package net.rptools.maptool.model.entities;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.entities.components.CameraComponent;
@@ -33,21 +32,18 @@ public class EntityManager {
   }
 
   public List<Entity> getAllEntities() {
-    return Collections.unmodifiableList(entities);
+    return entityResolver.getAll();
   }
 
   public void adopt(Entity entity) {
     entity.entityResolver.set(entityResolver);
     entityResolver.add(entity);
-
-    this.entities.add(entity);
   }
 
   public void disavow(GUID id) {
     var entity = entityResolver.remove(id);
     if (entity != null) {
       entity.entityResolver.set(new EntityResolver());
-      entities.remove(entity);
     }
   }
 
