@@ -55,9 +55,10 @@ import net.rptools.maptool.model.entities.TokenEntity;
 import net.rptools.maptool.model.entities.components.Component;
 import net.rptools.maptool.model.entities.components.GridComponent;
 import net.rptools.maptool.model.entities.components.LayoutComponent;
-import net.rptools.maptool.model.entities.components.ParentComponent;
+import net.rptools.maptool.model.entities.components.ParentReferenceComponent;
 import net.rptools.maptool.model.entities.components.PlacementComponent;
 import net.rptools.maptool.model.entities.components.PogComponent;
+import net.rptools.maptool.model.entities.reactive.ReactiveDag;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.tokens.TokenMacroChanged;
 import net.rptools.maptool.model.tokens.TokenPanelChanged;
@@ -446,6 +447,7 @@ public class Zone {
   private transient Map<String, Integer> tokenNumberCache;
 
   private transient EntityManager entityManager;
+
   private transient Entity cameraEntity;
   private transient Entity mapEntity;
   private transient Entity gridEntity;
@@ -463,6 +465,7 @@ public class Zone {
     drawablesByLayer.put(Layer.OBJECT, objectDrawables);
     drawablesByLayer.put(Layer.BACKGROUND, backgroundDrawables);
 
+    var dag = new ReactiveDag();
     {
       entityManager = new EntityManager();
     }
@@ -475,7 +478,7 @@ public class Zone {
     }
     {
       gridEntity = entityManager.spawn();
-      gridEntity.parent.set(new ParentComponent(mapEntity));
+      gridEntity.parentRef.set(new ParentReferenceComponent(mapEntity.id.get().id()));
       gridEntity.defineSource(
           GridComponent.class,
           new GridComponent(GridComponent.Type.Square, 100, 100, Color.black, 1.));
@@ -487,7 +490,7 @@ public class Zone {
               new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)),
               new PogComponent(new MD5Key("87f4e9bfa4f1f3db250b57b3599fa4e9"), 0.15));
       exampleEntity.defineSource(Trajectory.class, new Trajectory(0.75));
-      exampleEntity.parent.set(new ParentComponent(mapEntity));
+      exampleEntity.parentRef.set(new ParentReferenceComponent(mapEntity.id.get().id()));
       entityManager.adopt(exampleEntity);
     }
     {
@@ -497,7 +500,7 @@ public class Zone {
               new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity2.placement.set(new PlacementComponent(new Point2D.Double(-50, -50), 0., 1.));
       exampleEntity2.defineSource(Trajectory.class, new Trajectory(1.5));
-      exampleEntity2.parent.set(new ParentComponent(exampleEntity));
+      exampleEntity2.parentRef.set(new ParentReferenceComponent(exampleEntity.id.get().id()));
       entityManager.adopt(exampleEntity2);
     }
     {
@@ -507,7 +510,7 @@ public class Zone {
               new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity3.placement.set(new PlacementComponent(new Point2D.Double(50, -50), 0., 1.));
       exampleEntity3.defineSource(Trajectory.class, new Trajectory(1.5));
-      exampleEntity3.parent.set(new ParentComponent(exampleEntity));
+      exampleEntity3.parentRef.set(new ParentReferenceComponent(exampleEntity.id.get().id()));
       entityManager.adopt(exampleEntity3);
     }
     {
@@ -517,7 +520,7 @@ public class Zone {
               new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity4.placement.set(new PlacementComponent(new Point2D.Double(50, 50), 0., 1.));
       exampleEntity4.defineSource(Trajectory.class, new Trajectory(1.5));
-      exampleEntity4.parent.set(new ParentComponent(exampleEntity));
+      exampleEntity4.parentRef.set(new ParentReferenceComponent(exampleEntity.id.get().id()));
       entityManager.adopt(exampleEntity4);
     }
     {
@@ -527,7 +530,7 @@ public class Zone {
               new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity5.placement.set(new PlacementComponent(new Point2D.Double(-50, 50), 0., 1.));
       exampleEntity5.defineSource(Trajectory.class, new Trajectory(1.5));
-      exampleEntity5.parent.set(new ParentComponent(exampleEntity));
+      exampleEntity5.parentRef.set(new ParentReferenceComponent(exampleEntity.id.get().id()));
       entityManager.adopt(exampleEntity5);
     }
 
@@ -545,7 +548,10 @@ public class Zone {
       child.setX(400);
       child.setY(200);
 
-      child.getEntity().parent.set(new ParentComponent(parent.getEntity()));
+      child
+          .getEntity()
+          .parentRef
+          .set(new ParentReferenceComponent(parent.getEntity().id.get().id()));
     }
 
     SwingUtilities.invokeLater(() -> this.renderLoop(System.nanoTime()));
@@ -1676,6 +1682,7 @@ public class Zone {
   public void putToken(Token token) {
     boolean newToken = !tokenMap.containsKey(token.getId());
 
+    entityManager.adopt(token.getEntity());
     tokenMap.put(token.getId(), token);
 
     // LATER: optimize this
@@ -1715,7 +1722,6 @@ public class Zone {
    *
    * @param tokens List of Tokens to be added to this zone
    */
-  @Deprecated
   public void putTokens(List<Token> tokens) {
     Collection<Token> values = tokenMap.values();
 
@@ -1726,6 +1732,7 @@ public class Zone {
     changedTokens.retainAll(values);
 
     for (Token t : tokens) {
+      entityManager.adopt(t.getEntity());
       tokenMap.put(t.getId(), t);
     }
     tokenOrderedList.removeAll(tokens);
@@ -1746,6 +1753,8 @@ public class Zone {
    * @param id the id of the token
    */
   public void removeToken(GUID id) {
+    entityManager.disavow(id);
+
     Token token = tokenMap.remove(id);
     if (token != null) {
       tokenOrderedList.remove(token);
@@ -1764,6 +1773,7 @@ public class Zone {
     List<Token> removedTokens = new ArrayList<>();
     if (ids != null) {
       for (GUID id : ids) {
+        entityManager.disavow(id);
         Token token = tokenMap.remove(id);
         if (token != null) {
           tokenOrderedList.remove(token);
@@ -2239,6 +2249,7 @@ public class Zone {
   // Backward compatibility
   @SuppressWarnings("ConstantConditions")
   protected Object readResolve() {
+    var dag = new ReactiveDag();
     entityManager = new EntityManager();
     {
       mapEntity = entityManager.spawn();
@@ -2248,7 +2259,7 @@ public class Zone {
     }
     {
       gridEntity = entityManager.spawn();
-      gridEntity.parent.set(new ParentComponent(mapEntity));
+      gridEntity.parentRef.set(new ParentReferenceComponent(mapEntity.id.get().id()));
       // entityManager.getParentageApi().setParentTo(gridEntity, mapEntity);
       gridEntity.defineSource(
           GridComponent.class,
@@ -2473,6 +2484,7 @@ public class Zone {
         .map(t -> Token.fromDto(t))
         .forEach(
             t -> {
+              zone.entityManager.adopt(t.getEntity());
               zone.tokenMap.put(t.getId(), t);
               zone.tokenOrderedList.add(t);
             });

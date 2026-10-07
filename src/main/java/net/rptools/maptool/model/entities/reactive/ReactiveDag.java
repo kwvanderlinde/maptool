@@ -180,7 +180,7 @@ public class ReactiveDag {
     }
 
     @Override
-    public T ensureUpdated(long globalVersion) {
+    protected T ensureUpdated(long globalVersion) {
       // Nothing to do: value only updates explicitly in `#set()`.
       return value;
     }
@@ -215,7 +215,7 @@ public class ReactiveDag {
     }
 
     @Override
-    public T ensureUpdated(long globalVersion) {
+    protected T ensureUpdated(long globalVersion) {
       // Nothing to do.
       return this.value;
     }
@@ -236,7 +236,7 @@ public class ReactiveDag {
     }
 
     @Override
-    public T ensureUpdated(long globalVersion) {
+    protected T ensureUpdated(long globalVersion) {
       if (version < globalVersion) {
         for (var dependency : dependencies) {
           var ignored = dependency.ensureUpdated(globalVersion);
@@ -259,7 +259,7 @@ public class ReactiveDag {
     }
 
     @Override
-    public T ensureUpdated(long globalVersion) {
+    protected T ensureUpdated(long globalVersion) {
       if (version < globalVersion) {
         // The selected dependency may have changed, so apply the selector.
         var selected = source.ensureUpdated(globalVersion);

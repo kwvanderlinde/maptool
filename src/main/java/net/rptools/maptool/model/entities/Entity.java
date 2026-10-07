@@ -42,17 +42,21 @@ public class Entity {
   private final Map<Class<?>, SourceNode<?>> sourceComponentMap;
   private final Map<Class<?>, Node<?>> componentMap;
 
+  // TODO id can just be a static, non-reactive property. It shouldn't be able to change, so nothing
+  //  should derive from it either. At the very least, make it a ConstantNode (NonSourceNode).
   public final SourceNode<LocalId> id;
   public final SourceNode<PlacementComponent> placement;
   public final NonSourceNode<LocalTransformComponent> localTransform;
   public final NonSourceNode<WorldTransformComponent> worldTransform;
 
   // Dynamic dependencies.
+  public final SourceNode<EntityResolver> entityResolver;
+
   /** Necessary evil for transmitting parent data over the wire. */
   public final SourceNode<@Nullable ParentReferenceComponent> parentRef;
 
   /** The actual parent entity. */
-  public final SourceNode<@Nullable ParentComponent> parent;
+  public final NonSourceNode<@Nullable ParentComponent> parent;
 
   {
     dag = new ReactiveDag();
@@ -60,8 +64,26 @@ public class Entity {
     componentMap = new HashMap<>();
 
     id = defineSource(LocalId.class, new LocalId(GUID.random()));
+    entityResolver = dag.source(new EntityResolver(dag));
     parentRef = defineSource(ParentReferenceComponent.class, null);
-    parent = defineSource(ParentComponent.class, null);
+    parent =
+        derive(
+            ParentComponent.class,
+            entityResolver,
+            dag.flatten(dag.map(entityResolver, er -> er.getVersion())),
+            parentRef,
+            (EntityResolver resolver, Long resolverVersion, ParentReferenceComponent parentRef) -> {
+              if (parentRef == null) {
+                return null;
+              }
+
+              var parent = resolver.resolve(parentRef.parentLocalId()).orElse(null);
+              if (parent == null) {
+                return null;
+              }
+
+              return new ParentComponent(parent);
+            });
     // Special transform to fallback to when there is no parent.
     var noParentWorldTransform = dag.constant(new WorldTransformComponent(new AffineTransform()));
     var parentWorldTransform =
