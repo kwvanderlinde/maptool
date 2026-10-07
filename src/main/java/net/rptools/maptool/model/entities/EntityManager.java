@@ -19,20 +19,36 @@ import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.entities.components.CameraComponent;
 import net.rptools.maptool.model.entities.components.PlacementComponent;
 
 public class EntityManager {
   // TODO Z-order management.
   private final List<Entity> entities = new ArrayList<>();
+  private final EntityResolver entityResolver = new EntityResolver();
+
+  public EntityResolver getEntityResolver() {
+    return entityResolver;
+  }
 
   public List<Entity> getAllEntities() {
     return Collections.unmodifiableList(entities);
   }
 
   public void adopt(Entity entity) {
-    // TODO Ensure the entity has a local id, and store it in a lookup map.
+    entity.entityResolver.set(entityResolver);
+    entityResolver.add(entity);
+
     this.entities.add(entity);
+  }
+
+  public void disavow(GUID id) {
+    var entity = entityResolver.remove(id);
+    if (entity != null) {
+      entity.entityResolver.set(new EntityResolver());
+      entities.remove(entity);
+    }
   }
 
   public Entity spawn() {
