@@ -41,6 +41,15 @@ public class GUID implements Serializable, Comparable<GUID> {
     return new GUID(new byte[16]);
   }
 
+  public static GUID fromBytes(byte[] bytes) {
+    if (bytes.length != GUID_LENGTH) {
+      throw new IllegalArgumentException(
+          String.format("A GUID must be %d bytes in length", GUID_LENGTH));
+    }
+
+    return new GUID(bytes);
+  }
+
   private final byte[] baGUID;
 
   // Cache of the hashCode for a GUID

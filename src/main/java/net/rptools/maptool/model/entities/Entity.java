@@ -23,6 +23,7 @@ import net.rptools.maptool.model.entities.components.Component;
 import net.rptools.maptool.model.entities.components.LocalId;
 import net.rptools.maptool.model.entities.components.LocalTransformComponent;
 import net.rptools.maptool.model.entities.components.ParentComponent;
+import net.rptools.maptool.model.entities.components.ParentReferenceComponent;
 import net.rptools.maptool.model.entities.components.PlacementComponent;
 import net.rptools.maptool.model.entities.components.WorldTransformComponent;
 import net.rptools.maptool.model.entities.reactive.Func1;
@@ -47,6 +48,10 @@ public class Entity {
   public final NonSourceNode<WorldTransformComponent> worldTransform;
 
   // Dynamic dependencies.
+  /** Necessary evil for transmitting parent data over the wire. */
+  public final SourceNode<@Nullable ParentReferenceComponent> parentRef;
+
+  /** The actual parent entity. */
   public final SourceNode<@Nullable ParentComponent> parent;
 
   {
@@ -55,6 +60,7 @@ public class Entity {
     componentMap = new HashMap<>();
 
     id = defineSource(LocalId.class, new LocalId(GUID.random()));
+    parentRef = defineSource(ParentReferenceComponent.class, null);
     parent = defineSource(ParentComponent.class, null);
     // Special transform to fallback to when there is no parent.
     var noParentWorldTransform = dag.constant(new WorldTransformComponent(new AffineTransform()));
