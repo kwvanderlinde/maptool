@@ -54,6 +54,7 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.entities.Entity;
 import net.rptools.maptool.model.entities.TokenEntity;
 import net.rptools.maptool.model.entities.components.LayoutComponent;
+import net.rptools.maptool.model.entities.components.PlacementComponent;
 import net.rptools.maptool.model.sheet.stats.StatSheetProperties;
 import net.rptools.maptool.server.Mapper;
 import net.rptools.maptool.server.proto.TerrainModifierOperationDto;
@@ -252,8 +253,16 @@ public class Token implements Cloneable {
 
   // endregion
 
-  private int x;
-  private int y;
+  /**
+   * @deprecated Now represented by the entity's PlacementComponent
+   */
+  @Deprecated private int x;
+
+  /**
+   * @deprecated Now represented by the entity's PlacementComponent
+   */
+  @Deprecated private int y;
+
   private int z;
   private Integer facing = null;
 
@@ -403,7 +412,7 @@ public class Token implements Cloneable {
 
   private boolean allowURIAccess = false;
 
-  private transient Entity entity =
+  private transient TokenEntity entity =
       new TokenEntity(new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)), null);
 
   /**
@@ -427,8 +436,7 @@ public class Token implements Cloneable {
   public Token(Token token) {
     this(token.name, token.getImageAssetId());
 
-    x = token.x;
-    y = token.y;
+    entity.placement.set(token.entity.placement.get());
     z = token.z;
 
     snapToScale = token.snapToScale;
@@ -1336,19 +1344,29 @@ public class Token implements Cloneable {
   }
 
   public int getX() {
-    return x;
+    return (int) entity.placement.get().position().getX();
   }
 
   public int getY() {
-    return y;
+    return (int) entity.placement.get().position().getY();
   }
 
   public void setX(int x) {
-    this.x = x;
+    entity.placement.mutate(
+        placement ->
+            new PlacementComponent(
+                new Point2D.Double(x, placement.position().getY()),
+                placement.rotation(),
+                placement.scale()));
   }
 
   public void setY(int y) {
-    this.y = y;
+    entity.placement.mutate(
+        placement ->
+            new PlacementComponent(
+                new Point2D.Double(placement.position().getX(), y),
+                placement.rotation(),
+                placement.scale()));
   }
 
   public void setLastPath(Path<? extends AbstractPoint> path) {
@@ -2332,10 +2350,13 @@ public class Token implements Cloneable {
    * @param td Read the values from this transfer object.
    */
   public Token(TokenTransferData td) {
+    double x = 0, y = 0;
     if (td.getLocation() != null) {
       x = td.getLocation().x;
       y = td.getLocation().y;
     }
+    entity.placement.set(new PlacementComponent(new Point2D.Double(x, y), 0., 1.));
+
     snapToScale = getBoolean(td, TokenTransferData.SNAP_TO_SCALE, true);
     scaleX = getInt(td, TokenTransferData.WIDTH, 1);
     scaleY = getInt(td, TokenTransferData.HEIGHT, 1);
@@ -2674,6 +2695,7 @@ public class Token implements Cloneable {
     }
 
     entity = new TokenEntity(new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)), null);
+    entity.placement.set(new PlacementComponent(new Point2D.Double(x, y), 0., 1.));
 
     return this;
   }
@@ -3015,8 +3037,9 @@ public class Token implements Cloneable {
     token.id = GUID.valueOf(dto.getId());
     token.beingImpersonated = dto.getBeingImpersonated();
     token.exposedAreaGUID = GUID.valueOf(dto.getExposedAreaGuid());
-    token.x = dto.getX();
-    token.y = dto.getY();
+    if (dto.hasPlacement()) {
+      token.entity.placement.set(PlacementComponent.fromDto(dto.getPlacement()));
+    }
     token.z = dto.getZ();
     token.lastPath = dto.hasLastPath() ? Path.fromDto(dto.getLastPath()) : null;
     token.snapToScale = dto.getSnapToScale();
@@ -3121,8 +3144,7 @@ public class Token implements Cloneable {
     dto.setId(id.toString());
     dto.setBeingImpersonated(beingImpersonated);
     dto.setExposedAreaGuid(exposedAreaGUID.toString());
-    dto.setX(x);
-    dto.setY(y);
+    dto.setPlacement(entity.placement.get().toDto());
     dto.setZ(z);
     if (facing != null) {
       dto.setFacing(Int32Value.of(facing));
