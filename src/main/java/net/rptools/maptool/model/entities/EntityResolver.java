@@ -14,7 +14,9 @@
  */
 package net.rptools.maptool.model.entities;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import net.rptools.maptool.model.GUID;
@@ -23,7 +25,6 @@ import org.jspecify.annotations.Nullable;
 
 /** A reactive mapping from entity local IDs to entities. */
 public class EntityResolver {
-  private final ReactiveDag dag;
   private final ReactiveDag.SourceNode<Long> versionPumper;
   private final Map<GUID, Entity> knownEntities = new HashMap<>();
 
@@ -32,7 +33,6 @@ public class EntityResolver {
   }
 
   public EntityResolver(ReactiveDag dag) {
-    this.dag = dag;
     this.versionPumper = dag.source(Long.MIN_VALUE);
   }
 
@@ -42,6 +42,10 @@ public class EntityResolver {
 
   public ReactiveDag.SourceNode<Long> getVersion() {
     return versionPumper;
+  }
+
+  public List<Entity> getAll() {
+    return new ArrayList<>(knownEntities.values());
   }
 
   public Optional<Entity> resolve(GUID localId) {
