@@ -54,6 +54,7 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.entities.Entity;
 import net.rptools.maptool.model.entities.TokenEntity;
 import net.rptools.maptool.model.entities.components.LayoutComponent;
+import net.rptools.maptool.model.entities.components.ParentReferenceComponent;
 import net.rptools.maptool.model.entities.components.PlacementComponent;
 import net.rptools.maptool.model.sheet.stats.StatSheetProperties;
 import net.rptools.maptool.server.Mapper;
@@ -3058,6 +3059,11 @@ public class Token implements Cloneable {
     if (dto.hasPlacement()) {
       token.entity.placement.set(PlacementComponent.fromDto(dto.getPlacement()));
     }
+    if (dto.hasParentRef()) {
+      token.entity.parentRef.set(ParentReferenceComponent.fromDto(dto.getParentRef()));
+    } else {
+      token.entity.parentRef.set(null);
+    }
     token.z = dto.getZ();
     token.lastPath = dto.hasLastPath() ? Path.fromDto(dto.getLastPath()) : null;
     token.snapToScale = dto.getSnapToScale();
@@ -3171,6 +3177,10 @@ public class Token implements Cloneable {
       dto.setCurrentImageAsset(StringValue.of(currentImageAsset));
     }
     dto.setPlacement(entity.placement.get().toDto());
+    var parentRef = entity.parentRef.get();
+    if (parentRef != null) {
+      dto.setParentRef(parentRef.toDto());
+    }
     dto.setZ(z);
     if (facing != null) {
       dto.setFacing(Int32Value.of(facing));

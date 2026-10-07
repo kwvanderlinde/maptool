@@ -464,6 +464,7 @@ message TokenDto {
   repeated string halo_guids = 73;
 
   PlacementDto placement = 74;
+  ParentReferenceDto parentRef = 75;
 }
 
 message PathDto {

@@ -13,6 +13,10 @@ import "google/protobuf/wrappers.proto";
  * protobuf classes end with "Dto" or "Msg".
  */
 
+message ParentReferenceDto {
+  bytes parent_local_id = 1;
+}
+
 message PlacementDto {
   double x = 1;
   double y = 2;
