@@ -18,7 +18,6 @@ import com.google.protobuf.StringValue;
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -53,7 +52,6 @@ import net.rptools.maptool.model.drawing.Pen;
 import net.rptools.maptool.model.entities.Entity;
 import net.rptools.maptool.model.entities.EntityManager;
 import net.rptools.maptool.model.entities.TokenEntity;
-import net.rptools.maptool.model.entities.components.CameraComponent;
 import net.rptools.maptool.model.entities.components.Component;
 import net.rptools.maptool.model.entities.components.GridComponent;
 import net.rptools.maptool.model.entities.components.LayoutComponent;
@@ -469,18 +467,7 @@ public class Zone {
       entityManager = new EntityManager();
     }
     {
-      cameraEntity = entityManager.spawn();
-      cameraEntity.placement.set(new PlacementComponent(new Point2D.Double(0, 0), 0., 1.));
-      cameraEntity.derive(
-          CameraComponent.class,
-          cameraEntity.placement,
-          placement -> {
-            var transform = new AffineTransform();
-            transform.rotate(-placement.rotation());
-            transform.scale(1. / placement.scale(), 1. / placement.scale());
-            transform.translate(-placement.position().getX(), -placement.position().getY());
-            return new CameraComponent(transform);
-          });
+      cameraEntity = entityManager.spawnCamera();
     }
     {
       mapEntity = entityManager.spawn();
