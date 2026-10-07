@@ -16,7 +16,6 @@ package net.rptools.maptool.model.entities;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
-import java.util.ArrayList;
 import java.util.List;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.entities.components.CameraComponent;
@@ -24,7 +23,6 @@ import net.rptools.maptool.model.entities.components.PlacementComponent;
 
 public class EntityManager {
   // TODO Z-order management.
-  private final List<Entity> entities = new ArrayList<>();
   private final EntityResolver entityResolver = new EntityResolver();
 
   public EntityResolver getEntityResolver() {
