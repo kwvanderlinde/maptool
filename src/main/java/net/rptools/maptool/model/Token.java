@@ -33,7 +33,6 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.io.Serializable;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.util.*;
@@ -228,9 +227,6 @@ public class Token implements Cloneable {
     removeHalo,
     addHalo,
   }
-
-  public static final Comparator<Token> NAME_COMPARATOR =
-      (o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName());
 
   private final Map<String, MD5Key> imageAssetMap = new HashMap<>();
   private String currentImageAsset;
@@ -2163,15 +2159,6 @@ public class Token implements Cloneable {
   }
 
   /**
-   * Get a set containing the names of all set properties on this token.
-   *
-   * @return The set of state property names that have a value associated with them.
-   */
-  public Set<String> getStatePropertyNames() {
-    return state.keySet();
-  }
-
-  /**
    * Get a set containing the names of all the states that match the passed value.
    *
    * @param value the value to look for
@@ -2353,52 +2340,6 @@ public class Token implements Cloneable {
    */
   public int getFacingInDegrees() {
     return -getFacing() - 90;
-  }
-
-  /**
-   * Convert the token into a hash map. This is used to ship all of the properties for the token to
-   * other apps that do need access to the <code>Token</code> class.
-   *
-   * @return A map containing the properties of the token.
-   */
-  public TokenTransferData toTransferData() {
-    TokenTransferData td = new TokenTransferData();
-    td.setName(name);
-    td.setPlayers(ownerList);
-    td.setVisible(isVisible);
-    td.setLocation(new Point(x, y));
-    td.setFacing(facing);
-
-    // Set the properties
-    td.put(TokenTransferData.ID, id.toString());
-    td.put(TokenTransferData.ASSET_ID, imageAssetMap.get(null));
-    td.put(TokenTransferData.Z, z);
-    td.put(TokenTransferData.SNAP_TO_SCALE, snapToScale);
-    td.put(TokenTransferData.WIDTH, scaleX);
-    td.put(TokenTransferData.HEIGHT, scaleY);
-    td.put(TokenTransferData.SNAP_TO_GRID, snapToGrid);
-    td.put(TokenTransferData.OWNER_TYPE, ownerType);
-    td.put(TokenTransferData.VISIBLE_OWNER_ONLY, visibleOnlyToOwner);
-    td.put(TokenTransferData.TOKEN_TYPE, tokenShape);
-    td.put(TokenTransferData.NOTES, notes);
-    td.put(TokenTransferData.GM_NOTES, gmNotes);
-    td.put(TokenTransferData.GM_NAME, gmName);
-
-    // Put all of the serializable state into the map
-    for (String key : getStatePropertyNames()) {
-      Object value = getState(key);
-      if (value instanceof Serializable) {
-        td.put(key, value);
-      }
-    }
-    td.putAll(state);
-
-    // Create the image from the asset and add it to the map
-    Image image = ImageManager.getImageAndWait(imageAssetMap.get(null));
-    if (image != null) {
-      td.setToken(new ImageIcon(image)); // Image icon makes it serializable.
-    }
-    return td;
   }
 
   /**
