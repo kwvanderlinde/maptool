@@ -15,6 +15,7 @@
 package net.rptools.maptool.model.entities.components;
 
 import java.awt.geom.Point2D;
+import net.rptools.maptool.server.proto.components.PlacementDto;
 
 /**
  * Defines how an entity is transformed for placement on the map.
@@ -24,4 +25,18 @@ import java.awt.geom.Point2D;
  * @param scale The scale of the entity around its own origin.
  */
 public record PlacementComponent(Point2D position, double rotation, double scale)
-    implements Component {}
+    implements Component {
+  public PlacementDto toDto() {
+    return PlacementDto.newBuilder()
+        .setX(position.getX())
+        .setY(position.getY())
+        .setRotation(rotation)
+        .setScale(scale)
+        .build();
+  }
+
+  public static PlacementComponent fromDto(PlacementDto dto) {
+    return new PlacementComponent(
+        new Point2D.Double(dto.getX(), dto.getY()), dto.getRotation(), dto.getScale());
+  }
+}

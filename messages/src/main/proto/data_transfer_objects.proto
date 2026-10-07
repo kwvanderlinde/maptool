@@ -7,6 +7,7 @@ option java_package = "net.rptools.maptool.server.proto";
 option java_outer_classname = "DataTranferObjectProtos";
 
 import "drawing_dto.proto";
+import "components.proto";
 import "google/protobuf/wrappers.proto";
 /*
  * For easier differentiation between protobuf classes and "normal" classes
@@ -397,8 +398,6 @@ message TokenDto {
   string exposed_area_guid = 3;
   map<string, string> image_asset_map = 4;
   google.protobuf.StringValue current_image_asset = 5;
-  int32 x = 6;
-  int32 y = 7;
   int32 z = 8;
   int32 anchor_x = 9;
   int32 anchor_y = 10;
@@ -463,6 +462,8 @@ message TokenDto {
   string gm_notes_type = 69;
   StatSheetPropertiesDto stat_sheet_properties = 70;
   repeated string halo_guids = 73;
+
+  PlacementDto placement = 74;
 }
 
 message PathDto {
