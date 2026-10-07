@@ -235,8 +235,17 @@ public class Token implements Cloneable {
   private int y;
   private int z;
   private Integer facing = null;
-  private int lastX;
-  private int lastY;
+
+  /**
+   * @deprecated Kept for deserialization backwards compatibility.
+   */
+  @Deprecated private int lastX;
+
+  /**
+   * @deprecated Kept for deserialization backwards compatibility.
+   */
+  @Deprecated private int lastY;
+
   private Path<? extends AbstractPoint> lastPath;
 
   private int anchorX;
@@ -539,7 +548,6 @@ public class Token implements Cloneable {
     // hasSight?
     // height?
     lastPath = null;
-    lastX = lastY = 0;
     // lightSourceList?
     macroMap = null;
     ownerList.clear();
@@ -1343,25 +1351,15 @@ public class Token implements Cloneable {
   }
 
   public void setX(int x) {
-    lastX = this.x;
     this.x = x;
   }
 
   public void setY(int y) {
-    lastY = this.y;
     this.y = y;
   }
 
   public void setLastPath(Path<? extends AbstractPoint> path) {
     lastPath = path;
-  }
-
-  public int getLastY() {
-    return lastY;
-  }
-
-  public int getLastX() {
-    return lastX;
   }
 
   public Path<? extends AbstractPoint> getLastPath() {
@@ -3085,9 +3083,7 @@ public class Token implements Cloneable {
     }
     token.currentImageAsset =
         dto.hasCurrentImageAsset() ? dto.getCurrentImageAsset().getValue() : null;
-    token.lastX = dto.getLastX();
     token.x = dto.getX();
-    token.lastY = dto.getLastY();
     token.y = dto.getY();
     token.z = dto.getZ();
     token.lastPath = dto.hasLastPath() ? Path.fromDto(dto.getLastPath()) : null;
@@ -3201,9 +3197,7 @@ public class Token implements Cloneable {
     if (currentImageAsset != null) {
       dto.setCurrentImageAsset(StringValue.of(currentImageAsset));
     }
-    dto.setLastX(lastX);
     dto.setX(x);
-    dto.setLastY(lastY);
     dto.setY(y);
     dto.setZ(z);
     if (facing != null) {
