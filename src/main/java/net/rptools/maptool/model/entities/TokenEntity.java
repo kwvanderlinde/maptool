@@ -15,6 +15,7 @@
 package net.rptools.maptool.model.entities;
 
 import java.awt.geom.Point2D;
+import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.entities.components.LayoutComponent;
 import net.rptools.maptool.model.entities.components.PlacementComponent;
 import net.rptools.maptool.model.entities.components.PogComponent;
@@ -25,7 +26,11 @@ public final class TokenEntity extends Entity {
   public final ReactiveDag.SourceNode<PogComponent> pog;
 
   public TokenEntity(LayoutComponent layout, PogComponent pog) {
-    super();
+    this(GUID.random(), layout, pog);
+  }
+
+  public TokenEntity(GUID localId, LayoutComponent layout, PogComponent pog) {
+    super(localId);
 
     this.placement.set(
         new PlacementComponent( // Default to top-left being at (0, 0)

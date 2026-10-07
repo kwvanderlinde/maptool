@@ -402,7 +402,8 @@ public class Token implements Cloneable {
   private boolean allowURIAccess = false;
 
   private transient TokenEntity entity =
-      new TokenEntity(new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)), null);
+      new TokenEntity(
+          this.id, new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)), null);
 
   /**
    * Constructor from another token, with the option to keep the token id
@@ -2704,7 +2705,9 @@ public class Token implements Cloneable {
     }
     tokenOpacity = Math.max(0.f, Math.min(tokenOpacity, 1.f));
 
-    entity = new TokenEntity(new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)), null);
+    entity =
+        new TokenEntity(
+            this.id, new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)), null);
     entity.placement.set(new PlacementComponent(new Point2D.Double(x, y), 0., 1.));
 
     return this;
@@ -3056,14 +3059,6 @@ public class Token implements Cloneable {
     }
     token.currentImageAsset =
         dto.hasCurrentImageAsset() ? dto.getCurrentImageAsset().getValue() : null;
-    if (dto.hasPlacement()) {
-      token.entity.placement.set(PlacementComponent.fromDto(dto.getPlacement()));
-    }
-    if (dto.hasParentRef()) {
-      token.entity.parentRef.set(ParentReferenceComponent.fromDto(dto.getParentRef()));
-    } else {
-      token.entity.parentRef.set(null);
-    }
     token.z = dto.getZ();
     token.lastPath = dto.hasLastPath() ? Path.fromDto(dto.getLastPath()) : null;
     token.snapToScale = dto.getSnapToScale();
@@ -3161,6 +3156,19 @@ public class Token implements Cloneable {
     if (dto.hasStatSheetProperties()) {
       token.statSheet = StatSheetProperties.fromDto(dto.getStatSheetProperties());
     }
+
+    token.entity =
+        new TokenEntity(
+            token.id, new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)), null);
+    if (dto.hasPlacement()) {
+      token.entity.placement.set(PlacementComponent.fromDto(dto.getPlacement()));
+    }
+    if (dto.hasParentRef()) {
+      token.entity.parentRef.set(ParentReferenceComponent.fromDto(dto.getParentRef()));
+    } else {
+      token.entity.parentRef.set(null);
+    }
+
     return token;
   }
 

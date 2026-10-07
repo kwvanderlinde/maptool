@@ -478,7 +478,7 @@ public class Zone {
     }
     {
       gridEntity = entityManager.spawn();
-      gridEntity.parentRef.set(new ParentReferenceComponent(mapEntity.id.get().id()));
+      gridEntity.parentRef.set(new ParentReferenceComponent(mapEntity.id));
       gridEntity.defineSource(
           GridComponent.class,
           new GridComponent(GridComponent.Type.Square, 100, 100, Color.black, 1.));
@@ -490,7 +490,7 @@ public class Zone {
               new LayoutComponent(new Rectangle2D.Double(-50, -50, 100, 100)),
               new PogComponent(new MD5Key("87f4e9bfa4f1f3db250b57b3599fa4e9"), 0.15));
       exampleEntity.defineSource(Trajectory.class, new Trajectory(0.75));
-      exampleEntity.parentRef.set(new ParentReferenceComponent(mapEntity.id.get().id()));
+      exampleEntity.parentRef.set(new ParentReferenceComponent(mapEntity.id));
       entityManager.adopt(exampleEntity);
     }
     {
@@ -500,7 +500,7 @@ public class Zone {
               new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity2.placement.set(new PlacementComponent(new Point2D.Double(-50, -50), 0., 1.));
       exampleEntity2.defineSource(Trajectory.class, new Trajectory(1.5));
-      exampleEntity2.parentRef.set(new ParentReferenceComponent(exampleEntity.id.get().id()));
+      exampleEntity2.parentRef.set(new ParentReferenceComponent(exampleEntity.id));
       entityManager.adopt(exampleEntity2);
     }
     {
@@ -510,7 +510,7 @@ public class Zone {
               new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity3.placement.set(new PlacementComponent(new Point2D.Double(50, -50), 0., 1.));
       exampleEntity3.defineSource(Trajectory.class, new Trajectory(1.5));
-      exampleEntity3.parentRef.set(new ParentReferenceComponent(exampleEntity.id.get().id()));
+      exampleEntity3.parentRef.set(new ParentReferenceComponent(exampleEntity.id));
       entityManager.adopt(exampleEntity3);
     }
     {
@@ -520,7 +520,7 @@ public class Zone {
               new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity4.placement.set(new PlacementComponent(new Point2D.Double(50, 50), 0., 1.));
       exampleEntity4.defineSource(Trajectory.class, new Trajectory(1.5));
-      exampleEntity4.parentRef.set(new ParentReferenceComponent(exampleEntity.id.get().id()));
+      exampleEntity4.parentRef.set(new ParentReferenceComponent(exampleEntity.id));
       entityManager.adopt(exampleEntity4);
     }
     {
@@ -530,7 +530,7 @@ public class Zone {
               new PogComponent(new MD5Key("c4a499da1e97010b2ff20dcdb4e2054f"), 0.25));
       exampleEntity5.placement.set(new PlacementComponent(new Point2D.Double(-50, 50), 0., 1.));
       exampleEntity5.defineSource(Trajectory.class, new Trajectory(1.5));
-      exampleEntity5.parentRef.set(new ParentReferenceComponent(exampleEntity.id.get().id()));
+      exampleEntity5.parentRef.set(new ParentReferenceComponent(exampleEntity.id));
       entityManager.adopt(exampleEntity5);
     }
 
@@ -548,10 +548,7 @@ public class Zone {
       child.setX(400);
       child.setY(200);
 
-      child
-          .getEntity()
-          .parentRef
-          .set(new ParentReferenceComponent(parent.getEntity().id.get().id()));
+      child.getEntity().parentRef.set(new ParentReferenceComponent(parent.getEntity().id));
     }
 
     SwingUtilities.invokeLater(() -> this.renderLoop(System.nanoTime()));
@@ -2259,7 +2256,7 @@ public class Zone {
     }
     {
       gridEntity = entityManager.spawn();
-      gridEntity.parentRef.set(new ParentReferenceComponent(mapEntity.id.get().id()));
+      gridEntity.parentRef.set(new ParentReferenceComponent(mapEntity.id));
       // entityManager.getParentageApi().setParentTo(gridEntity, mapEntity);
       gridEntity.defineSource(
           GridComponent.class,
