@@ -395,8 +395,6 @@ message TokenDto {
   string id = 1;
   bool being_impersonated = 2;
   string exposed_area_guid = 3;
-  map<string, string> image_asset_map = 4;
-  google.protobuf.StringValue current_image_asset = 5;
   int32 x = 6;
   int32 y = 7;
   int32 z = 8;
@@ -441,6 +439,7 @@ message TokenDto {
   double terrain_modifier = 42;
   TerrainModifierOperationDto terrain_modifier_operation = 43;
   repeated TerrainModifierOperationDto terrain_modifiers_ignored = 44;
+  google.protobuf.StringValue image = 4;
   google.protobuf.StringValue charsheet_image = 48;
   google.protobuf.StringValue portrait_image = 49;
   repeated LightSourceDto unique_light_sources = 72;

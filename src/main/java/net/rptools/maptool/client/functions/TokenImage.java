@@ -252,7 +252,8 @@ public class TokenImage extends AbstractFunction {
     }
 
     StringBuilder assetId = new StringBuilder("asset://");
-    if (functionName.equalsIgnoreCase("getTokenImage")) {
+    if (functionName.equalsIgnoreCase("getTokenImage")
+        || functionName.equalsIgnoreCase("getImage")) {
       if (token.getImageAssetId() == null) {
         return "";
       }
@@ -262,11 +263,6 @@ public class TokenImage extends AbstractFunction {
         return "";
       }
       assetId.append(token.getPortraitImage().toString());
-    } else if (functionName.equalsIgnoreCase("getImage")) {
-      if (token.getImageAssetId() == null) {
-        return "";
-      }
-      assetId.append(token.getImageAssetId().toString());
     } else if ("getTokenHandout"
         .equalsIgnoreCase(functionName)) { // getTokenHandout, or different capitalization
       if (token.getCharsheetImage() == null) {
@@ -333,7 +329,7 @@ public class TokenImage extends AbstractFunction {
   private static void setImage(Token token, String assetName) throws ParserException {
     MD5Key md5key = getMD5Key(assetName, SET_IMAGE);
     MapTool.serverCommand()
-        .updateTokenProperty(token, Token.Update.setImageAsset, (String) null, md5key.toString());
+        .updateTokenProperty(token, Token.Update.setImageAsset, md5key.toString());
   }
 
   private static void setPortrait(Token token, String assetName) throws ParserException {
