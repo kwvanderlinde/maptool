@@ -526,11 +526,6 @@ public class Token implements Cloneable {
 
     image = assetId;
 
-    // convert old-style macros
-    if (macroMap != null) {
-      loadOldMacros();
-    }
-
     propertyType = MapTool.getCampaign().getCampaignProperties().getDefaultTokenPropertyType();
   }
 
