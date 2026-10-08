@@ -32,7 +32,6 @@ import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.io.Serializable;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.util.*;
@@ -224,9 +223,6 @@ public class Token implements Cloneable {
     removeHalo,
     addHalo,
   }
-
-  public static final Comparator<Token> NAME_COMPARATOR =
-      (o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName());
 
   private final Map<String, MD5Key> imageAssetMap = new HashMap<>();
   private String currentImageAsset;
@@ -1814,7 +1810,7 @@ public class Token implements Cloneable {
   }
 
   public List<String> getSetStates() {
-    List<String> setStates = new ArrayList<String>();
+    List<String> setStates = new ArrayList<>();
     for (Map.Entry<String, Object> entry : state.entrySet()) {
       if (entry.getValue() instanceof Boolean) {
         if ((Boolean) entry.getValue()) {
@@ -2126,10 +2122,6 @@ public class Token implements Cloneable {
     return list;
   }
 
-  public boolean hasMacros(boolean secure) {
-    return !getMacroPropertiesMap(secure).isEmpty();
-  }
-
   public void setSpeechMap(Map<String, String> map) {
     getSpeechMap().clear();
     getSpeechMap().putAll(map);
@@ -2149,15 +2141,6 @@ public class Token implements Cloneable {
 
   private Map<String, String> getSpeechMap() {
     return speechMap;
-  }
-
-  /**
-   * Get a set containing the names of all set properties on this token.
-   *
-   * @return The set of state property names that have a value associated with them.
-   */
-  public Set<String> getStatePropertyNames() {
-    return state.keySet();
   }
 
   /**
@@ -2345,52 +2328,6 @@ public class Token implements Cloneable {
   }
 
   /**
-   * Convert the token into a hash map. This is used to ship all of the properties for the token to
-   * other apps that do need access to the <code>Token</code> class.
-   *
-   * @return A map containing the properties of the token.
-   */
-  public TokenTransferData toTransferData() {
-    TokenTransferData td = new TokenTransferData();
-    td.setName(name);
-    td.setPlayers(ownerList);
-    td.setVisible(isVisible);
-    td.setLocation(new Point(x, y));
-    td.setFacing(facing);
-
-    // Set the properties
-    td.put(TokenTransferData.ID, id.toString());
-    td.put(TokenTransferData.ASSET_ID, imageAssetMap.get(null));
-    td.put(TokenTransferData.Z, z);
-    td.put(TokenTransferData.SNAP_TO_SCALE, snapToScale);
-    td.put(TokenTransferData.WIDTH, scaleX);
-    td.put(TokenTransferData.HEIGHT, scaleY);
-    td.put(TokenTransferData.SNAP_TO_GRID, snapToGrid);
-    td.put(TokenTransferData.OWNER_TYPE, ownerType);
-    td.put(TokenTransferData.VISIBLE_OWNER_ONLY, visibleOnlyToOwner);
-    td.put(TokenTransferData.TOKEN_TYPE, tokenShape);
-    td.put(TokenTransferData.NOTES, notes);
-    td.put(TokenTransferData.GM_NOTES, gmNotes);
-    td.put(TokenTransferData.GM_NAME, gmName);
-
-    // Put all of the serializable state into the map
-    for (String key : getStatePropertyNames()) {
-      Object value = getState(key);
-      if (value instanceof Serializable) {
-        td.put(key, value);
-      }
-    }
-    td.putAll(state);
-
-    // Create the image from the asset and add it to the map
-    Image image = ImageManager.getImageAndWait(imageAssetMap.get(null));
-    if (image != null) {
-      td.setToken(new ImageIcon(image)); // Image icon makes it serializable.
-    }
-    return td;
-  }
-
-  /**
    * Constructor to create a new token from a transfer object containing its property values. This
    * is used to read in a new token from other apps that don't have access to the <code>Token</code>
    * class.
@@ -2523,7 +2460,6 @@ public class Token implements Cloneable {
    *
    * @return The List of initiative
    */
-  @SuppressWarnings("unchecked")
   public List<InitiativeList.TokenInitiative> getInitiatives() {
     Zone zone = getZoneRenderer().getZone();
     List<Integer> list = zone.getInitiativeList().indexOf(this);
@@ -3133,7 +3069,7 @@ public class Token implements Cloneable {
     token.terrainModifiersIgnored.addAll(
         dto.getTerrainModifiersIgnoredList().stream()
             .map(m -> TerrainModifierOperation.valueOf(m.name()))
-            .collect(Collectors.toList()));
+            .toList());
 
     token.charsheetImage =
         dto.hasCharsheetImage() ? new MD5Key(dto.getCharsheetImage().getValue()) : null;
@@ -3144,10 +3080,8 @@ public class Token implements Cloneable {
         .map(LightSource::fromDto)
         .forEach(source -> token.uniqueLightSources.put(source.getId(), source));
     token.lightSourceList.addAll(
-        dto.getLightSourcesList().stream()
-            .map(AttachedLightSource::fromDto)
-            .collect(Collectors.toList()));
-    dto.getHaloGuidsList().stream().forEach(id -> token.haloIdSet.add(new GUID(id)));
+        dto.getLightSourcesList().stream().map(AttachedLightSource::fromDto).toList());
+    dto.getHaloGuidsList().forEach(id -> token.haloIdSet.add(new GUID(id)));
     token.sightType = dto.hasSightType() ? dto.getSightType().getValue() : null;
     token.hasSight = dto.getHasSight();
     token.hasImageTable = dto.getHasImageTable();
@@ -3171,7 +3105,7 @@ public class Token implements Cloneable {
                 default -> log.warn("unknown state type:" + stateDto.getStateTypeCase());
               }
             });
-    dto.getPropertiesMap().forEach((k, v) -> token.propertyMapCI.put(k, v.equals("") ? null : v));
+    dto.getPropertiesMap().forEach((k, v) -> token.propertyMapCI.put(k, v.isEmpty() ? null : v));
     dto.getMacroPropertiesMap()
         .forEach(
             (key, value) ->
