@@ -548,19 +548,8 @@ public class Token implements Cloneable {
     // lightSourceList?
     macroMap = null;
     ownerList.clear();
-    /**
-     * Lee: why shouldn't propertyType be set to what the framework uses? In case of multiple
-     * propertyType, give a choice; or incorporate in the Campaign Properties window a marker for
-     * what is default for new tokens.
-     */
-    propertyType = MapTool.getCampaign().getCampaignProperties().getDefaultTokenPropertyType();
 
-    /**
-     * Jamz: Like propertyType, why shouldn't sight be kept if it matches exists? Many creatures
-     * with DarkVision get reset and it makes it painful. I'm turning off this reset for now. If
-     * there are complaints/reasons, maybe the Import Dialog needs to be expanded to include
-     * checkboxes for these items...
-     */
+    propertyType = MapTool.getCampaign().getCampaignProperties().getDefaultTokenPropertyType();
 
     // Try and silently catch any errors if there is an issue with sightType...
     try {
