@@ -2069,7 +2069,7 @@ public class Token implements Cloneable {
       macroPropertiesMap.clear();
     }
     for (MacroButtonProperties macro : newMacroList) {
-      if (macro.getLabel().trim().length() == 0 || macro.getCommand().trim().length() == 0) {
+      if (macro.getLabel().trim().isEmpty() || macro.getCommand().trim().isEmpty()) {
         continue;
       }
       macroPropertiesMap.put(macro.getIndex(), macro);
@@ -2563,7 +2563,7 @@ public class Token implements Cloneable {
     }
 
     // Fix for pre 1.11.3 campaigns and token size issues
-    if (sizeMap != null && sizeMap.size() > 0) {
+    if (sizeMap != null && !sizeMap.isEmpty()) {
       Map<Object, GUID> oldSizeMap = new HashMap<>(sizeMap);
       sizeMap.clear();
       for (var entry : oldSizeMap.entrySet()) {
@@ -2650,7 +2650,7 @@ public class Token implements Cloneable {
     if (tokenOpacity == null) {
       tokenOpacity = 1.f;
     }
-    tokenOpacity = Math.max(0.f, Math.min(tokenOpacity, 1.f));
+    tokenOpacity = Math.clamp(tokenOpacity, 0.f, 1.f);
 
     // 1.20: removed `imageAssetMap`'s `null` key in favour of the new simple field `image`.
     if (image == null) {
@@ -2844,7 +2844,7 @@ public class Token implements Cloneable {
         break;
       case setHaloColor:
         setHaloColor(
-            parameters.size() > 0 ? new Color(parameters.get(0).getIntValue(), true) : null);
+            !parameters.isEmpty() ? new Color(parameters.get(0).getIntValue(), true) : null);
         break;
       case setLabel:
         setLabel(parameters.get(0).getStringValue());
