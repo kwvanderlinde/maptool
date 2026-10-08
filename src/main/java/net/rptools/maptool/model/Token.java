@@ -2543,6 +2543,7 @@ public class Token implements Cloneable {
         return Integer.compare(o1.z, o2.z);
       };
 
+  @SuppressWarnings("ConstantConditions")
   protected Object readResolve() {
     // FJE: If the propertyMap field has something in it, it could be:
     // a pre-1.3b66 token that contains a HashMap<?,?>, or
