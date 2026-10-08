@@ -224,6 +224,8 @@ public class Token implements Cloneable {
     addHalo,
   }
 
+  // region Obsolete fields, kept only for backwards compatibility
+
   /**
    * @deprecated Only the {@code null} key was ever used, which is now {@link #image}.
    */
@@ -234,11 +236,6 @@ public class Token implements Cloneable {
    */
   private String currentImageAsset = null;
 
-  private int x;
-  private int y;
-  private int z;
-  private Integer facing = null;
-
   /**
    * @deprecated Kept for deserialization backwards compatibility.
    */
@@ -248,6 +245,13 @@ public class Token implements Cloneable {
    * @deprecated Kept for deserialization backwards compatibility.
    */
   @Deprecated private int lastY;
+
+  // endregion
+
+  private int x;
+  private int y;
+  private int z;
+  private Integer facing = null;
 
   private Path<? extends AbstractPoint> lastPath;
 
