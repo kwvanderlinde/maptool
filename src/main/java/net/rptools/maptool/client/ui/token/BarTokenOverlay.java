@@ -203,14 +203,17 @@ public abstract class BarTokenOverlay extends AbstractTokenOverlay {
     return bar;
   }
 
-  protected void setSideDto(BarTokenOverlayDto.Builder dto) {
-    switch (side) {
-      case TOP -> dto.setSide(SideDto.TOP);
-      case BOTTOM -> dto.setSide(SideDto.BOTTOM);
-      case LEFT -> dto.setSide(SideDto.LEFT);
-      case RIGHT -> dto.setSide(SideDto.RIGHT);
-    }
+  public BarTokenOverlayDto.Builder toDto() {
+    var dto = BarTokenOverlayDto.newBuilder();
+    dto.setCommon(getCommonDto());
+    dto.setIncrements(increments);
+    dto.setSide(
+        switch (side) {
+          case TOP -> SideDto.TOP;
+          case BOTTOM -> SideDto.BOTTOM;
+          case LEFT -> SideDto.LEFT;
+          case RIGHT -> SideDto.RIGHT;
+        });
+    return dto;
   }
-
-  public abstract BarTokenOverlayDto toDto();
 }

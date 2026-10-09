@@ -179,12 +179,11 @@ public class TwoImageBarTokenOverlay extends BarTokenOverlay {
     return bar;
   }
 
-  public BarTokenOverlayDto toDto() {
-    var dto = BarTokenOverlayDto.newBuilder().setCommon(getCommonDto());
-    dto.addAssetIds(bottomAssetId.toString());
-    dto.addAssetIds(topAssetId.toString());
-    setSideDto(dto);
-    dto.setIncrements(getIncrements());
-    return dto.setType(BarTokenOverlayDto.BarTokenOverlayTypeDto.TWO_IMAGES).build();
+  @Override
+  public BarTokenOverlayDto.Builder toDto() {
+    return super.toDto()
+        .setType(BarTokenOverlayDto.BarTokenOverlayTypeDto.TWO_IMAGES)
+        .addAssetIds(bottomAssetId.toString())
+        .addAssetIds(topAssetId.toString());
   }
 }

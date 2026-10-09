@@ -47,6 +47,7 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.model.sheet.stats.StatSheetManager;
 import net.rptools.maptool.model.sheet.stats.StatSheetProperties;
+import net.rptools.maptool.server.proto.BarTokenOverlayDto;
 import net.rptools.maptool.server.proto.CampaignPropertiesDto;
 import net.rptools.maptool.server.proto.HaloListDto;
 import net.rptools.maptool.server.proto.LightSourceListDto;
@@ -923,7 +924,10 @@ public class CampaignProperties implements Serializable {
     dto.addAllTokenStates(
         tokenStates.values().stream().map(BooleanTokenOverlay::toDto).collect(Collectors.toList()));
     dto.addAllTokenBars(
-        tokenBars.values().stream().map(BarTokenOverlay::toDto).collect(Collectors.toList()));
+        tokenBars.values().stream()
+            .map(BarTokenOverlay::toDto)
+            .map(BarTokenOverlayDto.Builder::build)
+            .collect(Collectors.toList()));
     dto.putAllCharacterSheets(characterSheets);
     dto.setInitiativeOwnerPermissions(initiativeOwnerPermissions);
     dto.setInitiativeMovementLock(initiativeMovementLock);

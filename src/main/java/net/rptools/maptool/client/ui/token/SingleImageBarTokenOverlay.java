@@ -152,11 +152,10 @@ public class SingleImageBarTokenOverlay extends BarTokenOverlay {
     return bar;
   }
 
-  public BarTokenOverlayDto toDto() {
-    var dto = BarTokenOverlayDto.newBuilder().setCommon(getCommonDto());
-    dto.addAssetIds(assetId.toString());
-    setSideDto(dto);
-    dto.setIncrements(getIncrements());
-    return dto.setType(BarTokenOverlayDto.BarTokenOverlayTypeDto.SINGLE_IMAGE).build();
+  @Override
+  public BarTokenOverlayDto.Builder toDto() {
+    return super.toDto()
+        .setType(BarTokenOverlayDto.BarTokenOverlayTypeDto.SINGLE_IMAGE)
+        .addAssetIds(assetId.toString());
   }
 }

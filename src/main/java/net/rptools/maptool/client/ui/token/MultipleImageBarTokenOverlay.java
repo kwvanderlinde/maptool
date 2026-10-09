@@ -122,12 +122,10 @@ public class MultipleImageBarTokenOverlay extends BarTokenOverlay {
     return bar;
   }
 
-  public BarTokenOverlayDto toDto() {
-    var dto = BarTokenOverlayDto.newBuilder().setCommon(getCommonDto());
-    setSideDto(dto);
-    dto.addAllAssetIds(
-        Arrays.asList(assetIds).stream().map(a -> a.toString()).collect(Collectors.toList()));
-    dto.setIncrements(getIncrements());
-    return dto.setType(BarTokenOverlayDto.BarTokenOverlayTypeDto.MULTIPLE_IMAGE).build();
+  @Override
+  public BarTokenOverlayDto.Builder toDto() {
+    return super.toDto()
+        .setType(BarTokenOverlayDto.BarTokenOverlayTypeDto.MULTIPLE_IMAGE)
+        .addAllAssetIds(Arrays.stream(assetIds).map(MD5Key::toString).collect(Collectors.toList()));
   }
 }
