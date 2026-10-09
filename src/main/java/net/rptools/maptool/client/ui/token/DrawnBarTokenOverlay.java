@@ -121,7 +121,6 @@ public class DrawnBarTokenOverlay extends BarTokenOverlay {
   }
 
   protected void fillFrom(BarTokenOverlayDto dto) {
-    fillFrom(dto.getCommon());
     barColor = new Color(dto.getColor(), true);
     thickness = dto.getThickness();
   }

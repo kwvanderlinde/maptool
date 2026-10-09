@@ -192,13 +192,15 @@ public abstract class BarTokenOverlay extends AbstractTokenOverlay {
           case UNRECOGNIZED -> null;
         };
     if (bar != null) {
+      bar.fillFrom(dto.getCommon());
       bar.setIncrements(dto.getIncrements());
-      switch (dto.getSide()) {
-        case TOP -> bar.setSide(Side.TOP);
-        case LEFT -> bar.setSide(Side.LEFT);
-        case RIGHT -> bar.setSide(Side.RIGHT);
-        case BOTTOM -> bar.setSide(Side.BOTTOM);
-      }
+      bar.setSide(
+          switch (dto.getSide()) {
+            case TOP, UNRECOGNIZED -> Side.TOP;
+            case LEFT -> Side.LEFT;
+            case RIGHT -> Side.RIGHT;
+            case BOTTOM -> Side.BOTTOM;
+          });
     }
     return bar;
   }

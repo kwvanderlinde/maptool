@@ -115,9 +115,7 @@ public class MultipleImageBarTokenOverlay extends BarTokenOverlay {
 
   public static BarTokenOverlay fromDto(BarTokenOverlayDto dto) {
     var bar = new MultipleImageBarTokenOverlay();
-    bar.fillFrom(dto.getCommon());
-    bar.assetIds =
-        dto.getAssetIdsList().stream().map(a -> new MD5Key(a)).toArray(size -> new MD5Key[size]);
+    bar.assetIds = dto.getAssetIdsList().stream().map(MD5Key::new).toArray(MD5Key[]::new);
     bar.setIncrements(bar.assetIds.length);
     return bar;
   }
