@@ -120,14 +120,10 @@ public class DrawnBarTokenOverlay extends BarTokenOverlay {
     this.thickness = thickness;
   }
 
-  protected void fillFrom(BarTokenOverlayDto dto) {
-    barColor = new Color(dto.getColor(), true);
-    thickness = dto.getThickness();
-  }
-
   public static DrawnBarTokenOverlay fromDto(BarTokenOverlayDto dto) {
     var bar = new DrawnBarTokenOverlay();
-    bar.fillFrom(dto);
+    bar.barColor = new Color(dto.getColor(), true);
+    bar.thickness = dto.getThickness();
     return bar;
   }
 
