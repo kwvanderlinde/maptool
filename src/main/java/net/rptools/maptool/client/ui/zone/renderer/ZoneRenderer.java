@@ -66,7 +66,6 @@ import net.rptools.maptool.model.*;
 import net.rptools.maptool.model.Label;
 import net.rptools.maptool.model.Zone.Layer;
 import net.rptools.maptool.model.drawing.*;
-import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.model.zones.*;
 import net.rptools.maptool.util.GraphicsUtil;
 import net.rptools.maptool.util.ImageManager;
@@ -97,9 +96,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
   /** The ZoneView constructed from the zone. */
   private final ZoneView zoneView;
-
-  /** Manages the selected tokens on the zone. */
-  private final SelectionModel selectionModel;
 
   private final Map<Zone.Layer, DrawableRenderer> drawableRenderers;
   private final List<ZoneOverlay> overlayList = new ArrayList<>();
@@ -158,9 +154,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       throw new IllegalArgumentException("Zone cannot be null");
     }
     this.zone = zone;
-    this.selectionModel = new SelectionModel(zone);
     this.zoneView = new ZoneView(zone);
-    this.viewModel = new ZoneViewModel(zone, zoneView, selectionModel);
+    this.viewModel = new ZoneViewModel(zone, zoneView);
 
     drawableRenderers =
         CollectionUtil.newFilledEnumMap(
@@ -256,7 +251,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         .getToolbox()
         .setSelectedTool(!token.getLayer().isStampLayer() ? PointerTool.class : StampTool.class);
 
-    selectionModel.replaceSelection(Collections.singletonList(token.getId()));
+    zone.getSelectionModel().replaceSelection(Collections.singletonList(token.getId()));
     requestFocusInWindow();
   }
 
@@ -544,7 +539,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   }
 
   public SelectionModel getSelectionModel() {
-    return selectionModel;
+    return zone.getSelectionModel();
   }
 
   /** Clear internal caches and back-buffers */
@@ -709,19 +704,6 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
   public PlayerView getPlayerView() {
     return viewModel.getPlayerView();
-  }
-
-  /**
-   * The returned {@link PlayerView} contains a list of tokens that includes either all selected
-   * tokens that this player owns and that have their <code>HasSight</code> checkbox enabled, or all
-   * owned tokens that have <code>HasSight</code> enabled.
-   *
-   * @param role the player role
-   * @param selected whether to get the view of selected tokens, or all owned
-   * @return the player view
-   */
-  public PlayerView makePlayerView(Player.Role role, boolean selected) {
-    return viewModel.makePlayerView(role, selected);
   }
 
   /**
@@ -1666,7 +1648,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    */
   public void setActiveLayer(Zone.Layer layer) {
     activeLayer = Objects.requireNonNullElse(layer, Layer.getDefaultPlayerLayer());
-    selectionModel.replaceSelection(Collections.emptyList());
+    zone.getSelectionModel().replaceSelection(Collections.emptyList());
     repaintDebouncer.dispatch();
   }
 
@@ -1851,7 +1833,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
 
       // Count moving tokens as "selected" so that a border is drawn around them.
       boolean isSelected =
-          selectionModel.isSelected(token.getId()) || viewModel.isTokenMoving(token.getId());
+          zone.getSelectionModel().isSelected(token.getId())
+              || viewModel.isTokenMoving(token.getId());
       if (isSelected) {
         selectionRenderer.drawSelectBorder(clippedG, position);
         // Remove labels from the cache if the corresponding tokens are deselected
@@ -2018,7 +2001,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
   }
 
   public Set<GUID> getSelectedTokenSet() {
-    return selectionModel.getSelectedTokenIds();
+    return zone.getSelectionModel().getSelectedTokenIds();
   }
 
   /**
@@ -2047,27 +2030,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    * @return List of tokens
    */
   public List<Token> getSelectedTokensList() {
-    return new ArrayList<>(viewModel.getSelectedTokenList());
-  }
-
-  /**
-   * Verifies if a token is selectable based on existence, visibility and ownership.
-   *
-   * @param tokenGUID the token
-   * @return whether the token is selectable
-   */
-  public boolean isTokenSelectable(GUID tokenGUID) {
-    if (tokenGUID == null) {
-      return false; // doesn't exist
-    }
-    Token token = zone.getToken(tokenGUID);
-    if (token == null) {
-      return false; // doesn't exist
-    }
-    if (!zone.isTokenVisible(token)) {
-      return AppUtil.playerOwns(token); // can't own or see
-    }
-    return true;
+    return zone.getSelectionModel().getSelectedTokens();
   }
 
   /**
@@ -2107,11 +2070,17 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
     if (visibleTokens.isEmpty()) {
       return;
     }
+
+    var selectionModel = zone.getSelectionModel();
     if (selectionModel.isAnyTokenSelected()) {
       // Find the first selected token on the screen
       for (int i = 0; i < visibleTokens.size(); i++) {
         Token token = visibleTokens.get(i);
-        if (!isTokenSelectable(token.getId())) {
+        if (!zone.getSelectionModel()
+            .isSelectable(
+                token.getId(),
+                MapTool.getPlayer(),
+                MapTool.getServerPolicy().useStrictTokenManagement())) {
           continue;
         }
         if (selectionModel.isSelected(token.getId())) {
@@ -2413,7 +2382,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       selectThese.add(token.getId());
     }
     // For convenience, select them
-    selectionModel.replaceSelection(selectThese);
+    zone.getSelectionModel().replaceSelection(selectThese);
 
     if (!isGM) {
       String msg = I18N.getText("Token.dropped.byPlayer", zone.getName(), MapTool.getPlayer());

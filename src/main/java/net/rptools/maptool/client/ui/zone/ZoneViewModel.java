@@ -95,7 +95,6 @@ public class ZoneViewModel {
   private @Nonnull Zone.Layer activeLayer = Zone.Layer.getDefaultPlayerLayer();
   private Scale zoneScale = new Scale();
   private final ZoneView zoneView;
-  private final SelectionModel selectionModel;
   private final List<GUID> highlightCommonMacros = new ArrayList<>();
 
   // endregion
@@ -128,10 +127,9 @@ public class ZoneViewModel {
 
   // endregion
 
-  public ZoneViewModel(Zone zone, ZoneView zoneView, SelectionModel selectionModel) {
+  public ZoneViewModel(Zone zone, ZoneView zoneView) {
     this.zone = zone;
     this.zoneView = zoneView;
-    this.selectionModel = selectionModel;
   }
 
   public void repaintNeeded() {
@@ -185,37 +183,6 @@ public class ZoneViewModel {
     return playerView;
   }
 
-  /**
-   * The returned {@link PlayerView} contains a list of tokens that includes either all selected
-   * tokens that this player owns and that have their <code>HasSight</code> checkbox enabled, or all
-   * owned tokens that have <code>HasSight</code> enabled.
-   *
-   * @param role the player role
-   * @param selected whether to get the view of selected tokens, or all owned
-   * @return the player view
-   */
-  public PlayerView makePlayerView(Player.Role role, boolean selected) {
-    List<Token> selectedTokens = null;
-    if (selected && selectionModel.isAnyTokenSelected()) {
-      selectedTokens = new ArrayList<>(getSelectedTokenList());
-      selectedTokens.removeIf(token -> !token.getHasSight() || !AppUtil.playerOwns(token));
-    }
-    if (selectedTokens == null || selectedTokens.isEmpty()) {
-      // if no selected token qualifying for view, use owned tokens or player tokens with sight
-      final boolean checkOwnership =
-          MapTool.getServerPolicy().isUseIndividualViews() || MapTool.isPersonalServer();
-      selectedTokens =
-          checkOwnership
-              ? zone.getOwnedTokensWithSight(MapTool.getPlayer())
-              : zone.getPlayerTokensWithSight();
-    }
-    if (selectedTokens == null || selectedTokens.isEmpty()) {
-      return new PlayerView(role);
-    }
-
-    return new PlayerView(role, selectedTokens);
-  }
-
   public Map<GUID, TokenPosition> getTokenPositions() {
     return Collections.unmodifiableMap(tokenPositions);
   }
@@ -241,17 +208,6 @@ public class ZoneViewModel {
 
   public Map<Token, Set<Token>> getTokenStackMap() {
     return Collections.unmodifiableMap(tokenStackMap);
-  }
-
-  public List<Token> getSelectedTokenList() {
-    var tokens = new ArrayList<Token>();
-    for (GUID g : selectionModel.getSelectedTokenIds()) {
-      final var token = zone.getToken(g);
-      if (token != null) {
-        tokens.add(token);
-      }
-    }
-    return tokens;
   }
 
   public Set<GUID> getVisibleTokens(Zone.Layer layer) {
@@ -373,7 +329,14 @@ public class ZoneViewModel {
 
   /** Updates {@link #playerView}. */
   private void updatePlayerView() {
-    playerView = makePlayerView(MapTool.getPlayer().getEffectiveRole(), true);
+    var player = MapTool.getPlayer();
+    playerView =
+        zone.makePlayerView(
+            player,
+            player.getEffectiveRole(),
+            MapTool.getServerPolicy().useStrictTokenManagement(),
+            MapTool.getServerPolicy().isUseIndividualViews() || MapTool.isPersonalServer(),
+            true);
   }
 
   /** Clears and populates {@link #tokenPositions} and {@link #tokenPositionsByLayer}. */

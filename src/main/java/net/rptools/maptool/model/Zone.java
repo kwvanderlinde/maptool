@@ -33,6 +33,7 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.tool.drawing.UndoPerZone;
 import net.rptools.maptool.client.ui.MapToolFrame;
 import net.rptools.maptool.client.ui.zone.PlayerView;
+import net.rptools.maptool.client.ui.zone.SelectionModel;
 import net.rptools.maptool.client.ui.zone.ZoneView;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.events.MapToolEventBus;
@@ -364,7 +365,6 @@ public class Zone {
 
   private boolean hasFog;
   private DrawablePaint fogPaint;
-  private transient UndoPerZone undo;
 
   // region Topology masks
 
@@ -430,6 +430,10 @@ public class Zone {
   private int width;
 
   private transient Map<String, Integer> tokenNumberCache;
+  private transient UndoPerZone undo;
+
+  /** Manages the selected tokens on the zone. */
+  private transient SelectionModel selectionModel;
 
   {
     drawablesByLayer = new EnumMap<>(Layer.class);
@@ -441,6 +445,7 @@ public class Zone {
 
   public Zone() {
     undo = new UndoPerZone(this); // registers as ModelChangeListener for drawables...
+    selectionModel = new SelectionModel(this);
   }
 
   public void setBackgroundPaint(DrawablePaint paint) {
@@ -578,6 +583,7 @@ public class Zone {
     lightingStyle = zone.lightingStyle;
 
     undo = new UndoPerZone(this); // Undo/redo manager isn't copied
+    selectionModel = new SelectionModel(this);
     setName(zone.getName());
 
     try {
@@ -693,6 +699,46 @@ public class Zone {
    */
   public void imported() {
     initiativeList.clearModel();
+  }
+
+  public SelectionModel getSelectionModel() {
+    return selectionModel;
+  }
+
+  /**
+   * The returned {@link PlayerView} contains a list of tokens that includes either all selected
+   * tokens that this player owns and that have their <code>HasSight</code> checkbox enabled, or all
+   * owned tokens that have <code>HasSight</code> enabled.
+   *
+   * @param player the player
+   * @param selected whether to get the view of selected tokens, or all owned
+   * @return the player view
+   */
+  public PlayerView makePlayerView(
+      Player player,
+      Player.Role effectiveRole,
+      boolean strictTokenManagement,
+      boolean individualViews,
+      boolean selected) {
+    List<Token> selectedTokens = List.of();
+    if (selected) {
+      selectedTokens = new ArrayList<>(selectionModel.getSelectedTokens());
+      selectedTokens.removeIf(
+          t -> !t.getHasSight() || !AppUtil.playerOwns(player, t, strictTokenManagement));
+    }
+    if (selectedTokens.isEmpty()) {
+      // if no selected token qualifying for view, use owned tokens or player tokens with sight
+      final boolean checkOwnership = individualViews || MapTool.isPersonalServer();
+      selectedTokens =
+          checkOwnership
+              ? getOwnedTokensWithSight(player, strictTokenManagement)
+              : getPlayerTokensWithSight();
+    }
+    if (selectedTokens == null || selectedTokens.isEmpty()) {
+      return new PlayerView(effectiveRole);
+    }
+
+    return new PlayerView(effectiveRole, selectedTokens);
   }
 
   public int getHeight() {
@@ -1735,7 +1781,7 @@ public class Zone {
    * @author updated by Jamz
    * @since updated 1.4.1.0
    */
-  public List<Token> getOwnedTokensWithSight(Player p) {
+  public List<Token> getOwnedTokensWithSight(Player p, boolean strictTokenManagement) {
     return getTokensFiltered(
         t -> {
           if (tokenSelection == null) {
@@ -1743,20 +1789,20 @@ public class Zone {
           }
           switch (tokenSelection) {
             case ALL: // Show FoW for ANY Token I own
-              return t.getHasSight() && AppUtil.playerOwns(t);
+              return t.getHasSight() && AppUtil.playerOwns(p, t, strictTokenManagement);
             case NPC: // Show FoW for only NPC Tokens I own
               return t.getHasSight()
                   && t.getType() == Token.Type.NPC
-                  && (t.isOwnedByAll() || AppUtil.playerOwns(t));
+                  && (t.isOwnedByAll() || AppUtil.playerOwns(p, t, strictTokenManagement));
             case PC: // Show FoW for only PC Tokens I own
               return t.getHasSight()
                   && t.getType() == Token.Type.PC
-                  && (t.isOwnedByAll() || AppUtil.playerOwns(t));
+                  && (t.isOwnedByAll() || AppUtil.playerOwns(p, t, strictTokenManagement));
             case GM: // Show FoW for ANY Token the GM "username" explicitly owns OR has no
               // ownership
-              return t.getHasSight() && AppUtil.gmOwns(t);
+              return t.getHasSight() && AppUtil.gmOwns(p, t, strictTokenManagement);
             default: // Show FoW for ANY Token I own
-              return t.getHasSight() && AppUtil.playerOwns(t);
+              return t.getHasSight() && AppUtil.playerOwns(p, t, strictTokenManagement);
           }
         });
   }
@@ -2068,6 +2114,9 @@ public class Zone {
     // This will be true; it's just in case we decide to make it persistent in the future
     if (undo == null) {
       undo = new UndoPerZone(this);
+    }
+    if (selectionModel == null) {
+      selectionModel = new SelectionModel(this);
     }
 
     if (hillVbl == null) {

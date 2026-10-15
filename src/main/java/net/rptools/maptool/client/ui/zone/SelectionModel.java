@@ -19,11 +19,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import net.rptools.maptool.client.AppUtil;
+import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.GUID;
+import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.player.Player;
 
 /** Models the current and historical selections for a ZoneRenderer. */
 public class SelectionModel {
@@ -90,6 +94,10 @@ public class SelectionModel {
     return Collections.unmodifiableSet(currentSelection);
   }
 
+  public List<Token> getSelectedTokens() {
+    return getSelectedTokenIds().stream().map(zone::getToken).filter(Objects::nonNull).toList();
+  }
+
   /**
    * Check if any tokens are selected.
    *
@@ -122,8 +130,31 @@ public class SelectionModel {
    *
    * @param tokenGuid The ID of the token to check.
    * @return {@code true} if the token is allowed to be selected, otherwise {@code false}.
+   * @deprecated Use {@link #isSelectable(GUID, Player, boolean)} instead.
    */
-  private boolean isSelectable(GUID tokenGuid) {
+  @Deprecated
+  public boolean isSelectable(GUID tokenGuid) {
+    return isSelectable(
+        tokenGuid, MapTool.getPlayer(), MapTool.getServerPolicy().useStrictTokenManagement());
+  }
+
+  /**
+   * Check whether a token is eligible to be selected.
+   *
+   * <p>A token is only eligible for selection if:
+   *
+   * <ol>
+   *   <li>It exists.
+   *   <li>The token belongs to the zone that this model is for.
+   *   <li>The token is either visible or owned by the current player.
+   * </ol>
+   *
+   * @param tokenGuid The ID of the token to check.
+   * @param player The player to check ownership against.
+   * @param strictTokenMaangement Whether ownership matters.
+   * @return {@code true} if the token is allowed to be selected, otherwise {@code false}.
+   */
+  public boolean isSelectable(GUID tokenGuid, Player player, boolean strictTokenMaangement) {
     if (tokenGuid == null) {
       return false; // doesn't exist
     }
@@ -132,7 +163,7 @@ public class SelectionModel {
       return false; // doesn't exist
     }
     if (!zone.isTokenVisible(token)) {
-      return AppUtil.playerOwns(token); // can't own or see
+      return AppUtil.playerOwns(player, token, strictTokenMaangement); // can't own or see
     }
     return true;
   }

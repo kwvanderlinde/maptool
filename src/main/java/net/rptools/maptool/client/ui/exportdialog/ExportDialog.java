@@ -479,8 +479,11 @@ public class ExportDialog extends JDialog {
         }
 
         var playerView =
-            renderer.makePlayerView(
+            zone.makePlayerView(
+                MapTool.getPlayer(),
                 ExportRadioButtons.VIEW_PLAYER.isChecked() ? Player.Role.PLAYER : Player.Role.GM,
+                MapTool.getServerPolicy().useStrictTokenManagement(),
+                MapTool.getServerPolicy().isUseIndividualViews() || MapTool.isPersonalServer(),
                 false);
 
         switchToWaitPanel();

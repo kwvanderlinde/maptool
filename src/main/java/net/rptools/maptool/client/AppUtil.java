@@ -302,11 +302,15 @@ public class AppUtil {
    * @return {@code true} if the player owns the token, otherwise {@code false}.
    */
   public static boolean playerOwns(Token token) {
-    Player player = MapTool.getPlayer();
+    return playerOwns(
+        MapTool.getPlayer(), token, MapTool.getServerPolicy().useStrictTokenManagement());
+  }
+
+  public static boolean playerOwns(Player player, Token token, boolean strictTokenManagement) {
     if (player.isGM()) {
       return true;
     }
-    if (!MapTool.getServerPolicy().useStrictTokenManagement()) {
+    if (!strictTokenManagement) {
       return true;
     }
     return token.isOwner(player.getName());
@@ -322,17 +326,19 @@ public class AppUtil {
     return token.isOwnedByAny(MapTool.getNonGMs());
   }
 
+  // TODO I don't understand gmOwns(). It, in fact, does not all GM (playerOwns() does that).
+
   /**
    * Returns true if the token is visible in the zone. If the view is the GM view then this function
    * always returns true.
    *
+   * @param player The {@link Player} to check for ownership on {@code token}.
    * @param token the {@link Token} to check if the GM owns.
+   * @param strictTokenManagement If {@code false}, the token is effectively owned by any player.
    * @return {@code true} if the GM "owns" the {@link Token}, otherwise {@code false}.
    */
-  public static boolean gmOwns(Token token) {
-    Player player = MapTool.getPlayer();
-
-    if (!MapTool.getServerPolicy().useStrictTokenManagement()) {
+  public static boolean gmOwns(Player player, Token token, boolean strictTokenManagement) {
+    if (!strictTokenManagement) {
       return true;
     }
     return (token.isOwner(player.getName()) && !token.isOwnedByAll()) || !token.hasOwners();
