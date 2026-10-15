@@ -312,11 +312,9 @@ public class Zone {
     MBL;
   }
 
-  public static final int DEFAULT_TOKEN_VISION_DISTANCE = 250; // In units
-  public static final int DEFAULT_PIXELS_CELL = 50;
-  public static final int DEFAULT_UNITS_PER_CELL = 5;
-
-  public static final DrawablePaint DEFAULT_FOG = new DrawableColorPaint(Color.black);
+  private static final int DEFAULT_TOKEN_VISION_DISTANCE = 250; // In units
+  private static final int DEFAULT_UNITS_PER_CELL = 5;
+  private static final DrawablePaint DEFAULT_FOG = new DrawableColorPaint(Color.black);
 
   private long creationTime = System.currentTimeMillis();
 
