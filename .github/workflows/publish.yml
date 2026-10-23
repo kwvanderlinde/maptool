@@ -46,6 +46,8 @@ jobs:
           ${{ runner.os }}-gradle-
     - name: Build with Gradle
       run: ./gradlew jpackage zipJpackageImage
+
+    # region Arch package build, by transforming the RPM.
     - name: Copy the RPM to the location required to build the ArchLinux package
       if: ${{ runner.os == 'linux' && runner.arch == 'x64' }}
       run: cp releases/renamed/maptool-*.rpm package/archlinux/maptool/maptool.rpm
@@ -64,6 +66,9 @@ jobs:
     - name: Copy ArchLinux package back
       if: ${{ runner.os == 'linux' && runner.arch == 'x64' }}
       run: cp -t releases/renamed package/archlinux/maptool/maptool*.pkg.tar.zst
+      continue-on-error: true
+    # endregion
+
     - name: Build uberJar on Windows
       if: runner.os == 'windows'
       run: ./gradlew shadowJar
