@@ -18,7 +18,6 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-15-intel, macos-15]
         java: [ '21' ]
-        distribution: ['temurin']
       fail-fast: false
     steps:
       #       ____          _  __     __   ___        ____                __
@@ -27,6 +26,10 @@ jobs:
       #    / /_/ // /_/ // // // /_/ /  / /_/  <   / ____// /_/ // /__ / ,<  / /_/ // /_/ //  __/
       #   /_____/ \__,_//_//_/ \__,_/   \____/\/  /_/     \__,_/ \___//_/|_| \__,_/ \__, / \___/
       #                                                                            /____/
+    - name: Set Platform
+      run: |
+        printf "OS: ${{ runner.os }}\n"
+        printf "ARCH: ${{ runner.arch }}\n"
     - name: Git checkout
       uses: actions/checkout@v3
     - name: Set up JDK
