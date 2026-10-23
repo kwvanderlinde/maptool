@@ -288,6 +288,7 @@ runtime {
                 '--file-associations', 'package/associations.properties'
         ]
 
+        def isArm = osdetector.arch.equals('aarch_64') || osdetector.arch.contains('arm') || osdetector.arch.contains('aarch')
         if (osdetector.os.is('windows')) {
             def winUpgradeUUID = "74d934b9-5fb5-433e-aca4-c6f14bd9aa6b"
             println "Setting Windows installer options with upgrade uuid = " + winUpgradeUUID
@@ -308,7 +309,6 @@ runtime {
 
         if (osdetector.os.is('osx')) {
             println "Setting MacOS installer options"
-            def isArm = osdetector.arch.equals('aarch_64') || osdetector.arch.contains('arm') || osdetector.arch.contains('aarch')
             def macArch = isArm ? 'apple-silicon' : 'intel'
             def macJdkUrl = isArm ?
                     'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jdk_aarch64_mac_hotspot_21.0.1_12.tar.gz' :
@@ -348,7 +348,10 @@ runtime {
                 ]
             }
             targetPlatform('linux') {
-                jdkHome = jdkDownload('https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jdk_x64_linux_hotspot_21.0.1_12.tar.gz')
+                jdkHome = jdkDownload(
+                        isArm
+                                ? 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jdk_aarch64_linux_hotspot_21.0.1_12.tar.gz'
+                                : 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jdk_x64_linux_hotspot_21.0.1_12.tar.gz')
             }
         }
 
