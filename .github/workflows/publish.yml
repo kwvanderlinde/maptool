@@ -59,6 +59,9 @@ jobs:
       with:
         target: 'pkgbuild'
         pkgname: 'package/archlinux/maptool'
+    - name: Copy ArchLinux package back
+      if: $${{ runner.os == 'linux' }}
+      run: cp -t releases/ package/archlinux/maptool/maptool*.pkg.tar.zst
     - name: Build uberJar on Windows
       if: startsWith(matrix.os, 'windows')
       run: ./gradlew shadowJar
@@ -139,6 +142,7 @@ jobs:
         # find package/archlinux/maptool/ -maxdepth 1 -type f -name 'maptool-*-x86_64.pkg.tar.zst' -not -name '*debug*' -exec cp {} releases/renamed/maptool-${{ github.event.release.tag_name }}-x86_64.pkg.tar.zst \;
         # cp releases/MapTool*-linux.zip releases/renamed/MapTool-${{ github.event.release.tag_name }}-linux.zip
         mv releases/maptool*.rpm releases/renamed/
+        mv releases/maptool*.pkg.tar.zst releases/renamed/
         mv releases/maptool*.deb releases/renamed/
         mv releases/MapTool*.zip releases/renamed/
       continue-on-error: true
