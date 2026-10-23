@@ -277,7 +277,7 @@ runtime {
 
         imageOptions = []
         imageName = project.name + developerRelease
-        installerName = project.name
+        installerName = project.name + "-" + appSemVer
         installerOptions = [
                 //'--temp', 'releases/temp-files',
                 '--verbose',

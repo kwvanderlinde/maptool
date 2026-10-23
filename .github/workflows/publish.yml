@@ -134,16 +134,13 @@ jobs:
       if: ${{ runner.os == 'linux' }}
       run: |
         mkdir releases/renamed/
-        cd releases
-        rename 's|maptool.*\.(.*)\.(rpm)$|renamed/maptool-${{ github.event.release.tag_name }}.$1.$2|' *
-        rename 's|maptool.*_(.*)\.(deb)$|renamed/maptool-${{ github.event.release.tag_name }}_$1.$2|' *
-        rename 's|MapTool*-(.*)\.(zip)$|renamed/MapTool-${{ github.event.release.tag_name }}-$1.$2|' *
         # cp releases/maptool*.x86_64.rpm releases/renamed/maptool-${{ github.event.release.tag_name }}.x86_64.rpm
         # cp releases/maptool*_amd64.deb releases/renamed/maptool_${{ github.event.release.tag_name }}_amd64.deb
-        # TODO Need to exclude "debug" file.
-        rename 's|../package/archlinux/maptool/maptool-*-(.*).(pkg.tar.zst)|renamed/maptool-${{ github.event.release.tag_name }}-$1.$2|' ../package/archlinux/maptool/*
         # find package/archlinux/maptool/ -maxdepth 1 -type f -name 'maptool-*-x86_64.pkg.tar.zst' -not -name '*debug*' -exec cp {} releases/renamed/maptool-${{ github.event.release.tag_name }}-x86_64.pkg.tar.zst \;
         # cp releases/MapTool*-linux.zip releases/renamed/MapTool-${{ github.event.release.tag_name }}-linux.zip
+        mv releases/maptool*.rpm releases/renamed/
+        mv releases/maptool*.deb releases/renamed/
+        mv releases/MapTool*.zip releases/renamed/
       continue-on-error: true
     - name: Upload Linux RPM Release Asset
       id: upload-release-asset-rpm
