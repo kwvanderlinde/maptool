@@ -357,7 +357,6 @@ runtime {
             imageOptions += ['--icon', 'package/linux/' + project.name + developerRelease + '.png']
             installerOptions += [
                     '--linux-menu-group', 'Game',
-                    '--linux-app-release', '1',
                     '--linux-shortcut',
             ]
 
