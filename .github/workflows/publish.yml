@@ -75,35 +75,12 @@ jobs:
       #   | |/ |/ // // / / // /_/ // /_/ /| |/ |/ /(__  )
       #   |__/|__//_//_/ /_/ \__,_/ \____/ |__/|__//____/
       #
-    - name: Rename Windows Release Files
-      if: startsWith(matrix.os, 'windows')
-      run: |
-        mkdir releases/renamed/
-        cp releases/MapTool*.exe releases/renamed/MapTool-${{ github.event.release.tag_name }}.exe
-        cp releases/MapTool*.msi releases/renamed/MapTool-${{ github.event.release.tag_name }}.msi
-        cp releases/MapTool*.jar releases/renamed/MapTool-${{ github.event.release.tag_name }}.jar
-        cp releases/MapTool*-win.zip releases/renamed/MapTool-${{ github.event.release.tag_name }}-win.zip
-      continue-on-error: true
       #       __     _
       #      / /    (_)____   __  __ _  __
       #     / /    / // __ \ / / / /| |/_/
       #    / /___ / // / / // /_/ /_>  <
       #   /_____//_//_/ /_/ \__,_//_/|_|
       #
-    - name: Rename Linux Release Files
-      if: ${{ runner.os == 'linux' }}
-      run: |
-        mkdir releases/renamed/
-        # cp releases/maptool*.x86_64.rpm releases/renamed/maptool-${{ github.event.release.tag_name }}.x86_64.rpm
-        # cp releases/maptool*_amd64.deb releases/renamed/maptool_${{ github.event.release.tag_name }}_amd64.deb
-        # find package/archlinux/maptool/ -maxdepth 1 -type f -name 'maptool-*-x86_64.pkg.tar.zst' -not -name '*debug*' -exec cp {} releases/renamed/maptool-${{ github.event.release.tag_name }}-x86_64.pkg.tar.zst \;
-        # cp releases/MapTool*-linux.zip releases/renamed/MapTool-${{ github.event.release.tag_name }}-linux.zip
-        # rename -n 's|releases/maptool-([^\-]*)-1\.([^.]*).(rpm)$|releases/maptool-$1.$2.$3|' releases/*
-        mv releases/maptool*.rpm releases/renamed/
-        mv releases/maptool*.pkg.tar.zst releases/renamed/
-        mv releases/maptool*.deb releases/renamed/
-        mv releases/MapTool*.zip releases/renamed/
-      continue-on-error: true
       #                               ____  _____
       #      ____ ___   ____ _ _____ / __ \/ ___/
       #     / __ `__ \ / __ `// ___// / / /\__ \
@@ -130,4 +107,4 @@ jobs:
     - name: Upload release assets
       uses: softprops/action-gh-release@v3
       with:
-        files: releases/renamed/*.*
+        files: releases/*.*

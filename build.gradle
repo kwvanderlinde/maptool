@@ -277,7 +277,6 @@ runtime {
 
         imageOptions = []
         imageName = project.name + developerRelease
-        installerName = project.name
         installerOptions = [
                 //'--temp', 'releases/temp-files',
                 '--verbose',
@@ -352,6 +351,8 @@ runtime {
                 jdkHome = jdkDownload('https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jdk_x64_linux_hotspot_21.0.1_12.tar.gz')
             }
         }
+
+        installerName = "${project.name}-${targetPlatformName}"
     }
 }
 
