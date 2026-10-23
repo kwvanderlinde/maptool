@@ -59,6 +59,7 @@ jobs:
       with:
         target: 'pkgbuild'
         pkgname: 'package/archlinux/maptool'
+        debug: false
     - name: Copy ArchLinux package back
       if: $${{ runner.os == 'linux' }}
       run: cp -t releases/ package/archlinux/maptool/maptool*.pkg.tar.zst
