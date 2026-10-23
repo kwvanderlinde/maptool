@@ -33,10 +33,6 @@ jobs:
       run: |
         printf "OS: ${{ runner.os }}\n"
         printf "ARCH: ${{ runner.arch }}\n"
-    - name: Test rename
-      run: |
-        touch example.txt
-        rename -n 'S|(example)-1\.(txt)|$1.$2|' example*
     - name: Git checkout
       uses: actions/checkout@v3
     - name: Set up JDK
@@ -149,8 +145,8 @@ jobs:
         # cp releases/maptool*_amd64.deb releases/renamed/maptool_${{ github.event.release.tag_name }}_amd64.deb
         # find package/archlinux/maptool/ -maxdepth 1 -type f -name 'maptool-*-x86_64.pkg.tar.zst' -not -name '*debug*' -exec cp {} releases/renamed/maptool-${{ github.event.release.tag_name }}-x86_64.pkg.tar.zst \;
         # cp releases/MapTool*-linux.zip releases/renamed/MapTool-${{ github.event.release.tag_name }}-linux.zip
-        rename -n 's|releases/maptool-([^\-]*)-1\.([^.]*).(rpm)$|releases/maptool-$1.$2.$3|' releases/*
-        # mv releases/maptool*.rpm releases/renamed/
+        # rename -n 's|releases/maptool-([^\-]*)-1\.([^.]*).(rpm)$|releases/maptool-$1.$2.$3|' releases/*
+        mv releases/maptool*.rpm releases/renamed/
         mv releases/maptool*.pkg.tar.zst releases/renamed/
         mv releases/maptool*.deb releases/renamed/
         mv releases/MapTool*.zip releases/renamed/
