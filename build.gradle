@@ -333,7 +333,8 @@ runtime {
             imageOptions += ['--icon', 'package/linux/' + project.name + developerRelease + '.png']
             installerOptions += [
                     '--linux-menu-group', 'Game',
-                    '--linux-shortcut'
+                    '--linux-app-release', '1',
+                    '--linux-shortcut',
             ]
 
             if (installerType == 'deb') {
