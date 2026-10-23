@@ -108,7 +108,7 @@ ext {
         os = 'linux'
     }
 
-    println "OS Detected: ${os} on arch ${arch}"
+    println "OS Detected: '${os}' on '${arch}'"
 }
 
 def modulesToOpen = [
