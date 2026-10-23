@@ -94,7 +94,7 @@ ext {
 
     // These are our own platform strings that we can tweak as we wish.
     arch = isArm ? 'aarch64' : 'amd64'
-    brandedArch = arch;
+    brandedArch = arch
     os = osdetector.os
     // Tweak the OS name
     if (osdetector.os == 'windows') {
@@ -405,7 +405,7 @@ tasks.register('renameInstaller', Copy) {
 
             // Special: insert platform details to distinguish apple builds, since they don't be default.
             if (os == 'mac') {
-                newName = newName.replaceAll('(\\.[^.]*)$', "-${brandedArch}}.\$1");
+                newName = newName.replaceAll('(\\.[^.]*)$', "-${brandedArch}\$1");
             }
 
             println "New name: ${newName}}"
