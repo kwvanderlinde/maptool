@@ -8,6 +8,10 @@ on:
   release:
     types:
       - published
+      -
+  push:
+    - branches:
+        - 'experiment/2026-10-22-arm-linux'
 jobs:
   build:
     permissions:
