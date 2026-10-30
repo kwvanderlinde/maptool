@@ -701,6 +701,15 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   @Override
+  public void setTokenFootprint(Token token, GridType gridType, GUID footprintId) {
+    updateTokenProperty(
+        token,
+        Token.Update.setFootprint,
+        TokenPropertyValueDto.newBuilder().setGridType(gridType.toDto()).build(),
+        TokenPropertyValueDto.newBuilder().setFootprintId(footprintId.toDto()).build());
+  }
+
+  @Override
   public void updateTokenProperty(Token token, Token.Update update, int value) {
     updateTokenProperty(
         token, update, TokenPropertyValueDto.newBuilder().setIntValue(value).build());
@@ -787,16 +796,6 @@ public class ServerCommandClientImpl implements ServerCommand {
         TokenPropertyValueDto.newBuilder().setDoubleValue(value1).build(),
         TokenPropertyValueDto.newBuilder().setIntValue(value2).build(),
         TokenPropertyValueDto.newBuilder().setIntValue(value3).build());
-  }
-
-  @Override
-  public void updateTokenProperty(
-      Token token, Token.Update update, Grid grid, TokenFootprint footprint) {
-    updateTokenProperty(
-        token,
-        update,
-        TokenPropertyValueDto.newBuilder().setGrid(grid.toDto()).build(),
-        TokenPropertyValueDto.newBuilder().setTokenFootPrint(footprint.toDto()).build());
   }
 
   @Override

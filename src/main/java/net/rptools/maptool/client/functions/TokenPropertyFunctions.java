@@ -35,6 +35,7 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
+import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Grid;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.TokenFootprint;
@@ -1037,8 +1038,7 @@ public class TokenPropertyFunctions extends AbstractFunction {
     Grid grid = token.getZoneRenderer().getZone().getGrid();
     for (TokenFootprint footprint : grid.getFootprints()) {
       if (footprint.getName().equalsIgnoreCase(size)) {
-        MapTool.serverCommand()
-            .updateTokenProperty(token, Token.Update.setFootprint, grid, footprint);
+        MapTool.serverCommand().setTokenFootprint(token, grid.getType(), footprint.getId());
         return getSize(token);
       }
     }
@@ -1053,8 +1053,8 @@ public class TokenPropertyFunctions extends AbstractFunction {
    */
   private void resetSize(Token token) {
     Grid grid = token.getZoneRenderer().getZone().getGrid();
-    TokenFootprint footprint = grid.getDefaultFootprint();
-    MapTool.serverCommand().updateTokenProperty(token, Token.Update.setFootprint, grid, footprint);
+    GUID footprintId = grid.getDefaultFootprint().getId();
+    MapTool.serverCommand().setTokenFootprint(token, grid.getType(), footprintId);
   }
 
   /**
