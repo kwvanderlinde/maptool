@@ -22,7 +22,15 @@ import net.rptools.clientserver.simple.DisconnectHandler;
 import net.rptools.clientserver.simple.MessageHandler;
 
 public interface Connection extends AutoCloseable {
-  record Streams(InputStream input, OutputStream output) {}
+  record Streams(InputStream input, OutputStream output) {
+    public Streams() {
+      this(InputStream.nullInputStream(), OutputStream.nullOutputStream());
+    }
+
+    public void flush() throws IOException {
+      // TODO Tells the underlying connection to send its pending data.
+    }
+  }
 
   Streams open() throws IOException;
 

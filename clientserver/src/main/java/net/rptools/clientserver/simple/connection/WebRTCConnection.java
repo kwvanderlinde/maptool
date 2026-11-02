@@ -18,8 +18,6 @@ import com.google.gson.Gson;
 import dev.onvoid.webrtc.*;
 import dev.onvoid.webrtc.media.MediaStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -231,7 +229,7 @@ public class WebRTCConnection extends AbstractConnection implements Connection {
   public Streams open() throws IOException {
     startSignaling();
 
-    return new Streams(InputStream.nullInputStream(), OutputStream.nullOutputStream());
+    return new Streams();
   }
 
   private void sendSignalingMessage(String message) {

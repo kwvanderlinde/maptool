@@ -65,7 +65,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
     }
     if (isClosed()) {
       // Closed before it was opened, e.g. refused while its handlers were being added.
-      return new Streams(InputStream.nullInputStream(), OutputStream.nullOutputStream());
+      return new Streams();
     }
 
     if (this.socket == null) {
