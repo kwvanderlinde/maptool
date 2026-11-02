@@ -15,12 +15,16 @@
 package net.rptools.clientserver.simple.connection;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import net.rptools.clientserver.ActivityListener;
 import net.rptools.clientserver.simple.DisconnectHandler;
 import net.rptools.clientserver.simple.MessageHandler;
 
 public interface Connection extends AutoCloseable {
-  void open() throws IOException;
+  record Streams(InputStream input, OutputStream output) {}
+
+  Streams open() throws IOException;
 
   void close();
 

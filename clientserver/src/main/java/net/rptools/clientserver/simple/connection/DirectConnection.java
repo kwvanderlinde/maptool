@@ -14,6 +14,8 @@
  */
 package net.rptools.clientserver.simple.connection;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -55,8 +57,10 @@ public class DirectConnection extends AbstractConnection {
   }
 
   @Override
-  public void open() {
+  public Streams open() {
     receiveThread.start();
+
+    return new Streams(InputStream.nullInputStream(), OutputStream.nullOutputStream());
   }
 
   @Override

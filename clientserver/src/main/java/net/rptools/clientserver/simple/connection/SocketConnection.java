@@ -58,28 +58,30 @@ public class SocketConnection extends AbstractConnection implements Connection {
     this.socket = socket;
   }
 
-  private void startThreads() {
-    this.send = new SendThread(socket);
-    this.receive = new ReceiveThread(socket);
-
-    this.send.start();
-    this.receive.start();
-  }
-
   @Override
-  public void open() throws IOException {
+  public Streams open() throws IOException {
     if (this.send != null) {
       throw new IOException("The connection has already been opened.");
     }
     if (isClosed()) {
       // Closed before it was opened, e.g. refused while its handlers were being added.
-      return;
+      return new Streams(InputStream.nullInputStream(), OutputStream.nullOutputStream());
     }
 
     if (this.socket == null) {
       this.socket = new Socket(hostName, port);
     }
-    startThreads();
+
+    var input = new BufferedInputStream(socket.getInputStream());
+    var output = new BufferedOutputStream(socket.getOutputStream());
+
+    this.send = new SendThread(output);
+    this.receive = new ReceiveThread(input);
+
+    this.send.start();
+    this.receive.start();
+
+    return new Streams(input, output);
   }
 
   @Override
@@ -120,24 +122,16 @@ public class SocketConnection extends AbstractConnection implements Connection {
   // send thread
   // /////////////////////////////////////////////////////////////////////////
   private class SendThread extends Thread {
-    private final Socket socket;
+    private final OutputStream out;
 
-    public SendThread(Socket socket) {
+    public SendThread(OutputStream out) {
       setName("SocketConnection.SendThread");
-      this.socket = socket;
+      this.out = out;
     }
 
     @Override
     public void run() {
       try {
-        final OutputStream out;
-        try {
-          out = new BufferedOutputStream(socket.getOutputStream());
-        } catch (IOException e) {
-          log.error("Unable to get socket output stream", e);
-          return;
-        }
-
         while (!SocketConnection.this.isClosed() && SocketConnection.this.isAlive()) {
           // Blocks for a time until a message is received.
           byte[] message = SocketConnection.this.nextMessage();
@@ -186,24 +180,16 @@ public class SocketConnection extends AbstractConnection implements Connection {
   // receive thread
   // /////////////////////////////////////////////////////////////////////////
   private class ReceiveThread extends Thread {
-    private final Socket socket;
+    private final InputStream in;
 
-    public ReceiveThread(Socket socket) {
+    public ReceiveThread(InputStream in) {
       setName("SocketConnection.ReceiveThread");
-      this.socket = socket;
+      this.in = in;
     }
 
     @Override
     public void run() {
       try {
-        final InputStream in;
-        try {
-          in = socket.getInputStream();
-        } catch (IOException e) {
-          log.error("Unable to get socket input stream", e);
-          return;
-        }
-
         while (!SocketConnection.this.isClosed() && SocketConnection.this.isAlive()) {
           try {
             byte[] message = readMessage(in);
