@@ -42,6 +42,8 @@ public class MapToolConnection {
   private final Handshake<Void> handshake;
   private final List<HandshakeCompletionObserver> onCompleted;
 
+  private Connection.Streams streams = null;
+
   public MapToolConnection(Connection connection, LocalPlayer player, Handshake<Void> handshake) {
     this.connection = connection;
     this.player = player;
@@ -56,7 +58,7 @@ public class MapToolConnection {
   public void start() throws IOException {
     if (handshake == null) {
       // No handshake required. Transition immediately to connected.
-      connection.open();
+      streams = connection.open();
       for (final var callback : onCompleted) {
         callback.onComplete(true);
       }
@@ -68,6 +70,7 @@ public class MapToolConnection {
               // for players, the exception is logged just in case more info is required
               log.warn(exception);
               MapTool.showError(exception.getMessage());
+              streams = null;
               connection.close();
               for (final var callback : onCompleted) {
                 callback.onComplete(false);
@@ -80,7 +83,7 @@ public class MapToolConnection {
           });
 
       // this triggers the handshake from the server side
-      connection.open();
+      streams = connection.open();
       handshake.startHandshake();
     }
   }
