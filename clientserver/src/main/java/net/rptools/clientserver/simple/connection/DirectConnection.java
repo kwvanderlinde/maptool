@@ -14,6 +14,7 @@
  */
 package net.rptools.clientserver.simple.connection;
 
+import com.google.protobuf.Message;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -28,8 +29,8 @@ public class DirectConnection extends AbstractConnection {
 
   public static Pair create(String id) {
     var closed = new AtomicBoolean(false);
-    var clientToServerQueue = new ArrayBlockingQueue<byte[]>(128);
-    var serverToClientQueue = new ArrayBlockingQueue<byte[]>(128);
+    var clientToServerQueue = new ArrayBlockingQueue<Message>(128);
+    var serverToClientQueue = new ArrayBlockingQueue<Message>(128);
 
     var clientSide =
         new DirectConnection(closed, id + "-client", clientToServerQueue, serverToClientQueue);
@@ -40,14 +41,14 @@ public class DirectConnection extends AbstractConnection {
   }
 
   private final AtomicBoolean sharedClosedFlag;
-  private final BlockingQueue<byte[]> writeQueue;
+  private final BlockingQueue<Message> writeQueue;
   private final ReceiveThread receiveThread;
 
   private DirectConnection(
       AtomicBoolean sharedClosedFlag,
       String id,
-      BlockingQueue<byte[]> writeQueue,
-      BlockingQueue<byte[]> readQueue) {
+      BlockingQueue<Message> writeQueue,
+      BlockingQueue<Message> readQueue) {
     super(id);
     this.sharedClosedFlag = sharedClosedFlag;
     this.writeQueue = writeQueue;
@@ -69,16 +70,12 @@ public class DirectConnection extends AbstractConnection {
   }
 
   @Override
-  public void sendMessage(Object channel, byte[] message) {
-    if (message.length == 0) {
-      return;
-    }
-
+  public void sendMessage(Object channel, Message msg) {
     boolean written = false;
     while (!written) {
       try {
         // Set a timeout so we have a chance to escape in case we weren't notified properly.
-        written = writeQueue.offer(message, 10, TimeUnit.MILLISECONDS);
+        written = writeQueue.offer(msg, 10, TimeUnit.MILLISECONDS);
       } catch (InterruptedException e) {
         // Just try again.
       }
@@ -96,9 +93,9 @@ public class DirectConnection extends AbstractConnection {
   }
 
   private final class ReceiveThread extends Thread {
-    private final BlockingQueue<byte[]> readQueue;
+    private final BlockingQueue<Message> readQueue;
 
-    public ReceiveThread(BlockingQueue<byte[]> readQueue) {
+    public ReceiveThread(BlockingQueue<Message> readQueue) {
       super("DirectConnection.ReceiveThread");
       this.readQueue = readQueue;
     }
@@ -109,7 +106,7 @@ public class DirectConnection extends AbstractConnection {
         while (!DirectConnection.this.isClosed() && DirectConnection.this.isAlive()) {
           try {
             // Set a timeout so we have a chance to escape in case we weren't notified properly.
-            byte[] message;
+            Message message;
             try {
               message = readQueue.poll(10, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {

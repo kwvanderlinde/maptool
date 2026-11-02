@@ -14,11 +14,13 @@
  */
 package net.rptools.clientserver.simple.connection;
 
+import com.google.protobuf.Message;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import net.rptools.clientserver.ActivityListener;
+import net.rptools.clientserver.simple.lib.ActivityListeningOutputStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -73,7 +75,9 @@ public class SocketConnection extends AbstractConnection implements Connection {
     }
 
     var input = new BufferedInputStream(socket.getInputStream());
-    var output = new BufferedOutputStream(socket.getOutputStream());
+    var output =
+        new ActivityListeningOutputStream(
+            new BufferedOutputStream(socket.getOutputStream()), this::notifyListeners);
 
     this.send = new SendThread(output);
     this.receive = new ReceiveThread(input);
@@ -85,8 +89,8 @@ public class SocketConnection extends AbstractConnection implements Connection {
   }
 
   @Override
-  public void sendMessage(Object channel, byte[] message) {
-    addMessage(channel, message);
+  public void sendMessage(Object channel, Message msg) {
+    addMessage(channel, msg);
   }
 
   @Override
@@ -122,9 +126,9 @@ public class SocketConnection extends AbstractConnection implements Connection {
   // send thread
   // /////////////////////////////////////////////////////////////////////////
   private class SendThread extends Thread {
-    private final OutputStream out;
+    private final ActivityListeningOutputStream out;
 
-    public SendThread(OutputStream out) {
+    public SendThread(ActivityListeningOutputStream out) {
       setName("SocketConnection.SendThread");
       this.out = out;
     }
@@ -134,7 +138,7 @@ public class SocketConnection extends AbstractConnection implements Connection {
       try {
         while (!SocketConnection.this.isClosed() && SocketConnection.this.isAlive()) {
           // Blocks for a time until a message is received.
-          byte[] message = SocketConnection.this.nextMessage();
+          Message message = SocketConnection.this.nextMessage();
           if (message == null) {
             // No message available. Thread may also have been interrupted as part of stopping.
             continue;
@@ -152,24 +156,19 @@ public class SocketConnection extends AbstractConnection implements Connection {
       }
     }
 
-    protected final void writeMessage(OutputStream out, byte[] message) throws IOException {
-      int length = message.length;
+    protected final void writeMessage(ActivityListeningOutputStream out, Message message)
+        throws IOException {
+      int length = message.getSerializedSize();
 
-      notifyListeners(ActivityListener.Direction.Outbound, ActivityListener.State.Start, length, 0);
+      out.startMessage(length + Integer.BYTES);
 
       out.write(length >> 24);
       out.write(length >> 16);
       out.write(length >> 8);
       out.write(length);
 
-      for (int i = 0; i < message.length; i++) {
-        out.write(message[i]);
+      message.writeTo(out);
 
-        if (i != 0 && i % ActivityListener.CHUNK_SIZE == 0) {
-          notifyListeners(
-              ActivityListener.Direction.Outbound, ActivityListener.State.Progress, length, i);
-        }
-      }
       out.flush();
       notifyListeners(
           ActivityListener.Direction.Outbound, ActivityListener.State.Complete, length, length);

@@ -15,6 +15,7 @@
 package net.rptools.clientserver.simple.connection;
 
 import com.google.gson.Gson;
+import com.google.protobuf.Message;
 import dev.onvoid.webrtc.*;
 import dev.onvoid.webrtc.media.MediaStream;
 import java.io.IOException;
@@ -208,9 +209,8 @@ public class WebRTCConnection extends AbstractConnection implements Connection {
   }
 
   @Override
-  public void sendMessage(Object channel, byte[] message) {
-    log.debug(prefix() + "added message");
-    addMessage(channel, message);
+  public void sendMessage(Object channel, Message msg) {
+    addMessage(channel, msg);
   }
 
   @Override
@@ -366,11 +366,12 @@ public class WebRTCConnection extends AbstractConnection implements Connection {
 
       while (!WebRTCConnection.this.isClosed() && WebRTCConnection.this.isAlive()) {
         // Blocks for a time until a message is received.
-        byte[] message = WebRTCConnection.this.nextMessage();
-        if (message == null) {
+        Message message2 = WebRTCConnection.this.nextMessage();
+        if (message2 == null) {
           // No message available. Thread may also have been interrupted as part of stopping.
           continue;
         }
+        byte[] message = message2.toByteArray();
 
         ByteBuffer buffer = ByteBuffer.allocate(message.length + Integer.BYTES);
         buffer.putInt(message.length).put(message).rewind();

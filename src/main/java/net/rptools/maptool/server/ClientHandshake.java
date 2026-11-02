@@ -15,6 +15,7 @@
 package net.rptools.maptool.server;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Message;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
@@ -160,13 +161,26 @@ public class ClientHandshake implements Handshake<Void>, MessageHandler {
 
     var msgType = message.getMessageTypeCase();
     log.debug("{} sent: {}", connection.getId(), msgType);
-    connection.sendMessage(message.toByteArray());
+    connection.sendMessage(null, message);
   }
 
   @Override
   public void handleMessage(String id, byte[] message) {
+    Message parsed;
     try {
-      var handshakeMsg = HandshakeMsg.parseFrom(message);
+      parsed = HandshakeMsg.parseFrom(message);
+    } catch (Exception e) {
+      log.error("Unepxected error while parsing message", e);
+      return;
+    }
+
+    handleMessage(id, parsed);
+  }
+
+  @Override
+  public void handleMessage(String id, Message message) {
+    try {
+      var handshakeMsg = (HandshakeMsg) message;
       var msgType = handshakeMsg.getMessageTypeCase();
 
       log.debug("{} got: {}", id, msgType);

@@ -14,6 +14,7 @@
  */
 package net.rptools.clientserver.simple.connection;
 
+import com.google.protobuf.Message;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -36,11 +37,7 @@ public interface Connection extends AutoCloseable {
 
   void close();
 
-  default void sendMessage(byte[] message) {
-    sendMessage(null, message);
-  }
-
-  void sendMessage(Object channel, byte[] message);
+  void sendMessage(Object channel, Message msg);
 
   boolean isAlive();
 

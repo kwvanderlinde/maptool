@@ -109,11 +109,35 @@ public class MapToolConnection {
   }
 
   public void close() {
+    streams = null;
     connection.close();
   }
 
   public void sendMessage(Message msg) {
+    if (streams == null) {
+      log.error("Connection {} not open yet", connection.getId());
+      return;
+    }
+
+    com.google.protobuf.Message m = msg;
+
     log.debug("{} sent {}", player.getName(), msg.getMessageTypeCase());
-    connection.sendMessage(msg.toByteArray());
+
+    try {
+      var out = streams.output();
+
+      var size = m.getSerializedSize();
+      out.write((size >> 24) & 0xFF);
+      out.write((size >> 16) & 0xFF);
+      out.write((size >> 8) & 0xFF);
+      out.write(size & 0xFF);
+
+      m.writeTo(out);
+
+      streams.flush();
+    } catch (IOException e) {
+      log.error("Unexpected error while writing message", e);
+      close();
+    }
   }
 }

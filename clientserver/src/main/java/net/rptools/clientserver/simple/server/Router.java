@@ -14,6 +14,7 @@
  */
 package net.rptools.clientserver.simple.server;
 
+import com.google.protobuf.Message;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -64,31 +65,31 @@ public class Router {
     }
   }
 
-  public void broadcastMessage(byte[] message) {
+  public void broadcastMessage(Message message) {
     synchronized (clients) {
       for (Connection conn : clients.values()) {
-        conn.sendMessage(message);
+        conn.sendMessage(null, message);
       }
     }
   }
 
-  public void broadcastMessage(String[] exclude, byte[] message) {
+  public void broadcastMessage(String[] exclude, Message message) {
     // Note: although we except an exclude array, reality is that it only has one element at most.
     // So don't bother setting up a hash set or anything, just loop to check if in the array.
     synchronized (clients) {
       for (Map.Entry<String, Connection> entry : clients.entrySet()) {
         if (!Arrays.asList(exclude).contains(entry.getKey())) {
-          entry.getValue().sendMessage(message);
+          entry.getValue().sendMessage(null, message);
         }
       }
     }
   }
 
-  public void sendMessage(String id, byte[] message) {
+  public void sendMessage(String id, Message message) {
     sendMessage(id, null, message);
   }
 
-  public void sendMessage(String id, Object channel, byte[] message) {
+  public void sendMessage(String id, Object channel, Message message) {
     synchronized (clients) {
       var connection = clients.get(id);
       if (connection != null) {

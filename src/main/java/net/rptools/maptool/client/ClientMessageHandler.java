@@ -98,8 +98,21 @@ public class ClientMessageHandler implements MessageHandler {
 
   @Override
   public void handleMessage(String id, byte[] message) {
+    com.google.protobuf.Message parsed;
     try {
-      var msg = Message.parseFrom(message);
+      parsed = Message.parseFrom(message);
+    } catch (Exception e) {
+      log.error("Unepxected error while parsing message", e);
+      return;
+    }
+
+    handleMessage(id, parsed);
+  }
+
+  @Override
+  public void handleMessage(String id, com.google.protobuf.Message message) {
+    try {
+      var msg = (Message) message;
       var msgType = msg.getMessageTypeCase();
       log.debug("{} got: {}", id, msgType);
 

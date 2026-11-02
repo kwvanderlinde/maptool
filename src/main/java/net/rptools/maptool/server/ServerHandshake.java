@@ -15,6 +15,7 @@
 package net.rptools.maptool.server;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Message;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -172,13 +173,26 @@ public class ServerHandshake implements Handshake<Player>, MessageHandler {
 
     var msgType = message.getMessageTypeCase();
     log.debug("Server sent to {}: {}", connection.getId(), msgType);
-    connection.sendMessage(message.toByteArray());
+    connection.sendMessage(null, message);
   }
 
   @Override
   public void handleMessage(String id, byte[] message) {
+    Message parsed;
     try {
-      var handshakeMsg = HandshakeMsg.parseFrom(message);
+      parsed = HandshakeMsg.parseFrom(message);
+    } catch (Exception e) {
+      log.error("Unepxected error while parsing message", e);
+      return;
+    }
+
+    handleMessage(id, parsed);
+  }
+
+  @Override
+  public void handleMessage(String id, Message message) {
+    try {
+      var handshakeMsg = (HandshakeMsg) message;
       var msgType = handshakeMsg.getMessageTypeCase();
 
       log.debug("from {} got: {}", id, msgType);

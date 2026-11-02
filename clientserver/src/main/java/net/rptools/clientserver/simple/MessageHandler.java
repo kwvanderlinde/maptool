@@ -14,10 +14,13 @@
  */
 package net.rptools.clientserver.simple;
 
+import com.google.protobuf.Message;
+
 /**
  * @author drice Interface for handling client server messages.
  */
 public interface MessageHandler {
-
   public void handleMessage(String id, byte[] message);
+
+  void handleMessage(String id, Message message);
 }

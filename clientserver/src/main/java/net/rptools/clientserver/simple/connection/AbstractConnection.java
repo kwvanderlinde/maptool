@@ -14,6 +14,7 @@
  */
 package net.rptools.clientserver.simple.connection;
 
+import com.google.protobuf.Message;
 import java.io.*;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -21,6 +22,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.annotation.Nullable;
 import net.rptools.clientserver.ActivityListener;
 import net.rptools.clientserver.simple.DisconnectHandler;
 import net.rptools.clientserver.simple.MessageHandler;
@@ -34,7 +36,7 @@ public abstract class AbstractConnection implements Connection {
 
   private final String id;
   private final AtomicBoolean closed = new AtomicBoolean(false);
-  private final BlockingQueue<byte[]> outQueue = new LinkedBlockingQueue<>();
+  private final BlockingQueue<Message> outQueue = new LinkedBlockingQueue<>();
 
   private final List<DisconnectHandler> disconnectHandlers = new CopyOnWriteArrayList<>();
   private final List<ActivityListener> listeners = new CopyOnWriteArrayList<>();
@@ -87,11 +89,11 @@ public abstract class AbstractConnection implements Connection {
     }
   }
 
-  protected void addMessage(Object channel, byte[] message) {
-    outQueue.add(compress(message));
+  protected void addMessage(@Nullable Object channel, Message message) {
+    outQueue.add(message);
   }
 
-  protected byte[] nextMessage() {
+  protected Message nextMessage() {
     try {
       // Bit paranoid, but don't wait forever for a message - that can perpetually block the thread.
       return outQueue.poll(10, TimeUnit.MILLISECONDS);
@@ -109,6 +111,17 @@ public abstract class AbstractConnection implements Connection {
   }
 
   protected void dispatchMessage(byte[] message) {
+    var id = getId();
+    if (messageHandlers.isEmpty()) {
+      log.warn("message received but not messageHandlers registered for {}.", id);
+    }
+
+    for (MessageHandler handler : messageHandlers) {
+      handler.handleMessage(id, message);
+    }
+  }
+
+  protected void dispatchMessage(Message message) {
     var id = getId();
     if (messageHandlers.isEmpty()) {
       log.warn("message received but not messageHandlers registered for {}.", id);

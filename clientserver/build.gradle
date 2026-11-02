@@ -31,4 +31,6 @@ dependencies {
     // compression of messages between client and server
     implementation(libs.apache.commons.compress)
     implementation(libs.zstd)
+
+    implementation(libs.protobuf.java)
 }

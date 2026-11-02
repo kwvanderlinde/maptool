@@ -449,18 +449,18 @@ public class MapToolServer {
 
   public void sendMessage(String id, Message message) {
     log.debug("{} sent to {}: {}", getName(), id, message.getMessageTypeCase());
-    router.sendMessage(id, message.toByteArray());
+    router.sendMessage(id, message);
   }
 
   public void sendMessage(String id, Object channel, Message message) {
     log.debug(
         "{} sent to {}: {} ({})", getName(), id, message.getMessageTypeCase(), channel.toString());
-    router.sendMessage(id, channel, message.toByteArray());
+    router.sendMessage(id, channel, message);
   }
 
   public void broadcastMessage(Message message) {
     log.debug("{} broadcast: {}", getName(), message.getMessageTypeCase());
-    router.broadcastMessage(message.toByteArray());
+    router.broadcastMessage(message);
   }
 
   public void broadcastMessage(String[] exclude, Message message) {
@@ -469,7 +469,7 @@ public class MapToolServer {
         getName(),
         message.getMessageTypeCase(),
         String.join(",", exclude));
-    router.broadcastMessage(exclude, message.toByteArray());
+    router.broadcastMessage(exclude, message);
   }
 
   private class HeartbeatThread extends Thread {
