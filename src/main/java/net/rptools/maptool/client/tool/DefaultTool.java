@@ -66,6 +66,7 @@ public abstract class DefaultTool extends Tool
   protected ZoneRenderer renderer;
 
   protected DefaultTool() {
+    keyActionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), new EscapeAction());
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD4, InputEvent.CTRL_DOWN_MASK),
         new ViewMovementKey(this, 1, 0));
@@ -114,18 +115,43 @@ public abstract class DefaultTool extends Tool
     }
   }
 
+  public abstract String getInstructions();
+
+  /**
+   * Clears internal data to restore the tool to a starting state.
+   *
+   * <p>This method must repaint whatever it is being displayed upon.
+   *
+   * <p>The default implementation switches back to the default tool ({@link PointerTool}). Only
+   * delegate if there is no other reset behaviour that was actioned.
+   */
+  protected void resetTool() {
+    var frame = MapTool.getFrame();
+    if (frame != null) {
+      frame.getToolbox().setSelectedTool(PointerTool.class);
+    }
+  }
+
+  /**
+   * Called when the tool's button is clicked.
+   *
+   * @param e the event to be processed
+   */
   @Override
+  public void actionPerformed(ActionEvent e) {
+    if (isSelected()) {
+      getToolbox().setSelectedTool(this);
+    }
+  }
+
   protected void attachTo(ZoneRenderer renderer) {
-    super.attachTo(renderer);
     this.renderer = renderer;
     selectedLayer = renderer.getActiveLayer();
     layerSelectionDialog.setSelectedLayer(selectedLayer);
   }
 
-  @Override
   protected void detachFrom(ZoneRenderer renderer) {
     this.renderer = null;
-    super.detachFrom(renderer);
   }
 
   protected boolean isDraggingMap() {
@@ -344,11 +370,6 @@ public abstract class DefaultTool extends Tool
     }
   }
 
-  @Override
-  protected void resetTool() {
-    MapTool.getFrame().getToolbox().setSelectedTool(PointerTool.class);
-  }
-
   /*
    * For touch screens, swap the events, easier to move map/draw by default
    */
@@ -403,6 +424,30 @@ public abstract class DefaultTool extends Tool
                 }
               });
       MapTool.getFrame().refresh();
+    }
+  }
+
+  /**
+   * Perform the escape action on a tool.
+   *
+   * @author jgorrell
+   */
+  private class EscapeAction extends AbstractAction {
+
+    private static final long serialVersionUID = -514197544905143826L;
+
+    /**
+     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+     */
+    public void actionPerformed(ActionEvent e) {
+      // This should probably go somewhere else like MapToolFrame...
+      // but it was just too easy to plop down here to resist =)
+      // although having it here will be a quick reminder about competing
+      // Escape actions.
+      if (MapTool.getFrame().isFullScreen()) {
+        MapTool.getFrame().showWindowed();
+      }
+      resetTool();
     }
   }
 }

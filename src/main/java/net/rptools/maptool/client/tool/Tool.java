@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.ComponentInputMap;
@@ -35,12 +34,12 @@ import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.KeyStroke;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 
 public abstract class Tool extends JToggleButton implements ActionListener, KeyListener {
 
   private static final long serialVersionUID = -6365594431759083634L;
+
   /**
    * Holds all pressed keys.
    *
@@ -48,12 +47,11 @@ public abstract class Tool extends JToggleButton implements ActionListener, KeyL
    * No idea why.
    */
   private final Set<Character> keyDownSet = new HashSet<Character>();
+
   protected Map<KeyStroke, Action> keyActionMap = new HashMap<KeyStroke, Action>();
   private Toolbox toolbox;
 
   public Tool() {
-    keyActionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), new EscapeAction());
-
     addActionListener(this);
 
     setToolTipText(I18N.getText(getTooltip()));
@@ -69,13 +67,15 @@ public abstract class Tool extends JToggleButton implements ActionListener, KeyL
     return true;
   }
 
+  protected Toolbox getToolbox() {
+    return this.toolbox;
+  }
+
   void setToolbox(Toolbox toolbox) {
     this.toolbox = toolbox;
   }
 
   public abstract String getTooltip();
-
-  public abstract String getInstructions();
 
   protected void addListeners(JComponent comp) {
     if (comp == null) {
@@ -113,14 +113,6 @@ public abstract class Tool extends JToggleButton implements ActionListener, KeyL
     }
   }
 
-  protected void attachTo(ZoneRenderer renderer) {
-    // No op
-  }
-
-  protected void detachFrom(ZoneRenderer renderer) {
-    // No op
-  }
-
   private InputMap createInputMap(Map<KeyStroke, Action> keyActionMap) {
     ComponentInputMap inputMap =
         new ComponentInputMap((JPanel) MapTool.getFrame().getContentPane());
@@ -138,26 +130,9 @@ public abstract class Tool extends JToggleButton implements ActionListener, KeyL
     return actionMap;
   }
 
-  /**
-   * Implement this method to clear internal data to a start drawing state. This method must repaint
-   * whatever it is being displayed upon.
-   */
-  protected abstract void resetTool();
-
-  /*
-   * Defines if the Tool belongs to a button group or not
-   */
-  protected boolean hasGroup() {
-    return true;
-  }
-
   ////
   // ACTION LISTENER
-  public void actionPerformed(ActionEvent e) {
-    if (isSelected()) {
-      toolbox.setSelectedTool(Tool.this);
-    }
-  }
+  public abstract void actionPerformed(ActionEvent e);
 
   ////
   // KEY LISTENER
@@ -172,28 +147,4 @@ public abstract class Tool extends JToggleButton implements ActionListener, KeyL
   public void keyTyped(KeyEvent e) {}
 
   public void updateButtonState() {}
-
-  /**
-   * Perform the escape action on a tool.
-   *
-   * @author jgorrell
-   */
-  private class EscapeAction extends AbstractAction {
-
-    private static final long serialVersionUID = -514197544905143826L;
-
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
-    public void actionPerformed(ActionEvent e) {
-      // This should probably go somewhere else like MapToolFrame...
-      // but it was just too easy to plop down here to resist =)
-      // although having it here will be a quick reminder about competing
-      // Escape actions.
-      if (MapTool.getFrame().isFullScreen()) {
-        MapTool.getFrame().showWindowed();
-      }
-      resetTool();
-    }
-  }
 }

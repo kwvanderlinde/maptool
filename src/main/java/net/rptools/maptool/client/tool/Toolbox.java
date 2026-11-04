@@ -32,14 +32,13 @@ public class Toolbox {
   private ZoneRenderer currentRenderer;
 
   /** The selected tool, if any. Will be one of {@link #tools} or {@code null}. */
-  private Tool currentTool;
+  private DefaultTool currentTool;
 
   /** Contains all tools in the toolbox regardless of how they were registered. */
   private final List<Tool> tools = new ArrayList<>();
 
   /** Remembers which tool was registered for which class. Values are members of {@link #tools}. */
-  private final Map<Class<? extends Tool>, Tool> toolMap =
-      new HashMap<Class<? extends Tool>, Tool>();
+  private final Map<Class<? extends Tool>, DefaultTool> toolMap = new HashMap<>();
 
   private final ButtonGroup buttonGroup = new ButtonGroup();
 
@@ -66,7 +65,9 @@ public class Toolbox {
       tool = constructor.newInstance();
 
       addTool(tool);
-      toolMap.put(toolClass, tool);
+      if (tool instanceof DefaultTool defaultTool) {
+        toolMap.put(toolClass, defaultTool);
+      }
 
       return tool;
     } catch (InstantiationException e) {
@@ -93,7 +94,7 @@ public class Toolbox {
    */
   public void addTool(Tool tool) {
     tools.add(tool);
-    if (tool.hasGroup()) {
+    if (tool instanceof DefaultTool) {
       buttonGroup.add(tool);
     }
     tool.setToolbox(this);
@@ -110,12 +111,12 @@ public class Toolbox {
         });
   }
 
-  public void setSelectedTool(Class<? extends Tool> toolClass) {
-    Tool tool = toolMap.get(toolClass);
+  public void setSelectedTool(Class<? extends DefaultTool> toolClass) {
+    DefaultTool tool = toolMap.get(toolClass);
     setSelectedTool(tool);
   }
 
-  public void setSelectedTool(final Tool tool) {
+  public void setSelectedTool(final DefaultTool tool) {
     EventQueue.invokeLater(
         () -> {
           if (tool == null || tool == currentTool || !tool.isAvailable()) {

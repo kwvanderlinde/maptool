@@ -315,18 +315,12 @@ public class RadiusCellTemplateTool extends AbstractTemplateTool implements Mous
     resetTool(null);
   }
 
-  /**
-   * @see Tool#detachFrom(ZoneRenderer)
-   */
   @Override
   protected void detachFrom(ZoneRenderer renderer) {
     super.detachFrom(renderer);
     renderer.repaint();
   }
 
-  /**
-   * @see Tool#attachTo(ZoneRenderer)
-   */
   @Override
   protected void attachTo(ZoneRenderer renderer) {
     renderer.repaint();
@@ -341,9 +335,6 @@ public class RadiusCellTemplateTool extends AbstractTemplateTool implements Mous
     return "tool.radiusCellTemplate.tooltip";
   }
 
-  /**
-   * @see Tool#getInstructions()
-   */
   @Override
   public String getInstructions() {
     return "tool.radiustemplate.instructions";

@@ -61,9 +61,6 @@ public class WallTemplateTool extends BurstTemplateTool {
     return "tool.walltemplate.tooltip";
   }
 
-  /**
-   * @see Tool#getInstructions()
-   */
   @Override
   public String getInstructions() {
     return "tool.walltemplate.instructions";

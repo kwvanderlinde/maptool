@@ -34,13 +34,8 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.Zone.TokenSelection;
 import net.rptools.maptool.util.MessageUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class ToolbarPanel extends JToolBar {
-
-  private static final Logger log = LogManager.getLogger(ToolbarPanel.class);
-
   private final ButtonGroup buttonGroup = new ButtonGroup();
   private final ButtonGroup tokenSelectionbuttonGroup = new ButtonGroup();
   private final JToggleButton pointerGroupButton;
@@ -583,8 +578,8 @@ public class ToolbarPanel extends JToolBar {
   }
 
   private class OptionPanel extends JToolBar {
-    private Tool firstTool;
-    private Tool currentTool;
+    private DefaultTool firstTool;
+    private DefaultTool currentTool;
 
     public OptionPanel() {
       setFloatable(false);
@@ -606,15 +601,17 @@ public class ToolbarPanel extends JToolBar {
     }
 
     private void setupTool(Tool tool) {
-      if (firstTool == null) {
-        firstTool = tool;
+      if (tool instanceof DefaultTool defaultTool) {
+        if (firstTool == null) {
+          firstTool = defaultTool;
+        }
+        tool.addActionListener(
+            e -> {
+              if (tool.isSelected()) {
+                currentTool = defaultTool;
+              }
+            });
       }
-      tool.addActionListener(
-          e -> {
-            if (tool.isSelected()) {
-              currentTool = tool;
-            }
-          });
       add(tool);
     }
 

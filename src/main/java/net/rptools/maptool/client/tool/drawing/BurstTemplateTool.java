@@ -101,9 +101,6 @@ public class BurstTemplateTool extends RadiusTemplateTool {
     return "tool.bursttemplate.tooltip";
   }
 
-  /**
-   * @see Tool#getInstructions()
-   */
   @Override
   public String getInstructions() {
     return "tool.bursttemplate.instructions";
