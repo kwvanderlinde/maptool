@@ -15,6 +15,7 @@
 package net.rptools.maptool.client.ui;
 
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -218,7 +219,7 @@ public class ToolbarPanel extends JToolBar {
             pointerGroupOptionPanel,
             I18N.getText("tools.interaction.tooltip"));
 
-    final SidePanel aiPanel = new SidePanel();
+    final var aiPanel = new OptionPanel();
 
     aiPanel.add(AI_Tool.class, Icons.TOOLBAR_POINTERTOOL_AI_OFF, Icons.TOOLBAR_POINTERTOOL_AI_ON);
     aiPanel.add(
@@ -576,9 +577,15 @@ public class ToolbarPanel extends JToolBar {
                 toolbox.setSelectedTool(defaultTool);
               }
             });
-      } else if (tool instanceof ActionListener al) {
-        button.addActionListener(al);
       }
+
+      button.addActionListener(
+          new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+              tool.setSelected(button.isSelected());
+            }
+          });
 
       tool.addPropertyChangeListener(
           new PropertyChangeListener() {
@@ -591,11 +598,21 @@ public class ToolbarPanel extends JToolBar {
                 }
                 case Tool.SELECTED_PROPERTY -> {
                   var selected = (boolean) evt.getNewValue();
+                  if (selected && tool instanceof DefaultTool defaultTool) {
+                    // Remember for later in case the user switches away.
+                    currentTool = defaultTool;
+                    toolbox.setSelectedTool(defaultTool);
+                  }
                   button.setSelected(selected);
                 }
               }
+              toolbox.updateTools();
             }
           });
+
+      tool.updateButtonState();
+      button.setSelected(tool.isSelected());
+      button.setEnabled(tool.isEnabled());
 
       add(button);
     }
@@ -604,36 +621,8 @@ public class ToolbarPanel extends JToolBar {
       if (currentTool == null) {
         currentTool = firstTool;
       }
-      toolbox.setSelectedTool(currentTool);
-    }
-  }
-
-  /*
-   * Stand-alone toolbar with meant to not interact with standard toolbar
-   */
-  private class SidePanel extends JToolBar {
-
-    public SidePanel() {
-      setFloatable(false);
-      setRollover(true);
-      setBorder(null);
-      setBorderPainted(false);
-    }
-
-    public void add(Class<? extends Tool> toolClass, Icons icon, Icons selectedIcon) {
-      final Tool tool = toolbox.createTool(toolClass);
-
-      var button = new JToggleButton();
-      button.setIcon(RessourceManager.getBigIcon(icon));
-      button.setSelectedIcon(RessourceManager.getBigIcon(selectedIcon));
-      button.setFocusable(false);
-      button.setFocusPainted(false);
-      setToolTipText(I18N.getText(tool.getTooltip()));
-
-      add(button);
-
-      if (tool instanceof ActionListener al) {
-        button.addActionListener(al);
+      if (currentTool != null) {
+        toolbox.setSelectedTool(currentTool);
       }
     }
   }

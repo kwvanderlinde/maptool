@@ -14,36 +14,39 @@
  */
 package net.rptools.maptool.client.tool;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
 
 /** Controls the toolbar button which drives if VBL will block movement or not when AI is used */
-public class AI_UseVblTool extends Tool implements ActionListener {
+public class AI_UseVblTool extends Tool {
 
   public AI_UseVblTool() {
-    // Server policy is not available yet but that's ok, we have it saved as a preference which
-    // is OK at this stage of initialization.
-    setSelected(AppPreferences.pathfindingBlockedByVbl.get());
-  }
+    addPropertyChangeListener(
+        evt -> {
+          switch (evt.getPropertyName()) {
+            case "selected" -> {
+              var selected = (boolean) evt.getNewValue();
 
-  @Override
-  public void actionPerformed(ActionEvent e) {
-    AppPreferences.pathfindingBlockedByVbl.set(isSelected());
+              AppPreferences.pathfindingBlockedByVbl.set(selected);
 
-    var client = MapTool.getClient();
-    var policy = client.getServerPolicy();
-    policy.setVblBlocksMove(isSelected());
-    client.setServerPolicy(policy);
-    client.getServerCommand().setServerPolicy(policy);
+              var client = MapTool.getClient();
+              var policy = client.getServerPolicy();
+              policy.setVblBlocksMove(selected);
+              client.setServerPolicy(policy);
+              client.getServerCommand().setServerPolicy(policy);
+            }
+          }
+        });
   }
 
   @Override
   public void updateButtonState() {
-    if (MapTool.getServerPolicy() != null) {
-      setSelected(MapTool.getServerPolicy().getVblBlocksMove());
-    }
+    var serverPolicy = MapTool.getServerPolicy();
+    boolean shouldBeSelected =
+        serverPolicy == null
+            ? AppPreferences.pathfindingBlockedByVbl.get()
+            : serverPolicy.getVblBlocksMove();
+    setSelected(shouldBeSelected);
   }
 
   @Override
