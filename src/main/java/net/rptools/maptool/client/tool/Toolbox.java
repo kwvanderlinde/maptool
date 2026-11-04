@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.swing.ButtonGroup;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.ZoneOverlay;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
@@ -39,8 +38,6 @@ public class Toolbox {
 
   /** Remembers which tool was registered for which class. Values are members of {@link #tools}. */
   private final Map<Class<? extends Tool>, DefaultTool> toolMap = new HashMap<>();
-
-  private final ButtonGroup buttonGroup = new ButtonGroup();
 
   public void updateTools() {
     for (Tool tool : tools) {
@@ -94,10 +91,6 @@ public class Toolbox {
    */
   public void addTool(Tool tool) {
     tools.add(tool);
-    if (tool instanceof DefaultTool) {
-      buttonGroup.add(tool);
-    }
-    tool.setToolbox(this);
   }
 
   public void setTargetRenderer(final ZoneRenderer renderer) {

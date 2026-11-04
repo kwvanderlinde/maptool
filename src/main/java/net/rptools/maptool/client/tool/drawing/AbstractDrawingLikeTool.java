@@ -22,7 +22,6 @@ import net.rptools.maptool.client.tool.DefaultTool;
 import net.rptools.maptool.client.tool.ToolHelper;
 import net.rptools.maptool.client.ui.zone.ZoneOverlay;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
-import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.ZonePoint;
 
 public abstract class AbstractDrawingLikeTool extends DefaultTool implements ZoneOverlay {
@@ -33,8 +32,6 @@ public abstract class AbstractDrawingLikeTool extends DefaultTool implements Zon
   protected AbstractDrawingLikeTool(String instructionKey, String tooltipKey) {
     this.instructionKey = instructionKey;
     this.tooltipKey = tooltipKey;
-
-    setToolTipText(I18N.getText(tooltipKey));
   }
 
   @Override

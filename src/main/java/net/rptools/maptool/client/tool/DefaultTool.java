@@ -132,18 +132,6 @@ public abstract class DefaultTool extends Tool
     }
   }
 
-  /**
-   * Called when the tool's button is clicked.
-   *
-   * @param e the event to be processed
-   */
-  @Override
-  public void actionPerformed(ActionEvent e) {
-    if (isSelected()) {
-      getToolbox().setSelectedTool(this);
-    }
-  }
-
   protected void attachTo(ZoneRenderer renderer) {
     this.renderer = renderer;
     selectedLayer = renderer.getActiveLayer();

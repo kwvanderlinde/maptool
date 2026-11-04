@@ -15,11 +15,12 @@
 package net.rptools.maptool.client.tool;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
 
 /** Controls the toolbar button which drives if AI is used or not to move tokens */
-public class AI_Tool extends Tool {
+public class AI_Tool extends Tool implements ActionListener {
 
   public AI_Tool() {
     // Server policy is not available yet but that's ok, we have it saved as a preference which

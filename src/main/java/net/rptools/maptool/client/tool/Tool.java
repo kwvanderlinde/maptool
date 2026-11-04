@@ -14,13 +14,14 @@
  */
 package net.rptools.maptool.client.tool;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -31,14 +32,14 @@ import javax.swing.ComponentInputMap;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
-import javax.swing.JToggleButton;
 import javax.swing.KeyStroke;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.language.I18N;
 
-public abstract class Tool extends JToggleButton implements ActionListener, KeyListener {
+public abstract class Tool implements KeyListener {
+  public static final String ENABLED_PROPERTY = "enabled";
+  public static final String SELECTED_PROPERTY = "selected";
 
-  private static final long serialVersionUID = -6365594431759083634L;
+  private final PropertyChangeSupport pcs;
 
   /**
    * Holds all pressed keys.
@@ -49,14 +50,45 @@ public abstract class Tool extends JToggleButton implements ActionListener, KeyL
   private final Set<Character> keyDownSet = new HashSet<Character>();
 
   protected Map<KeyStroke, Action> keyActionMap = new HashMap<KeyStroke, Action>();
-  private Toolbox toolbox;
+
+  private boolean enabled = false;
+  private boolean selected = false;
 
   public Tool() {
-    addActionListener(this);
+    pcs = new PropertyChangeSupport(this);
+  }
 
-    setToolTipText(I18N.getText(getTooltip()));
-    setFocusable(false);
-    setFocusPainted(false);
+  public void addPropertyChangeListener(PropertyChangeListener listener) {
+    pcs.addPropertyChangeListener(listener);
+  }
+
+  public void removePropertyChangeListener(PropertyChangeListener listener) {
+    pcs.removePropertyChangeListener(listener);
+  }
+
+  public boolean isEnabled() {
+    return enabled;
+  }
+
+  public void setEnabled(boolean enabled) {
+    var previous = this.enabled;
+    this.enabled = enabled;
+    pcs.firePropertyChange(new PropertyChangeEvent(this, ENABLED_PROPERTY, previous, this.enabled));
+  }
+
+  public boolean isSelected() {
+    return selected;
+  }
+
+  public void setSelected(boolean selected) {
+    if (!isAvailable()) {
+      selected = false;
+    }
+
+    var previous = this.selected;
+    this.selected = selected;
+    pcs.firePropertyChange(
+        new PropertyChangeEvent(this, SELECTED_PROPERTY, previous, this.selected));
   }
 
   protected boolean isKeyDown(char key) {
@@ -65,14 +97,6 @@ public abstract class Tool extends JToggleButton implements ActionListener, KeyL
 
   public boolean isAvailable() {
     return true;
-  }
-
-  protected Toolbox getToolbox() {
-    return this.toolbox;
-  }
-
-  void setToolbox(Toolbox toolbox) {
-    this.toolbox = toolbox;
   }
 
   public abstract String getTooltip();
@@ -129,10 +153,6 @@ public abstract class Tool extends JToggleButton implements ActionListener, KeyL
     }
     return actionMap;
   }
-
-  ////
-  // ACTION LISTENER
-  public abstract void actionPerformed(ActionEvent e);
 
   ////
   // KEY LISTENER
