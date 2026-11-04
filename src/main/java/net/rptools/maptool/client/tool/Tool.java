@@ -41,6 +41,12 @@ import net.rptools.maptool.language.I18N;
 public abstract class Tool extends JToggleButton implements ActionListener, KeyListener {
 
   private static final long serialVersionUID = -6365594431759083634L;
+  /**
+   * Holds all pressed keys.
+   *
+   * <p>Really, this is only used to check whether 'z' is held down so we can invert zoom direction.
+   * No idea why.
+   */
   private final Set<Character> keyDownSet = new HashSet<Character>();
   protected Map<KeyStroke, Action> keyActionMap = new HashMap<KeyStroke, Action>();
   private Toolbox toolbox;
