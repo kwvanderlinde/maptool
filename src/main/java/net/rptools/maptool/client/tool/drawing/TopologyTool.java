@@ -208,6 +208,7 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
     }
   }
 
+  // TODO This will soon be redundant.
   public static final class MaskOverlay implements ZoneOverlay {
     @Override
     public void paintOverlay(ZoneRenderer renderer, Graphics2D g) {
