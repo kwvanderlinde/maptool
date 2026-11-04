@@ -17,6 +17,9 @@ package net.rptools.maptool.client.tool;
 import java.awt.Point;
 import java.awt.dnd.DragSource;
 import java.awt.event.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.swing.*;
@@ -32,15 +35,26 @@ import net.rptools.maptool.model.CellPoint;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** */
 public abstract class DefaultTool extends Tool
-    implements MouseListener, MouseMotionListener, MouseWheelListener {
-  private static final long serialVersionUID = 3258411729238372921L;
+    implements MouseListener, MouseMotionListener, MouseWheelListener, KeyListener {
 
+  private static final Logger log = LoggerFactory.getLogger(DefaultTool.class);
   private final LayerSelectionDialog layerSelectionDialog =
       new LayerSelectionDialog(Zone.Layer.values(), this::selectedLayerChanged);
 
+  /**
+   * Holds all pressed keys.
+   *
+   * <p>Really, this is only used to check whether 'z' is held down so we can invert zoom direction.
+   * No idea why.
+   */
+  private final Set<Character> keyDownSet = new HashSet<>();
+
+  protected Map<KeyStroke, Action> keyActionMap = new HashMap<>();
   private Zone.Layer selectedLayer;
   private boolean isDraggingMap;
 
@@ -65,6 +79,7 @@ public abstract class DefaultTool extends Tool
   protected ZoneRenderer renderer;
 
   protected DefaultTool() {
+    keyActionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), new EscapeAction());
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD4, InputEvent.CTRL_DOWN_MASK),
         new ViewMovementKey(1, 0));
@@ -98,6 +113,24 @@ public abstract class DefaultTool extends Tool
         new FlipTokenVerticalActionListener());
   }
 
+  protected boolean isKeyDown(char key) {
+    return keyDownSet.contains(key);
+  }
+
+  // region KeyListener
+
+  public void keyPressed(KeyEvent e) {
+    keyDownSet.add(e.getKeyChar());
+  }
+
+  public void keyReleased(KeyEvent e) {
+    keyDownSet.remove(e.getKeyChar());
+  }
+
+  public void keyTyped(KeyEvent e) {}
+
+  // endregion
+
   protected Zone.Layer getSelectedLayer() {
     return selectedLayer;
   }
@@ -113,18 +146,83 @@ public abstract class DefaultTool extends Tool
     }
   }
 
+  public abstract String getInstructions();
+
+  /**
+   * Clears internal data to restore the tool to a starting state.
+   *
+   * <p>This method must repaint whatever it is being displayed upon.
+   *
+   * <p>The default implementation switches back to the default tool ({@link PointerTool}). Only
+   * delegate if there is no other reset behaviour that was actioned.
+   */
+  protected void resetTool() {
+    var frame = MapTool.getFrame();
+    if (frame != null) {
+      frame.getToolbox().setSelectedTool(PointerTool.class);
+    }
+  }
+
+  /**
+   * Called when the tool's button is clicked.
+   *
+   * @param e the event to be processed
+   */
   @Override
+  public void actionPerformed(ActionEvent e) {
+    if (isSelected()) {
+      getToolbox().setSelectedTool(this);
+    }
+  }
+
   protected void attachTo(ZoneRenderer renderer) {
-    super.attachTo(renderer);
     this.renderer = renderer;
     selectedLayer = renderer.getActiveLayer();
     layerSelectionDialog.setSelectedLayer(selectedLayer);
+
+    renderer.addMouseListener(this);
+    renderer.addMouseMotionListener(this);
+    renderer.addMouseWheelListener(this);
+    renderer.addKeyListener(this);
+    renderer.setActionMap(createActionMap(keyActionMap));
+    renderer.setInputMap(
+        JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, createInputMap(keyActionMap));
+
+    SwingUtilities.invokeLater(renderer::repaint);
   }
 
-  @Override
   protected void detachFrom(ZoneRenderer renderer) {
+    if (renderer != this.renderer) {
+      log.error(
+          "Asked to detach from the wrong zone. Attached to {}, but request was for {}",
+          this.renderer == null ? "null" : this.renderer.getZone().getId(),
+          renderer.getZone().getId());
+    }
+
     this.renderer = null;
-    super.detachFrom(renderer);
+
+    renderer.removeKeyListener(this);
+    renderer.removeMouseListener(this);
+    renderer.removeMouseMotionListener(this);
+    renderer.removeMouseWheelListener(this);
+    SwingUtilities.invokeLater(renderer::repaint);
+  }
+
+  private static InputMap createInputMap(Map<KeyStroke, Action> keyActionMap) {
+    ComponentInputMap inputMap =
+        new ComponentInputMap((JPanel) MapTool.getFrame().getContentPane());
+    for (KeyStroke keyStroke : keyActionMap.keySet()) {
+      inputMap.put(keyStroke, keyStroke.toString());
+    }
+    return inputMap;
+  }
+
+  private static ActionMap createActionMap(Map<KeyStroke, Action> keyActionMap) {
+    ActionMap actionMap = new ActionMap();
+    for (var keyAction : keyActionMap.entrySet()) {
+      actionMap.put(keyAction.getKey().toString(), keyAction.getValue());
+    }
+    return actionMap;
   }
 
   protected boolean isDraggingMap() {
@@ -139,10 +237,6 @@ public abstract class DefaultTool extends Tool
   protected void cancelMapDrag() {
     mapDragStart = null;
     isDraggingMap = false;
-  }
-
-  protected void repaintZone() {
-    renderer.repaint();
   }
 
   protected Zone getZone() {
@@ -180,37 +274,21 @@ public abstract class DefaultTool extends Tool
     }
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.awt.event.MouseListener#mouseClicked(java.awt.event.MouseEvent)
-   */
+  // region MouseListener implementation
+
   @Override
   public void mouseClicked(MouseEvent e) {}
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.awt.event.MouseListener#mouseEntered(java.awt.event.MouseEvent)
-   */
   @Override
   public void mouseEntered(MouseEvent e) {}
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.awt.event.MouseListener#mouseExited(java.awt.event.MouseEvent)
-   */
   @Override
   public void mouseExited(MouseEvent e) {}
 
-  ////
-  // MouseMotion
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.awt.event.MouseMotionListener#mouseMoved(java.awt.event.MouseEvent)
-   */
+  // endregion
+
+  // region MouseMotionListener implementation
+
   @Override
   public void mouseMoved(MouseEvent e) {
     if (renderer == null) {
@@ -260,12 +338,10 @@ public abstract class DefaultTool extends Tool
     }
   }
 
-  public void moveViewByCells(int dx, int dy) {
-    renderer.moveViewByCells(dx, dy);
-  }
+  // endregion
 
-  ////
-  // Mouse Wheel
+  // region MouseWheelListener implementation
+
   @Override
   public void mouseWheelMoved(MouseWheelEvent e) {
     // Fix for High Resolution Mouse Wheels
@@ -308,7 +384,7 @@ public abstract class DefaultTool extends Tool
         MapTool.serverCommand().putToken(getZone().getId(), token);
       }
 
-      repaintZone();
+      renderer.repaint();
       return;
     }
     // ZOOM
@@ -343,10 +419,7 @@ public abstract class DefaultTool extends Tool
     }
   }
 
-  @Override
-  protected void resetTool() {
-    MapTool.getFrame().getToolbox().setSelectedTool(PointerTool.class);
-  }
+  // endregion
 
   /*
    * For touch screens, swap the events, easier to move map/draw by default
@@ -405,6 +478,30 @@ public abstract class DefaultTool extends Tool
     }
   }
 
+  /**
+   * Perform the escape action on a tool.
+   *
+   * @author jgorrell
+   */
+  private class EscapeAction extends AbstractAction {
+
+    private static final long serialVersionUID = -514197544905143826L;
+
+    /**
+     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+     */
+    public void actionPerformed(ActionEvent e) {
+      // This should probably go somewhere else like MapToolFrame...
+      // but it was just too easy to plop down here to resist =)
+      // although having it here will be a quick reminder about competing
+      // Escape actions.
+      if (MapTool.getFrame().isFullScreen()) {
+        MapTool.getFrame().showWindowed();
+      }
+      resetTool();
+    }
+  }
+
   private class ViewMovementKey extends AbstractAction {
     private final int dx, dy;
 
@@ -419,7 +516,9 @@ public abstract class DefaultTool extends Tool
     }
 
     public void actionPerformed(ActionEvent e) {
-      moveViewByCells(dx, dy);
+      if (renderer != null) {
+        renderer.moveViewByCells(dx, dy);
+      }
     }
   }
 }

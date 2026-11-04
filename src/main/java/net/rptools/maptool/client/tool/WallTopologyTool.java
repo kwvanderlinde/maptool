@@ -114,6 +114,7 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
   @Override
   protected void attachTo(ZoneRenderer renderer) {
     super.attachTo(renderer);
+
     currentPosition = new Point2D.Double(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
     var rig = new WallTopologyRig(this::getHandleSelectDistance, this::getWallSelectDistance);
     rig.setWalls(getZone().getWalls());
@@ -131,6 +132,7 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
     MapTool.getFrame().removeControlPanel();
 
     changeToolMode(new NilToolMode());
+
     super.detachFrom(renderer);
   }
 

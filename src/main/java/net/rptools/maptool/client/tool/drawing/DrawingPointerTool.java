@@ -216,6 +216,7 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
   @Override
   protected void attachTo(ZoneRenderer renderer) {
     super.attachTo(renderer);
+
     if (MapTool.getPlayer().isGM()) {
       MapTool.getFrame()
           .showControlPanel(MapTool.getFrame().getColorPicker(), getLayerSelectionDialog());

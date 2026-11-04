@@ -214,6 +214,8 @@ public class GridTool extends DefaultTool {
    */
   @Override
   protected void attachTo(ZoneRenderer renderer) {
+    super.attachTo(renderer);
+
     oldShowGrid = AppState.isShowGrid();
     AppState.setShowGrid(true);
 
@@ -224,9 +226,6 @@ public class GridTool extends DefaultTool {
     gridSecondDimensionLabel.setVisible(showSecond);
 
     MapTool.getFrame().showControlPanel(controlPanel);
-    renderer.repaint();
-
-    super.attachTo(renderer);
 
     copyGridToControlPanel();
   }
@@ -240,7 +239,6 @@ public class GridTool extends DefaultTool {
   protected void detachFrom(ZoneRenderer renderer) {
     AppState.setShowGrid(oldShowGrid);
     MapTool.getFrame().removeControlPanel();
-    renderer.repaint();
 
     // Commit the grid size change
     Zone zone = renderer.getZone();
