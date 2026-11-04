@@ -116,6 +116,171 @@ public class PointerTool extends DefaultTool {
     htmlRenderer.setOpaque(false);
     htmlRenderer.addStyleSheetRule("body{color:black}");
     htmlRenderer.addStyleSheetRule(".title{font-size: 14pt}");
+
+    keyActionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_HOME, 0), AppActions.NEXT_TOKEN);
+    keyActionMap.put(AppActions.CUT_TOKENS.getKeyStroke(), AppActions.CUT_TOKENS);
+    keyActionMap.put(AppActions.COPY_TOKENS.getKeyStroke(), AppActions.COPY_TOKENS);
+    keyActionMap.put(AppActions.PASTE_TOKENS.getKeyStroke(), AppActions.PASTE_TOKENS);
+    keyActionMap.put(AppActions.SET_FACING_ACTION.getKeyStroke(), AppActions.SET_FACING_ACTION);
+
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), ToolHelper.getDeleteTokenAction());
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0, true), new StopPointerActionListener());
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, ActionEvent.CTRL_MASK, true),
+        new StopPointerActionListener());
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, ActionEvent.SHIFT_MASK, true),
+        new StopPointerActionListener());
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(
+            KeyEvent.VK_SPACE, ActionEvent.CTRL_MASK | ActionEvent.SHIFT_MASK, true),
+        new StopPointerActionListener(true));
+
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0, false),
+        new PointerActionListener(Pointer.Type.ARROW));
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, ActionEvent.CTRL_MASK, false),
+        new PointerActionListener(Pointer.Type.SPEECH_BUBBLE));
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, ActionEvent.SHIFT_MASK, false),
+        new PointerActionListener(Pointer.Type.THOUGHT_BUBBLE));
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(
+            KeyEvent.VK_SPACE, ActionEvent.CTRL_MASK | ActionEvent.SHIFT_MASK, false),
+        new PointerActionListener(Pointer.Type.LOOK_HERE));
+
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_D, 0),
+        new AbstractAction() {
+          private static final long serialVersionUID = 1L;
+
+          public void actionPerformed(ActionEvent e) {
+            if (tokenDragOp == null) {
+              return;
+            }
+            // Stop
+            stopTokenDrag();
+          }
+        });
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
+        new AbstractAction() {
+          private static final long serialVersionUID = 1L;
+
+          public void actionPerformed(ActionEvent e) {
+            if (tokenDragOp == null) {
+              return;
+            }
+            // Stop
+            stopTokenDrag();
+          }
+        });
+    // Other NumPad keys are handled by individual grid types
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD5, 0),
+        new AbstractAction() {
+          private static final long serialVersionUID = 1L;
+
+          public void actionPerformed(ActionEvent e) {
+            if (tokenDragOp == null) {
+              return;
+            }
+            // Stop
+            stopTokenDrag();
+          }
+        });
+    int size = 1;
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD7, 0), new MovementKey(this, -size, -size));
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD8, 0), new MovementKey(this, 0, -size));
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD9, 0), new MovementKey(this, size, -size));
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD4, 0), new MovementKey(this, -size, 0));
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD6, 0), new MovementKey(this, size, 0));
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD1, 0), new MovementKey(this, -size, size));
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD2, 0), new MovementKey(this, 0, size));
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD3, 0), new MovementKey(this, size, size));
+    keyActionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0), new MovementKey(this, -size, 0));
+    keyActionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), new MovementKey(this, size, 0));
+    keyActionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), new MovementKey(this, 0, -size));
+    keyActionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), new MovementKey(this, 0, size));
+
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, InputEvent.SHIFT_DOWN_MASK),
+        new AbstractAction() {
+          private static final long serialVersionUID = 1L;
+
+          public void actionPerformed(ActionEvent e) {
+            handleKeyRotate(-1, false); // clockwise
+          }
+        });
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(
+            KeyEvent.VK_RIGHT, InputEvent.SHIFT_DOWN_MASK | InputEvent.CTRL_DOWN_MASK),
+        new AbstractAction() {
+          private static final long serialVersionUID = 1L;
+
+          public void actionPerformed(ActionEvent e) {
+            handleKeyRotate(-1, true); // clockwise
+          }
+        });
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, InputEvent.SHIFT_DOWN_MASK),
+        new AbstractAction() {
+          private static final long serialVersionUID = 1L;
+
+          public void actionPerformed(ActionEvent e) {
+            handleKeyRotate(1, false); // counter-clockwise
+          }
+        });
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(
+            KeyEvent.VK_LEFT, InputEvent.SHIFT_DOWN_MASK | InputEvent.CTRL_DOWN_MASK),
+        new AbstractAction() {
+          private static final long serialVersionUID = 1L;
+
+          public void actionPerformed(ActionEvent e) {
+            handleKeyRotate(1, true); // counter-clockwise
+          }
+        });
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_T, 0),
+        new AbstractAction() {
+          private static final long serialVersionUID = 1L;
+
+          public void actionPerformed(ActionEvent e) {
+            renderer.cycleSelectedToken(1);
+          }
+        });
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_T, InputEvent.SHIFT_DOWN_MASK),
+        new AbstractAction() {
+          private static final long serialVersionUID = 1L;
+
+          public void actionPerformed(ActionEvent e) {
+            renderer.cycleSelectedToken(-1);
+          }
+        });
+
+    keyActionMap.put(
+        AppActions.EXPOSE_VISIBLE_AREA_ACTION.getKeyStroke(),
+        AppActions.EXPOSE_VISIBLE_AREA_ACTION);
+    keyActionMap.put(
+        AppActions.EXPOSE_VISIBLE_AREA_ONLY_ACTION.getKeyStroke(),
+        AppActions.EXPOSE_VISIBLE_AREA_ONLY_ACTION);
+    keyActionMap.put(
+        AppActions.EXPOSE_ALL_OWNED_ACTION.getKeyStroke(), AppActions.EXPOSE_ALL_OWNED_ACTION);
+    keyActionMap.put(
+        AppActions.EXPOSE_LAST_PATH_ACTION.getKeyStroke(), AppActions.EXPOSE_LAST_PATH_ACTION);
   }
 
   @Override
@@ -730,258 +895,6 @@ public class PointerTool extends DefaultTool {
       return;
     }
     super.mouseDragged(e);
-  }
-
-  /**
-   * @note These keystrokes are currently hard-coded and should be exported to a property file in a
-   *     perfect universe. :)
-   *     <table>
-   * <caption>Keystrokes</caption>
-   * <tr>
-   * <td>Meta R
-   * <td>Select the FacingTool (to allow rotating with the left/right arrows)
-   * <tr>
-   * <td>DELETE
-   * <td>Allow deletion of owned tokens
-   * <tr>
-   * <td>Space
-   * <td>Show arrow pointer on map
-   * <tr>
-   * <td>Ctrl Space
-   * <td>Show speech bubble on map
-   * <tr>
-   * <td>Shift Space
-   * <td>Show thought bubble on map
-   * <tr>
-   * <td>D
-   * <td>Stop dragging token
-   * <tr>
-   * <td>Enter
-   * <td>Stop dragging token
-   * <tr>
-   * <td>T
-   * <td>Cycle forward through tokens
-   * <tr>
-   * <td>Shift T
-   * <td>Cycle backward through tokens
-   * <tr>
-   * <td>Meta I
-   * <td>Expose fog from visible area
-   * <tr>
-   * <td>Meta P
-   * <td>Expose fog from last path
-   * <tr>
-   * <td>Meta Shift O
-   * <td>Expose only PC area (reinsert other fog)
-   * <tr>
-   * <td>NumPad digits
-   * <td>Move token (specifics based on the grid type are not implemented yet):<br>
-   * <tr>
-   * <td>
-   * <td>
-   * <table>
-   *    <tr>
-   *    <td>7 (up/left)
-   *    <td>8 (up)
-   *    <td>9 (up/right)
-   *    <tr>
-   *    <td>4 (left)
-   *    <td>5 (stop)
-   *    <td>6 (right)
-   *    <tr>
-   *    <td>1 (down/left)
-   *    <td>2 (down)
-   *    <td>3 (down/right)
-   * </table>
-   * <tr>
-   * <td>Down
-   * <td>Move token down
-   * <tr>
-   * <td>Up
-   * <td>Move token up
-   * <tr>
-   * <td>Right
-   * <td>Move token right
-   * <tr>
-   * <td>Shift Right
-   * <td>Rotate token right by facing amount (depends on grid)
-   * <tr>
-   * <td>Ctrl Shift Right
-   * <td>Rotate token right by 5 degree increments
-   * <tr>
-   * <td>Left
-   * <td>Move token left
-   * <tr>
-   * <td>Shift Left
-   * <td>Rotate token left by facing amount (depends on grid)
-   * <tr>
-   * <td>Ctrl Shift Left
-   * <td>Rotate token left by 5 degree increments
-   * </table>
-   */
-  @Override
-  protected void installKeystrokes(Map<KeyStroke, Action> actionMap) {
-    super.installKeystrokes(actionMap);
-
-    actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_HOME, 0), AppActions.NEXT_TOKEN);
-    actionMap.put(AppActions.CUT_TOKENS.getKeyStroke(), AppActions.CUT_TOKENS);
-    actionMap.put(AppActions.COPY_TOKENS.getKeyStroke(), AppActions.COPY_TOKENS);
-    actionMap.put(AppActions.PASTE_TOKENS.getKeyStroke(), AppActions.PASTE_TOKENS);
-    actionMap.put(AppActions.SET_FACING_ACTION.getKeyStroke(), AppActions.SET_FACING_ACTION);
-
-    actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), ToolHelper.getDeleteTokenAction());
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0, true), new StopPointerActionListener());
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, ActionEvent.CTRL_MASK, true),
-        new StopPointerActionListener());
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, ActionEvent.SHIFT_MASK, true),
-        new StopPointerActionListener());
-    actionMap.put(
-        KeyStroke.getKeyStroke(
-            KeyEvent.VK_SPACE, ActionEvent.CTRL_MASK + ActionEvent.SHIFT_MASK, true),
-        new StopPointerActionListener(true));
-
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0, false),
-        new PointerActionListener(Pointer.Type.ARROW));
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, ActionEvent.CTRL_MASK, false),
-        new PointerActionListener(Pointer.Type.SPEECH_BUBBLE));
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, ActionEvent.SHIFT_MASK, false),
-        new PointerActionListener(Pointer.Type.THOUGHT_BUBBLE));
-    actionMap.put(
-        KeyStroke.getKeyStroke(
-            KeyEvent.VK_SPACE, ActionEvent.CTRL_MASK + ActionEvent.SHIFT_MASK, false),
-        new PointerActionListener(Pointer.Type.LOOK_HERE));
-
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_D, 0),
-        new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
-          public void actionPerformed(ActionEvent e) {
-            if (tokenDragOp == null) {
-              return;
-            }
-            // Stop
-            stopTokenDrag();
-          }
-        });
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
-        new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
-          public void actionPerformed(ActionEvent e) {
-            if (tokenDragOp == null) {
-              return;
-            }
-            // Stop
-            stopTokenDrag();
-          }
-        });
-    // Other NumPad keys are handled by individual grid types
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD5, 0),
-        new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
-          public void actionPerformed(ActionEvent e) {
-            if (tokenDragOp == null) {
-              return;
-            }
-            // Stop
-            stopTokenDrag();
-          }
-        });
-    int size = 1;
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD7, 0), new MovementKey(this, -size, -size));
-    actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD8, 0), new MovementKey(this, 0, -size));
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD9, 0), new MovementKey(this, size, -size));
-    actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD4, 0), new MovementKey(this, -size, 0));
-    actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD6, 0), new MovementKey(this, size, 0));
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD1, 0), new MovementKey(this, -size, size));
-    actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD2, 0), new MovementKey(this, 0, size));
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD3, 0), new MovementKey(this, size, size));
-    actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0), new MovementKey(this, -size, 0));
-    actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), new MovementKey(this, size, 0));
-    actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), new MovementKey(this, 0, -size));
-    actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), new MovementKey(this, 0, size));
-
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, InputEvent.SHIFT_DOWN_MASK),
-        new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
-          public void actionPerformed(ActionEvent e) {
-            handleKeyRotate(-1, false); // clockwise
-          }
-        });
-    actionMap.put(
-        KeyStroke.getKeyStroke(
-            KeyEvent.VK_RIGHT, InputEvent.SHIFT_DOWN_MASK | InputEvent.CTRL_DOWN_MASK),
-        new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
-          public void actionPerformed(ActionEvent e) {
-            handleKeyRotate(-1, true); // clockwise
-          }
-        });
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, InputEvent.SHIFT_DOWN_MASK),
-        new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
-          public void actionPerformed(ActionEvent e) {
-            handleKeyRotate(1, false); // counter-clockwise
-          }
-        });
-    actionMap.put(
-        KeyStroke.getKeyStroke(
-            KeyEvent.VK_LEFT, InputEvent.SHIFT_DOWN_MASK | InputEvent.CTRL_DOWN_MASK),
-        new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
-          public void actionPerformed(ActionEvent e) {
-            handleKeyRotate(1, true); // counter-clockwise
-          }
-        });
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_T, 0),
-        new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
-          public void actionPerformed(ActionEvent e) {
-            renderer.cycleSelectedToken(1);
-          }
-        });
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_T, InputEvent.SHIFT_DOWN_MASK),
-        new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
-          public void actionPerformed(ActionEvent e) {
-            renderer.cycleSelectedToken(-1);
-          }
-        });
-
-    actionMap.put(
-        AppActions.EXPOSE_VISIBLE_AREA_ACTION.getKeyStroke(),
-        AppActions.EXPOSE_VISIBLE_AREA_ACTION);
-    actionMap.put(
-        AppActions.EXPOSE_VISIBLE_AREA_ONLY_ACTION.getKeyStroke(),
-        AppActions.EXPOSE_VISIBLE_AREA_ONLY_ACTION);
-    actionMap.put(
-        AppActions.EXPOSE_ALL_OWNED_ACTION.getKeyStroke(), AppActions.EXPOSE_ALL_OWNED_ACTION);
-    actionMap.put(
-        AppActions.EXPOSE_LAST_PATH_ACTION.getKeyStroke(), AppActions.EXPOSE_LAST_PATH_ACTION);
   }
 
   /**

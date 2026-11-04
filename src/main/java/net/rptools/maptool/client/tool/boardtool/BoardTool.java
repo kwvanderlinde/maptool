@@ -23,7 +23,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.geom.Point2D;
 import java.text.ParseException;
-import java.util.Map;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -107,18 +106,14 @@ public class BoardTool extends DefaultTool {
 
     JButton closeButton = (JButton) controlPanel.getComponent("closeButton");
     closeButton.addActionListener(e -> resetTool());
-  }
 
-  @Override
-  protected void installKeystrokes(Map<KeyStroke, Action> actionMap) {
-    super.installKeystrokes(actionMap);
-
-    actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), new boardPositionAction(Direction.Up));
-    actionMap.put(
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), new boardPositionAction(Direction.Up));
+    keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0), new boardPositionAction(Direction.Left));
-    actionMap.put(
+    keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), new boardPositionAction(Direction.Down));
-    actionMap.put(
+    keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), new boardPositionAction(Direction.Right));
   }
 

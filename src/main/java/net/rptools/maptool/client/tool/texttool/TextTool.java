@@ -19,9 +19,7 @@ import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.util.Map;
 import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JSpinner;
@@ -67,6 +65,22 @@ public class TextTool extends DefaultTool implements ZoneOverlay {
 
   private boolean selectedNewLabel;
 
+  public TextTool() {
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0),
+        new AbstractAction() {
+          public void actionPerformed(ActionEvent e) {
+            if (selectedLabel != null) {
+              renderer.getZone().removeLabel(selectedLabel.getId());
+              MapTool.serverCommand()
+                  .removeLabel(renderer.getZone().getId(), selectedLabel.getId());
+              selectedLabel = null;
+              renderer.repaint();
+            }
+          }
+        });
+  }
+
   @Override
   protected void attachTo(ZoneRenderer renderer) {
     renderer.setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
@@ -100,25 +114,6 @@ public class TextTool extends DefaultTool implements ZoneOverlay {
     if (selectedLabel != null && renderer.getLabelBounds(selectedLabel) != null) {
       AppStyle.selectedBorder.paintWithin(g, renderer.getLabelBounds(selectedLabel));
     }
-  }
-
-  @Override
-  protected void installKeystrokes(Map<KeyStroke, Action> actionMap) {
-    super.installKeystrokes(actionMap);
-
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0),
-        new AbstractAction() {
-          public void actionPerformed(ActionEvent e) {
-            if (selectedLabel != null) {
-              renderer.getZone().removeLabel(selectedLabel.getId());
-              MapTool.serverCommand()
-                  .removeLabel(renderer.getZone().getId(), selectedLabel.getId());
-              selectedLabel = null;
-              repaint();
-            }
-          }
-        });
   }
 
   ////
