@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.KeyStroke;
 import net.rptools.maptool.client.AppStyle;
 import net.rptools.maptool.client.MapTool;
@@ -64,6 +63,16 @@ public class WallTool extends DefaultTool implements ZoneOverlay {
 
   public WallTool() {
     super();
+
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0),
+        new AbstractAction() {
+          @Override
+          public void actionPerformed(ActionEvent e) {
+            mode.delete();
+            renderer.repaint();
+          }
+        });
   }
 
   private void changeToolMode(ToolMode newMode) {
@@ -85,21 +94,6 @@ public class WallTool extends DefaultTool implements ZoneOverlay {
   @Override
   public boolean isAvailable() {
     return MapTool.getPlayer().isGM();
-  }
-
-  @Override
-  protected void installKeystrokes(Map<KeyStroke, Action> actionMap) {
-    super.installKeystrokes(actionMap);
-
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0),
-        new AbstractAction() {
-          @Override
-          public void actionPerformed(ActionEvent e) {
-            mode.delete();
-            renderer.repaint();
-          }
-        });
   }
 
   @Override
