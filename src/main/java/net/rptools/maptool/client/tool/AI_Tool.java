@@ -19,7 +19,7 @@ import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
 
 /** Controls the toolbar button which drives if AI is used or not to move tokens */
-public class AI_Tool extends DefaultTool {
+public class AI_Tool extends Tool {
 
   public AI_Tool() {
     // Server policy is not available yet but that's ok, we have it saved as a preference which
@@ -53,17 +53,7 @@ public class AI_Tool extends DefaultTool {
   }
 
   @Override
-  public String getInstructions() {
-    return ""; // Not used, only displayed for currentTool
-  }
-
-  @Override
   public boolean isAvailable() {
     return MapTool.getPlayer().isGM();
-  }
-
-  @Override
-  public boolean hasGroup() {
-    return false;
   }
 }

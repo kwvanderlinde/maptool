@@ -53,9 +53,6 @@ public class BlastTemplateTool extends BurstTemplateTool {
     return "tool.blasttemplate.tooltip";
   }
 
-  /**
-   * @see Tool#getInstructions()
-   */
   @Override
   public String getInstructions() {
     return "tool.blasttemplate.instructions";

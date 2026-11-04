@@ -46,6 +46,7 @@ public abstract class AbstractTemplateTool extends DefaultTool implements ZoneOv
   @Override
   protected void attachTo(ZoneRenderer renderer) {
     super.attachTo(renderer);
+
     if (MapTool.getPlayer().isGM()) {
       MapTool.getFrame()
           .showControlPanel(MapTool.getFrame().getColorPicker(), getLayerSelectionDialog());

@@ -221,6 +221,7 @@ public class BoardTool extends DefaultTool {
   @Override
   protected void attachTo(ZoneRenderer renderer) {
     super.attachTo(renderer);
+
     zone = renderer.getZone();
     copyBoardToControlPanel();
     oldShowGrid = AppState.isShowGrid();
@@ -262,6 +263,7 @@ public class BoardTool extends DefaultTool {
             zone.getImageScaleX(),
             zone.getImageScaleY());
     AppState.setShowGrid(oldShowGrid);
+
     super.detachFrom(renderer);
   }
 

@@ -57,6 +57,7 @@ public final class DrawingTool<StateT> extends AbstractDrawingLikeTool {
   @Override
   protected void attachTo(ZoneRenderer renderer) {
     super.attachTo(renderer);
+
     if (MapTool.getPlayer().isGM()) {
       MapTool.getFrame()
           .showControlPanel(MapTool.getFrame().getColorPicker(), getLayerSelectionDialog());

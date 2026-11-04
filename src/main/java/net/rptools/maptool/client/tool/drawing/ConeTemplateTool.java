@@ -58,9 +58,6 @@ public class ConeTemplateTool extends RadiusTemplateTool {
     return "tool.cone.tooltip";
   }
 
-  /**
-   * @see Tool#getInstructions()
-   */
   @Override
   public String getInstructions() {
     return "tool.cone.instructions";
