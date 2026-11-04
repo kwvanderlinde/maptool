@@ -14,43 +14,68 @@
  */
 package net.rptools.maptool.client.tool;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyListener;
-import javax.swing.JToggleButton;
-import net.rptools.maptool.language.I18N;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import javax.swing.Action;
+import javax.swing.KeyStroke;
 
-public abstract class Tool extends JToggleButton implements ActionListener {
+public abstract class Tool {
+  public static final String ENABLED_PROPERTY = "enabled";
+  public static final String SELECTED_PROPERTY = "selected";
 
-  private static final long serialVersionUID = -6365594431759083634L;
+  private final PropertyChangeSupport pcs;
+  private final Set<Character> keyDownSet = new HashSet<>();
 
-  private Toolbox toolbox;
+  protected Map<KeyStroke, Action> keyActionMap = new HashMap<>();
+
+  private boolean enabled = false;
+  private boolean selected = false;
 
   public Tool() {
-    addActionListener(this);
+    pcs = new PropertyChangeSupport(this);
+  }
 
-    setToolTipText(I18N.getText(getTooltip()));
-    setFocusable(false);
-    setFocusPainted(false);
+  public void addPropertyChangeListener(PropertyChangeListener listener) {
+    pcs.addPropertyChangeListener(listener);
+  }
+
+  public void removePropertyChangeListener(PropertyChangeListener listener) {
+    pcs.removePropertyChangeListener(listener);
+  }
+
+  public boolean isEnabled() {
+    return enabled;
+  }
+
+  public void setEnabled(boolean enabled) {
+    var previous = this.enabled;
+    this.enabled = enabled;
+    pcs.firePropertyChange(ENABLED_PROPERTY, previous, this.enabled);
+  }
+
+  public boolean isSelected() {
+    return selected;
+  }
+
+  public void setSelected(boolean selected) {
+    if (!isAvailable()) {
+      selected = false;
+    }
+
+    var previous = this.selected;
+    this.selected = selected;
+    pcs.firePropertyChange(SELECTED_PROPERTY, previous, this.selected);
   }
 
   public boolean isAvailable() {
     return true;
   }
 
-  protected Toolbox getToolbox() {
-    return this.toolbox;
-  }
-
-  void setToolbox(Toolbox toolbox) {
-    this.toolbox = toolbox;
-  }
-
   public abstract String getTooltip();
 
-  ////
-  // ACTION LISTENER
-  public abstract void actionPerformed(ActionEvent e);
-
-  public void updateButtonState() {}
+  public void updateState() {}
 }

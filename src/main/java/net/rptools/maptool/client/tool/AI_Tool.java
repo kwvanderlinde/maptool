@@ -14,7 +14,6 @@
  */
 package net.rptools.maptool.client.tool;
 
-import java.awt.event.ActionEvent;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
 
@@ -22,29 +21,31 @@ import net.rptools.maptool.client.MapTool;
 public class AI_Tool extends Tool {
 
   public AI_Tool() {
-    // Server policy is not available yet but that's ok, we have it saved as a preference which
-    // is OK at this stage of initialization.
-    setSelected(AppPreferences.pathfindingEnabled.get());
+    addPropertyChangeListener(
+        evt -> {
+          switch (evt.getPropertyName()) {
+            case "selected" -> {
+              var selected = (boolean) evt.getNewValue();
+
+              AppPreferences.pathfindingEnabled.set(selected);
+
+              var client = MapTool.getClient();
+              var policy = client.getServerPolicy();
+              policy.setUsingAstarPathfinding(selected);
+              client.setServerPolicy(policy);
+              client.getServerCommand().setServerPolicy(policy);
+            }
+          }
+        });
   }
 
-  @Override
-  public void actionPerformed(ActionEvent e) {
-    AppPreferences.pathfindingEnabled.set(isSelected());
-
-    var client = MapTool.getClient();
-    var policy = client.getServerPolicy();
-    policy.setUsingAstarPathfinding(isSelected());
-    client.setServerPolicy(policy);
-    client.getServerCommand().setServerPolicy(policy);
-
-    // Trigger AI_UseVblTool's isAvailable
-    MapTool.getFrame().getToolbox().updateTools();
-  }
-
-  public void updateButtonState() {
-    if (MapTool.getServerPolicy() != null) {
-      setSelected(MapTool.getServerPolicy().isUsingAstarPathfinding());
-    }
+  public void updateState() {
+    var serverPolicy = MapTool.getServerPolicy();
+    boolean shouldBeSelected =
+        serverPolicy == null
+            ? AppPreferences.pathfindingEnabled.get()
+            : serverPolicy.isUsingAstarPathfinding();
+    setSelected(shouldBeSelected);
   }
 
   @Override

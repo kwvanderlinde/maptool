@@ -22,7 +22,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.geom.*;
-import java.io.Serial;
 import java.util.*;
 import java.util.List;
 import javax.swing.*;
@@ -96,8 +95,6 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
   /*---------------------------------------------------------------------------------------------
    * Instance Variables & Enumerations
    *-------------------------------------------------------------------------------------------*/
-
-  @Serial private static final long serialVersionUID = 8817168063984434244L;
 
   /**
    * Used to keep track of which pointer tool we are using, as using {@link DrawingPointerTool}

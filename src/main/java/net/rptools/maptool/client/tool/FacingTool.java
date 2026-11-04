@@ -14,7 +14,6 @@
  */
 package net.rptools.maptool.client.tool;
 
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -31,9 +30,6 @@ import net.rptools.maptool.model.Token;
 
 /** */
 public class FacingTool extends DefaultTool {
-
-  private static final long serialVersionUID = -2807604658989763950L;
-
   private Token tokenUnderMouse;
   private Set<GUID> selectedTokenSet;
 

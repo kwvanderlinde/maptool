@@ -163,18 +163,6 @@ public abstract class DefaultTool extends Tool
     }
   }
 
-  /**
-   * Called when the tool's button is clicked.
-   *
-   * @param e the event to be processed
-   */
-  @Override
-  public void actionPerformed(ActionEvent e) {
-    if (isSelected()) {
-      getToolbox().setSelectedTool(this);
-    }
-  }
-
   protected void attachTo(ZoneRenderer renderer) {
     this.renderer = renderer;
     selectedLayer = renderer.getActiveLayer();
@@ -484,9 +472,6 @@ public abstract class DefaultTool extends Tool
    * @author jgorrell
    */
   private class EscapeAction extends AbstractAction {
-
-    private static final long serialVersionUID = -514197544905143826L;
-
     public void actionPerformed(ActionEvent e) {
       // This should probably go somewhere else like MapToolFrame...
       // but it was just too easy to plop down here to resist =)

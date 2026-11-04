@@ -38,8 +38,6 @@ import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.drawing.DrawablePaint;
 import net.rptools.maptool.model.drawing.DrawableTexturePaint;
 import net.rptools.maptool.util.ImageManager;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * Allows user to re-position the background map (internally called the 'board'). This entire class
@@ -47,8 +45,6 @@ import org.apache.logging.log4j.Logger;
  * instance?
  */
 public class BoardTool extends DefaultTool {
-  private static final long serialVersionUID = 98389912045059L;
-  private static final Logger log = LogManager.getLogger(BoardTool.class);
 
   // Context variables
   private static Zone zone;

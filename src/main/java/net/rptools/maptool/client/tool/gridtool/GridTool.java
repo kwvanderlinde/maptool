@@ -46,7 +46,6 @@ import net.rptools.maptool.model.zones.GridChanged;
 
 /** */
 public class GridTool extends DefaultTool {
-  private static final long serialVersionUID = 3760846783148208951L;
   private static final int zoomSliderStopCount = 100;
 
   private enum Size {
@@ -388,7 +387,6 @@ public class GridTool extends DefaultTool {
   }
 
   private final class GridSizeAction extends AbstractAction {
-    private static final long serialVersionUID = -3949586212099357034L;
     private final Size size;
 
     public GridSizeAction(Size size) {
@@ -411,7 +409,6 @@ public class GridTool extends DefaultTool {
   }
 
   private class GridOffsetAction extends AbstractAction {
-    private static final long serialVersionUID = 6664327737774374442L;
     private final Direction direction;
 
     public GridOffsetAction(Direction direction) {

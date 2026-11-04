@@ -44,9 +44,6 @@ import net.rptools.maptool.model.ZonePoint;
  * editor. It extends the DefaultTool class and implements the ZoneOverlay interface.
  */
 public class TextTool extends DefaultTool implements ZoneOverlay {
-  /** The serial version UID. */
-  private static final long serialVersionUID = -8944323545051996907L;
-
   /**
    * Represents the currently selected Label object.
    *
@@ -211,8 +208,6 @@ public class TextTool extends DefaultTool implements ZoneOverlay {
    * panel.
    */
   public class EditLabelDialog extends JDialog {
-    /** The serial version UID. */
-    private static final long serialVersionUID = 7621373725343873527L;
 
     /** Indicates whether the changes have been accepted. */
     private boolean accepted;
@@ -259,7 +254,6 @@ public class TextTool extends DefaultTool implements ZoneOverlay {
    * and initializing the user interface components.
    */
   public class EditLabelPanel extends AbeillePanel<Label> {
-    private static final long serialVersionUID = 3307411310513003924L;
 
     private final EditLabelDialog dialog;
 
