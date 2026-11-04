@@ -188,6 +188,10 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
    *-------------------------------------------------------------------------------------------*/
 
   public DrawingPointerTool() {
+    keyActionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), deleteAction);
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.CTRL_DOWN_MASK), duplicateAction);
+
     new MapToolEventBus().getMainEventBus().register(this);
   }
 
@@ -236,20 +240,6 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
     selectedTool = null;
 
     super.detachFrom(renderer);
-  }
-
-  /**
-   * Set <kbd>DELETE</kbd> to delete selected drawn elements. Set <kbd>CTRL</kbd>+<kbd>D</kbd> to
-   * duplicate selected drawn elements.
-   *
-   * @param actionMap What keys do what action.
-   */
-  @Override
-  protected void installKeystrokes(Map<KeyStroke, Action> actionMap) {
-    super.installKeystrokes(actionMap);
-    actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), deleteAction);
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.CTRL_DOWN_MASK), duplicateAction);
   }
 
   /**

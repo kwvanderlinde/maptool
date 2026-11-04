@@ -22,7 +22,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.Serial;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import javax.swing.*;
 import net.rptools.maptool.client.*;
@@ -46,13 +45,9 @@ public class DeleteDrawingTool extends DefaultTool implements ZoneOverlay, Mouse
       new DrawPanelPopupMenu.DeleteDrawingAction(selectedDrawings);
 
   public DeleteDrawingTool() {
-    new MapToolEventBus().getMainEventBus().register(this);
-  }
+    keyActionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), deleteAction);
 
-  @Override
-  protected void installKeystrokes(Map<KeyStroke, Action> actionMap) {
-    super.installKeystrokes(actionMap);
-    actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), deleteAction);
+    new MapToolEventBus().getMainEventBus().register(this);
   }
 
   @Override
