@@ -22,11 +22,9 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.Path2D;
 import java.text.NumberFormat;
 import java.util.List;
-import java.util.Map;
 import javafx.application.Platform;
 import javafx.scene.ImageCursor;
 import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.ScreenPoint;
@@ -61,6 +59,26 @@ public class MeasureTool extends DefaultTool implements ZoneOverlay {
     Platform.runLater(
         () ->
             measureCursorFX = new ImageCursor(RessourceManager.getFxImage(Images.MEASURE), 2, 28));
+
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0, false),
+        new AbstractAction() {
+          public void actionPerformed(ActionEvent e) {
+            // Waypoint
+            if (walker != null) {
+              CellPoint cp =
+                  renderer
+                      .getZone()
+                      .getGrid()
+                      .convert(
+                          new ScreenPoint(mouseX, mouseY)
+                              .convertToZone(renderer.getViewModel().getZoneScale()));
+              walker.toggleWaypoint(cp);
+            } else if (gridlessPath != null) {
+              gridlessPath.appendWaypoint(currentGridlessPoint);
+            }
+          }
+        });
   }
 
   public static Cursor getMeasureCursor() {
@@ -145,31 +163,6 @@ public class MeasureTool extends DefaultTool implements ZoneOverlay {
         SwingUtil.restoreAntiAliasing(g, oldAA);
       }
     }
-  }
-
-  @Override
-  protected void installKeystrokes(Map<KeyStroke, Action> actionMap) {
-    super.installKeystrokes(actionMap);
-
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0, false),
-        new AbstractAction() {
-          public void actionPerformed(ActionEvent e) {
-            // Waypoint
-            if (walker != null) {
-              CellPoint cp =
-                  renderer
-                      .getZone()
-                      .getGrid()
-                      .convert(
-                          new ScreenPoint(mouseX, mouseY)
-                              .convertToZone(renderer.getViewModel().getZoneScale()));
-              walker.toggleWaypoint(cp);
-            } else if (gridlessPath != null) {
-              gridlessPath.appendWaypoint(currentGridlessPoint);
-            }
-          }
-        });
   }
 
   ////

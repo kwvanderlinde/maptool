@@ -24,7 +24,6 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
-import java.util.Map;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -109,30 +108,25 @@ public class GridTool extends DefaultTool {
     ZoomChangeListener zoomListener = new ZoomChangeListener();
     zoomSlider.addChangeListener(zoomListener);
     zoomSlider.addMouseListener(zoomListener);
-  }
 
-  @Override
-  protected void installKeystrokes(Map<KeyStroke, Action> actionMap) {
-    super.installKeystrokes(actionMap);
-
-    actionMap.put(
+    keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_UP, KeyEvent.SHIFT_DOWN_MASK),
         new GridSizeAction(Size.Decrease));
-    actionMap.put(
+    keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, KeyEvent.SHIFT_DOWN_MASK),
         new GridSizeAction(Size.Decrease));
-    actionMap.put(
+    keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, KeyEvent.SHIFT_DOWN_MASK),
         new GridSizeAction(Size.Increase));
-    actionMap.put(
+    keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, KeyEvent.SHIFT_DOWN_MASK),
         new GridSizeAction(Size.Increase));
-    actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), new GridOffsetAction(Direction.Up));
-    actionMap.put(
+    keyActionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), new GridOffsetAction(Direction.Up));
+    keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0), new GridOffsetAction(Direction.Left));
-    actionMap.put(
+    keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), new GridOffsetAction(Direction.Down));
-    actionMap.put(
+    keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), new GridOffsetAction(Direction.Right));
   }
 

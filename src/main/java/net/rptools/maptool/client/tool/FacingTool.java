@@ -20,7 +20,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Area;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import javax.swing.*;
 import net.rptools.maptool.client.AppPreferences;
@@ -40,28 +39,8 @@ public class FacingTool extends DefaultTool {
 
   public FacingTool() {
     // Non tool-bar tool ... atm
-  }
 
-  public void init(Token keyToken, Set<GUID> selectedTokenSet) {
-    tokenUnderMouse = keyToken;
-    this.selectedTokenSet = selectedTokenSet;
-  }
-
-  @Override
-  public String getTooltip() {
-    return "tool.facing.tooltip";
-  }
-
-  @Override
-  public String getInstructions() {
-    return "tool.facing.instructions";
-  }
-
-  @Override
-  protected void installKeystrokes(Map<KeyStroke, Action> actionMap) {
-    super.installKeystrokes(actionMap);
-
-    actionMap.put(
+    keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0),
         new AbstractAction() {
           public void actionPerformed(ActionEvent e) {
@@ -79,6 +58,21 @@ public class FacingTool extends DefaultTool {
             }
           }
         });
+  }
+
+  public void init(Token keyToken, Set<GUID> selectedTokenSet) {
+    tokenUnderMouse = keyToken;
+    this.selectedTokenSet = selectedTokenSet;
+  }
+
+  @Override
+  public String getTooltip() {
+    return "tool.facing.tooltip";
+  }
+
+  @Override
+  public String getInstructions() {
+    return "tool.facing.instructions";
   }
 
   /// /

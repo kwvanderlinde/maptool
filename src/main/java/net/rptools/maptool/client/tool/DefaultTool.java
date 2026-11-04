@@ -17,7 +17,6 @@ package net.rptools.maptool.client.tool;
 import java.awt.Point;
 import java.awt.dnd.DragSource;
 import java.awt.event.*;
-import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.swing.*;
@@ -65,6 +64,40 @@ public abstract class DefaultTool extends Tool
   private boolean isTouchScreen = false;
 
   protected ZoneRenderer renderer;
+
+  protected DefaultTool() {
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD4, InputEvent.CTRL_DOWN_MASK),
+        new ViewMovementKey(this, 1, 0));
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD6, InputEvent.CTRL_DOWN_MASK),
+        new ViewMovementKey(this, -1, 0));
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD8, InputEvent.CTRL_DOWN_MASK),
+        new ViewMovementKey(this, 0, 1));
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD2, InputEvent.CTRL_DOWN_MASK),
+        new ViewMovementKey(this, 0, -1));
+
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, InputEvent.CTRL_DOWN_MASK),
+        new ViewMovementKey(this, 1, 0));
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, InputEvent.CTRL_DOWN_MASK),
+        new ViewMovementKey(this, -1, 0));
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_UP, InputEvent.CTRL_DOWN_MASK),
+        new ViewMovementKey(this, 0, 1));
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, InputEvent.CTRL_DOWN_MASK),
+        new ViewMovementKey(this, 0, -1));
+
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_F, 0), new FlipTokenHorizontalActionListener());
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.SHIFT_DOWN_MASK),
+        new FlipTokenVerticalActionListener());
+  }
 
   protected Zone.Layer getSelectedLayer() {
     return selectedLayer;
@@ -115,43 +148,6 @@ public abstract class DefaultTool extends Tool
 
   protected Zone getZone() {
     return renderer.getZone();
-  }
-
-  @Override
-  protected void installKeystrokes(Map<KeyStroke, Action> actionMap) {
-    super.installKeystrokes(actionMap);
-
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD4, InputEvent.CTRL_DOWN_MASK),
-        new ViewMovementKey(this, 1, 0));
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD6, InputEvent.CTRL_DOWN_MASK),
-        new ViewMovementKey(this, -1, 0));
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD8, InputEvent.CTRL_DOWN_MASK),
-        new ViewMovementKey(this, 0, 1));
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD2, InputEvent.CTRL_DOWN_MASK),
-        new ViewMovementKey(this, 0, -1));
-
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, InputEvent.CTRL_DOWN_MASK),
-        new ViewMovementKey(this, 1, 0));
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, InputEvent.CTRL_DOWN_MASK),
-        new ViewMovementKey(this, -1, 0));
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_UP, InputEvent.CTRL_DOWN_MASK),
-        new ViewMovementKey(this, 0, 1));
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, InputEvent.CTRL_DOWN_MASK),
-        new ViewMovementKey(this, 0, -1));
-
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_F, 0), new FlipTokenHorizontalActionListener());
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.SHIFT_DOWN_MASK),
-        new FlipTokenVerticalActionListener());
   }
 
   ////

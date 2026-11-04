@@ -33,12 +33,10 @@ import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import net.rptools.lib.CollectionUtil;
@@ -86,6 +84,16 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
                 mode.onWallChanged(wall);
               }
             });
+
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0),
+        new AbstractAction() {
+          @Override
+          public void actionPerformed(ActionEvent e) {
+            mode.delete();
+            renderer.repaint();
+          }
+        });
   }
 
   @Override
@@ -101,21 +109,6 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
   @Override
   public boolean isAvailable() {
     return MapTool.getPlayer().isGM();
-  }
-
-  @Override
-  protected void installKeystrokes(Map<KeyStroke, Action> actionMap) {
-    super.installKeystrokes(actionMap);
-
-    actionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0),
-        new AbstractAction() {
-          @Override
-          public void actionPerformed(ActionEvent e) {
-            mode.delete();
-            renderer.repaint();
-          }
-        });
   }
 
   @Override
