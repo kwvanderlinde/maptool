@@ -37,13 +37,10 @@ public final class WallTopologyRig implements Rig<WallTopologyRig.Element<?>> {
 
   private WallTopology walls;
   private final Supplier<Double> vertexSelectDistanceSupplier;
-  private final Supplier<Double> wallSelectDistanceSupplier;
 
-  public WallTopologyRig(
-      Supplier<Double> vertexSelectDistanceSupplier, Supplier<Double> wallSelectDistanceSupplier) {
+  public WallTopologyRig(Supplier<Double> vertexSelectDistanceSupplier) {
     this.walls = new WallTopology();
     this.vertexSelectDistanceSupplier = vertexSelectDistanceSupplier;
-    this.wallSelectDistanceSupplier = wallSelectDistanceSupplier;
     updateShape();
   }
 
@@ -65,7 +62,6 @@ public final class WallTopologyRig implements Rig<WallTopologyRig.Element<?>> {
     return this.walls.getWall(from, to).map(wall -> new MovableWall(this, walls, wall));
   }
 
-  @Override
   public List<WallTopologyRig.MovableVertex> getHandlesWithin(Rectangle2D bounds) {
     var envelope =
         new Envelope(
@@ -133,79 +129,71 @@ public final class WallTopologyRig implements Rig<WallTopologyRig.Element<?>> {
     return results;
   }
 
+  private Rectangle2D getHitTestingBounds(Point2D point, double selectDistance) {
+    return new Rectangle2D.Double(
+        point.getX() - selectDistance,
+        point.getY() - selectDistance,
+        2 * selectDistance,
+        2 * selectDistance);
+  }
+
+  @Override
+  public List<? extends Element<?>> getElementsIntersecting(Rectangle2D bounds) {
+    // Put vertices first, then walls.
+    var result = new ArrayList<Element<?>>();
+
+    result.addAll(getHandlesWithin(bounds));
+    result.addAll(getWallsIntersecting(bounds));
+
+    return result;
+  }
+
   /**
-   * Convenience method for calling {@link #getNearbyHandle(Point2D, double, Predicate)} followed by
-   * {@link #getNearbyWall(Point2D, double, Predicate)}.
-   *
    * @param point
    * @param filter
    * @return
    */
+  @Override
   public Optional<? extends Element<?>> getNearbyElement(
       Point2D point, double extraSpace, Predicate<Element<?>> filter) {
-    var vertex = getNearbyHandle(point, extraSpace, filter);
-    if (vertex.isPresent()) {
-      return vertex;
-    }
-    return getNearbyWall(point, extraSpace, filter);
-  }
-
-  @Override
-  public Optional<WallTopologyRig.MovableVertex> getNearbyHandle(
-      Point2D point, double extraSpace, Predicate<Element<?>> filter) {
     var selectDistance = vertexSelectDistanceSupplier.get() + extraSpace;
-    var candidatesVertices =
-        getHandlesWithin(
-            new Rectangle2D.Double(
-                point.getX() - selectDistance,
-                point.getY() - selectDistance,
-                2 * selectDistance,
-                2 * selectDistance));
+    var bounds = getHitTestingBounds(point, selectDistance);
+    var allNearbyElements = getElementsIntersecting(bounds);
 
-    // Reverse so we pick the highest z-index candidate.
-    for (var candidate : candidatesVertices.reversed()) {
-      if (filter.test(candidate) && point.distance(candidate.getPosition()) < selectDistance) {
-        return Optional.of(candidate);
-      }
-    }
-
-    return Optional.empty();
-  }
-
-  public Optional<WallTopologyRig.MovableWall> getNearbyWall(
-      Point2D point, double extraSpace, Predicate<Element<?>> filter) {
+    // Prefer a vertex, but settle for a wall.
+    MovableWall wall = null;
     var coordinate = GeometryUtil.point2DToCoordinate(point);
-
-    var selectDistance = wallSelectDistanceSupplier.get() + extraSpace;
-    var bounds =
-        new Rectangle2D.Double(
-            point.getX() - selectDistance,
-            point.getY() - selectDistance,
-            2 * selectDistance,
-            2 * selectDistance);
-    var candidateWalls = getWallsIntersecting(bounds);
-
-    // Reverse so we pick the highest-z-index candidate.
-    for (var wall : candidateWalls.reversed()) {
-      if (!filter.test(wall)) {
+    for (var element : allNearbyElements.reversed()) {
+      if (!filter.test(element)) {
         continue;
       }
 
-      var segment = walls.asLineSegment(wall.getSource());
-      var factor = segment.projectionFactor(coordinate);
-      if (factor < 0 || factor > 1) {
-        // Lies outside this segment.
-        continue;
-      }
+      switch (element) {
+        case MovableVertex movableVertex -> {
+          if (point.distance(movableVertex.getPosition()) < selectDistance) {
+            return Optional.of(movableVertex);
+          }
+        }
+        case MovableWall movableWall -> {
+          if (wall == null) {
+            var segment = walls.asLineSegment(movableWall.getSource());
+            var factor = segment.projectionFactor(coordinate);
+            if (factor < 0 || factor > 1) {
+              // Lies outside this segment.
+              continue;
+            }
 
-      var pointAlong = segment.pointAlong(factor);
-      var distance = coordinate.distance(pointAlong);
-      if (distance <= selectDistance) {
-        return Optional.of(wall);
+            var pointAlong = segment.pointAlong(factor);
+            var distance = coordinate.distance(pointAlong);
+            if (distance <= selectDistance) {
+              wall = movableWall;
+            }
+          }
+        }
       }
     }
 
-    return Optional.empty();
+    return Optional.ofNullable(wall);
   }
 
   public WallTopologyRig.MovableWall addDegenerateWall(Point2D point) {

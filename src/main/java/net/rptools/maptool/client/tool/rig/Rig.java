@@ -22,18 +22,7 @@ import java.util.function.Predicate;
 
 /** A rig is a representation of a model in terms of handles and other movable elements. */
 public interface Rig<E> {
-  default Optional<? extends Handle<?>> getNearbyHandle(Point2D point) {
-    return getNearbyHandle(point, 0., element -> true);
-  }
-
-  Optional<? extends Handle<?>> getNearbyHandle(
-      Point2D point, double extraSpace, Predicate<E> filter);
-
-  List<? extends Handle<?>> getHandlesWithin(Rectangle2D bounds);
-
-  default Optional<? extends E> getNearbyElement(Point2D point) {
-    return getNearbyElement(point, 0., element -> true);
-  }
-
   Optional<? extends E> getNearbyElement(Point2D point, double extraSpace, Predicate<E> filter);
+
+  List<? extends E> getElementsIntersecting(Rectangle2D bounds);
 }

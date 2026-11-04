@@ -14,6 +14,7 @@
  */
 package net.rptools.maptool.client.tool;
 
+import com.google.common.base.Predicates;
 import com.google.common.eventbus.Subscribe;
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
@@ -116,7 +117,7 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
     super.attachTo(renderer);
 
     currentPosition = new Point2D.Double(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
-    var rig = new WallTopologyRig(this::getHandleSelectDistance, this::getWallSelectDistance);
+    var rig = new WallTopologyRig(this::getHandleSelectDistance);
     rig.setWalls(getZone().getWalls());
     changeToolMode(new BasicToolMode(this, rig));
 
@@ -315,7 +316,7 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
   private void onTopologyChanged(WallTopologyChanged event) {
     var selected = new ArrayList<>(getSelectedWalls());
 
-    var rig = new WallTopologyRig(this::getHandleSelectDistance, this::getWallSelectDistance);
+    var rig = new WallTopologyRig(this::getHandleSelectDistance);
     rig.setWalls(getZone().getWalls());
     changeToolMode(new BasicToolMode(this, rig));
 
@@ -767,7 +768,8 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
 
     @Override
     public void activate() {
-      currentElement = rig.getNearbyElement(tool.getCurrentPosition()).orElse(null);
+      currentElement =
+          rig.getNearbyElement(tool.getCurrentPosition(), 0, Predicates.alwaysTrue()).orElse(null);
     }
 
     @Override
@@ -777,7 +779,7 @@ public class WallTopologyTool extends DefaultTool implements ZoneOverlay {
 
     @Override
     public void mouseMoved(Point2D point, Snap snapMode, MouseEvent event) {
-      currentElement = rig.getNearbyElement(point).orElse(null);
+      currentElement = rig.getNearbyElement(point, 0, Predicates.alwaysTrue()).orElse(null);
     }
 
     @Override

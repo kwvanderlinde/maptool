@@ -15,7 +15,7 @@
 package net.rptools.maptool.client.tool.rig;
 
 public interface Movable<T> {
-  Rig getParentRig();
+  Rig<?> getParentRig();
 
   T getSource();
 
