@@ -370,6 +370,9 @@ public class Zone {
 
   // region Topology masks
 
+  // TODO Replace with a Polygon-based topology structure. Each polygon can carry directional
+  //  attributes, and can efficiently do hit testing to find polygons that
+
   /**
    * The Wall VBL topology of the zone. Does not include token Wall VBL. Should really be called
    * wallVbl.

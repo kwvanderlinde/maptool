@@ -31,6 +31,11 @@ import org.locationtech.jts.geom.LinearRing;
 import org.locationtech.jts.geom.Location;
 import org.locationtech.jts.geom.Polygon;
 
+// TODO We need an alternative for our new take on topology. This represents a single "chunk".
+//  But the type needs to be more subtle. We really need a bitmask (EnumSet) to allow any number of
+//  types at the same time.
+//  We also need a matching container type that can hold any number of chunks, allows efficient hit
+//  testing via KdTree or similar.
 public final class MaskTopology implements Topology {
   private final TopologyType type;
   private final Polygon polygon;
