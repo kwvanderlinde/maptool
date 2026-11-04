@@ -70,7 +70,6 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class PointerTool extends DefaultTool {
 
-  private static final long serialVersionUID = 8606021718606275084L;
   private BufferedImage panelTexture = RessourceManager.getImage(Images.TEXTURE_PANEL);
 
   private boolean isShowingTokenStackPopup;
@@ -155,8 +154,6 @@ public class PointerTool extends DefaultTool {
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_D, 0),
         new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
           public void actionPerformed(ActionEvent e) {
             if (tokenDragOp == null) {
               return;
@@ -168,8 +165,6 @@ public class PointerTool extends DefaultTool {
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
         new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
           public void actionPerformed(ActionEvent e) {
             if (tokenDragOp == null) {
               return;
@@ -182,8 +177,6 @@ public class PointerTool extends DefaultTool {
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD5, 0),
         new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
           public void actionPerformed(ActionEvent e) {
             if (tokenDragOp == null) {
               return;
@@ -217,8 +210,6 @@ public class PointerTool extends DefaultTool {
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, InputEvent.SHIFT_DOWN_MASK),
         new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
           public void actionPerformed(ActionEvent e) {
             handleKeyRotate(-1, false); // clockwise
           }
@@ -227,8 +218,6 @@ public class PointerTool extends DefaultTool {
         KeyStroke.getKeyStroke(
             KeyEvent.VK_RIGHT, InputEvent.SHIFT_DOWN_MASK | InputEvent.CTRL_DOWN_MASK),
         new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
           public void actionPerformed(ActionEvent e) {
             handleKeyRotate(-1, true); // clockwise
           }
@@ -236,8 +225,6 @@ public class PointerTool extends DefaultTool {
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, InputEvent.SHIFT_DOWN_MASK),
         new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
           public void actionPerformed(ActionEvent e) {
             handleKeyRotate(1, false); // counter-clockwise
           }
@@ -246,8 +233,6 @@ public class PointerTool extends DefaultTool {
         KeyStroke.getKeyStroke(
             KeyEvent.VK_LEFT, InputEvent.SHIFT_DOWN_MASK | InputEvent.CTRL_DOWN_MASK),
         new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
           public void actionPerformed(ActionEvent e) {
             handleKeyRotate(1, true); // counter-clockwise
           }
@@ -255,8 +240,6 @@ public class PointerTool extends DefaultTool {
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_T, 0),
         new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
           public void actionPerformed(ActionEvent e) {
             renderer.cycleSelectedToken(1);
           }
@@ -264,8 +247,6 @@ public class PointerTool extends DefaultTool {
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_T, InputEvent.SHIFT_DOWN_MASK),
         new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
           public void actionPerformed(ActionEvent e) {
             renderer.cycleSelectedToken(-1);
           }
@@ -356,7 +337,7 @@ public class PointerTool extends DefaultTool {
   private void showTokenStackPopup(List<Token> tokenList, int x, int y) {
     tokenStackPanel.show(tokenList, x, y);
     isShowingTokenStackPopup = true;
-    repaint();
+    renderer.repaint();
   }
 
   private class TokenStackPanel {
@@ -377,7 +358,7 @@ public class PointerTool extends DefaultTool {
 
     public Dimension getSize() {
       int gridSize = (int) renderer.getScaledGridSize();
-      FontMetrics fm = getFontMetrics(getFont());
+      FontMetrics fm = renderer.getFontMetrics(renderer.getFont());
       return new Dimension(
           tokenList.size() * (gridSize + PADDING) + PADDING,
           gridSize + PADDING * 2 + fm.getHeight() + 10);
@@ -523,7 +504,7 @@ public class PointerTool extends DefaultTool {
       isShowingHover = false;
       hoverTokenNotes = null;
       markerUnderMouse = renderer.getViewModel().getMarkerAt(e.getX(), e.getY());
-      repaint();
+      renderer.repaint();
     }
     if (isShowingTokenStackPopup) {
       if (tokenStackPanel.contains(e.getX(), e.getY())) {
@@ -531,7 +512,7 @@ public class PointerTool extends DefaultTool {
         return;
       } else {
         isShowingTokenStackPopup = false;
-        repaint();
+        renderer.repaint();
       }
     }
     // So that keystrokes end up in the right place
@@ -614,7 +595,7 @@ public class PointerTool extends DefaultTool {
         return;
       } else {
         isShowingTokenStackPopup = false;
-        repaint();
+        renderer.repaint();
       }
     }
 
@@ -639,7 +620,7 @@ public class PointerTool extends DefaultTool {
             && tokenDragOp == null) {
           isShowingHover = true;
           hoverTokenNotes = createHoverNote(markerUnderMouse);
-          repaint();
+          renderer.repaint();
         }
         // SELECTION BOUND BOX
         final var selectionModel = renderer.getSelectionModel();
@@ -745,7 +726,7 @@ public class PointerTool extends DefaultTool {
       }
       // Turn it off
       isShowingTokenStackPopup = false;
-      repaint();
+      renderer.repaint();
       return;
     }
 
@@ -984,9 +965,6 @@ public class PointerTool extends DefaultTool {
   // //
   // POINTER KEY ACTION
   private class PointerActionListener extends AbstractAction {
-
-    private static final long serialVersionUID = 8348513388262364724L;
-
     Pointer.Type type;
 
     public PointerActionListener(Pointer.Type type) {
@@ -1131,9 +1109,7 @@ public class PointerTool extends DefaultTool {
   // //
   // STOP POINTER ACTION
   private class StopPointerActionListener extends AbstractAction {
-
-    private static final long serialVersionUID = -8508019800264211345L;
-    private boolean restoreZoneView = false;
+    private boolean restoreZoneView;
 
     public StopPointerActionListener(boolean restore) {
       restoreZoneView = restore;
@@ -1478,7 +1454,7 @@ public class PointerTool extends DefaultTool {
                     new Rectangle(0, 0, panelTexture.getWidth(), panelTexture.getHeight())));
             statsG.fill(bounds);
             AppPreferences.renderQuality.get().setShrinkRenderingHints(g);
-            statsG.drawImage(image, bounds.x, bounds.y, imgSize.width, imgSize.height, this);
+            statsG.drawImage(image, bounds.x, bounds.y, imgSize.width, imgSize.height, renderer);
             AppStyle.miniMapBorder.paintAround(statsG, bounds);
             AppStyle.shadowBorder.paintWithin(statsG, bounds);
 
@@ -1511,7 +1487,7 @@ public class PointerTool extends DefaultTool {
           statSheet,
           STATSHEET_EXTERIOR_PADDING,
           viewSize.height - statSheet.getHeight() - STATSHEET_EXTERIOR_PADDING,
-          this);
+          renderer);
     }
 
     // Hovers

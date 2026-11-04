@@ -20,7 +20,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.io.Serial;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.*;
@@ -37,8 +36,6 @@ import net.rptools.maptool.model.drawing.DrawnElement;
 
 /** Tool for deleting drawings. */
 public class DeleteDrawingTool extends DefaultTool implements ZoneOverlay, MouseListener {
-
-  @Serial private static final long serialVersionUID = -8846217296437736953L;
 
   private static final Set<GUID> selectedDrawings = new HashSet<>();
   private static final DrawPanelPopupMenu.DeleteDrawingAction deleteAction =
