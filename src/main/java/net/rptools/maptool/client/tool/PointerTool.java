@@ -140,52 +140,6 @@ public class PointerTool extends DefaultTool {
     }
   }
 
-  /**
-   * When implementation is completed, this method will accept a ZoneRenderer parameter and
-   * determine that zone's grid style, then query the grid for the keystroke movement it wants to
-   * use. Those keystrokes are then added to the InputMap and ActionMap for the component by calling
-   * the superclass's addListeners() method.
-   *
-   * @param comp the component to add as listener
-   * @deprecated
-   */
-  @Deprecated
-  protected void addListeners_NOT_USED(JComponent comp) {
-    if (comp instanceof ZoneRenderer) {
-      Grid grid = ((ZoneRenderer) comp).getZone().getGrid();
-      addGridBasedKeys(grid, true);
-    }
-    super.addListeners(comp);
-  }
-
-  /**
-   * Let the grid decide which keys perform which kind of movement. This allows hex grids to handle
-   * the six-sided shapes intelligently depending on whether the grid is a vertical or horizontal
-   * grid. This also moves us one step closer to defining the keys in an external file...
-   *
-   * <p>Boy, this is ugly. As I pin down fixes for code leading up to MT1.4 I find myself performing
-   * criminal acts on the code base. :(
-   */
-  @Override
-  protected void addGridBasedKeys(Grid grid, boolean enable) {
-    try {
-      if (enable) {
-        grid.installMovementKeys(this, keyActionMap);
-      } else {
-        grid.uninstallMovementKeys(keyActionMap);
-      }
-    } catch (Exception e) {
-      // If there was an exception just ignore those keystrokes...
-      MapTool.showError("exception adding grid-based keys; shouldn't get here!", e); // this
-      // gives
-      // me a
-      // hook
-      // to set
-      // a
-      // breakpoint
-    }
-  }
-
   @Override
   protected void detachFrom(ZoneRenderer renderer) {
     super.detachFrom(renderer);

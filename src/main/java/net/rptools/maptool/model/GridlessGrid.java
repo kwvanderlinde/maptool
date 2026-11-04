@@ -15,15 +15,9 @@
 package net.rptools.maptool.model;
 
 import java.awt.Rectangle;
-import java.awt.event.KeyEvent;
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import javax.swing.Action;
-import javax.swing.KeyStroke;
-import net.rptools.maptool.client.tool.PointerTool;
 import net.rptools.maptool.client.walker.WalkerMetric;
 import net.rptools.maptool.server.proto.GridDto;
 import net.rptools.maptool.server.proto.GridlessGridDto;
@@ -123,55 +117,6 @@ public class GridlessGrid extends Grid {
     int dX = cellA.x - cellB.x;
     int dY = cellA.y - cellB.y;
     return Math.sqrt(dX * dX + dY * dY) / this.getSize(); // returns in cell units
-  }
-
-  /*
-   * May as well use the same keys as for the square grid...
-   */
-  @Override
-  public void installMovementKeys(PointerTool callback, Map<KeyStroke, Action> actionMap) {
-    if (movementKeys == null) {
-      movementKeys = new HashMap<KeyStroke, Action>(18); // This is 13/0.75, rounded up
-      Rectangle r = getFootprint(null).getBounds(this);
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD7, 0),
-          new MovementKey(callback, -r.width, -r.height));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD8, 0), new MovementKey(callback, 0, -r.height));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD9, 0),
-          new MovementKey(callback, r.width, -r.height));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD4, 0), new MovementKey(callback, -r.width, 0));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD6, 0), new MovementKey(callback, r.width, 0));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD1, 0),
-          new MovementKey(callback, -r.width, r.height));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD2, 0), new MovementKey(callback, 0, r.height));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD3, 0),
-          new MovementKey(callback, r.width, r.height));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0), new MovementKey(callback, -r.width, 0));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), new MovementKey(callback, r.width, 0));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), new MovementKey(callback, 0, -r.height));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), new MovementKey(callback, 0, r.height));
-    }
-    actionMap.putAll(movementKeys);
-  }
-
-  @Override
-  public void uninstallMovementKeys(Map<KeyStroke, Action> actionMap) {
-    if (movementKeys != null) {
-      for (KeyStroke key : movementKeys.keySet()) {
-        actionMap.remove(key);
-      }
-    }
   }
 
   @Override
