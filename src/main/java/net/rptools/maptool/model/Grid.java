@@ -29,7 +29,6 @@ import javax.swing.KeyStroke;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.DeveloperOptions;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.tool.PointerTool;
 import net.rptools.maptool.client.walker.WalkerMetric;
 import net.rptools.maptool.client.walker.ZoneWalker;
 import net.rptools.maptool.events.MapToolEventBus;
@@ -727,17 +726,6 @@ public abstract class Grid implements Cloneable {
    * @param length the second settable dimension
    */
   public void setSecondDimension(double length) {}
-
-  /**
-   * Installs a list of which which actions go with which keystrokes for the purpose of moving the
-   * token.
-   *
-   * @param callback The object whose methods are invoked when the event occurs
-   * @param actionMap the map of existing keystrokes we want to add ourselves to
-   */
-  public abstract void installMovementKeys(PointerTool callback, Map<KeyStroke, Action> actionMap);
-
-  public abstract void uninstallMovementKeys(Map<KeyStroke, Action> actionMap);
 
   /**
    * Tests the grid cell location to determine whether a token is allowed to move into it when such
