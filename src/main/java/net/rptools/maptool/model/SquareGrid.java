@@ -17,18 +17,12 @@ package net.rptools.maptool.model;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.event.KeyEvent;
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import javax.swing.Action;
-import javax.swing.KeyStroke;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.tool.PointerTool;
 import net.rptools.maptool.client.ui.theme.Images;
 import net.rptools.maptool.client.ui.theme.RessourceManager;
 import net.rptools.maptool.client.walker.WalkerMetric;
@@ -146,48 +140,6 @@ public final class SquareGrid extends Grid {
   @Override
   public Point2D.Double getCenterOffset() {
     return new Point2D.Double(getCellWidth() / 2, getCellHeight() / 2);
-  }
-
-  @Override
-  public void installMovementKeys(PointerTool callback, Map<KeyStroke, Action> actionMap) {
-    if (movementKeys == null) {
-      movementKeys = new HashMap<KeyStroke, Action>(18); // This is 13/0.75, rounded up
-      int size = getSize();
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD7, 0), new MovementKey(callback, -size, -size));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD8, 0), new MovementKey(callback, 0, -size));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD9, 0), new MovementKey(callback, size, -size));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD4, 0), new MovementKey(callback, -size, 0));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD6, 0), new MovementKey(callback, size, 0));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD1, 0), new MovementKey(callback, -size, size));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD2, 0), new MovementKey(callback, 0, size));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD3, 0), new MovementKey(callback, size, size));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0), new MovementKey(callback, -size, 0));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), new MovementKey(callback, size, 0));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), new MovementKey(callback, 0, -size));
-      movementKeys.put(
-          KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), new MovementKey(callback, 0, size));
-    }
-    actionMap.putAll(movementKeys);
-  }
-
-  @Override
-  public void uninstallMovementKeys(Map<KeyStroke, Action> actionMap) {
-    if (movementKeys != null) {
-      for (KeyStroke key : movementKeys.keySet()) {
-        actionMap.remove(key);
-      }
-    }
   }
 
   @Override

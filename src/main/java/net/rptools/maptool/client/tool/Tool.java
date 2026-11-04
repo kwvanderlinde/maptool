@@ -37,7 +37,6 @@ import javax.swing.KeyStroke;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
-import net.rptools.maptool.model.Grid;
 
 public abstract class Tool extends JToggleButton implements ActionListener, KeyListener {
 
@@ -119,10 +118,6 @@ public abstract class Tool extends JToggleButton implements ActionListener, KeyL
 
   protected void detachFrom(ZoneRenderer renderer) {
     // No op
-  }
-
-  protected void addGridBasedKeys(Grid grid, boolean enable) {
-    // do nothing; only overridden by PointerTool currently
   }
 
   private InputMap createInputMap(Map<KeyStroke, Action> keyActionMap) {
