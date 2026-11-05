@@ -15,6 +15,7 @@
 package net.rptools.maptool.client.tool;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Area;
@@ -54,6 +55,11 @@ public class FacingTool extends DefaultTool {
             }
           }
         });
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_F, 0), ToolHelper.flipTokenHorizontalAction);
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.SHIFT_DOWN_MASK),
+        ToolHelper.flipTokenVerticalAction);
   }
 
   public void init(Token keyToken, Set<GUID> selectedTokenSet) {

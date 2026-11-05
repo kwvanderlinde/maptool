@@ -23,9 +23,11 @@ import java.text.NumberFormat;
 import javax.swing.AbstractAction;
 import javax.swing.SwingUtilities;
 import net.rptools.maptool.client.AppActions;
+import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
+import net.rptools.maptool.model.Token;
 import net.rptools.maptool.util.GraphicsUtil;
 
 /**
@@ -33,7 +35,7 @@ import net.rptools.maptool.util.GraphicsUtil;
  */
 public class ToolHelper {
 
-  private static AbstractAction deleteTokenAction =
+  public static final AbstractAction deleteTokenAction =
       new AbstractAction() {
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -44,6 +46,40 @@ public class ToolHelper {
 
           ZoneRenderer renderer = (ZoneRenderer) e.getSource();
           AppActions.deleteTokens(renderer.getZone(), renderer.getSelectedTokenSet());
+        }
+      };
+
+  public static final AbstractAction flipTokenHorizontalAction =
+      new AbstractAction() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          ZoneRenderer renderer = (ZoneRenderer) e.getSource();
+          renderer
+              .getSelectedTokensList()
+              .forEach(
+                  token -> {
+                    if (token != null && AppUtil.playerOwns(token)) {
+                      MapTool.serverCommand().updateTokenProperty(token, Token.Update.flipX);
+                    }
+                  });
+          MapTool.getFrame().refresh();
+        }
+      };
+
+  public static final AbstractAction flipTokenVerticalAction =
+      new AbstractAction() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          ZoneRenderer renderer = (ZoneRenderer) e.getSource();
+          renderer
+              .getSelectedTokensList()
+              .forEach(
+                  token -> {
+                    if (token != null && AppUtil.playerOwns(token)) {
+                      MapTool.serverCommand().updateTokenProperty(token, Token.Update.flipY);
+                    }
+                  });
+          MapTool.getFrame().refresh();
         }
       };
 
@@ -175,9 +211,5 @@ public class ToolHelper {
   private static double isometricDistance(ZoneRenderer renderer, ScreenPoint p1, ScreenPoint p2) {
     double b = p2.y - p1.y;
     return 2 * b * renderer.getZone().getUnitsPerCell() / renderer.getScaledGridSize();
-  }
-
-  protected static AbstractAction getDeleteTokenAction() {
-    return deleteTokenAction;
   }
 }
