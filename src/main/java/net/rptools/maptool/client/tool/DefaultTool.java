@@ -34,7 +34,6 @@ import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.CellPoint;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Token;
-import net.rptools.maptool.model.ViewMovementKey;
 import net.rptools.maptool.model.Zone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,29 +82,29 @@ public abstract class DefaultTool extends Tool
     keyActionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), new EscapeAction());
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD4, InputEvent.CTRL_DOWN_MASK),
-        new ViewMovementKey(this, 1, 0));
+        new ViewMovementKey(1, 0));
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD6, InputEvent.CTRL_DOWN_MASK),
-        new ViewMovementKey(this, -1, 0));
+        new ViewMovementKey(-1, 0));
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD8, InputEvent.CTRL_DOWN_MASK),
-        new ViewMovementKey(this, 0, 1));
+        new ViewMovementKey(0, 1));
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD2, InputEvent.CTRL_DOWN_MASK),
-        new ViewMovementKey(this, 0, -1));
+        new ViewMovementKey(0, -1));
 
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, InputEvent.CTRL_DOWN_MASK),
-        new ViewMovementKey(this, 1, 0));
+        new ViewMovementKey(1, 0));
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, InputEvent.CTRL_DOWN_MASK),
-        new ViewMovementKey(this, -1, 0));
+        new ViewMovementKey(-1, 0));
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_UP, InputEvent.CTRL_DOWN_MASK),
-        new ViewMovementKey(this, 0, 1));
+        new ViewMovementKey(0, 1));
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, InputEvent.CTRL_DOWN_MASK),
-        new ViewMovementKey(this, 0, -1));
+        new ViewMovementKey(0, -1));
 
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_F, 0), new FlipTokenHorizontalActionListener());
@@ -508,6 +507,24 @@ public abstract class DefaultTool extends Tool
         MapTool.getFrame().showWindowed();
       }
       resetTool();
+    }
+  }
+
+  private class ViewMovementKey extends AbstractAction {
+    private final int dx, dy;
+
+    public ViewMovementKey(int x, int y) {
+      dx = x;
+      dy = y;
+    }
+
+    @Override
+    public String toString() {
+      return "[" + dx + "," + dy + "]";
+    }
+
+    public void actionPerformed(ActionEvent e) {
+      moveViewByCells(dx, dy);
     }
   }
 }
