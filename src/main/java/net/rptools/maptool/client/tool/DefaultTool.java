@@ -190,7 +190,7 @@ public abstract class DefaultTool extends Tool
     SwingUtilities.invokeLater(renderer::repaint);
   }
 
-  private InputMap createInputMap(Map<KeyStroke, Action> keyActionMap) {
+  private static InputMap createInputMap(Map<KeyStroke, Action> keyActionMap) {
     ComponentInputMap inputMap =
         new ComponentInputMap((JPanel) MapTool.getFrame().getContentPane());
     for (KeyStroke keyStroke : keyActionMap.keySet()) {
@@ -199,7 +199,7 @@ public abstract class DefaultTool extends Tool
     return inputMap;
   }
 
-  private ActionMap createActionMap(Map<KeyStroke, Action> keyActionMap) {
+  private static ActionMap createActionMap(Map<KeyStroke, Action> keyActionMap) {
     ActionMap actionMap = new ActionMap();
     for (var keyAction : keyActionMap.entrySet()) {
       actionMap.put(keyAction.getKey().toString(), keyAction.getValue());
@@ -219,10 +219,6 @@ public abstract class DefaultTool extends Tool
   protected void cancelMapDrag() {
     mapDragStart = null;
     isDraggingMap = false;
-  }
-
-  protected void repaintZone() {
-    renderer.repaint();
   }
 
   protected Zone getZone() {
@@ -388,7 +384,7 @@ public abstract class DefaultTool extends Tool
         MapTool.serverCommand().putToken(getZone().getId(), token);
       }
 
-      repaintZone();
+      renderer.repaint();
       return;
     }
     // ZOOM
