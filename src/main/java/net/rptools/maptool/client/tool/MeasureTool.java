@@ -17,6 +17,7 @@ package net.rptools.maptool.client.tool;
 import com.google.common.collect.Iterables;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Path2D;
@@ -79,6 +80,11 @@ public class MeasureTool extends DefaultTool implements ZoneOverlay {
             }
           }
         });
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_F, 0), ToolHelper.flipTokenHorizontalAction);
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.SHIFT_DOWN_MASK),
+        ToolHelper.flipTokenVerticalAction);
   }
 
   public static Cursor getMeasureCursor() {
