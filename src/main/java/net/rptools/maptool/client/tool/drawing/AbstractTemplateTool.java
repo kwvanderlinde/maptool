@@ -33,8 +33,6 @@ import net.rptools.maptool.model.drawing.Pen;
 /** Base class for tools that draw templates. */
 public abstract class AbstractTemplateTool extends DefaultTool implements ZoneOverlay {
 
-  private static final long serialVersionUID = 9121558405484986225L;
-
   private boolean isSnapToGridSelected;
   private boolean isEraseSelected;
   private boolean isEraser;

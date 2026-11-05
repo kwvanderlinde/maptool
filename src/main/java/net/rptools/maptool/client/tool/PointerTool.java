@@ -70,7 +70,6 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class PointerTool extends DefaultTool {
 
-  private static final long serialVersionUID = 8606021718606275084L;
   private BufferedImage panelTexture = RessourceManager.getImage(Images.TEXTURE_PANEL);
 
   private boolean isShowingTokenStackPopup;
@@ -159,8 +158,6 @@ public class PointerTool extends DefaultTool {
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_D, 0),
         new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
           public void actionPerformed(ActionEvent e) {
             if (tokenDragOp == null) {
               return;
@@ -172,8 +169,6 @@ public class PointerTool extends DefaultTool {
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
         new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
           public void actionPerformed(ActionEvent e) {
             if (tokenDragOp == null) {
               return;
@@ -186,8 +181,6 @@ public class PointerTool extends DefaultTool {
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD5, 0),
         new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
           public void actionPerformed(ActionEvent e) {
             if (tokenDragOp == null) {
               return;
@@ -221,8 +214,6 @@ public class PointerTool extends DefaultTool {
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, InputEvent.SHIFT_DOWN_MASK),
         new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
           public void actionPerformed(ActionEvent e) {
             handleKeyRotate(-1, false); // clockwise
           }
@@ -231,8 +222,6 @@ public class PointerTool extends DefaultTool {
         KeyStroke.getKeyStroke(
             KeyEvent.VK_RIGHT, InputEvent.SHIFT_DOWN_MASK | InputEvent.CTRL_DOWN_MASK),
         new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
           public void actionPerformed(ActionEvent e) {
             handleKeyRotate(-1, true); // clockwise
           }
@@ -240,8 +229,6 @@ public class PointerTool extends DefaultTool {
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, InputEvent.SHIFT_DOWN_MASK),
         new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
           public void actionPerformed(ActionEvent e) {
             handleKeyRotate(1, false); // counter-clockwise
           }
@@ -250,8 +237,6 @@ public class PointerTool extends DefaultTool {
         KeyStroke.getKeyStroke(
             KeyEvent.VK_LEFT, InputEvent.SHIFT_DOWN_MASK | InputEvent.CTRL_DOWN_MASK),
         new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
           public void actionPerformed(ActionEvent e) {
             handleKeyRotate(1, true); // counter-clockwise
           }
@@ -259,8 +244,6 @@ public class PointerTool extends DefaultTool {
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_T, 0),
         new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
           public void actionPerformed(ActionEvent e) {
             renderer.cycleSelectedToken(1);
           }
@@ -268,8 +251,6 @@ public class PointerTool extends DefaultTool {
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_T, InputEvent.SHIFT_DOWN_MASK),
         new AbstractAction() {
-          private static final long serialVersionUID = 1L;
-
           public void actionPerformed(ActionEvent e) {
             renderer.cycleSelectedToken(-1);
           }
@@ -988,9 +969,6 @@ public class PointerTool extends DefaultTool {
   // //
   // POINTER KEY ACTION
   private class PointerActionListener extends AbstractAction {
-
-    private static final long serialVersionUID = 8348513388262364724L;
-
     Pointer.Type type;
 
     public PointerActionListener(Pointer.Type type) {
@@ -1135,9 +1113,7 @@ public class PointerTool extends DefaultTool {
   // //
   // STOP POINTER ACTION
   private class StopPointerActionListener extends AbstractAction {
-
-    private static final long serialVersionUID = -8508019800264211345L;
-    private boolean restoreZoneView = false;
+    private boolean restoreZoneView;
 
     public StopPointerActionListener(boolean restore) {
       restoreZoneView = restore;

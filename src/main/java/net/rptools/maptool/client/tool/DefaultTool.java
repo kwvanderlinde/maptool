@@ -432,9 +432,6 @@ public abstract class DefaultTool extends Tool
    * @author jgorrell
    */
   private class EscapeAction extends AbstractAction {
-
-    private static final long serialVersionUID = -514197544905143826L;
-
     /**
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
