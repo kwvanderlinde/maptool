@@ -122,9 +122,13 @@ public class PointerTool extends DefaultTool {
     keyActionMap.put(AppActions.COPY_TOKENS.getKeyStroke(), AppActions.COPY_TOKENS);
     keyActionMap.put(AppActions.PASTE_TOKENS.getKeyStroke(), AppActions.PASTE_TOKENS);
     keyActionMap.put(AppActions.SET_FACING_ACTION.getKeyStroke(), AppActions.SET_FACING_ACTION);
-
+    keyActionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), ToolHelper.deleteTokenAction);
     keyActionMap.put(
-        KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), ToolHelper.getDeleteTokenAction());
+        KeyStroke.getKeyStroke(KeyEvent.VK_F, 0), ToolHelper.flipTokenHorizontalAction);
+    keyActionMap.put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.SHIFT_DOWN_MASK),
+        ToolHelper.flipTokenVerticalAction);
+
     keyActionMap.put(
         KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0, true), new StopPointerActionListener());
     keyActionMap.put(
