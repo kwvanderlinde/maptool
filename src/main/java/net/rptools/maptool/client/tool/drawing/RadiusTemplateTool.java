@@ -321,18 +321,6 @@ public class RadiusTemplateTool extends AbstractTemplateTool implements MouseMot
     resetTool(null);
   }
 
-  @Override
-  protected void detachFrom(ZoneRenderer renderer) {
-    super.detachFrom(renderer);
-    renderer.repaint();
-  }
-
-  @Override
-  protected void attachTo(ZoneRenderer renderer) {
-    renderer.repaint();
-    super.attachTo(renderer);
-  }
-
   /**
    * @see Tool#getTooltip()
    */

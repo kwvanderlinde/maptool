@@ -17,6 +17,9 @@ package net.rptools.maptool.client.tool;
 import java.awt.Point;
 import java.awt.dnd.DragSource;
 import java.awt.event.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.swing.*;
@@ -33,15 +36,26 @@ import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.ViewMovementKey;
 import net.rptools.maptool.model.Zone;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** */
 public abstract class DefaultTool extends Tool
-    implements MouseListener, MouseMotionListener, MouseWheelListener {
-  private static final long serialVersionUID = 3258411729238372921L;
+    implements MouseListener, MouseMotionListener, MouseWheelListener, KeyListener {
 
+  private static final Logger log = LoggerFactory.getLogger(DefaultTool.class);
   private final LayerSelectionDialog layerSelectionDialog =
       new LayerSelectionDialog(Zone.Layer.values(), this::selectedLayerChanged);
 
+  /**
+   * Holds all pressed keys.
+   *
+   * <p>Really, this is only used to check whether 'z' is held down so we can invert zoom direction.
+   * No idea why.
+   */
+  private final Set<Character> keyDownSet = new HashSet<>();
+
+  protected Map<KeyStroke, Action> keyActionMap = new HashMap<>();
   private Zone.Layer selectedLayer;
   private boolean isDraggingMap;
 
@@ -100,6 +114,24 @@ public abstract class DefaultTool extends Tool
         new FlipTokenVerticalActionListener());
   }
 
+  protected boolean isKeyDown(char key) {
+    return keyDownSet.contains(key);
+  }
+
+  // region KeyListener
+
+  public void keyPressed(KeyEvent e) {
+    keyDownSet.add(e.getKeyChar());
+  }
+
+  public void keyReleased(KeyEvent e) {
+    keyDownSet.remove(e.getKeyChar());
+  }
+
+  public void keyTyped(KeyEvent e) {}
+
+  // endregion
+
   protected Zone.Layer getSelectedLayer() {
     return selectedLayer;
   }
@@ -136,10 +168,50 @@ public abstract class DefaultTool extends Tool
     this.renderer = renderer;
     selectedLayer = renderer.getActiveLayer();
     layerSelectionDialog.setSelectedLayer(selectedLayer);
+
+    renderer.addMouseListener(this);
+    renderer.addMouseMotionListener(this);
+    renderer.addMouseWheelListener(this);
+    renderer.addKeyListener(this);
+    renderer.setActionMap(createActionMap(keyActionMap));
+    renderer.setInputMap(
+        JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, createInputMap(keyActionMap));
+
+    SwingUtilities.invokeLater(renderer::repaint);
   }
 
   protected void detachFrom(ZoneRenderer renderer) {
+    if (renderer != this.renderer) {
+      log.error(
+          "Asked to detach from the wrong zone. Attached to {}, but request was for {}",
+          this.renderer == null ? "null" : this.renderer.getZone().getId(),
+          renderer.getZone().getId());
+    }
+
     this.renderer = null;
+
+    renderer.removeKeyListener(this);
+    renderer.removeMouseListener(this);
+    renderer.removeMouseMotionListener(this);
+    renderer.removeMouseWheelListener(this);
+    SwingUtilities.invokeLater(renderer::repaint);
+  }
+
+  private InputMap createInputMap(Map<KeyStroke, Action> keyActionMap) {
+    ComponentInputMap inputMap =
+        new ComponentInputMap((JPanel) MapTool.getFrame().getContentPane());
+    for (KeyStroke keyStroke : keyActionMap.keySet()) {
+      inputMap.put(keyStroke, keyStroke.toString());
+    }
+    return inputMap;
+  }
+
+  private ActionMap createActionMap(Map<KeyStroke, Action> keyActionMap) {
+    ActionMap actionMap = new ActionMap();
+    for (var keyAction : keyActionMap.entrySet()) {
+      actionMap.put(keyAction.getKey().toString(), keyAction.getValue());
+    }
+    return actionMap;
   }
 
   protected boolean isDraggingMap() {

@@ -301,11 +301,7 @@ public class RadiusCellTemplateTool extends AbstractTemplateTool implements Mous
     } // endif
   }
 
-  /**
-   * New instance of the template, at the current vertex
-   *
-   * @see Tool#resetTool()
-   */
+  /** New instance of the template, at the current vertex */
   @Override
   protected void resetTool() {
     if (!anchorSet) {
@@ -313,18 +309,6 @@ public class RadiusCellTemplateTool extends AbstractTemplateTool implements Mous
       return;
     }
     resetTool(null);
-  }
-
-  @Override
-  protected void detachFrom(ZoneRenderer renderer) {
-    super.detachFrom(renderer);
-    renderer.repaint();
-  }
-
-  @Override
-  protected void attachTo(ZoneRenderer renderer) {
-    renderer.repaint();
-    super.attachTo(renderer);
   }
 
   /**

@@ -129,28 +129,34 @@ public class Toolbox {
   }
 
   private void attach() {
-    if (currentTool != null) {
-      if (currentRenderer != null) {
-        // We have a renderer at this point so we can figure out the grid type and add its
-        // keystrokes to the PointerTool.
-        currentTool.addListeners(currentRenderer);
-        currentTool.attachTo(currentRenderer);
+    if (currentRenderer == null) {
+      return;
+    }
 
-        if (currentTool instanceof ZoneOverlay) {
-          currentRenderer.addOverlay((ZoneOverlay) currentTool);
-        }
+    if (currentTool != null) {
+      currentTool.attachTo(currentRenderer);
+
+      if (currentTool instanceof ZoneOverlay) {
+        currentRenderer.addOverlay((ZoneOverlay) currentTool);
       }
     }
+
+    currentRenderer.repaint();
   }
 
   private void detach() {
-    if (currentTool != null && currentRenderer != null) {
-      currentTool.removeListeners(currentRenderer);
+    if (currentRenderer == null) {
+      return;
+    }
+
+    if (currentTool != null) {
       currentTool.detachFrom(currentRenderer);
 
       if (currentTool instanceof ZoneOverlay) {
         currentRenderer.removeOverlay((ZoneOverlay) currentTool);
       }
     }
+
+    currentRenderer.repaint();
   }
 }
