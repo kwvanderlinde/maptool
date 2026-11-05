@@ -610,7 +610,7 @@ public class ToolbarPanel extends JToolBar {
             }
           });
 
-      tool.updateButtonState();
+      tool.updateState();
       button.setSelected(tool.isSelected());
       button.setEnabled(tool.isEnabled());
 

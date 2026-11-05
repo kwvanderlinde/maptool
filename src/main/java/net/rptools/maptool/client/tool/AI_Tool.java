@@ -39,7 +39,7 @@ public class AI_Tool extends Tool {
         });
   }
 
-  public void updateButtonState() {
+  public void updateState() {
     var serverPolicy = MapTool.getServerPolicy();
     boolean shouldBeSelected =
         serverPolicy == null

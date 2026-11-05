@@ -70,5 +70,5 @@ public abstract class Tool {
 
   public abstract String getTooltip();
 
-  public void updateButtonState() {}
+  public void updateState() {}
 }

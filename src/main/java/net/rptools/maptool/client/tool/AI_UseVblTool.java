@@ -40,7 +40,7 @@ public class AI_UseVblTool extends Tool {
   }
 
   @Override
-  public void updateButtonState() {
+  public void updateState() {
     var serverPolicy = MapTool.getServerPolicy();
     boolean shouldBeSelected =
         serverPolicy == null

@@ -42,7 +42,7 @@ public class Toolbox {
   public void updateTools() {
     for (Tool tool : tools) {
       tool.setEnabled(tool.isAvailable());
-      tool.updateButtonState();
+      tool.updateState();
     }
   }
 
