@@ -256,37 +256,21 @@ public abstract class DefaultTool extends Tool
     }
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.awt.event.MouseListener#mouseClicked(java.awt.event.MouseEvent)
-   */
+  // region MouseListener implementation
+
   @Override
   public void mouseClicked(MouseEvent e) {}
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.awt.event.MouseListener#mouseEntered(java.awt.event.MouseEvent)
-   */
   @Override
   public void mouseEntered(MouseEvent e) {}
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.awt.event.MouseListener#mouseExited(java.awt.event.MouseEvent)
-   */
   @Override
   public void mouseExited(MouseEvent e) {}
 
-  ////
-  // MouseMotion
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.awt.event.MouseMotionListener#mouseMoved(java.awt.event.MouseEvent)
-   */
+  // endregion
+
+  // region MouseMotionListener implementation
+
   @Override
   public void mouseMoved(MouseEvent e) {
     if (renderer == null) {
@@ -336,12 +320,10 @@ public abstract class DefaultTool extends Tool
     }
   }
 
-  public void moveViewByCells(int dx, int dy) {
-    renderer.moveViewByCells(dx, dy);
-  }
+  // endregion
 
-  ////
-  // Mouse Wheel
+  // region MouseWheelListener implementation
+
   @Override
   public void mouseWheelMoved(MouseWheelEvent e) {
     // Fix for High Resolution Mouse Wheels
@@ -419,6 +401,8 @@ public abstract class DefaultTool extends Tool
     }
   }
 
+  // endregion
+
   /*
    * For touch screens, swap the events, easier to move map/draw by default
    */
@@ -480,7 +464,9 @@ public abstract class DefaultTool extends Tool
     }
 
     public void actionPerformed(ActionEvent e) {
-      moveViewByCells(dx, dy);
+      if (renderer != null) {
+        renderer.moveViewByCells(dx, dy);
+      }
     }
   }
 }
