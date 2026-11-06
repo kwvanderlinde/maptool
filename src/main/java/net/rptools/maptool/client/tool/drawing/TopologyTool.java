@@ -70,17 +70,13 @@ public final class TopologyTool<StateT> extends AbstractDrawingLikeTool {
   }
 
   @Override
-  protected void attachTo(ZoneRenderer renderer) {
-    super.attachTo(renderer);
-
+  protected void attachImpl() {
     topologyModeSelectionPanel.setEnabled(true);
   }
 
   @Override
-  protected void detachFrom(ZoneRenderer renderer) {
+  protected void detachImpl() {
     topologyModeSelectionPanel.setEnabled(false);
-
-    super.detachFrom(renderer);
   }
 
   @Override

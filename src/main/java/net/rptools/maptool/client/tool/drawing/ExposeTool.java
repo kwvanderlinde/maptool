@@ -50,6 +50,16 @@ public final class ExposeTool<StateT> extends AbstractDrawingLikeTool {
   }
 
   @Override
+  protected void attachImpl() {
+    // Nothing special to do.
+  }
+
+  @Override
+  protected void detachImpl() {
+    // Nothing special to do.
+  }
+
+  @Override
   protected boolean isLinearTool() {
     return strategy.isLinear();
   }

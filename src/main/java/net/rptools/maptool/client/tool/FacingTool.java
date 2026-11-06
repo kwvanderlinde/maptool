@@ -77,6 +77,16 @@ public class FacingTool extends DefaultTool {
     return "tool.facing.instructions";
   }
 
+  @Override
+  protected void attachImpl() {
+    // Nothing special to do.
+  }
+
+  @Override
+  protected void detachImpl() {
+    // Nothing special to do.
+  }
+
   /// /
   // MOUSE
   @Override

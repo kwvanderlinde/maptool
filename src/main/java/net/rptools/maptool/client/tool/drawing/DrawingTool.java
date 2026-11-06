@@ -55,9 +55,7 @@ public final class DrawingTool<StateT> extends AbstractDrawingLikeTool {
   }
 
   @Override
-  protected void attachTo(ZoneRenderer renderer) {
-    super.attachTo(renderer);
-
+  protected void attachImpl() {
     if (MapTool.getPlayer().isGM()) {
       MapTool.getFrame()
           .showControlPanel(MapTool.getFrame().getColorPicker(), getLayerSelectionDialog());
@@ -68,11 +66,9 @@ public final class DrawingTool<StateT> extends AbstractDrawingLikeTool {
   }
 
   @Override
-  protected void detachFrom(ZoneRenderer renderer) {
+  protected void detachImpl() {
     MapTool.getFrame().removeControlPanel();
     renderer.setCursor(Cursor.getDefaultCursor());
-
-    super.detachFrom(renderer);
   }
 
   /** If currently drawing, stop and clear it. */

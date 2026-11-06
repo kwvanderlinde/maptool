@@ -277,9 +277,7 @@ public class PointerTool extends DefaultTool {
   }
 
   @Override
-  protected void attachTo(ZoneRenderer renderer) {
-    super.attachTo(renderer);
-
+  protected void attachImpl() {
     if (MapTool.getPlayer().isGM()) {
       MapTool.getFrame().showControlPanel(getLayerSelectionDialog());
     }
@@ -291,11 +289,9 @@ public class PointerTool extends DefaultTool {
   }
 
   @Override
-  protected void detachFrom(ZoneRenderer renderer) {
+  protected void detachImpl() {
     MapTool.getFrame().removeControlPanel();
     htmlRenderer.detach(renderer);
-
-    super.detachFrom(renderer);
   }
 
   @Override

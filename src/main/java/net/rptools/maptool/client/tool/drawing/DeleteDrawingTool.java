@@ -58,19 +58,15 @@ public class DeleteDrawingTool extends DefaultTool implements ZoneOverlay, Mouse
   }
 
   @Override
-  protected void attachTo(ZoneRenderer renderer) {
-    super.attachTo(renderer);
-
+  protected void attachImpl() {
     if (MapTool.getPlayer().isGM()) {
       MapTool.getFrame().showControlPanel(getLayerSelectionDialog());
     }
   }
 
   @Override
-  protected void detachFrom(ZoneRenderer renderer) {
+  protected void detachImpl() {
     MapTool.getFrame().removeControlPanel();
-
-    super.detachFrom(renderer);
   }
 
   @Override

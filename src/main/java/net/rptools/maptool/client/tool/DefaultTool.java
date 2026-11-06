@@ -30,6 +30,7 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.swing.SwingUtil;
 import net.rptools.maptool.client.tool.layerselectiondialog.LayerSelectionDialog;
+import net.rptools.maptool.client.ui.zone.ZoneOverlay;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.CellPoint;
 import net.rptools.maptool.model.GUID;
@@ -155,9 +156,17 @@ public abstract class DefaultTool extends Tool
     if (frame != null) {
       frame.getToolbox().setSelectedTool(PointerTool.class);
     }
+    // TODO Always repaint the zone?
   }
 
-  protected void attachTo(ZoneRenderer renderer) {
+  public void attachTo(ZoneRenderer renderer) {
+    if (this.renderer != null) {
+      log.warn(
+          "Attaching a tool that is already attached to {}. Detaching it first.",
+          this.renderer.getZone().getId());
+      detach();
+    }
+
     this.renderer = renderer;
     selectedLayer = renderer.getActiveLayer();
     layerSelectionDialog.setSelectedLayer(selectedLayer);
@@ -170,25 +179,52 @@ public abstract class DefaultTool extends Tool
     renderer.setInputMap(
         JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, createInputMap(keyActionMap));
 
-    SwingUtilities.invokeLater(renderer::repaint);
-  }
+    attachImpl();
 
-  protected void detachFrom(ZoneRenderer renderer) {
-    if (renderer != this.renderer) {
-      log.error(
-          "Asked to detach from the wrong zone. Attached to {}, but request was for {}",
-          this.renderer == null ? "null" : this.renderer.getZone().getId(),
-          renderer.getZone().getId());
+    if (this instanceof ZoneOverlay overlay) {
+      renderer.addOverlay(overlay);
     }
 
-    this.renderer = null;
-
-    renderer.removeKeyListener(this);
-    renderer.removeMouseListener(this);
-    renderer.removeMouseMotionListener(this);
-    renderer.removeMouseWheelListener(this);
-    SwingUtilities.invokeLater(renderer::repaint);
+    renderer.repaint();
   }
+
+  public void detach() {
+    if (renderer == null) {
+      // Nothing to detach from.
+      return;
+    }
+
+    var oldRenderer = renderer;
+    if (this instanceof ZoneOverlay overlay) {
+      oldRenderer.removeOverlay(overlay);
+    }
+
+    detachImpl();
+
+    oldRenderer.removeKeyListener(this);
+    oldRenderer.removeMouseListener(this);
+    oldRenderer.removeMouseMotionListener(this);
+    oldRenderer.removeMouseWheelListener(this);
+
+    renderer = null;
+
+    oldRenderer.repaint();
+  }
+
+  /**
+   * Called to customize attachment from {@link #renderer}.
+   *
+   * <p>Will only be called once {@link #renderer} is set to a non-null value.
+   */
+  protected abstract void attachImpl();
+
+  /**
+   * Called to customize detachment from {@link #renderer}.
+   *
+   * <p>Will only be called if {@link #renderer} is non-null, i.e., if the tool was previously
+   * attached to a renderer.
+   */
+  protected abstract void detachImpl();
 
   private static InputMap createInputMap(Map<KeyStroke, Action> keyActionMap) {
     ComponentInputMap inputMap =

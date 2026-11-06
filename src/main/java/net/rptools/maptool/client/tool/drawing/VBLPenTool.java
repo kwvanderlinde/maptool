@@ -82,19 +82,15 @@ public final class VBLPenTool extends AbstractDrawingLikeTool {
   }
 
   @Override
-  protected void attachTo(ZoneRenderer renderer) {
-    super.attachTo(renderer);
-
+  protected void attachImpl() {
     topologyModeSelectionPanel.setEnabled(true);
     MapTool.getFrame().showControlPanel(RADIUS_PANEL);
   }
 
   @Override
-  protected void detachFrom(ZoneRenderer renderer) {
+  protected void detachImpl() {
     topologyModeSelectionPanel.setEnabled(false);
     MapTool.getFrame().removeControlPanel();
-
-    super.detachFrom(renderer);
   }
 
   @Override

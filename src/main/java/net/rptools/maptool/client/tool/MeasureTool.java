@@ -96,17 +96,13 @@ public class MeasureTool extends DefaultTool implements ZoneOverlay {
   }
 
   @Override
-  protected void attachTo(ZoneRenderer renderer) {
-    super.attachTo(renderer);
-
+  protected void attachImpl() {
     renderer.setCursor(measureCursor);
   }
 
   @Override
-  protected void detachFrom(ZoneRenderer renderer) {
+  protected void detachImpl() {
     renderer.setCursor(Cursor.getDefaultCursor());
-
-    super.detachFrom(renderer);
   }
 
   @Override
