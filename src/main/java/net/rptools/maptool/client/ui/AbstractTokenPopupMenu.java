@@ -817,8 +817,7 @@ public abstract class AbstractTokenPopupMenu extends JPopupMenu {
 
       FacingTool tool = toolbox.getTool(FacingTool.class);
       tool.init(tokenUnderMouse, renderer.getOwnedTokens(selectedTokenSet));
-
-      toolbox.setSelectedTool(FacingTool.class);
+      toolbox.setSelectedTool(tool);
     }
   }
 
