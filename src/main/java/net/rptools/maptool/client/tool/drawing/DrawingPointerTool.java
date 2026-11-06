@@ -211,9 +211,7 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
    *-------------------------------------------------------------------------------------------*/
 
   @Override
-  protected void attachTo(ZoneRenderer renderer) {
-    super.attachTo(renderer);
-
+  protected void attachImpl() {
     if (MapTool.getPlayer().isGM()) {
       MapTool.getFrame()
           .showControlPanel(MapTool.getFrame().getColorPicker(), getLayerSelectionDialog());
@@ -227,7 +225,7 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
   }
 
   @Override
-  protected void detachFrom(ZoneRenderer renderer) {
+  protected void detachImpl() {
     selectedDrawableIdSet.clear();
     draggedDrawnElementSet.clear();
     flatImageLabelCache.clear();
@@ -236,8 +234,6 @@ public class DrawingPointerTool extends DefaultTool implements ZoneOverlay, Mous
     isSnapToGridSelected = MapTool.getFrame().getColorPicker().isSnapSelected();
     isEraseSelected = MapTool.getFrame().getColorPicker().isEraseSelected();
     selectedTool = null;
-
-    super.detachFrom(renderer);
   }
 
   /**

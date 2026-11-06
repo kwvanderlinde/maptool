@@ -42,9 +42,7 @@ public abstract class AbstractTemplateTool extends DefaultTool implements ZoneOv
   }
 
   @Override
-  protected void attachTo(ZoneRenderer renderer) {
-    super.attachTo(renderer);
-
+  protected void attachImpl() {
     if (MapTool.getPlayer().isGM()) {
       MapTool.getFrame()
           .showControlPanel(MapTool.getFrame().getColorPicker(), getLayerSelectionDialog());
@@ -58,14 +56,12 @@ public abstract class AbstractTemplateTool extends DefaultTool implements ZoneOv
   }
 
   @Override
-  protected void detachFrom(ZoneRenderer renderer) {
+  protected void detachImpl() {
     MapTool.getFrame().removeControlPanel();
     renderer.setCursor(Cursor.getDefaultCursor());
 
     isSnapToGridSelected = MapTool.getFrame().getColorPicker().isSnapSelected();
     isEraseSelected = MapTool.getFrame().getColorPicker().isEraseSelected();
-
-    super.detachFrom(renderer);
   }
 
   protected void setIsEraser(boolean eraser) {

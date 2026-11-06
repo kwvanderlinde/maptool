@@ -212,9 +212,7 @@ public class GridTool extends DefaultTool {
    * @see maptool.client.Tool#attachTo(maptool.client.ZoneRenderer)
    */
   @Override
-  protected void attachTo(ZoneRenderer renderer) {
-    super.attachTo(renderer);
-
+  protected void attachImpl() {
     oldShowGrid = AppState.isShowGrid();
     AppState.setShowGrid(true);
 
@@ -235,7 +233,7 @@ public class GridTool extends DefaultTool {
    * @see maptool.client.Tool#detachFrom(maptool.client.ZoneRenderer)
    */
   @Override
-  protected void detachFrom(ZoneRenderer renderer) {
+  protected void detachImpl() {
     AppState.setShowGrid(oldShowGrid);
     MapTool.getFrame().removeControlPanel();
 
@@ -248,8 +246,6 @@ public class GridTool extends DefaultTool {
             zone.getGrid().getOffsetY(),
             zone.getGrid().getSize(),
             zone.getGridColor());
-
-    super.detachFrom(renderer);
   }
 
   ////

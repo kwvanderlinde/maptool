@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.ui.zone.ZoneOverlay;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 
@@ -135,28 +134,14 @@ public class Toolbox {
 
     if (currentTool != null) {
       currentTool.attachTo(currentRenderer);
-
-      if (currentTool instanceof ZoneOverlay) {
-        currentRenderer.addOverlay((ZoneOverlay) currentTool);
-      }
     }
 
     currentRenderer.repaint();
   }
 
   private void detach() {
-    if (currentRenderer == null) {
-      return;
-    }
-
     if (currentTool != null) {
-      currentTool.detachFrom(currentRenderer);
-
-      if (currentTool instanceof ZoneOverlay) {
-        currentRenderer.removeOverlay((ZoneOverlay) currentTool);
-      }
+      currentTool.detach();
     }
-
-    currentRenderer.repaint();
   }
 }

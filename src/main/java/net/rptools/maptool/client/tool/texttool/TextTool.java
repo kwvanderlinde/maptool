@@ -79,18 +79,14 @@ public class TextTool extends DefaultTool implements ZoneOverlay {
   }
 
   @Override
-  protected void attachTo(ZoneRenderer renderer) {
-    super.attachTo(renderer);
-
+  protected void attachImpl() {
     renderer.setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
     selectedLabel = null;
   }
 
   @Override
-  protected void detachFrom(ZoneRenderer renderer) {
+  protected void detachImpl() {
     renderer.setCursor(Cursor.getDefaultCursor());
-
-    super.detachFrom(renderer);
   }
 
   @Override

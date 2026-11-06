@@ -31,7 +31,6 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.ScreenPoint;
 import net.rptools.maptool.client.swing.AbeillePanel;
 import net.rptools.maptool.client.tool.DefaultTool;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.Grid;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.ZonePoint;
@@ -215,9 +214,7 @@ public class BoardTool extends DefaultTool {
    * @see maptool.client.Tool#attachTo(maptool.client.ZoneRenderer)
    */
   @Override
-  protected void attachTo(ZoneRenderer renderer) {
-    super.attachTo(renderer);
-
+  protected void attachImpl() {
     zone = renderer.getZone();
     copyBoardToControlPanel();
     oldShowGrid = AppState.isShowGrid();
@@ -248,7 +245,7 @@ public class BoardTool extends DefaultTool {
    * @see maptool.client.Tool#detachFrom(maptool.client.ZoneRenderer)
    */
   @Override
-  protected void detachFrom(ZoneRenderer renderer) {
+  protected void detachImpl() {
     MapTool.getFrame().removeControlPanel();
     MapTool.serverCommand()
         .setBoard(
@@ -259,8 +256,6 @@ public class BoardTool extends DefaultTool {
             zone.getImageScaleX(),
             zone.getImageScaleY());
     AppState.setShowGrid(oldShowGrid);
-
-    super.detachFrom(renderer);
   }
 
   ////
