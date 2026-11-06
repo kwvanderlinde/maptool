@@ -2267,7 +2267,8 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
    */
   public void addTokens(
       List<Token> tokens, ZonePoint zp, List<Boolean> configureTokens, boolean showDialog) {
-    GridCapabilities gridCaps = zone.getGrid().getCapabilities();
+    Grid grid = zone.getGrid();
+    GridCapabilities gridCaps = grid.getCapabilities();
     boolean isGM = MapTool.getPlayer().isGM();
     List<String> failedPaste = new ArrayList<>(tokens.size());
     List<GUID> selectThese = new ArrayList<>(tokens.size());
@@ -2283,7 +2284,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
       token.setSnapToGrid(
           gridCaps.isSnapToGridSupported() && AppPreferences.tokensStartSnapToGrid.get());
       if (token.isSnapToGrid()) {
-        zp = zone.getGrid().convert(zone.getGrid().convert(zp));
+        zp = grid.convert(grid.convert(zp));
       }
       token.setX(zp.x);
       token.setY(zp.y);
@@ -2293,8 +2294,7 @@ public class ZoneRenderer extends JComponent implements DropTargetListener {
         BufferedImage image = ImageManager.getImageAndWait(token.getImageAssetId());
         token.setWidth(image.getWidth(null));
         token.setHeight(image.getHeight(null));
-        token.setFootprintId(
-            zone.getGrid().getType(), zone.getGrid().getDefaultFootprint().getId());
+        token.setFootprintId(grid.getType(), grid.getType().getDefaultFootprint().getId());
         token.guessAndSetShape();
       }
 
