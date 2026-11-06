@@ -49,6 +49,7 @@ public class Toolbox {
     return currentTool;
   }
 
+  // TODO This is used uniquely to support FacingTool. Is it really needed?
   @SuppressWarnings("unchecked")
   public <T extends Tool> T getTool(Class<? extends T> toolClass) {
     return (T) toolMap.get(toolClass);
