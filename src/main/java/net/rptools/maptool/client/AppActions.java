@@ -3010,8 +3010,7 @@ public class AppActions {
           tool.init(
               renderer.getZone().getToken(renderer.getSelectedTokenSet().iterator().next()),
               renderer.getSelectedTokenSet());
-
-          toolbox.setSelectedTool(FacingTool.class);
+          toolbox.setSelectedTool(tool);
         }
       };
 
