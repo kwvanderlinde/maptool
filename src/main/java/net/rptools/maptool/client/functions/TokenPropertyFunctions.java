@@ -1012,14 +1012,7 @@ public class TokenPropertyFunctions extends AbstractFunction {
    */
   private String getSize(Token token) {
     GridType gridType = token.getZoneRenderer().getZone().getGrid().getType();
-    if (token.isSnapToScale()) {
-      for (TokenFootprint footprint : gridType.getFootprints()) {
-        if (footprint.getId().equals(token.getFootprintId(gridType))) {
-          return footprint.getName();
-        }
-      }
-    }
-    return "";
+    return gridType.getFootprint(token.getFootprintId(gridType)).getName();
   }
 
   /**
@@ -1033,13 +1026,13 @@ public class TokenPropertyFunctions extends AbstractFunction {
   private String setSize(Token token, String size) throws ParserException {
     if (size.equalsIgnoreCase("native") || size.equalsIgnoreCase("free")) {
       MapTool.serverCommand().updateTokenProperty(token, Token.Update.setSnapToScale, false);
-      return getSize(token);
+      return "";
     }
     GridType gridType = token.getZoneRenderer().getZone().getGrid().getType();
     for (TokenFootprint footprint : gridType.getFootprints()) {
       if (footprint.getName().equalsIgnoreCase(size)) {
         MapTool.serverCommand().setTokenFootprint(token, gridType, footprint.getId());
-        return getSize(token);
+        return footprint.getName();
       }
     }
     throw new ParserException(
