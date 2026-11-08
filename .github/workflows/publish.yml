@@ -41,6 +41,8 @@ jobs:
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v6
     - name: Build with Gradle
       run: ./gradlew jpackage zipJpackageImage
     - name: Copy the RPM to the location required to build the ArchLinux package
