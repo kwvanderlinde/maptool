@@ -45,6 +45,7 @@ jobs:
       uses: gradle/actions/setup-gradle@v6
       with:
         cache-read-only: false
+        gradle-version: 8.5
     - name: Build with Gradle
       run: ./gradlew jpackage zipJpackageImage
     - name: Copy the RPM to the location required to build the ArchLinux package
