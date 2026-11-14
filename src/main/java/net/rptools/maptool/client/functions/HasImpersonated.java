@@ -58,7 +58,9 @@ public class HasImpersonated extends AbstractFunction {
         return "";
       } else {
         Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, -1);
-        MapTool.getClient().getImpersonation().setGlobalIdentity(new TokenIdentity(token));
+        MapTool.getClient()
+            .getImpersonation()
+            .setGlobalIdentity(new TokenIdentity(token.getId(), null));
         return token.getName();
       }
     }

@@ -14,6 +14,7 @@
  */
 package net.rptools.maptool.client;
 
+import javax.annotation.Nullable;
 import net.rptools.maptool.client.functions.FindTokenFunctions;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Token;
@@ -42,46 +43,23 @@ public class TokenIdentity {
   /** Whether the player is allowed to set the token in the Impersonate panel. */
   private final boolean canImpersonate;
 
+  /**
+   * Primary constructor.
+   *
+   * @param identityName The name to display for the impersonation.
+   * @param identityGUID The ID of the token being impersonated.
+   * @param canImpersonate Whether this identify can be shown in the impersonation panel.
+   */
+  public TokenIdentity(
+      @Nullable GUID identityGUID, @Nullable String identityName, boolean canImpersonate) {
+    this.identityGUID = identityGUID;
+    this.identityName = identityName;
+    this.canImpersonate = canImpersonate;
+  }
+
   /** Creates an empty identity (nothing impersonated). */
   public TokenIdentity() {
-    identityName = null;
-    identityGUID = null;
-    canImpersonate = false;
-  }
-
-  /**
-   * Creates an identity from the token. If null, nothing is impersonated.
-   *
-   * <p>Equivalent to {@code TokenIdentity(token, null)}, which in turn allows the token to be shown
-   * in the Impersonate panel. This is what the {@code impersonate()} macro function uses, so a
-   * token impersonated that way does appear in the panel. This constructor was package-private
-   * while the class was nested in {@code CommandPanel}, and is public only because that class is
-   * now in a different package.
-   *
-   * @param token the token to impersonate
-   */
-  public TokenIdentity(Token token) {
-    this(token, null);
-  }
-
-  /**
-   * Creates an identity from a name. If null, nothing is impersonated.
-   *
-   * @param name the name to impersonate
-   */
-  TokenIdentity(String name) {
-    this(null, name, false);
-  }
-
-  /**
-   * Creates an identity from a token. If the token is null, the identity uses the specified backup
-   * name.
-   *
-   * @param token the token to impersonate
-   * @param backupName the backup name to impersonate if the token is null
-   */
-  public TokenIdentity(Token token, String backupName) {
-    this(token, backupName, true);
+    this((GUID) null, (String) null, false);
   }
 
   /**
@@ -92,27 +70,7 @@ public class TokenIdentity {
    * @param backupName the backup name to impersonate if the token is null
    */
   public TokenIdentity(GUID tokenId, String backupName) {
-    this(FindTokenFunctions.findToken(tokenId, null), backupName);
-  }
-
-  /**
-   * Creates an identity from a token. If the token is null, the identity uses the specified backup
-   * name. Impersonation through the Impersonate panel can be disabled.
-   *
-   * @param token the token to impersonate
-   * @param backupName the backup name to impersonate if the token is null
-   * @param canImpersonate whether the token can be impersonated in the Impersonate panel
-   */
-  public TokenIdentity(Token token, String backupName, boolean canImpersonate) {
-    if (token != null) {
-      this.identityGUID = token.getId();
-      this.identityName = token.getName();
-      this.canImpersonate = canImpersonate;
-    } else {
-      this.identityGUID = null;
-      this.identityName = backupName;
-      this.canImpersonate = false;
-    }
+    this(tokenId, backupName, true);
   }
 
   /**

@@ -229,7 +229,7 @@ public class CommandPanel extends JPanel {
 
       Token impersonated = getImpersonatedAmongList(tokens);
       if (impersonated != null) {
-        setGlobalIdentity(new TokenIdentity(impersonated));
+        setGlobalIdentity(new TokenIdentity(impersonated.getId(), null));
       }
     }
   }

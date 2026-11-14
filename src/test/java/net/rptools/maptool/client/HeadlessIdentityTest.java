@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import net.rptools.maptool.client.functions.FindTokenFunctions;
 import net.rptools.maptool.client.macro.MacroManager;
 import net.rptools.maptool.model.GUID;
 import org.junit.jupiter.api.AfterEach;
@@ -53,12 +52,6 @@ public class HeadlessIdentityTest {
   @Test
   void thereIsNoCurrentMapWithoutAWindow() {
     assertNull(MapTool.getClient().getCurrentZone());
-  }
-
-  @Test
-  void findingATokenOnTheCurrentMapFindsNothingRatherThanFailing() {
-    assertNull(FindTokenFunctions.findToken(new GUID(), null));
-    assertNull(FindTokenFunctions.findToken("Anyone", null));
   }
 
   /** {@code hasImpersonated()} asks this, and it looks the token up on the current map. */

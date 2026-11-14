@@ -39,7 +39,7 @@ import org.junit.jupiter.api.Test;
 public class ImpersonationStateTest {
 
   private static TokenIdentity named(String name) {
-    return new TokenIdentity(name);
+    return new TokenIdentity(null, name, false);
   }
 
   @Test

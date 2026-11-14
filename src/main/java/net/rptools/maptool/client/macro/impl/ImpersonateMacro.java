@@ -72,12 +72,14 @@ public class ImpersonateMacro implements Macro {
     // Impersonate
     if (index > 0) {
       // Enter impersonation context for the duration of the macro
-      identities.enterContextIdentity(new TokenIdentity(token, name));
+      identities.enterContextIdentity(
+          new TokenIdentity(token == null ? null : token.getId(), name));
       MacroManager.executeMacro(macro, executionContext);
       identities.leaveContextIdentity();
     } else {
       // Set current identity
-      identities.setIdentity(new TokenIdentity(token, name, canLoadTokenMacros(token)));
+      identities.setIdentity(
+          new TokenIdentity(token == null ? null : token.getId(), name, canLoadTokenMacros(token)));
     }
   }
 
