@@ -73,9 +73,6 @@ public class CommandPanel extends JPanel {
 
   private ChatProcessor chatProcessor;
 
-  /** The identity representing no impersonation. */
-  private static final TokenIdentity emptyIdentity = new TokenIdentity();
-
   public CommandPanel() {
     setLayout(new BorderLayout());
     setBorder(BorderFactory.createLineBorder(Color.gray));
@@ -119,15 +116,6 @@ public class CommandPanel extends JPanel {
   }
 
   /**
-   * Clears both the identity stack and the global identity.
-   *
-   * @see ImpersonationState#clearAllIdentities()
-   */
-  public void clearAllIdentities() {
-    impersonation().clearAllIdentities();
-  }
-
-  /**
    * Whether the player is currently impersonating a token
    *
    * @return {@code true} if there is a token being impersonated.
@@ -144,31 +132,6 @@ public class CommandPanel extends JPanel {
    */
   public String getIdentity() {
     return impersonation().getIdentity();
-  }
-
-  /**
-   * If the current impersonation was assigned using a GUID, that value is returned. This allows the
-   * calling code to find a specific token even if there are duplicate names. If a GUID was not used
-   * (perhaps an arbitrary strings was used) then <code>null</code> is returned.
-   *
-   * @return ID of the token that is being impersonated if it was set via ID.
-   */
-  public GUID getIdentityGUID() {
-    return impersonation().getIdentityGUID();
-  }
-
-  /**
-   * Globally impersonates a token.
-   *
-   * @param token the token to impersonate.
-   */
-  public void setGlobalIdentity(Token token) {
-    setGlobalIdentity(new TokenIdentity(token));
-  }
-
-  /** Clears the globally impersonated token. */
-  public void clearGlobalIdentity() {
-    setGlobalIdentity(emptyIdentity);
   }
 
   /**
@@ -209,16 +172,6 @@ public class CommandPanel extends JPanel {
     HTMLFrameFactory.impersonateToken();
   }
 
-  /** Refreshes the global identity so that it matches the impersonated token. */
-  public void refreshGlobalIdentity() {
-    TokenIdentity globalIdentity = impersonation().getGlobalIdentity();
-    if (globalIdentity.getIdentityGUID() != null) {
-      TokenIdentity identity = globalIdentity;
-      identity = new TokenIdentity(identity.getIdentityGUID(), identity.getIdentity());
-      setGlobalIdentity(identity);
-    }
-  }
-
   /**
    * Change the current impersonated identity. If no macro has entered a context identity, change
    * the global identity; otherwise, replace the current context identity.
@@ -228,37 +181,6 @@ public class CommandPanel extends JPanel {
    */
   public void setIdentity(TokenIdentity macroIdentity) {
     impersonation().setIdentity(macroIdentity);
-  }
-
-  /**
-   * @return whether the current identity is a token.
-   */
-  public boolean isImpersonatingToken() {
-    return impersonation().isImpersonatingToken();
-  }
-
-  /**
-   * @return whether the global identity is a token.
-   */
-  public boolean isGlobalImpersonatingToken() {
-    return impersonation().isGlobalImpersonatingToken();
-  }
-
-  /**
-   * Enters an identity context in which the identity is temporarily different.
-   *
-   * @param macroIdentity the identity to temporarily adopt.
-   */
-  public void enterContextIdentity(TokenIdentity macroIdentity) {
-    impersonation().enterContextIdentity(macroIdentity);
-  }
-
-  /**
-   * Leaves the current identity context. Returns to the previous in the identity stack or to the
-   * global one if the stack is empty.
-   */
-  public void leaveContextIdentity() {
-    impersonation().leaveContextIdentity();
   }
 
   /**
