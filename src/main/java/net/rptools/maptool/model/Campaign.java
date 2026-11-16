@@ -398,10 +398,6 @@ public class Campaign implements Serializable {
     zones.put(zone.getId(), zone);
   }
 
-  public void removeAllZones() {
-    zones.clear();
-  }
-
   /**
    * Remove a zone from zones.
    *
@@ -409,6 +405,17 @@ public class Campaign implements Serializable {
    */
   public void removeZone(GUID id) {
     zones.remove(id);
+  }
+
+  public @Nullable ZoneEntity<Token> findToken(GUID tokenId) {
+    for (var zone : getZones()) {
+      var token = zone.getToken(tokenId);
+      if (token != null) {
+        return new ZoneEntity<>(zone, token);
+      }
+    }
+
+    return null;
   }
 
   public boolean containsAsset(Asset asset) {
