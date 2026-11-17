@@ -64,7 +64,9 @@ public class HeroLabFunctions extends AbstractFunction {
 
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, -1);
 
-      if (token.getHeroLabData() == null) return BigDecimal.ZERO;
+      if (token.getHeroLabData() == null) {
+        return BigDecimal.ZERO;
+      }
 
       return token.getHeroLabData().getInfo();
     } else if (functionName.equalsIgnoreCase("herolab.getStatBlock")) {
@@ -72,33 +74,23 @@ public class HeroLabFunctions extends AbstractFunction {
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
 
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 1, -1);
-
-      if (token.getHeroLabData() == null)
-        throw new ParserException(I18N.getText("macro.function.herolab.null", functionName));
-
       String statBlockType = parameters.get(0).toString();
 
-      return token.getHeroLabData().getStatBlock_data(statBlockType);
+      return getHeroLabData(token, functionName).getStatBlock_data(statBlockType);
     } else if (functionName.equalsIgnoreCase("herolab.hasChanged")) {
       FunctionUtil.blockUntrustedMacro(functionName);
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
 
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, -1);
 
-      if (token.getHeroLabData() == null)
-        throw new ParserException(I18N.getText("macro.function.herolab.null", functionName));
-
-      return token.getHeroLabData().isDirty() ? BigDecimal.ONE : BigDecimal.ZERO;
+      return getHeroLabData(token, functionName).isDirty() ? BigDecimal.ONE : BigDecimal.ZERO;
     } else if (functionName.equalsIgnoreCase("herolab.refresh")) {
       FunctionUtil.blockUntrustedMacro(functionName);
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
 
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, -1);
 
-      if (token.getHeroLabData() == null)
-        throw new ParserException(I18N.getText("macro.function.herolab.null", functionName));
-
-      HeroLabData heroLabData = token.getHeroLabData();
+      HeroLabData heroLabData = getHeroLabData(token, functionName);
       ExtractHeroLab heroLabExtract = new ExtractHeroLab(heroLabData.getPortfolioFile(), false);
       heroLabData = heroLabExtract.refreshCharacter(heroLabData);
 
@@ -107,13 +99,19 @@ public class HeroLabFunctions extends AbstractFunction {
 
         // Update the images
         MD5Key tokenAsset = heroLabData.getTokenImage();
-        if (tokenAsset != null) token.setImageAsset(null, tokenAsset);
+        if (tokenAsset != null) {
+          token.setImageAsset(null, tokenAsset);
+        }
 
         MD5Key portraitAsset = heroLabData.getPortraitImage();
-        if (portraitAsset != null) token.setPortraitImage(portraitAsset);
+        if (portraitAsset != null) {
+          token.setPortraitImage(portraitAsset);
+        }
 
         MD5Key handoutAsset = heroLabData.getHandoutImage();
-        if (handoutAsset != null) token.setCharsheetImage(handoutAsset);
+        if (handoutAsset != null) {
+          token.setCharsheetImage(handoutAsset);
+        }
 
         return BigDecimal.ONE;
       } else {
@@ -128,23 +126,22 @@ public class HeroLabFunctions extends AbstractFunction {
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 1, -1);
       String delim = parameters.size() == 3 ? parameters.get(2).toString() : ", ";
 
-      if (token.getHeroLabData() == null) {
-        throw new ParserException(I18N.getText("macro.function.herolab.null", functionName));
-      }
-
+      HeroLabData heroLabData = getHeroLabData(token, functionName);
       if (delim.equalsIgnoreCase("json")) {
         try {
-          return token.getHeroLabData().parseXmlToJson(xPathExpression);
+          return heroLabData.parseXmlToJson(xPathExpression);
         } catch (IllegalArgumentException iae) {
           throw new IllegalArgumentException(
               I18N.getText("macro.function.herolab.xpath.invalid", xPathExpression), iae);
         }
       } else {
         try {
-          String result = token.getHeroLabData().parseXML(xPathExpression, delim);
-          if (NumberUtils.isNumber(result))
+          String result = heroLabData.parseXML(xPathExpression, delim);
+          if (NumberUtils.isNumber(result)) {
             return new BigDecimal(result).stripTrailingZeros().toPlainString();
-          else return result;
+          } else {
+            return result;
+          }
         } catch (IllegalArgumentException iae) {
           throw new IllegalArgumentException(
               I18N.getText("macro.function.herolab.xpath.invalid", xPathExpression), iae);
@@ -154,41 +151,38 @@ public class HeroLabFunctions extends AbstractFunction {
       FunctionUtil.blockUntrustedMacro(functionName);
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
 
+      int imageIndex = Integer.parseInt(parameters.get(0).toString());
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 1, -1);
 
-      if (token.getHeroLabData() == null)
-        throw new ParserException(I18N.getText("macro.function.herolab.null", functionName));
-
-      int imageIndex = Integer.parseInt(parameters.get(0).toString());
-      MD5Key assetID = token.getHeroLabData().getImageAssetID(imageIndex);
-      if (assetID == null) return "";
-
-      StringBuilder assetURL = new StringBuilder("asset://");
-      assetURL.append(assetID.toString());
-
-      return assetURL.toString();
+      MD5Key assetID = getHeroLabData(token, functionName).getImageAssetID(imageIndex);
+      if (assetID == null) {
+        return "";
+      }
+      return "asset://" + assetID;
     } else if (functionName.equalsIgnoreCase("herolab.isMinion")) {
       FunctionUtil.blockUntrustedMacro(functionName);
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
 
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, -1);
 
-      if (token.getHeroLabData() == null)
-        throw new ParserException(I18N.getText("macro.function.herolab.null", functionName));
-
-      return token.getHeroLabData().isMinion() ? BigDecimal.ONE : BigDecimal.ZERO;
+      return getHeroLabData(token, functionName).isMinion() ? BigDecimal.ONE : BigDecimal.ZERO;
     } else if (functionName.equalsIgnoreCase("herolab.getMasterName")) {
       FunctionUtil.blockUntrustedMacro(functionName);
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
 
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, -1);
 
-      if (token.getHeroLabData() == null)
-        throw new ParserException(I18N.getText("macro.function.herolab.null", functionName));
-
-      return token.getHeroLabData().getMinionMasterName();
+      return getHeroLabData(token, functionName).getMinionMasterName();
     }
 
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));
+  }
+
+  private HeroLabData getHeroLabData(Token token, String functionName) throws ParserException {
+    var data = token.getHeroLabData();
+    if (data == null) {
+      throw new ParserException(I18N.getText("macro.function.herolab.null", functionName));
+    }
+    return data;
   }
 }
