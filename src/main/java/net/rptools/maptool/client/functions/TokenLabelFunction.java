@@ -16,7 +16,6 @@ package net.rptools.maptool.client.functions;
 
 import java.util.List;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.util.FunctionUtil;
@@ -62,42 +61,16 @@ public class TokenLabelFunction extends AbstractFunction {
       Parser parser, VariableResolver resolver, String functionName, List<Object> args)
       throws ParserException {
     if (functionName.equalsIgnoreCase("getLabel")) {
-      return getLabel((MapToolVariableResolver) resolver, args);
+      FunctionUtil.checkNumberParam(functionName, args, 0, 1);
+      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, args, 0, -1);
+      return getLabel(token);
     } else if ("setLabel".equalsIgnoreCase(functionName)) {
-      return setLabel((MapToolVariableResolver) resolver, args);
+      FunctionUtil.checkNumberParam(functionName, args, 1, 3);
+      String label = args.get(0).toString();
+      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, args, 1, 2);
+      setLabel(token, label);
+      return label;
     }
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));
-  }
-
-  /**
-   * Gets the label of the token
-   *
-   * @param args The arguments passed.
-   * @return the name of the token.
-   * @throws ParserException when an error occurs.
-   */
-  private static Object getLabel(MapToolVariableResolver resolver, List<Object> args)
-      throws ParserException {
-    FunctionUtil.checkNumberParam("getLabel", args, 0, 1);
-
-    Token token = FunctionUtil.getTokenFromParam(resolver, "getLabel", args, 0, -1);
-    return getLabel(token);
-  }
-
-  /**
-   * Sets the label of the token.
-   *
-   * @param args The arguments passed.
-   * @return the new name of the token.
-   * @throws ParserException when an error occurs.
-   */
-  private static Object setLabel(MapToolVariableResolver resolver, List<Object> args)
-      throws ParserException {
-    FunctionUtil.checkNumberParam("setLabel", args, 1, 3);
-
-    String label = args.get(0).toString();
-    Token token = FunctionUtil.getTokenFromParam(resolver, "setLabel", args, 1, 2);
-    setLabel(token, label);
-    return label;
   }
 }
