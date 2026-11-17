@@ -14,7 +14,6 @@
  */
 package net.rptools.maptool.client.functions;
 
-import java.math.BigDecimal;
 import java.util.List;
 import net.rptools.maptool.client.AppUtil;
 import net.rptools.maptool.client.MapTool;
@@ -52,16 +51,6 @@ public class TokenVisibleFunction extends AbstractFunction {
     return instance;
   }
 
-  public static boolean getBooleanVisible(Token token) throws ParserException {
-    FunctionUtil.blockUntrustedMacro("getVisible");
-
-    boolean ownerOnly = token.isVisibleOnlyToOwner() && !AppUtil.playerOwns(token);
-    if (ownerOnly) {
-      return false;
-    }
-    return token.isVisible();
-  }
-
   /**
    * Gets if the token is visible.
    *
@@ -70,7 +59,10 @@ public class TokenVisibleFunction extends AbstractFunction {
    * @throws ParserException if the player does not have permissions to check.
    */
   public static Object getVisible(Token token) throws ParserException {
-    return getBooleanVisible(token) ? BigDecimal.ONE : BigDecimal.ZERO;
+    FunctionUtil.blockUntrustedMacro("getVisible");
+
+    boolean ownerOnly = token.isVisibleOnlyToOwner() && !AppUtil.playerOwns(token);
+    return FunctionUtil.getDecimalForBoolean(!ownerOnly && token.isVisible());
   }
 
   /**
@@ -83,37 +75,8 @@ public class TokenVisibleFunction extends AbstractFunction {
   public static void setVisible(Token token, Object val) throws ParserException {
     FunctionUtil.blockUntrustedMacro("setVisible");
 
-    boolean set;
-    if (val instanceof Integer) {
-      set = (Integer) val != 0;
-    } else if (val instanceof Boolean) {
-      set = (Boolean) val;
-    } else {
-      try {
-        set = Integer.parseInt(val.toString()) != 0;
-      } catch (NumberFormatException e) {
-        set = Boolean.parseBoolean(val.toString());
-      }
-    }
+    boolean set = getBooleanValue(val);
     MapTool.serverCommand().updateTokenProperty(token, Token.Update.setVisible, set);
-  }
-
-  public static void setOwnerOnlyVisible(Token token, Object val) throws ParserException {
-    FunctionUtil.blockUntrustedMacro("setOwnerOnlyVisible");
-
-    boolean set;
-    if (val instanceof Integer) {
-      set = (Integer) val != 0;
-    } else if (val instanceof Boolean) {
-      set = (Boolean) val;
-    } else {
-      try {
-        set = Integer.parseInt(val.toString()) != 0;
-      } catch (NumberFormatException e) {
-        set = Boolean.parseBoolean(val.toString());
-      }
-    }
-    MapTool.serverCommand().updateTokenProperty(token, Token.Update.setVisibleOnlyToOwner, set);
   }
 
   @Override
@@ -121,154 +84,69 @@ public class TokenVisibleFunction extends AbstractFunction {
       Parser parser, VariableResolver resolver, String functionName, List<Object> param)
       throws ParserException {
     if (functionName.equalsIgnoreCase("getVisible")) {
-      return getVisible(resolver, param);
+      FunctionUtil.checkNumberParam(functionName, param, 0, 1);
+      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, param, 0, -1);
+      return getVisible(token);
     } else if (functionName.equalsIgnoreCase("setOwnerOnlyVisible")) {
-      return setOwnerOnlyVisible(resolver, param);
+      FunctionUtil.blockUntrustedMacro(functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 2);
+      Object val = param.get(0);
+      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, param, 1, -1);
+      MapTool.serverCommand()
+          .updateTokenProperty(token, Token.Update.setVisibleOnlyToOwner, getBooleanValue(val));
+      return val;
     } else if (functionName.equalsIgnoreCase("getOwnerOnlyVisible")) {
-      return getOwnerOnlyVisible(resolver, param);
+      FunctionUtil.blockUntrustedMacro(functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 0, 1);
+      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, param, 0, -1);
+      return FunctionUtil.getDecimalForBoolean(token.isVisibleOnlyToOwner());
     } else if (functionName.equalsIgnoreCase("setVisible")) {
-      return setVisible(resolver, param);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 2);
+      Object val = param.get(0);
+      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, param, 1, -1);
+      setVisible(token, val);
+      return val;
     } else if (functionName.equalsIgnoreCase("setAlwaysVisible")) {
-      return setAlwaysVisible(resolver, param);
+      FunctionUtil.blockUntrustedMacro(functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 3);
+      Object val = param.get(0);
+      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, param, 1, 2);
+      MapTool.serverCommand()
+          .updateTokenProperty(
+              token, Token.Update.setIsAlwaysVisible, FunctionUtil.getBooleanValue(val));
+      return val;
     } else if (functionName.equalsIgnoreCase("getAlwaysVisible")) {
-      return getAlwaysVisible(resolver, param);
+      FunctionUtil.blockUntrustedMacro(functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 0, 1);
+      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, param, 0, -1);
+      boolean ownerOnly = token.isVisibleOnlyToOwner() && !AppUtil.playerOwns(token);
+      return FunctionUtil.getDecimalForBoolean(!ownerOnly && token.isAlwaysVisible());
     } else {
       throw new ParserException(I18N.getText("macro.function.general.unknownFunction"));
     }
   }
 
   /**
-   * Gets if the token is visible
+   * Converts an arbitrary object to a boolean value.
    *
-   * @param args The arguments.
-   * @return if the token is visible or not.
-   * @throws ParserException if an error occurs.
-   */
-  private static Object getVisible(VariableResolver resolver, List<Object> args)
-      throws ParserException {
-    FunctionUtil.checkNumberParam("getVisible", args, 0, 1);
-
-    Token token = FunctionUtil.getTokenFromParam(resolver, "getVisible", args, 0, -1);
-    return getVisible(token);
-  }
-
-  /**
-   * Sets if the token is visible
+   * <p>The functions in this class do not support the general set of possibilities as would be
+   * supported by {@link FunctionUtil#getBooleanValue(Object)}, which is why we have our own support
+   * function here.
    *
-   * @param args The arguments.
-   * @return the value visible is set to.
-   * @throws ParserException if an error occurs.
+   * @param val The value to convert to a boolean.
+   * @return The boolean equivalent of {@code val}.
    */
-  private static Object setVisible(VariableResolver resolver, List<Object> args)
-      throws ParserException {
-    FunctionUtil.checkNumberParam("setVisible", args, 1, 2);
-
-    Object val = args.get(0);
-    Token token = FunctionUtil.getTokenFromParam(resolver, "setVisible", args, 1, -1);
-    setVisible(token, val);
-    return val;
-  }
-
-  private static Object setOwnerOnlyVisible(VariableResolver resolver, List<Object> args)
-      throws ParserException {
-    FunctionUtil.checkNumberParam("setOwnerOnlyVisible", args, 1, 2);
-
-    Object val = args.get(0);
-    Token token = FunctionUtil.getTokenFromParam(resolver, "setOwnerOnlyVisible", args, 1, -1);
-    setOwnerOnlyVisible(token, val);
-    return val;
-  }
-
-  private static Object getOwnerOnlyVisible(VariableResolver resolver, List<Object> args)
-      throws ParserException {
-    FunctionUtil.checkNumberParam("getOwnerOnlyVisible", args, 0, 1);
-
-    Token token = FunctionUtil.getTokenFromParam(resolver, "getOwnerOnlyVisible", args, 0, -1);
-    return getOwnerOnlyVisible(token);
-  }
-
-  public static Object getOwnerOnlyVisible(Token token) throws ParserException {
-    FunctionUtil.blockUntrustedMacro("getOwnerOnlyVisible");
-
-    return token.isVisibleOnlyToOwner() ? BigDecimal.ONE : BigDecimal.ZERO;
-  }
-
-  /**
-   * Sets if the token is always visible or not.
-   *
-   * @param token the token to set.
-   * @param val the value to set the visible flag to.
-   * @throws ParserException when an error occurs.
-   */
-  public static void setAlwaysVisible(Token token, Object val) throws ParserException {
-    FunctionUtil.blockUntrustedMacro("setAlwaysVisible");
-
-    boolean set;
-    if (val instanceof Integer) {
-      set = (Integer) val != 0;
-    } else if (val instanceof Boolean) {
-      set = (Boolean) val;
-    } else {
-      try {
-        set = Integer.parseInt(val.toString()) != 0;
-      } catch (NumberFormatException e) {
-        set = Boolean.parseBoolean(val.toString());
+  private static boolean getBooleanValue(Object val) {
+    return switch (val) {
+      case Boolean b -> b;
+      case Integer i -> i != 0;
+      default -> {
+        try {
+          yield Integer.parseInt(val.toString()) != 0;
+        } catch (NumberFormatException e) {
+          yield Boolean.parseBoolean(val.toString());
+        }
       }
-    }
-    MapTool.serverCommand().updateTokenProperty(token, Token.Update.setIsAlwaysVisible, set);
-  }
-
-  /**
-   * Sets if the token is always visible
-   *
-   * @param args The arguments.
-   * @return the value visible is set to.
-   * @throws ParserException if an error occurs.
-   */
-  private static Object setAlwaysVisible(VariableResolver resolver, List<Object> args)
-      throws ParserException {
-    FunctionUtil.checkNumberParam("setAlwaysVisible", args, 1, 3);
-
-    Object val = args.get(0);
-    Token token = FunctionUtil.getTokenFromParam(resolver, "setAlwaysVisible", args, 1, 2);
-
-    setAlwaysVisible(token, val);
-    return val;
-  }
-
-  public static boolean getBooleanAlwaysVisible(Token token) throws ParserException {
-    FunctionUtil.blockUntrustedMacro("getAlwaysVisible");
-
-    boolean ownerOnly = token.isVisibleOnlyToOwner() && !AppUtil.playerOwns(token);
-    if (ownerOnly) {
-      return false;
-    }
-    return token.isAlwaysVisible();
-  }
-
-  /**
-   * Gets if the token is visible.
-   *
-   * @param token The token to check.
-   * @return if the token is visible.
-   * @throws ParserException if the player does not have permissions to check.
-   */
-  public static Object getAlwaysVisible(Token token) throws ParserException {
-    return getBooleanAlwaysVisible(token) ? BigDecimal.ONE : BigDecimal.ZERO;
-  }
-
-  /**
-   * Gets if the token is visible
-   *
-   * @param args The arguments.
-   * @return if the token is visible or not.
-   * @throws ParserException if an error occurs.
-   */
-  private static Object getAlwaysVisible(VariableResolver resolver, List<Object> args)
-      throws ParserException {
-    FunctionUtil.checkNumberParam("getAlwaysVisible", args, 0, 1);
-
-    Token token = FunctionUtil.getTokenFromParam(resolver, "getAlwaysVisible", args, 0, -1);
-    return getAlwaysVisible(token);
+    };
   }
 }
