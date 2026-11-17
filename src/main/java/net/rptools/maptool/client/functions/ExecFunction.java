@@ -67,10 +67,8 @@ public class ExecFunction extends AbstractFunction {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> args)
       throws ParserException {
+    FunctionUtil.blockUntrustedMacro(functionName);
     FunctionUtil.checkNumberParam(functionName, args, 2, 5);
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
-    }
 
     String execName = args.get(0).toString();
     Function function = parser.getFunction(execName);

@@ -228,15 +228,13 @@ public class Topology_Functions extends AbstractFunction {
 
   private void childEvaluateDrawEraseTopology(String functionName, List<Object> parameters)
       throws ParserException {
+    FunctionUtil.blockUntrustedMacro(functionName);
+
     ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
     boolean erase = false;
     if (parameters.size() != 1) {
       throw new ParserException(
           I18N.getText("macro.function.general.wrongNumParam", functionName, 1, parameters.size()));
-    }
-
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
     }
 
     if (functionName.equalsIgnoreCase("eraseVBL")
@@ -302,6 +300,8 @@ public class Topology_Functions extends AbstractFunction {
 
   private Object childEvaluateGetTopology(String functionName, List<Object> parameters)
       throws ParserException {
+    FunctionUtil.blockUntrustedMacro(functionName);
+
     ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
     Zone.TopologyType topologyType;
     if (functionName.equalsIgnoreCase("getVBL")) {
@@ -326,10 +326,6 @@ public class Topology_Functions extends AbstractFunction {
       throw new ParserException(
           I18N.getText(
               "macro.function.general.notEnoughParam", functionName, 1, parameters.size()));
-    }
-
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
     }
 
     if (parameters.size() >= 2 && !parameters.get(1).equals(BigDecimal.ZERO)) {
@@ -428,6 +424,7 @@ public class Topology_Functions extends AbstractFunction {
   private int childEvaluateSetTokenTopology(
       VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
+    FunctionUtil.blockUntrustedMacro(functionName);
 
     Zone.TopologyType topologyType;
     if (functionName.equalsIgnoreCase("setTokenVBL")) {
@@ -451,10 +448,6 @@ public class Topology_Functions extends AbstractFunction {
       throw new ParserException(
           I18N.getText(
               "macro.function.general.notEnoughParam", functionName, 1, parameters.size()));
-    }
-
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
     }
 
     JsonElement jsonArea =
@@ -520,6 +513,8 @@ public class Topology_Functions extends AbstractFunction {
   private void childEvaluateTransferTopology(
       VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
+    FunctionUtil.blockUntrustedMacro(functionName);
+
     Token token = null;
 
     Zone.TopologyType topologyType;
@@ -544,10 +539,6 @@ public class Topology_Functions extends AbstractFunction {
       throw new ParserException(
           I18N.getText(
               "macro.function.general.notEnoughParam", functionName, 1, parameters.size()));
-    }
-
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
     }
 
     /*

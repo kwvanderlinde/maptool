@@ -65,8 +65,6 @@ public class FunctionUtil {
   private static final String KEY_NOT_NUMBER = "macro.function.general.argumentTypeN";
   private static final String KEY_NOT_STRING = "macro.function.general.argumentTypeS";
 
-  private static final String KEY_NO_PERM = "macro.function.general.noPermOther";
-  private static final String KEY_NO_CURRENT_MAP = "macro.function.map.none";
   private static final String KEY_UNKNOWN_MAP = "macro.function.moveTokenMap.unknownMap";
   private static final String KEY_UNKNOWN_TOKEN = "macro.function.general.unknownToken";
   private static final String KEY_UNKNOWN_TOKEN_ON_MAP = "macro.function.general.unknownTokenOnMap";
@@ -178,8 +176,9 @@ public class FunctionUtil {
     Token token;
     if (id != null) {
       if (!MapTool.getParser().isMacroTrusted()) {
-        throw new ParserException(I18N.getText(KEY_NO_PERM, functionName));
+        throw new ParserException(I18N.getText("macro.function.general.noPermOther", functionName));
       }
+
       token = FindTokenFunctions.findToken(id, map);
       if (token == null) {
         if (map == null) {

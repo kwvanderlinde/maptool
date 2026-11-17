@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.Inflater;
 import net.rptools.maptool.client.AppPreferences;
-import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
@@ -83,9 +82,7 @@ public class RESTfulFunctions extends AbstractFunction {
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
 
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
-    }
+    FunctionUtil.blockUntrustedMacro(functionName);
 
     if (!AppPreferences.allowExternalMacroAccess.get()) {
       throw new ParserException(I18N.getText("macro.function.general.accessDenied", functionName));

@@ -53,9 +53,8 @@ public class TokenVisibleFunction extends AbstractFunction {
   }
 
   public static boolean getBooleanVisible(Token token) throws ParserException {
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", "getVisible"));
-    }
+    FunctionUtil.blockUntrustedMacro("getVisible");
+
     boolean ownerOnly = token.isVisibleOnlyToOwner() && !AppUtil.playerOwns(token);
     if (ownerOnly) {
       return false;
@@ -82,9 +81,8 @@ public class TokenVisibleFunction extends AbstractFunction {
    * @throws ParserException if no permission
    */
   public static void setVisible(Token token, Object val) throws ParserException {
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", "setVisible"));
-    }
+    FunctionUtil.blockUntrustedMacro("setVisible");
+
     boolean set;
     if (val instanceof Integer) {
       set = (Integer) val != 0;
@@ -101,10 +99,8 @@ public class TokenVisibleFunction extends AbstractFunction {
   }
 
   public static void setOwnerOnlyVisible(Token token, Object val) throws ParserException {
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(
-          I18N.getText("macro.function.general.noPerm", "setOwnerOnlyVisible"));
-    }
+    FunctionUtil.blockUntrustedMacro("setOwnerOnlyVisible");
+
     boolean set;
     if (val instanceof Integer) {
       set = (Integer) val != 0;
@@ -213,10 +209,8 @@ public class TokenVisibleFunction extends AbstractFunction {
   }
 
   public static Object getOwnerOnlyVisible(Token token) throws ParserException {
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(
-          I18N.getText("macro.function.general.noPerm", "getOwnerOnlyVisible"));
-    }
+    FunctionUtil.blockUntrustedMacro("getOwnerOnlyVisible");
+
     return token.isVisibleOnlyToOwner() ? BigDecimal.ONE : BigDecimal.ZERO;
   }
 
@@ -228,9 +222,8 @@ public class TokenVisibleFunction extends AbstractFunction {
    * @throws ParserException when an error occurs.
    */
   public static void setAlwaysVisible(Token token, Object val) throws ParserException {
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", "setAlwaysVisible"));
-    }
+    FunctionUtil.blockUntrustedMacro("setAlwaysVisible");
+
     boolean set;
     if (val instanceof Integer) {
       set = (Integer) val != 0;
@@ -265,9 +258,8 @@ public class TokenVisibleFunction extends AbstractFunction {
   }
 
   public static boolean getBooleanAlwaysVisible(Token token) throws ParserException {
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", "getAlwaysVisible"));
-    }
+    FunctionUtil.blockUntrustedMacro("getAlwaysVisible");
+
     boolean ownerOnly = token.isVisibleOnlyToOwner() && !AppUtil.playerOwns(token);
     if (ownerOnly) {
       return false;

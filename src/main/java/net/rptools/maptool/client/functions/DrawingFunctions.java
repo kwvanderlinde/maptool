@@ -147,18 +147,6 @@ public class DrawingFunctions extends AbstractFunction {
   }
 
   /**
-   * Checks whether or not the function is trusted
-   *
-   * @param functionName Name of the macro function
-   * @throws ParserException Returns trust error message and function name
-   */
-  protected void checkTrusted(String functionName) throws ParserException {
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
-    }
-  }
-
-  /**
    * Looks for a drawing on a specific map that matches a specific id. Throws a <code>
    * ParserException</code> if the drawing is not found.
    *

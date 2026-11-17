@@ -132,7 +132,7 @@ public class LookupTableFunction extends AbstractFunction {
 
     } else if ("getTableVisible".equalsIgnoreCase(function)) {
 
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("getTableVisible", params, 1, 1);
       String name = params.get(0).toString();
       LookupTable lookupTable = getMaptoolTable(name, function);
@@ -140,7 +140,7 @@ public class LookupTableFunction extends AbstractFunction {
 
     } else if ("setTableVisible".equalsIgnoreCase(function)) {
 
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("setTableVisible", params, 2, 2);
       String name = params.get(0).toString();
       String visibleStr = params.get(1).toString();
@@ -154,7 +154,7 @@ public class LookupTableFunction extends AbstractFunction {
 
     } else if ("getTableAccess".equalsIgnoreCase(function)) {
 
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("getTableAccess", params, 1, 1);
       String name = params.get(0).toString();
       LookupTable lookupTable = getMaptoolTable(name, function);
@@ -162,7 +162,7 @@ public class LookupTableFunction extends AbstractFunction {
 
     } else if ("setTableAccess".equalsIgnoreCase(function)) {
 
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("setTableAccess", params, 2, 2);
       String name = params.get(0).toString();
       String access = params.get(1).toString();
@@ -183,7 +183,7 @@ public class LookupTableFunction extends AbstractFunction {
 
     } else if ("setTableRoll".equalsIgnoreCase(function)) {
 
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("setTableRoll", params, 2, 2);
       String name = params.get(0).toString();
       String roll = params.get(1).toString();
@@ -197,7 +197,7 @@ public class LookupTableFunction extends AbstractFunction {
 
     } else if ("clearTable".equalsIgnoreCase(function)) {
 
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("clearTable", params, 1, 1);
       String name = params.get(0).toString();
       LookupTable lookupTable = getMaptoolTable(name, function);
@@ -207,7 +207,7 @@ public class LookupTableFunction extends AbstractFunction {
 
     } else if ("addTableEntry".equalsIgnoreCase(function)) {
 
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("addTableEntry", params, 4, 5);
       String name = params.get(0).toString();
       int min = FunctionUtil.paramAsInteger(function, params, 1, true);
@@ -226,7 +226,7 @@ public class LookupTableFunction extends AbstractFunction {
 
       // Note: unlike getTableEntry() and setTableEntry(), the roll in this case can actually be a
       // roll expression. I don't like, but it's been that way forever, so..
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("deleteTableEntry", params, 2, 2);
       String name = params.get(0).toString();
       String roll = params.get(1).toString();
@@ -240,7 +240,7 @@ public class LookupTableFunction extends AbstractFunction {
 
     } else if ("createTable".equalsIgnoreCase(function)) {
 
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("createTable", params, 3, 4);
       String name = params.get(0).toString();
       String visible = params.get(1).toString();
@@ -261,7 +261,7 @@ public class LookupTableFunction extends AbstractFunction {
 
     } else if ("deleteTable".equalsIgnoreCase(function)) {
 
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("deleteTable", params, 1, 1);
       String name = params.get(0).toString();
       // Ensure that the table exists.
@@ -274,7 +274,7 @@ public class LookupTableFunction extends AbstractFunction {
 
     } else if ("getTableImage".equalsIgnoreCase(function)) {
 
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("getTableImage", params, 1, 1);
       String name = params.get(0).toString();
       LookupTable lookupTable = getMaptoolTable(name, function);
@@ -284,7 +284,7 @@ public class LookupTableFunction extends AbstractFunction {
 
     } else if ("setTableImage".equalsIgnoreCase(function)) {
 
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("setTableImage", params, 2, 2);
       String name = params.get(0).toString();
       MD5Key asset = FunctionUtil.getAssetKeyFromString(params.get(1).toString());
@@ -297,7 +297,7 @@ public class LookupTableFunction extends AbstractFunction {
 
     } else if ("copyTable".equalsIgnoreCase(function)) {
 
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("copyTable", params, 2, 2);
       String oldName = params.get(0).toString();
       String newName = params.get(1).toString();
@@ -309,7 +309,7 @@ public class LookupTableFunction extends AbstractFunction {
 
     } else if ("setTableEntry".equalsIgnoreCase(function)) {
 
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("setTableEntry", params, 3, 4);
       String name = params.get(0).toString();
       int roll = FunctionUtil.paramAsInteger(function, params, 1, true);
@@ -441,7 +441,7 @@ public class LookupTableFunction extends AbstractFunction {
        * resetTablePicks(tblName, entriesToReset, delim) - use custom delimiter
        * resetTablePicks(tblName, entriesToReset, "json") - entriesToReset is a JsonArray
        */
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam(function, params, 1, 3);
       String tblName = params.get(0).toString();
       LookupTable lookupTable = getMaptoolTable(tblName, function);
@@ -469,7 +469,7 @@ public class LookupTableFunction extends AbstractFunction {
 
     } else if ("setTablePickOnce".equalsIgnoreCase(function)) {
 
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("setTablePickOnce", params, 2, 2);
       String name = params.get(0).toString();
       String pickOnceStr = params.get(1).toString();
@@ -483,7 +483,7 @@ public class LookupTableFunction extends AbstractFunction {
 
     } else if ("getTablePickOnce".equalsIgnoreCase(function)) {
 
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("getTablePickOnce", params, 1, 1);
       String name = params.get(0).toString();
       LookupTable lookupTable = getMaptoolTable(name, function);
@@ -491,7 +491,7 @@ public class LookupTableFunction extends AbstractFunction {
 
     } else if ("getTablePicksLeft".equalsIgnoreCase(function)) {
 
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("getTablePicksLeft", params, 1, 1);
       String name = params.get(0).toString();
       LookupTable lookupTable = getMaptoolTable(name, function);
@@ -501,7 +501,7 @@ public class LookupTableFunction extends AbstractFunction {
       /*
        * getTableGroup(tblName) - get the named table's group
        */
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("getTableGroup", params, 1, 1);
       String name = params.get(0).toString();
       LookupTable lookupTable = getMaptoolTable(name, function);
@@ -511,7 +511,7 @@ public class LookupTableFunction extends AbstractFunction {
       /*
        * setTableGroup(tblName, group) - set the named table's group
        */
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("setTableGroup", params, 2, 2);
       String name = params.get(0).toString();
       String group = params.get(1).toString();
@@ -524,7 +524,7 @@ public class LookupTableFunction extends AbstractFunction {
       /*
        * getTableMetadata(tblName) - get the named table's metadata
        */
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("getTableMetadata", params, 1, 1);
       String name = params.get(0).toString();
       LookupTable lookupTable = getMaptoolTable(name, function);
@@ -534,7 +534,7 @@ public class LookupTableFunction extends AbstractFunction {
       /*
        * setTableMetadata(tblName, metadata) - set the named table's metadata
        */
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("setTableMetadata", params, 2, 2);
       String name = params.get(0).toString();
       String metadata = params.get(1).toString();
@@ -547,7 +547,7 @@ public class LookupTableFunction extends AbstractFunction {
       /*
        * getTableMetadataType(tblName) - get the named table's metadata MIME type
        */
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("getTableMetadataType", params, 1, 1);
       String name = params.get(0).toString();
       LookupTable lookupTable = getMaptoolTable(name, function);
@@ -557,7 +557,7 @@ public class LookupTableFunction extends AbstractFunction {
       /*
        * setTableMetadataType(tblName, metadataType) - set the named table's metadata MIME type
        */
-      checkTrusted(function);
+      FunctionUtil.blockUntrustedMacro(function);
       FunctionUtil.checkNumberParam("setTableMetadataType", params, 2, 2);
       String name = params.get(0).toString();
       String metadataType = params.get(1).toString();
@@ -648,18 +648,6 @@ public class LookupTableFunction extends AbstractFunction {
       } else {
         throw new ParserException(I18N.getText("macro.function.general.unknownFunction", function));
       }
-    }
-  }
-
-  /**
-   * Checks whether or not the function is trusted
-   *
-   * @param functionName Name of the macro function
-   * @throws ParserException Returns trust error message and function name
-   */
-  private void checkTrusted(String functionName) throws ParserException {
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
     }
   }
 

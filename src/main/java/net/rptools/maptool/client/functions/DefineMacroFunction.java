@@ -46,9 +46,7 @@ public class DefineMacroFunction extends AbstractFunction {
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
     if (functionName.equalsIgnoreCase("defineFunction")) {
-      if (!MapTool.getParser().isMacroTrusted()) {
-        throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
-      }
+      FunctionUtil.blockUntrustedMacro(functionName);
 
       if (parameters.size() < 2) {
         throw new ParserException(

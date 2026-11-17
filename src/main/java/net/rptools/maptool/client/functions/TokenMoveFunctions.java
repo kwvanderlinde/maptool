@@ -114,10 +114,7 @@ public class TokenMoveFunctions extends AbstractFunction {
       return pathPointsToJSONArray(pathPoints);
     }
     if (functionName.equalsIgnoreCase("movedOverPoints")) {
-      // macro.function.general.noPerm
-      if (!MapTool.getParser().isMacroTrusted()) {
-        throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
-      }
+      FunctionUtil.blockUntrustedMacro(functionName);
       Path<?> path = tokenInContext.getLastPath();
 
       List<Map<String, Integer>> returnPoints = new ArrayList<Map<String, Integer>>();
@@ -168,10 +165,7 @@ public class TokenMoveFunctions extends AbstractFunction {
       }
     }
     if (functionName.equalsIgnoreCase("movedOverToken")) {
-      // macro.function.general.noPerm
-      if (!MapTool.getParser().isMacroTrusted()) {
-        throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
-      }
+      FunctionUtil.blockUntrustedMacro(functionName);
       Path<?> path = tokenInContext.getLastPath();
       List<Map<String, Integer>> returnPoints = new ArrayList<Map<String, Integer>>();
 

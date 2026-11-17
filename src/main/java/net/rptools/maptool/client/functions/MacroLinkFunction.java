@@ -133,9 +133,7 @@ public class MacroLinkFunction extends AbstractFunction {
       linkTarget = args.size() > 3 ? args.get(3).toString() : "Impersonated";
 
     } else if ("execLink".equalsIgnoreCase(functionName)) {
-      if (!MapTool.getParser().isMacroTrusted()) {
-        throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
-      }
+      FunctionUtil.blockUntrustedMacro(functionName);
       FunctionUtil.checkNumberParam(functionName, args, 1, 4);
 
       String link = args.get(0).toString();

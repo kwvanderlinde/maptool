@@ -57,7 +57,7 @@ public class DrawingSetterFunctions extends DrawingFunctions {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
-    checkTrusted(functionName);
+    FunctionUtil.blockUntrustedMacro(functionName);
 
     if (FUNC_SET_DRAWABLE_LAYER.equalsIgnoreCase(functionName)) {
       // layer, [drawingRef [, mapRef]]

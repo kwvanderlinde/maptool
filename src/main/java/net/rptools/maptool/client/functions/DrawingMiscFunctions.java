@@ -74,7 +74,7 @@ public class DrawingMiscFunctions extends DrawingFunctions {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
-    checkTrusted(functionName);
+    FunctionUtil.blockUntrustedMacro(functionName);
 
     if (FUNC_DUPLICATE_DRAWABLE.equalsIgnoreCase(functionName)) {
       // [drawingRef [, mapRef]]

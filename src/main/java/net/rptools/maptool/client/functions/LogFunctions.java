@@ -18,8 +18,8 @@ import com.google.gson.Gson;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.language.I18N;
+import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
@@ -62,9 +62,7 @@ public class LogFunctions extends AbstractFunction {
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
 
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
-    }
+    FunctionUtil.blockUntrustedMacro(functionName);
 
     if (functionName.equalsIgnoreCase("log.getLoggers")) {
       return getLoggers(functionName, parameters);

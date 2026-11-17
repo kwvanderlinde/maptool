@@ -75,7 +75,7 @@ public class DrawingGetterFunctions extends DrawingFunctions {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
-    checkTrusted(functionName);
+    FunctionUtil.blockUntrustedMacro(functionName);
 
     if (FUNC_GET_DRAWABLE_INFO.equalsIgnoreCase(functionName)
         || FUNC_GET_DRAWABLE_LAYER.equalsIgnoreCase(functionName)

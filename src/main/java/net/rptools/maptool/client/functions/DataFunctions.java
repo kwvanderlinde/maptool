@@ -58,9 +58,7 @@ public class DataFunctions extends AbstractFunction {
       throws ParserException {
 
     String fName = functionName.toLowerCase();
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
-    }
+    FunctionUtil.blockUntrustedMacro(functionName);
 
     try {
       var dataStore = new DataStoreManager().getDefaultDataStore();

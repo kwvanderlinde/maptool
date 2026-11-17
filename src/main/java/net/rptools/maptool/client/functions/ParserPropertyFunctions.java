@@ -21,6 +21,7 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolLineParser;
 import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.language.I18N;
+import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
@@ -62,9 +63,7 @@ public class ParserPropertyFunctions extends AbstractFunction {
     int argVal = 0;
 
     if (functionName.startsWith("set")) {
-      if (!MapTool.getParser().isMacroTrusted()) {
-        throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
-      }
+      FunctionUtil.blockUntrustedMacro(functionName);
 
       if (args.size() < 1) {
         throw new ParserException(

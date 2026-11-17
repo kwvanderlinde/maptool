@@ -21,8 +21,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 import net.rptools.maptool.client.AppPreferences;
-import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.language.I18N;
+import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
@@ -57,18 +57,19 @@ public class ExportDataFunctions extends AbstractFunction {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
-    if (!MapTool.getParser().isMacroTrusted())
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
+    FunctionUtil.blockUntrustedMacro(functionName);
 
-    if (!AppPreferences.allowExternalMacroAccess.get())
+    if (!AppPreferences.allowExternalMacroAccess.get()) {
       throw new ParserException(I18N.getText("macro.function.general.accessDenied", functionName));
+    }
 
     // New function to save data to an external file.
     if (functionName.equalsIgnoreCase("exportData")) {
-      if (parameters.size() != 3)
+      if (parameters.size() != 3) {
         throw new ParserException(
             I18N.getText(
                 "macro.function.general.wrongNumParam", functionName, 1, parameters.size()));
+      }
 
       File file = new File(parameters.get(0).toString());
       String data = parameters.get(1).toString();
@@ -99,10 +100,11 @@ public class ExportDataFunctions extends AbstractFunction {
     }
 
     if (functionName.equalsIgnoreCase("getEnvironmentVariable")) {
-      if (parameters.size() != 1)
+      if (parameters.size() != 1) {
         throw new ParserException(
             I18N.getText(
                 "macro.function.general.wrongNumParam", functionName, 1, parameters.size()));
+      }
 
       String envName = parameters.get(0).toString();
       String value = System.getenv(envName);

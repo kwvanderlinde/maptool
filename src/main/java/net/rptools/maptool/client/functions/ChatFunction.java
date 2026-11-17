@@ -80,6 +80,7 @@ public class ChatFunction extends AbstractFunction {
       throws ParserException {
 
     if (functionName.equalsIgnoreCase("broadcast")) {
+      FunctionUtil.blockUntrustedMacro(functionName);
       return broadcast(resolver, parameters);
     } else if (functionName.equalsIgnoreCase("chat")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
@@ -133,11 +134,6 @@ public class ChatFunction extends AbstractFunction {
    * @return empty string
    */
   private Object broadcast(VariableResolver resolver, List<Object> param) throws ParserException {
-    // broadcast shall be trusted
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", "broadcast"));
-    }
-
     String message = null;
     String delim = ",";
     JsonArray jarray = null;

@@ -21,6 +21,7 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.InitiativeList;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Token.Type;
+import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
@@ -61,12 +62,11 @@ public class RemoveAllFromInitiativeFunction extends AbstractFunction {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> args)
       throws ParserException {
+    FunctionUtil.blockUntrustedMacro(functionName);
+
     InitiativeList list = MapTool.getFrame().getCurrentZoneRenderer().getZone().getInitiativeList();
     int count = 0;
 
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
-    }
     if (functionName.equalsIgnoreCase("removeAllFromInitiative")) {
       count = list.getSize();
       list.clearModel();

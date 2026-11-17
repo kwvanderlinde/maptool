@@ -17,10 +17,10 @@ package net.rptools.maptool.client.functions;
 import java.math.BigDecimal;
 import java.util.List;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.client.MapToolLineParser;
 import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.language.I18N;
+import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
@@ -47,11 +47,7 @@ public class EvalMacroFunctions extends AbstractFunction {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
-    MapToolLineParser lineParser = MapTool.getParser();
-
-    if (!lineParser.isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
-    }
+    FunctionUtil.blockUntrustedMacro(functionName);
 
     // execMacro has new variable scope where as evalMacro does not.
     MapToolVariableResolver mtResolver = (MapToolVariableResolver) resolver;

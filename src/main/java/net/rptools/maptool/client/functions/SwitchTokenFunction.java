@@ -15,7 +15,6 @@
 package net.rptools.maptool.client.functions;
 
 import java.util.List;
-import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Token;
@@ -40,9 +39,7 @@ public class SwitchTokenFunction extends AbstractFunction {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
-    }
+    FunctionUtil.blockUntrustedMacro(functionName);
     if (parameters.size() < 1) {
       throw new ParserException(
           I18N.getText(

@@ -68,9 +68,7 @@ public class TokenGMNameFunction extends AbstractFunction {
    * @throws ParserException if the user does not have the permission.
    */
   public static String getGMName(Token token) throws ParserException {
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", "getGMName"));
-    }
+    FunctionUtil.blockUntrustedMacro("getGMName");
     return token.getGMName() != null ? token.getGMName() : "";
   }
 
@@ -83,9 +81,7 @@ public class TokenGMNameFunction extends AbstractFunction {
    * @return the new GMName of the token.
    */
   public static String setGMName(Token token, String gmName) throws ParserException {
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", "setGMName"));
-    }
+    FunctionUtil.blockUntrustedMacro("setGMName");
     MapTool.serverCommand().updateTokenProperty(token, Token.Update.setGMName, gmName);
     return gmName;
   }

@@ -17,7 +17,6 @@ package net.rptools.maptool.client.functions;
 import java.math.BigDecimal;
 import java.util.List;
 import net.rptools.lib.MD5Key;
-import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.HeroLabData;
 import net.rptools.maptool.model.Token;
@@ -60,8 +59,7 @@ public class HeroLabFunctions extends AbstractFunction {
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
     if (functionName.equalsIgnoreCase("herolab.getInfo")) {
-      if (!MapTool.getParser().isMacroTrusted())
-        throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
+      FunctionUtil.blockUntrustedMacro(functionName);
 
       if (parameters.size() > 1) {
         throw new ParserException(
@@ -75,8 +73,7 @@ public class HeroLabFunctions extends AbstractFunction {
 
       return token.getHeroLabData().getInfo();
     } else if (functionName.equalsIgnoreCase("herolab.getStatBlock")) {
-      if (!MapTool.getParser().isMacroTrusted())
-        throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
+      FunctionUtil.blockUntrustedMacro(functionName);
 
       if (parameters.size() > 2)
         throw new ParserException(
@@ -97,8 +94,7 @@ public class HeroLabFunctions extends AbstractFunction {
 
       return token.getHeroLabData().getStatBlock_data(statBlockType);
     } else if (functionName.equalsIgnoreCase("herolab.hasChanged")) {
-      if (!MapTool.getParser().isMacroTrusted())
-        throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
+      FunctionUtil.blockUntrustedMacro(functionName);
 
       if (parameters.size() > 1) {
         throw new ParserException(
@@ -113,8 +109,7 @@ public class HeroLabFunctions extends AbstractFunction {
 
       return token.getHeroLabData().isDirty() ? BigDecimal.ONE : BigDecimal.ZERO;
     } else if (functionName.equalsIgnoreCase("herolab.refresh")) {
-      if (!MapTool.getParser().isMacroTrusted())
-        throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
+      FunctionUtil.blockUntrustedMacro(functionName);
 
       if (parameters.size() > 1) {
         throw new ParserException(
@@ -180,8 +175,7 @@ public class HeroLabFunctions extends AbstractFunction {
         }
       }
     } else if (functionName.equalsIgnoreCase("herolab.getImage")) {
-      if (!MapTool.getParser().isMacroTrusted())
-        throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
+      FunctionUtil.blockUntrustedMacro(functionName);
 
       if (parameters.size() > 2)
         throw new ParserException(
@@ -207,8 +201,7 @@ public class HeroLabFunctions extends AbstractFunction {
 
       return assetURL.toString();
     } else if (functionName.equalsIgnoreCase("herolab.isMinion")) {
-      if (!MapTool.getParser().isMacroTrusted())
-        throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
+      FunctionUtil.blockUntrustedMacro(functionName);
 
       if (parameters.size() > 1) {
         throw new ParserException(
@@ -223,8 +216,7 @@ public class HeroLabFunctions extends AbstractFunction {
 
       return token.getHeroLabData().isMinion() ? BigDecimal.ONE : BigDecimal.ZERO;
     } else if (functionName.equalsIgnoreCase("herolab.getMasterName")) {
-      if (!MapTool.getParser().isMacroTrusted())
-        throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
+      FunctionUtil.blockUntrustedMacro(functionName);
 
       if (parameters.size() > 1) {
         throw new ParserException(

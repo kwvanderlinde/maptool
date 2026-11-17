@@ -132,8 +132,8 @@ public class getInfoFunction extends AbstractFunction {
     JsonObject minfo = new JsonObject();
     Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
 
-    if (!MapTool.getParser().isMacroTrusted() && !zone.isVisible()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", "getInfo('map')"));
+    if (!zone.isVisible()) {
+      FunctionUtil.blockUntrustedMacro("getInfo('map')");
     }
 
     minfo.addProperty("name", zone.getName());
@@ -332,13 +332,10 @@ public class getInfoFunction extends AbstractFunction {
    * @throws ParserException if an error occurs.
    */
   private JsonObject getCampaignInfo() throws ParserException {
+    FunctionUtil.blockUntrustedMacro("getInfo('campaign')");
 
     Gson gson = new Gson();
 
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(
-          I18N.getText("macro.function.general.noPerm", "getInfo('campaign')"));
-    }
     JsonObject cinfo = new JsonObject();
     Campaign c = MapTool.getCampaign();
     CampaignProperties cp = c.getCampaignProperties();

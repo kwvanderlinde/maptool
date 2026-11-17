@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Set;
 import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.AppActions;
-import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
 import net.rptools.maptool.client.ui.zone.FogUtil;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
@@ -61,9 +60,7 @@ public class FogOfWarFunctions extends AbstractFunction {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPerm", functionName));
-    }
+    FunctionUtil.blockUntrustedMacro(functionName);
 
     int maxParamSize = functionName.equalsIgnoreCase("exposeFOW") ? 3 : 1;
 

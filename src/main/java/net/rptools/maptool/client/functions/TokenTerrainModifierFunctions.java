@@ -87,11 +87,7 @@ public class TokenTerrainModifierFunctions extends AbstractFunction {
    */
   private Object getTerrainModifierInfo(VariableResolver resolver, List<Object> args)
       throws ParserException {
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(
-          I18N.getText("macro.function.general.noPerm", "getTerrainModifier"));
-    }
-
+    FunctionUtil.blockUntrustedMacro("getTerrainModifier");
     FunctionUtil.checkNumberParam("getTerrainModifier", args, 0, 3);
 
     String firstParameter = "";
@@ -138,11 +134,7 @@ public class TokenTerrainModifierFunctions extends AbstractFunction {
    */
   private Object setTerrainModifier(VariableResolver resolver, List<Object> args)
       throws ParserException {
-    if (!MapTool.getParser().isMacroTrusted()) {
-      throw new ParserException(
-          I18N.getText("macro.function.general.noPerm", "setTerrainModifier"));
-    }
-
+    FunctionUtil.blockUntrustedMacro("setTerrainModifier");
     FunctionUtil.checkNumberParam("setTerrainModifier", args, 1, 3);
 
     Token token = FunctionUtil.getTokenFromParam(resolver, "setTerrainModifier", args, 1, 2);
