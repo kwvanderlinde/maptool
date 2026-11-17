@@ -58,10 +58,14 @@ public class TokenHaloFunctions extends AbstractFunction {
 
     if (functionName.equalsIgnoreCase("getHalo")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
-      return getHalo((MapToolVariableResolver) resolver, parameters);
+      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, -1);
+      return getHalo(token);
     } else if ("setHalo".equalsIgnoreCase(functionName)) {
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
-      return setHalo((MapToolVariableResolver) resolver, parameters);
+      Object value = parameters.get(0);
+      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 1, -1);
+      setHalo(token, value);
+      return value;
     } else if (functionName.equalsIgnoreCase("hasHalos")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 4);
 
@@ -122,19 +126,6 @@ public class TokenHaloFunctions extends AbstractFunction {
    */
 
   /**
-   * Gets the simple halo on the token.
-   *
-   * @param args The arguments.
-   * @return the halo color.
-   * @throws ParserException if an error occurs.
-   */
-  private Object getHalo(MapToolVariableResolver resolver, List<Object> args)
-      throws ParserException {
-    Token token = FunctionUtil.getTokenFromParam(resolver, "getHalo", args, 0, -1);
-    return getHalo(token);
-  }
-
-  /**
    * Gets the simple halo color on the token.
    *
    * @param token the token to get the halo for.
@@ -180,21 +171,6 @@ public class TokenHaloFunctions extends AbstractFunction {
     } else {
       cmd.updateTokenProperty(token, Token.Update.setHaloColor);
     }
-  }
-
-  /**
-   * Sets the simple halo on the token.
-   *
-   * @param args The arguments.
-   * @return the halo color.
-   * @throws ParserException if an error occurs.
-   */
-  private Object setHalo(MapToolVariableResolver resolver, List<Object> args)
-      throws ParserException {
-    Object value = args.get(0);
-    Token token = FunctionUtil.getTokenFromParam(resolver, "setHalo", args, 1, -1);
-    setHalo(token, value);
-    return value;
   }
 
   /*
