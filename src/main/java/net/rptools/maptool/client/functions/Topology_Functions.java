@@ -313,10 +313,8 @@ public class Topology_Functions extends AbstractFunction {
       topologyType = Zone.TopologyType.MBL;
     }
 
-    boolean simpleJSON = false; // If true, send only array of x,y
-    if (parameters.size() >= 2 && !parameters.get(1).equals(BigDecimal.ZERO)) {
-      simpleJSON = true;
-    }
+    // If true, send only array of x,y
+    boolean simpleJSON = parameters.size() >= 2 && !parameters.get(1).equals(BigDecimal.ZERO);
 
     JsonElement json = JSONMacroFunctions.getInstance().asJsonElement(parameters.get(0).toString());
     JsonArray topologyArray;
@@ -359,8 +357,6 @@ public class Topology_Functions extends AbstractFunction {
       throws ParserException {
     FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
 
-    Token token;
-
     Zone.TopologyType topologyType;
     if (functionName.equalsIgnoreCase("getTokenVBL")) {
       topologyType = Zone.TopologyType.WALL_VBL;
@@ -379,6 +375,7 @@ public class Topology_Functions extends AbstractFunction {
      * trusted context when provided a token ID.
      * See bug [#6253](https://github.com/RPTools/maptool/issues/6253)
      */
+    Token token;
     if (!parameters.isEmpty()) {
       token = FindTokenFunctions.findToken(parameters.get(0).toString(), null);
       if (token == null) {
@@ -513,12 +510,12 @@ public class Topology_Functions extends AbstractFunction {
      */
     if (parameters.size() >= 2
         && (!(parameters.get(parameters.size() - 1) instanceof BigDecimal))) {
-      token = FindTokenFunctions.findToken(parameters.get(parameters.size() - 1).toString(), null);
+      var lastParam = parameters.get(parameters.size() - 1).toString();
+      token = FindTokenFunctions.findToken(lastParam, null);
 
       if (token == null) {
         throw new ParserException(
-            I18N.getText(
-                "macro.function.general.unknownToken", functionName, parameters.get(0).toString()));
+            I18N.getText("macro.function.general.unknownToken", functionName, lastParam));
       }
     } else {
       MapToolVariableResolver res = (MapToolVariableResolver) resolver;
