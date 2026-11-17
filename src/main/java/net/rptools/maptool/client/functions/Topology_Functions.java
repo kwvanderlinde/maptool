@@ -229,14 +229,10 @@ public class Topology_Functions extends AbstractFunction {
   private void childEvaluateDrawEraseTopology(String functionName, List<Object> parameters)
       throws ParserException {
     FunctionUtil.blockUntrustedMacro(functionName);
+    FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
 
     ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
     boolean erase = false;
-    if (parameters.size() != 1) {
-      throw new ParserException(
-          I18N.getText("macro.function.general.wrongNumParam", functionName, 1, parameters.size()));
-    }
-
     if (functionName.equalsIgnoreCase("eraseVBL")
         || functionName.equalsIgnoreCase("eraseHillVBL")
         || functionName.equalsIgnoreCase("erasePitVBL")
@@ -301,6 +297,7 @@ public class Topology_Functions extends AbstractFunction {
   private Object childEvaluateGetTopology(String functionName, List<Object> parameters)
       throws ParserException {
     FunctionUtil.blockUntrustedMacro(functionName);
+    FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
 
     ZoneRenderer renderer = MapTool.getFrame().getCurrentZoneRenderer();
     Zone.TopologyType topologyType;
@@ -315,19 +312,8 @@ public class Topology_Functions extends AbstractFunction {
     } else {
       topologyType = Zone.TopologyType.MBL;
     }
+
     boolean simpleJSON = false; // If true, send only array of x,y
-
-    if (parameters.size() > 2) {
-      throw new ParserException(
-          I18N.getText("macro.function.general.tooManyParam", functionName, 2, parameters.size()));
-    }
-
-    if (parameters.isEmpty()) {
-      throw new ParserException(
-          I18N.getText(
-              "macro.function.general.notEnoughParam", functionName, 1, parameters.size()));
-    }
-
     if (parameters.size() >= 2 && !parameters.get(1).equals(BigDecimal.ZERO)) {
       simpleJSON = true;
     }
@@ -371,6 +357,8 @@ public class Topology_Functions extends AbstractFunction {
   private JsonArray childEvaluateGetTokenTopology(
       VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
+    FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
+
     Token token;
 
     Zone.TopologyType topologyType;
@@ -391,23 +379,20 @@ public class Topology_Functions extends AbstractFunction {
      * trusted context when provided a token ID.
      * See bug [#6253](https://github.com/RPTools/maptool/issues/6253)
      */
-    if (parameters.size() == 1) {
+    if (!parameters.isEmpty()) {
       token = FindTokenFunctions.findToken(parameters.get(0).toString(), null);
       if (token == null) {
         throw new ParserException(
             I18N.getText(
                 "macro.function.general.unknownToken", functionName, parameters.get(0).toString()));
       }
-    } else if (parameters.size() == 0) {
+    } else {
       MapToolVariableResolver res = (MapToolVariableResolver) resolver;
       token = res.getTokenInContext();
       if (token == null) {
         throw new ParserException(
             I18N.getText("macro.function.general.noImpersonated", functionName));
       }
-    } else {
-      throw new ParserException(
-          I18N.getText("macro.function.general.tooManyParam", functionName, 1, parameters.size()));
     }
 
     JsonArray allShapes = new JsonArray();
@@ -425,6 +410,7 @@ public class Topology_Functions extends AbstractFunction {
       VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
     FunctionUtil.blockUntrustedMacro(functionName);
+    FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
 
     Zone.TopologyType topologyType;
     if (functionName.equalsIgnoreCase("setTokenVBL")) {
@@ -437,17 +423,6 @@ public class Topology_Functions extends AbstractFunction {
       topologyType = Zone.TopologyType.COVER_VBL;
     } else {
       topologyType = Zone.TopologyType.MBL;
-    }
-
-    if (parameters.size() > 2) {
-      throw new ParserException(
-          I18N.getText("macro.function.general.tooManyParam", functionName, 1, parameters.size()));
-    }
-
-    if (parameters.isEmpty()) {
-      throw new ParserException(
-          I18N.getText(
-              "macro.function.general.notEnoughParam", functionName, 1, parameters.size()));
     }
 
     JsonElement jsonArea =
@@ -514,6 +489,7 @@ public class Topology_Functions extends AbstractFunction {
       VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
     FunctionUtil.blockUntrustedMacro(functionName);
+    FunctionUtil.checkNumberParam(functionName, parameters, 1, 3);
 
     Token token = null;
 
@@ -528,17 +504,6 @@ public class Topology_Functions extends AbstractFunction {
       topologyType = Zone.TopologyType.COVER_VBL;
     } else {
       topologyType = Zone.TopologyType.MBL;
-    }
-
-    if (parameters.size() > 3) {
-      throw new ParserException(
-          I18N.getText("macro.function.general.tooManyParam", functionName, 1, parameters.size()));
-    }
-
-    if (parameters.isEmpty()) {
-      throw new ParserException(
-          I18N.getText(
-              "macro.function.general.notEnoughParam", functionName, 1, parameters.size()));
     }
 
     /*

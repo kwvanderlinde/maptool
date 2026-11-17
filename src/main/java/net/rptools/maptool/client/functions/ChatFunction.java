@@ -18,6 +18,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import java.util.List;
 import java.util.regex.Pattern;
+import javax.annotation.Nullable;
 import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
@@ -81,7 +82,11 @@ public class ChatFunction extends AbstractFunction {
 
     if (functionName.equalsIgnoreCase("broadcast")) {
       FunctionUtil.blockUntrustedMacro(functionName);
-      return broadcast(resolver, parameters);
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 3);
+      return broadcast(
+          parameters.get(0).toString(),
+          parameters.size() > 1 ? parameters.get(1).toString() : null,
+          parameters.size() > 2 ? parameters.get(2).toString() : ",");
     } else if (functionName.equalsIgnoreCase("chat")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
       return chat(parameters);
@@ -133,51 +138,38 @@ public class ChatFunction extends AbstractFunction {
    *
    * @return empty string
    */
-  private Object broadcast(VariableResolver resolver, List<Object> param) throws ParserException {
-    String message = null;
-    String delim = ",";
-    JsonArray jarray = null;
-    switch (param.size()) {
-      default:
-        throw new ParserException(
-            I18N.getText("macro.function.general.tooManyParam", "broadcast", 3, param.size()));
-      case 0:
-        throw new ParserException(
-            I18N.getText("macro.function.general.notEnoughParam", "broadcast", 1, 0));
-      case 3:
-        delim = param.get(2).toString();
-      // FALLTHRU
-      case 2:
-        String temp = param.get(1).toString().trim();
-        if ("json".equals(delim) || temp.charAt(0) == '[') {
-          jarray = JsonParser.parseString(temp).getAsJsonArray();
-        } else {
-          jarray = new JsonArray();
-          for (String t : StringUtil.split(temp, delim)) {
-            jarray.add(t.trim());
-          }
+  private Object broadcast(String message, @Nullable String targetStringList, String delim) {
+    JsonArray jarray;
+    if (targetStringList == null) {
+      jarray = null;
+    } else {
+      targetStringList = targetStringList.trim();
+      if ("json".equals(delim) || targetStringList.charAt(0) == '[') {
+        jarray = JsonParser.parseString(targetStringList).getAsJsonArray();
+      } else {
+        jarray = new JsonArray();
+        for (String t : StringUtil.split(targetStringList, delim)) {
+          jarray.add(t.trim());
         }
-        if (jarray.size() == 0) {
-          return ""; // dont send to empty lists
-        }
-
-      // FALLTHRU
-      case 1:
-        message = checkForCheating(param.get(0).toString());
-        if (message != null) {
-          if (jarray == null || jarray.size() == 0) {
-            MapTool.addGlobalMessage(message);
-          } else {
-            @SuppressWarnings("unchecked")
-            List<String> targets =
-                JSONMacroFunctions.getInstance()
-                    .getJsonArrayFunctions()
-                    .jsonArrayToListOfStrings(jarray);
-            MapTool.addGlobalMessage(message, targets);
-          }
-        }
-        return "";
+      }
+      if (jarray.isEmpty()) {
+        return ""; // dont send to empty lists
+      }
     }
+
+    message = checkForCheating(message);
+    if (message != null) {
+      if (jarray == null) {
+        MapTool.addGlobalMessage(message);
+      } else {
+        List<String> targets =
+            JSONMacroFunctions.getInstance()
+                .getJsonArrayFunctions()
+                .jsonArrayToListOfStrings(jarray);
+        MapTool.addGlobalMessage(message, targets);
+      }
+    }
+    return "";
   }
 
   /**

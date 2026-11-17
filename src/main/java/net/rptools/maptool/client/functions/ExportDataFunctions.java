@@ -65,11 +65,7 @@ public class ExportDataFunctions extends AbstractFunction {
 
     // New function to save data to an external file.
     if (functionName.equalsIgnoreCase("exportData")) {
-      if (parameters.size() != 3) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.wrongNumParam", functionName, 1, parameters.size()));
-      }
+      FunctionUtil.checkNumberParam(functionName, parameters, 3, 3);
 
       File file = new File(parameters.get(0).toString());
       String data = parameters.get(1).toString();
@@ -100,11 +96,7 @@ public class ExportDataFunctions extends AbstractFunction {
     }
 
     if (functionName.equalsIgnoreCase("getEnvironmentVariable")) {
-      if (parameters.size() != 1) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.wrongNumParam", functionName, 1, parameters.size()));
-      }
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
 
       String envName = parameters.get(0).toString();
       String value = System.getenv(envName);

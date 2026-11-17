@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import net.rptools.maptool.language.I18N;
@@ -31,7 +30,6 @@ import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
 import net.rptools.parser.function.AbstractFunction;
-import net.rptools.parser.function.ParameterException;
 
 public class MathFunctions extends AbstractFunction {
 
@@ -95,24 +93,8 @@ public class MathFunctions extends AbstractFunction {
     return instance;
   }
 
-  private List<BigDecimal> getNumericParams(
-      List<Object> param, int minParams, int maxParams, String functionName)
+  private List<BigDecimal> getNumericParams(List<Object> param, String functionName)
       throws ParserException {
-    if (minParams == maxParams) {
-      if (param.size() != minParams) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.wrongNumParam", functionName, minParams, param.size()));
-      }
-    } else if (param.size() < minParams) {
-      throw new ParserException(
-          I18N.getText(
-              "macro.function.general.notEnoughParam", functionName, minParams, param.size()));
-    } else if (maxParams != UNLIMITED_PARAMETERS && param.size() > maxParams) {
-      throw new ParserException(
-          I18N.getText(
-              "macro.function.general.tooManyParam", functionName, maxParams, param.size()));
-    }
 
     List<BigDecimal> outVals = new ArrayList<>();
     for (int i = 0; i < param.size(); i++) {
@@ -144,17 +126,16 @@ public class MathFunctions extends AbstractFunction {
    * numeric values.
    *
    * @param functionName the function name to use in error reporting
-   * @param param the list of parameters, which should contain a single non-empty JSON array
+   * @param param the parameter which should contain a non-empty JSON array
    * @return a parallel stream of numeric values
    * @throws ParserException if too few/many params are present, if the provided param cannot be
    *     parsed as a JSON array, or if the JSON array is empty
    * @throws NumberFormatException if any element of the json array is non-numeric
    */
-  static Stream<BigDecimal> getNumericValuesFromArrayParam(String functionName, List<Object> param)
+  static Stream<BigDecimal> getNumericValuesFromArrayParam(String functionName, Object param)
       throws ParserException {
-    checkParamNumber(functionName, param, 1, 1);
-    JsonArray jsonArray = FunctionUtil.paramAsJsonArray(functionName, param, 0);
-    if (jsonArray.size() == 0) {
+    JsonArray jsonArray = FunctionUtil.paramAsJsonArray(functionName, List.of(param), 0);
+    if (jsonArray.isEmpty()) {
       throw new ParserException(
           I18N.getText("macro.function.json.arrayCannotBeEmpty", functionName, 1));
     }
@@ -166,54 +147,21 @@ public class MathFunctions extends AbstractFunction {
    * values.
    *
    * @param functionName the function name to use in error reporting
-   * @param param the list of parameters, which should contain a non-empty string list and an
-   *     optional delimiter
+   * @param list a non-empty string list
+   * @param delim the delimiter for the string list
    * @return a parallel stream of numeric values
    * @throws ParserException if too few/many params are present, if the provided param cannot be
    *     parsed as a string list with the given delimiter, or if the string list is empty
    * @throws NumberFormatException if any element of the string list is non-numeric
    */
   static Stream<BigDecimal> getNumericValuesFromStrListParam(
-      String functionName, List<Object> param) throws ParserException {
-    checkParamNumber(functionName, param, 1, 2);
-    String delim = (param.size() > 1) ? param.get(1).toString() : ",";
-    List<String> stringList = StrListFunctions.toList(param.get(0).toString(), delim);
-    if (stringList.size() == 0) {
+      String functionName, Object list, String delim) throws ParserException {
+    List<String> stringList = StrListFunctions.toList(list.toString(), delim);
+    if (stringList.isEmpty()) {
       throw new ParserException(
           I18N.getText("macro.function.general.listCannotBeEmpty", functionName, 1));
     }
     return stringList.parallelStream().map(BigDecimal::new);
-  }
-
-  /**
-   * Check the number of provided parameters, throwing a ParserException if an unacceptable number
-   * is found
-   *
-   * @param functionName the function name to use in error reporting
-   * @param param the list of parameters
-   * @param minParameters the minimum number of acceptable parameters
-   * @param maxParameters the maximum number of acceptable parameters
-   * @throws ParserException if too few or too many parameters are present
-   */
-  static void checkParamNumber(
-      String functionName, List<Object> param, int minParameters, int maxParameters)
-      throws ParserException {
-    int pCount = param == null ? 0 : param.size();
-    if (minParameters == maxParameters) {
-      if (pCount != maxParameters)
-        throw new ParameterException(
-            I18N.getText(
-                "macro.function.general.wrongNumParam", functionName, minParameters, pCount));
-    } else {
-      if (pCount < minParameters)
-        throw new ParameterException(
-            I18N.getText(
-                "macro.function.general.notEnoughParam", functionName, minParameters, pCount));
-      if (maxParameters != UNLIMITED_PARAMETERS && pCount > maxParameters)
-        throw new ParameterException(
-            I18N.getText(
-                "macro.function.general.tooManyParam", functionName, maxParameters, pCount));
-    }
   }
 
   @Override
@@ -221,75 +169,97 @@ public class MathFunctions extends AbstractFunction {
       Parser parser, VariableResolver resolver, String functionName, List<Object> param)
       throws ParserException {
     if ("math.abs".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.abs(nparam.get(0).doubleValue()));
     } else if ("math.ceil".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.ceil(nparam.get(0).doubleValue()));
     } else if ("math.floor".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.floor(nparam.get(0).doubleValue()));
     } else if ("math.cos".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.cos(Math.toRadians(nparam.get(0).doubleValue())));
     } else if ("math.cos_r".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.cos(nparam.get(0).doubleValue()));
     } else if ("math.sin".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.sin(Math.toRadians(nparam.get(0).doubleValue())));
     } else if ("math.sin_r".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.sin(nparam.get(0).doubleValue()));
     } else if ("math.tan".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.tan(Math.toRadians(nparam.get(0).doubleValue())));
     } else if ("math.tan_r".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.tan(nparam.get(0).doubleValue()));
     } else if ("math.acos".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.toDegrees(Math.acos(nparam.get(0).doubleValue())));
     } else if ("math.acos_r".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.acos(nparam.get(0).doubleValue()));
     } else if ("math.asin".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.toDegrees(Math.asin(nparam.get(0).doubleValue())));
     } else if ("math.asin_r".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.asin(nparam.get(0).doubleValue()));
     } else if ("math.atan".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.toDegrees(Math.atan(nparam.get(0).doubleValue())));
     } else if ("math.atan_r".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.atan(nparam.get(0).doubleValue()));
     } else if ("math.atan2".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 2, 2, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 2, 2);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(
           Math.toDegrees(Math.atan2(nparam.get(0).doubleValue(), nparam.get(1).doubleValue())));
     } else if ("math.atan2_r".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 2, 2, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 2, 2);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(
           Math.atan2(nparam.get(0).doubleValue(), nparam.get(1).doubleValue()));
     } else if ("math.cbrt".equalsIgnoreCase(functionName)
         || "math.cuberoot".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.cbrt(nparam.get(0).doubleValue()));
     } else if ("math.hypot".equalsIgnoreCase(functionName)
         || "math.hypotenuse".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 2, 2, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 2, 2);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(
           Math.hypot(nparam.get(0).doubleValue(), nparam.get(1).doubleValue()));
     } else if ("math.log".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.log(nparam.get(0).doubleValue()));
     } else if ("math.log10".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.log10(nparam.get(0).doubleValue()));
     } else if ("math.min".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 2, UNLIMITED_PARAMETERS, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 2, UNLIMITED_PARAMETERS);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       double minVal = nparam.get(0).doubleValue();
       for (BigDecimal n : nparam) {
         double val = n.doubleValue();
@@ -299,7 +269,8 @@ public class MathFunctions extends AbstractFunction {
       }
       return BigDecimal.valueOf(minVal);
     } else if ("math.max".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 2, UNLIMITED_PARAMETERS, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 2, UNLIMITED_PARAMETERS);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       double maxVal = nparam.get(0).doubleValue();
       for (BigDecimal n : nparam) {
         double val = n.doubleValue();
@@ -309,7 +280,8 @@ public class MathFunctions extends AbstractFunction {
       }
       return BigDecimal.valueOf(maxVal);
     } else if ("math.mod".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 2, 2, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 2, 2);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       if (!isInteger(nparam.get(0))) {
         throw new ParserException(
             I18N.getText("macro.function.general.argumentTypeI", functionName, 1, nparam.get(0)));
@@ -322,38 +294,34 @@ public class MathFunctions extends AbstractFunction {
 
       return BigDecimal.valueOf(nparam.get(0).intValue() % nparam.get(1).intValue());
     } else if ("math.pow".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 2, 2, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 2, 2);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.pow(nparam.get(0).doubleValue(), nparam.get(1).doubleValue()));
     } else if ("math.random".equalsIgnoreCase(functionName)) {
-      if (param.size() > 0) {
-        throw new ParserException(
-            I18N.getText("macro.function.general.wrongNumParam", functionName, 0, param.size()));
-      }
+      FunctionUtil.checkNumberParam(functionName, param, 0, 0);
       return BigDecimal.valueOf(Math.random());
     } else if ("math.sqrt".equalsIgnoreCase(functionName)
         || "math.squareroot".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.sqrt(nparam.get(0).doubleValue()));
     } else if ("math.toRadians".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.toRadians(nparam.get(0).doubleValue()));
     } else if ("math.toDegrees".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return BigDecimal.valueOf(Math.toDegrees(nparam.get(0).doubleValue()));
     } else if ("math.pi".equalsIgnoreCase(functionName)) {
-      if (param.size() > 0) {
-        throw new ParserException(
-            I18N.getText("macro.function.general.wrongNumParam", functionName, 0, param.size()));
-      }
+      FunctionUtil.checkNumberParam(functionName, param, 0, 0);
       return BigDecimal.valueOf(Math.PI);
     } else if ("math.e".equalsIgnoreCase(functionName)) {
-      if (param.size() > 0) {
-        throw new ParserException(
-            I18N.getText("macro.function.general.wrongNumParam", functionName, 0, param.size()));
-      }
+      FunctionUtil.checkNumberParam(functionName, param, 0, 0);
       return BigDecimal.valueOf(Math.E);
     } else if ("math.isEven".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       if (!isInteger(nparam.get(0))) {
         throw new ParserException(
             I18N.getText("macro.function.general.argumentTypeI", functionName, 1, nparam.get(0)));
@@ -363,7 +331,8 @@ public class MathFunctions extends AbstractFunction {
           ? BigDecimal.ONE
           : BigDecimal.ZERO;
     } else if ("math.isOdd".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       if (!isInteger(nparam.get(0))) {
         throw new ParserException(
             I18N.getText("macro.function.general.argumentTypeI", functionName, 1, nparam.get(0)));
@@ -373,39 +342,58 @@ public class MathFunctions extends AbstractFunction {
           ? BigDecimal.ZERO
           : BigDecimal.ONE;
     } else if ("math.isInt".equalsIgnoreCase(functionName)) {
-      List<BigDecimal> nparam = getNumericParams(param, 1, 1, functionName);
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      List<BigDecimal> nparam = getNumericParams(param, functionName);
       return isInteger(nparam.get(0)) ? BigDecimal.ONE : BigDecimal.ZERO;
     } else if ("math.arraySum".equalsIgnoreCase(functionName)) {
-      return streamSum(getNumericValuesFromArrayParam(functionName, param));
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      return streamSum(getNumericValuesFromArrayParam(functionName, param.get(0)));
     } else if ("math.arrayProduct".equalsIgnoreCase(functionName)) {
-      return streamProduct(getNumericValuesFromArrayParam(functionName, param));
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      return streamProduct(getNumericValuesFromArrayParam(functionName, param.get(0)));
     } else if ("math.arrayMin".equalsIgnoreCase(functionName)) {
-      return streamMin(getNumericValuesFromArrayParam(functionName, param));
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      return streamMin(getNumericValuesFromArrayParam(functionName, param.get(0)));
     } else if ("math.arrayMax".equalsIgnoreCase(functionName)) {
-      return streamMax(getNumericValuesFromArrayParam(functionName, param));
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
+      return streamMax(getNumericValuesFromArrayParam(functionName, param.get(0)));
     } else if ("math.arrayMean".equalsIgnoreCase(functionName)) {
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
       List<BigDecimal> theValues =
-          getNumericValuesFromArrayParam(functionName, param).collect(Collectors.toList());
+          getNumericValuesFromArrayParam(functionName, param.get(0)).toList();
       return getMean(theValues);
     } else if ("math.arrayMedian".equalsIgnoreCase(functionName)) {
+      FunctionUtil.checkNumberParam(functionName, param, 1, 1);
       List<BigDecimal> theValues =
-          getNumericValuesFromArrayParam(functionName, param).collect(Collectors.toList());
+          getNumericValuesFromArrayParam(functionName, param.get(0)).toList();
       return getMedian(theValues);
     } else if ("math.listSum".equalsIgnoreCase(functionName)) {
-      return streamSum(getNumericValuesFromStrListParam(functionName, param));
+      FunctionUtil.checkNumberParam(functionName, param, 1, 2);
+      var delim = param.size() > 1 ? param.get(1).toString() : ",";
+      return streamSum(getNumericValuesFromStrListParam(functionName, param.get(0), delim));
     } else if ("math.listProduct".equalsIgnoreCase(functionName)) {
-      return streamProduct(getNumericValuesFromStrListParam(functionName, param));
+      FunctionUtil.checkNumberParam(functionName, param, 1, 2);
+      var delim = param.size() > 1 ? param.get(1).toString() : ",";
+      return streamProduct(getNumericValuesFromStrListParam(functionName, param.get(0), delim));
     } else if ("math.listMin".equalsIgnoreCase(functionName)) {
-      return streamMin(getNumericValuesFromStrListParam(functionName, param));
+      FunctionUtil.checkNumberParam(functionName, param, 1, 2);
+      var delim = param.size() > 1 ? param.get(1).toString() : ",";
+      return streamMin(getNumericValuesFromStrListParam(functionName, param.get(0), delim));
     } else if ("math.listMax".equalsIgnoreCase(functionName)) {
-      return streamMax(getNumericValuesFromStrListParam(functionName, param));
+      FunctionUtil.checkNumberParam(functionName, param, 1, 2);
+      var delim = param.size() > 1 ? param.get(1).toString() : ",";
+      return streamMax(getNumericValuesFromStrListParam(functionName, param.get(0), delim));
     } else if ("math.listMean".equalsIgnoreCase(functionName)) {
+      FunctionUtil.checkNumberParam(functionName, param, 1, 2);
+      var delim = param.size() > 1 ? param.get(1).toString() : ",";
       List<BigDecimal> theValues =
-          getNumericValuesFromStrListParam(functionName, param).collect(Collectors.toList());
+          getNumericValuesFromStrListParam(functionName, param.get(0), delim).toList();
       return getMean(theValues);
     } else if ("math.listMedian".equalsIgnoreCase(functionName)) {
+      FunctionUtil.checkNumberParam(functionName, param, 1, 2);
+      var delim = param.size() > 1 ? param.get(1).toString() : ",";
       List<BigDecimal> theValues =
-          getNumericValuesFromStrListParam(functionName, param).collect(Collectors.toList());
+          getNumericValuesFromStrListParam(functionName, param.get(0), delim).toList();
       return getMedian(theValues);
     }
 

@@ -87,7 +87,7 @@ public class LogFunctions extends AbstractFunction {
    * @throws ParserException
    */
   private Object getLoggers(String functionName, List<Object> parameters) throws ParserException {
-    checkParameters(functionName, parameters, 0, 0);
+    FunctionUtil.checkNumberParam(functionName, parameters, 0, 0);
 
     LoggerContext logContext = (LoggerContext) LogManager.getContext(false);
     List<LoggerResponse> loggerLevels = new ArrayList<>();
@@ -111,7 +111,7 @@ public class LogFunctions extends AbstractFunction {
    * @throws ParserException
    */
   private Object setLogLevel(String functionName, List<Object> parameters) throws ParserException {
-    checkParameters(functionName, parameters, 2, 2);
+    FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
 
     String loggerName = parameters.get(0).toString();
 
@@ -127,7 +127,7 @@ public class LogFunctions extends AbstractFunction {
   }
 
   private Object logMessage(String functionName, List<Object> parameters) throws ParserException {
-    checkParameters(functionName, parameters, 1, 1);
+    FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
 
     String logMessage = parameters.get(0).toString();
 
@@ -158,42 +158,10 @@ public class LogFunctions extends AbstractFunction {
    * @throws ParserException
    */
   private Object setPattern(String functionName, List<Object> parameters) throws ParserException {
-    checkParameters(functionName, parameters, 1, 1);
+    FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
 
     String logPattern = parameters.get(0).toString();
     return logPattern;
-  }
-
-  /**
-   * @param functionName the name of the function
-   * @param parameters passed into the function call
-   * @param min number of parameters required
-   * @param max number of parameters required
-   * @throws ParserException
-   */
-  private void checkParameters(String functionName, List<Object> parameters, int min, int max)
-      throws ParserException {
-
-    if (min == max) {
-      if (parameters.size() != max) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.wrongNumParam", functionName, max, parameters.size()));
-      }
-
-    } else {
-      if (parameters.size() < min) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.notEnoughParam", functionName, min, parameters.size()));
-      }
-
-      if (parameters.size() > max) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.tooManyParam", functionName, max, parameters.size()));
-      }
-    }
   }
 
   /*

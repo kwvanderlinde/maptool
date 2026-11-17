@@ -88,9 +88,6 @@ public class RESTfulFunctions extends AbstractFunction {
       throw new ParserException(I18N.getText("macro.function.general.accessDenied", functionName));
     }
 
-    // Check do we need this?
-    checkParameters(functionName, parameters, 1, 5);
-
     if (functionName.equalsIgnoreCase("REST.get")) {
       return buildGetRequest(functionName, parameters);
     }
@@ -117,7 +114,7 @@ public class RESTfulFunctions extends AbstractFunction {
    */
   private Object buildGetRequest(String functionName, List<Object> parameters)
       throws ParserException {
-    checkParameters(functionName, parameters, 1, 3);
+    FunctionUtil.checkNumberParam(functionName, parameters, 1, 3);
 
     Request request;
     String baseURL = parameters.get(0).toString();
@@ -126,7 +123,7 @@ public class RESTfulFunctions extends AbstractFunction {
 
     // Special case, syrinscape URI use java.awt.Desktop to launch URI
     if (baseURL.startsWith("syrinscape")) {
-      checkParameters(functionName, parameters, 1, 1);
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
       return launchSyrinscape(baseURL);
     }
 
@@ -162,7 +159,7 @@ public class RESTfulFunctions extends AbstractFunction {
    * @throws ParserException
    */
   private Object buildRequest(String functionName, List<Object> parameters) throws ParserException {
-    checkParameters(functionName, parameters, 3, 5);
+    FunctionUtil.checkNumberParam(functionName, parameters, 3, 5);
 
     Request request = null;
     String baseURL = parameters.get(0).toString();
@@ -369,38 +366,6 @@ public class RESTfulFunctions extends AbstractFunction {
     }
 
     return BigDecimal.ONE;
-  }
-
-  /**
-   * @param functionName the name of the function
-   * @param parameters passed into the function call
-   * @param min number of parameters required
-   * @param max number of parameters required
-   * @throws ParserException
-   */
-  private void checkParameters(String functionName, List<Object> parameters, int min, int max)
-      throws ParserException {
-
-    if (min == max) {
-      if (parameters.size() != max) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.wrongNumParam", functionName, max, parameters.size()));
-      }
-
-    } else {
-      if (parameters.size() < min) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.notEnoughParam", functionName, min, parameters.size()));
-      }
-
-      if (parameters.size() > max) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.tooManyParam", functionName, max, parameters.size()));
-      }
-    }
   }
 
   /*

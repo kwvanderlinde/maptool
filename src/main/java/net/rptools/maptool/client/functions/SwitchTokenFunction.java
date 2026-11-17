@@ -16,7 +16,6 @@ package net.rptools.maptool.client.functions;
 
 import java.util.List;
 import net.rptools.maptool.client.MapToolVariableResolver;
-import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
@@ -40,13 +39,10 @@ public class SwitchTokenFunction extends AbstractFunction {
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
     FunctionUtil.blockUntrustedMacro(functionName);
-    if (parameters.size() < 1) {
-      throw new ParserException(
-          I18N.getText(
-              "macro.function.general.notEnoughParam", functionName, 1, parameters.size()));
-    }
+    FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
 
     Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, -1);
+
     ((MapToolVariableResolver) resolver).setTokenIncontext(token);
     return "";
   }

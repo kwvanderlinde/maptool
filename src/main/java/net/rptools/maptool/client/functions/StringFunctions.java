@@ -81,11 +81,8 @@ public class StringFunctions extends AbstractFunction {
       throws ParserException {
     try {
       if (functionName.equalsIgnoreCase("replace")) {
-        if (parameters.size() < 3) {
-          throw new ParserException(
-              I18N.getText(
-                  "macro.function.general.notEnoughParam", functionName, 3, parameters.size()));
-        }
+        FunctionUtil.checkNumberParam(functionName, parameters, 3, 4);
+
         if (parameters.size() > 3) {
           if (!(parameters.get(3) instanceof BigDecimal)) {
             throw new ParserException(
@@ -108,11 +105,8 @@ public class StringFunctions extends AbstractFunction {
         }
       }
       if (functionName.equalsIgnoreCase("stringToList")) {
-        if (parameters.size() < 2) {
-          throw new ParserException(
-              I18N.getText(
-                  "macro.function.general.notEnoughParam", functionName, 2, parameters.size()));
-        }
+        FunctionUtil.checkNumberParam(functionName, parameters, 2, 3);
+
         String delim;
         if (parameters.size() > 2) {
           delim = parameters.get(2).toString();
@@ -122,11 +116,8 @@ public class StringFunctions extends AbstractFunction {
         return stringToList(parameters.get(0).toString(), parameters.get(1).toString(), delim);
       }
       if (functionName.equalsIgnoreCase("substring")) {
-        if (parameters.size() < 2) {
-          throw new ParserException(
-              I18N.getText(
-                  "macro.function.general.notEnoughParam", functionName, 2, parameters.size()));
-        }
+        FunctionUtil.checkNumberParam(functionName, parameters, 2, 3);
+
         if (!(parameters.get(1) instanceof BigDecimal)) {
           throw new ParserException(
               I18N.getText(
@@ -155,9 +146,12 @@ public class StringFunctions extends AbstractFunction {
             .substring(((BigDecimal) parameters.get(1)).intValue(), end);
       }
       if (functionName.equalsIgnoreCase("length")) {
+        FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
         return BigDecimal.valueOf(parameters.get(0).toString().length());
       }
       if (functionName.equalsIgnoreCase("upper")) {
+        FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
+
         if (parameters.size() > 1) {
           String str = parameters.get(0).toString();
           try {
@@ -177,6 +171,8 @@ public class StringFunctions extends AbstractFunction {
         }
       }
       if (functionName.equalsIgnoreCase("lower")) {
+        FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
+
         if (parameters.size() > 1) {
           String str = parameters.get(0).toString();
           try {
@@ -196,11 +192,8 @@ public class StringFunctions extends AbstractFunction {
         }
       }
       if (functionName.equalsIgnoreCase("indexOf")) {
-        if (parameters.size() < 2) {
-          throw new ParserException(
-              I18N.getText(
-                  "macro.function.general.notEnoughParam", functionName, 2, parameters.size()));
-        }
+        FunctionUtil.checkNumberParam(functionName, parameters, 2, 3);
+
         int from = 0;
         if (parameters.size() > 2) {
           if (!(parameters.get(2) instanceof BigDecimal)) {
@@ -219,22 +212,25 @@ public class StringFunctions extends AbstractFunction {
             parameters.get(0).toString().indexOf(parameters.get(1).toString(), from));
       }
       if (functionName.equalsIgnoreCase("lastIndexOf")) {
-        if (parameters.size() < 2) {
-          throw new ParserException(
-              I18N.getText(
-                  "macro.function.general.notEnoughParam", functionName, 2, parameters.size()));
-        }
+        FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
+
         return BigDecimal.valueOf(
             parameters.get(0).toString().lastIndexOf(parameters.get(1).toString()));
       }
       if (functionName.equalsIgnoreCase("trim")) {
+        FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
+
         return parameters.get(0).toString().trim();
       }
       if (functionName.equalsIgnoreCase("strfmt")) {
+        FunctionUtil.checkNumberParam(functionName, parameters, 1, UNLIMITED_PARAMETERS);
+
         int size = parameters.size();
         return format(parameters.get(0).toString(), resolver, parameters.subList(1, size));
       }
       if (functionName.equalsIgnoreCase("strformat")) {
+        FunctionUtil.checkNumberParam(functionName, parameters, 1, UNLIMITED_PARAMETERS);
+
         int size = parameters.size();
         if (size > 1) {
           return compatFormat(parameters.get(0).toString(), resolver, parameters.subList(1, size));
@@ -243,11 +239,8 @@ public class StringFunctions extends AbstractFunction {
         }
       }
       if (functionName.equalsIgnoreCase("matches")) {
-        if (parameters.size() < 2) {
-          throw new ParserException(
-              I18N.getText(
-                  "macro.function.general.notEnoughParam", functionName, 2, parameters.size()));
-        }
+        FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
+
         if (parameters.get(0).toString().matches(parameters.get(1).toString())) {
           return BigDecimal.valueOf(1);
         } else {
@@ -258,9 +251,13 @@ public class StringFunctions extends AbstractFunction {
       throw new ParserException(e.getMessage());
     }
     if (functionName.equalsIgnoreCase("string")) {
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
+
       return parameters.get(0).toString();
     }
     if (functionName.equalsIgnoreCase("number")) {
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
+
       if (parameters.get(0).toString().trim().isEmpty()) return BigDecimal.ZERO;
       try {
         return BigDecimal.valueOf(Integer.parseInt(parameters.get(0).toString()));
@@ -279,6 +276,8 @@ public class StringFunctions extends AbstractFunction {
       }
     }
     if (functionName.equalsIgnoreCase("isNumber")) {
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
+
       String str = parameters.get(0).toString().trim();
       // isParsable() returns false for leading + so stripping
       // off the first one. Any extras will return false.
@@ -289,39 +288,23 @@ public class StringFunctions extends AbstractFunction {
       }
     }
     if (functionName.equalsIgnoreCase("strfind")) {
-      if (parameters.size() < 2) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.notEnoughParam", functionName, 2, parameters.size()));
-      }
+      FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
+
       return stringFind(resolver, parameters.get(0).toString(), parameters.get(1).toString());
     }
     if (functionName.equalsIgnoreCase("getGroupCount")) {
-      if (parameters.size() < 1) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.notEnoughParam", functionName, 1, parameters.size()));
-      }
-      StringBuilder sb = new StringBuilder();
-      sb.append("match.").append(parameters.get(0)).append(".groupCount");
-      return resolver.getVariable(sb.toString());
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
+
+      return resolver.getVariable("match." + parameters.get(0) + ".groupCount");
     }
     if (functionName.equalsIgnoreCase("getGroupNames")) {
-      if (parameters.size() < 1) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.notEnoughParam", functionName, 1, parameters.size()));
-      }
-      StringBuilder sb = new StringBuilder();
-      sb.append("match.").append(parameters.get(0)).append(".groupNames");
-      return resolver.getVariable(sb.toString());
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
+
+      return resolver.getVariable("match." + parameters.get(0) + ".groupNames");
     }
     if (functionName.startsWith("getGroup")) {
-      if (parameters.size() < 3) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.notEnoughParam", functionName, 3, parameters.size()));
-      }
+      FunctionUtil.checkNumberParam(functionName, parameters, 3, 3);
+
       StringBuilder sb = new StringBuilder();
       sb.append("match.").append(parameters.get(0));
       sb.append(".m").append(parameters.get(1));
@@ -334,21 +317,13 @@ public class StringFunctions extends AbstractFunction {
       return resolver.getVariable(sb.toString());
     }
     if (functionName.equalsIgnoreCase("getFindCount")) {
-      if (parameters.size() < 1) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.notEnoughParam", functionName, 1, parameters.size()));
-      }
-      StringBuilder sb = new StringBuilder();
-      sb.append("match.").append(parameters.get(0)).append(".matchCount");
-      return resolver.getVariable(sb.toString());
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
+
+      return resolver.getVariable("match." + parameters.get(0) + ".matchCount");
     }
     if (functionName.equalsIgnoreCase("encode")) {
-      if (parameters.size() < 1) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.notEnoughParam", functionName, 1, parameters.size()));
-      }
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
+
       String encoded;
       // Shouldn't this use '&#59;' like
       // net.rptools.maptool.client.functions.MacroLinkFunction.argsToStrPropList(String) does?
@@ -357,11 +332,8 @@ public class StringFunctions extends AbstractFunction {
       return encoded;
     }
     if (functionName.equalsIgnoreCase("decode")) {
-      if (parameters.size() < 1) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.notEnoughParam", functionName, 1, parameters.size()));
-      }
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
+
       String decoded;
       // Shouldn't this use '&#59;' like
       // net.rptools.maptool.client.functions.MacroLinkFunction.argsToStrPropList(String) does?
@@ -370,27 +342,22 @@ public class StringFunctions extends AbstractFunction {
       return decoded;
     }
     if (functionName.equalsIgnoreCase("startsWith")) {
-      if (parameters.size() < 2) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.notEnoughParam", functionName, 2, parameters.size()));
-      }
+      FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
+
       return parameters.get(0).toString().startsWith(parameters.get(1).toString())
           ? BigDecimal.ONE
           : BigDecimal.ZERO;
     }
     if (functionName.equalsIgnoreCase("endsWith")) {
-      if (parameters.size() < 2) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.notEnoughParam", functionName, 2, parameters.size()));
-      }
+      FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
+
       return parameters.get(0).toString().endsWith(parameters.get(1).toString())
           ? BigDecimal.ONE
           : BigDecimal.ZERO;
     }
     if (functionName.equalsIgnoreCase("capitalize")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
+
       boolean treatNumbersSymbolsAsBoundaries = true;
       if (parameters.size() == 2) {
         treatNumbersSymbolsAsBoundaries =

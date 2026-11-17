@@ -47,12 +47,9 @@ public class DefineMacroFunction extends AbstractFunction {
       throws ParserException {
     if (functionName.equalsIgnoreCase("defineFunction")) {
       FunctionUtil.blockUntrustedMacro(functionName);
+      FunctionUtil.checkNumberParam(functionName, parameters, 2, 3);
 
-      if (parameters.size() < 2) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.notEnoughParam", functionName, 2, parameters.size()));
-      }
+      String newFunctionName = parameters.get(0).toString();
 
       String macro = parameters.get(1).toString();
       if (macro.toLowerCase().endsWith("@this")) {
@@ -63,34 +60,34 @@ public class DefineMacroFunction extends AbstractFunction {
 
       boolean ignoreOutput = false;
       if (parameters.size() > 2) {
-        if (!(parameters.get(2) instanceof BigDecimal)) {
+        var ignoreOutputParam = parameters.get(2);
+        if (!(ignoreOutputParam instanceof BigDecimal bd)) {
           throw new ParserException(
               I18N.getText(
                   "macro.function.general.argumentTypeN",
                   functionName,
                   3,
-                  parameters.get(2).toString()));
+                  ignoreOutputParam.toString()));
         }
-        ignoreOutput = !BigDecimal.ZERO.equals(parameters.get(2));
+        ignoreOutput = !BigDecimal.ZERO.equals(bd);
       }
       boolean newVariableContext = true;
       if (parameters.size() > 3) {
-        if (!(parameters.get(3) instanceof BigDecimal)) {
+        var newVariableContextParam = parameters.get(3);
+        if (!(newVariableContextParam instanceof BigDecimal bd)) {
           throw new ParserException(
               I18N.getText(
                   "macro.function.general.argumentTypeN",
                   functionName,
                   4,
-                  parameters.get(3).toString()));
+                  newVariableContextParam));
         }
-        newVariableContext = !BigDecimal.ZERO.equals(parameters.get(3));
+        newVariableContext = !BigDecimal.ZERO.equals(bd);
       }
 
       UserDefinedMacroFunctions.getInstance()
-          .defineFunction(
-              parser, parameters.get(0).toString(), macro, ignoreOutput, newVariableContext);
-      return I18N.getText(
-          "macro.function.defineFunction.functionDefined", parameters.get(0).toString());
+          .defineFunction(parser, newFunctionName, macro, ignoreOutput, newVariableContext);
+      return I18N.getText("macro.function.defineFunction.functionDefined", newFunctionName);
     } else if (functionName.equalsIgnoreCase("oldFunction")) {
       return UserDefinedMacroFunctions.getInstance()
           .executeOldFunction(parser, resolver, parameters);
@@ -103,12 +100,15 @@ public class DefineMacroFunction extends AbstractFunction {
       }
       return UserDefinedMacroFunctions.getInstance().getDefinedFunctions(delim, showFullLocations);
     } else if ("isFunctionDefined".equalsIgnoreCase(functionName)) {
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
 
-      if (UserDefinedMacroFunctions.getInstance().isFunctionDefined(parameters.get(0).toString())) {
+      String function = parameters.get(0).toString();
+
+      if (UserDefinedMacroFunctions.getInstance().isFunctionDefined(function)) {
         return BigDecimal.ONE;
       }
 
-      if (parser.getFunction(parameters.get(0).toString()) != null) {
+      if (parser.getFunction(function) != null) {
         return BigDecimal.valueOf(2);
       }
 

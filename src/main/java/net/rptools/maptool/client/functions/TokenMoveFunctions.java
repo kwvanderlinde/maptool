@@ -115,29 +115,23 @@ public class TokenMoveFunctions extends AbstractFunction {
     }
     if (functionName.equalsIgnoreCase("movedOverPoints")) {
       FunctionUtil.blockUntrustedMacro(functionName);
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
+
       Path<?> path = tokenInContext.getLastPath();
 
-      List<Map<String, Integer>> returnPoints = new ArrayList<Map<String, Integer>>();
+      String points = (String) parameters.get(0);
+      String jsonPath = (String) (parameters.size() > 1 ? parameters.get(1) : "");
 
-      if ((parameters.size() == 1) || parameters.size() == 2) {
-        String points = (String) parameters.get(0);
-        String jsonPath = (String) (parameters.size() == 2 ? parameters.get(1) : "");
-
-        List<Map<String, Integer>> pathPoints = null;
-        if (jsonPath != null && !jsonPath.equals("")) {
-          returnPoints = crossedPoints(zone, tokenInContext, points, jsonPath);
-        } else {
-          pathPoints = getLastPathList(path, true);
-          returnPoints = crossedPoints(zone, tokenInContext, points, pathPoints);
-        }
-        JsonArray retVal = pathPointsToJSONArray(returnPoints);
-        returnPoints = null;
-        return retVal;
+      List<Map<String, Integer>> returnPoints;
+      if (jsonPath != null && !jsonPath.isEmpty()) {
+        returnPoints = crossedPoints(zone, tokenInContext, points, jsonPath);
       } else {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.wrongNumParam", functionName, 2, parameters.size()));
+        List<Map<String, Integer>> pathPoints = getLastPathList(path, true);
+        returnPoints = crossedPoints(zone, tokenInContext, points, pathPoints);
       }
+      JsonArray retVal = pathPointsToJSONArray(returnPoints);
+
+      return retVal;
     }
     if (functionName.equalsIgnoreCase("getMoveCount")) {
       boolean useFractionOnly = false;
@@ -166,27 +160,21 @@ public class TokenMoveFunctions extends AbstractFunction {
     }
     if (functionName.equalsIgnoreCase("movedOverToken")) {
       FunctionUtil.blockUntrustedMacro(functionName);
-      Path<?> path = tokenInContext.getLastPath();
-      List<Map<String, Integer>> returnPoints = new ArrayList<Map<String, Integer>>();
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
 
-      if (parameters.size() < 1 || parameters.size() > 2) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.wrongNumParam", functionName, 2, parameters.size()));
-      }
+      Path<?> path = tokenInContext.getLastPath();
 
       Token target = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, -1);
-
       String jsonPath = parameters.size() == 2 ? parameters.get(1).toString() : "";
-      List<Map<String, Integer>> pathPoints = null;
-      if (jsonPath != null && !jsonPath.equals("")) {
+
+      List<Map<String, Integer>> returnPoints;
+      if (jsonPath != null && !jsonPath.isEmpty()) {
         returnPoints = crossedToken(zone, tokenInContext, target, jsonPath);
       } else {
-        pathPoints = getLastPathList(path, true);
+        List<Map<String, Integer>> pathPoints = getLastPathList(path, true);
         returnPoints = crossedToken(zone, tokenInContext, target, pathPoints);
       }
       JsonArray retVal = pathPointsToJSONArray(returnPoints);
-      returnPoints = null;
       return retVal;
     }
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));

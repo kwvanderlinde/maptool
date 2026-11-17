@@ -146,10 +146,7 @@ public class TokenVisibleFunction extends AbstractFunction {
    */
   private static Object getVisible(VariableResolver resolver, List<Object> args)
       throws ParserException {
-    if (args.size() > 1) {
-      throw new ParserException(
-          I18N.getText("macro.function.general.tooManyParam", "getVisible", 1, args.size()));
-    }
+    FunctionUtil.checkNumberParam("getVisible", args, 0, 1);
 
     Token token = FunctionUtil.getTokenFromParam(resolver, "getVisible", args, 0, -1);
     return getVisible(token);
@@ -164,13 +161,7 @@ public class TokenVisibleFunction extends AbstractFunction {
    */
   private static Object setVisible(VariableResolver resolver, List<Object> args)
       throws ParserException {
-    if (args.size() == 0) {
-      throw new ParserException(
-          I18N.getText("macro.function.general.notEnoughParam", "setVisible", 1, args.size()));
-    } else if (args.size() > 2) {
-      throw new ParserException(
-          I18N.getText("macro.function.general.tooManyParam", "setVisible", 2, args.size()));
-    }
+    FunctionUtil.checkNumberParam("setVisible", args, 1, 2);
 
     Object val = args.get(0);
     Token token = FunctionUtil.getTokenFromParam(resolver, "setVisible", args, 1, -1);
@@ -180,15 +171,7 @@ public class TokenVisibleFunction extends AbstractFunction {
 
   private static Object setOwnerOnlyVisible(VariableResolver resolver, List<Object> args)
       throws ParserException {
-    if (args.size() == 0) {
-      throw new ParserException(
-          I18N.getText(
-              "macro.function.general.notEnoughParam", "setOwnerOnlyVisible", 1, args.size()));
-    } else if (args.size() > 2) {
-      throw new ParserException(
-          I18N.getText(
-              "macro.function.general.tooManyParam", "setOwnerOnlyVisible", 2, args.size()));
-    }
+    FunctionUtil.checkNumberParam("setOwnerOnlyVisible", args, 1, 2);
 
     Object val = args.get(0);
     Token token = FunctionUtil.getTokenFromParam(resolver, "setOwnerOnlyVisible", args, 1, -1);
@@ -198,11 +181,7 @@ public class TokenVisibleFunction extends AbstractFunction {
 
   private static Object getOwnerOnlyVisible(VariableResolver resolver, List<Object> args)
       throws ParserException {
-    if (args.size() > 1) {
-      throw new ParserException(
-          I18N.getText(
-              "macro.function.general.tooManyParam", "getOwnerOnlyVisible", 1, args.size()));
-    }
+    FunctionUtil.checkNumberParam("getOwnerOnlyVisible", args, 0, 1);
 
     Token token = FunctionUtil.getTokenFromParam(resolver, "getOwnerOnlyVisible", args, 0, -1);
     return getOwnerOnlyVisible(token);
@@ -287,10 +266,7 @@ public class TokenVisibleFunction extends AbstractFunction {
    */
   private static Object getAlwaysVisible(VariableResolver resolver, List<Object> args)
       throws ParserException {
-    if (args.size() > 1) {
-      throw new ParserException(
-          I18N.getText("macro.function.general.tooManyParam", "getAlwaysVisible", 1, args.size()));
-    }
+    FunctionUtil.checkNumberParam("getAlwaysVisible", args, 0, 1);
 
     Token token = FunctionUtil.getTokenFromParam(resolver, "getAlwaysVisible", args, 0, -1);
     return getAlwaysVisible(token);

@@ -62,23 +62,12 @@ public class FogOfWarFunctions extends AbstractFunction {
       throws ParserException {
     FunctionUtil.blockUntrustedMacro(functionName);
 
-    int maxParamSize = functionName.equalsIgnoreCase("exposeFOW") ? 3 : 1;
-
-    if (parameters.size() > maxParamSize) {
-      throw new ParserException(
-          I18N.getText(
-              "macro.function.general.tooManyParam",
-              functionName,
-              maxParamSize,
-              parameters.size()));
-    }
-
-    final var zoneRenderer = FunctionUtil.getZoneRendererFromParam(functionName, parameters, 0);
-
     /*
      * String empty = exposePCOnlyArea(optional String mapName)
      */
     if (functionName.equalsIgnoreCase("exposePCOnlyArea")) {
+      FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
+      final var zoneRenderer = FunctionUtil.getZoneRendererFromParam(functionName, parameters, 0);
       FogUtil.exposePCArea(zoneRenderer);
       return "<!---->";
     }
@@ -86,6 +75,8 @@ public class FogOfWarFunctions extends AbstractFunction {
      * String empty = exposeAllOwnedArea(optional String mapName)
      */
     if (functionName.equalsIgnoreCase("exposeAllOwnedArea")) {
+      FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
+      final var zoneRenderer = FunctionUtil.getZoneRendererFromParam(functionName, parameters, 0);
       FogUtil.exposeAllOwnedArea(zoneRenderer);
       return "<!---->";
     }
@@ -93,6 +84,8 @@ public class FogOfWarFunctions extends AbstractFunction {
      * String empty = exposeFOW(optional String mapName, optional String tokens, optional String delim)
      */
     if (functionName.equalsIgnoreCase("exposeFOW")) {
+      FunctionUtil.checkNumberParam(functionName, parameters, 0, 3);
+      final var zoneRenderer = FunctionUtil.getZoneRendererFromParam(functionName, parameters, 0);
 
       Set<GUID> tokenSet;
 
@@ -112,6 +105,8 @@ public class FogOfWarFunctions extends AbstractFunction {
      * String empty = restoreFOW(optional String mapName)
      */
     if (functionName.equalsIgnoreCase("restoreFOW")) {
+      FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
+      final var zoneRenderer = FunctionUtil.getZoneRendererFromParam(functionName, parameters, 0);
       FogUtil.restoreFoW(zoneRenderer);
       return "<!---->";
     }
@@ -119,6 +114,7 @@ public class FogOfWarFunctions extends AbstractFunction {
      * Lee: String empty = toggleFoW()
      */
     if (functionName.equalsIgnoreCase("toggleFoW")) {
+      FunctionUtil.checkNumberParam(functionName, parameters, 0, 0);
       AppActions.TOGGLE_FOG.execute(null);
       return AppActions.TOGGLE_FOG.isSelected()
           ? I18N.getText("msg.info.action.enableFoW")
@@ -128,6 +124,7 @@ public class FogOfWarFunctions extends AbstractFunction {
      * Lee: String empty = exposeFogAtWaypoints()
      */
     if (functionName.equalsIgnoreCase("exposeFogAtWaypoints")) {
+      FunctionUtil.checkNumberParam(functionName, parameters, 0, 0);
 
       if (AppActions.TOGGLE_WAYPOINT_FOG_REVEAL.isAvailable()) {
         AppActions.TOGGLE_WAYPOINT_FOG_REVEAL.execute(null);

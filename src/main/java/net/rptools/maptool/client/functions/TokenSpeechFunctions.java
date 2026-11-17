@@ -20,6 +20,7 @@ import java.util.List;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
@@ -48,26 +49,22 @@ public class TokenSpeechFunctions extends AbstractFunction {
     }
 
     if (functionName.equalsIgnoreCase("getSpeech")) {
-      if (parameters.size() < 1) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.notEnoughParam", functionName, 1, parameters.size()));
-      }
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
+
       String speech = token.getSpeech(parameters.get(0).toString());
       return speech == null ? "" : speech;
     }
 
     if (functionName.equalsIgnoreCase("setSpeech")) {
-      if (parameters.size() < 2) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.notEnoughParam", functionName, 2, parameters.size()));
-      }
+      FunctionUtil.checkNumberParam(functionName, parameters, 2, 2);
+
       token.setSpeech(parameters.get(0).toString(), parameters.get(1).toString());
       return "";
     }
 
     if (functionName.equalsIgnoreCase("getSpeechNames")) {
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
+
       String[] speech = new String[token.getSpeechNames().size()];
       String delim = parameters.size() > 0 ? parameters.get(0).toString() : ",";
       if ("json".equals(delim)) {

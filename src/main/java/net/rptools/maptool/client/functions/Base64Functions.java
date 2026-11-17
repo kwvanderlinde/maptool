@@ -59,13 +59,13 @@ public class Base64Functions extends AbstractFunction {
       throws ParserException {
 
     if (functionName.equalsIgnoreCase("base64.encode")) {
-      checkParameters(functionName, parameters, 1, 1);
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
       return base64Encode(functionName, parameters);
     } else if (functionName.equalsIgnoreCase("base64.encode.asset")) {
-      checkParameters(functionName, parameters, 1, 2);
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
       return base64EncodeAsset(functionName, parameters);
     } else if (functionName.equalsIgnoreCase("base64.decode")) {
-      checkParameters(functionName, parameters, 1, 1);
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 1);
       return base64Decode(functionName, parameters);
     } else {
       throw new ParserException(
@@ -142,34 +142,5 @@ public class Base64Functions extends AbstractFunction {
     byte[] decoded = Base64.getDecoder().decode(parameters.get(0).toString());
 
     return new String(decoded, StandardCharsets.UTF_8);
-  }
-
-  /**
-   * @param functionName the name of the function
-   * @param parameters passed into the function call
-   * @param min number of parameters required
-   * @param max number of parameters required
-   * @throws ParserException the parser exception
-   */
-  private void checkParameters(String functionName, List<Object> parameters, int min, int max)
-      throws ParserException {
-
-    if (min == max) {
-      if (parameters.size() != max)
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.wrongNumParam", functionName, max, parameters.size()));
-
-    } else {
-      if (parameters.size() < min)
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.notEnoughParam", functionName, min, parameters.size()));
-
-      if (parameters.size() > max)
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.tooManyParam", functionName, max, parameters.size()));
-    }
   }
 }

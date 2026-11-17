@@ -57,8 +57,10 @@ public class TokenHaloFunctions extends AbstractFunction {
       throws ParserException {
 
     if (functionName.equalsIgnoreCase("getHalo")) {
+      FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
       return getHalo((MapToolVariableResolver) resolver, parameters);
     } else if ("setHalo".equalsIgnoreCase(functionName)) {
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
       return setHalo((MapToolVariableResolver) resolver, parameters);
     } else if (functionName.equalsIgnoreCase("hasHalos")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 4);
@@ -128,11 +130,6 @@ public class TokenHaloFunctions extends AbstractFunction {
    */
   private Object getHalo(MapToolVariableResolver resolver, List<Object> args)
       throws ParserException {
-    if (args.size() > 1) {
-      throw new ParserException(
-          I18N.getText("macro.function.general.tooManyParam", "getHalo", 1, args.size()));
-    }
-
     Token token = FunctionUtil.getTokenFromParam(resolver, "getHalo", args, 0, -1);
     return getHalo(token);
   }
@@ -194,20 +191,7 @@ public class TokenHaloFunctions extends AbstractFunction {
    */
   private Object setHalo(MapToolVariableResolver resolver, List<Object> args)
       throws ParserException {
-
     Object value = args.get(0);
-
-    switch (args.size()) {
-      case 0:
-        throw new ParserException(
-            I18N.getText("macro.function.general.notEnoughParam", "setHalo", 1, args.size()));
-      default:
-        throw new ParserException(
-            I18N.getText("macro.function.general.tooManyParam", "setHalo", 2, args.size()));
-      case 1:
-      case 2:
-    }
-
     Token token = FunctionUtil.getTokenFromParam(resolver, "setHalo", args, 1, -1);
     setHalo(token, value);
     return value;

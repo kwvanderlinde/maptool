@@ -60,12 +60,7 @@ public class HeroLabFunctions extends AbstractFunction {
       throws ParserException {
     if (functionName.equalsIgnoreCase("herolab.getInfo")) {
       FunctionUtil.blockUntrustedMacro(functionName);
-
-      if (parameters.size() > 1) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.tooManyParam", functionName, 1, parameters.size()));
-      }
+      FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
 
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, -1);
 
@@ -74,16 +69,7 @@ public class HeroLabFunctions extends AbstractFunction {
       return token.getHeroLabData().getInfo();
     } else if (functionName.equalsIgnoreCase("herolab.getStatBlock")) {
       FunctionUtil.blockUntrustedMacro(functionName);
-
-      if (parameters.size() > 2)
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.tooManyParam", functionName, 1, parameters.size()));
-
-      if (parameters.isEmpty())
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.notenoughparms", functionName, 1, parameters.size()));
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
 
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 1, -1);
 
@@ -95,12 +81,7 @@ public class HeroLabFunctions extends AbstractFunction {
       return token.getHeroLabData().getStatBlock_data(statBlockType);
     } else if (functionName.equalsIgnoreCase("herolab.hasChanged")) {
       FunctionUtil.blockUntrustedMacro(functionName);
-
-      if (parameters.size() > 1) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.tooManyParam", functionName, 1, parameters.size()));
-      }
+      FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
 
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, -1);
 
@@ -110,12 +91,7 @@ public class HeroLabFunctions extends AbstractFunction {
       return token.getHeroLabData().isDirty() ? BigDecimal.ONE : BigDecimal.ZERO;
     } else if (functionName.equalsIgnoreCase("herolab.refresh")) {
       FunctionUtil.blockUntrustedMacro(functionName);
-
-      if (parameters.size() > 1) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.tooManyParam", functionName, 1, parameters.size()));
-      }
+      FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
 
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, -1);
 
@@ -176,16 +152,7 @@ public class HeroLabFunctions extends AbstractFunction {
       }
     } else if (functionName.equalsIgnoreCase("herolab.getImage")) {
       FunctionUtil.blockUntrustedMacro(functionName);
-
-      if (parameters.size() > 2)
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.tooManyParam", functionName, 1, parameters.size()));
-
-      if (parameters.isEmpty())
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.notenoughparms", functionName, 1, parameters.size()));
+      FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
 
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 1, -1);
 
@@ -202,12 +169,7 @@ public class HeroLabFunctions extends AbstractFunction {
       return assetURL.toString();
     } else if (functionName.equalsIgnoreCase("herolab.isMinion")) {
       FunctionUtil.blockUntrustedMacro(functionName);
-
-      if (parameters.size() > 1) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.tooManyParam", functionName, 1, parameters.size()));
-      }
+      FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
 
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, -1);
 
@@ -217,12 +179,7 @@ public class HeroLabFunctions extends AbstractFunction {
       return token.getHeroLabData().isMinion() ? BigDecimal.ONE : BigDecimal.ZERO;
     } else if (functionName.equalsIgnoreCase("herolab.getMasterName")) {
       FunctionUtil.blockUntrustedMacro(functionName);
-
-      if (parameters.size() > 1) {
-        throw new ParserException(
-            I18N.getText(
-                "macro.function.general.tooManyParam", functionName, 1, parameters.size()));
-      }
+      FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
 
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, -1);
 

@@ -64,11 +64,7 @@ public class ParserPropertyFunctions extends AbstractFunction {
 
     if (functionName.startsWith("set")) {
       FunctionUtil.blockUntrustedMacro(functionName);
-
-      if (args.size() < 1) {
-        throw new ParserException(
-            I18N.getText("macro.function.general.notEnoughParam", functionName, 1, args.size()));
-      }
+      FunctionUtil.checkNumberParam(functionName, args, 1, 1);
 
       argVal = ((BigDecimal) (args.get(0))).intValue();
     }

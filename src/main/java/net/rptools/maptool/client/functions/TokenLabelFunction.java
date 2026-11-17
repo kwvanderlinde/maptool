@@ -78,10 +78,7 @@ public class TokenLabelFunction extends AbstractFunction {
    */
   private static Object getLabel(MapToolVariableResolver resolver, List<Object> args)
       throws ParserException {
-    if (args.size() > 1) {
-      throw new ParserException(
-          I18N.getText("macro.function.general.tooManyParam", "getLabel", 1, args.size()));
-    }
+    FunctionUtil.checkNumberParam("getLabel", args, 0, 1);
 
     Token token = FunctionUtil.getTokenFromParam(resolver, "getLabel", args, 0, -1);
     return getLabel(token);

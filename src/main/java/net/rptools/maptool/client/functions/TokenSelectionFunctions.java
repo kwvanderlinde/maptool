@@ -64,11 +64,13 @@ public class TokenSelectionFunctions extends AbstractFunction {
   }
 
   private void deselectTokens(List<Object> parameters) throws ParserException {
+    FunctionUtil.checkNumberParam("deselectTokens", parameters, 0, 2);
+
     ZoneRenderer zr = MapTool.getFrame().getCurrentZoneRenderer();
     Zone zone = zr.getZone();
     SelectionModel selectionModel = zr.getSelectionModel();
 
-    if (parameters == null || parameters.isEmpty()) {
+    if (parameters.isEmpty()) {
       // Deselect all currently selected tokens
       selectionModel.replaceSelection(Collections.emptyList());
     } else if (parameters.size() == 1) {
@@ -82,7 +84,7 @@ public class TokenSelectionFunctions extends AbstractFunction {
         throw new ParserException(
             I18N.getText("macro.function.general.unknownToken", "deselectTokens", paramStr));
       }
-    } else if (parameters.size() == 2) {
+    } else {
       // Either a JSON Array or a String List
       String paramStr = parameters.get(0).toString();
       String delim = parameters.get(1).toString();
@@ -118,14 +120,12 @@ public class TokenSelectionFunctions extends AbstractFunction {
         }
       }
       selectionModel.removeTokensFromSelection(deselectGUIDs);
-    } else {
-      throw new ParserException(
-          I18N.getText(
-              "macro.function.general.tooManyParam", "deselectTokens", 2, parameters.size()));
     }
   }
 
   private void selectTokens(List<Object> parameters) throws ParserException {
+    FunctionUtil.checkNumberParam("selectTokens", parameters, 0, 3);
+
     ZoneRenderer zr = MapTool.getFrame().getCurrentZoneRenderer();
     Zone zone = zr.getZone();
     SelectionModel selectionModel = zr.getSelectionModel();
@@ -133,7 +133,7 @@ public class TokenSelectionFunctions extends AbstractFunction {
     final var newSelection = new ArrayList<GUID>();
     final boolean replaceSelection;
 
-    if (parameters == null || parameters.isEmpty()) {
+    if (parameters.isEmpty()) {
       replaceSelection = true;
       // Select all tokens
       List<Token> allTokens = zone.getTokensOnLayer(zr.getActiveLayer());
@@ -155,7 +155,7 @@ public class TokenSelectionFunctions extends AbstractFunction {
         throw new ParserException(
             I18N.getText("macro.function.general.unknownToken", "selectTokens", paramStr));
       }
-    } else if (parameters.size() == 3) {
+    } else {
       // Either a JSON Array or a String List
       String paramStr = parameters.get(0).toString();
       replaceSelection = !FunctionUtil.getBooleanValue(parameters.get(1).toString());
@@ -189,10 +189,6 @@ public class TokenSelectionFunctions extends AbstractFunction {
           }
         }
       }
-    } else {
-      throw new ParserException(
-          I18N.getText(
-              "macro.function.general.tooManyParam", "selectTokens", 3, parameters.size()));
     }
 
     if (replaceSelection) {
