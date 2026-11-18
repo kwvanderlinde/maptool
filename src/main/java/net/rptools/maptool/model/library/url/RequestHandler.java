@@ -130,7 +130,7 @@ public class RequestHandler {
       responseHeaders.put("Content-Type", "text/html");
       responseHeaders.put(":Status", "200 OK");
 
-      final MapToolVariableResolver resolver = new MapToolVariableResolver(null);
+      final MapToolVariableResolver resolver = new MapToolVariableResolver();
       c =
           new ThreadExecutionHelper<String>()
               .runOnSwingThread(

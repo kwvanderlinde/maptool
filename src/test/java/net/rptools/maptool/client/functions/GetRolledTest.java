@@ -67,7 +67,7 @@ public class GetRolledTest {
 
   private void verifyRolls(String modeExpr, int expectedSize, List<Integer> rolls)
       throws ParserException {
-    Result result = parser.parseExpression(new MapToolVariableResolver(null), modeExpr, false);
+    Result result = parser.parseExpression(new MapToolVariableResolver(), modeExpr, false);
     JsonArray arr = (JsonArray) result.getValue();
     assertEquals(expectedSize, rolls.size(), "Wrong number of rolls found");
     assertEquals(rolls.size(), arr.size(), "Number of rolls does not match");
@@ -96,10 +96,10 @@ public class GetRolledTest {
     // start with 2 rolls back to back, so both getRolled() and getNewRolls() should contain all
     // dice
     mostRecentRolls =
-        parser.parseExpression(new MapToolVariableResolver(null), "2d6", false).getRolled();
+        parser.parseExpression(new MapToolVariableResolver(), "2d6", false).getRolled();
     allRollsSoFar.addAll(mostRecentRolls);
     mostRecentRolls =
-        parser.parseExpression(new MapToolVariableResolver(null), "2d20k1", false).getRolled();
+        parser.parseExpression(new MapToolVariableResolver(), "2d20k1", false).getRolled();
     allRollsSoFar.addAll(mostRecentRolls);
     verifyNewRolls(4, allRollsSoFar);
     verifyAllRolls(4, allRollsSoFar);
@@ -107,7 +107,7 @@ public class GetRolledTest {
     // after this roll getNewRolls() should only have the most recent rolls, getRolled() should have
     // all dice
     mostRecentRolls =
-        parser.parseExpression(new MapToolVariableResolver(null), "3d6", false).getRolled();
+        parser.parseExpression(new MapToolVariableResolver(), "3d6", false).getRolled();
     allRollsSoFar.addAll(mostRecentRolls);
     verifyNewRolls(3, mostRecentRolls);
     verifyAllRolls(7, allRollsSoFar);
@@ -160,7 +160,7 @@ public class GetRolledTest {
     parser.parseExpression(resolver, "defineFunction('testUDF', 'testUDF@TOKEN')", false);
 
     mostRecentRolls =
-        parser.parseExpression(new MapToolVariableResolver(null), "2d6", false).getRolled();
+        parser.parseExpression(new MapToolVariableResolver(), "2d6", false).getRolled();
     allRollsSoFar.addAll(mostRecentRolls);
     verifyNewRolls(2, mostRecentRolls);
     verifyAllRolls(2, allRollsSoFar);
@@ -198,7 +198,7 @@ public class GetRolledTest {
     List<Integer> mostRecentRolls;
     List<Integer> allRollsSoFar = new ArrayList<>();
 
-    MapToolVariableResolver resolver = new MapToolVariableResolver(null);
+    MapToolVariableResolver resolver = new MapToolVariableResolver();
     parser.parseExpression(resolver, "vNames = json.append('', 'henchman1')", false);
     parser.parseExpression(
         resolver, "vStats = json.append('', 'Str', 'Dex', 'Con', 'Wis', 'Int', 'Cha')", false);
@@ -248,7 +248,7 @@ public class GetRolledTest {
   public void testExec() throws ParserException {
     String result =
         parser.parseLine(
-            new MapToolVariableResolver(null),
+            new MapToolVariableResolver(),
             String.format("[h: 3d4]\n[r: execMacro(\"%s\")]", UDF_CONTENTS),
             null);
     JsonObject json =
@@ -270,7 +270,7 @@ public class GetRolledTest {
   public void testEvalMacro() throws ParserException {
     String result =
         parser.parseLine(
-            new MapToolVariableResolver(null),
+            new MapToolVariableResolver(),
             String.format("[h: 4d6]\n[r: evalMacro(\"%s\")]", UDF_CONTENTS),
             null);
     JsonObject json =

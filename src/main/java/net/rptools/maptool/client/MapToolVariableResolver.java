@@ -108,6 +108,10 @@ public class MapToolVariableResolver implements VariableResolver {
 
   private boolean autoPrompt;
 
+  public MapToolVariableResolver() {
+    this(null);
+  }
+
   public MapToolVariableResolver(Token tokenInContext) {
     this.tokenInContext = tokenInContext;
     autoPrompt = true;
