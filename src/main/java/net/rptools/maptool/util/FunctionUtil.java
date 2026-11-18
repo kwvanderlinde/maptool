@@ -151,6 +151,15 @@ public class FunctionUtil {
     }
   }
 
+  public static @Nonnull Zone getCurrentZone(VariableResolver resolver, String functionName)
+      throws ParserException {
+    Zone zone = MapTool.getClient().getCurrentZone();
+    if (zone == null) {
+      throw new ParserException(I18N.getText(KEY_NO_CURRENT_MAP, functionName));
+    }
+    return zone;
+  }
+
   /**
    * Gets the token from the specified index or returns the token in context. This method will check
    * the list size before trying to retrieve the token so it is safe to use for functions that have
