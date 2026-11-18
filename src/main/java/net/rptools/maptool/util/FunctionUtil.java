@@ -189,7 +189,7 @@ public class FunctionUtil {
       if (!MapTool.getParser().isMacroTrusted()) {
         throw new ParserException(I18N.getText(KEY_NO_PERM, functionName));
       }
-      token = FindTokenFunctions.findToken(id, map);
+      token = FindTokenFunctions.findToken(id, map).map(ZoneEntity::entity).orElse(null);
       if (token == null) {
         if (map == null) {
           throw new ParserException(I18N.getText(KEY_UNKNOWN_TOKEN, functionName, id));

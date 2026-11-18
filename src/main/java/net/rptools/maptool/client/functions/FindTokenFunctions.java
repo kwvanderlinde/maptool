@@ -23,7 +23,6 @@ import java.awt.*;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.List;
-import javax.annotation.Nullable;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.MapToolVariableResolver;
@@ -606,7 +605,10 @@ public class FindTokenFunctions extends AbstractFunction {
       TokenLocationFunctions instance = TokenLocationFunctions.getInstance();
       Token token;
       if (range.has("token")) {
-        token = findToken(range.get("token").getAsString(), mapName);
+        token =
+            findToken(range.get("token").getAsString(), mapName)
+                .map(ZoneEntity::entity)
+                .orElse(null);
         if (token == null) {
           throw new ParserException(
               I18N.getText(
@@ -619,7 +621,10 @@ public class FindTokenFunctions extends AbstractFunction {
         if (guid != null) {
           token = zone.getToken(guid);
         } else {
-          token = findToken(MapTool.getClient().getImpersonation().getIdentity(), mapName);
+          token =
+              findToken(MapTool.getClient().getImpersonation().getIdentity(), mapName)
+                  .map(ZoneEntity::entity)
+                  .orElse(null);
         }
         if (token == null) {
           throw new ParserException(
@@ -659,7 +664,10 @@ public class FindTokenFunctions extends AbstractFunction {
       TokenLocationFunctions instance = TokenLocationFunctions.getInstance();
       Token token;
       if (area.has("token")) {
-        token = findToken(area.get("token").getAsString(), mapName);
+        token =
+            findToken(area.get("token").getAsString(), mapName)
+                .map(ZoneEntity::entity)
+                .orElse(null);
         if (token == null) {
           throw new ParserException(
               I18N.getText(
@@ -672,7 +680,10 @@ public class FindTokenFunctions extends AbstractFunction {
         if (guid != null) {
           token = zone.getToken(guid);
         } else {
-          token = findToken(MapTool.getClient().getImpersonation().getIdentity(), mapName);
+          token =
+              findToken(MapTool.getClient().getImpersonation().getIdentity(), mapName)
+                  .map(ZoneEntity::entity)
+                  .orElse(null);
         }
         if (token == null) {
           throw new ParserException(
@@ -930,8 +941,7 @@ public class FindTokenFunctions extends AbstractFunction {
    * @return the token Id, or a blank string if none found.
    */
   private String findTokenId(String identifier, String zoneName) {
-    Token token = findToken(identifier, zoneName);
-    return token == null ? "" : token.getId().toString();
+    return findToken(identifier, zoneName).map(ze -> ze.entity().getId().toString()).orElse("");
   }
 
   /**
@@ -941,24 +951,31 @@ public class FindTokenFunctions extends AbstractFunction {
    * @param zoneNameOrId the name or ID of the zone. If null, check current zone.
    * @return the token, or null if none found.
    */
-  public static @Nullable Token findToken(String identifier, String zoneNameOrId) {
+  public static Optional<ZoneEntity<Token>> findToken(String identifier, String zoneNameOrId) {
     if (identifier == null) {
-      return null;
+      return Optional.empty();
     }
-    if (zoneNameOrId == null || zoneNameOrId.length() == 0) {
+    if (zoneNameOrId == null || zoneNameOrId.isEmpty()) {
       // Null with no map open, and also with no window at all, as on a server run without a UI.
       Zone zone = MapTool.getClient().getCurrentZone();
-      return zone == null ? null : zone.resolveToken(identifier);
-    } else {
-      var campaign = MapTool.getClient().getCampaign();
+      if (zone == null) {
+        return Optional.empty();
+      }
 
+      var token = zone.resolveToken(identifier);
+      if (token == null) {
+        return Optional.empty();
+      }
+
+      return Optional.of(new ZoneEntity<>(zone, token));
+    } else {
       if (!GUID.isNotGUID(zoneNameOrId)) {
         try {
-          final var zone = campaign.getZone(GUID.valueOf(zoneNameOrId));
-          if (zone != null) {
-            Token token = zone.resolveToken(identifier);
+          final var zr = MapTool.getFrame().getZoneRenderer(GUID.valueOf(zoneNameOrId));
+          if (zr != null) {
+            Token token = zr.getZone().resolveToken(identifier);
             if (token != null) {
-              return token;
+              return Optional.of(new ZoneEntity<>(zr.getZone(), token));
             }
           }
         } catch (InvalidGUIDException ignored) {
@@ -966,16 +983,18 @@ public class FindTokenFunctions extends AbstractFunction {
         }
       }
 
-      for (Zone zone : campaign.getZones()) {
+      List<ZoneRenderer> zrenderers = MapTool.getFrame().getZoneRenderers();
+      for (ZoneRenderer zr : zrenderers) {
+        Zone zone = zr.getZone();
         if (zone.getName().equalsIgnoreCase(zoneNameOrId)) {
           Token token = zone.resolveToken(identifier);
           if (token != null) {
-            return token;
+            return Optional.of(new ZoneEntity<>(zone, token));
           }
         }
       }
     }
-    return null;
+    return Optional.empty();
   }
 
   /**
