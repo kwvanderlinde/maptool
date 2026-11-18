@@ -817,7 +817,7 @@ public class FindTokenFunctions extends AbstractFunction {
         guid = MapTool.getFrame().getImpersonatePanel().getTokenId();
         if (guid != null) {
           // Searches all maps to find impersonated token
-          t = findToken(guid);
+          t = findToken(guid).map(ZoneEntity::entity).orElse(null);
         }
         if (t != null) {
           tokenList = getTokensFiltered(Collections.singletonList(t), originalList, match);
@@ -984,22 +984,17 @@ public class FindTokenFunctions extends AbstractFunction {
    * @param identifier to check for
    * @return the token, or {@code null} if no token is found.
    */
-  public static @Nullable Token findToken(final GUID identifier) {
+  public static Optional<ZoneEntity<Token>> findToken(final GUID identifier) {
     final MapToolClient client = MapTool.getClient();
 
     final Zone currentZone = client.getCurrentZone();
     if (currentZone != null) {
       var token = currentZone.getToken(identifier);
       if (token != null) {
-        return token;
+        return Optional.of(new ZoneEntity<>(currentZone, token));
       }
     }
 
-    var result = client.getCampaign().findToken(identifier);
-    if (result != null) {
-      return result.entity();
-    }
-
-    return null;
+    return Optional.ofNullable(client.getCampaign().findToken(identifier));
   }
 }
