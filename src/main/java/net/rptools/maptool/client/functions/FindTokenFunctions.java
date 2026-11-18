@@ -912,37 +912,6 @@ public class FindTokenFunctions extends AbstractFunction {
   }
 
   /**
-   * Finds the specified token by ID.
-   *
-   * @param guid the id of the token.
-   * @param zoneName the name of the zone. If null, check current zone.
-   * @return the token, or null if none found.
-   */
-  public static Token findToken(GUID guid, String zoneName) {
-    if (guid == null) {
-      return null;
-    }
-    if (zoneName == null || zoneName.length() == 0) {
-      // Null with no map open, and also with no window at all, as on a server run without a UI. The
-      // impersonation identity looks its token up through here.
-      Zone zone = MapTool.getClient().getCurrentZone();
-      return zone == null ? null : zone.getToken(guid);
-    } else {
-      List<ZoneRenderer> zrenderers = MapTool.getFrame().getZoneRenderers();
-      for (ZoneRenderer zr : zrenderers) {
-        Zone zone = zr.getZone();
-        if (zone.getName().equalsIgnoreCase(zoneName)) {
-          Token token = zone.getToken(guid);
-          if (token != null) {
-            return token;
-          }
-        }
-      }
-    }
-    return null;
-  }
-
-  /**
    * find a token on all maps (first matching is returned)
    *
    * @param identifier to check for
