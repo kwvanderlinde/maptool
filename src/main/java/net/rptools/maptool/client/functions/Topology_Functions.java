@@ -378,7 +378,8 @@ public class Topology_Functions extends AbstractFunction {
      * See bug [#6253](https://github.com/RPTools/maptool/issues/6253)
      */
     if (parameters.size() == 1) {
-      token = FindTokenFunctions.findToken(parameters.get(0).toString(), null);
+      Zone currentZone = MapTool.getClient().getCurrentZone();
+      token = currentZone == null ? null : currentZone.resolveToken(parameters.get(0).toString());
       if (token == null) {
         throw new ParserException(
             I18N.getText(
@@ -528,7 +529,7 @@ public class Topology_Functions extends AbstractFunction {
     Token token;
     if (parameters.size() >= 2
         && (!(parameters.get(parameters.size() - 1) instanceof BigDecimal))) {
-      token = FindTokenFunctions.findToken(parameters.get(parameters.size() - 1).toString(), null);
+      token = zone.resolveToken(parameters.get(parameters.size() - 1).toString());
 
       if (token == null) {
         throw new ParserException(
