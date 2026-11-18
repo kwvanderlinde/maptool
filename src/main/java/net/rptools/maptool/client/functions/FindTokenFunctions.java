@@ -995,11 +995,9 @@ public class FindTokenFunctions extends AbstractFunction {
       }
     }
 
-    for (var zone : client.getCampaign().getZones()) {
-      var token = zone.getToken(identifier);
-      if (token != null) {
-        return token;
-      }
+    var result = client.getCampaign().findToken(identifier);
+    if (result != null) {
+      return result.entity();
     }
 
     return null;
