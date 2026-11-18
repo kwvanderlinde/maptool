@@ -23,7 +23,9 @@ import java.awt.*;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.List;
+import javax.annotation.Nullable;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolClient;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
@@ -939,7 +941,7 @@ public class FindTokenFunctions extends AbstractFunction {
    * @param zoneNameOrId the name or ID of the zone. If null, check current zone.
    * @return the token, or null if none found.
    */
-  public static Token findToken(String identifier, String zoneNameOrId) {
+  public static @Nullable Token findToken(String identifier, String zoneNameOrId) {
     if (identifier == null) {
       return null;
     }
@@ -948,11 +950,13 @@ public class FindTokenFunctions extends AbstractFunction {
       Zone zone = MapTool.getClient().getCurrentZone();
       return zone == null ? null : zone.resolveToken(identifier);
     } else {
+      var campaign = MapTool.getClient().getCampaign();
+
       if (!GUID.isNotGUID(zoneNameOrId)) {
         try {
-          final var zr = MapTool.getFrame().getZoneRenderer(GUID.valueOf(zoneNameOrId));
-          if (zr != null) {
-            Token token = zr.getZone().resolveToken(identifier);
+          final var zone = campaign.getZone(GUID.valueOf(zoneNameOrId));
+          if (zone != null) {
+            Token token = zone.resolveToken(identifier);
             if (token != null) {
               return token;
             }
@@ -962,9 +966,7 @@ public class FindTokenFunctions extends AbstractFunction {
         }
       }
 
-      List<ZoneRenderer> zrenderers = MapTool.getFrame().getZoneRenderers();
-      for (ZoneRenderer zr : zrenderers) {
-        Zone zone = zr.getZone();
+      for (Zone zone : campaign.getZones()) {
         if (zone.getName().equalsIgnoreCase(zoneNameOrId)) {
           Token token = zone.resolveToken(identifier);
           if (token != null) {
@@ -980,21 +982,26 @@ public class FindTokenFunctions extends AbstractFunction {
    * find a token on all maps (first matching is returned)
    *
    * @param identifier to check for
-   * @return the token
+   * @return the token, or {@code null} if no token is found.
    */
-  public static Token findToken(final GUID identifier) {
-    final Zone currentZone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
-    Token token = currentZone.getToken(identifier);
-    if (token == null) {
-      final List<ZoneRenderer> zrenderers = MapTool.getFrame().getZoneRenderers();
-      for (final ZoneRenderer zr : zrenderers) {
-        final Zone zone = zr.getZone();
-        token = zone.getToken(identifier);
-        if (token != null) {
-          return token;
-        }
+  public static @Nullable Token findToken(final GUID identifier) {
+    final MapToolClient client = MapTool.getClient();
+
+    final Zone currentZone = client.getCurrentZone();
+    if (currentZone != null) {
+      var token = currentZone.getToken(identifier);
+      if (token != null) {
+        return token;
       }
     }
-    return token;
+
+    for (var zone : client.getCampaign().getZones()) {
+      var token = zone.getToken(identifier);
+      if (token != null) {
+        return token;
+      }
+    }
+
+    return null;
   }
 }
