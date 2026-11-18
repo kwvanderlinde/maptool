@@ -15,7 +15,6 @@
 package net.rptools.maptool.client;
 
 import javax.annotation.Nullable;
-import net.rptools.maptool.client.functions.FindTokenFunctions;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Token;
 
@@ -118,8 +117,17 @@ public class TokenIdentity {
    * @return the token of the identity, looked up on the current map, or {@code null} if it is not
    *     there or no map is open.
    */
-  public Token getToken() {
-    return FindTokenFunctions.findToken(identityGUID, null);
+  public @Nullable Token getToken() {
+    if (identityGUID == null) {
+      return null;
+    }
+
+    var zone = MapTool.getClient().getCurrentZone();
+    if (zone == null) {
+      return null;
+    }
+
+    return zone.getToken(identityGUID);
   }
 
   /**
@@ -134,10 +142,6 @@ public class TokenIdentity {
    *     open.
    */
   public boolean validToken() {
-    if (identityGUID == null) {
-      return false;
-    } else {
-      return FindTokenFunctions.findToken(identityGUID, null) != null;
-    }
+    return getToken() != null;
   }
 }
