@@ -368,6 +368,15 @@ public class Campaign implements Serializable {
     return zones.get(id);
   }
 
+  public @Nullable Zone getZoneByName(String name) {
+    for (var zone : getZones()) {
+      if (name.equals(zone.getName())) {
+        return zone;
+      }
+    }
+    return null;
+  }
+
   /**
    * Create an entry for the given <code>Zone</code> in the map, using <code>zone</code>'s {@link
    * Zone#getId()} method.
