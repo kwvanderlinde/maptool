@@ -403,12 +403,21 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(UpdateTokenPropertyMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          Zone zone = server.getCampaign().getZone(GUID.valueOf(msg.getZoneGuid()));
-          Token token = zone.getToken(GUID.valueOf(msg.getTokenGuid()));
-          token.updateProperty(
-              zone,
-              Token.Update.valueOf(msg.getProperty().name()),
-              msg.getValuesList()); // update server version of token
+          var zoneGUID = GUID.valueOf(msg.getZoneGuid());
+          var tokenGUID = GUID.valueOf(msg.getTokenGuid());
+
+          Zone zone = server.getCampaign().getZone(zoneGUID);
+          if (zone == null) {
+            // Not found. Nothing to action.
+            return;
+          }
+
+          Token token = zone.getToken(tokenGUID);
+          if (token != null) {
+            Token.Update update = Token.Update.valueOf(msg.getProperty().name());
+            token.updateProperty(
+                zone, update, msg.getValuesList()); // update server version of token
+          }
         });
   }
 

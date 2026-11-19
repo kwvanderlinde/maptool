@@ -411,8 +411,14 @@ public class ClientMessageHandler implements MessageHandler {
     EventQueue.invokeLater(
         () -> {
           var zoneGUID = GUID.valueOf(msg.getZoneGuid());
-          var zone = client.getCampaign().getZone(zoneGUID);
           var tokenGUID = GUID.valueOf(msg.getTokenGuid());
+
+          var zone = client.getCampaign().getZone(zoneGUID);
+          if (zone == null) {
+            // Not found. Nothing to action.
+            return;
+          }
+
           var token = zone.getToken(tokenGUID);
           if (token != null) {
             Token.Update update = Token.Update.valueOf(msg.getProperty().name());

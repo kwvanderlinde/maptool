@@ -2957,7 +2957,10 @@ public class Token implements Cloneable {
         break;
     }
     if (lightChanged) {
-      getZoneRenderer().flushLight(); // flush lights if it changed
+      var renderer = MapTool.getFrame().getZoneRenderer(zone);
+      if (renderer != null) {
+        renderer.flushLight(); // flush lights if it changed
+      }
     }
     if (macroChanged) {
       zone.tokenMacroChanged(this);
