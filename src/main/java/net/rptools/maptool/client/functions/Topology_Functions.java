@@ -36,7 +36,6 @@ import net.rptools.maptool.client.ui.zone.vbl.TokenVBL.JTS_SimplifyMethodType;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
-import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
@@ -388,7 +387,7 @@ public class Topology_Functions extends AbstractFunction {
       }
     } else if (parameters.size() == 0) {
       MapToolVariableResolver res = (MapToolVariableResolver) resolver;
-      token = res.getTokenInContext().map(ZoneEntity::entity).orElse(null);
+      token = res.getTokenInContext();
       if (token == null) {
         throw new ParserException(
             I18N.getText("macro.function.general.noImpersonated", functionName));
@@ -539,8 +538,7 @@ public class Topology_Functions extends AbstractFunction {
       }
     } else {
       MapToolVariableResolver res = (MapToolVariableResolver) resolver;
-      // TODO this allows transfering to/from tokens from another map. Is that intended?
-      token = res.getTokenInContext().map(ZoneEntity::entity).orElse(null);
+      token = res.getTokenInContext();
       if (token == null) {
         throw new ParserException(
             I18N.getText("macro.function.general.noImpersonated", functionName));

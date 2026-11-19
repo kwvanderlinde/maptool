@@ -19,8 +19,6 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Token;
-import net.rptools.maptool.model.Zone;
-import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
@@ -52,8 +50,7 @@ public class SwitchTokenFunction extends AbstractFunction {
     }
 
     Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, -1);
-    Zone zone = token.getZoneRenderer().getZone();
-    ((MapToolVariableResolver) resolver).setTokenInContext(new ZoneEntity<>(zone, token));
+    ((MapToolVariableResolver) resolver).setTokenIncontext(token);
     return "";
   }
 }

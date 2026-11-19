@@ -41,7 +41,6 @@ import net.rptools.maptool.model.GridType;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.TokenProperty;
 import net.rptools.maptool.model.Zone;
-import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.maptool.model.gamedata.MTScriptDataConversion;
 import net.rptools.maptool.model.library.LibraryManager;
 import net.rptools.maptool.model.library.data.LibraryData;
@@ -371,8 +370,7 @@ public class TokenPropertyFunctions extends AbstractFunction {
      */
     if (functionName.equalsIgnoreCase("getProperty")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 3);
-      ZoneEntity<Token> token =
-          FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, parameters, 1, 2);
+      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 1, 2);
       Object val =
           new MapToolVariableResolver(token)
               .getEvaluatedTokenProperty(parameters.get(0).toString());

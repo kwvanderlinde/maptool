@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.annotation.Nonnull;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.MapToolVariableResolver;
@@ -31,7 +30,6 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
-import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.parser.ParserException;
 
 @MacroDefinition(
@@ -71,21 +69,17 @@ public class SetTokenPropertyMacro implements Macro {
       MapTool.addLocalMessage(I18N.getText("settokenproperty.param"));
       return;
     }
+    Set<Token> selectedTokenSet = getTokens(tokenName);
 
-    Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
-    Set<Token> selectedTokenSet = getTokens(zone, tokenName);
-
+    assert selectedTokenSet != null : I18N.getText("settokenproperty.unknownTokens");
     if (selectedTokenSet.isEmpty()) {
       MapTool.addLocalMessage(I18N.getText("settokenproperty.unknownTokens"));
       return;
     }
     for (Token token : selectedTokenSet) {
-      var zoneEntity = new ZoneEntity<>(zone, token);
-
       for (String command : commands) {
         try {
-          MapTool.getParser()
-              .parseExpression(new MapToolVariableResolver(zoneEntity), command, false);
+          MapTool.getParser().parseExpression(new MapToolVariableResolver(token), command, false);
         } catch (ParserException e) {
           MapTool.addLocalMessage(I18N.getText("msg.error.evaluatingExpr", e.getMessage()));
           break;
@@ -109,10 +103,11 @@ public class SetTokenPropertyMacro implements Macro {
    * @return The tokens. If the token in <code>tokenName</code> is empty or <code>tokenName</code>
    *     is null then the selected tokens are returned.
    */
-  protected @Nonnull Set<Token> getTokens(Zone zone, String tokenName) {
-    Set<Token> selectedTokenSet = new HashSet<>();
+  protected Set<Token> getTokens(String tokenName) {
+    Set<Token> selectedTokenSet = new HashSet<Token>();
 
-    if (tokenName != null && !tokenName.isEmpty()) {
+    if (tokenName != null && tokenName.length() > 0) {
+      Zone zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
       Token token = zone.getTokenByName(tokenName);
       /*
        * Give the player the benefit of the doubt. If they specified a token that is invisible then try the name as a property. This will also stop players that are trying to "guess" token names

@@ -27,17 +27,14 @@ import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
 import net.rptools.maptool.client.macro.MacroLocationFactory;
-import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.MacroButtonProperties;
 import net.rptools.maptool.model.Token;
-import net.rptools.maptool.model.Zone;
-import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.parser.ParserException;
 import org.junit.jupiter.api.*;
 
 public class GetRolledTest {
 
-  private static MapToolLineParser parser;
+  static MapToolLineParser parser;
 
   private static MacroLocationFactory factory;
 
@@ -56,21 +53,11 @@ public class GetRolledTest {
               + " rolls_2, 'all_rolls', getRolled())]");
 
   @BeforeAll
-  public static void setUpAll() {
+  public static void setUp() {
     parser = MapTool.getParser();
     factory = MacroLocationFactory.getInstance();
     var loc = factory.createChatLocation();
     parser.enterContext(new MapToolMacroContext("test", loc, true));
-  }
-
-  private Campaign campaign;
-  private Zone zone;
-
-  @BeforeEach
-  public void setUp() {
-    campaign = new Campaign();
-    zone = new Zone();
-    campaign.putZone(zone);
   }
 
   @AfterEach
@@ -140,7 +127,7 @@ public class GetRolledTest {
     token.setName("testUDF");
     token.saveMacro(macro);
 
-    MapToolVariableResolver resolver = new MapToolVariableResolver(new ZoneEntity<>(zone, token));
+    MapToolVariableResolver resolver = new MapToolVariableResolver(token);
     parser.parseExpression(resolver, "defineFunction('testUDF', 'testUDF@TOKEN')", false);
 
     Result result = parser.parseExpression(resolver, "testUDF()", false);
@@ -169,7 +156,7 @@ public class GetRolledTest {
     token.setName("testUDF");
     token.saveMacro(macro);
 
-    MapToolVariableResolver resolver = new MapToolVariableResolver(new ZoneEntity<>(zone, token));
+    MapToolVariableResolver resolver = new MapToolVariableResolver(token);
     parser.parseExpression(resolver, "defineFunction('testUDF', 'testUDF@TOKEN')", false);
 
     mostRecentRolls =
@@ -234,7 +221,7 @@ public class GetRolledTest {
     token.saveMacro(macro);
 
     var loc = factory.createChatLocation();
-    MapToolVariableResolver resolver = new MapToolVariableResolver(new ZoneEntity<>(zone, token));
+    MapToolVariableResolver resolver = new MapToolVariableResolver(token);
 
     String result =
         parser.parseLine(

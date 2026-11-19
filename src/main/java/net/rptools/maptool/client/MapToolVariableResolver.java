@@ -27,7 +27,6 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 import java.util.*;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.swing.JOptionPane;
 import net.rptools.CaseInsensitiveHashMap;
 import net.rptools.lib.StringUtil;
@@ -105,22 +104,15 @@ public class MapToolVariableResolver implements VariableResolver {
           GM_PANEL);
   private final Map<String, Object> variables = new CaseInsensitiveHashMap<>();
 
-  private @Nullable ZoneEntity<Token> tokenInContext;
+  private Token tokenInContext;
 
   private boolean autoPrompt;
 
   public MapToolVariableResolver() {
-    this((ZoneEntity<Token>) null);
+    this(null);
   }
 
-  public MapToolVariableResolver(@Nullable Token tokenInContext) {
-    this(
-        tokenInContext == null
-            ? null
-            : new ZoneEntity<>(tokenInContext.getZoneRenderer().getZone(), tokenInContext));
-  }
-
-  public MapToolVariableResolver(@Nullable ZoneEntity<Token> tokenInContext) {
+  public MapToolVariableResolver(Token tokenInContext) {
     this.tokenInContext = tokenInContext;
     autoPrompt = true;
     // Set the default macro.args to "" so that it is always present.
@@ -163,9 +155,9 @@ public class MapToolVariableResolver implements VariableResolver {
       return "";
     }
 
-    Object val = tokenInContext.entity().getProperty(key);
+    Object val = tokenInContext.getProperty(key);
     if (val == null) {
-      val = tokenInContext.entity().getPropertyDefault(key);
+      val = tokenInContext.getPropertyDefault(key);
     }
     if (val == null) {
       return "";
@@ -184,7 +176,7 @@ public class MapToolVariableResolver implements VariableResolver {
       return "";
     }
 
-    Object val = tokenInContext.entity().getPropertyDefault(key);
+    Object val = tokenInContext.getPropertyDefault(key);
     if (val == null) {
       return "";
     }
@@ -232,8 +224,8 @@ public class MapToolVariableResolver implements VariableResolver {
       LOGGER.debug(
           "Evaluating property: '{}' for token {} ({})----------------------------------------------------------------------------------",
           key,
-          tokenInContext == null ? "<null>" : tokenInContext.entity().getName(),
-          tokenInContext == null ? "<null>" : tokenInContext.entity().getId());
+          tokenInContext.getName(),
+          tokenInContext.getId());
       val = MapTool.getParser().parseLine(this, val.toString(), null);
     } catch (ParserException pe) {
       LOGGER.debug("Ignoring Parse Exception, continuing to evaluate {}", key);
@@ -282,8 +274,8 @@ public class MapToolVariableResolver implements VariableResolver {
    *
    * @return the token in context
    */
-  public Optional<ZoneEntity<Token>> getTokenInContext() {
-    return Optional.ofNullable(tokenInContext);
+  public Token getTokenInContext() {
+    return tokenInContext;
   }
 
   @Override
@@ -305,34 +297,34 @@ public class MapToolVariableResolver implements VariableResolver {
     if (tokenInContext != null) {
       if (name.startsWith(STATE_PREFIX)) {
         String stateName = name.substring(STATE_PREFIX.length());
-        return TokenStateFunction.getState(tokenInContext.entity(), stateName);
+        return TokenStateFunction.getState(tokenInContext, stateName);
       } else if (name.startsWith(BAR_PREFIX)) {
         String barName = name.substring(BAR_PREFIX.length());
-        return TokenBarFunction.getValue(tokenInContext.entity(), barName);
+        return TokenBarFunction.getValue(getTokenInContext(), barName);
       } else if (name.equals(TOKEN_HALO)) {
         // We don't want this evaluated as the # format is more useful to us then the
         // evaluated
         // format.
-        return TokenHaloFunctions.getHalo(tokenInContext.entity()).toString();
+        return TokenHaloFunctions.getHalo(tokenInContext).toString();
       } else if (name.equals(TOKEN_NAME)) {
         // Don't evaluate return value.
-        return TokenNameFunction.getName(tokenInContext.entity());
+        return TokenNameFunction.getName(tokenInContext);
       } else if (name.equals(TOKEN_GMNAME)) {
         // Don't evaluate return value.
-        return TokenGMNameFunction.getGMName(tokenInContext.entity());
+        return TokenGMNameFunction.getGMName(tokenInContext);
       } else if (name.equals(TOKEN_LABEL)) {
         // Don't evaluate return value.
-        return TokenLabelFunction.getLabel(tokenInContext.entity());
+        return TokenLabelFunction.getLabel(tokenInContext);
       } else if (name.equals(TOKEN_VISIBLE)) {
         // Don't evaluate return value.
-        return TokenVisibleFunction.getVisible(tokenInContext.entity());
+        return TokenVisibleFunction.getVisible(tokenInContext);
       } else if (name.equals(TOKEN_INITIATIVE)) {
-        return TokenInitFunction.getInitiative(tokenInContext.entity());
+        return TokenInitFunction.getInitiative(tokenInContext);
       } else if (name.equals(TOKEN_INITIATIVE_HOLD)) {
-        return TokenInitHoldFunction.getInitiativeHold(tokenInContext.entity());
+        return TokenInitHoldFunction.getInitiativeHold(tokenInContext);
       } // endif
 
-      if (this.validTokenProperty(name, tokenInContext.entity())) {
+      if (this.validTokenProperty(name, tokenInContext)) {
         result = getEvaluatedTokenProperty(name);
       } else {
         // If the token has no property of that name check to see if there s a defaulted
@@ -340,7 +332,7 @@ public class MapToolVariableResolver implements VariableResolver {
         List<TokenProperty> propertyList =
             MapTool.getCampaign()
                 .getCampaignProperties()
-                .getTokenPropertyList(tokenInContext.entity().getPropertyType());
+                .getTokenPropertyList(tokenInContext.getPropertyType());
         if (propertyList != null) {
           for (TokenProperty property : propertyList) {
             if (name.equalsIgnoreCase(property.getName())) {
@@ -368,19 +360,21 @@ public class MapToolVariableResolver implements VariableResolver {
 
     // Prompt
     if ((result == null && autoPrompt) || mods == VariableModifiers.Prompt) {
-      String dialogTitle = I18N.getText("lineParser.dialogTitleNoToken");
-      if (tokenInContext != null) {
-        var nameToUse =
-            (!StringUtil.isEmpty(tokenInContext.entity().getGMName()) && MapTool.getPlayer().isGM())
-                ? tokenInContext.entity().getGMName()
-                : tokenInContext.entity().getName();
-        dialogTitle = I18N.getText("lineParser.dialogTitle", nameToUse);
+      String DialogTitle = I18N.getText("lineParser.dialogTitleNoToken");
+      if (tokenInContext != null
+          && !StringUtil.isEmpty(tokenInContext.getGMName())
+          && MapTool.getPlayer().isGM()) {
+        DialogTitle = I18N.getText("lineParser.dialogTitle", tokenInContext.getGMName());
+      }
+      if (tokenInContext != null
+          && (StringUtil.isEmpty(tokenInContext.getGMName()) || !MapTool.getPlayer().isGM())) {
+        DialogTitle = I18N.getText("lineParser.dialogTitle", tokenInContext.getName());
       }
       result =
           JOptionPane.showInputDialog(
               MapTool.getFrame(),
               I18N.getText("lineParser.dialogValueFor", name),
-              dialogTitle,
+              DialogTitle,
               JOptionPane.QUESTION_MESSAGE,
               null,
               null,
@@ -440,7 +434,7 @@ public class MapToolVariableResolver implements VariableResolver {
     // this logic allows unit tests to execute MT script that changes token properties
     // there should be no other context where we have no server of any kind
     MapTool.serverCommand()
-        .updateTokenProperty(tokenInContext.entity(), Token.Update.setProperty, varname, value);
+        .updateTokenProperty(tokenInContext, Token.Update.setProperty, varname, value);
   }
 
   @Override
@@ -452,43 +446,43 @@ public class MapToolVariableResolver implements VariableResolver {
       throw new ParserException(I18N.getText("lineParser.cantAssignToConstant", varname));
     }
 
-    if (tokenInContext != null && validTokenProperty(varname, tokenInContext.entity())) {
-      updateTokenProperty(tokenInContext.entity(), varname, value.toString());
+    if (tokenInContext != null && validTokenProperty(varname, tokenInContext)) {
+      updateTokenProperty(tokenInContext, varname, value.toString());
     }
 
     // Check to see if it is a token state.
     if (varname.startsWith(STATE_PREFIX)) {
       String stateName = varname.substring(STATE_PREFIX.length());
-      TokenStateFunction.setState(tokenInContext.entity(), stateName, value);
+      TokenStateFunction.setState(tokenInContext, stateName, value);
       return;
     } else if (varname.startsWith(BAR_PREFIX)) {
       String barName = varname.substring(BAR_PREFIX.length());
-      TokenBarFunction.setValue(tokenInContext.entity(), barName, value);
+      TokenBarFunction.setValue(tokenInContext, barName, value);
       return;
     } else if (varname.equals(TOKEN_HALO)) {
-      TokenHaloFunctions.setHalo(tokenInContext.entity(), value);
+      TokenHaloFunctions.setHalo(tokenInContext, value);
       return;
     } else if (varname.equals(TOKEN_NAME)) {
       if (value.toString().equals("")) {
         throw new ParserException(I18N.getText("lineParser.emptyTokenName"));
       }
-      TokenNameFunction.setName(tokenInContext.entity(), value.toString());
+      TokenNameFunction.setName(tokenInContext, value.toString());
       return;
     } else if (varname.equals(TOKEN_GMNAME)) {
-      TokenGMNameFunction.setGMName(tokenInContext.entity(), value.toString());
+      TokenGMNameFunction.setGMName(tokenInContext, value.toString());
       return;
     } else if (varname.equals(TOKEN_LABEL)) {
-      TokenLabelFunction.setLabel(tokenInContext.entity(), value.toString());
+      TokenLabelFunction.setLabel(tokenInContext, value.toString());
       return;
     } else if (varname.endsWith(TOKEN_VISIBLE)) {
-      TokenVisibleFunction.setVisible(tokenInContext.entity(), value.toString());
+      TokenVisibleFunction.setVisible(tokenInContext, value.toString());
       return;
     } else if (varname.equals(TOKEN_INITIATIVE)) {
-      TokenInitFunction.setInitiative(tokenInContext.entity(), value.toString());
+      TokenInitFunction.setInitiative(tokenInContext, value.toString());
       return;
     } else if (varname.equals(TOKEN_INITIATIVE_HOLD)) {
       boolean set = FunctionUtil.getBooleanValue(value);
-      TokenInitHoldFunction.setInitiativeHold(tokenInContext.entity(), set);
+      TokenInitHoldFunction.setInitiativeHold(tokenInContext, set);
       return;
     } else if (varname.equals(INITIATIVE_CURRENT)) {
       if (!MapTool.getFrame().getInitiativePanel().hasGMPermission())
@@ -527,7 +521,7 @@ public class MapToolVariableResolver implements VariableResolver {
    *
    * @param token The new token in context.
    */
-  public void setTokenInContext(@Nullable ZoneEntity<Token> token) {
+  public void setTokenIncontext(Token token) {
     tokenInContext = token;
   }
 }

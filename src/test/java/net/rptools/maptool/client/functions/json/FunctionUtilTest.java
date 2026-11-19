@@ -24,12 +24,11 @@ import java.util.*;
 import java.util.List;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.model.Token;
-import net.rptools.maptool.model.Zone;
-import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.maptool.model.drawing.DrawableColorPaint;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
+import net.rptools.parser.VariableResolver;
 import org.junit.jupiter.api.*;
 
 class FunctionUtilTest {
@@ -39,9 +38,8 @@ class FunctionUtilTest {
   @Disabled // I don't know how to get these to work
   void untestable() throws ParserException {
     Parser parser = new Parser(true);
-    Zone zone = mock(Zone.class);
     Token mockToken = mock(Token.class);
-    var variableResolver = new MapToolVariableResolver(new ZoneEntity<>(zone, mockToken));
+    VariableResolver variableResolver = new MapToolVariableResolver(mockToken);
     List<Object> parameters = List.of();
     FunctionUtil.experimentalWarning(parser, variableResolver, functionName);
     FunctionUtil.getTokenFromParam(variableResolver, functionName, parameters, 14, 16);
