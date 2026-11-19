@@ -193,7 +193,7 @@ public class FunctionUtil {
       if (token == null) {
         if (map == null) {
           throw new ParserException(I18N.getText(KEY_UNKNOWN_TOKEN, functionName, id));
-        } else if (MapTool.getFrame().getZoneRenderer(map) == null) {
+        } else if (MapTool.getClient().getCampaign().getZoneByName(map) == null) {
           throw new ParserException(I18N.getText(KEY_UNKNOWN_MAP, functionName, map));
         } else {
           throw new ParserException(I18N.getText(KEY_UNKNOWN_TOKEN_ON_MAP, functionName, id, map));
