@@ -202,10 +202,11 @@ public class FunctionUtil {
       return token.get();
     } else {
       var token = ((MapToolVariableResolver) resolver).getTokenInContext();
-      if (token.isEmpty()) {
+      if (token == null) {
         throw new ParserException(I18N.getText(KEY_NO_IMPERSONATED, functionName));
       }
-      return token.get();
+      // Unknown zone.
+      return new ZoneEntity<>(null, token);
     }
   }
 
