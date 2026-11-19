@@ -20,6 +20,7 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.InitiativeList;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
@@ -56,19 +57,20 @@ public class TokenRemoveFromInitiativeFunction extends AbstractFunction {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> args)
       throws ParserException {
-    Token token = FunctionUtil.getTokenFromParam(resolver, functionName, args, 0, 1);
+    ZoneEntity<Token> token =
+        FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, args, 0, 1);
 
-    InitiativeList list = token.getZoneRenderer().getZone().getInitiativeList();
+    InitiativeList list = token.zone().getInitiativeList();
 
     if (!MapTool.getParser().isMacroTrusted()) {
-      if (!MapTool.getFrame().getInitiativePanel().hasOwnerPermission(token)) {
+      if (!MapTool.getFrame().getInitiativePanel().hasOwnerPermission(token.entity())) {
         String message = I18N.getText("macro.function.initiative.gmOnly", functionName);
         if (MapTool.getFrame().getInitiativePanel().isOwnerPermissions())
           message = I18N.getText("macro.function.initiative.gmOrOwner", functionName);
         throw new ParserException(message);
       } // endif
     }
-    List<Integer> tokens = list.indexOf(token);
+    List<Integer> tokens = list.indexOf(token.entity());
     list.startUnitOfWork();
     for (int i = tokens.size() - 1; i >= 0; i--) list.removeToken(tokens.get(i));
     list.finishUnitOfWork();

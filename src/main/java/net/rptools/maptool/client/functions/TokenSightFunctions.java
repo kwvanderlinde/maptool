@@ -25,7 +25,7 @@ import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Grid;
 import net.rptools.maptool.model.Token;
-import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
@@ -57,45 +57,51 @@ public class TokenSightFunctions extends AbstractFunction {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
-    Token token;
+    ZoneEntity<Token> token;
     // For functions no parameters except option tokenID and mapname
     if (functionName.equalsIgnoreCase("hasSight")
         || functionName.equalsIgnoreCase("getSightType")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 2);
-      token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, 1);
+      token = FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, parameters, 0, 1);
       if (functionName.equalsIgnoreCase("hasSight"))
-        return token.getHasSight() ? BigDecimal.ONE : BigDecimal.ZERO;
+        return token.entity().getHasSight() ? BigDecimal.ONE : BigDecimal.ZERO;
 
       // if (functionName.equalsIgnoreCase("getSightType"))
       // Don't test to remove code warning for always true if statement
-      String sightType = token.getSightType();
+      String sightType = token.entity().getSightType();
       if (sightType == null) sightType = "";
       return sightType;
     }
 
     // For functions with only 1 parameter and optional second parameter of tokenID & mapname
     FunctionUtil.checkNumberParam(functionName, parameters, 1, 3);
-    token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 1, 2);
+    token = FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, parameters, 1, 2);
 
     if (functionName.equalsIgnoreCase("setHasSight")) {
       boolean hasSight = !parameters.get(0).equals(BigDecimal.ZERO);
-      MapTool.serverCommand().updateTokenProperty(token, Token.Update.setHasSight, hasSight);
-      return token.getHasSight() ? BigDecimal.ONE : BigDecimal.ZERO;
+      MapTool.serverCommand()
+          .updateTokenProperty(token.entity(), Token.Update.setHasSight, hasSight);
+      return token.entity().getHasSight() ? BigDecimal.ONE : BigDecimal.ZERO;
     }
 
     if (functionName.equalsIgnoreCase("setSightType")) {
       String sightType = parameters.get(0).toString();
-      MapTool.serverCommand().updateTokenProperty(token, Token.Update.setSightType, sightType);
-      return token.getSightType();
+      MapTool.serverCommand()
+          .updateTokenProperty(token.entity(), Token.Update.setSightType, sightType);
+      return token.entity().getSightType();
     }
 
     if (functionName.equalsIgnoreCase("canSeeToken")) {
-      if (!token.getHasSight()) {
+      if (!token.entity().getHasSight()) {
         return "[]";
       }
-      ZoneRenderer zoneRenderer = token.getZoneRenderer();
+      ZoneRenderer zoneRenderer = MapTool.getFrame().getZoneRenderer(token.zone());
       Area tokensVisibleArea =
-          zoneRenderer.getZoneView().getVisibleArea(token, zoneRenderer.getPlayerView());
+          zoneRenderer == null
+              ? null
+              : zoneRenderer
+                  .getZoneView()
+                  .getVisibleArea(token.entity(), zoneRenderer.getPlayerView());
       if (tokensVisibleArea == null) {
         return "[]";
       }
@@ -103,14 +109,13 @@ public class TokenSightFunctions extends AbstractFunction {
       if (!target.isVisible() || (target.isVisibleOnlyToOwner() && !AppUtil.playerOwns(target))) {
         return "[]";
       }
-      Zone zone = zoneRenderer.getZone();
-      Grid grid = zone.getGrid();
+      Grid grid = token.zone().getGrid();
 
       Rectangle bounds =
           target
               .getFootprint(grid)
               .getBounds(grid, grid.convert(new ZonePoint(target.getX(), target.getY())));
-      if (!target.isSnapToGrid()) bounds = target.getImageBounds(zone);
+      if (!target.isSnapToGrid()) bounds = target.getImageBounds(token.zone());
 
       int x = (int) bounds.getX();
       int y = (int) bounds.getY();

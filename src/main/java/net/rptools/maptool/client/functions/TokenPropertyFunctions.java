@@ -34,13 +34,13 @@ import net.rptools.lib.StringUtil;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
-import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.GridType;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.TokenProperty;
 import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.maptool.model.gamedata.MTScriptDataConversion;
 import net.rptools.maptool.model.library.LibraryManager;
 import net.rptools.maptool.model.library.data.LibraryData;
@@ -263,9 +263,9 @@ public class TokenPropertyFunctions extends AbstractFunction {
      */
     if (functionName.equalsIgnoreCase("getSize")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 2);
-      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, 1);
-      Zone zone = token.getZoneRenderer().getZone();
-      return getSize(zone, token);
+      ZoneEntity<Token> token =
+          FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, parameters, 0, 1);
+      return getSize(token.zone(), token.entity());
     }
 
     /*
@@ -273,16 +273,16 @@ public class TokenPropertyFunctions extends AbstractFunction {
      */
     if (functionName.equalsIgnoreCase("setSize")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 3);
-      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 1, 2);
-      Zone zone = token.getZoneRenderer().getZone();
-      return setSize(zone, token, parameters.get(0).toString());
+      ZoneEntity<Token> token =
+          FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, parameters, 1, 2);
+      return setSize(token.zone(), token.entity(), parameters.get(0).toString());
     }
 
     if (functionName.equalsIgnoreCase("resetSize")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 2);
-      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, 1);
-      Zone zone = token.getZoneRenderer().getZone();
-      resetSize(zone, token);
+      ZoneEntity<Token> token =
+          FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, parameters, 0, 1);
+      resetSize(token.zone(), token.entity());
 
       return "";
     }
@@ -488,11 +488,11 @@ public class TokenPropertyFunctions extends AbstractFunction {
      */
     if (functionName.equalsIgnoreCase("bringToFront")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 2);
-      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, 1);
-      Zone zone = token.getZoneRenderer().getZone();
-      int zOrder = zone.getLargestZOrder() + 1;
-      MapTool.serverCommand().updateTokenProperty(token, Token.Update.setZOrder, zOrder);
-      return BigDecimal.valueOf(token.getZOrder());
+      ZoneEntity<Token> token =
+          FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, parameters, 0, 1);
+      int zOrder = token.zone().getLargestZOrder() + 1;
+      MapTool.serverCommand().updateTokenProperty(token.entity(), Token.Update.setZOrder, zOrder);
+      return BigDecimal.valueOf(token.entity().getZOrder());
     }
 
     /*
@@ -500,11 +500,11 @@ public class TokenPropertyFunctions extends AbstractFunction {
      */
     if (functionName.equalsIgnoreCase("sendToBack")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 2);
-      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, 1);
-      Zone zone = token.getZoneRenderer().getZone();
-      int zOrder = zone.getSmallestZOrder() - 1;
-      MapTool.serverCommand().updateTokenProperty(token, Token.Update.setZOrder, zOrder);
-      return BigDecimal.valueOf(token.getZOrder());
+      ZoneEntity<Token> token =
+          FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, parameters, 0, 1);
+      int zOrder = token.zone().getSmallestZOrder() - 1;
+      MapTool.serverCommand().updateTokenProperty(token.entity(), Token.Update.setZOrder, zOrder);
+      return BigDecimal.valueOf(token.entity().getZOrder());
     }
 
     /*
@@ -673,11 +673,10 @@ public class TokenPropertyFunctions extends AbstractFunction {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 3);
       boolean trusted = MapTool.getParser().isMacroTrusted();
       Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 1, 2);
-      ZoneRenderer zoneR = token.getZoneRenderer();
-      Zone zone = zoneR.getZone();
-      // Remove current owners, but if this macro is untrusted and the current player is an owner,
-      // keep the
-      // ownership there.
+      /*
+       * Remove current owners, but if this macro is untrusted and the current player is an owner,
+       * keep the ownership there.
+       */
       String myself = MapTool.getPlayer().getName();
       MapTool.serverCommand().updateTokenProperty(token, Token.Update.clearAllOwners);
       String s = parameters.get(0).toString();
@@ -779,12 +778,11 @@ public class TokenPropertyFunctions extends AbstractFunction {
         || functionName.equalsIgnoreCase("getTokenHeight")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 2);
 
-      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, 1);
-      ZoneRenderer zoneR = token.getZoneRenderer();
-      Zone zone = zoneR.getZone();
+      ZoneEntity<Token> token =
+          FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, parameters, 0, 1);
 
       // Get the pixel width or height of a given token
-      Rectangle tokenBounds = token.getImageBounds(zone);
+      Rectangle tokenBounds = token.entity().getImageBounds(token.zone());
 
       if (functionName.equalsIgnoreCase("getTokenWidth")) {
         return BigDecimal.valueOf(tokenBounds.width);
@@ -803,26 +801,25 @@ public class TokenPropertyFunctions extends AbstractFunction {
     if (functionName.equalsIgnoreCase("setTokenWidth")
         || functionName.equalsIgnoreCase("setTokenHeight")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 3);
-      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 1, 2);
-      ZoneRenderer zoneR = token.getZoneRenderer();
-      Zone zone = zoneR.getZone();
+      ZoneEntity<Token> token =
+          FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, parameters, 1, 2);
 
       double magnitude = getBigDecimalFromParam(functionName, parameters, 0).doubleValue();
-      Rectangle tokenBounds = token.getImageBounds(zone);
+      Rectangle tokenBounds = token.entity().getImageBounds(token.zone());
 
       double oldWidth = tokenBounds.width;
       double oldHeight = tokenBounds.height;
       double newScaleX;
       double newScaleY;
       if (functionName.equalsIgnoreCase("setTokenWidth")) {
-        newScaleX = magnitude / token.getWidth();
-        newScaleY = oldHeight / token.getHeight();
+        newScaleX = magnitude / token.entity().getWidth();
+        newScaleY = oldHeight / token.entity().getHeight();
       } else { // it wasn't 'setTokenWidth' which means functionName equals 'setTokenHeight'
-        newScaleX = oldWidth / token.getWidth();
-        newScaleY = magnitude / token.getHeight();
+        newScaleX = oldWidth / token.entity().getWidth();
+        newScaleY = magnitude / token.entity().getHeight();
       }
       MapTool.serverCommand()
-          .updateTokenProperty(token, Token.Update.setScaleXY, newScaleX, newScaleY);
+          .updateTokenProperty(token.entity(), Token.Update.setScaleXY, newScaleX, newScaleY);
       return magnitude;
     }
 

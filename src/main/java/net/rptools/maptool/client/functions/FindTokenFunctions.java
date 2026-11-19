@@ -603,12 +603,9 @@ public class FindTokenFunctions extends AbstractFunction {
     // Loop through and compare ranges if we have them
     if (range != null) {
       TokenLocationFunctions instance = TokenLocationFunctions.getInstance();
-      Token token;
+      ZoneEntity<Token> token;
       if (range.has("token")) {
-        token =
-            findToken(range.get("token").getAsString(), mapName)
-                .map(ZoneEntity::entity)
-                .orElse(null);
+        token = findToken(range.get("token").getAsString(), mapName).orElse(null);
         if (token == null) {
           throw new ParserException(
               I18N.getText(
@@ -619,12 +616,11 @@ public class FindTokenFunctions extends AbstractFunction {
       } else {
         GUID guid = MapTool.getClient().getImpersonation().getIdentityGUID();
         if (guid != null) {
-          token = zone.getToken(guid);
+          var resolvedToken = zone.getToken(guid);
+          token = resolvedToken == null ? null : new ZoneEntity<>(zone, resolvedToken);
         } else {
           token =
-              findToken(MapTool.getClient().getImpersonation().getIdentity(), mapName)
-                  .map(ZoneEntity::entity)
-                  .orElse(null);
+              findToken(MapTool.getClient().getImpersonation().getIdentity(), mapName).orElse(null);
         }
         if (token == null) {
           throw new ParserException(
@@ -651,8 +647,10 @@ public class FindTokenFunctions extends AbstractFunction {
       }
       List<Token> inrange = new LinkedList<Token>();
       for (Token targetToken : tokenList) {
-        double distance = instance.getDistance(token, targetToken, useDistancePerCell, metric);
-        if (distance <= upto && distance >= from && token != targetToken) {
+        double distance =
+            instance.getDistance(
+                token.zone(), token.entity(), targetToken, useDistancePerCell, metric);
+        if (distance <= upto && distance >= from && token.entity() != targetToken) {
           inrange.add(targetToken);
         }
       }
@@ -662,12 +660,9 @@ public class FindTokenFunctions extends AbstractFunction {
     // Loop through and compare the area if we have it
     if (area != null) {
       TokenLocationFunctions instance = TokenLocationFunctions.getInstance();
-      Token token;
+      ZoneEntity<Token> token;
       if (area.has("token")) {
-        token =
-            findToken(area.get("token").getAsString(), mapName)
-                .map(ZoneEntity::entity)
-                .orElse(null);
+        token = findToken(area.get("token").getAsString(), mapName).orElse(null);
         if (token == null) {
           throw new ParserException(
               I18N.getText(
@@ -678,12 +673,11 @@ public class FindTokenFunctions extends AbstractFunction {
       } else {
         GUID guid = MapTool.getClient().getImpersonation().getIdentityGUID();
         if (guid != null) {
-          token = zone.getToken(guid);
+          var resolvedToken = zone.getToken(guid);
+          token = resolvedToken == null ? null : new ZoneEntity<>(zone, resolvedToken);
         } else {
           token =
-              findToken(MapTool.getClient().getImpersonation().getIdentity(), mapName)
-                  .map(ZoneEntity::entity)
-                  .orElse(null);
+              findToken(MapTool.getClient().getImpersonation().getIdentity(), mapName).orElse(null);
         }
         if (token == null) {
           throw new ParserException(
@@ -699,7 +693,7 @@ public class FindTokenFunctions extends AbstractFunction {
       if (area.has("metric")) {
         metric = area.get("metric").getAsString();
       }
-      CellPoint cp = instance.getTokenCell(token);
+      CellPoint cp = instance.getTokenCell(token.zone(), token.entity());
 
       Point[] points = new Point[offsets.size()];
       int ip = 0; // create an array of points for each cell

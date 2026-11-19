@@ -31,6 +31,7 @@ import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Grid;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.util.AssetResolver;
 import net.rptools.maptool.util.FunctionUtil;
@@ -82,9 +83,10 @@ public class TokenCopyDeleteFunctions extends AbstractFunction {
 
     if (functionName.equalsIgnoreCase(REMOVE_FUNC)) {
       FunctionUtil.checkNumberParam(functionName, parameters, 1, 2);
-      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 0, 1);
+      ZoneEntity<Token> result =
+          FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, parameters, 0, 1);
 
-      return deleteToken(token);
+      return deleteToken(result.zone(), result.entity());
     }
 
     if (functionName.equalsIgnoreCase(CREATE_TOKEN_FUNC)) {
@@ -151,8 +153,7 @@ public class TokenCopyDeleteFunctions extends AbstractFunction {
    * @param token the token
    * @return a string describing which token got deleted
    */
-  private String deleteToken(Token token) {
-    Zone zone = token.getZoneRenderer().getZone();
+  private String deleteToken(Zone zone, Token token) {
     MapTool.serverCommand().removeToken(zone.getId(), token.getId());
     return "Deleted token " + token.getId() + " (" + token.getName() + ")";
   }

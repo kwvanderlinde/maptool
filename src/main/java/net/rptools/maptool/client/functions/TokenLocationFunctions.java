@@ -35,6 +35,7 @@ import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Grid;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
@@ -95,8 +96,9 @@ public class TokenLocationFunctions extends AbstractFunction {
           parameters.size() > 0
               ? FunctionUtil.paramAsBoolean(functionName, parameters, 0, false)
               : true;
-      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 1, 2);
-      TokenLocation location = getTokenLocation(useDistancePerCell, token);
+      ZoneEntity<Token> result =
+          FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, parameters, 1, 2);
+      TokenLocation location = getTokenLocation(useDistancePerCell, result.zone(), result.entity());
       return BigDecimal.valueOf(
           functionName.equalsIgnoreCase("getTokenX") ? location.x : location.y);
     }
@@ -238,14 +240,14 @@ public class TokenLocationFunctions extends AbstractFunction {
    * @param token the token to return the location of.
    * @return the location of the token.
    */
-  private TokenLocation getTokenLocation(boolean useDistancePerCell, Token token) {
+  private TokenLocation getTokenLocation(boolean useDistancePerCell, Zone zone, Token token) {
     TokenLocation loc = new TokenLocation();
     if (useDistancePerCell) {
-      Rectangle tokenBounds = token.getImageBounds(token.getZoneRenderer().getZone());
+      Rectangle tokenBounds = token.getImageBounds(zone);
       loc.x = tokenBounds.x;
       loc.y = tokenBounds.y;
     } else {
-      CellPoint cellPoint = getTokenCell(token);
+      CellPoint cellPoint = getTokenCell(zone, token);
       int x = cellPoint.x;
       int y = cellPoint.y;
 
@@ -261,11 +263,12 @@ public class TokenLocationFunctions extends AbstractFunction {
    * Returns the token pixel offset between its reported pixel location and its true (x,y) pixel
    * coordinate.
    *
+   * @param zone the zone that {@code token} belongs to
    * @param token the token to return the offset of
    * @return a point representing the (x,y) offset
    */
-  private Point getTokenPixelLocationOffset(Token token) {
-    TokenLocation loc = getTokenLocation(true, token);
+  private Point getTokenPixelLocationOffset(Zone zone, Token token) {
+    TokenLocation loc = getTokenLocation(true, zone, token);
     return new Point(loc.x - token.getX(), loc.y - token.getY());
   }
 
@@ -274,6 +277,7 @@ public class TokenLocationFunctions extends AbstractFunction {
    * because VBL &amp; terrain are currently ignored. The other walker-based approach is kept as it
    * will be needed if we implement distance based on terrain &amp; VBL.
    *
+   * @param zone the zone that {@code source} must belong to.
    * @param source The token to get the distance from.
    * @param target The token to calculate the distance to.
    * @param units get the distance in the units specified for the map.
@@ -281,10 +285,9 @@ public class TokenLocationFunctions extends AbstractFunction {
    * @return the distance.
    * @throws ParserException when an error occurs
    */
-  public double getDistance(Token source, Token target, boolean units, String metric)
+  public double getDistance(Zone zone, Token source, Token target, boolean units, String metric)
       throws ParserException {
     boolean closedForm = true; // VBL & terrain ignored, so closedForm always work
-    Zone zone = source.getZoneRenderer().getZone();
     Grid grid = zone.getGrid();
     double distance;
 
@@ -355,6 +358,7 @@ public class TokenLocationFunctions extends AbstractFunction {
   /**
    * Gets the distance to a target x,y co-ordinate following map movement rules.
    *
+   * @param zone The zone that {@code token} must belong to.
    * @param source The token to get the distance from.
    * @param x the x co-ordinate to get the distance to.
    * @param y the y co-ordinate to get the distance to.
@@ -365,9 +369,8 @@ public class TokenLocationFunctions extends AbstractFunction {
    * @throws ParserException when an error occurs
    */
   public double getDistance(
-      Token source, int x, int y, boolean units, String metric, boolean pixels)
+      Zone zone, Token source, int x, int y, boolean units, String metric, boolean pixels)
       throws ParserException {
-    Zone zone = source.getZoneRenderer().getZone();
     Grid grid = zone.getGrid();
 
     if (grid.getCapabilities().isPathingSupported() && !NO_GRID.equals(metric)) {
@@ -470,13 +473,14 @@ public class TokenLocationFunctions extends AbstractFunction {
   private BigDecimal getDistance(VariableResolver resolver, List<Object> args)
       throws ParserException {
     Token target = FunctionUtil.getTokenFromParam(resolver, "getDistance", args, 0, -1);
-    Token source = FunctionUtil.getTokenFromParam(resolver, "getDistance", args, 2, -1);
+    ZoneEntity<Token> source =
+        FunctionUtil.getTokenAndZoneFromParam(resolver, "getDistance", args, 2, -1);
 
     boolean useDistancePerCell =
         args.size() > 1 ? FunctionUtil.paramAsBoolean("getDistance", args, 1, false) : true;
     String metric = args.size() > 3 ? args.get(3).toString() : null;
 
-    double dist = getDistance(source, target, useDistancePerCell, metric);
+    double dist = getDistance(source.zone(), source.entity(), target, useDistancePerCell, metric);
 
     if (dist == Math.floor(dist)) {
       return BigDecimal.valueOf((int) dist);
@@ -502,11 +506,12 @@ public class TokenLocationFunctions extends AbstractFunction {
     boolean useDistancePerCell = true;
     if (args.size() > 2) useDistancePerCell = FunctionUtil.paramAsBoolean(fName, args, 2, true);
 
-    Token source = FunctionUtil.getTokenFromParam(resolver, fName, args, 3, -1);
+    ZoneEntity<Token> source = FunctionUtil.getTokenAndZoneFromParam(resolver, fName, args, 3, -1);
     String metric = args.size() > 4 ? args.get(4).toString() : null;
     boolean pixel = args.size() > 5 ? FunctionUtil.paramAsBoolean(fName, args, 5, true) : false;
 
-    double dist = getDistance(source, x, y, useDistancePerCell, metric, pixel);
+    double dist =
+        getDistance(source.zone(), source.entity(), x, y, useDistancePerCell, metric, pixel);
 
     if (dist == Math.floor(dist)) {
       return BigDecimal.valueOf((int) dist);
@@ -550,16 +555,17 @@ public class TokenLocationFunctions extends AbstractFunction {
     int y = FunctionUtil.paramAsInteger("moveToken", args, 1, false);
     boolean useDistance =
         args.size() > 2 ? FunctionUtil.paramAsBoolean("moveToken", args, 2, false) : true;
-    Token token = FunctionUtil.getTokenFromParam(resolver, "moveToken", args, 3, -1);
+    ZoneEntity<Token> result =
+        FunctionUtil.getTokenAndZoneFromParam(resolver, "moveToken", args, 3, -1);
 
     if (useDistance) {
       // Remove pixel offset, so that getTokenX / getTokenY and coordinates match. Fixes #1757.
-      Point offset = getInstance().getTokenPixelLocationOffset(token);
+      Point offset = getInstance().getTokenPixelLocationOffset(result.zone(), result.entity());
       x -= offset.x;
       y -= offset.y;
     }
     ZonePoint zp = getZonePoint(x, y, useDistance);
-    MapTool.serverCommand().updateTokenProperty(token, Token.Update.setXY, zp.x, zp.y);
+    MapTool.serverCommand().updateTokenProperty(result.entity(), Token.Update.setXY, zp.x, zp.y);
     return "";
   }
 
@@ -605,11 +611,11 @@ public class TokenLocationFunctions extends AbstractFunction {
   /**
    * Gets the cell point that the token is at.
    *
+   * @param zone the zone that {@code token} must belong to.
    * @param token the token.
    * @return the CellPoint where the token is.
    */
-  public CellPoint getTokenCell(Token token) {
-    Zone zone = token.getZoneRenderer().getZone();
+  public CellPoint getTokenCell(Zone zone, Token token) {
     return zone.getGrid().convert(new ZonePoint(token.getX(), token.getY()));
   }
 

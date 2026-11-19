@@ -21,6 +21,8 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.InitiativeList;
 import net.rptools.maptool.model.InitiativeList.TokenInitiative;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
@@ -62,8 +64,9 @@ public class TokenInitFunction extends AbstractFunction {
       boolean allowDuplicates =
           args.size() > 0 ? FunctionUtil.paramAsBoolean(functionName, args, 0, true) : false;
       String state = args.size() > 1 && !"".equals(args.get(1)) ? args.get(1).toString() : null;
-      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, args, 2, 3);
-      return addToInitiative(allowDuplicates, state, token);
+      ZoneEntity<Token> result =
+          FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, args, 2, 3);
+      return addToInitiative(allowDuplicates, state, result.zone(), result.entity());
     } else if ("setInitiative".equalsIgnoreCase(functionName)) { // setInitiative
       FunctionUtil.checkNumberParam(functionName, args, 1, 3);
       String value = args.get(0).toString();
@@ -95,12 +98,13 @@ public class TokenInitFunction extends AbstractFunction {
    *
    * @param allowDuplicates are duplicates allowed
    * @param state the initiative to assign to the token
+   * @param zone the zone containing the token and whose initiaitve is to be modified.
    * @param token the token to add to the initiative
    * @return 1 if the token was added, 0 otherwise
    * @throws ParserException when an error occurs.
    */
-  public static BigDecimal addToInitiative(boolean allowDuplicates, String state, Token token)
-      throws ParserException {
+  private static BigDecimal addToInitiative(
+      boolean allowDuplicates, String state, Zone zone, Token token) throws ParserException {
     boolean hasPermission = MapTool.getFrame().getInitiativePanel().hasOwnerPermission(token);
     if (!MapTool.getParser().isMacroTrusted() && !hasPermission) {
       String message;
@@ -112,7 +116,7 @@ public class TokenInitFunction extends AbstractFunction {
       throw new ParserException(message);
     } // endif
 
-    InitiativeList list = token.getZoneRenderer().getZone().getInitiativeList();
+    InitiativeList list = zone.getInitiativeList();
     // insert the token if needed
     TokenInitiative ti = null;
     if (allowDuplicates || list.indexOf(token).isEmpty()) {
