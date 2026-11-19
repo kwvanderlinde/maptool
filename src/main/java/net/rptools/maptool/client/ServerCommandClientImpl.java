@@ -231,7 +231,7 @@ public class ServerCommandClientImpl implements ServerCommand {
    * @param update the type of token update
    * @param parameters an array of parameters
    */
-  public void updateTokenProperty(
+  private void updateTokenProperty(
       GUID zoneGUID, GUID tokenGUID, Token.Update update, List<TokenPropertyValueDto> parameters) {
     var msg =
         UpdateTokenPropertyMsg.newBuilder()
@@ -250,8 +250,8 @@ public class ServerCommandClientImpl implements ServerCommand {
    * @param parameters an array of parameters
    */
   public void updateTokenProperty(
-      Token token, Token.Update update, TokenPropertyValueDto... parameters) {
-    updateTokenProperty(token.getZoneRenderer().getZone(), token, update, List.of(parameters));
+      Zone zone, Token token, Token.Update update, TokenPropertyValueDto... parameters) {
+    updateTokenPropertyImpl(zone, token, update, List.of(parameters));
   }
 
   /**
@@ -261,7 +261,7 @@ public class ServerCommandClientImpl implements ServerCommand {
    * @param update the type of token update
    * @param parameters The message data
    */
-  private void updateTokenProperty(
+  private void updateTokenPropertyImpl(
       Zone zone, Token token, Token.Update update, List<TokenPropertyValueDto> parameters) {
     token.updateProperty(zone, update, parameters); // update locally right away
     updateTokenProperty(zone.getId(), token.getId(), update, parameters);
@@ -671,10 +671,12 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   @Override
-  public void toggleLightSourceOnToken(Token token, boolean toggleOn, LightSource lightSource) {
+  public void toggleLightSourceOnToken(
+      Zone zone, Token token, boolean toggleOn, LightSource lightSource) {
     var update = toggleOn ? Token.Update.addLightSource : Token.Update.removeLightSource;
     // We only need to send the ID of the light source.
     updateTokenProperty(
+        zone,
         token,
         update,
         TokenPropertyValueDto.newBuilder()
@@ -683,23 +685,25 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   @Override
-  public void toggleHaloSourceOnToken(Token token, boolean toggleOn, Halo halo) {
+  public void toggleHaloSourceOnToken(Zone zone, Token token, boolean toggleOn, Halo halo) {
     var update = toggleOn ? Token.Update.addHalo : Token.Update.removeHalo;
     // We only need to send the ID of the halo source.
     updateTokenProperty(
+        zone,
         token,
         update,
         TokenPropertyValueDto.newBuilder().setHaloId(halo.getId().toString()).build());
   }
 
   public void setTokenMaskTopology(
-      Token token, @Nullable Area area, Zone.TopologyType topologyType) {
+      Zone zone, Token token, @Nullable Area area, Zone.TopologyType topologyType) {
     if (area == null) {
       // Will be converted back to null on the other end.
       area = new Area();
     }
 
     updateTokenProperty(
+        zone,
         token,
         Token.Update.setMaskTopology,
         TokenPropertyValueDto.newBuilder().setTopologyType(topologyType.name()).build(),
@@ -708,7 +712,7 @@ public class ServerCommandClientImpl implements ServerCommand {
 
   @Override
   public void setTokenFootprint(Zone zone, Token token, GridType gridType, GUID footprintId) {
-    updateTokenProperty(
+    updateTokenPropertyImpl(
         zone,
         token,
         Token.Update.setFootprint,
@@ -718,13 +722,14 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   @Override
-  public void updateTokenProperty(Token token, Token.Update update, int value) {
+  public void updateTokenProperty(Zone zone, Token token, Token.Update update, int value) {
     updateTokenProperty(
-        token, update, TokenPropertyValueDto.newBuilder().setIntValue(value).build());
+        zone, token, update, TokenPropertyValueDto.newBuilder().setIntValue(value).build());
   }
 
   @Override
-  public void updateTokenProperty(Token token, Token.Update update, String value1, String value2) {
+  public void updateTokenProperty(
+      Zone zone, Token token, Token.Update update, String value1, String value2) {
     var value1Dto = TokenPropertyValueDto.newBuilder();
     if (value1 != null) {
       value1Dto.setStringValue(value1);
@@ -735,12 +740,16 @@ public class ServerCommandClientImpl implements ServerCommand {
       value2Dto.setStringValue(value2);
     }
 
-    updateTokenProperty(token, update, value1Dto.build(), value2Dto.build());
+    updateTokenProperty(zone, token, update, value1Dto.build(), value2Dto.build());
   }
 
   @Override
   public void updateTokenProperty(
-      Token token, Token.Update update, List<MacroButtonProperties> workingMacros, boolean b) {
+      Zone zone,
+      Token token,
+      Token.Update update,
+      List<MacroButtonProperties> workingMacros,
+      boolean b) {
     var list =
         MacroButtonPropertiesListDto.newBuilder()
             .addAllMacros(
@@ -748,6 +757,7 @@ public class ServerCommandClientImpl implements ServerCommand {
                     .map(MacroButtonProperties::toDto)
                     .collect(Collectors.toList()));
     updateTokenProperty(
+        zone,
         token,
         update,
         TokenPropertyValueDto.newBuilder().setMacros(list).build(),
@@ -755,25 +765,29 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   @Override
-  public void updateTokenProperty(Token token, Token.Update update) {
-    updateTokenProperty(token, update, new TokenPropertyValueDto[] {});
+  public void updateTokenProperty(Zone zone, Token token, Token.Update update) {
+    updateTokenProperty(zone, token, update, new TokenPropertyValueDto[] {});
   }
 
   @Override
-  public void updateTokenProperty(Token token, Token.Update update, MacroButtonProperties value) {
+  public void updateTokenProperty(
+      Zone zone, Token token, Token.Update update, MacroButtonProperties value) {
     var list = MacroButtonPropertiesListDto.newBuilder().addMacros(value.toDto());
-    updateTokenProperty(token, update, TokenPropertyValueDto.newBuilder().setMacros(list).build());
+    updateTokenProperty(
+        zone, token, update, TokenPropertyValueDto.newBuilder().setMacros(list).build());
   }
 
   @Override
-  public void updateTokenProperty(Token token, Token.Update update, String value) {
+  public void updateTokenProperty(Zone zone, Token token, Token.Update update, String value) {
     updateTokenProperty(
-        token, update, TokenPropertyValueDto.newBuilder().setStringValue(value).build());
+        zone, token, update, TokenPropertyValueDto.newBuilder().setStringValue(value).build());
   }
 
   @Override
-  public void updateTokenProperty(Token token, Token.Update update, int value1, int value2) {
+  public void updateTokenProperty(
+      Zone zone, Token token, Token.Update update, int value1, int value2) {
     updateTokenProperty(
+        zone,
         token,
         update,
         TokenPropertyValueDto.newBuilder().setIntValue(value1).build(),
@@ -781,14 +795,16 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   @Override
-  public void updateTokenProperty(Token token, Token.Update update, boolean value) {
+  public void updateTokenProperty(Zone zone, Token token, Token.Update update, boolean value) {
     updateTokenProperty(
-        token, update, TokenPropertyValueDto.newBuilder().setBoolValue(value).build());
+        zone, token, update, TokenPropertyValueDto.newBuilder().setBoolValue(value).build());
   }
 
   @Override
-  public void updateTokenProperty(Token token, Token.Update update, double value1, double value2) {
+  public void updateTokenProperty(
+      Zone zone, Token token, Token.Update update, double value1, double value2) {
     updateTokenProperty(
+        zone,
         token,
         update,
         TokenPropertyValueDto.newBuilder().setDoubleValue(value1).build(),
@@ -797,8 +813,9 @@ public class ServerCommandClientImpl implements ServerCommand {
 
   @Override
   public void updateTokenProperty(
-      Token token, Token.Update update, double value1, int value2, int value3) {
+      Zone zone, Token token, Token.Update update, double value1, int value2, int value3) {
     updateTokenProperty(
+        zone,
         token,
         update,
         TokenPropertyValueDto.newBuilder().setDoubleValue(value1).build(),
@@ -807,8 +824,10 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   @Override
-  public void updateTokenProperty(Token token, Token.Update update, List<String> values) {
+  public void updateTokenProperty(
+      Zone zone, Token token, Token.Update update, List<String> values) {
     updateTokenProperty(
+        zone,
         token,
         update,
         TokenPropertyValueDto.newBuilder()
@@ -817,15 +836,16 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   @Override
-  public void updateTokenProperty(Token token, Token.Update update, double value) {
+  public void updateTokenProperty(Zone zone, Token token, Token.Update update, double value) {
     updateTokenProperty(
-        token, update, TokenPropertyValueDto.newBuilder().setDoubleValue(value).build());
+        zone, token, update, TokenPropertyValueDto.newBuilder().setDoubleValue(value).build());
   }
 
   @Override
   public void updateTokenProperty(
-      Token token, Token.Update update, boolean value1, int value2, int value3) {
+      Zone zone, Token token, Token.Update update, boolean value1, int value2, int value3) {
     updateTokenProperty(
+        zone,
         token,
         update,
         TokenPropertyValueDto.newBuilder().setBoolValue(value1).build(),
@@ -834,8 +854,10 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   @Override
-  public void updateTokenProperty(Token token, Token.Update update, String value1, boolean value2) {
+  public void updateTokenProperty(
+      Zone zone, Token token, Token.Update update, String value1, boolean value2) {
     updateTokenProperty(
+        zone,
         token,
         update,
         TokenPropertyValueDto.newBuilder().setStringValue(value1).build(),
@@ -844,8 +866,9 @@ public class ServerCommandClientImpl implements ServerCommand {
 
   @Override
   public void updateTokenProperty(
-      Token token, Token.Update update, String value, BigDecimal value2) {
+      Zone zone, Token token, Token.Update update, String value, BigDecimal value2) {
     updateTokenProperty(
+        zone,
         token,
         update,
         TokenPropertyValueDto.newBuilder().setStringValue(value).build(),

@@ -191,6 +191,10 @@ public interface ServerCommand {
 
   void removeData(String type, String namespace, String name);
 
+  default void toggleLightSourceOnToken(Token token, boolean toggleOn, LightSource lightSource) {
+    toggleLightSourceOnToken(token.getZoneRenderer().getZone(), token, toggleOn, lightSource);
+  }
+
   /**
    * Adds or removes a light source on {@code token}.
    *
@@ -199,7 +203,11 @@ public interface ServerCommand {
    *     turned off.
    * @param lightSource The light source to add.
    */
-  void toggleLightSourceOnToken(Token token, boolean toggleOn, LightSource lightSource);
+  void toggleLightSourceOnToken(Zone zone, Token token, boolean toggleOn, LightSource lightSource);
+
+  default void toggleHaloSourceOnToken(Token token, boolean toggleOn, Halo halo) {
+    toggleHaloSourceOnToken(token.getZoneRenderer().getZone(), token, toggleOn, halo);
+  }
 
   /**
    * Adds or removes a halo source on {@code token}.
@@ -209,43 +217,132 @@ public interface ServerCommand {
    *     turned off.
    * @param halo The halo source to add.
    */
-  void toggleHaloSourceOnToken(Token token, boolean toggleOn, Halo halo);
+  void toggleHaloSourceOnToken(Zone zone, Token token, boolean toggleOn, Halo halo);
 
-  void setTokenMaskTopology(Token token, @Nullable Area area, Zone.TopologyType topologyType);
+  default void setTokenMaskTopology(
+      Token token, @Nullable Area area, Zone.TopologyType topologyType) {
+    setTokenMaskTopology(token.getZoneRenderer().getZone(), token, area, topologyType);
+  }
+
+  void setTokenMaskTopology(
+      Zone zone, Token token, @Nullable Area area, Zone.TopologyType topologyType);
 
   void setTokenFootprint(Zone zone, Token token, GridType gridType, GUID footprintId);
 
-  void updateTokenProperty(Token token, Token.Update update, int value);
+  // region Legacy property updates
 
-  void updateTokenProperty(Token token, Token.Update update, String value1, String value2);
+  default void updateTokenProperty(Token token, Token.Update update, int value) {
+    updateTokenProperty(token.getZoneRenderer().getZone(), token, update, value);
+  }
+
+  default void updateTokenProperty(Token token, Token.Update update, String value1, String value2) {
+    updateTokenProperty(token.getZoneRenderer().getZone(), token, update, value1, value2);
+  }
+
+  default void updateTokenProperty(
+      Token token, Token.Update update, List<MacroButtonProperties> workingMacros, boolean b) {
+    updateTokenProperty(token.getZoneRenderer().getZone(), token, update, workingMacros, b);
+  }
+
+  default void updateTokenProperty(Token token, Token.Update update) {
+    updateTokenProperty(token.getZoneRenderer().getZone(), token, update);
+  }
+
+  default void updateTokenProperty(Token token, Token.Update update, MacroButtonProperties value) {
+    updateTokenProperty(token.getZoneRenderer().getZone(), token, update, value);
+  }
+
+  default void updateTokenProperty(Token token, Token.Update update, String value) {
+    updateTokenProperty(token.getZoneRenderer().getZone(), token, update, value);
+  }
+
+  default void updateTokenProperty(Token token, Token.Update update, int value1, int value2) {
+    updateTokenProperty(token.getZoneRenderer().getZone(), token, update, value1, value2);
+  }
+
+  default void updateTokenProperty(Token token, Token.Update update, boolean value) {
+    updateTokenProperty(token.getZoneRenderer().getZone(), token, update, value);
+  }
+
+  default void updateTokenProperty(Token token, Token.Update update, double value1, double value2) {
+    updateTokenProperty(token.getZoneRenderer().getZone(), token, update, value1, value2);
+  }
+
+  default void updateTokenProperty(
+      Token token, Token.Update update, double value1, int value2, int value3) {
+    updateTokenProperty(token.getZoneRenderer().getZone(), token, update, value1, value2, value3);
+  }
+
+  default void updateTokenProperty(Token token, Token.Update update, List<String> values) {
+    updateTokenProperty(token.getZoneRenderer().getZone(), token, update, values);
+  }
+
+  default void updateTokenProperty(Token token, Token.Update update, double value) {
+    updateTokenProperty(token.getZoneRenderer().getZone(), token, update, value);
+  }
+
+  default void updateTokenProperty(
+      Token token, Token.Update update, boolean value1, int value2, int value3) {
+    updateTokenProperty(token.getZoneRenderer().getZone(), token, update, value1, value2, value3);
+  }
+
+  default void updateTokenProperty(
+      Token token, Token.Update update, String value1, boolean value2) {
+    updateTokenProperty(token.getZoneRenderer().getZone(), token, update, value1, value2);
+  }
+
+  default void updateTokenProperty(
+      Token token, Token.Update update, String value, BigDecimal value2) {
+    updateTokenProperty(token.getZoneRenderer().getZone(), token, update, value, value2);
+  }
+
+  // endregion
+
+  // region newer property updates
+
+  void updateTokenProperty(Zone zone, Token token, Token.Update update, int value);
 
   void updateTokenProperty(
-      Token token, Token.Update update, List<MacroButtonProperties> workingMacros, boolean b);
-
-  void updateTokenProperty(Token token, Token.Update update);
-
-  void updateTokenProperty(Token token, Token.Update update, MacroButtonProperties value);
-
-  void updateTokenProperty(Token token, Token.Update update, String value);
-
-  void updateTokenProperty(Token token, Token.Update update, int value1, int value2);
-
-  void updateTokenProperty(Token token, Token.Update update, boolean value);
-
-  void updateTokenProperty(Token token, Token.Update update, double value1, double value2);
-
-  void updateTokenProperty(Token token, Token.Update update, double value1, int value2, int value3);
-
-  void updateTokenProperty(Token token, Token.Update update, List<String> values);
-
-  void updateTokenProperty(Token token, Token.Update update, double value);
+      Zone zone, Token token, Token.Update update, String value1, String value2);
 
   void updateTokenProperty(
-      Token token, Token.Update update, boolean value1, int value2, int value3);
+      Zone zone,
+      Token token,
+      Token.Update update,
+      List<MacroButtonProperties> workingMacros,
+      boolean b);
 
-  void updateTokenProperty(Token token, Token.Update update, String value1, boolean value2);
+  void updateTokenProperty(Zone zone, Token token, Token.Update update);
 
-  void updateTokenProperty(Token token, Token.Update update, String value, BigDecimal value2);
+  void updateTokenProperty(
+      Zone zone, Token token, Token.Update update, MacroButtonProperties value);
+
+  void updateTokenProperty(Zone zone, Token token, Token.Update update, String value);
+
+  void updateTokenProperty(Zone zone, Token token, Token.Update update, int value1, int value2);
+
+  void updateTokenProperty(Zone zone, Token token, Token.Update update, boolean value);
+
+  void updateTokenProperty(
+      Zone zone, Token token, Token.Update update, double value1, double value2);
+
+  void updateTokenProperty(
+      Zone zone, Token token, Token.Update update, double value1, int value2, int value3);
+
+  void updateTokenProperty(Zone zone, Token token, Token.Update update, List<String> values);
+
+  void updateTokenProperty(Zone zone, Token token, Token.Update update, double value);
+
+  void updateTokenProperty(
+      Zone zone, Token token, Token.Update update, boolean value1, int value2, int value3);
+
+  void updateTokenProperty(
+      Zone zone, Token token, Token.Update update, String value1, boolean value2);
+
+  void updateTokenProperty(
+      Zone zone, Token token, Token.Update update, String value, BigDecimal value2);
+
+  // endregion
 
   void updatePlayerStatus(Player player);
 
