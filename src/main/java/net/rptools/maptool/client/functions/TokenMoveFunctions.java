@@ -45,6 +45,7 @@ import net.rptools.maptool.model.Grid;
 import net.rptools.maptool.model.Path;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.model.library.LibraryManager;
 import net.rptools.maptool.util.EventMacroUtil;
@@ -90,7 +91,11 @@ public class TokenMoveFunctions extends AbstractFunction {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
-    final Token tokenInContext = ((MapToolVariableResolver) resolver).getTokenInContext();
+    final Token tokenInContext =
+        ((MapToolVariableResolver) resolver)
+            .getTokenInContext()
+            .map(ZoneEntity::entity)
+            .orElse(null);
     if (tokenInContext == null) {
       throw new ParserException(
           I18N.getText("macro.function.general.noImpersonated", functionName));
@@ -433,7 +438,7 @@ public class TokenMoveFunctions extends AbstractFunction {
    * @return the list of tokens from the given list that have their movement rejected
    */
   public static List<Token> callForIndividualTokenMoveVetoes(
-      final Path<?> path, final List<Token> filteredTokens) {
+      final Zone zone, final Path<?> path, final List<Token> filteredTokens) {
     List<Token> deniedTokens = new ArrayList<>();
     try {
       var libraries =
@@ -452,7 +457,7 @@ public class TokenMoveFunctions extends AbstractFunction {
                   ON_TOKEN_MOVE_COMPLETE_CALLBACK,
                   libraryNamespace,
                   pathCoordinates,
-                  new MapToolVariableResolver(token),
+                  new MapToolVariableResolver(new ZoneEntity<>(zone, token)),
                   ON_TOKEN_MOVE_DENY_VARIABLE,
                   varsToSet);
           if (moveDenied) deniedTokens.add(token);

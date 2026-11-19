@@ -21,6 +21,7 @@ import net.rptools.maptool.client.MapToolExpressionParser;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
 
@@ -65,15 +66,15 @@ public class ExpressionParserFactory {
    * @return the value of the property.
    */
   private static Object getAdvancedRollProperty(VariableResolver resolver, String name) {
-    Token token =
+    ZoneEntity<Token> token =
         resolver instanceof MapToolVariableResolver mtResolver
-            ? mtResolver.getTokenInContext()
+            ? mtResolver.getTokenInContext().orElse(null)
             : null;
     if (token == null) {
       throw new IllegalArgumentException(I18N.getText("advanced.roll.noTokenInContext"));
     }
 
-    var value = token.getProperty(name);
+    var value = token.entity().getProperty(name);
     if (value == null) {
       throw new IllegalArgumentException(I18N.getText("advanced.roll.unknownProperty", name));
     }

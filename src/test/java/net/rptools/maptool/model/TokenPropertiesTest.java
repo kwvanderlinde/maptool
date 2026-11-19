@@ -32,15 +32,26 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class TokenPropertiesTest {
+  private Campaign campaign;
+  private Zone zone;
+  private Token testToken;
 
-  MapToolVariableResolver variableResolver;
-  List<TokenProperty> propsList;
-  Token testToken;
+  private MapToolVariableResolver variableResolver;
+  private List<TokenProperty> propsList;
 
-  MacroLocationFactory factory;
+  private MacroLocationFactory factory;
 
   @BeforeEach
   public void setUp() {
+    campaign = new Campaign();
+    MapTool.getClient().setCampaign(campaign);
+
+    zone = new Zone();
+    campaign.putZone(zone);
+
+    testToken = new Token();
+    testToken.setPropertyType("testType");
+
     propsList = new ArrayList<>();
     propsList.add(new TokenProperty("prop1", null, null, true, false, Permissions.NONE, "10"));
     propsList.add(
@@ -68,11 +79,8 @@ public class TokenPropertiesTest {
             "badJson", null, null, false, false, Permissions.ALL, "{\"a\": 1}{\"b\": 2}"));
     MapTool.getCampaign().putTokenType("testType", propsList);
 
-    testToken = new Token();
-    testToken.setPropertyType("testType");
-
     variableResolver =
-        new MapToolVariableResolver(testToken) {
+        new MapToolVariableResolver(new ZoneEntity<>(zone, testToken)) {
           @Override
           protected void updateTokenProperty(
               Token tokenToUpdate, String varToUpdate, String valueToSet) {

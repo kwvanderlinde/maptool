@@ -32,6 +32,7 @@ import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.events.TokenHoverEnter;
 import net.rptools.maptool.client.ui.token.AbstractTokenOverlay;
 import net.rptools.maptool.client.ui.token.BarTokenOverlay;
+import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.maptool.model.player.Player;
 import net.rptools.maptool.util.HTMLUtil;
 import net.rptools.maptool.util.ImageManager;
@@ -241,7 +242,8 @@ public class StatSheetContext {
       portraitAsset = null;
     }
     label = token.getLabel();
-    MapToolVariableResolver resolver = new MapToolVariableResolver(token);
+    MapToolVariableResolver resolver =
+        new MapToolVariableResolver(new ZoneEntity<>(event.zone(), token));
     MapTool.getCampaign()
         .getCampaignProperties()
         .getTokenPropertyList(token.getPropertyType())

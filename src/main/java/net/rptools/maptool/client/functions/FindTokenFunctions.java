@@ -802,12 +802,12 @@ public class FindTokenFunctions extends AbstractFunction {
         tokenList = getTokensFiltered(zoneRenderer.getSelectedTokensList(), originalList, match);
         break;
       case CURRENT:
-        Token token = resolver.getTokenInContext();
-        if (token != null) {
-          tokenList = getTokensFiltered(Collections.singletonList(token), originalList, match);
-        } else if (!match) {
-          tokenList = originalList;
-        }
+        Optional<ZoneEntity<Token>> token = resolver.getTokenInContext();
+        tokenList =
+            token
+                .map(ZoneEntity::entity)
+                .map(t -> getTokensFiltered(List.of(t), originalList, match))
+                .orElse(originalList);
         break;
       case IMPERSONATED:
         Token t;

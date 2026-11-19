@@ -1436,7 +1436,9 @@ public class PointerTool extends DefaultTool {
                       continue;
                     }
                     timer.start(property.getName());
-                    MapToolVariableResolver resolver = new MapToolVariableResolver(tokenUnderMouse);
+                    MapToolVariableResolver resolver =
+                        new MapToolVariableResolver(
+                            new ZoneEntity<>(renderer.getZone(), tokenUnderMouse));
                     resolver.setAutoPrompt(false);
                     Object propertyValue = resolver.getEvaluatedTokenProperty(property.getName());
                     if (!propertyValue.toString().isEmpty()) {

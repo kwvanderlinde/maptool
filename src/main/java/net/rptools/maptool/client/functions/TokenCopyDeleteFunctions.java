@@ -31,6 +31,7 @@ import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Grid;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.maptool.model.ZonePoint;
 import net.rptools.maptool.util.AssetResolver;
 import net.rptools.maptool.util.FunctionUtil;
@@ -300,13 +301,13 @@ public class TokenCopyDeleteFunctions extends AbstractFunction {
           .trim()
           .toLowerCase(Locale.ROOT)
           .equals("current")) {
-        try {
-          deltX = res.getTokenInContext().getX();
-          deltY = res.getTokenInContext().getY();
-        } catch (NullPointerException e) {
+        var tokenInContext = res.getTokenInContext().map(ZoneEntity::entity).orElse(null);
+        if (tokenInContext == null) {
           throw new ParserException(
               I18N.getText("macro.function.tokenCopy.noCurrentToken", COPY_FUNC));
         }
+        deltX = tokenInContext.getX();
+        deltY = tokenInContext.getY();
       } else if (newVals
           .get("relativeto")
           .getAsString()

@@ -20,6 +20,8 @@ import net.rptools.maptool.client.*;
 import net.rptools.maptool.client.macro.MacroLocationFactory;
 import net.rptools.maptool.model.MacroButtonProperties;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.maptool.util.ExpressionParserFactory;
 import net.rptools.parser.ParserException;
 import org.junit.jupiter.api.Test;
@@ -35,11 +37,12 @@ public class UserDefinedMacroTest {
     macro.setCommand("[r:'got parameter ' + arg(0)]");
 
     // create a token w/macro
+    Zone zone = new Zone();
     Token token = new Token();
     token.saveMacro(macro);
 
     // setup evaluation, trusted, on token
-    MapToolVariableResolver resolver = new MapToolVariableResolver(token);
+    MapToolVariableResolver resolver = new MapToolVariableResolver(new ZoneEntity<>(zone, token));
     var loc = MacroLocationFactory.getInstance().createChatLocation();
     MapTool.getParser().enterContext(new MapToolMacroContext("test", loc, true));
 

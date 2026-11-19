@@ -38,6 +38,7 @@ import net.rptools.maptool.client.functions.json.JSONMacroFunctions;
 import net.rptools.maptool.client.ui.htmlframe.HTMLPane;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.maptool.util.ImageManager;
 import net.rptools.parser.Parser;
@@ -1012,13 +1013,14 @@ public class InputFunction extends AbstractFunction {
 
     // UI step 1 - First, see if a token is in context.
     VariableResolver varRes = resolver;
-    Token tokenInContext = null;
-    if (varRes instanceof MapToolVariableResolver) {
-      tokenInContext = ((MapToolVariableResolver) varRes).getTokenInContext();
+    ZoneEntity<Token> tokenInContext = null;
+    if (varRes instanceof MapToolVariableResolver mtRes) {
+      tokenInContext = mtRes.getTokenInContext().orElse(null);
     }
     String dialogTitle = "Input Values";
     if (tokenInContext != null) {
-      String name = tokenInContext.getName(), gm_name = tokenInContext.getGMName();
+      String name = tokenInContext.entity().getName();
+      String gm_name = tokenInContext.entity().getGMName();
       boolean isGM = MapTool.getPlayer().isGM();
       String extra = "";
 

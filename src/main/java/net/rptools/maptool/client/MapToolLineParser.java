@@ -36,6 +36,7 @@ import net.rptools.maptool.client.ui.macrobuttons.buttons.MacroButtonPrefs;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.MacroButtonProperties;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.maptool.model.library.LibraryManager;
 import net.rptools.maptool.util.ExpressionParserFactory;
 import net.rptools.parser.ParserException;
@@ -237,7 +238,7 @@ public class MapToolLineParser {
       return "";
     }
 
-    Stack<Token> contextTokenStack = new Stack<>();
+    Stack<ZoneEntity<Token>> contextTokenStack = new Stack<>();
     if (context == null) {
       if (!contextStack.isEmpty()) {
         context = contextStack.peek();
@@ -555,14 +556,12 @@ public class MapToolLineParser {
                   if (!isMacroTrusted()) {
                     throw new ParserException(I18N.getText("macro.function.roll.noPerm"));
                   }
+                  var zone = MapTool.getFrame().getCurrentZoneRenderer().getZone();
                   Token newToken =
-                      MapTool.getFrame()
-                          .getCurrentZoneRenderer()
-                          .getZone()
-                          .resolveToken(option.getParsedParam(0, resolver, this).toString());
+                      zone.resolveToken(option.getParsedParam(0, resolver, this).toString());
                   if (newToken != null) {
-                    contextTokenStack.push(resolver.getTokenInContext());
-                    resolver.setTokenIncontext(newToken);
+                    contextTokenStack.push(resolver.getTokenInContext().orElse(null));
+                    resolver.setTokenInContext(new ZoneEntity<>(zone, newToken));
                   }
                   break;
                 default:
@@ -986,7 +985,7 @@ public class MapToolLineParser {
 
           // Revert to our previous token if [token(): ] was used
           if (!contextTokenStack.isEmpty()) {
-            resolver.setTokenIncontext(contextTokenStack.pop());
+            resolver.setTokenInContext(contextTokenStack.pop());
           }
         } else if (match.getMatch().startsWith("{")) {
           roll = match.getRoll();
@@ -1129,7 +1128,7 @@ public class MapToolLineParser {
       boolean createNewVariableContext)
       throws ParserException {
 
-    Token tokenInContext = resolver.getTokenInContext();
+    Token tokenInContext = resolver.getTokenInContext().map(ZoneEntity::entity).orElse(null);
     MapToolMacroContext macroContext;
     MacroLocation currentContext = null;
 

@@ -27,6 +27,7 @@ import net.rptools.maptool.client.macro.impl.*;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.parser.ParserException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -319,7 +320,7 @@ public class MacroManager {
 
         // Preprocess line if required.
         if (def == null || def.expandRolls()) {
-          Token tokenInContext = null;
+          ZoneEntity<Token> tokenInContext = null;
           // getCurrentZone() rather than the frame, so that with no window at all (a server run
           // without a UI) this behaves as it does with no map open: the command has no token in
           // context.
@@ -333,11 +334,13 @@ public class MacroManager {
             // exactly like the player becomes the token in context. Frameworks may rely on this,
             // so it is deliberate.
             final ImpersonationState identity = MapTool.getClient().getImpersonation();
+            Token resolvedToken;
             if (identity.getIdentityGUID() != null) {
-              tokenInContext = zone.getToken(identity.getIdentityGUID());
+              resolvedToken = zone.getToken(identity.getIdentityGUID());
             } else {
-              tokenInContext = zone.resolveToken(identity.getIdentity());
+              resolvedToken = zone.resolveToken(identity.getIdentity());
             }
+            tokenInContext = resolvedToken == null ? null : new ZoneEntity<>(zone, resolvedToken);
           }
           details =
               MapTool.getParser()

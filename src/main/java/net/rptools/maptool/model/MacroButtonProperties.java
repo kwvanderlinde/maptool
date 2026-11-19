@@ -805,12 +805,16 @@ public class MacroButtonProperties implements Comparable<MacroButtonProperties> 
       return toolTip;
     }
 
-    Token token = null;
+    ZoneEntity<Token> token = null;
     if (tokenId != null) {
-      token = MapTool.getFrame().getCurrentZoneRenderer().getZone().getToken(tokenId);
+      Zone zone = MapTool.getClient().getCurrentZone();
+      if (zone != null) {
+        Token resolved = zone.getToken(tokenId);
+        token = resolved == null ? null : new ZoneEntity<>(zone, resolved);
+      }
     }
     try {
-      var loc = macroLocationFactory.createToolTipLocation(token);
+      var loc = macroLocationFactory.createToolTipLocation(token == null ? null : token.entity());
       MapToolMacroContext context = new MapToolMacroContext("ToolTip", loc, false, index);
       if (token == null) {
         log.debug(
@@ -820,8 +824,8 @@ public class MacroButtonProperties implements Comparable<MacroButtonProperties> 
         log.debug(
             "Evaluating toolTip: for token {}"
                 + " ({})----------------------------------------------------------------------------------",
-            token.getName(),
-            token.getId());
+            token.entity().getName(),
+            token.entity().getId());
       }
       return MapTool.getParser().parseLine(new MapToolVariableResolver(token), toolTip, context);
     } catch (ParserException pe) {

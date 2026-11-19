@@ -32,13 +32,13 @@ import net.rptools.maptool.client.script.javascript.JSScriptEngine;
 import net.rptools.maptool.client.script.javascript.api.MapToolJSAPIInterface;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.maptool.model.library.*;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
 import net.rptools.parser.function.*;
 import org.graalvm.polyglot.*;
-import org.graalvm.polyglot.proxy.*;
 
 public class MacroJavaScriptBridge extends AbstractFunction implements DefinesSpecialVariables {
   private static final String NOT_ENOUGH_PARAM =
@@ -364,7 +364,7 @@ public class MacroJavaScriptBridge extends AbstractFunction implements DefinesSp
   }
 
   public Token getTokenInContext() {
-    return variableResolver.getTokenInContext();
+    return variableResolver.getTokenInContext().map(ZoneEntity::entity).orElse(null);
   }
 
   public MapToolVariableResolver getVariableResolver() {

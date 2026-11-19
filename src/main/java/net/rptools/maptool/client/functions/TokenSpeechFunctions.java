@@ -20,6 +20,7 @@ import java.util.List;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
@@ -41,7 +42,11 @@ public class TokenSpeechFunctions extends AbstractFunction {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> parameters)
       throws ParserException {
-    final Token token = ((MapToolVariableResolver) resolver).getTokenInContext();
+    final Token token =
+        ((MapToolVariableResolver) resolver)
+            .getTokenInContext()
+            .map(ZoneEntity::entity)
+            .orElse(null);
     if (token == null) {
       throw new ParserException(
           I18N.getText("macro.function.general.noImpersonated", functionName));
