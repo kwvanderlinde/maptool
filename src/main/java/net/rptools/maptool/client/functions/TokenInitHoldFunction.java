@@ -20,6 +20,8 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.InitiativeList;
 import net.rptools.maptool.model.InitiativeList.TokenInitiative;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
@@ -54,13 +56,15 @@ public class TokenInitHoldFunction extends AbstractFunction {
       throws ParserException {
     if (functionName.equalsIgnoreCase("getInitiativeHold")) {
       FunctionUtil.checkNumberParam(functionName, args, 0, 2);
-      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, args, 0, 1);
-      return getInitiativeHold(token);
+      ZoneEntity<Token> token =
+          FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, args, 0, 1);
+      return getInitiativeHold(token.zone(), token.entity());
     } else if ("setInitiativeHold".equalsIgnoreCase(functionName)) {
       FunctionUtil.checkNumberParam(functionName, args, 1, 3);
       boolean set = FunctionUtil.paramAsBoolean(functionName, args, 0, true);
-      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, args, 1, 2);
-      return setInitiativeHold(token, set);
+      ZoneEntity<Token> token =
+          FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, args, 1, 2);
+      return setInitiativeHold(token.zone(), token.entity(), set);
     }
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));
   }
@@ -71,8 +75,8 @@ public class TokenInitHoldFunction extends AbstractFunction {
    * @param token the token to get the hold
    * @return 1/0 if held or not held, or error message if token not in the initiative list
    */
-  public static Object getInitiativeHold(Token token) {
-    TokenInitiative ti = token.getInitiative();
+  public static Object getInitiativeHold(Zone zone, Token token) {
+    TokenInitiative ti = token.getInitiative(zone);
     if (ti == null) return I18N.getText("macro.function.TokenInit.notOnList");
     return ti.isHolding() ? BigDecimal.ONE : BigDecimal.ZERO;
   }
@@ -84,8 +88,8 @@ public class TokenInitHoldFunction extends AbstractFunction {
    * @param set the boolean value for the hold
    * @return 1/0 if hold set or removed, or error message if token not in the initiative list
    */
-  public static Object setInitiativeHold(Token token, boolean set) {
-    List<InitiativeList.TokenInitiative> tis = token.getInitiatives();
+  public static Object setInitiativeHold(Zone zone, Token token, boolean set) {
+    List<InitiativeList.TokenInitiative> tis = token.getInitiatives(zone);
     for (InitiativeList.TokenInitiative ti : tis) ti.setHolding(set);
     if (tis.isEmpty()) {
       return I18N.getText("macro.function.TokenInit.notOnListSet");

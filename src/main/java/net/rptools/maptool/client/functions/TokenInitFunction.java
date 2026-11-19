@@ -57,8 +57,9 @@ public class TokenInitFunction extends AbstractFunction {
       throws ParserException {
     if (functionName.equalsIgnoreCase("getInitiative")) {
       FunctionUtil.checkNumberParam(functionName, args, 0, 2);
-      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, args, 0, 1);
-      return getInitiative(token);
+      ZoneEntity<Token> token =
+          FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, args, 0, 1);
+      return getInitiative(token.zone(), token.entity());
     } else if (functionName.equalsIgnoreCase("addToInitiative")) {
       FunctionUtil.checkNumberParam(functionName, args, 0, 4);
       boolean allowDuplicates =
@@ -70,8 +71,9 @@ public class TokenInitFunction extends AbstractFunction {
     } else if ("setInitiative".equalsIgnoreCase(functionName)) { // setInitiative
       FunctionUtil.checkNumberParam(functionName, args, 1, 3);
       String value = args.get(0).toString();
-      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, args, 1, 2);
-      return setInitiative(token, value);
+      ZoneEntity<Token> token =
+          FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, args, 1, 2);
+      return setInitiative(token.zone(), token.entity(), value);
     }
     throw new ParserException(I18N.getText("macro.function.general.unknownFunction", functionName));
   }
@@ -82,9 +84,9 @@ public class TokenInitFunction extends AbstractFunction {
    * @param token the token
    * @return a String list of the initiatives
    */
-  public static String getInitiative(Token token) {
+  public static String getInitiative(Zone zone, Token token) {
     String ret = "";
-    List<TokenInitiative> tis = token.getInitiatives();
+    List<TokenInitiative> tis = token.getInitiatives(zone);
     if (tis.isEmpty()) return I18N.getText("macro.function.TokenInit.notOnList");
     for (TokenInitiative ti : tis) {
       if (ret.length() > 0) ret += ", ";
@@ -123,7 +125,7 @@ public class TokenInitFunction extends AbstractFunction {
       ti = list.insertToken(-1, token);
       if (state != null) ti.setState(state);
     } else {
-      setInitiative(token, state);
+      setInitiative(zone, token, state);
     } // endif
     return ti != null ? BigDecimal.ONE : BigDecimal.ZERO;
   }
@@ -135,8 +137,8 @@ public class TokenInitFunction extends AbstractFunction {
    * @param state the initiative to assign to the token
    * @return the value assigned to the initiative
    */
-  public static Object setInitiative(Token token, String state) {
-    List<InitiativeList.TokenInitiative> tis = token.getInitiatives();
+  public static Object setInitiative(Zone zone, Token token, String state) {
+    List<InitiativeList.TokenInitiative> tis = token.getInitiatives(zone);
     for (InitiativeList.TokenInitiative ti : tis) ti.setState(state);
     if (tis.isEmpty()) {
       return I18N.getText("macro.function.TokenInit.notOnListSet");

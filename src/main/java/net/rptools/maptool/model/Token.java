@@ -2423,10 +2423,10 @@ public class Token implements Cloneable {
   /**
    * Get the list of initiatives for the token
    *
+   * @param zone the parent zone of this token
    * @return The List of initiative
    */
-  public List<InitiativeList.TokenInitiative> getInitiatives() {
-    Zone zone = getZoneRenderer().getZone();
+  public List<InitiativeList.TokenInitiative> getInitiatives(Zone zone) {
     List<Integer> list = zone.getInitiativeList().indexOf(this);
     if (list.isEmpty()) {
       return Collections.emptyList();
@@ -2443,8 +2443,7 @@ public class Token implements Cloneable {
    *
    * @return The first token initiative value for the token
    */
-  public InitiativeList.TokenInitiative getInitiative() {
-    Zone zone = getZoneRenderer().getZone();
+  public InitiativeList.TokenInitiative getInitiative(Zone zone) {
     List<Integer> list = zone.getInitiativeList().indexOf(this);
     if (list.isEmpty()) {
       return null;

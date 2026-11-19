@@ -319,9 +319,11 @@ public class MapToolVariableResolver implements VariableResolver {
         // Don't evaluate return value.
         return TokenVisibleFunction.getVisible(tokenInContext);
       } else if (name.equals(TOKEN_INITIATIVE)) {
-        return TokenInitFunction.getInitiative(tokenInContext);
+        var zone = MapTool.getClient().getCampaign().getZoneContainingToken(tokenInContext);
+        return TokenInitFunction.getInitiative(zone, tokenInContext);
       } else if (name.equals(TOKEN_INITIATIVE_HOLD)) {
-        return TokenInitHoldFunction.getInitiativeHold(tokenInContext);
+        var zone = MapTool.getClient().getCampaign().getZoneContainingToken(tokenInContext);
+        return TokenInitHoldFunction.getInitiativeHold(zone, tokenInContext);
       } // endif
 
       if (this.validTokenProperty(name, tokenInContext)) {
@@ -479,11 +481,13 @@ public class MapToolVariableResolver implements VariableResolver {
       TokenVisibleFunction.setVisible(tokenInContext, value.toString());
       return;
     } else if (varname.equals(TOKEN_INITIATIVE)) {
-      TokenInitFunction.setInitiative(tokenInContext, value.toString());
+      var zone = MapTool.getClient().getCampaign().getZoneContainingToken(tokenInContext);
+      TokenInitFunction.setInitiative(zone, tokenInContext, value.toString());
       return;
     } else if (varname.equals(TOKEN_INITIATIVE_HOLD)) {
       boolean set = FunctionUtil.getBooleanValue(value);
-      TokenInitHoldFunction.setInitiativeHold(tokenInContext, set);
+      var zone = MapTool.getClient().getCampaign().getZoneContainingToken(tokenInContext);
+      TokenInitHoldFunction.setInitiativeHold(zone, tokenInContext, set);
       return;
     } else if (varname.equals(INITIATIVE_CURRENT)) {
       if (!MapTool.getFrame().getInitiativePanel().hasGMPermission())
