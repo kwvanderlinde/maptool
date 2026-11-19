@@ -169,6 +169,55 @@ public class FunctionUtil {
    * @param param the parameters for the function
    * @param indexToken the index to find the token at. If -1, use current token instead.
    * @param indexMap the index to find the map name or ID at. If -1, use current map instead.
+   * @return the token and its containing zone.
+   * @throws ParserException if a token is specified but the macro is not trusted, or the specified
+   *     token can not be found, or if no token is specified and no token is impersonated.
+   */
+  public static ZoneEntity<Token> getTokenAndZoneFromParam(
+      VariableResolver resolver,
+      String functionName,
+      List<Object> param,
+      int indexToken,
+      int indexMap)
+      throws ParserException {
+
+    int size = param.size();
+    String id = indexToken >= 0 && size > indexToken ? param.get(indexToken).toString() : null;
+    String map = indexMap >= 0 && size > indexMap ? param.get(indexMap).toString() : null;
+
+    if (id != null) {
+      if (!MapTool.getParser().isMacroTrusted()) {
+        throw new ParserException(I18N.getText(KEY_NO_PERM, functionName));
+      }
+      var token = FindTokenFunctions.findToken(id, map);
+      if (token.isEmpty()) {
+        if (map == null) {
+          throw new ParserException(I18N.getText(KEY_UNKNOWN_TOKEN, functionName, id));
+        } else if (MapTool.getClient().getCampaign().getZoneByName(map) == null) {
+          throw new ParserException(I18N.getText(KEY_UNKNOWN_MAP, functionName, map));
+        } else {
+          throw new ParserException(I18N.getText(KEY_UNKNOWN_TOKEN_ON_MAP, functionName, id, map));
+        }
+      }
+      return token.get();
+    } else {
+      var token = ((MapToolVariableResolver) resolver).getTokenInContext();
+      if (token.isEmpty()) {
+        throw new ParserException(I18N.getText(KEY_NO_IMPERSONATED, functionName));
+      }
+      return token.get();
+    }
+  }
+
+  /**
+   * Gets the token from the specified index or returns the token in context. This method will check
+   * the list size before trying to retrieve the token so it is safe to use for functions that have
+   * the token as an optional argument.
+   *
+   * @param functionName the function name (used for generating exception messages).
+   * @param param the parameters for the function
+   * @param indexToken the index to find the token at. If -1, use current token instead.
+   * @param indexMap the index to find the map name or ID at. If -1, use current map instead.
    * @return the token.
    * @throws ParserException if a token is specified but the macro is not trusted, or the specified
    *     token can not be found, or if no token is specified and no token is impersonated.
@@ -180,32 +229,7 @@ public class FunctionUtil {
       int indexToken,
       int indexMap)
       throws ParserException {
-
-    int size = param.size();
-    String id = indexToken >= 0 && size > indexToken ? param.get(indexToken).toString() : null;
-    String map = indexMap >= 0 && size > indexMap ? param.get(indexMap).toString() : null;
-    Token token;
-    if (id != null) {
-      if (!MapTool.getParser().isMacroTrusted()) {
-        throw new ParserException(I18N.getText(KEY_NO_PERM, functionName));
-      }
-      token = FindTokenFunctions.findToken(id, map).map(ZoneEntity::entity).orElse(null);
-      if (token == null) {
-        if (map == null) {
-          throw new ParserException(I18N.getText(KEY_UNKNOWN_TOKEN, functionName, id));
-        } else if (MapTool.getClient().getCampaign().getZoneByName(map) == null) {
-          throw new ParserException(I18N.getText(KEY_UNKNOWN_MAP, functionName, map));
-        } else {
-          throw new ParserException(I18N.getText(KEY_UNKNOWN_TOKEN_ON_MAP, functionName, id, map));
-        }
-      }
-    } else {
-      token = ((MapToolVariableResolver) resolver).getTokenInContext();
-      if (token == null) {
-        throw new ParserException(I18N.getText(KEY_NO_IMPERSONATED, functionName));
-      }
-    }
-    return token;
+    return getTokenAndZoneFromParam(resolver, functionName, param, indexToken, indexMap).entity();
   }
 
   /**
