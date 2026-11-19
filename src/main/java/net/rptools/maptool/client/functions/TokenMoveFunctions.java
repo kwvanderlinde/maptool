@@ -452,7 +452,7 @@ public class TokenMoveFunctions extends AbstractFunction {
                   ON_TOKEN_MOVE_COMPLETE_CALLBACK,
                   libraryNamespace,
                   pathCoordinates,
-                  token,
+                  new MapToolVariableResolver(token),
                   ON_TOKEN_MOVE_DENY_VARIABLE,
                   varsToSet);
           if (moveDenied) deniedTokens.add(token);
@@ -567,7 +567,7 @@ public class TokenMoveFunctions extends AbstractFunction {
                 ON_MULTIPLE_TOKENS_MOVED_COMPLETE_CALLBACK,
                 libraryNamespace,
                 json.toString(),
-                null,
+                new MapToolVariableResolver(),
                 ON_TOKEN_MOVE_DENY_VARIABLE,
                 varsToSet);
       }

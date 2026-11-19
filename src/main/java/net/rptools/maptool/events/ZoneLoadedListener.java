@@ -18,6 +18,7 @@ import com.google.common.eventbus.Subscribe;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.events.ZoneLoaded;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.language.I18N;
@@ -50,7 +51,7 @@ public class ZoneLoadedListener {
               ON_CHANGE_MAP_CALLBACK,
               libraryNamespace,
               currentZR.getZone().getId().toString(),
-              null,
+              new MapToolVariableResolver(),
               Collections.emptyMap(),
               false);
         } catch (InterruptedException | ExecutionException e) {

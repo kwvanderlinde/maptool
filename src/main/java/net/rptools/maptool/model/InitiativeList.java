@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import net.rptools.maptool.client.AppPreferences;
 import net.rptools.maptool.client.MapTool;
+import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.library.Library;
 import net.rptools.maptool.model.library.LibraryManager;
@@ -673,7 +674,7 @@ public class InitiativeList implements Serializable {
                     ON_INITIATIVE_CHANGE_VETOABLE_MACRO_CALLBACK,
                     libraryNamespace,
                     argStr,
-                    null,
+                    new MapToolVariableResolver(),
                     ON_INITIATIVE_CHANGE_DENY_VARIABLE,
                     Collections.emptyMap());
             isVetoed = isVetoed || thisVote;
@@ -725,7 +726,7 @@ public class InitiativeList implements Serializable {
                 ON_INITIATIVE_CHANGE_COMMIT_MACRO_CALLBACK,
                 libraryNamespace,
                 argStr,
-                null,
+                new MapToolVariableResolver(),
                 Collections.emptyMap(),
                 false);
           } catch (InterruptedException | ExecutionException e) {
