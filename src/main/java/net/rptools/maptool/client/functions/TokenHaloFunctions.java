@@ -28,6 +28,8 @@ import net.rptools.maptool.model.CategorizedHalos;
 import net.rptools.maptool.model.Halo;
 import net.rptools.maptool.model.Halos;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
@@ -91,8 +93,9 @@ public class TokenHaloFunctions extends AbstractFunction {
       } else {
         value = BigDecimal.ONE;
       }
-      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 3, 4);
-      return setHalos(haloCategory, haloName, value, token);
+      ZoneEntity<Token> token =
+          FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, parameters, 3, 4);
+      return setHalos(haloCategory, haloName, value, token.zone(), token.entity());
     } else if (functionName.equalsIgnoreCase("showHalos")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 1);
 
@@ -278,7 +281,8 @@ public class TokenHaloFunctions extends AbstractFunction {
    * @throws ParserException if the halo type can't be found.
    */
   private static BigDecimal setHalos(
-      String categoryName, String haloName, BigDecimal value, Token token) throws ParserException {
+      String categoryName, String haloName, BigDecimal value, Zone zone, Token token)
+      throws ParserException {
     boolean found = false;
     CategorizedHalos categorizedHalos = MapTool.getCampaign().getCategorizedHalos();
 
@@ -296,7 +300,7 @@ public class TokenHaloFunctions extends AbstractFunction {
     for (Halo halo : halos) {
       if (haloName.equals(halo.getName())) {
         found = true;
-        MapTool.serverCommand().toggleHaloSourceOnToken(token, add, halo);
+        MapTool.serverCommand().toggleHaloSourceOnToken(zone, token, add, halo);
       }
     }
 

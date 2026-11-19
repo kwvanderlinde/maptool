@@ -36,6 +36,7 @@ import net.rptools.maptool.client.ui.zone.vbl.TokenVBL.JTS_SimplifyMethodType;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
+import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
@@ -456,7 +457,8 @@ public class Topology_Functions extends AbstractFunction {
               functionName));
     }
 
-    Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 1, -1);
+    ZoneEntity<Token> token =
+        FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, parameters, 1, -1);
 
     int results = -1;
     Area tokenTopology = new Area();
@@ -478,7 +480,7 @@ public class Topology_Functions extends AbstractFunction {
           tokenTopology.add(makeCircle(topologyObject, functionName));
           break;
         case AUTO:
-          tokenTopology = autoGenerateTopology(token, topologyObject, functionName);
+          tokenTopology = autoGenerateTopology(token.entity(), topologyObject, functionName);
 
           if (tokenTopology != null) {
             int tokenTopologyOptimizedPointCount = 0;
@@ -495,7 +497,8 @@ public class Topology_Functions extends AbstractFunction {
       }
     }
     // Replace with new topology
-    MapTool.serverCommand().setTokenMaskTopology(token, tokenTopology, topologyType);
+    MapTool.serverCommand()
+        .setTokenMaskTopology(token.zone(), token.entity(), tokenTopology, topologyType);
 
     return results;
   }
@@ -526,23 +529,27 @@ public class Topology_Functions extends AbstractFunction {
      * position for the token ID, and because a given parameter could indicate a delete flag instead
      * of a token ID. So we customize the logic here, despite largely being similar.
      */
-    Token token;
+    ZoneEntity<Token> token;
     if (parameters.size() >= 2
         && (!(parameters.get(parameters.size() - 1) instanceof BigDecimal))) {
-      token = zone.resolveToken(parameters.get(parameters.size() - 1).toString());
-
-      if (token == null) {
+      var resolvedToken = zone.resolveToken(parameters.get(parameters.size() - 1).toString());
+      if (resolvedToken == null) {
         throw new ParserException(
             I18N.getText(
                 "macro.function.general.unknownToken", functionName, parameters.get(0).toString()));
       }
+      token = new ZoneEntity<>(zone, resolvedToken);
     } else {
       MapToolVariableResolver res = (MapToolVariableResolver) resolver;
-      token = res.getTokenInContext();
-      if (token == null) {
+      var resolvedToken = res.getTokenInContext();
+      if (resolvedToken == null) {
         throw new ParserException(
             I18N.getText("macro.function.general.noImpersonated", functionName));
       }
+      token =
+          new ZoneEntity<>(
+              MapTool.getClient().getCampaign().getZoneContainingToken(resolvedToken),
+              resolvedToken);
     }
 
     boolean delete = false;
@@ -566,19 +573,23 @@ public class Topology_Functions extends AbstractFunction {
     }
 
     if (topologyFromToken) {
-      var newMapTopology = token.getTransformedMaskTopology(zone, topologyType);
+      var newMapTopology = token.entity().getTransformedMaskTopology(zone, topologyType);
       if (newMapTopology != null) {
         MapTool.serverCommand().updateMaskTopology(zone, newMapTopology, false, topologyType);
       }
       if (delete) {
-        MapTool.serverCommand().setTokenMaskTopology(token, null, topologyType);
+        MapTool.serverCommand()
+            .setTokenMaskTopology(token.zone(), token.entity(), null, topologyType);
       }
     } else {
-      Area topology = TokenVBL.getTopology_underToken(zone, token, topologyType);
+      Area topology = TokenVBL.getTopology_underToken(zone, token.entity(), topologyType);
 
       MapTool.serverCommand()
           .setTokenMaskTopology(
-              token, TokenVBL.transformTopology_toToken(zone, token, topology), topologyType);
+              token.zone(),
+              token.entity(),
+              TokenVBL.transformTopology_toToken(zone, token.entity(), topology),
+              topologyType);
       if (delete) {
         MapTool.serverCommand().updateMaskTopology(zone, topology, true, topologyType);
       }

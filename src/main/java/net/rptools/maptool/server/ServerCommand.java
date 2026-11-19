@@ -191,10 +191,6 @@ public interface ServerCommand {
 
   void removeData(String type, String namespace, String name);
 
-  default void toggleLightSourceOnToken(Token token, boolean toggleOn, LightSource lightSource) {
-    toggleLightSourceOnToken(token.getZoneRenderer().getZone(), token, toggleOn, lightSource);
-  }
-
   /**
    * Adds or removes a light source on {@code token}.
    *
@@ -205,10 +201,6 @@ public interface ServerCommand {
    */
   void toggleLightSourceOnToken(Zone zone, Token token, boolean toggleOn, LightSource lightSource);
 
-  default void toggleHaloSourceOnToken(Token token, boolean toggleOn, Halo halo) {
-    toggleHaloSourceOnToken(token.getZoneRenderer().getZone(), token, toggleOn, halo);
-  }
-
   /**
    * Adds or removes a halo source on {@code token}.
    *
@@ -218,11 +210,6 @@ public interface ServerCommand {
    * @param halo The halo source to add.
    */
   void toggleHaloSourceOnToken(Zone zone, Token token, boolean toggleOn, Halo halo);
-
-  default void setTokenMaskTopology(
-      Token token, @Nullable Area area, Zone.TopologyType topologyType) {
-    setTokenMaskTopology(token.getZoneRenderer().getZone(), token, area, topologyType);
-  }
 
   void setTokenMaskTopology(
       Zone zone, Token token, @Nullable Area area, Zone.TopologyType topologyType);

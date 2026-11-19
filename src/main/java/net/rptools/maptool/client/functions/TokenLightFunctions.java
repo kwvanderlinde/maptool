@@ -66,8 +66,9 @@ public class TokenLightFunctions extends AbstractFunction {
       String type = parameters.get(0).toString();
       String name = parameters.get(1).toString();
       BigDecimal value = FunctionUtil.paramAsBigDecimal(functionName, parameters, 2, false);
-      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 3, 4);
-      return setLight(token, type, name, value);
+      ZoneEntity<Token> token =
+          FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, parameters, 3, 4);
+      return setLight(token.zone(), token.entity(), type, name, value);
     }
     if (functionName.equalsIgnoreCase("getLights")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 0, 4);
@@ -150,7 +151,8 @@ public class TokenLightFunctions extends AbstractFunction {
    * @return 0 if the light was not found, otherwise 1;
    * @throws ParserException if the light type can't be found.
    */
-  private static BigDecimal setLight(Token token, String categoryName, String name, BigDecimal val)
+  private static BigDecimal setLight(
+      Zone zone, Token token, String categoryName, String name, BigDecimal val)
       throws ParserException {
     boolean found = false;
     CategorizedLights lightSources = MapTool.getCampaign().getLightSources();
@@ -172,7 +174,7 @@ public class TokenLightFunctions extends AbstractFunction {
     for (LightSource ls : sources) {
       if (name.equals(ls.getName())) {
         found = true;
-        MapTool.serverCommand().toggleLightSourceOnToken(token, add, ls);
+        MapTool.serverCommand().toggleLightSourceOnToken(zone, token, add, ls);
       }
     }
 
