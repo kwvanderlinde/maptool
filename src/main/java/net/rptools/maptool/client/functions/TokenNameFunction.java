@@ -18,6 +18,7 @@ import java.util.List;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Token;
+import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
@@ -45,26 +46,25 @@ public class TokenNameFunction extends AbstractFunction {
   public Object childEvaluate(
       Parser parser, VariableResolver resolver, String functionName, List<Object> args)
       throws ParserException {
-    Token token;
-
     if (functionName.equalsIgnoreCase("getName")) {
       FunctionUtil.checkNumberParam(functionName, args, 0, 2);
-      token = FunctionUtil.getTokenFromParam(resolver, functionName, args, 0, 1);
+      var token = FunctionUtil.getTokenFromParam(resolver, functionName, args, 0, 1);
+      return token.getName();
     } else if ("setName".equalsIgnoreCase(functionName)) {
       FunctionUtil.checkNumberParam(functionName, args, 1, 3);
       String name = args.get(0).toString();
-      token = FunctionUtil.getTokenFromParam(resolver, functionName, args, 1, 2);
+      var token = FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, args, 1, 2);
 
-      if (args.get(0).toString().equals("")) {
+      if (name.isEmpty()) {
         throw new ParserException(
             I18N.getText("macro.function.tokenName.emptyTokenNameForbidden", "setName"));
       }
-      setName(token, name);
+      setName(token.zone(), token.entity(), name);
+      return token.entity().getName();
     } else {
       throw new ParserException(
           I18N.getText("macro.function.general.unknownFunction", functionName));
     }
-    return token.getName();
   }
 
   /**
@@ -84,8 +84,35 @@ public class TokenNameFunction extends AbstractFunction {
    * @param name the name of the token.
    * @throws ParserException if an error occurs.
    */
-  public static void setName(Token token, String name) throws ParserException {
-    token.validateName(name);
+  public static void setName(Zone zone, Token token, String name) throws ParserException {
+    validateName(zone, token, name);
     MapTool.serverCommand().updateTokenProperty(token, Token.Update.setName, name);
+  }
+
+  /**
+   * Validate a token name by testing for duplicates. There is a potential exposure of information
+   * to the player in this method: through repeated attempts to name a token they own to another
+   * name, they could determine which token names the GM is already using. Fortunately, the
+   * showError() call makes this extremely unlikely due to the interactive nature of a failure.
+   *
+   * @param name the new name of the token
+   * @throws ParserException thrown if a token has the same name
+   */
+  private static void validateName(Zone zone, Token tokenToCheck, String name)
+      throws ParserException {
+    if (MapTool.getPlayer().isGM() || MapTool.getParser().isMacroTrusted()) {
+      // Always allowed.
+      return;
+    }
+
+    List<Token> tokensList = zone.getAllTokens();
+
+    for (Token token : tokensList) {
+      String curTokenName = token.getName();
+      if (curTokenName.equalsIgnoreCase(name) && !(token.equals(tokenToCheck))) {
+        MapTool.showError(I18N.getText("Token.error.unableToRename", name));
+        throw new ParserException(I18N.getText("Token.error.unableToRename", name));
+      }
+    }
   }
 }

@@ -1175,30 +1175,6 @@ public class Token implements Cloneable {
     this.name = name;
   }
 
-  /**
-   * Validate a token name by testing for duplicates. There is a potential exposure of information
-   * to the player in this method: through repeated attempts to name a token they own to another
-   * name, they could determine which token names the GM is already using. Fortunately, the
-   * showError() call makes this extremely unlikely due to the interactive nature of a failure.
-   *
-   * @param name the new name of the token
-   * @throws ParserException thrown if a token has the same name
-   */
-  public void validateName(String name) throws ParserException {
-    if (!MapTool.getPlayer().isGM() && !MapTool.getParser().isMacroTrusted()) {
-      Zone curZone = getZoneRenderer().getZone();
-      List<Token> tokensList = curZone.getAllTokens();
-
-      for (Token token : tokensList) {
-        String curTokenName = token.getName();
-        if (curTokenName.equalsIgnoreCase(name) && !(token.equals(this))) {
-          MapTool.showError(I18N.getText("Token.error.unableToRename", name));
-          throw new ParserException(I18N.getText("Token.error.unableToRename", name));
-        }
-      }
-    }
-  }
-
   public MD5Key getImageAssetId() {
     MD5Key assetId = imageAssetMap.get(currentImageAsset);
     if (assetId == null) {
@@ -2449,7 +2425,6 @@ public class Token implements Cloneable {
    *
    * @return The List of initiative
    */
-  @SuppressWarnings("unchecked")
   public List<InitiativeList.TokenInitiative> getInitiatives() {
     Zone zone = getZoneRenderer().getZone();
     List<Integer> list = zone.getInitiativeList().indexOf(this);

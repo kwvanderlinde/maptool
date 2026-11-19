@@ -466,7 +466,8 @@ public class MapToolVariableResolver implements VariableResolver {
       if (value.toString().equals("")) {
         throw new ParserException(I18N.getText("lineParser.emptyTokenName"));
       }
-      TokenNameFunction.setName(tokenInContext, value.toString());
+      var zone = MapTool.getClient().getCampaign().getZoneContainingToken(tokenInContext);
+      TokenNameFunction.setName(zone, tokenInContext, value.toString());
       return;
     } else if (varname.equals(TOKEN_GMNAME)) {
       TokenGMNameFunction.setGMName(tokenInContext, value.toString());
