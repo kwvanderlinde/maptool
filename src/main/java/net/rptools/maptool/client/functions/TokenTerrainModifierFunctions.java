@@ -33,6 +33,7 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Token.TerrainModifierOperation;
 import net.rptools.maptool.model.Token.Update;
+import net.rptools.maptool.model.ZoneEntity;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
@@ -145,8 +146,9 @@ public class TokenTerrainModifierFunctions extends AbstractFunction {
 
     FunctionUtil.checkNumberParam("setTerrainModifier", args, 1, 3);
 
-    Token token = FunctionUtil.getTokenFromParam(resolver, "setTerrainModifier", args, 1, 2);
-    Double terrainModifier = token.getTerrainModifier();
+    ZoneEntity<Token> token =
+        FunctionUtil.getTokenAndZoneFromParam(resolver, "setTerrainModifier", args, 1, 2);
+    double terrainModifier = token.entity().getTerrainModifier();
 
     if (args.get(0) instanceof BigDecimal) {
       terrainModifier = FunctionUtil.paramAsDouble("setTerrainModifier", args, 0, false);
@@ -169,7 +171,9 @@ public class TokenTerrainModifierFunctions extends AbstractFunction {
 
           MapTool.serverCommand()
               .updateTokenProperty(
-                  token, Update.setTerrainModifierOperation, terrainModifierOperation.name());
+                  token.entity(),
+                  Update.setTerrainModifierOperation,
+                  terrainModifierOperation.name());
         }
       } catch (java.lang.IllegalArgumentException iae) {
         throw new ParserException(
@@ -195,9 +199,9 @@ public class TokenTerrainModifierFunctions extends AbstractFunction {
             ignoredTerrainOperationsList.stream().filter(Objects::nonNull).collect(toSet());
 
         MapTool.serverCommand()
-            .updateTokenProperty(
-                token,
-                Update.setTerrainModifiersIgnored,
+            .setTokenTerrainModifiersIgnored(
+                token.zone(),
+                token.entity(),
                 ignoredTerrainOperationsSet.stream()
                     .map(TerrainModifierOperation::name)
                     .collect(Collectors.toList()));

@@ -818,8 +818,7 @@ public class TokenPropertyFunctions extends AbstractFunction {
         newScaleX = oldWidth / token.entity().getWidth();
         newScaleY = magnitude / token.entity().getHeight();
       }
-      MapTool.serverCommand()
-          .updateTokenProperty(token.entity(), Token.Update.setScaleXY, newScaleX, newScaleY);
+      MapTool.serverCommand().setTokenScaleXY(token.zone(), token.entity(), newScaleX, newScaleY);
       return magnitude;
     }
 
@@ -904,29 +903,29 @@ public class TokenPropertyFunctions extends AbstractFunction {
      */
     if (functionName.equalsIgnoreCase("setTokenLayoutProps")) {
       FunctionUtil.checkNumberParam(functionName, parameters, 3, 5);
-      Token token = FunctionUtil.getTokenFromParam(resolver, functionName, parameters, 3, 4);
+      ZoneEntity<Token> token =
+          FunctionUtil.getTokenAndZoneFromParam(resolver, functionName, parameters, 3, 4);
 
       double scale;
       if (!"".equals(parameters.get(0))) {
         scale = FunctionUtil.paramAsDouble(functionName, parameters, 0, false);
       } else {
-        scale = token.getSizeScale();
+        scale = token.entity().getSizeScale();
       }
       int xOffset;
       if (!"".equals(parameters.get(1))) {
         xOffset = FunctionUtil.paramAsInteger(functionName, parameters, 1, false);
       } else {
-        xOffset = token.getAnchorX();
+        xOffset = token.entity().getAnchorX();
       }
       int yOffset;
       if (!"".equals(parameters.get(2))) {
         yOffset = FunctionUtil.paramAsInteger(functionName, parameters, 2, false);
       } else {
-        yOffset = token.getAnchorY();
+        yOffset = token.entity().getAnchorY();
       }
 
-      MapTool.serverCommand()
-          .updateTokenProperty(token, Token.Update.setLayout, scale, xOffset, yOffset);
+      MapTool.serverCommand().setTokenLayout(token.zone(), token.entity(), scale, xOffset, yOffset);
       return "";
     }
 

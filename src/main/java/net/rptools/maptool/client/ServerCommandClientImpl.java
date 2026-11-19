@@ -801,35 +801,32 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   @Override
-  public void updateTokenProperty(
-      Zone zone, Token token, Token.Update update, double value1, double value2) {
+  public void setTokenScaleXY(Zone zone, Token token, double value1, double value2) {
     updateTokenProperty(
         zone,
         token,
-        update,
+        Token.Update.setScaleXY,
         TokenPropertyValueDto.newBuilder().setDoubleValue(value1).build(),
         TokenPropertyValueDto.newBuilder().setDoubleValue(value2).build());
   }
 
   @Override
-  public void updateTokenProperty(
-      Zone zone, Token token, Token.Update update, double value1, int value2, int value3) {
+  public void setTokenLayout(Zone zone, Token token, double value1, int value2, int value3) {
     updateTokenProperty(
         zone,
         token,
-        update,
+        Token.Update.setLayout,
         TokenPropertyValueDto.newBuilder().setDoubleValue(value1).build(),
         TokenPropertyValueDto.newBuilder().setIntValue(value2).build(),
         TokenPropertyValueDto.newBuilder().setIntValue(value3).build());
   }
 
   @Override
-  public void updateTokenProperty(
-      Zone zone, Token token, Token.Update update, List<String> values) {
+  public void setTokenTerrainModifiersIgnored(Zone zone, Token token, List<String> values) {
     updateTokenProperty(
         zone,
         token,
-        update,
+        Token.Update.setTerrainModifiersIgnored,
         TokenPropertyValueDto.newBuilder()
             .setStringValues(StringListDto.newBuilder().addAllValues(values).build())
             .build());

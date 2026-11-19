@@ -216,6 +216,12 @@ public interface ServerCommand {
 
   void setTokenFootprint(Zone zone, Token token, GridType gridType, GUID footprintId);
 
+  void setTokenScaleXY(Zone zone, Token token, double value1, double value2);
+
+  void setTokenLayout(Zone zone, Token token, double value1, int value2, int value3);
+
+  void setTokenTerrainModifiersIgnored(Zone zone, Token token, List<String> values);
+
   // region Legacy property updates
 
   default void updateTokenProperty(Token token, Token.Update update, int value) {
@@ -251,17 +257,8 @@ public interface ServerCommand {
     updateTokenProperty(token.getZoneRenderer().getZone(), token, update, value);
   }
 
-  default void updateTokenProperty(Token token, Token.Update update, double value1, double value2) {
-    updateTokenProperty(token.getZoneRenderer().getZone(), token, update, value1, value2);
-  }
-
-  default void updateTokenProperty(
-      Token token, Token.Update update, double value1, int value2, int value3) {
-    updateTokenProperty(token.getZoneRenderer().getZone(), token, update, value1, value2, value3);
-  }
-
   default void updateTokenProperty(Token token, Token.Update update, List<String> values) {
-    updateTokenProperty(token.getZoneRenderer().getZone(), token, update, values);
+    setTokenTerrainModifiersIgnored(token.getZoneRenderer().getZone(), token, update, values);
   }
 
   default void updateTokenProperty(Token token, Token.Update update, double value) {
@@ -309,14 +306,6 @@ public interface ServerCommand {
   void updateTokenProperty(Zone zone, Token token, Token.Update update, int value1, int value2);
 
   void updateTokenProperty(Zone zone, Token token, Token.Update update, boolean value);
-
-  void updateTokenProperty(
-      Zone zone, Token token, Token.Update update, double value1, double value2);
-
-  void updateTokenProperty(
-      Zone zone, Token token, Token.Update update, double value1, int value2, int value3);
-
-  void updateTokenProperty(Zone zone, Token token, Token.Update update, List<String> values);
 
   void updateTokenProperty(Zone zone, Token token, Token.Update update, double value);
 
