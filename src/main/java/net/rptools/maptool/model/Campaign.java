@@ -377,6 +377,17 @@ public class Campaign implements Serializable {
     return null;
   }
 
+  public @Nullable Zone getZoneContainingToken(Token token) {
+    // Should only ever be one possible containing zone.
+    for (Zone zone : getZones()) {
+      var match = zone.getToken(token.getId());
+      if (match != null) {
+        return zone;
+      }
+    }
+    return null;
+  }
+
   /**
    * Create an entry for the given <code>Zone</code> in the map, using <code>zone</code>'s {@link
    * Zone#getId()} method.
