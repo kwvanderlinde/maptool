@@ -42,9 +42,12 @@ public class GUID implements Serializable, Comparable<GUID> {
     buffer.putLong(high).putLong(low);
   }
 
+  private GUID(UUID uuid) {
+    this(uuid.getMostSignificantBits(), uuid.getLeastSignificantBits());
+  }
+
   public GUID() {
-    this.baGUID = generateGUID();
-    validateGUID();
+    this(generateUUID());
   }
 
   /**
@@ -125,14 +128,15 @@ public class GUID implements Serializable, Comparable<GUID> {
    *
    * @return a byte[]
    */
-  private static byte[] generateGUID() throws InvalidGUIDException {
-    String newGUID = UUID.randomUUID().toString().replaceAll("-", "");
+  private static UUID generateUUID() {
+    UUID uuid;
+    String idString;
+    do {
+      uuid = UUID.randomUUID();
+      idString = uuid.toString().replace("-", "");
+    } while (StringUtils.isNumeric(idString));
 
-    while (StringUtils.isNumeric(newGUID)) {
-      newGUID = UUID.randomUUID().toString().replaceAll("-", "");
-    }
-
-    return new GUID(newGUID).baGUID;
+    return uuid;
   }
 
   /**
