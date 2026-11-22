@@ -96,12 +96,7 @@ public class GUID implements Serializable, Comparable<GUID> {
   /** Determines whether two GUIDs are equal. */
   @Override
   public boolean equals(Object object) {
-    GUID guid;
-    if (object instanceof String s) { // string
-      guid = new GUID(s);
-    } else if (object instanceof GUID g) { // try to cast to a GUID
-      guid = g;
-    } else {
+    if (!(object instanceof GUID guid)) {
       return false;
     }
 
