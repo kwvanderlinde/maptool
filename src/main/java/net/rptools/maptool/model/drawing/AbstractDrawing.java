@@ -130,8 +130,10 @@ public abstract class AbstractDrawing implements Drawable, ImageObserver {
    */
   @Override
   public boolean equals(Object obj) {
-    if (!(obj instanceof AbstractDrawing)) return false;
-    return id.equals(obj);
+    if (!(obj instanceof AbstractDrawing other)) {
+      return false;
+    }
+    return id.equals(other.id);
   }
 
   /**
