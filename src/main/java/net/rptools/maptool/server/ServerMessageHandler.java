@@ -290,9 +290,9 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(UpdateExposedAreaMetaMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          Zone zone = server.getCampaign().getZone(GUID.valueOf(msg.getZoneGuid()));
+          Zone zone = server.getCampaign().getZone(GUID.fromDto(msg.getZoneGuid()));
           zone.setExposedAreaMetaData(
-              msg.hasTokenGuid() ? GUID.valueOf(msg.getTokenGuid().getValue()) : null,
+              msg.hasTokenGuid() ? GUID.fromDto(msg.getTokenGuid()) : null,
               new ExposedAreaMetaData(Mapper.map(msg.getArea()))); // update the server
         });
   }
@@ -322,8 +322,8 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(UpdateTokenInitiativeMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          Zone zone = server.getCampaign().getZone(GUID.valueOf(msg.getZoneGuid()));
-          var tokenId = GUID.valueOf(msg.getTokenGuid());
+          Zone zone = server.getCampaign().getZone(GUID.fromDto(msg.getZoneGuid()));
+          var tokenId = GUID.fromDto(msg.getTokenGuid());
           InitiativeList list = zone.getInitiativeList();
           TokenInitiative ti = list.getTokenInitiative(msg.getIndex());
           if (!ti.getId().equals(tokenId)) {
@@ -389,8 +389,8 @@ public class ServerMessageHandler implements MessageHandler {
     // for 1.4.
     EventQueue.invokeLater(
         () -> {
-          Zone zone = server.getCampaign().getZone(GUID.valueOf(msg.getZoneGuid()));
-          zone.removeDrawable(GUID.valueOf(msg.getDrawableGuid()));
+          Zone zone = server.getCampaign().getZone(GUID.fromDto(msg.getZoneGuid()));
+          zone.removeDrawable(GUID.fromDto(msg.getDrawableGuid()));
         });
   }
 
@@ -399,7 +399,7 @@ public class ServerMessageHandler implements MessageHandler {
         () -> {
           server
               .getCampaign()
-              .getZone(GUID.valueOf(msg.getZoneGuid()))
+              .getZone(GUID.fromDto(msg.getZoneGuid()))
               .setVisible(msg.getIsVisible());
         });
   }
@@ -407,8 +407,8 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(UpdateTokenPropertyMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          Zone zone = server.getCampaign().getZone(GUID.valueOf(msg.getZoneGuid()));
-          Token token = zone.getToken(GUID.valueOf(msg.getTokenGuid()));
+          Zone zone = server.getCampaign().getZone(GUID.fromDto(msg.getZoneGuid()));
+          Token token = zone.getToken(GUID.fromDto(msg.getTokenGuid()));
           token.updateProperty(
               zone,
               Token.Update.valueOf(msg.getProperty().name()),
@@ -419,7 +419,7 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(UpdateDrawingMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          Zone zone = server.getCampaign().getZone(GUID.valueOf(msg.getZoneGuid()));
+          Zone zone = server.getCampaign().getZone(GUID.fromDto(msg.getZoneGuid()));
           zone.updateDrawable(DrawnElement.fromDto(msg.getDrawing()), Pen.fromDto(msg.getPen()));
         });
   }
@@ -427,7 +427,7 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(SetZoneHasFowMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          Zone zone = server.getCampaign().getZone(GUID.valueOf(msg.getZoneGuid()));
+          Zone zone = server.getCampaign().getZone(GUID.fromDto(msg.getZoneGuid()));
           zone.setHasFog(msg.getHasFow());
         });
   }
@@ -435,7 +435,7 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(SetZoneGridSizeMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          Zone zone = server.getCampaign().getZone(GUID.valueOf(msg.getZoneGuid()));
+          Zone zone = server.getCampaign().getZone(GUID.fromDto(msg.getZoneGuid()));
           if (zone != null) {
             Grid grid = zone.getGrid();
             grid.setSize(msg.getSize());
@@ -448,7 +448,7 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(SetVisionTypeMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          Zone zone = server.getCampaign().getZone(GUID.valueOf(msg.getZoneGuid()));
+          Zone zone = server.getCampaign().getZone(GUID.fromDto(msg.getZoneGuid()));
           zone.setVisionType(VisionType.valueOf(msg.getVision().name()));
         });
   }
@@ -456,10 +456,10 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(SetFowMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          Zone zone = server.getCampaign().getZone(GUID.valueOf(msg.getZoneGuid()));
+          Zone zone = server.getCampaign().getZone(GUID.fromDto(msg.getZoneGuid()));
           var area = Mapper.map(msg.getArea());
           var selectedTokens =
-              msg.getSelectedTokensList().stream().map(GUID::valueOf).collect(Collectors.toSet());
+              msg.getSelectedTokensList().stream().map(GUID::fromDto).collect(Collectors.toSet());
           zone.setFogArea(area, selectedTokens);
         });
   }
@@ -475,7 +475,7 @@ public class ServerMessageHandler implements MessageHandler {
     EventQueue.invokeLater(
         () -> {
           if (msg.hasLandingMapId()) {
-            server.getCampaign().setLandingMapId(GUID.valueOf(msg.getLandingMapId()));
+            server.getCampaign().setLandingMapId(GUID.fromDto(msg.getLandingMapId()));
           } else {
             server.getCampaign().setLandingMapId(null);
           }
@@ -492,9 +492,9 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(SendTokensToBackMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          var zoneGuid = GUID.valueOf(msg.getZoneGuid());
+          var zoneGuid = GUID.fromDto(msg.getZoneGuid());
           var tokens =
-              msg.getTokenGuidsList().stream().map(GUID::valueOf).collect(Collectors.toSet());
+              msg.getTokenGuidsList().stream().map(GUID::fromDto).collect(Collectors.toSet());
           sendTokensToBack(zoneGuid, tokens);
         });
   }
@@ -502,7 +502,7 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(RenameZoneMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          var zoneGUID = GUID.valueOf(msg.getZoneGuid());
+          var zoneGUID = GUID.fromDto(msg.getZoneGuid());
           var name = msg.getName();
           Zone zone = server.getCampaign().getZone(zoneGUID);
           if (zone != null) {
@@ -514,7 +514,7 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(RemoveZoneMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          var zoneGUID = GUID.valueOf(msg.getZoneGuid());
+          var zoneGUID = GUID.fromDto(msg.getZoneGuid());
           var zone = server.getCampaign().getZone(zoneGUID);
           server.getCampaign().removeZone(zoneGUID);
 
@@ -529,9 +529,9 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(RemoveTokensMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          var zoneGUID = GUID.valueOf(msg.getZoneGuid());
+          var zoneGUID = GUID.fromDto(msg.getZoneGuid());
           var tokenGUIDs =
-              msg.getTokenGuidList().stream().map(GUID::valueOf).collect(Collectors.toList());
+              msg.getTokenGuidList().stream().map(GUID::fromDto).collect(Collectors.toList());
           Zone zone = server.getCampaign().getZone(zoneGUID);
           zone.removeTokens(tokenGUIDs); // remove server tokens
         });
@@ -540,16 +540,16 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(RemoveTokenMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          var zoneGUID = GUID.valueOf(msg.getZoneGuid());
-          var tokenGUID = GUID.valueOf(msg.getTokenGuid());
+          var zoneGUID = GUID.fromDto(msg.getZoneGuid());
+          var tokenGUID = GUID.fromDto(msg.getTokenGuid());
           var zone = server.getCampaign().getZone(zoneGUID);
           zone.removeToken(tokenGUID); // remove server tokens
         });
   }
 
   private void handle(RemoveLabelMsg msg) {
-    var zoneGUID = GUID.valueOf(msg.getZoneGuid());
-    var labelGUID = GUID.valueOf(msg.getLabelGuid());
+    var zoneGUID = GUID.fromDto(msg.getZoneGuid());
+    var labelGUID = GUID.fromDto(msg.getLabelGuid());
     var zone = server.getCampaign().getZone(zoneGUID);
     zone.removeLabel(labelGUID);
   }
@@ -573,7 +573,7 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(PutLabelMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          Zone zone = server.getCampaign().getZone(GUID.valueOf(msg.getZoneGuid()));
+          Zone zone = server.getCampaign().getZone(GUID.fromDto(msg.getZoneGuid()));
           zone.putLabel(Label.fromDto(msg.getLabel()));
         });
   }
@@ -588,10 +588,10 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(HideFowMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          var zoneGUID = GUID.valueOf(msg.getZoneGuid());
+          var zoneGUID = GUID.fromDto(msg.getZoneGuid());
           var area = Mapper.map(msg.getArea());
           var selectedTokens =
-              msg.getTokenGuidList().stream().map(GUID::valueOf).collect(Collectors.toSet());
+              msg.getTokenGuidList().stream().map(GUID::fromDto).collect(Collectors.toSet());
 
           Zone zone = server.getCampaign().getZone(zoneGUID);
           zone.hideArea(area, selectedTokens);
@@ -599,7 +599,7 @@ public class ServerMessageHandler implements MessageHandler {
   }
 
   private void handle(String id, GetZoneMsg msg) {
-    getZone(id, GUID.valueOf(msg.getZoneGuid()));
+    getZone(id, GUID.fromDto(msg.getZoneGuid()));
   }
 
   private void handle(String id, GetAssetMsg msg) {
@@ -609,7 +609,7 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(ExposePcAreaMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          var zoneGUID = GUID.valueOf(msg.getZoneGuid());
+          var zoneGUID = GUID.fromDto(msg.getZoneGuid());
           ZoneRenderer renderer = MapTool.getFrame().getZoneRenderer(zoneGUID);
           FogUtil.exposePCArea(renderer);
         });
@@ -618,11 +618,11 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(ExposeFowMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          var zoneGUID = GUID.valueOf(msg.getZoneGuid());
+          var zoneGUID = GUID.fromDto(msg.getZoneGuid());
           Zone zone = server.getCampaign().getZone(zoneGUID);
           Area area = Mapper.map(msg.getArea());
           var selectedTokens =
-              msg.getTokenGuidList().stream().map(GUID::valueOf).collect(Collectors.toSet());
+              msg.getTokenGuidList().stream().map(GUID::fromDto).collect(Collectors.toSet());
           zone.exposeArea(area, selectedTokens);
         });
   }
@@ -630,7 +630,7 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(String clientId, PutTokenMsg putTokenMsg) {
     EventQueue.invokeLater(
         () -> {
-          var zoneGUID = GUID.valueOf(putTokenMsg.getZoneGuid());
+          var zoneGUID = GUID.fromDto(putTokenMsg.getZoneGuid());
           var token = Token.fromDto(putTokenMsg.getToken());
           putToken(clientId, zoneGUID, token);
         });
@@ -639,7 +639,7 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(String clientId, EditTokenMsg editTokenMsg) {
     EventQueue.invokeLater(
         () -> {
-          var zoneGUID = GUID.valueOf(editTokenMsg.getZoneGuid());
+          var zoneGUID = GUID.fromDto(editTokenMsg.getZoneGuid());
           var token = Token.fromDto(editTokenMsg.getToken());
           putToken(clientId, zoneGUID, token);
         });
@@ -648,7 +648,7 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(DrawMsg drawMsg) {
     EventQueue.invokeLater(
         () -> {
-          var zoneGuid = GUID.valueOf(drawMsg.getZoneGuid());
+          var zoneGuid = GUID.fromDto(drawMsg.getZoneGuid());
           var pen = Pen.fromDto(drawMsg.getPen());
           var drawable = Drawable.fromDto(drawMsg.getDrawable());
           Zone zone = server.getCampaign().getZone(zoneGuid);
@@ -659,7 +659,7 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(ClearExposedAreaMsg clearExposedAreaMsg) {
     EventQueue.invokeLater(
         () -> {
-          var zoneGUID = GUID.valueOf(clearExposedAreaMsg.getZoneGuid());
+          var zoneGUID = GUID.fromDto(clearExposedAreaMsg.getZoneGuid());
           var globalOnly = clearExposedAreaMsg.getGlobalOnly();
           Zone zone = server.getCampaign().getZone(zoneGUID);
           zone.clearExposedArea(globalOnly);
@@ -669,7 +669,7 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(ClearAllDrawingsMsg clearAllDrawingsMsg) {
     EventQueue.invokeLater(
         () -> {
-          var zoneGUID = GUID.valueOf(clearAllDrawingsMsg.getZoneGuid());
+          var zoneGUID = GUID.fromDto(clearAllDrawingsMsg.getZoneGuid());
           var layer = Zone.Layer.valueOf(clearAllDrawingsMsg.getLayer());
           Zone zone = server.getCampaign().getZone(zoneGUID);
           zone.clearDrawables(layer);
@@ -677,7 +677,7 @@ public class ServerMessageHandler implements MessageHandler {
   }
 
   private void handle(ChangeZoneDisplayNameMsg changeZoneDisplayNameMsg, Message msg) {
-    var zoneGUID = GUID.valueOf(changeZoneDisplayNameMsg.getZoneGuid());
+    var zoneGUID = GUID.fromDto(changeZoneDisplayNameMsg.getZoneGuid());
     var name = changeZoneDisplayNameMsg.getName();
 
     Zone zone = server.getCampaign().getZone(zoneGUID);
@@ -690,10 +690,10 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(BringTokensToFrontMsg bringTokensToFrontMsg) {
     EventQueue.invokeLater(
         () -> {
-          var zoneGuid = GUID.valueOf(bringTokensToFrontMsg.getZoneGuid());
+          var zoneGuid = GUID.fromDto(bringTokensToFrontMsg.getZoneGuid());
           var tokenSet =
               bringTokensToFrontMsg.getTokenGuidsList().stream()
-                  .map(GUID::valueOf)
+                  .map(GUID::fromDto)
                   .collect(Collectors.toSet());
           bringTokensToFront(zoneGuid, tokenSet);
         });
@@ -702,7 +702,7 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(UpdateMaskTopologyMsg updateTopologyMsg) {
     EventQueue.invokeLater(
         () -> {
-          var zoneGUID = GUID.valueOf(updateTopologyMsg.getZoneGuid());
+          var zoneGUID = GUID.fromDto(updateTopologyMsg.getZoneGuid());
           var area = Mapper.map(updateTopologyMsg.getArea());
           var erase = updateTopologyMsg.getErase();
           var topologyType = Zone.TopologyType.valueOf(updateTopologyMsg.getType().name());
@@ -721,7 +721,7 @@ public class ServerMessageHandler implements MessageHandler {
     var zoneId =
         updatePlayerStatusMsg.getZoneGuid().equals("")
             ? null
-            : GUID.valueOf(updatePlayerStatusMsg.getZoneGuid());
+            : GUID.fromDto(updatePlayerStatusMsg.getZoneGuid());
     var loaded = updatePlayerStatusMsg.getLoaded();
     server.updatePlayerStatus(playerName, zoneId, loaded);
   }
@@ -729,7 +729,7 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(SetWallTopologyMsg setWallTopologyMsg) {
     EventQueue.invokeLater(
         () -> {
-          var zoneId = new GUID(setWallTopologyMsg.getZoneGuid());
+          var zoneId = GUID.fromDto(setWallTopologyMsg.getZoneGuid());
           var zone = server.getCampaign().getZone(zoneId);
           if (zone == null) {
             log.warn("Failed to find zone with id {}", zoneId);
@@ -744,7 +744,7 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(UpdateWallDataMsg updateWallDataMsg) {
     EventQueue.invokeLater(
         () -> {
-          var zoneId = new GUID(updateWallDataMsg.getZoneGuid());
+          var zoneId = GUID.fromDto(updateWallDataMsg.getZoneGuid());
           var zone = server.getCampaign().getZone(zoneId);
           if (zone == null) {
             log.warn("Failed to find zone with id {}", zoneId);
@@ -774,7 +774,7 @@ public class ServerMessageHandler implements MessageHandler {
   private void handle(SetShowCoordinatesMsg msg) {
     EventQueue.invokeLater(
         () -> {
-          var zoneGUID = GUID.valueOf(msg.getZoneGuid());
+          var zoneGUID = GUID.fromDto(msg.getZoneGuid());
           Zone.ShowCoordinates showCoordinates =
               Zone.ShowCoordinates.valueOf(msg.getShowCoordinates().name());
           var zone = server.getCampaign().getZone(zoneGUID);
@@ -814,7 +814,7 @@ public class ServerMessageHandler implements MessageHandler {
     // Broadcast
     for (Token token : tokenList) {
       var putTokenMsg =
-          PutTokenMsg.newBuilder().setZoneGuid(zoneGUID.toString()).setToken(token.toDto());
+          PutTokenMsg.newBuilder().setZoneGuid(zoneGUID.toDto()).setToken(token.toDto());
       sendToAllClients(Message.newBuilder().setPutTokenMsg(putTokenMsg).build());
     }
     zone.sortZOrder(); // update new ZOrder on server zone
@@ -868,8 +868,8 @@ public class ServerMessageHandler implements MessageHandler {
       // don't send whole token back to sender, instead just send new ZOrder
       var msg =
           UpdateTokenPropertyMsg.newBuilder()
-              .setZoneGuid(zoneGUID.toString())
-              .setTokenGuid(token.getId().toString())
+              .setZoneGuid(zoneGUID.toDto())
+              .setTokenGuid(token.getId().toDto())
               .setProperty(TokenUpdateDto.valueOf(Token.Update.setZOrder.name()))
               .addValues(0, TokenPropertyValueDto.newBuilder().setIntValue(zOrder));
       server.sendMessage(clientId, Message.newBuilder().setUpdateTokenPropertyMsg(msg).build());
@@ -898,7 +898,7 @@ public class ServerMessageHandler implements MessageHandler {
     // Broadcast
     for (Token token : tokenList) {
       var putTokenMsg =
-          PutTokenMsg.newBuilder().setZoneGuid(zoneGUID.toString()).setToken(token.toDto());
+          PutTokenMsg.newBuilder().setZoneGuid(zoneGUID.toDto()).setToken(token.toDto());
       sendToAllClients(Message.newBuilder().setPutTokenMsg(putTokenMsg).build());
     }
     zone.sortZOrder(); // update new ZOrder on server zone

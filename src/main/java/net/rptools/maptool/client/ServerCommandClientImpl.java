@@ -112,7 +112,7 @@ public class ServerCommandClientImpl implements ServerCommand {
     client.getCampaign().setLandingMapId(landingMapId);
     var msg = SetCampaignLandingMapMsg.newBuilder();
     if (landingMapId != null) {
-      msg.setLandingMapId(landingMapId.toString());
+      msg.setLandingMapId(landingMapId.toDto());
     }
     makeServerCall(Message.newBuilder().setSetCampaignLandingMapMsg(msg).build());
   }
@@ -120,7 +120,7 @@ public class ServerCommandClientImpl implements ServerCommand {
   public void setVisionType(GUID zoneGUID, VisionType visionType) {
     var msg =
         SetVisionTypeMsg.newBuilder()
-            .setZoneGuid(zoneGUID.toString())
+            .setZoneGuid(zoneGUID.toDto())
             .setVision(ZoneDto.VisionTypeDto.valueOf(visionType.name()));
     makeServerCall(Message.newBuilder().setSetVisionTypeMsg(msg).build());
   }
@@ -128,7 +128,7 @@ public class ServerCommandClientImpl implements ServerCommand {
   public void setShowCoordinates(GUID zoneGUID, ShowCoordinates showCoordinates) {
     var msg =
         SetShowCoordinatesMsg.newBuilder()
-            .setZoneGuid(zoneGUID.toString())
+            .setZoneGuid(zoneGUID.toDto())
             .setShowCoordinates(ZoneDto.ShowCoordinatesDto.valueOf(showCoordinates.name()));
     makeServerCall(Message.newBuilder().setSetShowCoordinatesMsg(msg).build());
   }
@@ -139,7 +139,7 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   public void getZone(GUID zoneGUID) {
-    var msg = GetZoneMsg.newBuilder().setZoneGuid(zoneGUID.toString());
+    var msg = GetZoneMsg.newBuilder().setZoneGuid(zoneGUID.toDto());
     makeServerCall(Message.newBuilder().setGetZoneMsg(msg).build());
   }
 
@@ -149,17 +149,17 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   public void removeZone(GUID zoneGUID) {
-    var msg = RemoveZoneMsg.newBuilder().setZoneGuid(zoneGUID.toString());
+    var msg = RemoveZoneMsg.newBuilder().setZoneGuid(zoneGUID.toDto());
     makeServerCall(Message.newBuilder().setRemoveZoneMsg(msg).build());
   }
 
   public void renameZone(GUID zoneGUID, String name) {
-    var msg = RenameZoneMsg.newBuilder().setZoneGuid(zoneGUID.toString()).setName(name);
+    var msg = RenameZoneMsg.newBuilder().setZoneGuid(zoneGUID.toDto()).setName(name);
     makeServerCall(Message.newBuilder().setRenameZoneMsg(msg).build());
   }
 
   public void changeZoneDispName(GUID zoneGUID, String name) {
-    var msg = ChangeZoneDisplayNameMsg.newBuilder().setName(name).setZoneGuid(zoneGUID.toString());
+    var msg = ChangeZoneDisplayNameMsg.newBuilder().setName(name).setZoneGuid(zoneGUID.toDto());
 
     makeServerCall(Message.newBuilder().setChangeZoneDisplayNameMsg(msg).build());
   }
@@ -182,7 +182,7 @@ public class ServerCommandClientImpl implements ServerCommand {
   public void enforceZoneView(GUID zoneGUID, int x, int y, double scale, int width, int height) {
     var msg =
         EnforceZoneViewMsg.newBuilder()
-            .setZoneGuid(zoneGUID.toString())
+            .setZoneGuid(zoneGUID.toDto())
             .setX(x)
             .setY(y)
             .setScale(scale)
@@ -192,13 +192,13 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   public void restoreZoneView(GUID zoneGUID) {
-    var msg = RestoreZoneViewMsg.newBuilder().setZoneGuid(zoneGUID.toString());
+    var msg = RestoreZoneViewMsg.newBuilder().setZoneGuid(zoneGUID.toDto());
     makeServerCall(Message.newBuilder().setRestoreZoneViewMsg(msg).build());
   }
 
   public void editToken(GUID zoneGUID, Token token) {
     client.getCampaign().getZone(zoneGUID).editToken(token);
-    var msg = EditTokenMsg.newBuilder().setZoneGuid(zoneGUID.toString()).setToken(token.toDto());
+    var msg = EditTokenMsg.newBuilder().setZoneGuid(zoneGUID.toDto()).setToken(token.toDto());
     makeServerCall(Message.newBuilder().setEditTokenMsg(msg).build());
   }
 
@@ -207,7 +207,7 @@ public class ServerCommandClientImpl implements ServerCommand {
     // after changing the token. But they don't tell the zone about it so classes
     // waiting for the zone change event don't get it.
     client.getCampaign().getZone(zoneGUID).putToken(token);
-    var msg = PutTokenMsg.newBuilder().setZoneGuid(zoneGUID.toString()).setToken(token.toDto());
+    var msg = PutTokenMsg.newBuilder().setZoneGuid(zoneGUID.toDto()).setToken(token.toDto());
     makeServerCall(Message.newBuilder().setPutTokenMsg(msg).build());
   }
 
@@ -216,9 +216,7 @@ public class ServerCommandClientImpl implements ServerCommand {
     // delete local token immediately
     client.getCampaign().getZone(zoneGUID).removeToken(tokenGUID);
     var msg =
-        RemoveTokenMsg.newBuilder()
-            .setZoneGuid(zoneGUID.toString())
-            .setTokenGuid(tokenGUID.toString());
+        RemoveTokenMsg.newBuilder().setZoneGuid(zoneGUID.toDto()).setTokenGuid(tokenGUID.toDto());
     makeServerCall(Message.newBuilder().setRemoveTokenMsg(msg).build());
   }
 
@@ -226,8 +224,8 @@ public class ServerCommandClientImpl implements ServerCommand {
   public void removeTokens(GUID zoneGUID, List<GUID> tokenGUIDs) {
     // delete local tokens immediately
     client.getCampaign().getZone(zoneGUID).removeTokens(tokenGUIDs);
-    var msg = RemoveTokensMsg.newBuilder().setZoneGuid(zoneGUID.toString());
-    msg.addAllTokenGuid(tokenGUIDs.stream().map(t -> t.toString()).collect(Collectors.toList()));
+    var msg = RemoveTokensMsg.newBuilder().setZoneGuid(zoneGUID.toDto());
+    msg.addAllTokenGuid(tokenGUIDs.stream().map(GUID::toDto).toList());
     makeServerCall(Message.newBuilder().setRemoveTokensMsg(msg).build());
   }
 
@@ -244,8 +242,8 @@ public class ServerCommandClientImpl implements ServerCommand {
       GUID zoneGUID, GUID tokenGUID, Token.Update update, List<TokenPropertyValueDto> parameters) {
     var msg =
         UpdateTokenPropertyMsg.newBuilder()
-            .setTokenGuid(tokenGUID.toString())
-            .setZoneGuid(zoneGUID.toString())
+            .setTokenGuid(tokenGUID.toDto())
+            .setZoneGuid(zoneGUID.toDto())
             .setProperty(TokenUpdateDto.valueOf(update.name()))
             .addAllValues(parameters);
     makeServerCall(Message.newBuilder().setUpdateTokenPropertyMsg(msg).build());
@@ -277,22 +275,20 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   public void putLabel(GUID zoneGUID, Label label) {
-    var msg = PutLabelMsg.newBuilder().setZoneGuid(zoneGUID.toString()).setLabel(label.toDto());
+    var msg = PutLabelMsg.newBuilder().setZoneGuid(zoneGUID.toDto()).setLabel(label.toDto());
     makeServerCall(Message.newBuilder().setPutLabelMsg(msg).build());
   }
 
   public void removeLabel(GUID zoneGUID, GUID labelGUID) {
     var msg =
-        RemoveLabelMsg.newBuilder()
-            .setZoneGuid(zoneGUID.toString())
-            .setLabelGuid(labelGUID.toString());
+        RemoveLabelMsg.newBuilder().setZoneGuid(zoneGUID.toDto()).setLabelGuid(labelGUID.toDto());
     makeServerCall(Message.newBuilder().setRemoveLabelMsg(msg).build());
   }
 
   public void draw(GUID zoneGUID, Pen pen, Drawable drawable) {
     var msg =
         DrawMsg.newBuilder()
-            .setZoneGuid(zoneGUID.toString())
+            .setZoneGuid(zoneGUID.toDto())
             .setPen(pen.toDto())
             .setDrawable(drawable.toDto());
 
@@ -302,15 +298,14 @@ public class ServerCommandClientImpl implements ServerCommand {
   public void updateDrawing(GUID zoneGUID, Pen pen, DrawnElement drawnElement) {
     var msg =
         UpdateDrawingMsg.newBuilder()
-            .setZoneGuid(zoneGUID.toString())
+            .setZoneGuid(zoneGUID.toDto())
             .setPen(pen.toDto())
             .setDrawing(drawnElement.toDto());
     makeServerCall(Message.newBuilder().setUpdateDrawingMsg(msg).build());
   }
 
   public void clearAllDrawings(GUID zoneGUID, Zone.Layer layer) {
-    var msg =
-        ClearAllDrawingsMsg.newBuilder().setZoneGuid(zoneGUID.toString()).setLayer(layer.name());
+    var msg = ClearAllDrawingsMsg.newBuilder().setZoneGuid(zoneGUID.toDto()).setLayer(layer.name());
 
     makeServerCall(Message.newBuilder().setClearAllDrawingsMsg(msg).build());
   }
@@ -318,15 +313,15 @@ public class ServerCommandClientImpl implements ServerCommand {
   public void undoDraw(GUID zoneGUID, GUID drawableGUID) {
     var msg =
         UndoDrawMsg.newBuilder()
-            .setZoneGuid(zoneGUID.toString())
-            .setDrawableGuid(drawableGUID.toString());
+            .setZoneGuid(zoneGUID.toDto())
+            .setDrawableGuid(drawableGUID.toDto());
     makeServerCall(Message.newBuilder().setUndoDrawMsg(msg).build());
   }
 
   public void setZoneGridSize(GUID zoneGUID, int xOffset, int yOffset, int size, int color) {
     var msg =
         SetZoneGridSizeMsg.newBuilder()
-            .setZoneGuid(zoneGUID.toString())
+            .setZoneGuid(zoneGUID.toDto())
             .setXOffset(xOffset)
             .setYOffset(yOffset)
             .setSize(size)
@@ -335,8 +330,7 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   public void setZoneVisibility(GUID zoneGUID, boolean visible) {
-    var msg =
-        SetZoneVisibilityMsg.newBuilder().setZoneGuid(zoneGUID.toString()).setIsVisible(visible);
+    var msg = SetZoneVisibilityMsg.newBuilder().setZoneGuid(zoneGUID.toDto()).setIsVisible(visible);
     makeServerCall(Message.newBuilder().setSetZoneVisibilityMsg(msg).build());
   }
 
@@ -396,10 +390,9 @@ public class ServerCommandClientImpl implements ServerCommand {
     var msg =
         StartTokenMoveMsg.newBuilder()
             .setPlayerId(playerId)
-            .setZoneGuid(zoneGUID.toString())
-            .setKeyTokenId(tokenGUID.toString())
-            .addAllSelectedTokens(
-                tokenList.stream().map(GUID::toString).collect(Collectors.toList()));
+            .setZoneGuid(zoneGUID.toDto())
+            .setKeyTokenId(tokenGUID.toDto())
+            .addAllSelectedTokens(tokenList.stream().map(GUID::toDto).toList());
     makeServerCall(Message.newBuilder().setStartTokenMoveMsg(msg).build());
   }
 
@@ -407,16 +400,16 @@ public class ServerCommandClientImpl implements ServerCommand {
     movementUpdateQueue.flush();
     var msg =
         StopTokenMoveMsg.newBuilder()
-            .setZoneGuid(zoneGUID.toString())
-            .setKeyTokenId(tokenGUID.toString());
+            .setZoneGuid(zoneGUID.toDto())
+            .setKeyTokenId(tokenGUID.toDto());
     makeServerCall(Message.newBuilder().setStopTokenMoveMsg(msg).build());
   }
 
   public void updateTokenMove(GUID zoneGUID, GUID tokenGUID, int x, int y) {
     var msg =
         UpdateTokenMoveMsg.newBuilder()
-            .setZoneGuid(zoneGUID.toString())
-            .setKeyTokenId(tokenGUID.toString())
+            .setZoneGuid(zoneGUID.toDto())
+            .setKeyTokenId(tokenGUID.toDto())
             .setPoint(IntPointDto.newBuilder().setX(x).setY(y).build());
     movementUpdateQueue.enqueue(Message.newBuilder().setUpdateTokenMoveMsg(msg).build());
   }
@@ -425,8 +418,8 @@ public class ServerCommandClientImpl implements ServerCommand {
     movementUpdateQueue.flush();
     var msg =
         ToggleTokenMoveWaypointMsg.newBuilder()
-            .setZoneGuid(zoneGUID.toString())
-            .setKeyTokenId(tokenGUID.toString())
+            .setZoneGuid(zoneGUID.toDto())
+            .setKeyTokenId(tokenGUID.toDto())
             .setPoint(cp.toDto());
     makeServerCall(Message.newBuilder().setToggleTokenMoveWaypointMsg(msg).build());
   }
@@ -435,14 +428,14 @@ public class ServerCommandClientImpl implements ServerCommand {
     zone.replaceWalls(walls);
     var msg =
         SetWallTopologyMsg.newBuilder()
-            .setZoneGuid(zone.getId().toString())
+            .setZoneGuid(zone.getId().toDto())
             .setTopology(walls.toDto());
     makeServerCall(Message.newBuilder().setSetWallTopologyMsg(msg).build());
   }
 
   public void updateWall(Zone zone, Wall wall) {
     var msg =
-        UpdateWallDataMsg.newBuilder().setZoneGuid(zone.getId().toString()).setWall(wall.toDto());
+        UpdateWallDataMsg.newBuilder().setZoneGuid(zone.getId().toDto()).setWall(wall.toDto());
 
     zone.updateWall(wall);
     makeServerCall(Message.newBuilder().setUpdateWallDataMsg(msg).build());
@@ -453,7 +446,7 @@ public class ServerCommandClientImpl implements ServerCommand {
       Zone zone, Area area, boolean erase, Zone.TopologyType topologyType) {
     var msg =
         UpdateMaskTopologyMsg.newBuilder()
-            .setZoneGuid(zone.getId().toString())
+            .setZoneGuid(zone.getId().toDto())
             .setArea(Mapper.map(area))
             .setErase(erase)
             .setType(TopologyTypeDto.valueOf(topologyType.name()));
@@ -464,53 +457,52 @@ public class ServerCommandClientImpl implements ServerCommand {
   }
 
   public void exposePCArea(GUID zoneGUID) {
-    var msg = ExposePcAreaMsg.newBuilder().setZoneGuid(zoneGUID.toString());
+    var msg = ExposePcAreaMsg.newBuilder().setZoneGuid(zoneGUID.toDto());
     makeServerCall(Message.newBuilder().setExposePcAreaMsg(msg).build());
   }
 
   public void exposeFoW(GUID zoneGUID, Area area, Set<GUID> selectedToks) {
     // Expose locally right away.
     client.getCampaign().getZone(zoneGUID).exposeArea(area, selectedToks);
-    var msg = ExposeFowMsg.newBuilder().setZoneGuid(zoneGUID.toString()).setArea(Mapper.map(area));
-    msg.addAllTokenGuid(selectedToks.stream().map(g -> g.toString()).collect(Collectors.toList()));
+    var msg = ExposeFowMsg.newBuilder().setZoneGuid(zoneGUID.toDto()).setArea(Mapper.map(area));
+    msg.addAllTokenGuid(selectedToks.stream().map(GUID::toDto).toList());
     makeServerCall(Message.newBuilder().setExposeFowMsg(msg).build());
   }
 
   public void setFoW(GUID zoneGUID, Area area, Set<GUID> selectedToks) {
     var msg =
         SetFowMsg.newBuilder()
-            .setZoneGuid(zoneGUID.toString())
+            .setZoneGuid(zoneGUID.toDto())
             .setArea(Mapper.map(area))
-            .addAllSelectedTokens(
-                selectedToks.stream().map(t -> t.toString()).collect(Collectors.toList()));
+            .addAllSelectedTokens(selectedToks.stream().map(GUID::toDto).toList());
     makeServerCall(Message.newBuilder().setSetFowMsg(msg).build());
   }
 
   public void hideFoW(GUID zoneGUID, Area area, Set<GUID> selectedToks) {
-    var msg = HideFowMsg.newBuilder().setZoneGuid(zoneGUID.toString()).setArea(Mapper.map(area));
-    msg.addAllTokenGuid(selectedToks.stream().map(g -> g.toString()).collect(Collectors.toList()));
+    var msg = HideFowMsg.newBuilder().setZoneGuid(zoneGUID.toDto()).setArea(Mapper.map(area));
+    msg.addAllTokenGuid(selectedToks.stream().map(GUID::toDto).toList());
     makeServerCall(Message.newBuilder().setHideFowMsg(msg).build());
   }
 
   public void setZoneHasFoW(GUID zoneGUID, boolean hasFog) {
-    var msg = SetZoneHasFowMsg.newBuilder().setZoneGuid(zoneGUID.toString()).setHasFow(hasFog);
+    var msg = SetZoneHasFowMsg.newBuilder().setZoneGuid(zoneGUID.toDto()).setHasFow(hasFog);
     makeServerCall(Message.newBuilder().setSetZoneHasFowMsg(msg).build());
   }
 
   public void bringTokensToFront(GUID zoneGUID, Set<GUID> tokenList) {
-    var msg = BringTokensToFrontMsg.newBuilder().setZoneGuid(zoneGUID.toString());
-    msg.addAllTokenGuids(tokenList.stream().map(g -> g.toString()).collect(Collectors.toList()));
+    var msg = BringTokensToFrontMsg.newBuilder().setZoneGuid(zoneGUID.toDto());
+    msg.addAllTokenGuids(tokenList.stream().map(GUID::toDto).toList());
     makeServerCall(Message.newBuilder().setBringTokensToFrontMsg(msg).build());
   }
 
   public void sendTokensToBack(GUID zoneGUID, Set<GUID> tokenList) {
-    var msg = SendTokensToBackMsg.newBuilder().setZoneGuid(zoneGUID.toString());
-    msg.addAllTokenGuids(tokenList.stream().map(g -> g.toString()).collect(Collectors.toList()));
+    var msg = SendTokensToBackMsg.newBuilder().setZoneGuid(zoneGUID.toDto());
+    msg.addAllTokenGuids(tokenList.stream().map(GUID::toDto).toList());
     makeServerCall(Message.newBuilder().setSendTokensToBackMsg(msg).build());
   }
 
   public void enforceZone(GUID zoneGUID) {
-    var msg = EnforceZoneMsg.newBuilder().setZoneGuid(zoneGUID.toString());
+    var msg = EnforceZoneMsg.newBuilder().setZoneGuid(zoneGUID.toDto());
     makeServerCall(Message.newBuilder().setEnforceZoneMsg(msg).build());
   }
 
@@ -530,8 +522,8 @@ public class ServerCommandClientImpl implements ServerCommand {
       GUID zone, GUID token, Boolean holding, String state, Integer index) {
     var msg =
         UpdateTokenInitiativeMsg.newBuilder()
-            .setZoneGuid(zone.toString())
-            .setTokenGuid(token.toString())
+            .setZoneGuid(zone.toDto())
+            .setTokenGuid(token.toDto())
             .setIsHolding(holding)
             .setIndex(index);
     if (state != null) {
@@ -564,7 +556,7 @@ public class ServerCommandClientImpl implements ServerCommand {
    */
   public void clearExposedArea(GUID zoneGUID, boolean globalOnly) {
     var msg =
-        ClearExposedAreaMsg.newBuilder().setZoneGuid(zoneGUID.toString()).setGlobalOnly(globalOnly);
+        ClearExposedAreaMsg.newBuilder().setZoneGuid(zoneGUID.toDto()).setGlobalOnly(globalOnly);
 
     makeServerCall(Message.newBuilder().setClearExposedAreaMsg(msg).build());
   }
@@ -593,7 +585,7 @@ public class ServerCommandClientImpl implements ServerCommand {
     // Second, tell the client to change the zone's board info
     var msg =
         SetBoardMsg.newBuilder()
-            .setZoneGuid(zoneGUID.toString())
+            .setZoneGuid(zoneGUID.toDto())
             .setAssetId(mapAssetId.toString())
             .setPoint(IntPointDto.newBuilder().setX(x).setY(y))
             .setScaleX(scaleX)
@@ -610,10 +602,10 @@ public class ServerCommandClientImpl implements ServerCommand {
       GUID zoneGUID, GUID tokenExposedAreaGUID, ExposedAreaMetaData meta) {
     var msg =
         UpdateExposedAreaMetaMsg.newBuilder()
-            .setZoneGuid(zoneGUID.toString())
+            .setZoneGuid(zoneGUID.toDto())
             .setArea(Mapper.map(meta.getExposedAreaHistory()));
     if (tokenExposedAreaGUID != null) {
-      msg.setTokenGuid(StringValue.of(tokenExposedAreaGUID.toString()));
+      msg.setTokenGuid(tokenExposedAreaGUID.toDto());
     }
     makeServerCall(Message.newBuilder().setUpdateExposedAreaMetaMsg(msg).build());
   }
@@ -866,7 +858,7 @@ public class ServerCommandClientImpl implements ServerCommand {
     var msg =
         UpdatePlayerStatusMsg.newBuilder()
             .setPlayer(player.getName())
-            .setZoneGuid(player.getZoneId().toString())
+            .setZoneGuid(player.getZoneId().toDto())
             .setLoaded(player.getLoaded());
     makeServerCall(Message.newBuilder().setUpdatePlayerStatusMsg(msg).build());
   }

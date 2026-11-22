@@ -12,24 +12,25 @@ import "google/protobuf/wrappers.proto";
  * protobuf classes end with "Dto" or "Msg".
  */
 
+import "common.proto";
 import "data_transfer_objects.proto";
 import "drawing_dto.proto";
 import "gamedata.proto";
 
 message UpdateMaskTopologyMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   AreaDto area = 2;
   bool erase = 3;
   TopologyTypeDto type = 4;
 }
 
 message SetWallTopologyMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   WallTopologyDto topology = 2;
 }
 
 message UpdateWallDataMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   WallDto wall = 2;
 }
 
@@ -38,38 +39,38 @@ message BootPlayerMsg {
 }
 
 message BringTokensToFrontMsg {
-  string zone_guid = 1;
-  repeated string token_guids = 2;
+  GuidDto zone_guid = 1;
+  repeated GuidDto token_guids = 2;
 }
 
 message ChangeZoneDisplayNameMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   string name = 2;
 }
 
 message ClearAllDrawingsMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   string layer = 2;
 }
 
 message ClearExposedAreaMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   bool global_only = 2;
 }
 
 message DrawMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   PenDto pen = 2;
   DrawableDto drawable = 3;
 }
 
 message EditTokenMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   TokenDto token = 2;
 }
 
 message PutTokenMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   TokenDto token = 2;
 }
 
@@ -78,11 +79,11 @@ message EnforceNotificationMsg {
 }
 
 message EnforceZoneMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
 }
 
 message EnforceZoneViewMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   int32 x = 2;
   int32 y = 3;
   double scale = 4;
@@ -104,13 +105,13 @@ message ExecLinkMsg {
 }
 
 message ExposeFowMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   AreaDto area = 2;
-  repeated string token_guid = 3;
+  repeated GuidDto token_guid = 3;
 }
 
 message ExposePcAreaMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
 }
 
 message GetAssetMsg {
@@ -118,7 +119,7 @@ message GetAssetMsg {
 }
 
 message GetZoneMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
 }
 
 message HeartbeatMsg {
@@ -126,9 +127,9 @@ message HeartbeatMsg {
 }
 
 message HideFowMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   AreaDto area = 2;
-  repeated string token_guid = 3;
+  repeated GuidDto token_guid = 3;
 }
 
 message HidePointerMsg {
@@ -158,7 +159,7 @@ message PutAssetMsg {
 }
 
 message PutLabelMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   LabelDto label = 2;
 }
 
@@ -171,40 +172,40 @@ message RemoveAssetMsg {
 }
 
 message RemoveLabelMsg {
-  string zone_guid = 1;
-  string label_guid = 2;
+  GuidDto zone_guid = 1;
+  GuidDto label_guid = 2;
 }
 
 message RemoveTokenMsg {
-  string zone_guid = 1;
-  string token_guid = 2;
+  GuidDto zone_guid = 1;
+  GuidDto token_guid = 2;
 }
 
 message RemoveTokensMsg {
-  string zone_guid = 1;
-  repeated string token_guid = 2;
+  GuidDto zone_guid = 1;
+  repeated GuidDto token_guid = 2;
 }
 
 message RemoveZoneMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
 }
 
 message RenameZoneMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   string name = 2;
 }
 
 message RestoreZoneViewMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
 }
 
 message SendTokensToBackMsg {
-  string zone_guid = 1;
-  repeated string token_guids = 2;
+  GuidDto zone_guid = 1;
+  repeated GuidDto token_guids = 2;
 }
 
 message SetBoardMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   IntPointDto point = 2;
   double scaleX = 3;
   double scaleY = 4;
@@ -220,13 +221,13 @@ message SetCampaignNameMsg {
 }
 
 message SetCampaignLandingMapMsg {
-  optional string landing_map_id = 1;
+  optional GuidDto landing_map_id = 1;
 }
 
 message SetFowMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   AreaDto area = 2;
-  repeated string selected_tokens = 3;
+  repeated GuidDto selected_tokens = 3;
 }
 
 message SetLiveTypingLabelMsg {
@@ -239,18 +240,18 @@ message SetServerPolicyMsg {
 }
 
 message SetTokenLocationMsg {
-  string zone_guid = 1;
-  string token_guid = 2;
+  GuidDto zone_guid = 1;
+  GuidDto token_guid = 2;
   IntPointDto location = 3;
 }
 
 message SetVisionTypeMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   ZoneDto.VisionTypeDto vision = 2;
 }
 
 message SetZoneGridSizeMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   int32 x_offset = 2;
   int32 y_offset = 3;
   int32 size = 4;
@@ -258,12 +259,12 @@ message SetZoneGridSizeMsg {
 }
 
 message SetZoneHasFowMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   bool has_fow = 2;
 }
 
 message SetZoneVisibilityMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   bool is_visible = 2;
 }
 
@@ -278,25 +279,25 @@ message StartAssetTransferMsg {
 
 message StartTokenMoveMsg {
   string player_id = 1;
-  string zone_guid = 2;
-  string key_token_id = 3;
-  repeated  string selected_tokens = 4;
+  GuidDto zone_guid = 2;
+  GuidDto key_token_id = 3;
+  repeated GuidDto selected_tokens = 4;
 }
 
 message StopTokenMoveMsg {
-  string zone_guid = 1;
-  string key_token_id = 2;
+  GuidDto zone_guid = 1;
+  GuidDto key_token_id = 2;
 }
 
 message ToggleTokenMoveWaypointMsg {
-  string zone_guid = 1;
-  string key_token_id = 2;
+  GuidDto zone_guid = 1;
+  GuidDto key_token_id = 2;
   IntPointDto point = 3;
 }
 
 message UndoDrawMsg {
-  string zone_guid = 1;
-  string drawable_guid = 2;
+  GuidDto zone_guid = 1;
+  GuidDto drawable_guid = 2;
 }
 
 message UpdateAssetTransferMsg {
@@ -312,14 +313,14 @@ message UpdateCampaignMacrosMsg {
 }
 
 message UpdateDrawingMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   PenDto pen = 2;
   DrawnElementDto drawing = 3;
 }
 
 message UpdateExposedAreaMetaMsg {
-  string zone_guid = 1;
-  google.protobuf.StringValue token_guid = 2;
+  GuidDto zone_guid = 1;
+  GuidDto token_guid = 2;
   AreaDto area = 3;
 }
 
@@ -333,28 +334,28 @@ message UpdateInitiativeMsg {
 }
 
 message UpdateTokenInitiativeMsg {
-  string zone_guid = 1;
-  string token_guid = 2;
+  GuidDto zone_guid = 1;
+  GuidDto token_guid = 2;
   bool is_holding = 3;
   google.protobuf.StringValue state = 4;
   int32 index = 5;
 }
 
 message UpdateTokenMoveMsg {
-  string zone_guid = 1;
-  string key_token_id = 2;
+  GuidDto zone_guid = 1;
+  GuidDto key_token_id = 2;
   IntPointDto point = 3;
 }
 
 message UpdateTokenPropertyMsg {
- string zone_guid = 1;
- string token_guid = 2;
- TokenUpdateDto property = 3;
- repeated TokenPropertyValueDto values = 4;
+  GuidDto zone_guid = 1;
+  GuidDto token_guid = 2;
+  TokenUpdateDto property = 3;
+  repeated TokenPropertyValueDto values = 4;
 }
 
 message RemoveAddOnLibraryMsg {
-  repeated  string namespaces = 1;
+  repeated string namespaces = 1;
 }
 message RemoveAllAddOnLibrariesMsg { /* empty */ }
 
@@ -391,7 +392,7 @@ message RemoveDataMsg {
 
 message UpdatePlayerStatusMsg {
   string player = 1;
-  string zone_guid = 2;
+  GuidDto zone_guid = 2;
   bool loaded = 3;
 }
 
@@ -404,6 +405,6 @@ message DeleteLookupTableMsg {
 }
 
 message SetShowCoordinatesMsg {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   ZoneDto.ShowCoordinatesDto show_coordinates = 2;
 }
