@@ -29,11 +29,7 @@ public class GUID implements Serializable, Comparable<GUID> {
   private static final long serialVersionUID = 6361057925697403643L;
 
   /** GUIDs always have 16 bytes. */
-  public static final int GUID_LENGTH = 16;
-
-  // NOTE: THIS CAN NEVER BE CHANGED, OR IT WILL AFFECT ALL THINGS THAT PREVIOUSLY USED IT
-  public static final int GUID_BUCKETS = 100;
-  // NOTE: THIS CAN NEVER BE CHANGED, OR IT WILL AFFECT ALL THINGS THAT PREVIOUSLY USED IT
+  private static final int GUID_LENGTH = 16;
 
   private final byte[] baGUID;
 
@@ -104,10 +100,6 @@ public class GUID implements Serializable, Comparable<GUID> {
     return Arrays.equals(this.baGUID, guid.baGUID);
   }
 
-  public byte[] getBytes() {
-    return baGUID;
-  }
-
   /** Returns a string for the GUID. */
   @Override
   public String toString() {
@@ -133,14 +125,14 @@ public class GUID implements Serializable, Comparable<GUID> {
    *
    * @return a byte[]
    */
-  public static byte[] generateGUID() throws InvalidGUIDException {
+  private static byte[] generateGUID() throws InvalidGUIDException {
     String newGUID = UUID.randomUUID().toString().replaceAll("-", "");
 
     while (StringUtils.isNumeric(newGUID)) {
       newGUID = UUID.randomUUID().toString().replaceAll("-", "");
     }
 
-    return new GUID(newGUID).getBytes();
+    return new GUID(newGUID).baGUID;
   }
 
   /**
