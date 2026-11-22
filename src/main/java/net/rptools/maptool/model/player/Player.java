@@ -139,7 +139,7 @@ public class Player {
     var player = new Player();
     player.name = dto.getName();
     player.role = dto.getRole();
-    player.zoneId = dto.getZoneGuid().equals("") ? null : GUID.valueOf(dto.getZoneGuid());
+    player.zoneId = dto.hasZoneGuid() ? GUID.fromDto(dto.getZoneGuid()) : null;
     player.loaded = dto.getLoaded();
 
     return player;
@@ -149,7 +149,7 @@ public class Player {
     var builder = PlayerDto.newBuilder().setName(name).setRole(role).setLoaded(loaded);
 
     if (zoneId != null) {
-      builder.setZoneGuid(zoneId.toString());
+      builder.setZoneGuid(zoneId.toDto());
     }
 
     return builder.build();

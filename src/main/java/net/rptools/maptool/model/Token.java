@@ -3001,7 +3001,7 @@ public class Token implements Cloneable {
     var token = new Token();
     token.id = GUID.fromDto(dto.getId());
     token.beingImpersonated = dto.getBeingImpersonated();
-    token.exposedAreaGUID = GUID.valueOf(dto.getExposedAreaGuid());
+    token.exposedAreaGUID = GUID.fromDto(dto.getExposedAreaGuid());
     var assetMap = dto.getImageAssetMapMap();
     for (var key : assetMap.keySet()) {
       var nullKey = key.equals("") ? null : key;
@@ -3031,7 +3031,7 @@ public class Token implements Cloneable {
     token.isFlippedIso = dto.getIsFlippedIso();
     token.facing = dto.hasFacing() ? dto.getFacing().getValue() : null;
 
-    dto.getSizeMapMap().forEach((k, v) -> token.sizeMap.put(k, GUID.valueOf(v)));
+    dto.getSizeMapMap().forEach((k, v) -> token.sizeMap.put(k, GUID.fromDto(v)));
     token.snapToGrid = dto.getSnapToGrid();
     token.isVisible = dto.getIsVisible();
     token.visibleOnlyToOwner = dto.getVisibleOnlyToOwner();
@@ -3075,7 +3075,7 @@ public class Token implements Cloneable {
         dto.getLightSourcesList().stream()
             .map(AttachedLightSource::fromDto)
             .collect(Collectors.toList()));
-    dto.getHaloGuidsList().stream().forEach(id -> token.haloIdSet.add(new GUID(id)));
+    dto.getHaloGuidsList().stream().forEach(id -> token.haloIdSet.add(GUID.fromDto(id)));
     token.sightType = dto.hasSightType() ? dto.getSightType().getValue() : null;
     token.hasSight = dto.getHasSight();
     token.hasImageTable = dto.getHasImageTable();
@@ -3117,7 +3117,7 @@ public class Token implements Cloneable {
     var dto = TokenDto.newBuilder();
     dto.setId(id.toDto());
     dto.setBeingImpersonated(beingImpersonated);
-    dto.setExposedAreaGuid(exposedAreaGUID.toString());
+    dto.setExposedAreaGuid(exposedAreaGUID.toDto());
     for (var key : imageAssetMap.keySet()) {
       var notNullKey = key == null ? "" : key;
       dto.putImageAssetMap(notNullKey, imageAssetMap.get(key).toString());
@@ -3147,7 +3147,7 @@ public class Token implements Cloneable {
     dto.setHeight(height);
     dto.setIsoWidth(isoWidth);
     dto.setIsoHeight(isoHeight);
-    sizeMap.forEach((k, v) -> dto.putSizeMap(k, v.toString()));
+    sizeMap.forEach((k, v) -> dto.putSizeMap(k, v.toDto()));
     dto.setSnapToGrid(snapToGrid);
     dto.setIsVisible(isVisible);
     dto.setVisibleOnlyToOwner(visibleOnlyToOwner);
@@ -3205,7 +3205,7 @@ public class Token implements Cloneable {
         uniqueLightSources.values().stream().map(LightSource::toDto).collect(Collectors.toList()));
     dto.addAllLightSources(
         lightSourceList.stream().map(AttachedLightSource::toDto).collect(Collectors.toList()));
-    dto.addAllHaloGuids(haloIdSet.stream().map(GUID::toString).collect(Collectors.toList()));
+    dto.addAllHaloGuids(haloIdSet.stream().map(GUID::toDto).collect(Collectors.toList()));
     if (sightType != null) {
       dto.setSightType(StringValue.of(sightType));
     }

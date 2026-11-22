@@ -47,7 +47,7 @@ message CampaignDto {
   repeated MacroButtonPropertiesDto macro_button_properties = 9;
   repeated ZoneDto zones = 10;
   repeated MacroButtonPropertiesDto gm_macro_button_properties = 11;
-  optional string landing_map_id = 12;
+  optional GuidDto landing_map_id = 12;
 }
 
 message LookupTableDto {
@@ -395,7 +395,7 @@ message TokenDto {
   }
   GuidDto id = 1;
   bool being_impersonated = 2;
-  string exposed_area_guid = 3;
+  GuidDto exposed_area_guid = 3;
   map<string, string> image_asset_map = 4;
   google.protobuf.StringValue current_image_asset = 5;
   int32 x = 6;
@@ -417,7 +417,7 @@ message TokenDto {
   int32 height = 17;
   int32 iso_width = 18;
   int32 iso_height = 19;
-  map<string, string> size_map = 22;
+  map<string, GuidDto> size_map = 22;
   bool snap_to_grid = 23;
   bool is_visible = 24;
   bool visible_only_to_owner = 25;
@@ -465,7 +465,7 @@ message TokenDto {
   string notes_type = 68;
   string gm_notes_type = 69;
   StatSheetPropertiesDto stat_sheet_properties = 70;
-  repeated string halo_guids = 73;
+  repeated GuidDto halo_guids = 73;
 }
 
 message PathDto {
@@ -491,7 +491,7 @@ message TerrainModifierOperationListDto {
 }
 
 message AttachedLightSourceDto {
-  string light_source_id = 1;
+  GuidDto light_source_id = 1;
 }
 
 message MacroButtonPropertiesDto {
@@ -561,7 +561,7 @@ message TextMessageDto {
 message PlayerDto {
   string name = 1;
   string role = 2;
-  string zone_guid = 3;
+  optional GuidDto zone_guid = 3;
   bool loaded = 4;
 }
 
@@ -675,12 +675,12 @@ message InitiativeListDto {
   repeated TokenInitiativeDto tokens = 1;
   int32 current = 2;
   int32 round = 3;
-  string zone_id = 4;
+  GuidDto zone_id = 4;
   bool hide_npc = 5;
 }
 
 message TokenInitiativeDto {
-  string token_id = 1;
+  GuidDto token_id = 1;
   bool holding = 2;
   google.protobuf.StringValue state = 3;
 }
@@ -802,7 +802,7 @@ message StringListDto {
 }
 
 message PointerDto {
-  string zone_guid = 1;
+  GuidDto zone_guid = 1;
   IntPointDto point = 2;
   double direction = 3;
   string type = 4;
@@ -848,8 +848,8 @@ message WallDataDto {
 }
 
 message WallDto {
-  string from = 1;
-  string to = 2;
+  GuidDto from = 1;
+  GuidDto to = 2;
   WallDataDto data = 3;
 }
 

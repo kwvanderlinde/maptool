@@ -80,7 +80,7 @@ public class Pointer {
     pointer.direction = dto.getDirection();
     pointer.x = dto.getPoint().getX();
     pointer.y = dto.getPoint().getY();
-    pointer.zoneGUID = GUID.valueOf(dto.getZoneGuid());
+    pointer.zoneGUID = GUID.fromDto(dto.getZoneGuid());
     pointer.type = dto.getType();
     return pointer;
   }
@@ -89,7 +89,7 @@ public class Pointer {
     var dto = PointerDto.newBuilder();
     dto.setDirection(direction);
     dto.setPoint(IntPointDto.newBuilder().setX(x).setY(y).build());
-    dto.setZoneGuid(zoneGUID.toString());
+    dto.setZoneGuid(zoneGUID.toDto());
     dto.setType(type);
     return dto.build();
   }

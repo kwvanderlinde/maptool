@@ -692,7 +692,7 @@ public class Campaign implements Serializable {
     var campaign = new Campaign();
     campaign.id = GUID.fromDto(dto.getId());
     campaign.name = dto.getName();
-    campaign.landingMapId = dto.hasLandingMapId() ? GUID.valueOf(dto.getLandingMapId()) : null;
+    campaign.landingMapId = dto.hasLandingMapId() ? GUID.fromDto(dto.getLandingMapId()) : null;
     campaign.hasUsedFogToolbar =
         dto.hasHasUsedFogToolbar() ? dto.getHasUsedFogToolbar().getValue() : null;
     campaign.campaignProperties = CampaignProperties.fromDto(dto.getProperties());
@@ -719,7 +719,7 @@ public class Campaign implements Serializable {
     dto.setId(id.toDto());
     dto.setName(name);
     if (landingMapId != null) {
-      dto.setLandingMapId(landingMapId.toString());
+      dto.setLandingMapId(landingMapId.toDto());
     }
     if (hasUsedFogToolbar != null) {
       dto.setHasUsedFogToolbar(BoolValue.of(hasUsedFogToolbar));

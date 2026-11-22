@@ -129,14 +129,15 @@ public final class Wall {
 
   public WallDto toDto() {
     return WallDto.newBuilder()
-        .setFrom(from.toString())
-        .setTo(to.toString())
+        .setFrom(from.toDto())
+        .setTo(to.toDto())
         .setData(data.toDto())
         .build();
   }
 
   public static Wall fromDto(WallDto dto) {
-    return new Wall(new GUID(dto.getFrom()), new GUID(dto.getTo()), Data.fromDto(dto.getData()));
+    return new Wall(
+        GUID.fromDto(dto.getFrom()), GUID.fromDto(dto.getTo()), Data.fromDto(dto.getData()));
   }
 
   public enum Direction {

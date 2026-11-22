@@ -768,7 +768,7 @@ public class InitiativeList implements Serializable {
     var initiativeList = new InitiativeList();
     initiativeList.current = dto.getCurrent();
     initiativeList.round = dto.getRound();
-    initiativeList.zoneId = GUID.valueOf(dto.getZoneId());
+    initiativeList.zoneId = GUID.fromDto(dto.getZoneId());
     initiativeList.hideNPC = dto.getHideNpc();
     initiativeList.tokens =
         dto.getTokensList().stream()
@@ -781,7 +781,7 @@ public class InitiativeList implements Serializable {
     var dto = InitiativeListDto.newBuilder();
     dto.setCurrent(current);
     dto.setRound(round);
-    dto.setZoneId(zoneId.toString());
+    dto.setZoneId(zoneId.toDto());
     dto.setHideNpc(hideNPC);
     dto.addAllTokens(tokens.stream().map(t -> t.toDto()).collect(Collectors.toList()));
     return dto.build();
@@ -790,7 +790,7 @@ public class InitiativeList implements Serializable {
   public TokenInitiative fromDto(TokenInitiativeDto dto) {
     var initiative = new TokenInitiative();
     initiative.holding = dto.getHolding();
-    initiative.id = GUID.valueOf(dto.getTokenId());
+    initiative.id = GUID.fromDto(dto.getTokenId());
     initiative.state = dto.hasState() ? dto.getState().getValue() : null;
     return initiative;
   }
@@ -929,7 +929,7 @@ public class InitiativeList implements Serializable {
     public TokenInitiativeDto toDto() {
       var dto = TokenInitiativeDto.newBuilder();
       dto.setHolding(holding);
-      dto.setTokenId(id.toString());
+      dto.setTokenId(id.toDto());
       if (state != null) {
         dto.setState(StringValue.of(state));
       }
