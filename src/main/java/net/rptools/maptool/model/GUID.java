@@ -16,6 +16,7 @@ package net.rptools.maptool.model;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.UUID;
 import javax.annotation.Nonnull;
@@ -95,29 +96,17 @@ public class GUID implements Serializable, Comparable<GUID> {
   /** Determines whether two GUIDs are equal. */
   @Override
   public boolean equals(Object object) {
-    if (object == null) {
-      return false;
-    }
-    Class<?> objClass = object.getClass();
-
     GUID guid;
-    try {
-      if (objClass == String.class) { // string
-        guid = new GUID((String) object);
-      } else { // try to cast to a GUID
-        guid = (GUID) object;
-      }
-    } catch (ClassCastException e) { // not a GUID
+    if (object instanceof String s) { // string
+      guid = new GUID(s);
+    } else if (object instanceof GUID g) { // try to cast to a GUID
+      guid = g;
+    } else {
       return false;
     }
 
     // Compare bytes.
-    for (int i = 0; i < GUID_LENGTH; i++) {
-      if (this.baGUID[i] != guid.baGUID[i]) return false;
-    }
-
-    // All tests pass.
-    return true;
+    return Arrays.equals(this.baGUID, guid.baGUID);
   }
 
   public byte[] getBytes() {
@@ -138,15 +127,10 @@ public class GUID implements Serializable, Comparable<GUID> {
    */
   @Override
   public int hashCode() {
-    int h = hash;
-    if (h == 0) {
-      byte val[] = baGUID;
-      int len = GUID_LENGTH;
-
-      for (int i = 0; i < len; i++) h = 31 * h + val[i];
-      hash = h;
+    if (hash == 0) {
+      hash = Arrays.hashCode(baGUID);
     }
-    return h;
+    return hash;
   }
 
   /**
@@ -174,13 +158,9 @@ public class GUID implements Serializable, Comparable<GUID> {
     return arg.length() != GUID.GUID_LENGTH * 2;
   }
 
+  @Override
   public int compareTo(@Nonnull GUID o) {
-    if (o != this) {
-      for (int i = 0; i < GUID_LENGTH; i++) {
-        if (this.baGUID[i] != o.baGUID[i]) return this.baGUID[i] - o.baGUID[i];
-      }
-    }
-    return 0;
+    return Arrays.compare(this.baGUID, o.baGUID);
   }
 
   public GuidDto toDto() {
