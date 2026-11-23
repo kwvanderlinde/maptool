@@ -2929,20 +2929,20 @@ public class Token implements Cloneable {
         if (hasLightSources()) {
           lightChanged = true;
         }
-        removeLightSource(GUID.valueOf(parameters.get(0).getLightSourceId()));
+        removeLightSource(GUID.fromDto(parameters.get(0).getLightSourceId()));
         break;
       case addLightSource:
         lightChanged = true;
-        addLightSource(GUID.valueOf(parameters.get(0).getLightSourceId()));
+        addLightSource(GUID.fromDto(parameters.get(0).getLightSourceId()));
         break;
       case clearHalos:
         clearHalos();
         break;
       case removeHalo:
-        removeHalo(GUID.valueOf(parameters.get(0).getHaloId()));
+        removeHalo(GUID.fromDto(parameters.get(0).getHaloId()));
         break;
       case addHalo:
-        addHalo(GUID.valueOf(parameters.get(0).getHaloId()));
+        addHalo(GUID.fromDto(parameters.get(0).getHaloId()));
         break;
       case setHasSight:
         if (hasLightSources()) {

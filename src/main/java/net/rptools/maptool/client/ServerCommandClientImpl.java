@@ -678,9 +678,7 @@ public class ServerCommandClientImpl implements ServerCommand {
     updateTokenProperty(
         token,
         update,
-        TokenPropertyValueDto.newBuilder()
-            .setLightSourceId(lightSource.getId().toString())
-            .build());
+        TokenPropertyValueDto.newBuilder().setLightSourceId(lightSource.getId().toDto()).build());
   }
 
   @Override
@@ -688,9 +686,7 @@ public class ServerCommandClientImpl implements ServerCommand {
     var update = toggleOn ? Token.Update.addHalo : Token.Update.removeHalo;
     // We only need to send the ID of the halo source.
     updateTokenProperty(
-        token,
-        update,
-        TokenPropertyValueDto.newBuilder().setHaloId(halo.getId().toString()).build());
+        token, update, TokenPropertyValueDto.newBuilder().setHaloId(halo.getId().toDto()).build());
   }
 
   public void setTokenMaskTopology(
