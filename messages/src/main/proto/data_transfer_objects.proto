@@ -634,6 +634,10 @@ message ZoneDto {
     SHOW_COORDS_TO_GM_ONLY = 1;
     SHOW_COORDS_TO_NONE = 2;
   }
+  message ExposedArea {
+    GuidDto id = 1;
+    AreaDto area = 2;
+  }
   int64 creation_time = 1;
   GuidDto id = 2;
   GridDto grid = 3;
@@ -646,7 +650,7 @@ message ZoneDto {
   map<string, DrawnElementListDto> drawables = 11;
   repeated LabelDto labels = 15;
   repeated TokenDto tokens = 16;
-  map<string, AreaDto> exposed_area_meta = 17;
+  repeated ExposedArea exposed_area_meta = 17;
   InitiativeListDto initiative = 18;
   AreaDto exposed_area = 19;
   bool has_fog = 20;

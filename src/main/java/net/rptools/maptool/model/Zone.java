@@ -2330,11 +2330,12 @@ public class Zone {
               zone.tokenOrderedList.add(t);
             });
     zone.tokenOrderedList.sort(TOKEN_Z_ORDER_COMPARATOR);
-    dto.getExposedAreaMetaMap()
+    dto.getExposedAreaMetaList()
         .forEach(
-            (id, area) ->
+            exposedDto ->
                 zone.exposedAreaMeta.put(
-                    GUID.valueOf(id), new ExposedAreaMetaData(Mapper.map(area))));
+                    GUID.fromDto(exposedDto.getId()),
+                    new ExposedAreaMetaData(Mapper.map(exposedDto.getArea()))));
     zone.initiativeList = InitiativeList.fromDto(dto.getInitiative());
     zone.exposedArea = Mapper.map(dto.getExposedArea());
     zone.hasFog = dto.getHasFog();
@@ -2390,10 +2391,10 @@ public class Zone {
     dto.addAllTokens(tokenMap.values().stream().map(t -> t.toDto()).collect(Collectors.toList()));
     exposedAreaMeta.forEach(
         (id, area) -> {
-          if (id == null) {
-            return;
-          }
-          dto.putExposedAreaMeta(id.toString(), Mapper.map(area.getExposedAreaHistory()));
+          dto.addExposedAreaMeta(
+              ZoneDto.ExposedArea.newBuilder()
+                  .setId(id.toDto())
+                  .setArea(Mapper.map(area.getExposedAreaHistory())));
         });
     dto.setInitiative(initiativeList.toDto());
     dto.setExposedArea(Mapper.map(exposedArea));
