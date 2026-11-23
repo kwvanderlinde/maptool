@@ -14,7 +14,7 @@
  */
 package net.rptools.maptool.model;
 
-public class InvalidGUIDException extends RuntimeException {
+public class InvalidGUIDException extends Exception {
   private static final long serialVersionUID = 3257568421032768820L;
 
   public InvalidGUIDException() {

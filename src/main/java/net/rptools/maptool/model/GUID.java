@@ -62,7 +62,7 @@ public class GUID implements Serializable, Comparable<GUID> {
    * @param strGUID the guid as a hexadecimal-code string
    * @throws InvalidGUIDException if the GUID is invalid
    */
-  public GUID(String strGUID) {
+  public GUID(String strGUID) throws InvalidGUIDException {
     if (strGUID == null) {
       throw new InvalidGUIDException("GUID is null");
     }
@@ -93,7 +93,7 @@ public class GUID implements Serializable, Comparable<GUID> {
    * @param s the guid as a hexadecimal-code string
    * @return a new GUID instance
    */
-  public static GUID valueOf(String s) {
+  public static GUID valueOf(String s) throws InvalidGUIDException {
     if (s == null) return null;
     return new GUID(s);
   }

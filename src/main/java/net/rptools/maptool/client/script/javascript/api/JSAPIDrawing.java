@@ -17,6 +17,7 @@ package net.rptools.maptool.client.script.javascript.api;
 import java.util.ArrayList;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.model.GUID;
+import net.rptools.maptool.model.InvalidGUIDException;
 import net.rptools.maptool.model.drawing.AbstractDrawing;
 import net.rptools.maptool.model.drawing.DrawnElement;
 import org.graalvm.polyglot.*;
@@ -33,7 +34,7 @@ public class JSAPIDrawing implements MapToolJSAPIInterface {
   private boolean dead = false;
 
   @HostAccess.Export
-  public JSAPIDrawing(String gid) {
+  public JSAPIDrawing(String gid) throws InvalidGUIDException {
     guid = new GUID(gid);
     AbstractDrawing target = null;
     for (DrawnElement e :
