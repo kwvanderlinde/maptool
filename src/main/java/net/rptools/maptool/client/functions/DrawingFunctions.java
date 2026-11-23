@@ -200,7 +200,7 @@ public class DrawingFunctions extends AbstractFunction {
     GUID guid = null;
     try {
       guid = GUID.valueOf(drawnElementRef);
-    } catch (Exception e) {
+    } catch (InvalidGUIDException e) {
       // wasn't a GUID after all, OK to ignore
     }
 
@@ -282,7 +282,7 @@ public class DrawingFunctions extends AbstractFunction {
   protected GUID getGUID(String functionName, String id) throws ParserException {
     try {
       return GUID.valueOf(id);
-    } catch (Exception e) {
+    } catch (InvalidGUIDException e) {
       throw new ParserException(
           I18N.getText("macro.function.general.argumentKeyTypeG", functionName, id));
     }

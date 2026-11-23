@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 public class GUIDTest {
   @Test
   void testDto() {
-    var guid = new GUID("57CF2A35CF3441A28CD02BE5B9D6F56B");
+    var guid = new GUID(0x57CF2A35CF3441A2L, 0x8CD02BE5B9D6F56BL);
     var dto = guid.toDto();
 
     assertEquals(
@@ -34,32 +34,42 @@ public class GUIDTest {
   }
 
   @Test
+  void testStringParse() {
+    var guidFromString = new GUID("A663192153894D92AD2CBEB84F7698FD");
+    var guidFromBits = new GUID(0xA663192153894D92L, 0xAD2CBEB84F7698FDL);
+
+    assertTrue(
+        guidFromString.equals(guidFromBits),
+        "Parsed GUID should be the same as when built from high/low bits");
+  }
+
+  @Test
   void equalsSelf() {
-    var guid = new GUID("5C6F833AF8804739AB6F52E2291951AC");
+    var guid = new GUID(0x5C6F833AF8804739L, 0xAB6F52E2291951ACL);
 
     assertTrue(guid.equals(guid), "The GUIDs should equal itself.");
   }
 
   @Test
   void equalsSuccess() {
-    var guid1 = new GUID("66BDB6D4957F40A9B046911B6E1B4E9C");
-    var guid2 = new GUID("66BDB6D4957F40A9B046911B6E1B4E9C");
+    var guid1 = new GUID(0x66BDB6D4957F40A9L, 0xB046911B6E1B4E9CL);
+    var guid2 = new GUID(0x66BDB6D4957F40A9L, 0xB046911B6E1B4E9CL);
 
     assertTrue(guid1.equals(guid2), "The GUIDs should be equal.");
   }
 
   @Test
   void equalsFailure() {
-    var guid1 = new GUID("66BDB6D4957F40A9B046911B6E1B4E9C");
-    var guid2 = new GUID("1948C3E4278F4961BD347BFCE105922F");
+    var guid1 = new GUID(0x66BDB6D4957F40A9L, 0xB046911B6E1B4E9CL);
+    var guid2 = new GUID(0x1948C3E4278F4961L, 0xBD347BFCE105922FL);
 
     assertFalse(guid1.equals(guid2), "The GUIDs should not be equal.");
   }
 
   @Test
   void equalGuidsHaveEqualHashCodes() {
-    var guid1 = new GUID("EBE33C7570004309940A8351C6BA6188");
-    var guid2 = new GUID("EBE33C7570004309940A8351C6BA6188");
+    var guid1 = new GUID(0xEBE33C7570004309L, 0x940A8351C6BA6188L);
+    var guid2 = new GUID(0xEBE33C7570004309L, 0x940A8351C6BA6188L);
 
     var hash1 = guid1.hashCode();
     var hash2 = guid2.hashCode();
@@ -69,31 +79,31 @@ public class GUIDTest {
 
   @Test
   void compareToSelf() {
-    var guid = new GUID("8ED4E6212C4040559334F0228DE68814");
+    var guid = new GUID(0x8ED4E6212C404055L, 0x9334F0228DE68814L);
 
     assertTrue(guid.compareTo(guid) == 0, "The GUID should equal itself.");
   }
 
   @Test
   void compareToZero() {
-    var guid1 = new GUID("ADF468A359CB4FE0A8574231B4BE0CCB");
-    var guid2 = new GUID("ADF468A359CB4FE0A8574231B4BE0CCB");
+    var guid1 = new GUID(0xADF468A359CB4FE0L, 0xA8574231B4BE0CCBL);
+    var guid2 = new GUID(0xADF468A359CB4FE0L, 0xA8574231B4BE0CCBL);
 
     assertTrue(guid1.compareTo(guid2) == 0, "The GUIDs should be equal.");
   }
 
   @Test
   void compareToPositive() {
-    var guid1 = new GUID("56A303480F654A95B6D53184277D4DD8");
-    var guid2 = new GUID("4EB2378F7E4F4351B29B6678198EAA19");
+    var guid1 = new GUID(0x56A303480F654A95L, 0xB6D53184277D4DD8L);
+    var guid2 = new GUID(0x4EB2378F7E4F4351L, 0xB29B6678198EAA19L);
 
     assertTrue(guid1.compareTo(guid2) > 0, "The GUIDs should be equal.");
   }
 
   @Test
   void compareToNegative() {
-    var guid1 = new GUID("DA1AF31049524C4ABEDF17B7ED92FFF5");
-    var guid2 = new GUID("432AFD8B8B6F4E6BBFD3E65AA7A0A755");
+    var guid1 = new GUID(0xDA1AF31049524C4AL, 0xBEDF17B7ED92FFF5L);
+    var guid2 = new GUID(0x432AFD8B8B6F4E6BL, 0xBFD3E65AA7A0A755L);
 
     assertTrue(guid1.compareTo(guid2) < 0, "The GUIDs should be equal.");
   }

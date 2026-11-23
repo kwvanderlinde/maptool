@@ -36,7 +36,13 @@ public class GUID implements Serializable, Comparable<GUID> {
   // Cache of the hashCode for a GUID
   private transient int hash;
 
-  private GUID(long high, long low) {
+  /**
+   * Primary GUID constructor.
+   *
+   * @param high The high 64 bits of the GUID
+   * @param low The low 64 bits of the GUID
+   */
+  public GUID(long high, long low) {
     baGUID = new byte[GUID_LENGTH];
     var buffer = ByteBuffer.wrap(baGUID);
     buffer.putLong(high).putLong(low);

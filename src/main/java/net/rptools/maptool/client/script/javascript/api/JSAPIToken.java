@@ -22,7 +22,6 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.script.javascript.*;
 import net.rptools.maptool.language.I18N;
-import net.rptools.maptool.model.GUID;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.Zone;
 import net.rptools.parser.ParserException;
@@ -31,7 +30,7 @@ import org.graalvm.polyglot.HostAccess;
 public class JSAPIToken implements MapToolJSAPIInterface {
   @Override
   public String serializeToString() {
-    return token.getId().toString();
+    return getId();
   }
 
   private final Token token;
@@ -41,10 +40,6 @@ public class JSAPIToken implements MapToolJSAPIInterface {
 
   public JSAPIToken(Token token) {
     this.token = token;
-  }
-
-  public JSAPIToken(String tid) {
-    this(MapTool.getFrame().getCurrentZoneRenderer().getZone().getToken(new GUID(tid)));
   }
 
   @HostAccess.Export
@@ -118,7 +113,7 @@ public class JSAPIToken implements MapToolJSAPIInterface {
 
   @HostAccess.Export
   public String getId() {
-    return "" + token.getId();
+    return token.getId().toString();
   }
 
   @HostAccess.Export
@@ -263,8 +258,7 @@ public class JSAPIToken implements MapToolJSAPIInterface {
 
   @HostAccess.Export
   public boolean isOnCurrentMap() {
-    Token findToken =
-        MapTool.getFrame().getCurrentZoneRenderer().getZone().getToken(new GUID(this.getId()));
+    Token findToken = MapTool.getFrame().getCurrentZoneRenderer().getZone().getToken(token.getId());
     return this.token == findToken;
   }
 

@@ -20,6 +20,7 @@ import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.script.javascript.*;
 import net.rptools.maptool.client.ui.zone.renderer.ZoneRenderer;
 import net.rptools.maptool.model.GUID;
+import net.rptools.maptool.model.InvalidGUIDException;
 import net.rptools.maptool.model.Token;
 import org.graalvm.polyglot.HostAccess;
 
@@ -92,16 +93,22 @@ public class JSAPITokens implements MapToolJSAPIInterface {
 
   @HostAccess.Export
   public JSAPIToken getTokenByID(String uuid) {
+    GUID tokenId;
+    try {
+      tokenId = new GUID(uuid);
+    } catch (InvalidGUIDException e) {
+      return null;
+    }
+
     JSAPIToken token = null;
-    Token findToken =
-        MapTool.getFrame().getCurrentZoneRenderer().getZone().getToken(new GUID(uuid));
+    Token findToken = MapTool.getFrame().getCurrentZoneRenderer().getZone().getToken(tokenId);
     if (findToken != null) {
       token = new JSAPIToken(findToken);
       token.setMap(MapTool.getFrame().getCurrentZoneRenderer().getZone());
     } else {
       List<ZoneRenderer> zrenderers = MapTool.getFrame().getZoneRenderers();
       for (ZoneRenderer zr : zrenderers) {
-        findToken = zr.getZone().resolveToken(uuid);
+        findToken = zr.getZone().getToken(tokenId);
         if (findToken != null) {
           token = new JSAPIToken(findToken);
           token.setMap(zr.getZone());
@@ -118,11 +125,18 @@ public class JSAPITokens implements MapToolJSAPIInterface {
 
   @HostAccess.Export
   public JSAPIToken getMapTokenByID(String uuid) {
+    GUID tokenId;
+    try {
+      tokenId = new GUID(uuid);
+    } catch (InvalidGUIDException e) {
+      return null;
+    }
+
     JSAPIToken token = null;
-    Token findToken =
-        MapTool.getFrame().getCurrentZoneRenderer().getZone().getToken(new GUID(uuid));
+    Token findToken = MapTool.getFrame().getCurrentZoneRenderer().getZone().getToken(tokenId);
     if (findToken != null
-        && (JSScriptEngine.inTrustedContext() || token.isOwner(MapTool.getPlayer().getName()))) {
+        && (JSScriptEngine.inTrustedContext()
+            || findToken.isOwner(MapTool.getPlayer().getName()))) {
       token = new JSAPIToken(findToken);
       token.setMap(MapTool.getFrame().getCurrentZoneRenderer().getZone());
     }

@@ -29,33 +29,33 @@ public enum GridType {
   Square(
       OffsetTranslator.IDENTITY,
       new TokenFootprints(
-          new GUID("7F000101CF65152A050000002A000101"),
+          new GUID(0x7F000101CF65152AL, 0x050000002A000101L),
           List.of(
               Map.entry(
-                  new GUID("7F000101CD65152A010000002A000101"),
+                  new GUID(0x7F000101CD65152AL, 0x010000002A000101L),
                   new TokenFootprint("Fine", "TokenFootprint.name.fine", 0.5, List.of())),
               Map.entry(
-                  new GUID("7F000101CD65152A020000002A000101"),
+                  new GUID(0x7F000101CD65152AL, 0x020000002A000101L),
                   new TokenFootprint(
                       "Diminutive", "TokenFootprint.name.diminutive", 0.5, List.of())),
               Map.entry(
-                  new GUID("7F000101CE65152A030000002A000100"),
+                  new GUID(0x7F000101CE65152AL, 0x030000002A000100L),
                   new TokenFootprint("Tiny", "TokenFootprint.name.tiny", 0.5, List.of())),
               Map.entry(
-                  new GUID("7F000101CE65152A040000002A000100"),
+                  new GUID(0x7F000101CE65152AL, 0x040000002A000100L),
                   new TokenFootprint("Small", "TokenFootprint.name.small", 0.75, List.of())),
               Map.entry(
-                  new GUID("7F000101CF65152A050000002A000101"),
+                  new GUID(0x7F000101CF65152AL, 0x050000002A000101L),
                   new TokenFootprint("Medium", "TokenFootprint.name.medium", 1.0, List.of())),
               Map.entry(
-                  new GUID("7F000101D065152A060000002A000100"),
+                  new GUID(0x7F000101D065152AL, 0x060000002A000100L),
                   new TokenFootprint(
                       "Large",
                       "TokenFootprint.name.large",
                       1.0,
                       List.of(new Point(1, 0), new Point(0, 1), new Point(1, 1)))),
               Map.entry(
-                  new GUID("7F000101D065152A070000002A000100"),
+                  new GUID(0x7F000101D065152AL, 0x070000002A000100L),
                   new TokenFootprint(
                       "Huge",
                       "TokenFootprint.name.huge",
@@ -70,7 +70,7 @@ public enum GridType {
                           new Point(1, 2),
                           new Point(2, 2)))),
               Map.entry(
-                  new GUID("7F000101D165152A080000002A000101"),
+                  new GUID(0x7F000101D165152AL, 0x080000002A000101L),
                   new TokenFootprint(
                       "Gargantuan",
                       "TokenFootprint.name.gargantuan",
@@ -92,7 +92,7 @@ public enum GridType {
                           new Point(2, 3),
                           new Point(3, 3)))),
               Map.entry(
-                  new GUID("7F000101E165152A090000002A000101"),
+                  new GUID(0x7F000101E165152AL, 0x090000002A000101L),
                   new TokenFootprint(
                       "Colossal",
                       "TokenFootprint.name.colossal",
@@ -136,33 +136,33 @@ public enum GridType {
   Isometric(
       OffsetTranslator.IDENTITY,
       new TokenFootprints(
-          new GUID("7F000101CF65152A050000002A000101"),
+          new GUID(0x7F000101CF65152AL, 0x050000002A000101L),
           List.of(
               Map.entry(
-                  new GUID("7F000101CD65152A010000002A000101"),
+                  new GUID(0x7F000101CD65152AL, 0x010000002A000101L),
                   new TokenFootprint("Fine", "TokenFootprint.name.fine", 0.5, List.of())),
               Map.entry(
-                  new GUID("7F000101CD65152A020000002A000101"),
+                  new GUID(0x7F000101CD65152AL, 0x020000002A000101L),
                   new TokenFootprint(
                       "Diminutive", "TokenFootprint.name.diminutive", 0.5, List.of())),
               Map.entry(
-                  new GUID("7F000101CE65152A030000002A000100"),
+                  new GUID(0x7F000101CE65152AL, 0x030000002A000100L),
                   new TokenFootprint("Tiny", "TokenFootprint.name.tiny", 0.5, List.of())),
               Map.entry(
-                  new GUID("7F000101CE65152A040000002A000100"),
+                  new GUID(0x7F000101CE65152AL, 0x040000002A000100L),
                   new TokenFootprint("Small", "TokenFootprint.name.small", 0.75, List.of())),
               Map.entry(
-                  new GUID("7F000101CF65152A050000002A000101"),
+                  new GUID(0x7F000101CF65152AL, 0x050000002A000101L),
                   new TokenFootprint("Medium", "TokenFootprint.name.medium", 1.0, List.of())),
               Map.entry(
-                  new GUID("7F000101D065152A060000002A000100"),
+                  new GUID(0x7F000101D065152AL, 0x060000002A000100L),
                   new TokenFootprint(
                       "Large",
                       "TokenFootprint.name.large",
                       1.0,
                       List.of(new Point(1, 0), new Point(0, 1), new Point(1, 1)))),
               Map.entry(
-                  new GUID("7F000101D065152A070000002A000100"),
+                  new GUID(0x7F000101D065152AL, 0x070000002A000100L),
                   new TokenFootprint(
                       "Huge",
                       "TokenFootprint.name.huge",
@@ -177,7 +177,7 @@ public enum GridType {
                           new Point(1, 2),
                           new Point(2, 2)))),
               Map.entry(
-                  new GUID("7F000101D165152A080000002A000101"),
+                  new GUID(0x7F000101D165152AL, 0x080000002A000101L),
                   new TokenFootprint(
                       "Gargantuan",
                       "TokenFootprint.name.gargantuan",
@@ -199,7 +199,7 @@ public enum GridType {
                           new Point(2, 3),
                           new Point(3, 3)))),
               Map.entry(
-                  new GUID("7F000101E165152A090000002A000101"),
+                  new GUID(0x7F000101E165152AL, 0x090000002A000101L),
                   new TokenFootprint(
                       "Colossal",
                       "TokenFootprint.name.colossal",
@@ -243,35 +243,35 @@ public enum GridType {
   HexVertical(
       OffsetTranslator.HEX_VERTICAL,
       new TokenFootprints(
-          new GUID("7F00010109655C380100000038000101"),
+          new GUID(0x7F00010109655C38L, 0x0100000038000101L),
           List.of(
               Map.entry(
-                  new GUID("C0A80F0E0CB9FB560100000040A8090C"),
+                  new GUID(0xC0A80F0E0CB9FB56L, 0x0100000040A8090CL),
                   new TokenFootprint("1/6", "TokenFootprint.name.1/6", .408, List.of())),
               Map.entry(
-                  new GUID("C0A80F0E0CB9FB560200000040A8090C"),
+                  new GUID(0xC0A80F0E0CB9FB56L, 0x0200000040A8090CL),
                   new TokenFootprint("1/4", "TokenFootprint.name.1/4", .500, List.of())),
               Map.entry(
-                  new GUID("C0A80F0E0CB9FB560300000040A8090C"),
+                  new GUID(0xC0A80F0E0CB9FB56L, 0x0300000040A8090CL),
                   new TokenFootprint("1/3", "TokenFootprint.name.1/3", .577, List.of())),
               Map.entry(
-                  new GUID("C0A80F0E0CB9FB560400000040A8090C"),
+                  new GUID(0xC0A80F0E0CB9FB56L, 0x0400000040A8090CL),
                   new TokenFootprint("1/2", "TokenFootprint.name.1/2", .707, List.of())),
               Map.entry(
-                  new GUID("C0A80F0E0CB9FB560500000040A8090C"),
+                  new GUID(0xC0A80F0E0CB9FB56L, 0x0500000040A8090CL),
                   new TokenFootprint("2/3", "TokenFootprint.name.2/3", .816, List.of())),
               Map.entry(
-                  new GUID("7F00010109655C380100000038000101"),
+                  new GUID(0x7F00010109655C38L, 0x0100000038000101L),
                   new TokenFootprint("Medium", "TokenFootprint.name.medium", 1.0, List.of())),
               Map.entry(
-                  new GUID("7F00010109655C380200000038000101"),
+                  new GUID(0x7F00010109655C38L, 0x0200000038000101L),
                   new TokenFootprint(
                       "Large",
                       "TokenFootprint.name.large",
                       1.0,
                       List.of(new Point(0, 1), new Point(1, 0)))),
               Map.entry(
-                  new GUID("7F00010109655C380300000038000101"),
+                  new GUID(0x7F00010109655C38L, 0x0300000038000101L),
                   new TokenFootprint(
                       "Huge",
                       "TokenFootprint.name.huge",
@@ -284,7 +284,7 @@ public enum GridType {
                           new Point(1, -1),
                           new Point(1, 0)))),
               Map.entry(
-                  new GUID("C0A80F464BAAC1B10900000080800A42"),
+                  new GUID(0xC0A80F464BAAC1B1L, 0x0900000080800A42L),
                   new TokenFootprint(
                       "Humongous",
                       "TokenFootprint.name.humongous",
@@ -311,35 +311,35 @@ public enum GridType {
   HexHorizontal(
       OffsetTranslator.HEX_HORIZONTAL,
       new TokenFootprints(
-          new GUID("7F00010109655C380100000038000101"),
+          new GUID(0x7F00010109655C38L, 0x0100000038000101L),
           List.of(
               Map.entry(
-                  new GUID("C0A80F0E0CB9FB560100000040A8090C"),
+                  new GUID(0xC0A80F0E0CB9FB56L, 0x0100000040A8090CL),
                   new TokenFootprint("1/6", "TokenFootprint.name.1/6", .408, List.of())),
               Map.entry(
-                  new GUID("C0A80F0E0CB9FB560200000040A8090C"),
+                  new GUID(0xC0A80F0E0CB9FB56L, 0x0200000040A8090CL),
                   new TokenFootprint("1/4", "TokenFootprint.name.1/4", .500, List.of())),
               Map.entry(
-                  new GUID("C0A80F0E0CB9FB560300000040A8090C"),
+                  new GUID(0xC0A80F0E0CB9FB56L, 0x0300000040A8090CL),
                   new TokenFootprint("1/3", "TokenFootprint.name.1/3", .577, List.of())),
               Map.entry(
-                  new GUID("C0A80F0E0CB9FB560400000040A8090C"),
+                  new GUID(0xC0A80F0E0CB9FB56L, 0x0400000040A8090CL),
                   new TokenFootprint("1/2", "TokenFootprint.name.1/2", .707, List.of())),
               Map.entry(
-                  new GUID("C0A80F0E0CB9FB560500000040A8090C"),
+                  new GUID(0xC0A80F0E0CB9FB56L, 0x0500000040A8090CL),
                   new TokenFootprint("2/3", "TokenFootprint.name.2/3", .816, List.of())),
               Map.entry(
-                  new GUID("7F00010109655C380100000038000101"),
+                  new GUID(0x7F00010109655C38L, 0x0100000038000101L),
                   new TokenFootprint("Medium", "TokenFootprint.name.medium", 1.0, List.of())),
               Map.entry(
-                  new GUID("7F00010109655C380200000038000101"),
+                  new GUID(0x7F00010109655C38L, 0x0200000038000101L),
                   new TokenFootprint(
                       "Large",
                       "TokenFootprint.name.large",
                       1.0,
                       List.of(new Point(1, 0), new Point(0, 1)))),
               Map.entry(
-                  new GUID("7F00010109655C380300000038000101"),
+                  new GUID(0x7F00010109655C38L, 0x0300000038000101L),
                   new TokenFootprint(
                       "Huge",
                       "TokenFootprint.name.huge",
@@ -352,7 +352,7 @@ public enum GridType {
                           new Point(0, -1),
                           new Point(-1, 1)))),
               Map.entry(
-                  new GUID("C0A80F464BAAC1B10900000080800A42"),
+                  new GUID(0xC0A80F464BAAC1B1L, 0x0900000080800A42L),
                   new TokenFootprint(
                       "Humongous",
                       "TokenFootprint.name.humongous",
@@ -379,103 +379,103 @@ public enum GridType {
   None(
       OffsetTranslator.IDENTITY,
       new TokenFootprints(
-          new GUID("C0A80F0EBEFED0A20C00000080800E0E"),
+          new GUID(0xC0A80F0EBEFED0A2L, 0x0C00000080800E0EL),
           List.of(
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A20100000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x0100000080800E0EL),
                   new TokenFootprint("-11", "TokenFootprint.name.-11", 0.086, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A20200000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x0200000080800E0EL),
                   new TokenFootprint("-10", "TokenFootprint.name.-10", 0.107, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A20300000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x0300000080800E0EL),
                   new TokenFootprint("-9", "TokenFootprint.name.-9", 0.134, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A20400000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x0400000080800E0EL),
                   new TokenFootprint("-8", "TokenFootprint.name.-8", 0.168, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A20500000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x0500000080800E0EL),
                   new TokenFootprint("-7", "TokenFootprint.name.-7", 0.210, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A20600000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x0600000080800E0EL),
                   new TokenFootprint("-6", "TokenFootprint.name.-6", 0.262, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A20700000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x0700000080800E0EL),
                   new TokenFootprint("-5", "TokenFootprint.name.-5", 0.328, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A20800000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x0800000080800E0EL),
                   new TokenFootprint("-4", "TokenFootprint.name.-4", 0.410, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A20900000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x0900000080800E0EL),
                   new TokenFootprint("-3", "TokenFootprint.name.-3", 0.512, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A20A00000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x0A00000080800E0EL),
                   new TokenFootprint("-2", "TokenFootprint.name.-2", 0.640, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A20B00000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x0B00000080800E0EL),
                   new TokenFootprint("-1", "TokenFootprint.name.-1", 0.800, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A20C00000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x0C00000080800E0EL),
                   new TokenFootprint("0", "TokenFootprint.name.0", 1.000, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A20D00000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x0D00000080800E0EL),
                   new TokenFootprint("1", "TokenFootprint.name.1", 1.200, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A20E00000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x0E00000080800E0EL),
                   new TokenFootprint("2", "TokenFootprint.name.2", 1.440, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A20F00000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x0F00000080800E0EL),
                   new TokenFootprint("3", "TokenFootprint.name.3", 1.728, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A21000000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x1000000080800E0EL),
                   new TokenFootprint("4", "TokenFootprint.name.4", 2.074, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A21100000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x1100000080800E0EL),
                   new TokenFootprint("5", "TokenFootprint.name.5", 2.488, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A21200000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x1200000080800E0EL),
                   new TokenFootprint("6", "TokenFootprint.name.6", 2.986, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A21300000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x1300000080800E0EL),
                   new TokenFootprint("7", "TokenFootprint.name.7", 3.583, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A21400000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x1400000080800E0EL),
                   new TokenFootprint("8", "TokenFootprint.name.8", 4.300, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A21500000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x1500000080800E0EL),
                   new TokenFootprint("9", "TokenFootprint.name.9", 5.160, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A21600000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x1600000080800E0EL),
                   new TokenFootprint("10", "TokenFootprint.name.10", 6.192, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A21700000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x1700000080800E0EL),
                   new TokenFootprint("11", "TokenFootprint.name.11", 7.430, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A21800000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x1800000080800E0EL),
                   new TokenFootprint("12", "TokenFootprint.name.12", 8.916, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A21900000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x1900000080800E0EL),
                   new TokenFootprint("13", "TokenFootprint.name.13", 10.699, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A21A00000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x1A00000080800E0EL),
                   new TokenFootprint("14", "TokenFootprint.name.14", 12.839, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A21B00000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x1B00000080800E0EL),
                   new TokenFootprint("15", "TokenFootprint.name.15", 15.407, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A21C00000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x1C00000080800E0EL),
                   new TokenFootprint("16", "TokenFootprint.name.16", 18.488, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A21D00000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x1D00000080800E0EL),
                   new TokenFootprint("17", "TokenFootprint.name.17", 22.186, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A21E00000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x1E00000080800E0EL),
                   new TokenFootprint("18", "TokenFootprint.name.18", 26.623, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A21F00000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x1F00000080800E0EL),
                   new TokenFootprint("19", "TokenFootprint.name.19", 31.948, List.of())),
               Map.entry(
-                  new GUID("C0A80F0EBEFED0A22000000080800E0E"),
+                  new GUID(0xC0A80F0EBEFED0A2L, 0x2000000080800E0EL),
                   new TokenFootprint("20", "TokenFootprint.name.20", 38.338, List.of())))));
 
   private final OffsetTranslator offsetTranslator;

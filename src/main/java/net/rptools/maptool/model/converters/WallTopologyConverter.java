@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import net.rptools.maptool.model.GUID;
+import net.rptools.maptool.model.InvalidGUIDException;
 import net.rptools.maptool.model.topology.Vertex;
 import net.rptools.maptool.model.topology.VisibilityType;
 import net.rptools.maptool.model.topology.Wall;
@@ -106,8 +107,16 @@ public class WallTopologyConverter extends AbstractCollectionConverter {
     var representation =
         (GraphRepresentation) context.convertAnother(walls, GraphRepresentation.class);
     for (var vertexRepresentation : representation.vertices) {
+      GUID id;
       try {
-        var vertex = walls.createVertex(new GUID(vertexRepresentation.id));
+        id = new GUID(vertexRepresentation.id);
+      } catch (InvalidGUIDException e) {
+        log.error("Found vertex with invalid ID '{}'. Skipping this one.", vertexRepresentation.id);
+        continue;
+      }
+
+      try {
+        var vertex = walls.createVertex(id);
         vertex.position(vertexRepresentation.x, vertexRepresentation.y);
       } catch (WallTopology.GraphException e) {
         log.error(
@@ -117,9 +126,25 @@ public class WallTopologyConverter extends AbstractCollectionConverter {
       }
     }
     for (var wallRepresentation : representation.walls) {
+      GUID fromId;
       try {
-        var fromId = new GUID(wallRepresentation.from);
-        var toId = new GUID(wallRepresentation.to);
+        fromId = new GUID(wallRepresentation.from);
+      } catch (InvalidGUIDException e) {
+        log.error(
+            "Found edge with invalid from vertex ID '{}'. Skipping this one.",
+            wallRepresentation.from);
+        continue;
+      }
+      GUID toId;
+      try {
+        toId = new GUID(wallRepresentation.to);
+      } catch (InvalidGUIDException e) {
+        log.error(
+            "Found edge with invalid to vertex ID '{}'. Skipping this one.", wallRepresentation.to);
+        continue;
+      }
+
+      try {
         // Direction and modifiers weren't available originally.
         var direction =
             Objects.requireNonNullElse(wallRepresentation.direction, Wall.Direction.Both);

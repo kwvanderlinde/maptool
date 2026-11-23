@@ -1696,8 +1696,8 @@ public class Zone {
     if (!GUID.isNotGUID(identifier)) {
       try {
         return getToken(GUID.valueOf(identifier));
-      } catch (Exception e) {
-        // wasn't a GUID afterall, OK to ignore
+      } catch (InvalidGUIDException e) {
+        // wasn't a GUID after all, OK to ignore
       }
     }
 
