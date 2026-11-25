@@ -88,15 +88,6 @@ public class BuiltInLibraryManager {
   }
 
   /**
-   * Deregister the add-on library with the specified namespace.
-   *
-   * @param namespace the namespace of the library to deregister.
-   */
-  public void deregisterLibrary(String namespace) {
-    // We never deregister the built in libraries
-  }
-
-  /**
    * Returns a list of the registered add-on libraries.
    *
    * @return list of the registered add-on libraries.
