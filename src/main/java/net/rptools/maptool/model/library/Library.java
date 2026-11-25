@@ -29,13 +29,104 @@ import net.rptools.maptool.model.library.data.LibraryData;
 
 /** Interface for classes that represents a framework library. */
 public interface Library {
+  /**
+   * Returns a {@link LibraryInfo} record representing this library, in a lot of cases where you
+   * need to deal with several bits of information about the library this is going to be more
+   * convenient than calling several methods that all return completable futures.
+   *
+   * @return information about the library.
+   */
+  LibraryInfo getLibraryInfo();
 
   /**
    * Returns the version of the library
    *
    * @return the version of the library
    */
-  CompletableFuture<String> getVersion();
+  default String getVersion() {
+    return getLibraryInfo().version();
+  }
+
+  /**
+   * Returns the Website for the library.
+   *
+   * @return the Website for the library.
+   */
+  default String getWebsite() {
+    return getLibraryInfo().website();
+  }
+
+  /**
+   * Returns the GitHub URL for the library.
+   *
+   * @return the GitHub URL for the library.
+   */
+  default String getGitUrl() {
+    return getLibraryInfo().gitUrl();
+  }
+
+  /**
+   * Returns the Authors of the library.
+   *
+   * @return the Authors of the library.
+   */
+  default List<String> getAuthors() {
+    return getLibraryInfo().authors();
+  }
+
+  /**
+   * Returns the license of the library.
+   *
+   * @return the license of the library.
+   */
+  default String getLicense() {
+    return getLibraryInfo().license();
+  }
+
+  /**
+   * Returns the namespace for the library.
+   *
+   * @return the namespace for the library.
+   */
+  default String getNamespace() {
+    return getLibraryInfo().namespace();
+  }
+
+  /**
+   * Returns the name of the library.
+   *
+   * @return the name of the library.
+   */
+  default String getName() {
+    return getLibraryInfo().name();
+  }
+
+  /**
+   * Returns the description of the library.
+   *
+   * @return the description of the library.
+   */
+  default String getDescription() {
+    return getLibraryInfo().description();
+  }
+
+  /**
+   * Returns the short description of the library.
+   *
+   * @return the short description of the library.
+   */
+  default String getShortDescription() {
+    return getLibraryInfo().shortDescription();
+  }
+
+  /**
+   * Returns if this library allows lib:// URI access or not.
+   *
+   * @return {@code true} if URI access is allowed.
+   */
+  default boolean allowsUriAccess() {
+    return getLibraryInfo().allowsUrlAccess();
+  }
 
   /**
    * Checks if the specified location exists.
@@ -71,78 +162,6 @@ public interface Library {
    * @throws IOException if there is an io error reading the location.
    */
   CompletableFuture<InputStream> read(URL location) throws IOException;
-
-  /**
-   * Returns the Website for the library.
-   *
-   * @return the Website for the library.
-   */
-  CompletableFuture<String> getWebsite();
-
-  /**
-   * Returns the GitHub URL for the library.
-   *
-   * @return the GitHub URL for the library.
-   */
-  CompletableFuture<String> getGitUrl();
-
-  /**
-   * Returns the Authors of the library.
-   *
-   * @return the Authors of the library.
-   */
-  CompletableFuture<List<String>> getAuthors();
-
-  /**
-   * Returns the license of the library.
-   *
-   * @return the license of the library.
-   */
-  CompletableFuture<String> getLicense();
-
-  /**
-   * Returns the namespace for the library.
-   *
-   * @return the namespace for the library.
-   */
-  CompletableFuture<String> getNamespace();
-
-  /**
-   * Returns the name of the library.
-   *
-   * @return the name of the library.
-   */
-  CompletableFuture<String> getName();
-
-  /**
-   * Returns the description of the library.
-   *
-   * @return the description of the library.
-   */
-  CompletableFuture<String> getDescription();
-
-  /**
-   * Returns the short description of the library.
-   *
-   * @return the short description of the library.
-   */
-  CompletableFuture<String> getShortDescription();
-
-  /**
-   * Returns if this library allows lib:// URI access or not.
-   *
-   * @return {@code true} if URI access is allowed.
-   */
-  CompletableFuture<Boolean> allowsUriAccess();
-
-  /**
-   * Returns a {@link LibraryInfo} record representing this library, in a lot of cases where you
-   * need to deal with several bits of information about the library this is going to be more
-   * convenient than calling several methods that all return completable futures.
-   *
-   * @return information about the library.
-   */
-  CompletableFuture<LibraryInfo> getLibraryInfo();
 
   /**
    * Returns the information about MapTool Macro Script on this library.

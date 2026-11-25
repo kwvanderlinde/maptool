@@ -666,21 +666,16 @@ public class InitiativeList implements Serializable {
         args.addProperty("direction", direction.toString());
         String argStr = args.toString();
         for (Library handler : libs) {
-          try {
-            String libraryNamespace = handler.getNamespace().get();
-            boolean thisVote =
-                EventMacroUtil.pollEventHandlerForVeto(
-                    ON_INITIATIVE_CHANGE_VETOABLE_MACRO_CALLBACK,
-                    libraryNamespace,
-                    argStr,
-                    null,
-                    ON_INITIATIVE_CHANGE_DENY_VARIABLE,
-                    Collections.emptyMap());
-            isVetoed = isVetoed || thisVote;
-          } catch (InterruptedException | ExecutionException e) {
-            // Should not be possible
-            throw new AssertionError("Error retrieving library namespace");
-          }
+          String libraryNamespace = handler.getNamespace();
+          boolean thisVote =
+              EventMacroUtil.pollEventHandlerForVeto(
+                  ON_INITIATIVE_CHANGE_VETOABLE_MACRO_CALLBACK,
+                  libraryNamespace,
+                  argStr,
+                  null,
+                  ON_INITIATIVE_CHANGE_DENY_VARIABLE,
+                  Collections.emptyMap());
+          isVetoed = isVetoed || thisVote;
         }
       }
       return isVetoed;
@@ -719,19 +714,14 @@ public class InitiativeList implements Serializable {
         String argStr = args.toString();
         String prefix = ON_INITIATIVE_CHANGE_COMMIT_MACRO_CALLBACK + "@";
         for (Library handler : libs) {
-          try {
-            String libraryNamespace = handler.getNamespace().get();
-            EventMacroUtil.callEventHandler(
-                ON_INITIATIVE_CHANGE_COMMIT_MACRO_CALLBACK,
-                libraryNamespace,
-                argStr,
-                null,
-                Collections.emptyMap(),
-                false);
-          } catch (InterruptedException | ExecutionException e) {
-            // Should not be possible
-            throw new AssertionError("Error retrieving library namespace");
-          }
+          String libraryNamespace = handler.getNamespace();
+          EventMacroUtil.callEventHandler(
+              ON_INITIATIVE_CHANGE_COMMIT_MACRO_CALLBACK,
+              libraryNamespace,
+              argStr,
+              null,
+              Collections.emptyMap(),
+              false);
         }
       }
     } catch (InterruptedException | ExecutionException e) {

@@ -174,8 +174,7 @@ public class LibraryManager {
    *
    * @param addOn the library to publish
    */
-  private static void publishAddOnLibrary(AddOnLibrary addOn)
-      throws ExecutionException, InterruptedException {
+  private static void publishAddOnLibrary(AddOnLibrary addOn) {
     if (!MapTool.isHostingServer()) {
       Asset asset = AssetManager.getAsset(addOn.getAssetKey());
       if (asset == null) {
@@ -200,7 +199,7 @@ public class LibraryManager {
       if (publishesAddOnChanges()) {
         publishAddOnLibrary(addOn);
       }
-    } catch (ExecutionException | InterruptedException | IllegalStateException e) {
+    } catch (IllegalStateException e) {
       log.error("Error registering add-on in library", e);
       return false;
     }
@@ -235,19 +234,11 @@ public class LibraryManager {
    *
    * @param addOnLibrary the add-on in library to register.
    */
-  public boolean reregisterAddOnLibrary(AddOnLibrary addOnLibrary) {
-    if (!reregisterAddOnLibraryLocally(addOnLibrary)) {
-      return false;
-    }
+  public void reregisterAddOnLibrary(AddOnLibrary addOnLibrary) {
+    reregisterAddOnLibraryLocally(addOnLibrary);
     if (publishesAddOnChanges()) {
-      try {
-        publishAddOnLibrary(addOnLibrary);
-      } catch (InterruptedException | ExecutionException e) {
-        log.error("Error publishing add-on library to the server", e);
-        return false;
-      }
+      publishAddOnLibrary(addOnLibrary);
     }
-    return true;
   }
 
   /**
@@ -258,17 +249,10 @@ public class LibraryManager {
    * publishing it again would send it straight back where it came from.
    *
    * @param addOnLibrary the add-on library to register.
-   * @return false if the library could not be registered.
    */
-  public boolean reregisterAddOnLibraryLocally(AddOnLibrary addOnLibrary) {
-    try {
-      addOnLibraryManager.deregisterLibrary(addOnLibrary.getNamespace().get());
-      addOnLibraryManager.registerLibrary(addOnLibrary);
-    } catch (InterruptedException | ExecutionException e) {
-      log.error("Error registering add-on in library", e);
-      return false;
-    }
-    return true;
+  public void reregisterAddOnLibraryLocally(AddOnLibrary addOnLibrary) {
+    addOnLibraryManager.deregisterLibrary(addOnLibrary.getNamespace());
+    addOnLibraryManager.registerLibrary(addOnLibrary);
   }
 
   /**
@@ -289,7 +273,7 @@ public class LibraryManager {
         };
 
     var libInfo = new ArrayList<LibraryInfo>();
-    libraries.forEach(l -> l.getLibraryInfo().thenAccept(libInfo::add));
+    libraries.forEach(l -> libInfo.add(l.getLibraryInfo()));
     return libInfo;
   }
 
@@ -298,17 +282,10 @@ public class LibraryManager {
    *
    * @param namespace the namespace of the library to get the information about.
    * @return the information for the library.
-   * @throws ExecutionException if an error occurs while extracting information about the library.
-   * @throws InterruptedException if an error occurs while extracting information about the library.
    */
-  public Optional<LibraryInfo> getLibraryInfo(String namespace)
-      throws ExecutionException, InterruptedException {
+  public Optional<LibraryInfo> getLibraryInfo(String namespace) {
     Optional<Library> library = getLibrary(namespace);
-    if (library.isPresent()) {
-      return Optional.ofNullable(library.get().getLibraryInfo().get());
-    } else {
-      return Optional.empty();
-    }
+    return library.map(Library::getLibraryInfo);
   }
 
   /**

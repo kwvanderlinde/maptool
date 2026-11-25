@@ -42,11 +42,7 @@ import net.rptools.maptool.util.HandlebarsUtil;
 public class MapToolBuiltInLibrary implements Library {
 
   private record ResourceDetails(
-      String name, String path, Function<ResourceDetails, String> supplier, boolean cache) {
-    public ResourceDetails(String name, String path) {
-      this(name, path, null, false);
-    }
-  }
+      String name, String path, Function<ResourceDetails, String> supplier, boolean cache) {}
 
   private final Map<String, ResourceDetails> resourcesMap =
       Map.of(
@@ -75,37 +71,23 @@ public class MapToolBuiltInLibrary implements Library {
 
   private static final Map<String, String> cache = new ConcurrentHashMap<>();
 
-  private static final String name = "MapTool Built-In Library";
-  private static final String namespace = AppConstants.MT_BUILTIN_ADD_ON_NAMESPACE;
-  private static final String version = "1.0.0";
-
-  private static final String website = "https://www.rptools.net";
-
-  private static final String gitUrl = "https://github.com/RPTools/maptool";
-
-  private static final String[] authors = new String[] {"RPTools Team"};
-
-  private static final String license = "AGPLv3";
-
-  private static final String description = "MapTool Built-In Library";
-
-  private static final String shortDescription = "MapTool Built-In Library";
-
-  private static final boolean allowsUriAccess = true;
-
-  private static final String readMeFile = "";
-
-  private static final String licenseFile = "";
-
-  private static final String[] tags = new String[] {};
+  private static final LibraryInfo libraryInfo =
+      new LibraryInfo(
+          "MapTool Built-In Library",
+          AppConstants.MT_BUILTIN_ADD_ON_NAMESPACE,
+          "1.0.0",
+          "https://www.rptools.net",
+          "https://github.com/RPTools/maptool",
+          List.of("RPTools Team"),
+          "AGPLv3",
+          "MapTool Built-In Library",
+          "MapTool Built-In Library",
+          true,
+          "",
+          "");
 
   @Override
-  public CompletableFuture<String> getVersion() {
-    return CompletableFuture.completedFuture(version);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> locationExists(URL location) throws IOException {
+  public CompletableFuture<Boolean> locationExists(URL location) {
     var key = location.getPath().replaceFirst("^/", "");
     return CompletableFuture.completedFuture(resourcesMap.containsKey(key));
   }
@@ -156,66 +138,8 @@ public class MapToolBuiltInLibrary implements Library {
   }
 
   @Override
-  public CompletableFuture<String> getWebsite() {
-    return CompletableFuture.completedFuture(namespace);
-  }
-
-  @Override
-  public CompletableFuture<String> getGitUrl() {
-    return CompletableFuture.completedFuture(gitUrl);
-  }
-
-  @Override
-  public CompletableFuture<List<String>> getAuthors() {
-    return CompletableFuture.completedFuture(List.of(authors));
-  }
-
-  @Override
-  public CompletableFuture<String> getLicense() {
-    return CompletableFuture.completedFuture(license);
-  }
-
-  @Override
-  public CompletableFuture<String> getNamespace() {
-    return CompletableFuture.completedFuture(namespace);
-  }
-
-  @Override
-  public CompletableFuture<String> getName() {
-    return CompletableFuture.completedFuture(name);
-  }
-
-  @Override
-  public CompletableFuture<String> getDescription() {
-    return CompletableFuture.completedFuture(description);
-  }
-
-  @Override
-  public CompletableFuture<String> getShortDescription() {
-    return CompletableFuture.completedFuture(shortDescription);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> allowsUriAccess() {
-    return CompletableFuture.completedFuture(allowsUriAccess);
-  }
-
-  @Override
-  public CompletableFuture<LibraryInfo> getLibraryInfo() {
-    return CompletableFuture.completedFuture(
-        new LibraryInfo(
-            name,
-            namespace,
-            version,
-            website,
-            gitUrl,
-            List.of(authors),
-            license,
-            description,
-            shortDescription,
-            allowsUriAccess,
-            readMeFile,
-            licenseFile));
+  public LibraryInfo getLibraryInfo() {
+    return libraryInfo;
   }
 
   @Override

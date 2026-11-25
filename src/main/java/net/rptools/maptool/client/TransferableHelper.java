@@ -505,7 +505,6 @@ public class TransferableHelper extends TransferHandler {
               AddOnLibrary addOnLibrary;
               try {
                 addOnLibrary = new AddOnLibraryImporter().importFromAsset(asset);
-                new LibraryManager().reregisterAddOnLibrary(addOnLibrary);
               } catch (IOException e) {
                 SwingUtilities.invokeLater(
                     () -> {

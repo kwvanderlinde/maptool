@@ -94,7 +94,7 @@ public class HandlebarsUtil<T> {
     public String content(@Nonnull final Charset charset) throws IOException {
       try {
         // The library API requires a URL even if it only uses the path.
-        var url = new URI("lib", library.getNamespace().join(), filename, null).toURL();
+        var url = new URI("lib", library.getNamespace(), filename, null).toURL();
         try (var is = library.read(url).join()) {
           return new String(is.readAllBytes(), charset);
         }

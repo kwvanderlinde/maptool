@@ -88,42 +88,6 @@ public class AddOnLibrary implements Library {
   /** Logger instance for this class. */
   private static final Logger logger = LogManager.getLogger(AddOnLibrary.class);
 
-  /** The Asset for the library read me file. */
-  private final String readMeFile;
-
-  /** The Asset for the library license file. */
-  private final String licenseFile;
-
-  /** The name of the add-on library. */
-  private final String name;
-
-  /** The version of the add-on library. */
-  private final String version;
-
-  /** The website for the add-on library. */
-  private final String website;
-
-  /** The authors for the add-on library. */
-  private final String[] authors;
-
-  /** The git url of the add-on library. */
-  private final String gitUrl;
-
-  /** The license for the add-on library. */
-  private final String license;
-
-  /** The namespace for the add-on library. */
-  private final String namespace;
-
-  /** The description for the add-on library. */
-  private final String description;
-
-  /** The short description for the add-on library. */
-  private final String shortDescription;
-
-  /** if the add-on library allows URI access or not. */
-  private final boolean allowsUriAccess;
-
   /** The mapping between paths and asset information. */
   private final Map<String, Pair<MD5Key, Type>> pathAssetMap;
 
@@ -175,18 +139,26 @@ public class AddOnLibrary implements Library {
       AddonSlashCommandsDto slashCommandsDto,
       Map<String, Pair<MD5Key, Type>> pathAssetMap) {
     Objects.requireNonNull(dto, I18N.getText("library.error.invalidDefinition"));
-    name = Objects.requireNonNull(dto.getName(), I18N.getText("library.error.emptyName"));
-    version =
-        Objects.requireNonNull(dto.getVersion(), I18N.getText("library.error.emptyVersion", name));
-    website = Objects.requireNonNullElse(dto.getWebsite(), "");
-    authors = dto.getAuthorsList().toArray(String[]::new);
-    gitUrl = dto.getGitUrl();
-    license = dto.getLicense();
-    namespace = dto.getNamespace();
-    description = dto.getDescription();
-    shortDescription = dto.getShortDescription();
+    String name = Objects.requireNonNull(dto.getName(), I18N.getText("library.error.emptyName"));
+    String licenseFile = dto.getLicenseFile();
+    String readMeFile = dto.getReadMeFile();
+    libraryInfo =
+        new LibraryInfo(
+            name,
+            dto.getNamespace(),
+            Objects.requireNonNull(
+                dto.getVersion(), I18N.getText("library.error.emptyVersion", name)),
+            Objects.requireNonNullElse(dto.getWebsite(), ""),
+            dto.getGitUrl(),
+            List.copyOf(dto.getAuthorsList()),
+            dto.getLicense(),
+            dto.getDescription(),
+            dto.getShortDescription(),
+            dto.getAllowsUriAccess(),
+            readMeFile,
+            licenseFile);
+
     this.pathAssetMap = Map.copyOf(pathAssetMap);
-    allowsUriAccess = dto.getAllowsUriAccess();
     assetKey = libraryAssetKey;
 
     var urlsMap = new HashMap<String, Pair<MD5Key, Type>>();
@@ -210,11 +182,12 @@ public class AddOnLibrary implements Library {
             new StatSheet(
                 s.getName(),
                 s.getDescription(),
-                new URI("lib://" + namespace + "/" + s.getEntry()).toURL(),
+                new URI("lib://" + libraryInfo.namespace() + "/" + s.getEntry()).toURL(),
                 new HashSet<>(s.getPropertyTypesList()),
-                namespace));
+                libraryInfo.namespace()));
       } catch (Exception e) {
-        MapTool.showError(I18N.getText("library.error.addOn.sheet", namespace, s.getName()), e);
+        MapTool.showError(
+            I18N.getText("library.error.addOn.sheet", libraryInfo.namespace(), s.getName()), e);
       }
     }
 
@@ -236,11 +209,11 @@ public class AddOnLibrary implements Library {
         urlsMap.put(path.substring(URL_PUBLIC_DIR.length()), entry.getValue());
       } else if (path.startsWith(MTSCRIPT_DIR)) {
         if (path.toLowerCase().endsWith(".mts")) {
-          String name = path.substring(MTSCRIPT_DIR.length(), path.length() - 4);
+          String macroName = path.substring(MTSCRIPT_DIR.length(), path.length() - 4);
           mtsMap.put(
-              name,
+              macroName,
               new MTScript(
-                  name,
+                  macroName,
                   autoExecSet.contains(path),
                   descriptionMap.getOrDefault(path, ""),
                   entry.getValue().getValue0()));
@@ -251,25 +224,7 @@ public class AddOnLibrary implements Library {
     urlPathAssetMap = Collections.unmodifiableMap(urlsMap);
     mtsFunctionAssetMap = Collections.unmodifiableMap(mtsMap);
 
-    licenseFile = dto.getLicenseFile();
-    readMeFile = dto.getReadMeFile();
-
-    jsContextName = JS_CONTEXT_PREFIX + namespace;
-
-    libraryInfo =
-        new LibraryInfo(
-            name,
-            namespace,
-            version,
-            website,
-            gitUrl,
-            List.of(authors),
-            license,
-            description,
-            shortDescription,
-            allowsUriAccess,
-            readMeFile,
-            licenseFile);
+    jsContextName = JS_CONTEXT_PREFIX + libraryInfo.namespace();
 
     for (var s : slashCommandsDto.getSlashCommandsList()) {
       slashCommands.put(
@@ -279,8 +234,8 @@ public class AddOnLibrary implements Library {
               s.getCommand(),
               s.getDescription(),
               MacroManager.Scope.ADDON,
-              namespace,
-              name));
+              libraryInfo.namespace(),
+              libraryInfo.name()));
     }
   }
 
@@ -308,29 +263,14 @@ public class AddOnLibrary implements Library {
         libraryAssetKey, dto, mtsDto, eventsDto, statSheetsDto, slashCommandsDto, pathAssetMap);
   }
 
-  @Override
-  public CompletableFuture<String> getDescription() {
-    return CompletableFuture.completedFuture(description);
-  }
-
-  @Override
-  public CompletableFuture<String> getShortDescription() {
-    return CompletableFuture.completedFuture(shortDescription);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> allowsUriAccess() {
-    return CompletableFuture.completedFuture(allowsUriAccess);
-  }
-
   /**
    * Returns a list of the library tokens.
    *
    * @return list of library tokens
    */
   @Override
-  public CompletableFuture<LibraryInfo> getLibraryInfo() {
-    return CompletableFuture.completedFuture(libraryInfo);
+  public LibraryInfo getLibraryInfo() {
+    return libraryInfo;
   }
 
   /**
@@ -400,7 +340,7 @@ public class AddOnLibrary implements Library {
   @Override
   public CompletableFuture<LibraryData> getLibraryData() {
     return CompletableFuture.completedFuture(
-        new AddOnLibraryData(this, this.namespace.toLowerCase()));
+        new AddOnLibraryData(this, getNamespace().toLowerCase()));
   }
 
   @Override
@@ -420,15 +360,12 @@ public class AddOnLibrary implements Library {
       return false;
     }
 
-    if (namespace.equalsIgnoreCase(ns)) {
-      return true;
-    }
-
-    return false;
+    return getNamespace().equalsIgnoreCase(ns);
   }
 
   @Override
   public CompletableFuture<Optional<Asset>> getReadMeAsset() {
+    var readMeFile = libraryInfo.readMeFile();
     if (readMeFile.isEmpty()) {
       return CompletableFuture.completedFuture(Optional.empty());
     } else {
@@ -442,6 +379,7 @@ public class AddOnLibrary implements Library {
 
   @Override
   public CompletableFuture<Optional<Asset>> getLicenseAsset() {
+    var licenseFile = libraryInfo.licenseFile();
     if (licenseFile.isEmpty()) {
       return CompletableFuture.completedFuture(Optional.empty());
     } else {
@@ -466,11 +404,6 @@ public class AddOnLibrary implements Library {
     return Set.copyOf(slashCommands.values());
   }
 
-  @Override
-  public CompletableFuture<String> getVersion() {
-    return CompletableFuture.completedFuture(version);
-  }
-
   /**
    * Returns the asset information for the specified location, this will take care of the mapping to
    * public/
@@ -484,12 +417,12 @@ public class AddOnLibrary implements Library {
   }
 
   @Override
-  public CompletableFuture<Boolean> locationExists(URL location) throws IOException {
-    if (allowsUriAccess) {
+  public CompletableFuture<Boolean> locationExists(URL location) {
+    if (allowsUriAccess()) {
       return CompletableFuture.completedFuture(getURILocation(location) != null);
     } else {
       throw new LibraryNotValidException(
-          Reason.MISSING_PERMISSIONS, I18N.getText("library.error.addOn.no.access", name));
+          Reason.MISSING_PERMISSIONS, I18N.getText("library.error.addOn.no.access", getName()));
     }
   }
 
@@ -504,7 +437,7 @@ public class AddOnLibrary implements Library {
 
   @Override
   public CompletableFuture<String> readAsString(URL location) throws IOException {
-    if (allowsUriAccess) {
+    if (allowsUriAccess()) {
       var values = getURILocation(location);
       if (values == null) {
         throw new IOException("Invalid Location");
@@ -521,13 +454,13 @@ public class AddOnLibrary implements Library {
           });
     } else {
       throw new LibraryNotValidException(
-          Reason.MISSING_PERMISSIONS, I18N.getText("library.error.addOn.no.access", name));
+          Reason.MISSING_PERMISSIONS, I18N.getText("library.error.addOn.no.access", getName()));
     }
   }
 
   @Override
   public CompletableFuture<InputStream> read(URL location) throws IOException {
-    if (allowsUriAccess) {
+    if (allowsUriAccess()) {
       var values = getURILocation(location);
       if (values == null) {
         throw new IOException("Invalid Location");
@@ -539,38 +472,8 @@ public class AddOnLibrary implements Library {
           });
     } else {
       throw new LibraryNotValidException(
-          Reason.MISSING_PERMISSIONS, I18N.getText("library.error.addOn.no.access", name));
+          Reason.MISSING_PERMISSIONS, I18N.getText("library.error.addOn.no.access", getName()));
     }
-  }
-
-  @Override
-  public CompletableFuture<String> getWebsite() {
-    return CompletableFuture.completedFuture(website);
-  }
-
-  @Override
-  public CompletableFuture<List<String>> getAuthors() {
-    return CompletableFuture.completedFuture(List.of(authors));
-  }
-
-  @Override
-  public CompletableFuture<String> getGitUrl() {
-    return CompletableFuture.completedFuture(gitUrl);
-  }
-
-  @Override
-  public CompletableFuture<String> getLicense() {
-    return CompletableFuture.completedFuture(license);
-  }
-
-  @Override
-  public CompletableFuture<String> getNamespace() {
-    return CompletableFuture.completedFuture(namespace);
-  }
-
-  @Override
-  public CompletableFuture<String> getName() {
-    return CompletableFuture.completedFuture(name);
   }
 
   /**
@@ -629,6 +532,7 @@ public class AddOnLibrary implements Library {
   /** Registers the stat sheets that this add-on defines. */
   public void registerSheets() {
     var statSheetManager = new StatSheetManager();
+    var namespace = getNamespace();
     statSheetManager.removeNamespace(namespace);
     for (StatSheet sheet : statSheets) {
       try {
@@ -649,6 +553,7 @@ public class AddOnLibrary implements Library {
   private CompletableFuture<Void> callMTSFunction(String name) {
     return ThreadExecutionHelper.runOnSwingThread(
         () -> {
+          var namespace = getNamespace();
           var resolver = new MapToolVariableResolver(null);
           MapTool.getParser().runMacro(resolver, name + "@lib:" + namespace, "", true);
           return null;

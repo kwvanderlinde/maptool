@@ -45,19 +45,14 @@ public class ZoneLoadedListener {
         return;
       }
       for (Library handler : libs) {
-        try {
-          String libraryNamespace = handler.getNamespace().get();
-          EventMacroUtil.callEventHandler(
-              ON_CHANGE_MAP_CALLBACK,
-              libraryNamespace,
-              currentZR.getZone().getId().toString(),
-              null,
-              Collections.emptyMap(),
-              false);
-        } catch (InterruptedException | ExecutionException e) {
-          LOGGER.error(I18N.getText("library.error.notFound"), e);
-          throw new AssertionError("Error retrieving library namespace");
-        }
+        String libraryNamespace = handler.getNamespace();
+        EventMacroUtil.callEventHandler(
+            ON_CHANGE_MAP_CALLBACK,
+            libraryNamespace,
+            currentZR.getZone().getId().toString(),
+            null,
+            Collections.emptyMap(),
+            false);
       }
     } catch (InterruptedException | ExecutionException e) {
       LOGGER.error(I18N.getText("library.error.retrievingEventHandler"), e);

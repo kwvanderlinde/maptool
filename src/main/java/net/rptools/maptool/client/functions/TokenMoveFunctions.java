@@ -439,7 +439,7 @@ public class TokenMoveFunctions extends AbstractFunction {
       var libraries =
           new LibraryManager().getLegacyEventTargets(ON_TOKEN_MOVE_COMPLETE_CALLBACK).get();
       if (!libraries.isEmpty()) {
-        String libraryNamespace = libraries.get(0).getNamespace().get();
+        String libraryNamespace = libraries.get(0).getNamespace();
         List<Map<String, Integer>> pathPoints = getInstance().getLastPathList(path, true);
         JsonArray pathArr = getInstance().pathPointsToJSONArray(pathPoints);
         String pathCoordinates = pathArr.toString();
@@ -555,7 +555,7 @@ public class TokenMoveFunctions extends AbstractFunction {
               .getLegacyEventTargets(ON_MULTIPLE_TOKENS_MOVED_COMPLETE_CALLBACK)
               .get();
       if (!libraries.isEmpty()) {
-        String libraryNamespace = libraries.get(0).getNamespace().get();
+        String libraryNamespace = libraries.get(0).getNamespace();
         JsonArray json = new JsonArray();
         for (GUID tokenGuid : filteredTokens) {
           json.add(tokenGuid.toString());

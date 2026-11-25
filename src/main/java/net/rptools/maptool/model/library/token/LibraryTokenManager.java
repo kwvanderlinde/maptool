@@ -131,9 +131,9 @@ public class LibraryTokenManager {
   private void addTokens(Collection<LibraryToken> libs) {
     libs.forEach(
         l -> {
-          String name = l.getName().join();
+          String name = l.getName();
           if (name.length() > 4 && name.toLowerCase().startsWith("lib:")) {
-            String namespace = l.getNamespace().join();
+            String namespace = l.getNamespace();
             libraryTokens.put(namespace, l);
           }
         });
@@ -149,7 +149,7 @@ public class LibraryTokenManager {
           // name may have changed so we need to search by id
           GUID id = l.getId();
           var old = libraryTokens.values().stream().filter(l2 -> id.equals(l2.getId())).findFirst();
-          old.ifPresent(libraryToken -> removeTokens(List.of(libraryToken.getNamespace().join())));
+          old.ifPresent(libraryToken -> removeTokens(List.of(libraryToken.getNamespace())));
           addTokens(List.of(l));
         });
   }

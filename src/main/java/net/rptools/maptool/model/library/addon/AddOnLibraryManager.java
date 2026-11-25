@@ -40,11 +40,11 @@ public class AddOnLibraryManager {
   private final Map<String, AddOnLibrary> namespaceLibraryMap = new ConcurrentHashMap<>();
 
   /**
-   * Is there a add-on library that would handle this path. This just checks the protocol and
+   * Is there an add-on library that would handle this path. This just checks the protocol and
    * namespace, it won't check that the full path actually exists.
    *
    * @param path the path for the library (can be full path or just part of path).
-   * @return if the library at the path is handled by a add-on library.
+   * @return if the library at the path is handled by an add-on library.
    */
   public boolean handles(URL path) {
     if (path.getProtocol().toLowerCase().startsWith(LIBRARY_PROTOCOL)) {
@@ -68,10 +68,10 @@ public class AddOnLibraryManager {
    * Registers the specified add-on library.
    *
    * @param library The add-on library to register.
-   * @throws IllegalStateException if there is already a add-on library with the same namespace.
+   * @throws IllegalStateException if there is already an add-on library with the same namespace.
    */
   public void registerLibrary(AddOnLibrary library) {
-    String namespace = library.getNamespace().join().toLowerCase();
+    String namespace = library.getNamespace().toLowerCase();
 
     var registeredLib = namespaceLibraryMap.computeIfAbsent(namespace, k -> library);
     if (registeredLib != library) {
@@ -81,7 +81,7 @@ public class AddOnLibraryManager {
     library.initialize();
     new MapToolEventBus()
         .getMainEventBus()
-        .post(new AddOnsAddedEvent(Set.of(library.getLibraryInfo().join())));
+        .post(new AddOnsAddedEvent(Set.of(library.getLibraryInfo())));
   }
 
   /**
@@ -95,7 +95,7 @@ public class AddOnLibraryManager {
       removed.cleanup();
       new MapToolEventBus()
           .getMainEventBus()
-          .post(new AddOnsRemovedEvent(Set.of(removed.getLibraryInfo().join())));
+          .post(new AddOnsRemovedEvent(Set.of(removed.getLibraryInfo())));
     }
   }
 
@@ -144,15 +144,15 @@ public class AddOnLibraryManager {
           var dto = AddOnLibraryListDto.newBuilder();
           for (var library : namespaceLibraryMap.values()) {
             var detailDto = AddOnLibraryDto.newBuilder();
-            detailDto.setName(library.getName().join());
-            detailDto.setVersion(library.getVersion().join());
-            detailDto.setWebsite(library.getWebsite().join());
-            detailDto.setGitUrl(library.getGitUrl().join());
-            detailDto.addAllAuthors(library.getAuthors().join());
-            detailDto.setLicense(library.getLicense().join());
-            detailDto.setNamespace(library.getNamespace().join());
-            detailDto.setDescription(library.getDescription().join());
-            detailDto.setShortDescription(library.getShortDescription().join());
+            detailDto.setName(library.getName());
+            detailDto.setVersion(library.getVersion());
+            detailDto.setWebsite(library.getWebsite());
+            detailDto.setGitUrl(library.getGitUrl());
+            detailDto.addAllAuthors(library.getAuthors());
+            detailDto.setLicense(library.getLicense());
+            detailDto.setNamespace(library.getNamespace());
+            detailDto.setDescription(library.getDescription());
+            detailDto.setShortDescription(library.getShortDescription());
             var campDto = AddOnLibraryEntryDto.newBuilder();
             campDto.setDetails(detailDto);
             campDto.setMd5Hash(library.getAssetKey().toString());
@@ -167,10 +167,9 @@ public class AddOnLibraryManager {
     var libs =
         namespaceLibraryMap.values().stream()
             .map(AddOnLibrary::getLibraryInfo)
-            .map(CompletableFuture::join)
             .collect(Collectors.toSet());
 
-    if (libs.size() > 0) {
+    if (!libs.isEmpty()) {
       new MapToolEventBus().getMainEventBus().post(new AddOnsRemovedEvent(libs));
       for (var library : namespaceLibraryMap.values()) {
         library.cleanup();

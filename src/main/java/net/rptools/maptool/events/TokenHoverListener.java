@@ -41,19 +41,14 @@ public class TokenHoverListener {
       var libs = new LibraryManager().getLegacyEventTargets(ON_MOUSE_OVER_CALLBACK).get();
       if (libs.isEmpty()) return;
       for (Library handler : libs) {
-        try {
-          String libraryNamespace = handler.getNamespace().get();
-          EventMacroUtil.callEventHandler(
-              ON_MOUSE_OVER_CALLBACK,
-              libraryNamespace,
-              token.getId().toString() + "," + tokX + "," + tokY + "," + shiftKey + "," + ctrlKey,
-              null,
-              Collections.emptyMap(),
-              false);
-        } catch (InterruptedException | ExecutionException e) {
-          LOGGER.error(I18N.getText("library.error.namespace"), e);
-          throw new AssertionError("Error retrieving library namespace");
-        }
+        String libraryNamespace = handler.getNamespace();
+        EventMacroUtil.callEventHandler(
+            ON_MOUSE_OVER_CALLBACK,
+            libraryNamespace,
+            token.getId().toString() + "," + tokX + "," + tokY + "," + shiftKey + "," + ctrlKey,
+            null,
+            Collections.emptyMap(),
+            false);
       }
     } catch (InterruptedException | ExecutionException e) {
       LOGGER.error(I18N.getText("library.error.retrievingEventHandler"), e);
@@ -67,19 +62,14 @@ public class TokenHoverListener {
       var libs = new LibraryManager().getLegacyEventTargets(ON_MOUSE_OVER_CALLBACK).get();
       if (libs.isEmpty()) return;
       for (Library handler : libs) {
-        try {
-          String libraryNamespace = handler.getNamespace().get();
-          EventMacroUtil.callEventHandler(
-              ON_MOUSE_OVER_CALLBACK,
-              libraryNamespace,
-              token.getId().toString() + ",exit",
-              null,
-              Collections.emptyMap(),
-              false);
-        } catch (InterruptedException | ExecutionException e) {
-          LOGGER.error(I18N.getText("library.error.namespace"), e);
-          throw new AssertionError("Error retrieving library namespace");
-        }
+        String libraryNamespace = handler.getNamespace();
+        EventMacroUtil.callEventHandler(
+            ON_MOUSE_OVER_CALLBACK,
+            libraryNamespace,
+            token.getId().toString() + ",exit",
+            null,
+            Collections.emptyMap(),
+            false);
       }
     } catch (InterruptedException | ExecutionException e) {
       LOGGER.error(I18N.getText("library.error.retrievingEventHandler"), e);

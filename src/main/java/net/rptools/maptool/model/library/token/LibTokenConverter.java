@@ -47,17 +47,16 @@ public class LibTokenConverter {
 
   public void convert() {
     var libraryBuilder = AddOnLibraryDto.newBuilder();
-    libraryBuilder.setName(libraryToken.getName().join());
-    libraryBuilder.setVersion(libraryToken.getVersion().join());
-    libraryBuilder.setWebsite(
-        Objects.requireNonNullElse(libraryToken.getWebsite().join(), "unknown"));
-    libraryBuilder.setGitUrl(libraryToken.getGitUrl().join());
-    libraryBuilder.addAllAuthors(libraryToken.getAuthors().join());
-    libraryBuilder.setLicense(libraryToken.getLicense().join());
-    libraryBuilder.setDescription(libraryToken.getDescription().join());
-    libraryBuilder.setShortDescription(libraryToken.getShortDescription().join());
-    libraryBuilder.setNamespace(libraryToken.getNamespace().join());
-    libraryBuilder.setAllowsUriAccess(libraryToken.allowsUriAccess().join());
+    libraryBuilder.setName(libraryToken.getName());
+    libraryBuilder.setVersion(libraryToken.getVersion());
+    libraryBuilder.setWebsite(Objects.requireNonNullElse(libraryToken.getWebsite(), "unknown"));
+    libraryBuilder.setGitUrl(libraryToken.getGitUrl());
+    libraryBuilder.addAllAuthors(libraryToken.getAuthors());
+    libraryBuilder.setLicense(libraryToken.getLicense());
+    libraryBuilder.setDescription(libraryToken.getDescription());
+    libraryBuilder.setShortDescription(libraryToken.getShortDescription());
+    libraryBuilder.setNamespace(libraryToken.getNamespace());
+    libraryBuilder.setAllowsUriAccess(libraryToken.allowsUriAccess());
 
     Path contentPath = directory.resolve(AddOnLibraryImporter.CONTENT_DIRECTORY);
     Path libraryJsonPath = directory.resolve(AddOnLibraryImporter.LIBRARY_INFO_FILE);

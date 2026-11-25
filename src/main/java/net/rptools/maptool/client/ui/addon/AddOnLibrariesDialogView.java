@@ -259,15 +259,15 @@ public class AddOnLibrariesDialogView extends JDialog {
       try {
         var addOnLibrary = new AddOnLibraryImporter().importFromFile(libFile);
         var libraryManager = new LibraryManager();
-        String namespace = addOnLibrary.getNamespace().get();
-        if (libraryManager.addOnLibraryExists(addOnLibrary.getNamespace().get())) {
+        String namespace = addOnLibrary.getNamespace();
+        if (libraryManager.addOnLibraryExists(addOnLibrary.getNamespace())) {
           if (!MapTool.confirm(I18N.getText("library.error.addOnLibraryExists", namespace))) {
             return;
           }
           libraryManager.deregisterAddOnLibrary(namespace);
         }
         libraryManager.reregisterAddOnLibrary(addOnLibrary);
-      } catch (IOException | InterruptedException | ExecutionException e) {
+      } catch (IOException e) {
         MapTool.showError("library.import.ioError", e);
       }
       ((AddOnLibrariesTableModel) addOnLibraryTable.getModel()).fireTableDataChanged();

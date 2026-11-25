@@ -71,33 +71,18 @@ public class AddOnLibraryData implements LibraryData {
 
   @Override
   public CompletableFuture<Boolean> hasStaticData(String path) {
-    return addOnLibrary
-        .allowsUriAccess()
-        .thenApply(
-            allow -> {
-              if (!allow) {
-                return false;
-              } else {
-                return getStaticData(path).thenApply(p -> !p.isUndefined()).join();
-              }
-            });
+    if (!addOnLibrary.allowsUriAccess()) {
+      return CompletableFuture.completedFuture(false);
+    }
+    return getStaticData(path).thenApply(p -> !p.isUndefined());
   }
 
   @Override
   public CompletableFuture<Boolean> hasPublicStaticData(String path) {
-    if (!path.replaceFirst("^/", "").startsWith("public/")) {
+    if (!addOnLibrary.allowsUriAccess() || !path.replaceFirst("^/", "").startsWith("public/")) {
       return CompletableFuture.completedFuture(false);
     }
-    return addOnLibrary
-        .allowsUriAccess()
-        .thenApply(
-            allow -> {
-              if (!allow) {
-                return false;
-              } else {
-                return hasStaticData(path).join();
-              }
-            });
+    return hasStaticData(path);
   }
 
   @Override

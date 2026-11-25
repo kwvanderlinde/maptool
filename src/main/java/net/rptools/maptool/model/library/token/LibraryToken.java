@@ -82,25 +82,8 @@ class LibraryToken implements Library {
   /** The id of the library token. */
   private final GUID id;
 
-  private final String name;
-
-  private final String namespace;
-
-  private final String version;
-
-  private final List<String> authors;
-
-  private final String website;
-
-  private final String gitUrl;
-
-  private final String license;
-
-  private final String description;
-
-  private final String shortDescription;
-
-  private final boolean allowsUriAccess;
+  // If the token changes, we recreate the LibraryToken, so this is okay to precompute.
+  private final LibraryInfo libraryInfo;
 
   private final Set<String> propertyNames;
 
@@ -139,38 +122,50 @@ class LibraryToken implements Library {
    */
   LibraryToken(Token token) {
     id = token.getId();
-    name = token.getName();
-    namespace = namespaceForName(token.getName());
-    version =
+    String name = token.getName();
+    String namespace = namespaceForName(token.getName());
+    String version =
         Objects.requireNonNullElse(
                 token.getProperty(LIB_VERSION_PROPERTY_NAME), LIB_VERSION_UNKNOWN)
             .toString();
-    website =
+    String website =
         Objects.requireNonNullElse(token.getProperty(LIB_WEBSITE_PROPERTY_NAME), "").toString();
-    gitUrl = Objects.requireNonNullElse(token.getProperty(LIB_GITURL_PROPERTY_NAME), "").toString();
-    license =
+    String gitUrl =
+        Objects.requireNonNullElse(token.getProperty(LIB_GITURL_PROPERTY_NAME), "").toString();
+    String license =
         Objects.requireNonNullElse(token.getProperty(LIB_LICENSE_PROPERTY_NAME), "").toString();
-    description =
+    String description =
         Objects.requireNonNullElse(token.getProperty(LIB_DESCRIPTION_PROPERTY_NAME), "").toString();
-    shortDescription =
+    String shortDescription =
         Objects.requireNonNullElse(token.getProperty(LIB_SHORT_DESCRIPTION_PROPERTY_NAME), "")
             .toString();
-    authors =
+    List<String> authors =
         Arrays.stream(
                 Objects.requireNonNullElse(token.getProperty(LIB_AUTHORS_PROPERTY_NAME), "")
                     .toString()
                     .split(","))
             .map(String::trim)
             .toList();
-    allowsUriAccess = token.getAllowURIAccess();
+    boolean allowsUriAccess = token.getAllowURIAccess();
 
     propertyNames = new HashSet<>(token.getPropertyNames());
     macroNames = new HashSet<>(token.getMacroNames(false));
-  }
 
-  @Override
-  public CompletableFuture<String> getVersion() {
-    return CompletableFuture.completedFuture(version);
+    String notSet = I18N.getText("library.property.value.notSpecified");
+    libraryInfo =
+        new LibraryInfo(
+            name,
+            namespace,
+            version.isEmpty() ? notSet : version,
+            website.isEmpty() ? notSet : website,
+            gitUrl.isEmpty() ? notSet : gitUrl,
+            authors.isEmpty() ? List.of(notSet) : authors,
+            license.isEmpty() ? notSet : license,
+            description.isEmpty() ? notSet : description,
+            shortDescription.isEmpty() ? notSet : shortDescription,
+            allowsUriAccess,
+            null,
+            null);
   }
 
   private CompletableFuture<String> getStringRaw(URL location) throws IOException {
@@ -215,67 +210,8 @@ class LibraryToken implements Library {
   }
 
   @Override
-  public CompletableFuture<String> getWebsite() {
-    return CompletableFuture.completedFuture(website);
-  }
-
-  @Override
-  public CompletableFuture<String> getGitUrl() {
-    return CompletableFuture.completedFuture(gitUrl);
-  }
-
-  @Override
-  public CompletableFuture<List<String>> getAuthors() {
-    return CompletableFuture.completedFuture(authors);
-  }
-
-  @Override
-  public CompletableFuture<String> getLicense() {
-    return CompletableFuture.completedFuture(license);
-  }
-
-  @Override
-  public CompletableFuture<String> getNamespace() {
-    return CompletableFuture.completedFuture(namespace);
-  }
-
-  @Override
-  public CompletableFuture<String> getName() {
-    return CompletableFuture.completedFuture(name);
-  }
-
-  @Override
-  public CompletableFuture<String> getDescription() {
-    return CompletableFuture.completedFuture(description);
-  }
-
-  @Override
-  public CompletableFuture<String> getShortDescription() {
-    return CompletableFuture.completedFuture(shortDescription);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> allowsUriAccess() {
-    return CompletableFuture.completedFuture(allowsUriAccess);
-  }
-
-  @Override
-  public CompletableFuture<LibraryInfo> getLibraryInfo() {
-    String notSet = I18N.getText("library.property.value.notSpecified");
-    return CompletableFuture.completedFuture(
-        new LibraryInfo(
-            name,
-            namespace,
-            version.isEmpty() ? notSet : version,
-            website.isEmpty() ? notSet : website,
-            gitUrl.isEmpty() ? notSet : gitUrl,
-            authors.isEmpty() ? List.of(notSet) : authors,
-            license.isEmpty() ? notSet : license,
-            description.isEmpty() ? notSet : description,
-            shortDescription.isEmpty() ? notSet : shortDescription,
-            allowsUriAccess,
-            "",
-            ""));
+  public LibraryInfo getLibraryInfo() {
+    return libraryInfo;
   }
 
   @Override
