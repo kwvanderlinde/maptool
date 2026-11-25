@@ -45,23 +45,6 @@ public interface LibraryData {
   CompletableFuture<Void> setData(DataValue value);
 
   /**
-   * Does the library have the specified static data.
-   *
-   * @param path the path of the static data to check for.
-   * @return {@code true} if the library has the specified static data, {@code false} otherwise.
-   */
-  CompletableFuture<Boolean> hasStaticData(String path);
-
-  /**
-   * Does the library have the specified public static data.
-   *
-   * @param path the path of the public static data to check for.
-   * @return {@code true} if the library has the specified public static data, {@code false}
-   *     otherwise.
-   */
-  CompletableFuture<Boolean> hasPublicStaticData(String path);
-
-  /**
    * Returns the static data value of the specified path.
    *
    * @param path the path of the static data to get.

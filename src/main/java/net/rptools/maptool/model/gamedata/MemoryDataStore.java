@@ -78,11 +78,6 @@ public class MemoryDataStore implements DataStore {
         });
   }
 
-  @Override
-  public CompletableFuture<Boolean> hasPropertyNamespace(String type, String namespace) {
-    return CompletableFuture.completedFuture(checkPropertyNamespace(type, namespace));
-  }
-
   /**
    * Returns the data value for the given property type, namespace and name. This will return null
    * if the data does not exist.
@@ -96,32 +91,6 @@ public class MemoryDataStore implements DataStore {
     var propertyTypeNamespace = new PropertyTypeNamespace(type, namespace);
     var values = namespaceDataMap.get(propertyTypeNamespace);
     return values != null ? values.get(name) : null;
-  }
-
-  @Override
-  public CompletableFuture<Boolean> hasProperty(String type, String namespace, String name) {
-    return CompletableFuture.supplyAsync(
-        () -> {
-          var def = getData(type, namespace, name);
-          if (def != null) {
-            return Boolean.TRUE;
-          } else {
-            return Boolean.FALSE;
-          }
-        });
-  }
-
-  @Override
-  public CompletableFuture<Boolean> isPropertyDefined(String type, String namespace, String name) {
-    return CompletableFuture.supplyAsync(
-        () -> {
-          var data = getData(type, namespace, name);
-          if (data != null) {
-            return !data.isUndefined();
-          } else {
-            return Boolean.FALSE;
-          }
-        });
   }
 
   @Override
@@ -183,6 +152,28 @@ public class MemoryDataStore implements DataStore {
   }
 
   @Override
+  public CompletableFuture<DataValue> setPropertyIfNotSet(
+      String type, String namespace, DataValue value) {
+    return CompletableFuture.supplyAsync(
+        () -> {
+          if (!checkPropertyNamespace(type, namespace)) {
+            throw InvalidDataOperation.createNamespaceDoesNotExist(namespace, type);
+          }
+
+          var dataMap =
+              namespaceDataMap.computeIfAbsent(
+                  new PropertyTypeNamespace(type, namespace), k -> new ConcurrentHashMap<>());
+          var existing = dataMap.get(value.getName());
+          if (existing == null || existing.getDataType() == DataType.UNDEFINED) {
+            dataMap.put(value.getName(), value);
+            return value;
+          }
+
+          return existing;
+        });
+  }
+
+  @Override
   public CompletableFuture<Void> removeProperty(String type, String namespace, String name) {
     return CompletableFuture.supplyAsync(
         () -> {
@@ -221,7 +212,7 @@ public class MemoryDataStore implements DataStore {
   }
 
   @Override
-  public CompletableFuture<Void> createNamespace(String propertyType, String namespace) {
+  public CompletableFuture<Boolean> createNamespace(String propertyType, String namespace) {
     return CompletableFuture.supplyAsync(
         () -> {
           createDataNamespace(propertyType, namespace, List.of());

@@ -70,37 +70,17 @@ public class AddOnLibraryData implements LibraryData {
   }
 
   @Override
-  public CompletableFuture<Boolean> hasStaticData(String path) {
-    if (!addOnLibrary.allowsUriAccess()) {
-      return CompletableFuture.completedFuture(false);
-    }
-    return getStaticData(path).thenApply(p -> !p.isUndefined());
-  }
-
-  @Override
-  public CompletableFuture<Boolean> hasPublicStaticData(String path) {
-    if (!addOnLibrary.allowsUriAccess() || !path.replaceFirst("^/", "").startsWith("public/")) {
-      return CompletableFuture.completedFuture(false);
-    }
-    return hasStaticData(path);
-  }
-
-  @Override
   public CompletableFuture<DataValue> getStaticData(String path) {
     return addOnLibrary.readFile(path);
   }
 
   @Override
   public CompletableFuture<DataValue> getPublicStaticData(String path) {
-    return hasPublicStaticData(path)
-        .thenApply(
-            has -> {
-              if (has) {
-                return getStaticData(path).join();
-              } else {
-                return DataValueFactory.undefined(path);
-              }
-            });
+    if (!addOnLibrary.allowsUriAccess() || !path.replaceFirst("^/", "").startsWith("public/")) {
+      return CompletableFuture.completedFuture(DataValueFactory.undefined(path));
+    }
+
+    return getStaticData(path);
   }
 
   /**
@@ -120,31 +100,20 @@ public class AddOnLibraryData implements LibraryData {
    * @return A future that completes when the data is initialized.
    */
   CompletableFuture<Void> initialize() {
-    var ds = new DataStoreManager().getDefaultDataStore();
-    return ds.hasPropertyNamespace(DATA_TYPE, dataNameSpace)
-        .thenApply(
-            has -> {
-              if (!has) {
-                // Wait for the namespace, including the message that announces it, before setting a
-                // property in it. Otherwise the property's message can reach the other clients
-                // first, and they reject it because the namespace doesn't exist there yet.
-                ds.createNamespace(DATA_TYPE, dataNameSpace).join();
-                ds.setProperty(
-                        DATA_TYPE,
-                        dataNameSpace,
-                        DataValueFactory.fromBoolean(NEEDS_INIT_KEY, true))
-                    .join();
+    var dataStore = new DataStoreManager().getDefaultDataStore();
+    return dataStore
+        .createNamespace(DATA_TYPE, dataNameSpace)
+        .thenCompose(
+            isNew -> {
+              if (isNew) {
+                return dataStore.setProperty(
+                    DATA_TYPE, dataNameSpace, DataValueFactory.fromBoolean(NEEDS_INIT_KEY, true));
               } else {
-                if (!ds.hasProperty(DATA_TYPE, dataNameSpace, NEEDS_INIT_KEY).join()) {
-                  ds.setProperty(
-                          DATA_TYPE,
-                          dataNameSpace,
-                          DataValueFactory.fromBoolean(NEEDS_INIT_KEY, false))
-                      .join();
-                }
+                return dataStore.setPropertyIfNotSet(
+                    DATA_TYPE, dataNameSpace, DataValueFactory.fromBoolean(NEEDS_INIT_KEY, false));
               }
-              return null;
-            });
+            })
+        .thenAccept(ignored -> {});
   }
 
   CompletableFuture<Boolean> needsInitialization() {

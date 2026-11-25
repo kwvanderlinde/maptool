@@ -46,37 +46,6 @@ public interface DataStore {
   CompletableFuture<Set<String>> getPropertyNamespaces(String type);
 
   /**
-   * Checks if a property and namespace exists.
-   *
-   * @param type the propertyType of the property.
-   * @param namespace the namespace of the property.
-   * @return {@code true} if the property and namespace exists.
-   */
-  CompletableFuture<Boolean> hasPropertyNamespace(String type, String namespace);
-
-  /**
-   * Checks if a property exists, the value may be undefined, if you want to check for both property
-   * existing and value being defined use {@link #isPropertyDefined(String, String, String)}.
-   *
-   * @param type the propertyType of the property.
-   * @param namespace the namespace of the property.
-   * @param name the name of the property.
-   * @return {@code true} if the property exists.
-   */
-  CompletableFuture<Boolean> hasProperty(String type, String namespace, String name);
-
-  /**
-   * Checks if a property exists, and has a value. property existing and value being defined use
-   * {@link #isPropertyDefined(String, String, String)}.
-   *
-   * @param type the propertyType of the property.
-   * @param namespace the namespace of the property.
-   * @param name the name of the property.
-   * @return {@code true} if the property exists and has a value.
-   */
-  CompletableFuture<Boolean> isPropertyDefined(String type, String namespace, String name);
-
-  /**
    * Returns the value of a property.
    *
    * @param type the propertyType of the property.
@@ -109,6 +78,19 @@ public interface DataStore {
   CompletableFuture<DataValue> setProperty(String type, String namespace, DataValue value);
 
   /**
+   * Sets the value of a property.
+   *
+   * @param type the propertyType of the property.
+   * @param namespace the namespace of the property.
+   * @param value the value of the property.
+   * @return the value that was set.
+   * @throws InvalidDataOperation exception if the value can not be converted to the properties'
+   *     data propertyType.
+   * @throws InvalidDataOperation exception if the namespace does not exist for the propertyType.
+   */
+  CompletableFuture<DataValue> setPropertyIfNotSet(String type, String namespace, DataValue value);
+
+  /**
    * Removes a property from the Data store.
    *
    * @param type the propertyType of the property.
@@ -119,14 +101,15 @@ public interface DataStore {
   CompletableFuture<Void> removeProperty(String type, String namespace, String name);
 
   /**
-   * Creates a new namespace with no initial data or types. This method can be called on an existing
-   * namespace with no adverse effects.
+   * Ensures a namespace exists.
+   *
+   * <p>If called for an existing namespace, it will be left unchanged.
    *
    * @param propertyType the propertyType of the namespace.
    * @param namespace the namespace to create.
-   * @return a {@code Void} completable future.
+   * @return a completable future yield {@code true} if the namespace was created.
    */
-  CompletableFuture<Void> createNamespace(String propertyType, String namespace);
+  CompletableFuture<Boolean> createNamespace(String propertyType, String namespace);
 
   /**
    * Returns the data transfer object representation of the data in the namespace.

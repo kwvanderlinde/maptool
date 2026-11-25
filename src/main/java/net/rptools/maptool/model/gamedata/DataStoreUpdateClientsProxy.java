@@ -43,21 +43,6 @@ class DataStoreUpdateClientsProxy implements DataStore {
   }
 
   @Override
-  public CompletableFuture<Boolean> hasPropertyNamespace(String type, String namespace) {
-    return dataStore.hasPropertyNamespace(type, namespace);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> hasProperty(String type, String namespace, String name) {
-    return dataStore.hasProperty(type, namespace, name);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> isPropertyDefined(String type, String namespace, String name) {
-    return dataStore.isPropertyDefined(type, namespace, name);
-  }
-
-  @Override
   public CompletableFuture<DataValue> getProperty(String type, String namespace, String name) {
     return dataStore.getProperty(type, namespace, name);
   }
@@ -95,23 +80,36 @@ class DataStoreUpdateClientsProxy implements DataStore {
   }
 
   @Override
+  public CompletableFuture<DataValue> setPropertyIfNotSet(
+      String type, String namespace, DataValue value) {
+    return dataStore
+        .setPropertyIfNotSet(type, namespace, value)
+        .thenApply(
+            v -> {
+              notifyClientsOfDataUpdate(type, namespace, v);
+              return v;
+            });
+  }
+
+  @Override
   public CompletableFuture<Void> removeProperty(String type, String namespace, String name) {
     MapTool.serverCommand().removeData(type, namespace, name);
     return dataStore.removeProperty(type, namespace, name);
   }
 
   @Override
-  public CompletableFuture<Void> createNamespace(String propertyType, String namespace) {
+  public CompletableFuture<Boolean> createNamespace(String propertyType, String namespace) {
     return dataStore
         .createNamespace(propertyType, namespace)
-        .thenRun(
-            () -> {
-              try {
-                MapTool.serverCommand().updateDataNamespace(toDto(propertyType, namespace).get());
-              } catch (InterruptedException | ExecutionException e) {
-                log.error(I18N.getText("data.error.sendingUpdate"));
-                throw new CompletionException(e.getCause());
+        .thenApply(
+            isNew -> {
+              if (isNew) {
+                var builder = GameDataDto.newBuilder();
+                builder.setType(propertyType);
+                builder.setNamespace(namespace);
+                MapTool.serverCommand().updateDataNamespace(builder.build());
               }
+              return isNew;
             });
   }
 
