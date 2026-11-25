@@ -500,11 +500,6 @@ public class AddOnLibrary implements Library {
   }
 
   @Override
-  public CompletableFuture<Boolean> isAsset(URL location) {
-    return CompletableFuture.completedFuture(getURILocation(location) != null);
-  }
-
-  @Override
   public CompletableFuture<Optional<MD5Key>> getAssetKey(URL location) {
     var AssetInfo = getURILocation(location);
     if (AssetInfo == null) {

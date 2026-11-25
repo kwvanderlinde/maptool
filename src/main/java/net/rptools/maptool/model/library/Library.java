@@ -48,19 +48,10 @@ public interface Library {
   CompletableFuture<Boolean> locationExists(URL location) throws IOException;
 
   /**
-   * Checks to see if the specified location is an Asset.
-   *
-   * @param location the location to check.
-   * @return {@code true} if the location is an asset, otherwise {@code false}.
-   */
-  CompletableFuture<Boolean> isAsset(URL location);
-
-  /**
-   * Returns the asset at the specified location. This will only return a value if {@link
-   * #isAsset(URL)} returns {@code true}.
+   * Returns the asset at the specified location.
    *
    * @param location the location to get the asset for.
-   * @return the asset at the specified location.
+   * @return the asset at the specified location if it exists.
    */
   CompletableFuture<Optional<MD5Key>> getAssetKey(URL location);
 

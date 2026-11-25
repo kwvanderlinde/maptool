@@ -62,11 +62,6 @@ public class ClassPathAddOnLibrary implements BuiltInLibrary {
   }
 
   @Override
-  public CompletableFuture<Boolean> isAsset(URL location) {
-    return addOnLibrary.isAsset(location);
-  }
-
-  @Override
   public CompletableFuture<Optional<MD5Key>> getAssetKey(URL location) {
     return addOnLibrary.getAssetKey(location);
   }

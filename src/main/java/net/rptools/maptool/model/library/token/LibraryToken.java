@@ -184,11 +184,6 @@ class LibraryToken implements Library {
   }
 
   @Override
-  public CompletableFuture<Boolean> isAsset(URL location) {
-    return CompletableFuture.completedFuture(Boolean.FALSE);
-  }
-
-  @Override
   public CompletableFuture<Optional<MD5Key>> getAssetKey(URL location) {
     return CompletableFuture.completedFuture(Optional.empty());
   }
