@@ -32,7 +32,6 @@ import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.macro.MacroManager.MacroDetails;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Asset;
-import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.library.LibraryInfo;
 import net.rptools.maptool.model.library.MTScriptMacroInfo;
 import net.rptools.maptool.model.library.builtin.themecss.ThemeCssContext;
@@ -246,11 +245,6 @@ public class MapToolBuiltInLibrary implements BuiltInLibrary {
 
   @Override
   public CompletableFuture<Optional<String>> getLegacyEventHandlerName(String eventName) {
-    return CompletableFuture.completedFuture(Optional.empty());
-  }
-
-  @Override
-  public CompletableFuture<Optional<Token>> getAssociatedToken() {
     return CompletableFuture.completedFuture(Optional.empty());
   }
 

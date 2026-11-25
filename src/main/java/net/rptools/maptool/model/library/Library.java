@@ -25,7 +25,6 @@ import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.macro.MacroManager.MacroDetails;
 import net.rptools.maptool.model.Asset;
-import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.library.data.LibraryData;
 
 /** Interface for classes that represents a framework library. */
@@ -192,14 +191,6 @@ public interface Library {
    * @return the name of the MT script to execute for the legacy event.
    */
   CompletableFuture<Optional<String>> getLegacyEventHandlerName(String eventName);
-
-  /**
-   * Returns the token associated with this library. This will only return a token for legacy
-   * libraries.
-   *
-   * @return the token associated with this library.
-   */
-  CompletableFuture<Optional<Token>> getAssociatedToken();
 
   /**
    * Returns if the context is able to access the private values in the library.

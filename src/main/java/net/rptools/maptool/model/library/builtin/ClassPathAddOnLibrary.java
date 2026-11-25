@@ -25,7 +25,6 @@ import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.macro.MacroManager.MacroDetails;
 import net.rptools.maptool.model.Asset;
-import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.library.LibraryInfo;
 import net.rptools.maptool.model.library.MTScriptMacroInfo;
 import net.rptools.maptool.model.library.addon.AddOnLibrary;
@@ -155,11 +154,6 @@ public class ClassPathAddOnLibrary implements BuiltInLibrary {
   @Override
   public CompletableFuture<Optional<String>> getLegacyEventHandlerName(String eventName) {
     return addOnLibrary.getLegacyEventHandlerName(eventName);
-  }
-
-  @Override
-  public CompletableFuture<Optional<Token>> getAssociatedToken() {
-    return addOnLibrary.getAssociatedToken();
   }
 
   @Override

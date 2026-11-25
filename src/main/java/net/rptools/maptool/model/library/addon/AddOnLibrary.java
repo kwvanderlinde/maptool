@@ -41,7 +41,6 @@ import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.Asset.Type;
 import net.rptools.maptool.model.AssetManager;
-import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.gamedata.data.DataValue;
 import net.rptools.maptool.model.gamedata.data.DataValueFactory;
 import net.rptools.maptool.model.library.Library;
@@ -408,11 +407,6 @@ public class AddOnLibrary implements Library {
   public CompletableFuture<Optional<String>> getLegacyEventHandlerName(String eventName) {
     return CompletableFuture.completedFuture(
         Optional.ofNullable(legacyEventNameMap.get(eventName)));
-  }
-
-  @Override
-  public CompletableFuture<Optional<Token>> getAssociatedToken() {
-    return CompletableFuture.completedFuture(Optional.empty());
   }
 
   @Override

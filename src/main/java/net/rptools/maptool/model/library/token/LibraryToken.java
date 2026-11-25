@@ -356,11 +356,6 @@ class LibraryToken implements Library {
   }
 
   @Override
-  public CompletableFuture<Optional<Token>> getAssociatedToken() {
-    return getToken().thenApply(Optional::of);
-  }
-
-  @Override
   public boolean canMTScriptAccessPrivate(MapToolMacroContext context) {
     return false; // Library Tokens don't have private data
   }
