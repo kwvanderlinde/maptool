@@ -78,7 +78,7 @@ public class BuiltInLibraryManager {
    * @param library The add-on library to register.
    * @throws IllegalStateException if there is already a add-on library with the same namespace.
    */
-  public void registerLibrary(BuiltInLibrary library) {
+  private void registerLibrary(Library library) {
     String namespace = library.getNamespace().join().toLowerCase();
 
     var registeredLib = namespaceLibraryMap.computeIfAbsent(namespace, k -> library);

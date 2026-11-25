@@ -25,12 +25,13 @@ import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.macro.MacroManager.MacroDetails;
 import net.rptools.maptool.model.Asset;
+import net.rptools.maptool.model.library.Library;
 import net.rptools.maptool.model.library.LibraryInfo;
 import net.rptools.maptool.model.library.MTScriptMacroInfo;
 import net.rptools.maptool.model.library.addon.AddOnLibrary;
 import net.rptools.maptool.model.library.data.LibraryData;
 
-public class ClassPathAddOnLibrary implements BuiltInLibrary {
+public class ClassPathAddOnLibrary implements Library {
 
   private final String resourceFilePath;
 

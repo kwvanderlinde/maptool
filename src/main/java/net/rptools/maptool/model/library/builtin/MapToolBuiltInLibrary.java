@@ -32,13 +32,14 @@ import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.macro.MacroManager.MacroDetails;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Asset;
+import net.rptools.maptool.model.library.Library;
 import net.rptools.maptool.model.library.LibraryInfo;
 import net.rptools.maptool.model.library.MTScriptMacroInfo;
 import net.rptools.maptool.model.library.builtin.themecss.ThemeCssContext;
 import net.rptools.maptool.model.library.data.LibraryData;
 import net.rptools.maptool.util.HandlebarsUtil;
 
-public class MapToolBuiltInLibrary implements BuiltInLibrary {
+public class MapToolBuiltInLibrary implements Library {
 
   private record ResourceDetails(
       String name, String path, Function<ResourceDetails, String> supplier, boolean cache) {
