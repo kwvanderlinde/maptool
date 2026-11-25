@@ -16,7 +16,6 @@ package net.rptools.maptool.model.library.addon;
 
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -149,7 +148,7 @@ public class AddOnLibraryManager {
             detailDto.setVersion(library.getVersion().join());
             detailDto.setWebsite(library.getWebsite().join());
             detailDto.setGitUrl(library.getGitUrl().join());
-            detailDto.addAllAuthors(Arrays.asList(library.getAuthors().join()));
+            detailDto.addAllAuthors(library.getAuthors().join());
             detailDto.setLicense(library.getLicense().join());
             detailDto.setNamespace(library.getNamespace().join());
             detailDto.setDescription(library.getDescription().join());

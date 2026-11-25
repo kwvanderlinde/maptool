@@ -86,7 +86,7 @@ public class ClassPathAddOnLibrary implements BuiltInLibrary {
   }
 
   @Override
-  public CompletableFuture<String[]> getAuthors() {
+  public CompletableFuture<List<String>> getAuthors() {
     return addOnLibrary.getAuthors();
   }
 

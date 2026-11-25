@@ -263,7 +263,7 @@ public class AddOnLibrary implements Library {
             version,
             website,
             gitUrl,
-            authors,
+            List.of(authors),
             license,
             description,
             shortDescription,
@@ -549,8 +549,8 @@ public class AddOnLibrary implements Library {
   }
 
   @Override
-  public CompletableFuture<String[]> getAuthors() {
-    return CompletableFuture.completedFuture(authors);
+  public CompletableFuture<List<String>> getAuthors() {
+    return CompletableFuture.completedFuture(List.of(authors));
   }
 
   @Override

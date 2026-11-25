@@ -14,6 +14,8 @@
  */
 package net.rptools.maptool.model.library;
 
+import java.util.List;
+
 /** Record that contains the information about a library. */
 public record LibraryInfo(
     String name,
@@ -21,7 +23,7 @@ public record LibraryInfo(
     String version,
     String website,
     String gitUrl,
-    String[] authors,
+    List<String> authors,
     String license,
     String description,
     String shortDescription,

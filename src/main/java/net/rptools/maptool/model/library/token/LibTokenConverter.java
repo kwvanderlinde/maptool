@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Objects;
 import net.rptools.maptool.client.MapTool;
@@ -53,7 +52,7 @@ public class LibTokenConverter {
     libraryBuilder.setWebsite(
         Objects.requireNonNullElse(libraryToken.getWebsite().join(), "unknown"));
     libraryBuilder.setGitUrl(libraryToken.getGitUrl().join());
-    libraryBuilder.addAllAuthors(Arrays.asList(libraryToken.getAuthors().join()));
+    libraryBuilder.addAllAuthors(libraryToken.getAuthors().join());
     libraryBuilder.setLicense(libraryToken.getLicense().join());
     libraryBuilder.setDescription(libraryToken.getDescription().join());
     libraryBuilder.setShortDescription(libraryToken.getShortDescription().join());

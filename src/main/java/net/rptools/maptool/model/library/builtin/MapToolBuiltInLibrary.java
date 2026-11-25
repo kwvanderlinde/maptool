@@ -165,8 +165,8 @@ public class MapToolBuiltInLibrary implements BuiltInLibrary {
   }
 
   @Override
-  public CompletableFuture<String[]> getAuthors() {
-    return CompletableFuture.completedFuture(authors);
+  public CompletableFuture<List<String>> getAuthors() {
+    return CompletableFuture.completedFuture(List.of(authors));
   }
 
   @Override
@@ -208,7 +208,7 @@ public class MapToolBuiltInLibrary implements BuiltInLibrary {
             version,
             website,
             gitUrl,
-            authors,
+            List.of(authors),
             license,
             description,
             shortDescription,

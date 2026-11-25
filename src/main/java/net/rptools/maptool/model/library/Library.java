@@ -91,7 +91,7 @@ public interface Library {
    *
    * @return the Authors of the library.
    */
-  CompletableFuture<String[]> getAuthors();
+  CompletableFuture<List<String>> getAuthors();
 
   /**
    * Returns the license of the library.

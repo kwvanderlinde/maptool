@@ -239,8 +239,8 @@ class LibraryToken implements Library {
   }
 
   @Override
-  public CompletableFuture<String[]> getAuthors() {
-    return CompletableFuture.completedFuture(authors.toArray(new String[0]));
+  public CompletableFuture<List<String>> getAuthors() {
+    return CompletableFuture.completedFuture(authors);
   }
 
   @Override
@@ -283,7 +283,7 @@ class LibraryToken implements Library {
             version.isEmpty() ? notSet : version,
             website.isEmpty() ? notSet : website,
             gitUrl.isEmpty() ? notSet : gitUrl,
-            authors.size() == 0 ? new String[] {notSet} : authors.toArray(new String[0]),
+            authors.isEmpty() ? List.of(notSet) : authors,
             license.isEmpty() ? notSet : license,
             description.isEmpty() ? notSet : description,
             shortDescription.isEmpty() ? notSet : shortDescription,
