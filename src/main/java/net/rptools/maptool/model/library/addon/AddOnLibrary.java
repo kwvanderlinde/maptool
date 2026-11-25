@@ -279,21 +279,17 @@ public class AddOnLibrary implements Library {
    * @param macro The macro details.
    * @return The {@link MTScriptMacroInfo} details.
    */
-  private CompletableFuture<Optional<MTScriptMacroInfo>> getMacroInfo(
-      String macroName, MTScript macro) {
-    return CompletableFuture.supplyAsync(
-        () -> {
-          Asset asset = AssetManager.getAsset(macro.md5Key());
-          String command = asset.getDataAsString();
-          // Drop In Library Functions are always trusted as only GM can add and no one can edit.
-          return Optional.of(
-              new MTScriptMacroInfo(
-                  macroName,
-                  command,
-                  true, // Drop In Library Functions are always trusted
-                  macro.autoExecute(),
-                  macro.description()));
-        });
+  private Optional<MTScriptMacroInfo> getMacroInfo(String macroName, MTScript macro) {
+    Asset asset = AssetManager.getAsset(macro.md5Key());
+    String command = asset.getDataAsString();
+    // Drop In Library Functions are always trusted as only GM can add and no one can edit.
+    return Optional.of(
+        new MTScriptMacroInfo(
+            macroName,
+            command,
+            true, // Drop In Library Functions are always trusted
+            macro.autoExecute(),
+            macro.description()));
   }
 
   @Override
@@ -306,19 +302,15 @@ public class AddOnLibrary implements Library {
   @Override
   public CompletableFuture<Optional<MTScriptMacroInfo>> getMTScriptMacroInfo(String macroName) {
     var macro = mtsFunctionAssetMap.get(MTSCRIPT_PUBLIC_DIR + macroName);
-    if (macro == null) {
-      return CompletableFuture.completedFuture(Optional.empty());
-    }
-    return getMacroInfo(macroName, macro);
+    return CompletableFuture.completedFuture(
+        macro == null ? Optional.empty() : getMacroInfo(macroName, macro));
   }
 
   @Override
   public CompletableFuture<Optional<MTScriptMacroInfo>> getPrivateMacroInfo(String macroName) {
     var macro = mtsFunctionAssetMap.get(macroName);
-    if (macro == null) {
-      return CompletableFuture.completedFuture(Optional.empty());
-    }
-    return getMacroInfo(macroName, macro);
+    return CompletableFuture.completedFuture(
+        macro == null ? Optional.empty() : getMacroInfo(macroName, macro));
   }
 
   /**
@@ -367,11 +359,9 @@ public class AddOnLibrary implements Library {
     if (readMeFile.isEmpty()) {
       return CompletableFuture.completedFuture(Optional.empty());
     } else {
-      return CompletableFuture.supplyAsync(
-          () -> {
-            var asset = pathAssetMap.get(readMeFile);
-            return Optional.of(AssetManager.getAsset(asset.getValue0()));
-          });
+      var asset = pathAssetMap.get(readMeFile);
+      return CompletableFuture.completedFuture(
+          Optional.of(AssetManager.getAsset(asset.getValue0())));
     }
   }
 
@@ -381,11 +371,9 @@ public class AddOnLibrary implements Library {
     if (licenseFile.isEmpty()) {
       return CompletableFuture.completedFuture(Optional.empty());
     } else {
-      return CompletableFuture.supplyAsync(
-          () -> {
-            var asset = pathAssetMap.get(licenseFile);
-            return Optional.of(AssetManager.getAsset(asset.getValue0()));
-          });
+      var asset = pathAssetMap.get(licenseFile);
+      return CompletableFuture.completedFuture(
+          Optional.of(AssetManager.getAsset(asset.getValue0())));
     }
   }
 
@@ -426,11 +414,9 @@ public class AddOnLibrary implements Library {
 
   @Override
   public CompletableFuture<Optional<MD5Key>> getAssetKey(URL location) {
-    var AssetInfo = getURILocation(location);
-    if (AssetInfo == null) {
-      return CompletableFuture.completedFuture(Optional.empty());
-    }
-    return CompletableFuture.completedFuture(Optional.of(AssetInfo.getValue0()));
+    var assetInfo = getURILocation(location);
+    return CompletableFuture.completedFuture(
+        assetInfo == null ? Optional.empty() : Optional.of(assetInfo.getValue0()));
   }
 
   @Override
@@ -445,11 +431,8 @@ public class AddOnLibrary implements Library {
             Reason.BAD_CONVERSION,
             I18N.getText("library.error.addOn.notText", values.getValue1().name()));
       }
-      return CompletableFuture.supplyAsync(
-          () -> {
-            Asset asset = AssetManager.getAsset(values.getValue0());
-            return asset.getDataAsString();
-          });
+      Asset asset = AssetManager.getAsset(values.getValue0());
+      return CompletableFuture.completedFuture(asset.getDataAsString());
     } else {
       throw new LibraryNotValidException(
           Reason.MISSING_PERMISSIONS, I18N.getText("library.error.addOn.no.access", getName()));
@@ -463,11 +446,8 @@ public class AddOnLibrary implements Library {
       if (values == null) {
         throw new IOException("Invalid Location");
       }
-      return CompletableFuture.supplyAsync(
-          () -> {
-            Asset asset = AssetManager.getAsset(values.getValue0());
-            return new ByteArrayInputStream(asset.getData());
-          });
+      Asset asset = AssetManager.getAsset(values.getValue0());
+      return CompletableFuture.completedFuture(new ByteArrayInputStream(asset.getData()));
     } else {
       throw new LibraryNotValidException(
           Reason.MISSING_PERMISSIONS, I18N.getText("library.error.addOn.no.access", getName()));
