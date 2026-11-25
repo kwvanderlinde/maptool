@@ -18,8 +18,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.model.gamedata.data.DataValue;
-import net.rptools.maptool.model.gamedata.proto.GameDataDto;
-import net.rptools.maptool.model.gamedata.proto.GameDataValueDto;
+import net.rptools.maptool.model.gamedata.proto.DataStoreDto;
 
 /**
  * Interface for a data store. Classes that implement this interfaces may be proxied by other
@@ -112,22 +111,12 @@ public interface DataStore {
   CompletableFuture<Boolean> createNamespace(String propertyType, String namespace);
 
   /**
-   * Returns the data transfer object representation of the data in the namespace.
+   * Returns the data transfer object representation of the data in the store.
    *
-   * @param type the propertyType of the namespace.
-   * @param namespace the namespace to get the data for.
    * @return a {@code CompletableFuture} containing the data transfer object representation of the
    *     data.
    */
-  CompletableFuture<GameDataDto> toDto(String type, String namespace);
-
-  /**
-   * Returns the data transfer object representation of the data in the namespace.
-   *
-   * @param value the data value to convert to a dto.
-   * @return a {@code CompletableFuture} containing the data transfer object representation of the
-   */
-  CompletableFuture<GameDataValueDto> toDto(DataValue value);
+  CompletableFuture<DataStoreDto> toDto();
 
   /**
    * Returns all of the {@link MD5Key} of assets in the DataStore.
@@ -138,7 +127,7 @@ public interface DataStore {
   CompletableFuture<Set<MD5Key>> getAssets();
 
   /** Removes all the data in the DataStore. */
-  void clear();
+  CompletableFuture<Void> clear();
 
   /**
    * Removes the namespace from the DataStore.

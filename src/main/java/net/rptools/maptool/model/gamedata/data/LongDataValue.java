@@ -18,6 +18,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.gamedata.InvalidDataOperation;
+import net.rptools.maptool.model.gamedata.proto.GameDataValueDto;
 
 /** The LongDataValue class represents a data value that is an integer. */
 public final class LongDataValue implements DataValue {
@@ -144,6 +145,18 @@ public final class LongDataValue implements DataValue {
     } else {
       throw InvalidDataOperation.createInvalidConversion(DataType.BOOLEAN, DataType.ASSET);
     }
+  }
+
+  @Override
+  public GameDataValueDto toDto() {
+    var dataBuilder = GameDataValueDto.newBuilder();
+    dataBuilder.setName(getName());
+    if (isUndefined()) {
+      dataBuilder.setUndefinedLongValue(true);
+    } else {
+      dataBuilder.setLongValue(asLong());
+    }
+    return dataBuilder.build();
   }
 
   @Override

@@ -18,6 +18,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.gamedata.InvalidDataOperation;
+import net.rptools.maptool.model.gamedata.proto.GameDataValueDto;
 
 /** The IntegerDataValue class represents a data value that is a Boolean. */
 public final class BooleanDataValue implements DataValue {
@@ -144,6 +145,18 @@ public final class BooleanDataValue implements DataValue {
     } else {
       throw InvalidDataOperation.createInvalidConversion(DataType.BOOLEAN, DataType.ASSET);
     }
+  }
+
+  @Override
+  public GameDataValueDto toDto() {
+    var dataBuilder = GameDataValueDto.newBuilder();
+    dataBuilder.setName(getName());
+    if (isUndefined()) {
+      dataBuilder.setUndefinedBooleanValue(true);
+    } else {
+      dataBuilder.setBooleanValue(asBoolean());
+    }
+    return dataBuilder.build();
   }
 
   @Override

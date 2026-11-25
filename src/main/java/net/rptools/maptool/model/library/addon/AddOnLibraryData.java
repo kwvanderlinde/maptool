@@ -17,6 +17,7 @@ package net.rptools.maptool.model.library.addon;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import net.rptools.maptool.model.gamedata.DataStore;
 import net.rptools.maptool.model.gamedata.DataStoreManager;
 import net.rptools.maptool.model.gamedata.data.DataValue;
 import net.rptools.maptool.model.gamedata.data.DataValueFactory;
@@ -34,6 +35,8 @@ public class AddOnLibraryData implements LibraryData {
   /** The name space for the data this library. */
   private final String dataNameSpace;
 
+  private final DataStore dataStore;
+
   /** If the library needs initialization. */
   private static final String NEEDS_INIT_KEY = "internal:needsInit";
 
@@ -46,12 +49,12 @@ public class AddOnLibraryData implements LibraryData {
   AddOnLibraryData(AddOnLibrary addOnLibrary, String dataNameSpace) {
     this.addOnLibrary = addOnLibrary;
     this.dataNameSpace = dataNameSpace;
+    this.dataStore = new DataStoreManager().getDefaultDataStore();
   }
 
   @Override
   public CompletableFuture<Set<String>> getAllKeys() {
-    return new DataStoreManager()
-        .getDefaultDataStore()
+    return dataStore
         .getProperties(DATA_TYPE, dataNameSpace)
         .thenApply(p -> p.stream().map(DataValue::getName).collect(Collectors.toSet()));
   }
@@ -63,10 +66,7 @@ public class AddOnLibraryData implements LibraryData {
 
   @Override
   public CompletableFuture<Void> setData(DataValue value) {
-    return new DataStoreManager()
-        .getDefaultDataStore()
-        .setProperty(DATA_TYPE, dataNameSpace, value)
-        .thenAccept(p -> {});
+    return dataStore.setProperty(DATA_TYPE, dataNameSpace, value).thenAccept(p -> {});
   }
 
   @Override
@@ -90,7 +90,7 @@ public class AddOnLibraryData implements LibraryData {
    * @return The data value for the given key.
    */
   private CompletableFuture<DataValue> getDataValue(String key) {
-    return new DataStoreManager().getDefaultDataStore().getProperty(DATA_TYPE, dataNameSpace, key);
+    return dataStore.getProperty(DATA_TYPE, dataNameSpace, key);
   }
 
   /**
@@ -100,7 +100,6 @@ public class AddOnLibraryData implements LibraryData {
    * @return A future that completes when the data is initialized.
    */
   CompletableFuture<Void> initialize() {
-    var dataStore = new DataStoreManager().getDefaultDataStore();
     return dataStore
         .createNamespace(DATA_TYPE, dataNameSpace)
         .thenCompose(
@@ -117,15 +116,13 @@ public class AddOnLibraryData implements LibraryData {
   }
 
   CompletableFuture<Boolean> needsInitialization() {
-    return new DataStoreManager()
-        .getDefaultDataStore()
+    return dataStore
         .getProperty(DATA_TYPE, dataNameSpace, NEEDS_INIT_KEY)
         .thenApply(DataValue::asBoolean);
   }
 
   public CompletableFuture<Void> setNeedsToBeInitialized(boolean needsToBeInitialized) {
-    return new DataStoreManager()
-        .getDefaultDataStore()
+    return dataStore
         .setProperty(
             DATA_TYPE,
             dataNameSpace,

@@ -59,17 +59,7 @@ public class DataStoreManager {
    *     data store.
    */
   public CompletableFuture<DataStoreDto> toDto() {
-    return CompletableFuture.supplyAsync(
-        () -> {
-          var builder = DataStoreDto.newBuilder();
-          builder.setDataStoreType(MEMORY_DATA_STORE_TYPE_NAME);
-          for (String propertyType : memoryDataStore.getPropertyTypes().join()) {
-            for (String namespace : memoryDataStore.getPropertyNamespaces(propertyType).join()) {
-              memoryDataStore.toDto(propertyType, namespace).thenAccept(builder::addData).join();
-            }
-          }
-          return builder.build();
-        });
+    return memoryDataStore.toDto();
   }
 
   /**

@@ -123,7 +123,7 @@ public class DataFunctions extends AbstractFunction {
         }
         case "data.clearalldata" -> {
           MapTool.addLocalMessage(I18N.getText("msg.warning.prerelease.only", functionName));
-          new DataStoreManager().getDefaultDataStore().clear();
+          new DataStoreManager().getDefaultDataStore().clear().join();
           return "";
         }
         case "data.clearnamespace" -> {

@@ -21,6 +21,7 @@ import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.Asset.Type;
 import net.rptools.maptool.model.AssetManager;
 import net.rptools.maptool.model.gamedata.InvalidDataOperation;
+import net.rptools.maptool.model.gamedata.proto.GameDataValueDto;
 
 /** Class to represent an asset data value. */
 public class AssetDataValue implements DataValue {
@@ -150,6 +151,18 @@ public class AssetDataValue implements DataValue {
   @Override
   public Asset asAsset() {
     return AssetManager.getAssetAndWait(asset);
+  }
+
+  @Override
+  public GameDataValueDto toDto() {
+    var dataBuilder = GameDataValueDto.newBuilder();
+    dataBuilder.setName(getName());
+    if (isUndefined()) {
+      dataBuilder.setUndefinedAssetValue(true);
+    } else {
+      dataBuilder.setAssetValue(asAsset().getMD5Key().toString());
+    }
+    return dataBuilder.build();
   }
 
   @Override

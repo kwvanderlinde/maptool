@@ -450,7 +450,7 @@ public class ClientMessageHandler implements MessageHandler {
   }
 
   private void handle(RemoveDataStoreMsg msg) {
-    new DataStoreManager().getDefaultDataStoreForRemoteUpdate().clear();
+    new DataStoreManager().getDefaultDataStoreForRemoteUpdate().clear().join();
   }
 
   private void handle(UpdateDataMsg msg) {

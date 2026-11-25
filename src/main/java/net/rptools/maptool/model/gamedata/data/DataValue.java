@@ -18,6 +18,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.gamedata.InvalidDataOperation;
+import net.rptools.maptool.model.gamedata.proto.GameDataValueDto;
 
 /** Interface for data values. */
 public interface DataValue {
@@ -111,4 +112,6 @@ public interface DataValue {
    * @return the data value as an Asset if it can be converted.
    */
   Asset asAsset();
+
+  GameDataValueDto toDto();
 }

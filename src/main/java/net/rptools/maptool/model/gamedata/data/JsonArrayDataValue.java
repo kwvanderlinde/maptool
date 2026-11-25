@@ -14,12 +14,14 @@
  */
 package net.rptools.maptool.model.gamedata.data;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import java.util.Collection;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.gamedata.InvalidDataOperation;
+import net.rptools.maptool.model.gamedata.proto.GameDataValueDto;
 
 /** The IntegerDataValue class represents a data value that is a list. */
 public final class JsonArrayDataValue implements DataValue {
@@ -172,6 +174,19 @@ public final class JsonArrayDataValue implements DataValue {
     } else {
       throw InvalidDataOperation.createInvalidConversion(DataType.JSON_ARRAY, DataType.ASSET);
     }
+  }
+
+  @Override
+  public GameDataValueDto toDto() {
+    var dataBuilder = GameDataValueDto.newBuilder();
+    dataBuilder.setName(getName());
+    if (isUndefined()) {
+      dataBuilder.setUndefinedJsonArrayValue(true);
+    } else {
+      var gson = new Gson();
+      dataBuilder.setJsonValue(gson.toJson(asJsonArray()));
+    }
+    return dataBuilder.build();
   }
 
   @Override

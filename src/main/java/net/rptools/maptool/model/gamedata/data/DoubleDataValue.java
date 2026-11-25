@@ -18,6 +18,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.gamedata.InvalidDataOperation;
+import net.rptools.maptool.model.gamedata.proto.GameDataValueDto;
 
 /** The IntegerDataValue class represents a data value that is a double. */
 public final class DoubleDataValue implements DataValue {
@@ -144,6 +145,18 @@ public final class DoubleDataValue implements DataValue {
     } else {
       throw InvalidDataOperation.createInvalidConversion(DataType.DOUBLE, DataType.ASSET);
     }
+  }
+
+  @Override
+  public GameDataValueDto toDto() {
+    var dataBuilder = GameDataValueDto.newBuilder();
+    dataBuilder.setName(getName());
+    if (isUndefined()) {
+      dataBuilder.setUndefinedDoubleValue(true);
+    } else {
+      dataBuilder.setDoubleValue(asDouble());
+    }
+    return dataBuilder.build();
   }
 
   @Override

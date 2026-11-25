@@ -16,21 +16,18 @@ package net.rptools.maptool.model.gamedata;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.gamedata.data.DataValue;
+import net.rptools.maptool.model.gamedata.proto.DataStoreDto;
 import net.rptools.maptool.model.gamedata.proto.GameDataDto;
-import net.rptools.maptool.model.gamedata.proto.GameDataValueDto;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 class DataStoreUpdateClientsProxy implements DataStore {
+  private final DataStore dataStore;
 
-  /** Class for logging. */
-  private static final Logger log = LogManager.getLogger(MemoryDataStore.class);
+  public DataStoreUpdateClientsProxy(DataStore delegate) {
+    this.dataStore = delegate;
+  }
 
   @Override
   public CompletableFuture<Set<String>> getPropertyTypes() {
@@ -60,12 +57,7 @@ class DataStoreUpdateClientsProxy implements DataStore {
    * @param data the data value of the property
    */
   private void notifyClientsOfDataUpdate(String type, String namespace, DataValue data) {
-    try {
-      MapTool.serverCommand().updateData(type, namespace, toDto(data).get());
-    } catch (InterruptedException | ExecutionException e) {
-      log.error(I18N.getText("data.error.sendingUpdate"));
-      throw new CompletionException(e.getCause());
-    }
+    MapTool.serverCommand().updateData(type, namespace, data.toDto());
   }
 
   @Override
@@ -93,8 +85,9 @@ class DataStoreUpdateClientsProxy implements DataStore {
 
   @Override
   public CompletableFuture<Void> removeProperty(String type, String namespace, String name) {
-    MapTool.serverCommand().removeData(type, namespace, name);
-    return dataStore.removeProperty(type, namespace, name);
+    return dataStore
+        .removeProperty(type, namespace, name)
+        .thenRun(() -> MapTool.serverCommand().removeData(type, namespace, name));
   }
 
   @Override
@@ -114,8 +107,8 @@ class DataStoreUpdateClientsProxy implements DataStore {
   }
 
   @Override
-  public CompletableFuture<GameDataDto> toDto(String type, String namespace) {
-    return dataStore.toDto(type, namespace);
+  public CompletableFuture<DataStoreDto> toDto() {
+    return dataStore.toDto();
   }
 
   @Override
@@ -124,25 +117,14 @@ class DataStoreUpdateClientsProxy implements DataStore {
   }
 
   @Override
-  public void clear() {
-    dataStore.clear();
-    MapTool.serverCommand().removeDataStore();
+  public CompletableFuture<Void> clear() {
+    return dataStore.clear().thenRun(() -> MapTool.serverCommand().removeDataStore());
   }
 
   @Override
   public CompletableFuture<Void> clearNamespace(String propertyType, String namespace) {
-    MapTool.serverCommand().removeDataNamespace(propertyType, namespace);
-    return dataStore.clearNamespace(propertyType, namespace);
-  }
-
-  @Override
-  public CompletableFuture<GameDataValueDto> toDto(DataValue value) {
-    return dataStore.toDto(value);
-  }
-
-  private final DataStore dataStore;
-
-  public DataStoreUpdateClientsProxy(DataStore delegate) {
-    this.dataStore = delegate;
+    return dataStore
+        .clearNamespace(propertyType, namespace)
+        .thenRun(() -> MapTool.serverCommand().removeDataNamespace(propertyType, namespace));
   }
 }

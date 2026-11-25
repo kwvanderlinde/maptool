@@ -53,7 +53,7 @@ public class CampaignManager {
     // released rather than leaking into the campaign about to be loaded.
     JSScriptEngine.resetContexts();
     new LibraryManager().deregisterAllLibraries();
-    new DataStoreManager().getDefaultDataStoreForRemoteUpdate().clear();
+    new DataStoreManager().getDefaultDataStoreForRemoteUpdate().clear().join();
     UserDefinedMacroFunctions.getInstance().clearUserDefinedFunctions();
     MacroManager.removeCampaignAliases();
 
