@@ -26,7 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class AddOnLibrariesTableModel extends AbstractTableModel {
-  private static final Logger log = LogManager.getLogger(AddOnLibrariesDialogController.class);
+  private static final Logger log = LogManager.getLogger(AddOnLibrariesTableModel.class);
 
   private final List<LibraryInfo> addons = new ArrayList<>();
 
