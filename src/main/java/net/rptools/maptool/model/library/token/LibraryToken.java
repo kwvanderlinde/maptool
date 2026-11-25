@@ -267,8 +267,8 @@ class LibraryToken implements Library {
   }
 
   @Override
-  public CompletableFuture<LibraryData> getLibraryData() {
-    return CompletableFuture.completedFuture(new TokenLibraryData(this));
+  public LibraryData getLibraryData() {
+    return new TokenLibraryData(this);
   }
 
   @Override

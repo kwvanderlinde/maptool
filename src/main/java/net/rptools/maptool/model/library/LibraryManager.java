@@ -31,7 +31,6 @@ import net.rptools.maptool.events.MapToolEventBus;
 import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.AssetManager;
 import net.rptools.maptool.model.library.addon.AddOnLibrary;
-import net.rptools.maptool.model.library.addon.AddOnLibraryData;
 import net.rptools.maptool.model.library.addon.AddOnLibraryManager;
 import net.rptools.maptool.model.library.addon.AddOnSlashCommandManager;
 import net.rptools.maptool.model.library.addon.TransferableAddOnLibrary;
@@ -382,15 +381,7 @@ public class LibraryManager {
   public void removeAddOnLibrary(String namespace) {
     var library = addOnLibraryManager.getLibrary(namespace);
     if (library != null) {
-      library
-          .getLibraryData()
-          .thenAccept(
-              data -> {
-                if (data instanceof AddOnLibraryData ald) {
-                  ald.setNeedsToBeInitialized(true).join();
-                }
-              })
-          .join();
+      library.getLibraryData().setNeedsToBeInitialized(true).join();
       deregisterAddOnLibrary(namespace);
     }
   }

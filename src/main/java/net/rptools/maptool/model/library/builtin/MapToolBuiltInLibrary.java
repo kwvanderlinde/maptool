@@ -164,8 +164,8 @@ public class MapToolBuiltInLibrary implements Library {
   }
 
   @Override
-  public CompletableFuture<LibraryData> getLibraryData() {
-    return CompletableFuture.completedFuture(new BuiltInLibraryData(this));
+  public LibraryData getLibraryData() {
+    return new BuiltInLibraryData(this);
   }
 
   @Override

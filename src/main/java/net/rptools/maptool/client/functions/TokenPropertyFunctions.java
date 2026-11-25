@@ -43,7 +43,6 @@ import net.rptools.maptool.model.TokenProperty;
 import net.rptools.maptool.model.Zone;
 import net.rptools.maptool.model.gamedata.MTScriptDataConversion;
 import net.rptools.maptool.model.library.LibraryManager;
-import net.rptools.maptool.model.library.data.LibraryData;
 import net.rptools.maptool.util.FunctionUtil;
 import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
@@ -529,7 +528,7 @@ public class TokenPropertyFunctions extends AbstractFunction {
                                 libName)));
         return library
             .getLibraryData()
-            .thenCompose(libData -> libData.getValue(propertyName))
+            .getValue(propertyName)
             .thenApply(data -> new MTScriptDataConversion().convertToMTScriptType(data))
             .get();
       } catch (ExecutionException | InterruptedException e) {
@@ -559,10 +558,7 @@ public class TokenPropertyFunctions extends AbstractFunction {
                                 libName)));
         library
             .getLibraryData()
-            .thenCompose(
-                libData ->
-                    libData.setData(
-                        new MTScriptDataConversion().parseMTScriptString(property, value)))
+            .setData(new MTScriptDataConversion().parseMTScriptString(property, value))
             .get();
       } catch (ExecutionException | InterruptedException e) {
         throw new ParserException(e.getCause());
@@ -1197,7 +1193,7 @@ public class TokenPropertyFunctions extends AbstractFunction {
                               libName)));
       return library
           .getLibraryData()
-          .thenCompose(LibraryData::getAllKeys)
+          .getAllKeys()
           .thenApply(
               keys -> {
                 if (delim.equalsIgnoreCase("json")) {

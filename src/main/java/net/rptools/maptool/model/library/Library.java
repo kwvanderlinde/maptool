@@ -197,11 +197,9 @@ public interface Library {
   CompletableFuture<List<String>> getAllFiles();
 
   /**
-   * Returns the data for the library.
-   *
-   * @return the data for the library.
+   * @return A handle for reading and writing library data.
    */
-  CompletableFuture<LibraryData> getLibraryData();
+  LibraryData getLibraryData();
 
   /**
    * Returns the name of the MT script to execute for the legacy event.

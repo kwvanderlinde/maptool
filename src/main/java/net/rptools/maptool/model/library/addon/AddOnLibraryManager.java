@@ -115,7 +115,7 @@ public class AddOnLibraryManager {
    * @param namespace the namespace of the library.
    * @return the library for the namespace.
    */
-  public Library getLibrary(String namespace) {
+  public AddOnLibrary getLibrary(String namespace) {
     return namespaceLibraryMap.getOrDefault(namespace.toLowerCase(), null);
   }
 

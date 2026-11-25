@@ -48,7 +48,6 @@ import net.rptools.maptool.model.library.LibraryInfo;
 import net.rptools.maptool.model.library.LibraryNotValidException;
 import net.rptools.maptool.model.library.LibraryNotValidException.Reason;
 import net.rptools.maptool.model.library.MTScriptMacroInfo;
-import net.rptools.maptool.model.library.data.LibraryData;
 import net.rptools.maptool.model.library.proto.*;
 import net.rptools.maptool.model.library.proto.AddOnLibraryDto;
 import net.rptools.maptool.model.library.proto.AddOnLibraryEventsDto;
@@ -338,9 +337,8 @@ public class AddOnLibrary implements Library {
   }
 
   @Override
-  public CompletableFuture<LibraryData> getLibraryData() {
-    return CompletableFuture.completedFuture(
-        new AddOnLibraryData(this, getNamespace().toLowerCase()));
+  public AddOnLibraryData getLibraryData() {
+    return new AddOnLibraryData(this, getNamespace().toLowerCase());
   }
 
   @Override
@@ -498,7 +496,7 @@ public class AddOnLibrary implements Library {
   void initialize() {
     registerSheets();
 
-    var data = (AddOnLibraryData) getLibraryData().join();
+    var data = getLibraryData();
     // JSScriptEngine needs to run on EDT, which is our current thread. So don't be too picky about
     // futureness.
     data.initialize().join();
