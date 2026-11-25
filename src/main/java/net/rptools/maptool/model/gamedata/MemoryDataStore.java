@@ -15,14 +15,11 @@
 package net.rptools.maptool.model.gamedata;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import net.rptools.lib.MD5Key;
-import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.gamedata.data.DataType;
 import net.rptools.maptool.model.gamedata.data.DataValue;
 import net.rptools.maptool.model.gamedata.data.DataValueFactory;
@@ -99,33 +96,6 @@ public class MemoryDataStore implements DataStore {
     var propertyTypeNamespace = new PropertyTypeNamespace(type, namespace);
     var values = namespaceDataMap.get(propertyTypeNamespace);
     return values != null ? values.get(name) : null;
-  }
-
-  @Override
-  public CompletableFuture<DataType> getPropertyDataType(
-      String type, String namespace, String name) {
-    return CompletableFuture.supplyAsync(
-        () -> {
-          var data = getData(type, namespace, name);
-          return data == null ? DataType.UNDEFINED : data.getDataType();
-        });
-  }
-
-  @Override
-  public CompletableFuture<Map<String, DataType>> getPropertyDataTypeMap(
-      String type, String namespace) {
-    return CompletableFuture.supplyAsync(
-        () -> {
-          var dataTypeMap = new HashMap<String, DataType>();
-          var values = namespaceDataMap.get(new PropertyTypeNamespace(type, namespace));
-          if (values != null) {
-            for (var value : values.values()) {
-              dataTypeMap.put(value.getName(), value.getDataType());
-            }
-          }
-
-          return dataTypeMap;
-        });
   }
 
   @Override
@@ -213,55 +183,6 @@ public class MemoryDataStore implements DataStore {
   }
 
   @Override
-  public CompletableFuture<DataValue> setLongProperty(
-      String type, String namespace, String name, long value) {
-    return CompletableFuture.supplyAsync(
-        () -> setData(type, namespace, DataValueFactory.fromLong(name, value)));
-  }
-
-  @Override
-  public CompletableFuture<DataValue> setDoubleProperty(
-      String type, String namespace, String name, double value) {
-    return CompletableFuture.supplyAsync(
-        () -> setData(type, namespace, DataValueFactory.fromDouble(name, value)));
-  }
-
-  @Override
-  public CompletableFuture<DataValue> setStringProperty(
-      String type, String namespace, String name, String value) {
-    return CompletableFuture.supplyAsync(
-        () -> setData(type, namespace, DataValueFactory.fromString(name, value)));
-  }
-
-  @Override
-  public CompletableFuture<DataValue> setBooleanProperty(
-      String type, String namespace, String name, boolean value) {
-    return CompletableFuture.supplyAsync(
-        () -> setData(type, namespace, DataValueFactory.fromBoolean(name, value)));
-  }
-
-  @Override
-  public CompletableFuture<DataValue> setJsonArrayProperty(
-      String type, String namespace, String name, JsonArray value) {
-    return CompletableFuture.supplyAsync(
-        () -> setData(type, namespace, DataValueFactory.fromJsonArray(name, value)));
-  }
-
-  @Override
-  public CompletableFuture<DataValue> setJsonObjectProperty(
-      String type, String namespace, String name, JsonObject value) {
-    return CompletableFuture.supplyAsync(
-        () -> setData(type, namespace, DataValueFactory.fromJsonObject(name, value)));
-  }
-
-  @Override
-  public CompletableFuture<DataValue> setAssetProperty(
-      String type, String namespace, String name, Asset value) {
-    return CompletableFuture.supplyAsync(
-        () -> setData(type, namespace, DataValueFactory.fromAsset(name, value)));
-  }
-
-  @Override
   public CompletableFuture<Void> removeProperty(String type, String namespace, String name) {
     return CompletableFuture.supplyAsync(
         () -> {
@@ -304,31 +225,6 @@ public class MemoryDataStore implements DataStore {
     return CompletableFuture.supplyAsync(
         () -> {
           createDataNamespace(propertyType, namespace, List.of());
-          return null;
-        });
-  }
-
-  @Override
-  public CompletableFuture<Void> createNamespaceWithInitialData(
-      String propertyType, String namespace, Collection<DataValue> initialData) {
-    return CompletableFuture.supplyAsync(
-        () -> {
-          createDataNamespace(propertyType, namespace, initialData);
-          return null;
-        });
-  }
-
-  @Override
-  public CompletableFuture<Void> createNamespaceWithTypes(
-      String propertyType, String namespace, Map<String, DataType> dataTypes) {
-    return CompletableFuture.supplyAsync(
-        () -> {
-          createDataNamespace(
-              propertyType,
-              namespace,
-              dataTypes.entrySet().stream()
-                  .map(e -> DataValueFactory.undefined(e.getKey(), e.getValue()))
-                  .toList());
           return null;
         });
   }
