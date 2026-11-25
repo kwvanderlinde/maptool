@@ -334,11 +334,9 @@ public class LibraryManager {
   }
 
   /**
-   * Returns the {@link AddOnLibraryListDto} containing all the add-on in libraries.
-   *
    * @return the {@link AddOnLibraryListDto} containing all the add-on in libraries.
    */
-  public CompletableFuture<AddOnLibraryListDto> addOnLibrariesToDto() {
+  public AddOnLibraryListDto addOnLibrariesToDto() {
     return addOnLibraryManager.toDto();
   }
 

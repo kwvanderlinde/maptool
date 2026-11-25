@@ -138,28 +138,25 @@ public class AddOnLibraryManager {
    *
    * @return the {@link AddOnLibraryListDto} containing all the add-on libraries.
    */
-  public CompletableFuture<AddOnLibraryListDto> toDto() {
-    return CompletableFuture.supplyAsync(
-        () -> {
-          var dto = AddOnLibraryListDto.newBuilder();
-          for (var library : namespaceLibraryMap.values()) {
-            var detailDto = AddOnLibraryDto.newBuilder();
-            detailDto.setName(library.getName());
-            detailDto.setVersion(library.getVersion());
-            detailDto.setWebsite(library.getWebsite());
-            detailDto.setGitUrl(library.getGitUrl());
-            detailDto.addAllAuthors(library.getAuthors());
-            detailDto.setLicense(library.getLicense());
-            detailDto.setNamespace(library.getNamespace());
-            detailDto.setDescription(library.getDescription());
-            detailDto.setShortDescription(library.getShortDescription());
-            var campDto = AddOnLibraryEntryDto.newBuilder();
-            campDto.setDetails(detailDto);
-            campDto.setMd5Hash(library.getAssetKey().toString());
-            dto.addLibraries(campDto);
-          }
-          return dto.build();
-        });
+  public AddOnLibraryListDto toDto() {
+    var dto = AddOnLibraryListDto.newBuilder();
+    for (var library : namespaceLibraryMap.values()) {
+      var detailDto = AddOnLibraryDto.newBuilder();
+      detailDto.setName(library.getName());
+      detailDto.setVersion(library.getVersion());
+      detailDto.setWebsite(library.getWebsite());
+      detailDto.setGitUrl(library.getGitUrl());
+      detailDto.addAllAuthors(library.getAuthors());
+      detailDto.setLicense(library.getLicense());
+      detailDto.setNamespace(library.getNamespace());
+      detailDto.setDescription(library.getDescription());
+      detailDto.setShortDescription(library.getShortDescription());
+      var campDto = AddOnLibraryEntryDto.newBuilder();
+      campDto.setDetails(detailDto);
+      campDto.setMd5Hash(library.getAssetKey().toString());
+      dto.addLibraries(campDto);
+    }
+    return dto.build();
   }
 
   /** Remove all the add-on libraries. */

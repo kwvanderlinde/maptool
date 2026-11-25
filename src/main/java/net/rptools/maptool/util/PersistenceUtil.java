@@ -879,12 +879,7 @@ public class PersistenceUtil {
       }
     }
 
-    AddOnLibraryListDto dto = null;
-    try {
-      dto = new LibraryManager().addOnLibrariesToDto().get();
-    } catch (InterruptedException | ExecutionException e) {
-      throw new IOException(e);
-    }
+    AddOnLibraryListDto dto = new LibraryManager().addOnLibrariesToDto();
     packedFile.putFile(
         DROP_IN_LIBRARY_LIST_FILE,
         JsonFormat.printer().print(dto).getBytes(StandardCharsets.UTF_8));

@@ -324,7 +324,7 @@ public class ServerHandshake implements Handshake<Player>, MessageHandler {
             .setRoleDto(player.isGM() ? RoleDto.GM : RoleDto.PLAYER)
             .setServerPolicyDto(server.getPolicy().toDto())
             .setGameDataDto(new DataStoreManager().toDto().get())
-            .setAddOnLibraryListDto(new LibraryManager().addOnLibrariesToDto().get());
+            .setAddOnLibraryListDto(new LibraryManager().addOnLibrariesToDto());
     var handshakeMsg =
         HandshakeMsg.newBuilder().setConnectionSuccessfulMsg(connectionSuccessfulMsg).build();
     sendMessage(State.Success, handshakeMsg);
