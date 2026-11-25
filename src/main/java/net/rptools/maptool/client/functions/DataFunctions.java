@@ -18,6 +18,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.language.I18N;
@@ -173,34 +174,30 @@ public class DataFunctions extends AbstractFunction {
 
   private JsonArray listData(DataStore dataStore, String type, String namespace)
       throws ParserException {
+    Set<DataValue> dataList;
     try {
-      var jarray = new JsonArray();
-      dataStore
-          .getProperties(type, namespace)
-          .thenAccept(
-              dataList -> {
-                for (var data : dataList) {
-                  var jobj = new JsonObject();
-                  jobj.addProperty("name", data.getName());
-                  jobj.addProperty("type", data.getDataType().name());
-                  switch (data.getDataType()) {
-                    case STRING -> jobj.addProperty("value", data.asString());
-                    case LONG -> jobj.addProperty("value", data.asLong());
-                    case DOUBLE -> jobj.addProperty("value", data.asDouble());
-                    case BOOLEAN -> jobj.addProperty("value", data.asBoolean());
-                    case JSON_OBJECT -> jobj.add("value", data.asJsonObject());
-                    case JSON_ARRAY -> jobj.add("value", data.asJsonArray());
-                    case ASSET ->
-                        jobj.addProperty(
-                            "value", "asset://" + data.asAsset().getMD5Key().toString());
-                  }
-                  jarray.add(jobj);
-                }
-              })
-          .get();
-      return jarray;
+      dataList = dataStore.getProperties(type, namespace).get();
     } catch (InterruptedException | ExecutionException e) {
+      // TODO Needs a real message.
       throw new ParserException(e.getCause());
     }
+
+    var jarray = new JsonArray();
+    for (var data : dataList) {
+      var jobj = new JsonObject();
+      jobj.addProperty("name", data.getName());
+      jobj.addProperty("type", data.getDataType().name());
+      switch (data.getDataType()) {
+        case STRING -> jobj.addProperty("value", data.asString());
+        case LONG -> jobj.addProperty("value", data.asLong());
+        case DOUBLE -> jobj.addProperty("value", data.asDouble());
+        case BOOLEAN -> jobj.addProperty("value", data.asBoolean());
+        case JSON_OBJECT -> jobj.add("value", data.asJsonObject());
+        case JSON_ARRAY -> jobj.add("value", data.asJsonArray());
+        case ASSET -> jobj.addProperty("value", "asset://" + data.asAsset().getMD5Key().toString());
+      }
+      jarray.add(jobj);
+    }
+    return jarray;
   }
 }
