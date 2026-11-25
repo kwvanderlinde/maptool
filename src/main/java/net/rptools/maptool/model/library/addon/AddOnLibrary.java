@@ -420,37 +420,42 @@ public class AddOnLibrary implements Library {
   }
 
   @Override
-  public CompletableFuture<String> readAsString(URL location) throws IOException {
+  public CompletableFuture<String> readAsString(URL location) {
     if (allowsUriAccess()) {
       var values = getURILocation(location);
       if (values == null) {
-        throw new IOException("Invalid Location");
+        return CompletableFuture.failedFuture(new IOException("Invalid Location"));
       }
       if (!values.getValue1().isStringType()) {
-        throw new LibraryNotValidException(
-            Reason.BAD_CONVERSION,
-            I18N.getText("library.error.addOn.notText", values.getValue1().name()));
+        return CompletableFuture.failedFuture(
+            new LibraryNotValidException(
+                Reason.BAD_CONVERSION,
+                I18N.getText("library.error.addOn.notText", values.getValue1().name())));
       }
       Asset asset = AssetManager.getAsset(values.getValue0());
       return CompletableFuture.completedFuture(asset.getDataAsString());
     } else {
-      throw new LibraryNotValidException(
-          Reason.MISSING_PERMISSIONS, I18N.getText("library.error.addOn.no.access", getName()));
+      return CompletableFuture.failedFuture(
+          new LibraryNotValidException(
+              Reason.MISSING_PERMISSIONS,
+              I18N.getText("library.error.addOn.no.access", getName())));
     }
   }
 
   @Override
-  public CompletableFuture<InputStream> read(URL location) throws IOException {
+  public CompletableFuture<InputStream> read(URL location) {
     if (allowsUriAccess()) {
       var values = getURILocation(location);
       if (values == null) {
-        throw new IOException("Invalid Location");
+        return CompletableFuture.failedFuture(new IOException("Invalid Location"));
       }
       Asset asset = AssetManager.getAsset(values.getValue0());
       return CompletableFuture.completedFuture(new ByteArrayInputStream(asset.getData()));
     } else {
-      throw new LibraryNotValidException(
-          Reason.MISSING_PERMISSIONS, I18N.getText("library.error.addOn.no.access", getName()));
+      return CompletableFuture.failedFuture(
+          new LibraryNotValidException(
+              Reason.MISSING_PERMISSIONS,
+              I18N.getText("library.error.addOn.no.access", getName())));
     }
   }
 

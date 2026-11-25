@@ -175,7 +175,7 @@ public class AddOnLibrariesDialogView extends JDialog {
               .ifPresent(
                   library -> {
                     URI uri = URI.create(AppConstants.MT_THEME_CSS);
-                    String themeCss = null;
+                    String themeCss;
                     try {
                       themeCss = library.readAsString(uri.toURL()).get();
                     } catch (InterruptedException | ExecutionException | IOException ex) {

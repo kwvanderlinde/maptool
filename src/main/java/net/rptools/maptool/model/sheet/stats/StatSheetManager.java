@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.library.Library;
@@ -198,8 +199,12 @@ public class StatSheetManager {
    * @throws IOException if an error occurs reading the stat sheet.
    */
   public void addStatSheet(StatSheet statSheet, Library library) throws IOException {
-    var html = library.readAsString(statSheet.entry()).join();
-    statSheets.put(statSheet, html);
+    try {
+      var html = library.readAsString(statSheet.entry()).get();
+      statSheets.put(statSheet, html);
+    } catch (ExecutionException | InterruptedException e) {
+      throw new IOException(e);
+    }
   }
 
   /**

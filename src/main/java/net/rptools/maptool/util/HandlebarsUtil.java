@@ -27,6 +27,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ExecutionException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import net.rptools.maptool.model.library.Library;
@@ -92,14 +93,18 @@ public class HandlebarsUtil<T> {
     @Override
     @Nonnull
     public String content(@Nonnull final Charset charset) throws IOException {
+      // The library API requires a URL even if it only uses the path.
+      URL url;
       try {
-        // The library API requires a URL even if it only uses the path.
-        var url = new URI("lib", library.getNamespace(), filename, null).toURL();
-        try (var is = library.read(url).join()) {
-          return new String(is.readAllBytes(), charset);
-        }
+        url = new URI("lib", library.getNamespace(), filename, null).toURL();
       } catch (URISyntaxException e) {
         throw new AssertionError("lib URL of namespace and filename should be valid", e);
+      }
+
+      try (var is = library.read(url).get()) {
+        return new String(is.readAllBytes(), charset);
+      } catch (ExecutionException | InterruptedException e) {
+        throw new IOException(e);
       }
     }
   }

@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.stream.Stream;
 import net.rptools.lib.MD5Key;
 import net.rptools.maptool.client.MapTool;
@@ -168,11 +169,17 @@ class LibraryToken implements Library {
             null);
   }
 
-  private CompletableFuture<String> getStringRaw(URL location) throws IOException {
-    final var loc = Location.getLocation(location);
+  private CompletableFuture<String> getStringRaw(URL location) {
     return getToken()
         .thenApply(
             token -> {
+              Location loc;
+              try {
+                loc = Location.getLocation(location);
+              } catch (IOException e) {
+                throw new CompletionException(e);
+              }
+
               if (loc.locationType() == LocationType.MACRO) {
                 return getMacroText(token, loc.location());
               } else {
@@ -182,7 +189,7 @@ class LibraryToken implements Library {
   }
 
   @Override
-  public CompletableFuture<Boolean> locationExists(URL location) throws IOException {
+  public CompletableFuture<Boolean> locationExists(URL location) {
     return getStringRaw(location).thenApply(value -> value != null ? Boolean.TRUE : Boolean.FALSE);
   }
 
@@ -192,7 +199,7 @@ class LibraryToken implements Library {
   }
 
   @Override
-  public CompletableFuture<String> readAsString(URL location) throws IOException {
+  public CompletableFuture<String> readAsString(URL location) {
     return getStringRaw(location)
         .thenCompose(
             text -> {
@@ -204,7 +211,7 @@ class LibraryToken implements Library {
   }
 
   @Override
-  public CompletableFuture<InputStream> read(URL location) throws IOException {
+  public CompletableFuture<InputStream> read(URL location) {
     return readAsString(location)
         .thenApply(text -> new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
   }

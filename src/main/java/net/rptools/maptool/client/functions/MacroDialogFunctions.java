@@ -16,7 +16,6 @@ package net.rptools.maptool.client.functions;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -38,9 +37,12 @@ import net.rptools.parser.Parser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
 import net.rptools.parser.function.AbstractFunction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MacroDialogFunctions extends AbstractFunction {
   private static final MacroDialogFunctions instance = new MacroDialogFunctions();
+  private static final Logger log = LoggerFactory.getLogger(MacroDialogFunctions.class);
 
   private MacroDialogFunctions() {
     super(
@@ -220,7 +222,8 @@ public class MacroDialogFunctions extends AbstractFunction {
         throw new ParserException(
             I18N.getText("macro.function.html5.invalidURI", url.toExternalForm()));
       }
-    } catch (InterruptedException | ExecutionException | IOException e) {
+    } catch (InterruptedException | ExecutionException e) {
+      log.error("Failed to get library or location", e);
       throw new ParserException(
           I18N.getText("macro.function.html5.invalidURI", url.toExternalForm()));
     }

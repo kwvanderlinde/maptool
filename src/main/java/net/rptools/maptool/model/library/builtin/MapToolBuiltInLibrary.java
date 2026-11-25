@@ -98,22 +98,30 @@ public class MapToolBuiltInLibrary implements Library {
   }
 
   @Override
-  public CompletableFuture<String> readAsString(URL location) throws IOException {
+  public CompletableFuture<String> readAsString(URL location) {
     var path = location.getPath().replaceFirst("^/", "");
     if (resourcesMap.containsKey(path)) {
-      return CompletableFuture.completedFuture(readAsString(resourcesMap.get(path)));
+      try {
+        return CompletableFuture.completedFuture(readAsString(resourcesMap.get(path)));
+      } catch (IOException e) {
+        return CompletableFuture.failedFuture(e);
+      }
     } else {
-      throw new IOException("Resource not found: " + location);
+      return CompletableFuture.failedFuture(new IOException("Resource not found: " + location));
     }
   }
 
   @Override
-  public CompletableFuture<InputStream> read(URL location) throws IOException {
+  public CompletableFuture<InputStream> read(URL location) {
     var path = location.getPath().replaceFirst("^/", "");
     if (resourcesMap.containsKey(path)) {
-      return CompletableFuture.completedFuture(read(resourcesMap.get(path)));
+      try {
+        return CompletableFuture.completedFuture(read(resourcesMap.get(path)));
+      } catch (IOException e) {
+        return CompletableFuture.failedFuture(e);
+      }
     } else {
-      throw new IOException("Resource not found: " + location);
+      return CompletableFuture.failedFuture(new IOException("Resource not found: " + location));
     }
   }
 
@@ -129,7 +137,7 @@ public class MapToolBuiltInLibrary implements Library {
     }
   }
 
-  public InputStream read(ResourceDetails details) throws IOException {
+  private InputStream read(ResourceDetails details) throws IOException {
     if (details.supplier != null) {
       return new ByteArrayInputStream(readAsString(details).getBytes());
     } else {

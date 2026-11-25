@@ -15,7 +15,6 @@
 package net.rptools.maptool.client.functions;
 
 import com.google.gson.*;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -137,7 +136,7 @@ public class MacroJavaScriptBridge extends AbstractFunction implements DefinesSp
           throw new ParserException(
               I18N.getText("macro.function.jsevalURI.invalidURI", args.get(0).toString()));
         }
-      } catch (ExecutionException | InterruptedException | IOException | CompletionException e) {
+      } catch (ExecutionException | InterruptedException | CompletionException e) {
         if (e.getCause() instanceof LibraryNotValidException lnve) {
           throw new ParserException(lnve.getMessage());
         } else if (e.getCause() != null) {

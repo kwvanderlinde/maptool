@@ -14,7 +14,6 @@
  */
 package net.rptools.maptool.model.library;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
@@ -133,9 +132,8 @@ public interface Library {
    *
    * @param location the location to check.
    * @return {@code true} if the location exists, otherwise {@code false}.
-   * @throws IOException if there is an io error reading the location.
    */
-  CompletableFuture<Boolean> locationExists(URL location) throws IOException;
+  CompletableFuture<Boolean> locationExists(URL location);
 
   /**
    * Returns the asset at the specified location.
@@ -150,18 +148,16 @@ public interface Library {
    *
    * @param location the location to read.
    * @return the contents of the location as a string.
-   * @throws IOException if there is an io error reading the location.
    */
-  CompletableFuture<String> readAsString(URL location) throws IOException;
+  CompletableFuture<String> readAsString(URL location);
 
   /**
    * Returns an {@link InputStream} for the location specified.
    *
    * @param location the location to return the input stream for.
    * @return the input stream for the location
-   * @throws IOException if there is an io error reading the location.
    */
-  CompletableFuture<InputStream> read(URL location) throws IOException;
+  CompletableFuture<InputStream> read(URL location);
 
   /**
    * Returns the information about MapTool Macro Script on this library.
