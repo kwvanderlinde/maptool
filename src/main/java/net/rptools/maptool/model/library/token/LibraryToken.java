@@ -173,15 +173,14 @@ class LibraryToken implements Library {
   @Override
   public CompletableFuture<Boolean> locationExists(URL location) throws IOException {
     final var loc = Location.getLocation(location);
-    return new ThreadExecutionHelper<Boolean>()
-        .runOnSwingThread(
-            () -> {
-              if (loc.locationType() == LocationType.MACRO) {
-                return getMacroText(loc.location()) != null ? Boolean.TRUE : Boolean.FALSE;
-              } else {
-                return getProperty(loc.location()) != null ? Boolean.TRUE : Boolean.FALSE;
-              }
-            });
+    return ThreadExecutionHelper.runOnSwingThread(
+        () -> {
+          if (loc.locationType() == LocationType.MACRO) {
+            return getMacroText(loc.location()) != null ? Boolean.TRUE : Boolean.FALSE;
+          } else {
+            return getProperty(loc.location()) != null ? Boolean.TRUE : Boolean.FALSE;
+          }
+        });
   }
 
   @Override
@@ -197,43 +196,41 @@ class LibraryToken implements Library {
   @Override
   public CompletableFuture<String> readAsString(URL location) throws IOException {
     final var loc = Location.getLocation(location);
-    return new ThreadExecutionHelper<String>()
-        .runOnSwingThread(
-            () -> {
-              String text;
-              if (loc.locationType() == LocationType.MACRO) {
-                text = getMacroText(loc.location());
-              } else {
-                text = getProperty(loc.location());
-              }
+    return ThreadExecutionHelper.runOnSwingThread(
+        () -> {
+          String text;
+          if (loc.locationType() == LocationType.MACRO) {
+            text = getMacroText(loc.location());
+          } else {
+            text = getProperty(loc.location());
+          }
 
-              if (text == null) {
-                throw new IOException("Invalid Location");
-              }
+          if (text == null) {
+            throw new IOException("Invalid Location");
+          }
 
-              return text;
-            });
+          return text;
+        });
   }
 
   @Override
   public CompletableFuture<InputStream> read(URL location) throws IOException {
     final var loc = Location.getLocation(location);
-    return new ThreadExecutionHelper<InputStream>()
-        .runOnSwingThread(
-            () -> {
-              String text;
-              if (loc.locationType() == LocationType.MACRO) {
-                text = getMacroText(loc.location());
-              } else {
-                text = getProperty(loc.location());
-              }
+    return ThreadExecutionHelper.runOnSwingThread(
+        () -> {
+          String text;
+          if (loc.locationType() == LocationType.MACRO) {
+            text = getMacroText(loc.location());
+          } else {
+            text = getProperty(loc.location());
+          }
 
-              if (text == null) {
-                throw new IOException("Invalid Location");
-              }
+          if (text == null) {
+            throw new IOException("Invalid Location");
+          }
 
-              return new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
-            });
+          return new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
+        });
   }
 
   @Override
@@ -313,27 +310,26 @@ class LibraryToken implements Library {
 
   @Override
   public CompletableFuture<Optional<MTScriptMacroInfo>> getMTScriptMacroInfo(String macroName) {
-    return new ThreadExecutionHelper<Optional<MTScriptMacroInfo>>()
-        .runOnSwingThread(
-            () -> {
-              Token library = findLibrary(id);
-              MacroButtonProperties buttonProps = library.getMacro(macroName, false);
-              if (buttonProps == null) {
-                // Try the "unknown macro"
-                buttonProps = library.getMacro(UNKNOWN_LIB_MACRO, false);
-                if (buttonProps == null) {
-                  return Optional.empty();
-                }
-              }
+    return ThreadExecutionHelper.runOnSwingThread(
+        () -> {
+          Token library = findLibrary(id);
+          MacroButtonProperties buttonProps = library.getMacro(macroName, false);
+          if (buttonProps == null) {
+            // Try the "unknown macro"
+            buttonProps = library.getMacro(UNKNOWN_LIB_MACRO, false);
+            if (buttonProps == null) {
+              return Optional.empty();
+            }
+          }
 
-              return Optional.of(
-                  new MTScriptMacroInfo(
-                      macroName,
-                      buttonProps.getCommand(),
-                      library.isOwnedByNone() || !buttonProps.getAllowPlayerEdits(),
-                      !buttonProps.getAllowPlayerEdits() && buttonProps.getAutoExecute(),
-                      buttonProps.getEvaluatedToolTip()));
-            });
+          return Optional.of(
+              new MTScriptMacroInfo(
+                  macroName,
+                  buttonProps.getCommand(),
+                  library.isOwnedByNone() || !buttonProps.getAllowPlayerEdits(),
+                  !buttonProps.getAllowPlayerEdits() && buttonProps.getAutoExecute(),
+                  buttonProps.getEvaluatedToolTip()));
+        });
   }
 
   @Override
@@ -500,7 +496,7 @@ class LibraryToken implements Library {
    * @return the token for the library.
    */
   CompletableFuture<Token> getToken() {
-    return new ThreadExecutionHelper<Token>().runOnSwingThread(() -> findLibrary(id));
+    return ThreadExecutionHelper.runOnSwingThread(() -> findLibrary(id));
   }
 
   /**

@@ -71,12 +71,11 @@ public class Players {
    * @return the information about the player for the client.
    */
   public CompletableFuture<PlayerInfo> getPlayer() {
-    return new ThreadExecutionHelper<PlayerInfo>()
-        .runOnSwingThread(
-            () -> {
-              Player player = MapTool.getPlayer();
-              return getPlayerInfo(player.getName());
-            });
+    return ThreadExecutionHelper.runOnSwingThread(
+        () -> {
+          Player player = MapTool.getPlayer();
+          return getPlayerInfo(player.getName());
+        });
   }
 
   /**

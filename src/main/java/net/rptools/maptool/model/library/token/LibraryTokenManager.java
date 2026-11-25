@@ -201,22 +201,19 @@ public class LibraryTokenManager {
    * @return list of library tokens that match the filters.
    */
   private CompletableFuture<List<Library>> getMatchingLibraryList(String property, String macro) {
-    return new ThreadExecutionHelper<List<Library>>()
-        .runOnSwingThread(
-            () -> {
-              List<Library> tokenList = new ArrayList<>();
-              for (var zone : MapTool.getCampaign().getZones()) {
-                tokenList.addAll(
-                    zone
-                        .getTokensFiltered(t -> t.getName().toLowerCase().startsWith("lib:"))
-                        .stream()
-                        .filter(t -> property == null || t.getProperty(property) != null)
-                        .filter(t -> macro == null || t.getMacro(macro, false) != null)
-                        .map(LibraryToken::new)
-                        .toList());
-              }
-              return tokenList;
-            });
+    return ThreadExecutionHelper.runOnSwingThread(
+        () -> {
+          List<Library> tokenList = new ArrayList<>();
+          for (var zone : MapTool.getCampaign().getZones()) {
+            tokenList.addAll(
+                zone.getTokensFiltered(t -> t.getName().toLowerCase().startsWith("lib:")).stream()
+                    .filter(t -> property == null || t.getProperty(property) != null)
+                    .filter(t -> macro == null || t.getMacro(macro, false) != null)
+                    .map(LibraryToken::new)
+                    .toList());
+          }
+          return tokenList;
+        });
   }
 
   /**
@@ -226,16 +223,15 @@ public class LibraryTokenManager {
    * @return the library for the namespace.
    */
   public CompletableFuture<Library> getLibrary(String namespace) {
-    return new ThreadExecutionHelper<Library>()
-        .runOnSwingThread(
-            () -> {
-              var tokenList = getTokensWithName("lib:" + namespace);
-              if (tokenList.isEmpty()) {
-                return null;
-              } else {
-                return new LibraryToken(tokenList.get(0));
-              }
-            });
+    return ThreadExecutionHelper.runOnSwingThread(
+        () -> {
+          var tokenList = getTokensWithName("lib:" + namespace);
+          if (tokenList.isEmpty()) {
+            return null;
+          } else {
+            return new LibraryToken(tokenList.get(0));
+          }
+        });
   }
 
   /**
@@ -249,8 +245,7 @@ public class LibraryTokenManager {
       return CompletableFuture.completedFuture(Optional.empty());
     }
 
-    return new ThreadExecutionHelper<Optional<Library>>()
-        .runOnSwingThread(() -> Optional.ofNullable(findLibrary(path)));
+    return ThreadExecutionHelper.runOnSwingThread(() -> Optional.ofNullable(findLibrary(path)));
   }
 
   /**

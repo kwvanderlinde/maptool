@@ -107,12 +107,11 @@ public class MTXMLHttpRequest {
     } else {
       d.thenApply(
           (String result) -> {
-            new ThreadExecutionHelper<Void>()
-                .runOnJFXThread(
-                    () -> {
-                      this.recv(result);
-                      return null;
-                    });
+            ThreadExecutionHelper.runOnJFXThread(
+                () -> {
+                  this.recv(result);
+                  return null;
+                });
             return result;
           });
     }

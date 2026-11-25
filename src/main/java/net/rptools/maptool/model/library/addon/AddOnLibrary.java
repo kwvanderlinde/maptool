@@ -658,13 +658,12 @@ public class AddOnLibrary implements Library {
    * @return a CompletableFuture that completes when the function MacroScript function has finished
    */
   private CompletableFuture<Void> callMTSFunction(String name) {
-    return new ThreadExecutionHelper<Void>()
-        .runOnSwingThread(
-            () -> {
-              var resolver = new MapToolVariableResolver(null);
-              MapTool.getParser().runMacro(resolver, name + "@lib:" + namespace, "", true);
-              return null;
-            });
+    return ThreadExecutionHelper.runOnSwingThread(
+        () -> {
+          var resolver = new MapToolVariableResolver(null);
+          MapTool.getParser().runMacro(resolver, name + "@lib:" + namespace, "", true);
+          return null;
+        });
   }
 
   /**

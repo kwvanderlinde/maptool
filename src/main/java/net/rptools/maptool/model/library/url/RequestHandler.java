@@ -132,8 +132,7 @@ public class RequestHandler {
 
       final MapToolVariableResolver resolver = new MapToolVariableResolver(null);
       c =
-          new ThreadExecutionHelper<String>()
-              .runOnSwingThread(
+          ThreadExecutionHelper.runOnSwingThread(
                   () -> {
                     String macroName;
                     if ("lib".equalsIgnoreCase(uri.getScheme())) {

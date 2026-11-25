@@ -20,18 +20,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import javafx.application.Platform;
 import javax.swing.SwingUtilities;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * Utility for helping execute tasks on the correct thread.
  *
  * @param <T> the type that this execution helper will be dealing with..
  */
-public class ThreadExecutionHelper<T> {
-
-  /** Instance used for logging messages. */
-  private static final Logger log = LogManager.getLogger(ThreadExecutionHelper.class);
+public final class ThreadExecutionHelper {
+  private ThreadExecutionHelper() {}
 
   /**
    * This method ensures tht the callable argument passed to it is executed on the swing thread. If
@@ -41,7 +37,7 @@ public class ThreadExecutionHelper<T> {
    * @param callable the task to be executed on the swing thread.
    * @return A {@link CompletableFuture} for the task to be executed.
    */
-  public CompletableFuture<T> runOnSwingThread(Callable<T> callable) {
+  public static <T> CompletableFuture<T> runOnSwingThread(Callable<T> callable) {
     if (SwingUtilities.isEventDispatchThread()) {
       return CompletableFuture.completedFuture(doCall(callable));
     } else {
@@ -57,7 +53,7 @@ public class ThreadExecutionHelper<T> {
    * @param callable the task to be executed on the swing thread.
    * @return A {@link CompletableFuture} for the task to be executed.
    */
-  public CompletableFuture<T> runOnJFXThread(Callable<T> callable) {
+  public static <T> CompletableFuture<T> runOnJFXThread(Callable<T> callable) {
     if (Platform.isFxApplicationThread()) {
       return CompletableFuture.completedFuture(doCall(callable));
     } else {
@@ -72,7 +68,7 @@ public class ThreadExecutionHelper<T> {
    * @return the value returned by the task.
    * @throws CompletionException if any exception occurs while running the task.
    */
-  private T doCall(Callable<T> callable) {
+  private static <T> T doCall(Callable<T> callable) {
     try {
       return callable.call();
     } catch (Exception e) {

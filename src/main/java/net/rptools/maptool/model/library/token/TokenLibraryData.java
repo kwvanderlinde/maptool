@@ -49,11 +49,10 @@ public class TokenLibraryData implements LibraryData {
 
   @Override
   public CompletableFuture<Set<String>> getAllKeys() {
-    return new ThreadExecutionHelper<Set<String>>()
-        .runOnSwingThread(
-            () -> {
-              return libraryToken.getToken().join().getPropertyNames();
-            });
+    return ThreadExecutionHelper.runOnSwingThread(
+        () -> {
+          return libraryToken.getToken().join().getPropertyNames();
+        });
   }
 
   /**
@@ -93,33 +92,32 @@ public class TokenLibraryData implements LibraryData {
 
   @Override
   public CompletableFuture<DataType> getDataType(String key) {
-    return new ThreadExecutionHelper<DataType>().runOnSwingThread(() -> getData(key).getDataType());
+    return ThreadExecutionHelper.runOnSwingThread(() -> getData(key).getDataType());
   }
 
   @Override
   public CompletableFuture<Boolean> isDefined(String key) {
-    return new ThreadExecutionHelper<Boolean>().runOnSwingThread(() -> !getData(key).isUndefined());
+    return ThreadExecutionHelper.runOnSwingThread(() -> !getData(key).isUndefined());
   }
 
   @Override
   public CompletableFuture<DataValue> getValue(String key) {
-    return new ThreadExecutionHelper<DataValue>().runOnSwingThread(() -> getData(key));
+    return ThreadExecutionHelper.runOnSwingThread(() -> getData(key));
   }
 
   @Override
   public CompletableFuture<Void> setData(DataValue value) {
-    return new ThreadExecutionHelper<Void>()
-        .runOnSwingThread(
-            () -> {
-              Object tokenVal = new MTScriptDataConversion().convertToMTScriptType(value);
-              MapTool.serverCommand()
-                  .updateTokenProperty(
-                      libraryToken.getToken().get(),
-                      Token.Update.setProperty,
-                      value.getName(),
-                      tokenVal.toString());
-              return null;
-            });
+    return ThreadExecutionHelper.runOnSwingThread(
+        () -> {
+          Object tokenVal = new MTScriptDataConversion().convertToMTScriptType(value);
+          MapTool.serverCommand()
+              .updateTokenProperty(
+                  libraryToken.getToken().get(),
+                  Token.Update.setProperty,
+                  value.getName(),
+                  tokenVal.toString());
+          return null;
+        });
   }
 
   @Override
