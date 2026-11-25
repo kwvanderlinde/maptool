@@ -546,22 +546,28 @@ public class TokenPropertyFunctions extends AbstractFunction {
       Object value = parameters.get(1);
       String libName = findLibNamespaceFromParams(parameters, 2, false);
 
-      var library =
-          new LibraryManager()
-              .getLibrary(libName)
-              .orElseThrow(
-                  () ->
-                      new ParserException(
-                          I18N.getText(
-                              "macro.function.tokenProperty.unknownLibToken",
-                              functionName,
-                              libName)));
-      library
-          .getLibraryData()
-          .thenCompose(
-              libData ->
-                  libData.setData(
-                      new MTScriptDataConversion().parseMTScriptString(property, value)));
+      try {
+        var library =
+            new LibraryManager()
+                .getLibrary(libName)
+                .orElseThrow(
+                    () ->
+                        new ParserException(
+                            I18N.getText(
+                                "macro.function.tokenProperty.unknownLibToken",
+                                functionName,
+                                libName)));
+        library
+            .getLibraryData()
+            .thenCompose(
+                libData ->
+                    libData.setData(
+                        new MTScriptDataConversion().parseMTScriptString(property, value)))
+            .get();
+      } catch (ExecutionException | InterruptedException e) {
+        throw new ParserException(e.getCause());
+      }
+
       return "";
     }
 
