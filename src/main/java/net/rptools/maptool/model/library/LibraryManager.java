@@ -423,7 +423,7 @@ public class LibraryManager {
           .thenAccept(
               data -> {
                 if (data instanceof AddOnLibraryData ald) {
-                  ald.setNeedsToBeInitialized(true);
+                  ald.setNeedsToBeInitialized(true).join();
                 }
               })
           .join();
