@@ -138,20 +138,6 @@ public class LibraryManager {
   }
 
   /**
-   * Does the library exist.
-   *
-   * @param path the path for the library (can be full path or just part of path).
-   * @return {@code true} if the library exists {@code false} if it does not.
-   */
-  public CompletableFuture<Boolean> libraryExists(URL path) {
-    if (libraryTokenManager.handles(path)) {
-      return libraryTokenManager.getLibrary(path).thenApply(Optional::isPresent);
-    } else {
-      return CompletableFuture.completedFuture(Boolean.FALSE);
-    }
-  }
-
-  /**
    * Checks if the current namespace has an add-on library registered.
    *
    * @param namespace the namespace to check.
@@ -429,25 +415,6 @@ public class LibraryManager {
           .join();
       deregisterAddOnLibrary(namespace);
     }
-  }
-
-  /**
-   * Removes all add-on libraries from the library manager. The difference between this method and
-   * {@link #deregisterAddOnLibraries()} is that this method will flag the libraries as needing
-   * initialization next time they are added.
-   */
-  public void removeAddOnLibraries() {
-    for (var lib : addOnLibraryManager.getLibraries()) {
-      lib.getLibraryData()
-          .thenAccept(
-              data -> {
-                if (data instanceof AddOnLibraryData ald) {
-                  ald.setNeedsToBeInitialized(true);
-                }
-              })
-          .join();
-    }
-    deregisterAddOnLibraries();
   }
 
   /**
