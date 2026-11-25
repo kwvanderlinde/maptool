@@ -38,6 +38,9 @@ public class BuiltInLibraryManager {
   /** "Protocol" for built in add-on libraries. */
   private static final String LIBRARY_PROTOCOL = "lib";
 
+  /** The directory on the class path for the built in libraries. */
+  private static final String BUILTIN_LIB_CLASSPATH_DIR = "net/rptools/maptool/libraries/builtin";
+
   private static final Logger log = LogManager.getLogger(BuiltInLibraryManager.class);
 
   /** The add-on libraries that are registered. */
@@ -127,14 +130,14 @@ public class BuiltInLibraryManager {
 
     URI uri;
     try {
-      uri = classLoader.getResource(ClassPathAddOnLibrary.BUILTIN_LIB_CLASSPATH_DIR).toURI();
+      uri = classLoader.getResource(BUILTIN_LIB_CLASSPATH_DIR).toURI();
     } catch (URISyntaxException e) {
       MapTool.showError("msg.error.library.builtin.path", e);
       return;
     }
 
     try (var fs = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
-      var resourcePath = fs.getPath(ClassPathAddOnLibrary.BUILTIN_LIB_CLASSPATH_DIR);
+      var resourcePath = fs.getPath(BUILTIN_LIB_CLASSPATH_DIR);
       var libs =
           Files.walk(resourcePath, 1)
               .filter(p -> p.toString().endsWith(AddOnLibraryImporter.DROP_IN_LIBRARY_EXTENSION))
@@ -146,10 +149,8 @@ public class BuiltInLibraryManager {
               l -> {
                 try {
                   var lib = importer.importFromClassPath(l.toString());
-                  var clib = new ClassPathAddOnLibrary(l.toString(), lib);
-                  registerLibrary(clib);
-                  clib.initialize();
-
+                  registerLibrary(lib);
+                  lib.registerSheets();
                 } catch (Exception e) {
                   MapTool.showError("msg.error.library.builtin.load", e);
                 }
