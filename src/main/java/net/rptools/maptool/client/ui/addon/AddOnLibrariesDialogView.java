@@ -237,9 +237,8 @@ public class AddOnLibrariesDialogView extends JDialog {
       addOnGitUrlLabel.setText(addOn.gitUrl());
       addOnLicenseLabel.setText(addOn.license());
       addOnDescriptionTextPane.setText(addOn.description());
-      viewLicenseFileButton.setEnabled(
-          addOn.licenseFile() != null && !addOn.licenseFile().isEmpty());
-      viewReadMeFileButton.setEnabled(addOn.readMeFile() != null && !addOn.readMeFile().isEmpty());
+      viewLicenseFileButton.setEnabled(!addOn.licenseFile().isEmpty());
+      viewReadMeFileButton.setEnabled(!addOn.readMeFile().isEmpty());
     }
   }
 

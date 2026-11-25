@@ -288,8 +288,8 @@ class LibraryToken implements Library {
             description.isEmpty() ? notSet : description,
             shortDescription.isEmpty() ? notSet : shortDescription,
             allowsUriAccess,
-            null,
-            null));
+            "",
+            ""));
   }
 
   @Override
