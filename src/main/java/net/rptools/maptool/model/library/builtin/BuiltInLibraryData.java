@@ -14,12 +14,8 @@
  */
 package net.rptools.maptool.model.library.builtin;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import net.rptools.maptool.model.Asset;
-import net.rptools.maptool.model.gamedata.data.DataType;
 import net.rptools.maptool.model.gamedata.data.DataValue;
 import net.rptools.maptool.model.gamedata.data.DataValueFactory;
 import net.rptools.maptool.model.library.data.LibraryData;
@@ -34,23 +30,8 @@ public class BuiltInLibraryData implements LibraryData {
   }
 
   @Override
-  public CompletableFuture<String> libraryName() {
-    return library.getName();
-  }
-
-  @Override
   public CompletableFuture<Set<String>> getAllKeys() {
     return CompletableFuture.completedFuture(Set.of());
-  }
-
-  @Override
-  public CompletableFuture<DataType> getDataType(String key) {
-    return CompletableFuture.completedFuture(DataType.UNDEFINED);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> isDefined(String key) {
-    return CompletableFuture.completedFuture(false);
   }
 
   @Override
@@ -61,46 +42,6 @@ public class BuiltInLibraryData implements LibraryData {
   @Override
   public CompletableFuture<Void> setData(DataValue value) {
     throw new IllegalArgumentException("Cannot set data on built-in library");
-  }
-
-  @Override
-  public CompletableFuture<Void> setLongData(String name, long value) {
-    throw new IllegalArgumentException("Cannot set data on built-in library");
-  }
-
-  @Override
-  public CompletableFuture<Void> setDoubleData(String name, double value) {
-    throw new IllegalArgumentException("Cannot set data on built-in library");
-  }
-
-  @Override
-  public CompletableFuture<Void> setBooleanData(String name, boolean value) {
-    throw new IllegalArgumentException("Cannot set data on built-in library");
-  }
-
-  @Override
-  public CompletableFuture<Void> setStringData(String name, String value) {
-    throw new IllegalArgumentException("Cannot set data on built-in library");
-  }
-
-  @Override
-  public CompletableFuture<Void> setJsonArrayData(String name, JsonArray value) {
-    throw new IllegalArgumentException("Cannot set data on built-in library");
-  }
-
-  @Override
-  public CompletableFuture<Void> setJsonObjectData(String name, JsonObject value) {
-    throw new IllegalArgumentException("Cannot set data on built-in library");
-  }
-
-  @Override
-  public CompletableFuture<Void> setAssetData(String name, Asset value) {
-    throw new IllegalArgumentException("Cannot set data on built-in library");
-  }
-
-  @Override
-  public boolean supportsStaticData() {
-    return false;
   }
 
   @Override

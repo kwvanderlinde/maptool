@@ -14,14 +14,10 @@
  */
 package net.rptools.maptool.model.library.addon;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.gamedata.DataStoreManager;
-import net.rptools.maptool.model.gamedata.data.DataType;
 import net.rptools.maptool.model.gamedata.data.DataValue;
 import net.rptools.maptool.model.gamedata.data.DataValueFactory;
 import net.rptools.maptool.model.library.data.LibraryData;
@@ -53,26 +49,11 @@ public class AddOnLibraryData implements LibraryData {
   }
 
   @Override
-  public CompletableFuture<String> libraryName() {
-    return addOnLibrary.getName();
-  }
-
-  @Override
   public CompletableFuture<Set<String>> getAllKeys() {
     return new DataStoreManager()
         .getDefaultDataStore()
         .getProperties(DATA_TYPE, dataNameSpace)
         .thenApply(p -> p.stream().map(DataValue::getName).collect(Collectors.toSet()));
-  }
-
-  @Override
-  public CompletableFuture<DataType> getDataType(String key) {
-    return getDataValue(key).thenApply(DataValue::getDataType);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> isDefined(String key) {
-    return getDataValue(key).thenApply(p -> !p.isUndefined());
   }
 
   @Override
@@ -86,46 +67,6 @@ public class AddOnLibraryData implements LibraryData {
         .getDefaultDataStore()
         .setProperty(DATA_TYPE, dataNameSpace, value)
         .thenAccept(p -> {});
-  }
-
-  @Override
-  public CompletableFuture<Void> setLongData(String name, long value) {
-    return setData(DataValueFactory.fromLong(name, value));
-  }
-
-  @Override
-  public CompletableFuture<Void> setDoubleData(String name, double value) {
-    return setData(DataValueFactory.fromDouble(name, value));
-  }
-
-  @Override
-  public CompletableFuture<Void> setBooleanData(String name, boolean value) {
-    return setData(DataValueFactory.fromBoolean(name, value));
-  }
-
-  @Override
-  public CompletableFuture<Void> setStringData(String name, String value) {
-    return setData(DataValueFactory.fromString(name, value));
-  }
-
-  @Override
-  public CompletableFuture<Void> setJsonArrayData(String name, JsonArray value) {
-    return setData(DataValueFactory.fromJsonArray(name, value));
-  }
-
-  @Override
-  public CompletableFuture<Void> setJsonObjectData(String name, JsonObject value) {
-    return setData(DataValueFactory.fromJsonObject(name, value));
-  }
-
-  @Override
-  public CompletableFuture<Void> setAssetData(String name, Asset value) {
-    return setData(DataValueFactory.fromAsset(name, value));
-  }
-
-  @Override
-  public boolean supportsStaticData() {
-    return true;
   }
 
   @Override

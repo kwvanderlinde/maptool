@@ -14,15 +14,11 @@
  */
 package net.rptools.maptool.model.library.token;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import net.rptools.maptool.client.MapTool;
-import net.rptools.maptool.model.Asset;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.gamedata.MTScriptDataConversion;
-import net.rptools.maptool.model.gamedata.data.DataType;
 import net.rptools.maptool.model.gamedata.data.DataValue;
 import net.rptools.maptool.model.gamedata.data.DataValueFactory;
 import net.rptools.maptool.model.library.data.LibraryData;
@@ -40,11 +36,6 @@ public class TokenLibraryData implements LibraryData {
    */
   TokenLibraryData(LibraryToken libraryToken) {
     this.libraryToken = libraryToken;
-  }
-
-  @Override
-  public CompletableFuture<String> libraryName() {
-    return libraryToken.getName();
   }
 
   @Override
@@ -91,16 +82,6 @@ public class TokenLibraryData implements LibraryData {
   }
 
   @Override
-  public CompletableFuture<DataType> getDataType(String key) {
-    return ThreadExecutionHelper.runOnSwingThread(() -> getData(key).getDataType());
-  }
-
-  @Override
-  public CompletableFuture<Boolean> isDefined(String key) {
-    return ThreadExecutionHelper.runOnSwingThread(() -> !getData(key).isUndefined());
-  }
-
-  @Override
   public CompletableFuture<DataValue> getValue(String key) {
     return ThreadExecutionHelper.runOnSwingThread(() -> getData(key));
   }
@@ -118,46 +99,6 @@ public class TokenLibraryData implements LibraryData {
                   tokenVal.toString());
           return null;
         });
-  }
-
-  @Override
-  public CompletableFuture<Void> setLongData(String name, long value) {
-    return setData(DataValueFactory.fromLong(name, value));
-  }
-
-  @Override
-  public CompletableFuture<Void> setDoubleData(String name, double value) {
-    return setData(DataValueFactory.fromDouble(name, value));
-  }
-
-  @Override
-  public CompletableFuture<Void> setBooleanData(String name, boolean value) {
-    return setData(DataValueFactory.fromBoolean(name, value));
-  }
-
-  @Override
-  public CompletableFuture<Void> setStringData(String name, String value) {
-    return setData(DataValueFactory.fromString(name, value));
-  }
-
-  @Override
-  public CompletableFuture<Void> setJsonArrayData(String name, JsonArray value) {
-    return setData(DataValueFactory.fromJsonArray(name, value));
-  }
-
-  @Override
-  public CompletableFuture<Void> setJsonObjectData(String name, JsonObject value) {
-    return setData(DataValueFactory.fromJsonObject(name, value));
-  }
-
-  @Override
-  public CompletableFuture<Void> setAssetData(String name, Asset value) {
-    return setData(DataValueFactory.fromAsset(name, value));
-  }
-
-  @Override
-  public boolean supportsStaticData() {
-    return false;
   }
 
   @Override
