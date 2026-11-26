@@ -156,7 +156,10 @@ class LibraryToken implements Library {
         Objects.requireNonNullElse(token.getProperty(LIB_SHORT_DESCRIPTION_PROPERTY_NAME), "")
             .toString();
     authors =
-        Arrays.stream(getProperty(LIB_AUTHORS_PROPERTY_NAME, "").split(","))
+        Arrays.stream(
+                Objects.requireNonNullElse(token.getProperty(LIB_AUTHORS_PROPERTY_NAME), "")
+                    .toString()
+                    .split(","))
             .map(String::trim)
             .toList();
     allowsUriAccess = token.getAllowURIAccess();
