@@ -605,42 +605,36 @@ public class AddOnLibrary implements Library {
   /** Run first time initialization of the add-on library. */
   void initialize() {
     registerSheets();
-    getLibraryData()
-        .thenAccept(
-            d -> {
-              var data = (AddOnLibraryData) d;
-              data.initialize()
-                  .thenRun(
-                      () -> {
-                        data.needsInitialization()
-                            .thenAccept(
-                                needInit -> {
-                                  // First remove any existing JavaScript context if it exists
-                                  if (JSScriptEngine.hasAddOnContext(jsContextName)) {
-                                    JSScriptEngine.removeAddOnContext(jsContextName);
-                                  }
-                                  // Then create a new JavaScript context for the add-on library
-                                  JSScriptEngine.registerAddOnContext(jsContextName);
-                                  if (needInit) {
-                                    if (jsEventNameMap.containsKey(FIRST_INIT_EVENT)) {
-                                      runJS(jsEventNameMap.get(FIRST_INIT_EVENT));
-                                    }
-                                    if (mtScriptEventNameMap.containsKey(FIRST_INIT_EVENT)) {
-                                      callMTSFunction(mtScriptEventNameMap.get(FIRST_INIT_EVENT))
-                                          .join();
-                                    }
-                                    data.setNeedsToBeInitialized(false).join();
-                                  }
-                                  if (jsEventNameMap.containsKey(INIT_EVENT)) {
-                                    runJS(jsEventNameMap.get(INIT_EVENT));
-                                  }
-                                  if (mtScriptEventNameMap.containsKey(INIT_EVENT)) {
-                                    callMTSFunction(mtScriptEventNameMap.get(INIT_EVENT)).join();
-                                  }
-                                });
-                      });
-            })
-        .join();
+
+    var data = (AddOnLibraryData) getLibraryData().join();
+    // JSScriptEngine needs to run on EDT, which is our current thread. So don't be too picky about
+    // futureness.
+    data.initialize().join();
+
+    // First remove any existing JavaScript context if it exists
+    if (JSScriptEngine.hasAddOnContext(jsContextName)) {
+      JSScriptEngine.removeAddOnContext(jsContextName);
+    }
+    // Then create a new JavaScript context for the add-on library
+    JSScriptEngine.registerAddOnContext(jsContextName);
+
+    var needsInit = data.needsInitialization().join();
+    if (needsInit) {
+      if (jsEventNameMap.containsKey(FIRST_INIT_EVENT)) {
+        runJS(jsEventNameMap.get(FIRST_INIT_EVENT)).join();
+      }
+      if (mtScriptEventNameMap.containsKey(FIRST_INIT_EVENT)) {
+        callMTSFunction(mtScriptEventNameMap.get(FIRST_INIT_EVENT)).join();
+      }
+      data.setNeedsToBeInitialized(false).join();
+    }
+
+    if (jsEventNameMap.containsKey(INIT_EVENT)) {
+      runJS(jsEventNameMap.get(INIT_EVENT)).join();
+    }
+    if (mtScriptEventNameMap.containsKey(INIT_EVENT)) {
+      callMTSFunction(mtScriptEventNameMap.get(INIT_EVENT)).join();
+    }
   }
 
   /** Registers the stat sheets that this add-on defines. */
@@ -679,8 +673,8 @@ public class AddOnLibrary implements Library {
    *
    * @param file the JavaScript file withing the file to run.
    */
-  private void runJS(String file) {
-    readFile(file)
+  private CompletableFuture<Void> runJS(String file) {
+    return readFile(file)
         .thenAccept(
             script -> {
               try {
@@ -689,8 +683,7 @@ public class AddOnLibrary implements Library {
               } catch (ParserException | ScriptException e) {
                 throw new RuntimeException(e);
               }
-            })
-        .join();
+            });
   }
 
   CompletableFuture<DataValue> readFile(String path) {
