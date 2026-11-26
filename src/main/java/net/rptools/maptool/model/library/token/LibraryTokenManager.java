@@ -245,28 +245,22 @@ public class LibraryTokenManager {
       return CompletableFuture.completedFuture(Optional.empty());
     }
 
-    return ThreadExecutionHelper.runOnSwingThread(() -> Optional.ofNullable(findLibrary(path)));
-  }
-
-  /**
-   * Finds the library token with the specific path.
-   *
-   * @param path the path of the token to find.
-   * @return the library token or {@code null} if it can not be found.
-   */
-  private static Library findLibrary(URL path) {
-    String name = "lib:" + path.getHost();
-    List<Token> tokenList = getTokensWithName(name);
-    if (tokenList.size() > 0) {
-      Optional<Token> token = tokenList.stream().filter(Token::getAllowURIAccess).findFirst();
-      if (token.isPresent()) {
-        return new LibraryToken(token.get());
-      } else { // There are some tokens but none with "Allow URI Access"
-        throw new LibraryNotValidException(
-            Reason.MISSING_PERMISSIONS, I18N.getText("library.error.libtoken.no.access", name));
-      }
-    }
-    return null;
+    return ThreadExecutionHelper.runOnSwingThread(
+        () -> {
+          String name = "lib:" + path.getHost();
+          List<Token> tokenList = getTokensWithName(name);
+          if (!tokenList.isEmpty()) {
+            Optional<Token> token = tokenList.stream().filter(Token::getAllowURIAccess).findFirst();
+            if (token.isPresent()) {
+              return Optional.of(new LibraryToken(token.get()));
+            } else { // There are some tokens but none with "Allow URI Access"
+              throw new LibraryNotValidException(
+                  Reason.MISSING_PERMISSIONS,
+                  I18N.getText("library.error.libtoken.no.access", name));
+            }
+          }
+          return Optional.empty();
+        });
   }
 
   /**
@@ -282,24 +276,6 @@ public class LibraryTokenManager {
     }
 
     return tokenList;
-  }
-
-  /**
-   * Returns the {@link Token} for the library.
-   *
-   * @param id the id of the token Lib:Token to get.
-   * @return the Token for the library.
-   */
-  private Token findLibrary(GUID id) {
-    for (var zone : MapTool.getCampaign().getZones()) {
-      var token = zone.getToken(id);
-      if (token != null) {
-        return token;
-      }
-    }
-
-    throw new LibraryNotValidException(
-        Reason.MISSING_LIBRARY, I18N.getText("library.error.libtoken.missing"));
   }
 
   /**

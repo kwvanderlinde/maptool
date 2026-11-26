@@ -22,7 +22,6 @@ import net.rptools.maptool.model.gamedata.MTScriptDataConversion;
 import net.rptools.maptool.model.gamedata.data.DataValue;
 import net.rptools.maptool.model.gamedata.data.DataValueFactory;
 import net.rptools.maptool.model.library.data.LibraryData;
-import net.rptools.maptool.util.threads.ThreadExecutionHelper;
 
 /** Class that represents the data for a token library. */
 public class TokenLibraryData implements LibraryData {
@@ -40,20 +39,18 @@ public class TokenLibraryData implements LibraryData {
 
   @Override
   public CompletableFuture<Set<String>> getAllKeys() {
-    return ThreadExecutionHelper.runOnSwingThread(
-        () -> {
-          return libraryToken.getToken().join().getPropertyNames();
-        });
+    return libraryToken.getToken().thenApply(Token::getPropertyNames);
   }
 
   /**
    * Returns the {@link DataValue} for the given key. This method must be run on thw swing thread.
    *
+   * @param token the lib: token.
    * @param key The key to get the value for.
    * @return The value for the given key.
    */
-  private DataValue getData(String key) {
-    var val = libraryToken.getToken().join().getProperty(key);
+  private DataValue getData(Token token, String key) {
+    var val = token.getProperty(key);
     if (val == null) {
       return DataValueFactory.undefined(key);
     } else if (val instanceof Number n) {
@@ -73,7 +70,7 @@ public class TokenLibraryData implements LibraryData {
           return DataValueFactory.fromDouble(key, dval);
         }
       } catch (NumberFormatException e) {
-        // Do nothing if can't be parsed as a number
+        // Do nothing if it can't be parsed as a number
       }
       return DataValueFactory.fromString(key, s);
     } else {
@@ -83,22 +80,20 @@ public class TokenLibraryData implements LibraryData {
 
   @Override
   public CompletableFuture<DataValue> getValue(String key) {
-    return ThreadExecutionHelper.runOnSwingThread(() -> getData(key));
+    return libraryToken.getToken().thenApply(token -> getData(token, key));
   }
 
   @Override
   public CompletableFuture<Void> setData(DataValue value) {
-    return ThreadExecutionHelper.runOnSwingThread(
-        () -> {
-          Object tokenVal = new MTScriptDataConversion().convertToMTScriptType(value);
-          MapTool.serverCommand()
-              .updateTokenProperty(
-                  libraryToken.getToken().get(),
-                  Token.Update.setProperty,
-                  value.getName(),
-                  tokenVal.toString());
-          return null;
-        });
+    return libraryToken
+        .getToken()
+        .thenAccept(
+            token -> {
+              Object tokenVal = new MTScriptDataConversion().convertToMTScriptType(value);
+              MapTool.serverCommand()
+                  .updateTokenProperty(
+                      token, Token.Update.setProperty, value.getName(), tokenVal.toString());
+            });
   }
 
   @Override

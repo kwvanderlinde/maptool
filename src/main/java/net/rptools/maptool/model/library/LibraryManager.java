@@ -16,7 +16,8 @@ package net.rptools.maptool.model.library;
 
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -424,20 +425,23 @@ public class LibraryManager {
    * @return the list of tokens that have handlers for the specified legacy token events.
    */
   public CompletableFuture<List<Library>> getLegacyEventTargets(String eventName) {
-    return CompletableFuture.supplyAsync(
-        () -> {
-          var addons = addOnLibraryManager.getLegacyEventTargets(eventName).join();
-          var tokens = libraryTokenManager.getLegacyEventTargets(eventName).join();
-          var libs = new HashSet<Library>(addons);
-          var addonLibNamespaces =
-              addons.stream().map(Library::getNamespace).collect(Collectors.toSet());
-          // Only add lib:tokens if there are no addon libraries with the same namespace
-          for (var token : tokens) {
-            if (!addonLibNamespaces.contains(token.getNamespace())) {
-              libs.add(token);
-            }
-          }
-          return new ArrayList<>(libs);
-        });
+    return addOnLibraryManager
+        .getLegacyEventTargets(eventName)
+        .thenCombine(
+            libraryTokenManager.getLegacyEventTargets(eventName),
+            (addons, tokens) -> {
+              var libs = Collections.newSetFromMap(new IdentityHashMap<Library, Boolean>());
+              libs.addAll(addons);
+              var addonLibNamespaces =
+                  addons.stream().map(Library::getNamespace).collect(Collectors.toSet());
+              // Only add lib:tokens if there are no addon libraries with the same namespace
+              for (var token : tokens) {
+                if (!addonLibNamespaces.contains(token.getNamespace())) {
+                  libs.add(token);
+                }
+              }
+
+              return List.copyOf(libs);
+            });
   }
 }
