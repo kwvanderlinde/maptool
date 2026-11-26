@@ -71,25 +71,22 @@ public class JSScriptEngine {
     return apiDefinitions;
   }
 
-  private final Context.Builder cbuilder;
+  private final HostAccess hostAccess;
   private final Map<String, JSContext> contexts = new HashMap<>();
   private final Map<String, JSContext> addOnContexts = new HashMap<>();
   private final Stack<JSContext> contextStack = new Stack<>();
 
   private JSScriptEngine() {
-    HostAccess.Builder habuilder = HostAccess.newBuilder();
-    habuilder.allowAccessAnnotatedBy(HostAccess.Export.class);
-    habuilder.allowArrayAccess(true);
-    habuilder.allowListAccess(true);
-    habuilder.allowMapAccess(true);
-    habuilder.targetTypeMapping(
-        Value.class, Object.class, (v) -> v.hasArrayElements(), (v) -> v.as(List.class));
-
-    HostAccess access = habuilder.build();
-
-    cbuilder = Context.newBuilder("js");
-    cbuilder.allowHostAccess(access);
-    cbuilder.option("js.ecmascript-version", "2021");
+    {
+      HostAccess.Builder habuilder = HostAccess.newBuilder();
+      habuilder.allowAccessAnnotatedBy(HostAccess.Export.class);
+      habuilder.allowArrayAccess(true);
+      habuilder.allowListAccess(true);
+      habuilder.allowMapAccess(true);
+      habuilder.targetTypeMapping(
+          Value.class, Object.class, (v) -> v.hasArrayElements(), (v) -> v.as(List.class));
+      hostAccess = habuilder.build();
+    }
   }
 
   public JSContext getCurrentContext() {
@@ -153,7 +150,11 @@ public class JSScriptEngine {
   }
 
   private JSContext makeContext(String name, boolean trusted) {
-    Context graalContext = cbuilder.build();
+    Context graalContext =
+        Context.newBuilder("js")
+            .allowHostAccess(hostAccess)
+            .option("js.ecmascript-version", "2021")
+            .build();
     Value bindings = graalContext.getBindings("js");
 
     for (var definition : getApiDefinitions()) {
