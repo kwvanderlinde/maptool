@@ -14,8 +14,10 @@
  */
 package net.rptools.maptool.client.script.javascript;
 
+import com.google.common.base.Predicates;
 import java.util.*;
 import java.util.List;
+import java.util.function.Predicate;
 import javax.script.*;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.functions.MacroJavaScriptBridge;
@@ -119,16 +121,19 @@ public class JSScriptEngine {
     return c;
   }
 
-  public void removeContext(String name, boolean trusted) throws ParserException {
-    if (trusted) {
-      contexts.remove(name);
-      return;
-    }
+  public boolean removeContext(String name) {
+    return removeContextIf(name, Predicates.alwaysTrue());
+  }
+
+  public boolean removeContextIf(String name, Predicate<JSContext> predicate) {
+    // TODO Would be nice to have an atomic version of this.
+    // TODO Silently succeed if the context does not exist.
     JSContext c = contexts.get(name);
-    if (c == null || c.trusted()) {
-      throw new ParserException(I18N.getText("macro.function.general.noPermJS", name));
+    if (predicate.test(c)) {
+      contexts.remove(name);
+      return true;
     }
-    contexts.remove(name);
+    return false;
   }
 
   public void resetContexts() {

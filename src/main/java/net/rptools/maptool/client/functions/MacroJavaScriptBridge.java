@@ -98,8 +98,18 @@ public class MacroJavaScriptBridge extends AbstractFunction implements DefinesSp
         throw new ParameterException(String.format(NOT_ENOUGH_PARAM, functionName, 2, args.size()));
       }
       contextName = (String) args.remove(0);
-      JSScriptEngine.getMainEngine()
-          .removeContext(contextName, MapTool.getParser().isMacroTrusted());
+
+      var removed =
+          JSScriptEngine.getMainEngine()
+              .removeContextIf(
+                  contextName,
+                  context ->
+                      MapTool.getParser().isMacroTrusted()
+                          || (context != null && !context.trusted()));
+      if (!removed) {
+        throw new ParserException(I18N.getText("macro.function.general.noPermJS", contextName));
+      }
+
       return "removed";
     }
     if ("js.createNS".equalsIgnoreCase(functionName)) {
