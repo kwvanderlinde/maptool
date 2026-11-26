@@ -14,7 +14,6 @@
  */
 package net.rptools.maptool.client.script.javascript;
 
-import com.oracle.truffle.js.scriptengine.*;
 import java.util.*;
 import java.util.List;
 import javax.script.*;
@@ -26,7 +25,6 @@ import net.rptools.parser.ParserException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.graalvm.polyglot.*;
-import org.graalvm.polyglot.HostAccess.*;
 import org.reflections.Reflections;
 
 public class JSScriptEngine {
@@ -185,12 +183,6 @@ public class JSScriptEngine {
       jc = registerContext(contextName, trusted, trusted);
     }
 
-    return evalScript(jc, script, trusted);
-  }
-
-  public Value evalAddOnScript(String contextName, String script, boolean trusted)
-      throws ScriptException, ParserException {
-    JSContext jc = addOnContexts.get(contextName);
     return evalScript(jc, script, trusted);
   }
 

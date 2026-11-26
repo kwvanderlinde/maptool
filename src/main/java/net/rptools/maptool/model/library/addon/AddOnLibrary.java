@@ -36,6 +36,7 @@ import net.rptools.maptool.client.MapToolMacroContext;
 import net.rptools.maptool.client.MapToolVariableResolver;
 import net.rptools.maptool.client.macro.MacroManager;
 import net.rptools.maptool.client.macro.MacroManager.MacroDetails;
+import net.rptools.maptool.client.script.javascript.JSContext;
 import net.rptools.maptool.client.script.javascript.JSScriptEngine;
 import net.rptools.maptool.language.I18N;
 import net.rptools.maptool.model.Asset;
@@ -488,12 +489,12 @@ public class AddOnLibrary implements Library {
     var jsEngine = JSScriptEngine.getInstance();
     jsEngine.removeAddOnContext(jsContextName);
     // Then create a new JavaScript context for the add-on library
-    jsEngine.registerAddOnContext(jsContextName);
+    var context = jsEngine.registerAddOnContext(jsContextName);
 
     var needsInit = data.needsInitialization().join();
     if (needsInit) {
       if (jsEventNameMap.containsKey(FIRST_INIT_EVENT)) {
-        runJS(jsEventNameMap.get(FIRST_INIT_EVENT));
+        runJS(context, jsEventNameMap.get(FIRST_INIT_EVENT));
       }
       if (mtScriptEventNameMap.containsKey(FIRST_INIT_EVENT)) {
         callMTSFunction(mtScriptEventNameMap.get(FIRST_INIT_EVENT)).join();
@@ -502,7 +503,7 @@ public class AddOnLibrary implements Library {
     }
 
     if (jsEventNameMap.containsKey(INIT_EVENT)) {
-      runJS(jsEventNameMap.get(INIT_EVENT));
+      runJS(context, jsEventNameMap.get(INIT_EVENT));
     }
     if (mtScriptEventNameMap.containsKey(INIT_EVENT)) {
       callMTSFunction(mtScriptEventNameMap.get(INIT_EVENT)).join();
@@ -546,11 +547,10 @@ public class AddOnLibrary implements Library {
    *
    * @param file the JavaScript file withing the file to run.
    */
-  private void runJS(String file) {
+  private void runJS(JSContext context, String file) {
     var script = readFile(file);
     try {
-      JSScriptEngine.getInstance()
-          .evalScript(jsContextName, script.asAsset().getDataAsString(), true);
+      JSScriptEngine.getInstance().evalScript(context, script.asAsset().getDataAsString(), true);
     } catch (ParserException | ScriptException e) {
       throw new RuntimeException(e);
     }
