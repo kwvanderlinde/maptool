@@ -45,12 +45,12 @@ public class BuiltInLibraryData implements LibraryData {
   }
 
   @Override
-  public CompletableFuture<DataValue> getStaticData(String path) {
-    return CompletableFuture.completedFuture(DataValueFactory.undefined(path));
+  public DataValue getStaticData(String path) {
+    return DataValueFactory.undefined(path);
   }
 
   @Override
-  public CompletableFuture<DataValue> getPublicStaticData(String path) {
-    return CompletableFuture.completedFuture(DataValueFactory.undefined(path));
+  public DataValue getPublicStaticData(String path) {
+    return DataValueFactory.undefined(path);
   }
 }

@@ -264,13 +264,11 @@ class LibraryToken implements Library {
 
   @Override
   public CompletableFuture<List<String>> getAllFiles() {
-    return CompletableFuture.supplyAsync(
-        () -> {
-          return Stream.concat(
-                  macroNames.stream().map(name -> "macro/" + name),
-                  propertyNames.stream().map(name -> "property/" + name))
-              .toList();
-        });
+    return CompletableFuture.completedFuture(
+        Stream.concat(
+                macroNames.stream().map(name -> "macro/" + name),
+                propertyNames.stream().map(name -> "property/" + name))
+            .toList());
   }
 
   @Override

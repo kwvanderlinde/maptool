@@ -157,9 +157,9 @@ public class DataFunctions extends AbstractFunction {
                   () -> new ParserException(I18N.getText("library.error.notFound", namespace)));
           DataValue dataValue;
           if (lib.canMTScriptAccessPrivate(context)) {
-            dataValue = lib.getLibraryData().getStaticData(path).join();
+            dataValue = lib.getLibraryData().getStaticData(path);
           } else {
-            dataValue = lib.getLibraryData().getPublicStaticData(path).join();
+            dataValue = lib.getLibraryData().getPublicStaticData(path);
           }
           return new MTScriptDataConversion().convertToMTScriptDereferenceType(dataValue);
         }

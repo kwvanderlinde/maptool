@@ -70,14 +70,14 @@ public class AddOnLibraryData implements LibraryData {
   }
 
   @Override
-  public CompletableFuture<DataValue> getStaticData(String path) {
+  public DataValue getStaticData(String path) {
     return addOnLibrary.readFile(path);
   }
 
   @Override
-  public CompletableFuture<DataValue> getPublicStaticData(String path) {
+  public DataValue getPublicStaticData(String path) {
     if (!addOnLibrary.allowsUriAccess() || !path.replaceFirst("^/", "").startsWith("public/")) {
-      return CompletableFuture.completedFuture(DataValueFactory.undefined(path));
+      return DataValueFactory.undefined(path);
     }
 
     return getStaticData(path);

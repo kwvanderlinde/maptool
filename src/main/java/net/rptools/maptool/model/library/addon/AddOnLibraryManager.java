@@ -182,10 +182,9 @@ public class AddOnLibraryManager {
    * @return the list of tokens that have handlers for the specified legacy token events.
    */
   public CompletableFuture<Set<Library>> getLegacyEventTargets(String eventName) {
-    return CompletableFuture.supplyAsync(
-        () ->
-            namespaceLibraryMap.values().stream()
-                .filter(l -> l.getLegacyEvents().contains(eventName))
-                .collect(Collectors.toSet()));
+    return CompletableFuture.completedFuture(
+        namespaceLibraryMap.values().stream()
+            .filter(l -> l.getLegacyEvents().contains(eventName))
+            .collect(Collectors.toSet()));
   }
 }

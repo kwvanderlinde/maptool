@@ -50,7 +50,7 @@ public interface LibraryData {
    * @param path the path of the static data to get.
    * @return the static data value of the specified path.
    */
-  CompletableFuture<DataValue> getStaticData(String path);
+  DataValue getStaticData(String path);
 
   /**
    * Returns the public static data value of the specified path.
@@ -58,5 +58,5 @@ public interface LibraryData {
    * @param path the path of the public static data to get.
    * @return the public static data value of the specified path.
    */
-  CompletableFuture<DataValue> getPublicStaticData(String path);
+  DataValue getPublicStaticData(String path);
 }

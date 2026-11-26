@@ -496,7 +496,7 @@ public class AddOnLibrary implements Library {
     var needsInit = data.needsInitialization().join();
     if (needsInit) {
       if (jsEventNameMap.containsKey(FIRST_INIT_EVENT)) {
-        runJS(jsEventNameMap.get(FIRST_INIT_EVENT)).join();
+        runJS(jsEventNameMap.get(FIRST_INIT_EVENT));
       }
       if (mtScriptEventNameMap.containsKey(FIRST_INIT_EVENT)) {
         callMTSFunction(mtScriptEventNameMap.get(FIRST_INIT_EVENT)).join();
@@ -505,7 +505,7 @@ public class AddOnLibrary implements Library {
     }
 
     if (jsEventNameMap.containsKey(INIT_EVENT)) {
-      runJS(jsEventNameMap.get(INIT_EVENT)).join();
+      runJS(jsEventNameMap.get(INIT_EVENT));
     }
     if (mtScriptEventNameMap.containsKey(INIT_EVENT)) {
       callMTSFunction(mtScriptEventNameMap.get(INIT_EVENT)).join();
@@ -549,29 +549,23 @@ public class AddOnLibrary implements Library {
    *
    * @param file the JavaScript file withing the file to run.
    */
-  private CompletableFuture<Void> runJS(String file) {
-    return readFile(file)
-        .thenAccept(
-            script -> {
-              try {
-                JSScriptEngine.getJSScriptEngine()
-                    .evalScript(jsContextName, script.asAsset().getDataAsString(), true);
-              } catch (ParserException | ScriptException e) {
-                throw new RuntimeException(e);
-              }
-            });
+  private void runJS(String file) {
+    var script = readFile(file);
+    try {
+      JSScriptEngine.getJSScriptEngine()
+          .evalScript(jsContextName, script.asAsset().getDataAsString(), true);
+    } catch (ParserException | ScriptException e) {
+      throw new RuntimeException(e);
+    }
   }
 
-  CompletableFuture<DataValue> readFile(String path) {
-    return CompletableFuture.supplyAsync(
-        () -> {
-          String filePath = path.replaceFirst("^/", "");
-          var val = pathAssetMap.get(filePath);
-          if (val == null) {
-            return DataValueFactory.undefined(path);
-          }
-          Asset asset = AssetManager.getAsset(val.getValue0());
-          return DataValueFactory.fromAsset(filePath, asset);
-        });
+  DataValue readFile(String path) {
+    String filePath = path.replaceFirst("^/", "");
+    var val = pathAssetMap.get(filePath);
+    if (val == null) {
+      return DataValueFactory.undefined(path);
+    }
+    Asset asset = AssetManager.getAsset(val.getValue0());
+    return DataValueFactory.fromAsset(filePath, asset);
   }
 }
