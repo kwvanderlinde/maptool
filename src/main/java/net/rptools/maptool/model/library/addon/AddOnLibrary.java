@@ -380,10 +380,7 @@ public class AddOnLibrary implements Library {
   @Override
   public void cleanup() {
     // Remove any existing JavaScript context if it exists
-    var jsEngine = JSScriptEngine.getInstance();
-    if (jsEngine.hasAddOnContext(jsContextName)) {
-      jsEngine.removeAddOnContext(jsContextName);
-    }
+    JSScriptEngine.getInstance().removeAddOnContext(jsContextName);
   }
 
   @Override
@@ -489,9 +486,7 @@ public class AddOnLibrary implements Library {
 
     // First remove any existing JavaScript context if it exists
     var jsEngine = JSScriptEngine.getInstance();
-    if (jsEngine.hasAddOnContext(jsContextName)) {
-      jsEngine.removeAddOnContext(jsContextName);
-    }
+    jsEngine.removeAddOnContext(jsContextName);
     // Then create a new JavaScript context for the add-on library
     jsEngine.registerAddOnContext(jsContextName);
 

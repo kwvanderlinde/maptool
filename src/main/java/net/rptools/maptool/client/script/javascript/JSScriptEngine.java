@@ -132,7 +132,6 @@ public class JSScriptEngine {
       throw new ParserException(I18N.getText("macro.function.general.noPermJS", name));
     }
     contexts.remove(name);
-    return;
   }
 
   public void resetContexts() {
@@ -149,10 +148,6 @@ public class JSScriptEngine {
 
   public void removeAddOnContext(String name) {
     addOnContexts.remove(name);
-  }
-
-  public boolean hasAddOnContext(String name) {
-    return addOnContexts.containsKey(name);
   }
 
   public Set<JSContext> getContexts() {
