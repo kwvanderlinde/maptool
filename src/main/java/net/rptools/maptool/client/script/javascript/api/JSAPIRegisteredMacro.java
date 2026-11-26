@@ -31,7 +31,7 @@ public class JSAPIRegisteredMacro {
   public JSAPIRegisteredMacro(String macroname, Function callable) {
     this.name = macroname;
     this.callable = callable;
-    this.context = JSScriptEngine.getCurrentContext();
+    this.context = JSScriptEngine.getInstance().getCurrentContext();
     JSMacro.registerMacro("js." + macroname, this);
   }
 }

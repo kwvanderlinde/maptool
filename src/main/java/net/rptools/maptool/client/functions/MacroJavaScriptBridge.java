@@ -37,7 +37,6 @@ import net.rptools.parser.ParserException;
 import net.rptools.parser.VariableResolver;
 import net.rptools.parser.function.*;
 import org.graalvm.polyglot.*;
-import org.graalvm.polyglot.proxy.*;
 
 public class MacroJavaScriptBridge extends AbstractFunction implements DefinesSpecialVariables {
   private static final String NOT_ENOUGH_PARAM =
@@ -75,7 +74,7 @@ public class MacroJavaScriptBridge extends AbstractFunction implements DefinesSp
 
     if ("js.listNS".equalsIgnoreCase(functionName)) {
       JsonArray array = new JsonArray();
-      JSScriptEngine.getContexts().stream()
+      JSScriptEngine.getInstance().getContexts().stream()
           .sorted(Comparator.comparing(JSContext::name))
           .forEach(
               c -> {
@@ -99,7 +98,7 @@ public class MacroJavaScriptBridge extends AbstractFunction implements DefinesSp
         throw new ParameterException(String.format(NOT_ENOUGH_PARAM, functionName, 2, args.size()));
       }
       contextName = (String) args.remove(0);
-      JSScriptEngine.removeContext(contextName, MapTool.getParser().isMacroTrusted());
+      JSScriptEngine.getInstance().removeContext(contextName, MapTool.getParser().isMacroTrusted());
       return "removed";
     }
     if ("js.createNS".equalsIgnoreCase(functionName)) {
@@ -111,8 +110,8 @@ public class MacroJavaScriptBridge extends AbstractFunction implements DefinesSp
       if (args.size() > 0) {
         makeTrusted = !BigDecimal.ZERO.equals(args.remove(0));
       }
-      JSScriptEngine.registerContext(
-          contextName, MapTool.getParser().isMacroTrusted(), makeTrusted);
+      JSScriptEngine.getInstance()
+          .registerContext(contextName, MapTool.getParser().isMacroTrusted(), makeTrusted);
       return "created";
     }
 
@@ -157,8 +156,7 @@ public class MacroJavaScriptBridge extends AbstractFunction implements DefinesSp
 
     callingArgsStack.push(scriptArgs);
     try {
-      return JavaScriptToMTScriptType(
-          JSScriptEngine.getJSScriptEngine().evalScript(contextName, script));
+      return JavaScriptToMTScriptType(JSScriptEngine.getInstance().evalScript(contextName, script));
     } catch (PolyglotException e) {
       throw toParserException(e);
     } catch (ScriptException e) {

@@ -30,29 +30,17 @@ import org.graalvm.polyglot.HostAccess.*;
 import org.reflections.Reflections;
 
 public class JSScriptEngine {
-
-  private static Context.Builder cbuilder;
-  private static final JSScriptEngine jsScriptEngine = new JSScriptEngine();
   private static final Logger log = LogManager.getLogger(JSScriptEngine.class);
-  private static final Map<String, JSContext> contexts = new HashMap<String, JSContext>();
-  private static final Map<String, JSContext> addOnContexts = new HashMap<String, JSContext>();
-  private static final Stack<JSContext> contextStack = new Stack<>();
+  private static final JSScriptEngine jsScriptEngine = new JSScriptEngine();
 
-  public static JSContext getCurrentContext() {
-    return contextStack.peek();
+  public static JSScriptEngine getInstance() {
+    return jsScriptEngine;
   }
 
-  public static boolean inTrustedContext() {
-    if (JSScriptEngine.contextStack.empty()) {
-      return false;
-    }
-    return JSScriptEngine.contextStack.peek().trusted();
-  }
-
-  private void registerAPIObject(Value bindings, MapToolJSAPIInterface apiObj) {
-    MapToolJSAPIDefinition def = apiObj.getClass().getAnnotation(MapToolJSAPIDefinition.class);
-    bindings.putMember(def.javaScriptVariableName(), apiObj);
-  }
+  private final Context.Builder cbuilder;
+  private final Map<String, JSContext> contexts = new HashMap<>();
+  private final Map<String, JSContext> addOnContexts = new HashMap<>();
+  private final Stack<JSContext> contextStack = new Stack<>();
 
   private JSScriptEngine() {
     HostAccess.Builder habuilder = HostAccess.newBuilder();
@@ -70,7 +58,23 @@ public class JSScriptEngine {
     cbuilder.option("js.ecmascript-version", "2021");
   }
 
-  public static JSContext registerContext(String name, boolean trusted, boolean makeTrusted)
+  public JSContext getCurrentContext() {
+    return contextStack.peek();
+  }
+
+  public boolean inTrustedContext() {
+    if (contextStack.empty()) {
+      return false;
+    }
+    return contextStack.peek().trusted();
+  }
+
+  private void registerAPIObject(Value bindings, MapToolJSAPIInterface apiObj) {
+    MapToolJSAPIDefinition def = apiObj.getClass().getAnnotation(MapToolJSAPIDefinition.class);
+    bindings.putMember(def.javaScriptVariableName(), apiObj);
+  }
+
+  public JSContext registerContext(String name, boolean trusted, boolean makeTrusted)
       throws ParserException {
     if (!trusted) {
       JSContext jc = contexts.get(name);
@@ -81,12 +85,12 @@ public class JSScriptEngine {
     if (!trusted && makeTrusted) {
       throw new ParserException("Cannot make a trusted JS context from an untrusted context");
     }
-    JSContext c = new JSContext(makeTrusted, jsScriptEngine.makeContext(), name);
+    JSContext c = new JSContext(makeTrusted, makeContext(), name);
     contexts.put(name, c);
     return c;
   }
 
-  public static void removeContext(String name, boolean trusted) throws ParserException {
+  public void removeContext(String name, boolean trusted) throws ParserException {
     if (trusted) {
       contexts.remove(name);
       return;
@@ -99,31 +103,27 @@ public class JSScriptEngine {
     return;
   }
 
-  public static void resetContexts() {
+  public void resetContexts() {
     JSMacro.clear();
     contexts.clear();
     addOnContexts.clear();
   }
 
-  public static JSContext registerAddOnContext(String name) {
-    JSContext c = new JSContext(true, jsScriptEngine.makeContext(), name);
+  public JSContext registerAddOnContext(String name) {
+    JSContext c = new JSContext(true, makeContext(), name);
     addOnContexts.put(name, c);
     return c;
   }
 
-  public static void removeAddOnContext(String name) {
+  public void removeAddOnContext(String name) {
     addOnContexts.remove(name);
   }
 
-  public static boolean hasContext(String name) {
-    return contexts.containsKey(name);
-  }
-
-  public static boolean hasAddOnContext(String name) {
+  public boolean hasAddOnContext(String name) {
     return addOnContexts.containsKey(name);
   }
 
-  public static Set<JSContext> getContexts() {
+  public Set<JSContext> getContexts() {
     return new HashSet<>(contexts.values());
   }
 
@@ -146,10 +146,6 @@ public class JSScriptEngine {
       }
     }
     return context;
-  }
-
-  public static JSScriptEngine getJSScriptEngine() {
-    return jsScriptEngine;
   }
 
   public Value evalScript(String contextName, String script)
