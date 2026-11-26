@@ -31,10 +31,46 @@ import org.reflections.Reflections;
 
 public class JSScriptEngine {
   private static final Logger log = LogManager.getLogger(JSScriptEngine.class);
+  private static List<ApiDefinition> apiDefinitions = null;
   private static final JSScriptEngine jsScriptEngine = new JSScriptEngine();
 
   public static JSScriptEngine getInstance() {
     return jsScriptEngine;
+  }
+
+  private static List<ApiDefinition> getApiDefinitions() {
+    if (apiDefinitions == null) {
+      Reflections reflections = new Reflections("net.rptools.maptool.client.script.javascript.api");
+      Set<Class<?>> annotated = reflections.getTypesAnnotatedWith(MapToolJSAPIDefinition.class);
+
+      var bindings = new ArrayList<ApiDefinition>();
+      for (Class<?> apiClass : annotated) {
+        Class<? extends MapToolJSAPIInterface> casted;
+        try {
+          casted = apiClass.asSubclass(MapToolJSAPIInterface.class);
+        } catch (ClassCastException e) {
+          log.error(
+              "Could not load API class {} since it does not implement {}",
+              apiClass,
+              MapToolJSAPIInterface.class);
+          continue;
+        }
+
+        var annotation = casted.getAnnotation(MapToolJSAPIDefinition.class);
+        if (annotation == null) {
+          log.error(
+              "Unexpected condition: class {} does not have annotation {}",
+              casted,
+              MapToolJSAPIDefinition.class);
+          continue;
+        }
+
+        bindings.add(new ApiDefinition(annotation, casted));
+      }
+
+      apiDefinitions = List.copyOf(bindings);
+    }
+    return apiDefinitions;
   }
 
   private final Context.Builder cbuilder;
@@ -67,11 +103,6 @@ public class JSScriptEngine {
       return false;
     }
     return contextStack.peek().trusted();
-  }
-
-  private void registerAPIObject(Value bindings, MapToolJSAPIInterface apiObj) {
-    MapToolJSAPIDefinition def = apiObj.getClass().getAnnotation(MapToolJSAPIDefinition.class);
-    bindings.putMember(def.javaScriptVariableName(), apiObj);
   }
 
   public JSContext registerContext(String name, boolean trusted, boolean makeTrusted)
@@ -127,24 +158,19 @@ public class JSScriptEngine {
     return new HashSet<>(contexts.values());
   }
 
-  public Context makeContext() {
+  private Context makeContext() {
     Context context = cbuilder.build();
     Value bindings = context.getBindings("js");
 
-    Reflections reflections = new Reflections("net.rptools.maptool.client.script.javascript.api");
-    Set<Class<?>> annotated = reflections.getTypesAnnotatedWith(MapToolJSAPIDefinition.class);
-
-    for (Class<?> apiClass : annotated) {
+    for (var definition : getApiDefinitions()) {
       try {
-        if (MapToolJSAPIInterface.class.isAssignableFrom(apiClass)) {
-          registerAPIObject(bindings, (MapToolJSAPIInterface) apiClass.newInstance());
-        } else {
-          log.error("Could not add API object " + apiClass.getName() + " (missing interface)");
-        }
+        MapToolJSAPIInterface apiObject = definition.type().getDeclaredConstructor().newInstance();
+        bindings.putMember(definition.annotation().javaScriptVariableName(), apiObject);
       } catch (Exception e) {
-        log.error("Could not add API object " + apiClass.getName(), e);
+        log.error("Could not add API object {}", definition.type().getName(), e);
       }
     }
+
     return context;
   }
 
@@ -215,4 +241,7 @@ public class JSScriptEngine {
       contextStack.pop();
     }
   }
+
+  private record ApiDefinition(
+      MapToolJSAPIDefinition annotation, Class<? extends MapToolJSAPIInterface> type) {}
 }
