@@ -150,8 +150,8 @@ public class JSScriptEngine {
     addOnContexts.remove(name);
   }
 
-  public Set<JSContext> getContexts() {
-    return new HashSet<>(contexts.values());
+  public Collection<JSContext> getContexts() {
+    return List.copyOf(contexts.values());
   }
 
   private JSContext makeContext(String name, boolean trusted) {
