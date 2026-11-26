@@ -236,7 +236,7 @@ public class JSScriptEngine {
     JSContext jc = new JSContext(MapTool.getParser().isMacroTrusted(), c, "<anonymous>");
     contextStack.push(jc);
     try {
-      return makeContext().eval("js", wrapped.toString());
+      return c.eval("js", wrapped.toString());
     } finally {
       contextStack.pop();
     }
