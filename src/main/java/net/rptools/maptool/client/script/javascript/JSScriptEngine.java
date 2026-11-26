@@ -113,9 +113,6 @@ public class JSScriptEngine {
         throw new ParserException("Context " + name + " already exists");
       }
     }
-    if (!trusted && makeTrusted) {
-      throw new ParserException("Cannot make a trusted JS context from an untrusted context");
-    }
 
     JSContext c = makeContext(name, makeTrusted);
     contexts.put(name, c);
