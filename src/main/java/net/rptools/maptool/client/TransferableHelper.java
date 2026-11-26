@@ -45,6 +45,7 @@ import net.rptools.maptool.model.Asset.Type;
 import net.rptools.maptool.model.AssetManager;
 import net.rptools.maptool.model.Token;
 import net.rptools.maptool.model.library.LibraryManager;
+import net.rptools.maptool.model.library.addon.AddOnLibrary;
 import net.rptools.maptool.model.library.addon.AddOnLibraryImporter;
 import net.rptools.maptool.util.PersistenceUtil;
 import org.apache.logging.log4j.LogManager;
@@ -489,7 +490,9 @@ public class TransferableHelper extends TransferHandler {
     if (configureTokens != null) {
       configureTokens = null;
     }
-    if (log.isInfoEnabled()) whichOnesWork(t);
+    if (log.isInfoEnabled()) {
+      whichOnesWork(t);
+    }
 
     List<Object> assets = getAsset(t);
     if (assets != null) {
@@ -499,20 +502,32 @@ public class TransferableHelper extends TransferHandler {
         if (working instanceof Asset asset) {
           if (asset.getType() == Type.MTLIB) {
             if (MapTool.getPlayer().isGM()) {
+              AddOnLibrary addOnLibrary;
               try {
-                var addOnLibrary = new AddOnLibraryImporter().importFromAsset(asset);
+                addOnLibrary = new AddOnLibraryImporter().importFromAsset(asset);
                 new LibraryManager().reregisterAddOnLibrary(addOnLibrary);
-                SwingUtilities.invokeLater(
-                    () -> {
-                      MapTool.showInformation(
-                          I18N.getText("library.imported", addOnLibrary.getNamespace().join()));
-                    });
               } catch (IOException e) {
                 SwingUtilities.invokeLater(
                     () -> {
                       MapTool.showError(I18N.getText("library.import.error", asset.getName()), e);
                     });
+                continue;
               }
+              try {
+                new LibraryManager().reregisterAddOnLibrary(addOnLibrary);
+              } catch (Exception e) {
+                SwingUtilities.invokeLater(
+                    () -> {
+                      MapTool.showError(I18N.getText("library.import.error", asset.getName()), e);
+                    });
+                continue;
+              }
+
+              SwingUtilities.invokeLater(
+                  () -> {
+                    MapTool.showInformation(
+                        I18N.getText("library.imported", addOnLibrary.getNamespace()));
+                  });
             } else {
               MapTool.showError(I18N.getText("library.import.error.notGM"));
             }
