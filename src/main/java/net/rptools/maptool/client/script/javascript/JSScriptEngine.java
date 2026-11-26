@@ -116,7 +116,8 @@ public class JSScriptEngine {
     if (!trusted && makeTrusted) {
       throw new ParserException("Cannot make a trusted JS context from an untrusted context");
     }
-    JSContext c = new JSContext(makeTrusted, makeContext(), name);
+
+    JSContext c = makeContext(name, makeTrusted);
     contexts.put(name, c);
     return c;
   }
@@ -141,7 +142,7 @@ public class JSScriptEngine {
   }
 
   public JSContext registerAddOnContext(String name) {
-    JSContext c = new JSContext(true, makeContext(), name);
+    JSContext c = makeContext(name, true);
     addOnContexts.put(name, c);
     return c;
   }
@@ -158,9 +159,9 @@ public class JSScriptEngine {
     return new HashSet<>(contexts.values());
   }
 
-  private Context makeContext() {
-    Context context = cbuilder.build();
-    Value bindings = context.getBindings("js");
+  private JSContext makeContext(String name, boolean trusted) {
+    Context graalContext = cbuilder.build();
+    Value bindings = graalContext.getBindings("js");
 
     for (var definition : getApiDefinitions()) {
       try {
@@ -171,7 +172,7 @@ public class JSScriptEngine {
       }
     }
 
-    return context;
+    return new JSContext(trusted, graalContext, name);
   }
 
   public Value evalScript(String contextName, String script)
@@ -232,11 +233,10 @@ public class JSScriptEngine {
         .append("(function() { var args = MTScript.getMTScriptCallingArgs(); ")
         .append(script)
         .append("})();");
-    Context c = makeContext();
-    JSContext jc = new JSContext(MapTool.getParser().isMacroTrusted(), c, "<anonymous>");
+    JSContext jc = makeContext("<anonymous>", MapTool.getParser().isMacroTrusted());
     contextStack.push(jc);
     try {
-      return c.eval("js", wrapped.toString());
+      return jc.context().eval("js", wrapped.toString());
     } finally {
       contextStack.pop();
     }
