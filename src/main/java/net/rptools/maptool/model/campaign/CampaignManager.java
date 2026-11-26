@@ -17,6 +17,7 @@ package net.rptools.maptool.model.campaign;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.functions.UserDefinedMacroFunctions;
 import net.rptools.maptool.client.macro.MacroManager;
+import net.rptools.maptool.client.script.javascript.JSMacro;
 import net.rptools.maptool.client.script.javascript.JSScriptEngine;
 import net.rptools.maptool.model.Campaign;
 import net.rptools.maptool.model.gamedata.DataStoreManager;
@@ -51,7 +52,10 @@ public class CampaignManager {
     // Campaign state is cleared before the UI that displays it. If a panel throws, the
     // libraries, script contexts and data stores of the outgoing campaign have already been
     // released rather than leaking into the campaign about to be loaded.
-    JSScriptEngine.getInstance().resetContexts();
+    // TODO Move the macros into JSScriptEngine.
+    JSMacro.clear();
+    JSScriptEngine.getMainEngine().resetContexts();
+    JSScriptEngine.getAddOnEngine().resetContexts();
     new LibraryManager().deregisterAllLibraries();
     new DataStoreManager().getDefaultDataStoreForRemoteUpdate().clear().join();
     UserDefinedMacroFunctions.getInstance().clearUserDefinedFunctions();

@@ -381,7 +381,7 @@ public class AddOnLibrary implements Library {
   @Override
   public void cleanup() {
     // Remove any existing JavaScript context if it exists
-    JSScriptEngine.getInstance().removeAddOnContext(jsContextName);
+    JSScriptEngine.getMainEngine().removeContext(jsContextName, true);
   }
 
   @Override
@@ -486,10 +486,10 @@ public class AddOnLibrary implements Library {
     data.initialize().join();
 
     // First remove any existing JavaScript context if it exists
-    var jsEngine = JSScriptEngine.getInstance();
-    jsEngine.removeAddOnContext(jsContextName);
+    var jsEngine = JSScriptEngine.getAddOnEngine();
+    jsEngine.removeContext(jsContextName, true);
     // Then create a new JavaScript context for the add-on library
-    var context = jsEngine.registerAddOnContext(jsContextName);
+    var context = jsEngine.registerContext(jsContextName, true, true);
 
     var needsInit = data.needsInitialization().join();
     if (needsInit) {
@@ -550,7 +550,7 @@ public class AddOnLibrary implements Library {
   private void runJS(JSContext context, String file) {
     var script = readFile(file);
     try {
-      JSScriptEngine.getInstance().evalScript(context, script.asAsset().getDataAsString(), true);
+      JSScriptEngine.getMainEngine().evalScript(context, script.asAsset().getDataAsString(), true);
     } catch (ParserException | ScriptException e) {
       throw new RuntimeException(e);
     }

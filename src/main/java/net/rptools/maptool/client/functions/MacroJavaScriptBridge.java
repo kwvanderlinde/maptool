@@ -74,7 +74,7 @@ public class MacroJavaScriptBridge extends AbstractFunction implements DefinesSp
 
     if ("js.listNS".equalsIgnoreCase(functionName)) {
       JsonArray array = new JsonArray();
-      JSScriptEngine.getInstance().getContexts().stream()
+      JSScriptEngine.getMainEngine().getContexts().stream()
           .sorted(Comparator.comparing(JSContext::name))
           .forEach(
               c -> {
@@ -98,7 +98,8 @@ public class MacroJavaScriptBridge extends AbstractFunction implements DefinesSp
         throw new ParameterException(String.format(NOT_ENOUGH_PARAM, functionName, 2, args.size()));
       }
       contextName = (String) args.remove(0);
-      JSScriptEngine.getInstance().removeContext(contextName, MapTool.getParser().isMacroTrusted());
+      JSScriptEngine.getMainEngine()
+          .removeContext(contextName, MapTool.getParser().isMacroTrusted());
       return "removed";
     }
     if ("js.createNS".equalsIgnoreCase(functionName)) {
@@ -110,7 +111,7 @@ public class MacroJavaScriptBridge extends AbstractFunction implements DefinesSp
       if (args.size() > 0) {
         makeTrusted = !BigDecimal.ZERO.equals(args.remove(0));
       }
-      JSScriptEngine.getInstance()
+      JSScriptEngine.getMainEngine()
           .registerContext(contextName, MapTool.getParser().isMacroTrusted(), makeTrusted);
       return "created";
     }
@@ -156,7 +157,8 @@ public class MacroJavaScriptBridge extends AbstractFunction implements DefinesSp
 
     callingArgsStack.push(scriptArgs);
     try {
-      return JavaScriptToMTScriptType(JSScriptEngine.getInstance().evalScript(contextName, script));
+      return JavaScriptToMTScriptType(
+          JSScriptEngine.getMainEngine().evalScript(contextName, script));
     } catch (PolyglotException e) {
       throw toParserException(e);
     } catch (ScriptException e) {

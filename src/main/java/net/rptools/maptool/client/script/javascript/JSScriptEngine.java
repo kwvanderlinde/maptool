@@ -30,10 +30,16 @@ import org.reflections.Reflections;
 public class JSScriptEngine {
   private static final Logger log = LogManager.getLogger(JSScriptEngine.class);
   private static List<ApiDefinition> apiDefinitions = null;
-  private static final JSScriptEngine jsScriptEngine = new JSScriptEngine();
 
-  public static JSScriptEngine getInstance() {
-    return jsScriptEngine;
+  private static final JSScriptEngine mainEngine = new JSScriptEngine();
+  private static final JSScriptEngine addOnEngine = new JSScriptEngine();
+
+  public static JSScriptEngine getMainEngine() {
+    return mainEngine;
+  }
+
+  public static JSScriptEngine getAddOnEngine() {
+    return addOnEngine;
   }
 
   private static List<ApiDefinition> getApiDefinitions() {
@@ -73,7 +79,6 @@ public class JSScriptEngine {
 
   private final HostAccess hostAccess;
   private final Map<String, JSContext> contexts = new HashMap<>();
-  private final Map<String, JSContext> addOnContexts = new HashMap<>();
   private final Stack<JSContext> contextStack = new Stack<>();
 
   private JSScriptEngine() {
@@ -130,19 +135,7 @@ public class JSScriptEngine {
   }
 
   public void resetContexts() {
-    JSMacro.clear();
     contexts.clear();
-    addOnContexts.clear();
-  }
-
-  public JSContext registerAddOnContext(String name) {
-    JSContext c = makeContext(name, true);
-    addOnContexts.put(name, c);
-    return c;
-  }
-
-  public void removeAddOnContext(String name) {
-    addOnContexts.remove(name);
   }
 
   public Collection<JSContext> getContexts() {
