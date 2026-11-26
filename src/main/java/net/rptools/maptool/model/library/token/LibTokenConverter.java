@@ -58,7 +58,7 @@ public class LibTokenConverter {
     libraryBuilder.setDescription(libraryToken.getDescription().join());
     libraryBuilder.setShortDescription(libraryToken.getShortDescription().join());
     libraryBuilder.setNamespace(libraryToken.getNamespace().join());
-    libraryBuilder.setAllowsUriAccess(token.getAllowURIAccess());
+    libraryBuilder.setAllowsUriAccess(libraryToken.allowsUriAccess().join());
 
     Path contentPath = directory.resolve(AddOnLibraryImporter.CONTENT_DIRECTORY);
     Path libraryJsonPath = directory.resolve(AddOnLibraryImporter.LIBRARY_INFO_FILE);
