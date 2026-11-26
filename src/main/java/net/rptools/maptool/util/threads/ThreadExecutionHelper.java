@@ -18,16 +18,22 @@ import java.awt.EventQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
 import javafx.application.Platform;
 import javax.swing.SwingUtilities;
 
-/**
- * Utility for helping execute tasks on the correct thread.
- *
- * @param <T> the type that this execution helper will be dealing with..
- */
+/** Utility for helping execute tasks on the correct thread. */
 public final class ThreadExecutionHelper {
   private ThreadExecutionHelper() {}
+
+  public static final Executor SWING_EXECUTOR =
+      command -> {
+        if (SwingUtilities.isEventDispatchThread()) {
+          command.run();
+        } else {
+          SwingUtilities.invokeLater(command);
+        }
+      };
 
   /**
    * This method ensures tht the callable argument passed to it is executed on the swing thread. If
