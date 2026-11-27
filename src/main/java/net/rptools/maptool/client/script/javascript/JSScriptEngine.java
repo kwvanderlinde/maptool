@@ -18,6 +18,8 @@ import com.google.common.base.Predicates;
 import java.util.*;
 import java.util.List;
 import java.util.function.Predicate;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.script.*;
 import net.rptools.maptool.client.MapTool;
 import net.rptools.maptool.client.functions.MacroJavaScriptBridge;
@@ -107,12 +109,16 @@ public class JSScriptEngine {
     return contextStack.peek().trusted();
   }
 
-  public JSContext registerContext(String name, boolean trusted, boolean makeTrusted)
-      throws ParserException {
-    if (!trusted) {
+  public @Nonnull JSContext registerContext(String name, boolean makeTrusted) {
+    return registerContext(name, makeTrusted, true);
+  }
+
+  public @Nullable JSContext registerContext(
+      String name, boolean makeTrusted, boolean overwriteExisting) {
+    if (!overwriteExisting) {
       JSContext jc = contexts.get(name);
       if (jc != null) {
-        throw new ParserException("Context " + name + " already exists");
+        return null;
       }
     }
 
@@ -171,12 +177,14 @@ public class JSScriptEngine {
 
   public Value evalScript(String contextName, String script, boolean trusted)
       throws ScriptException, ParserException {
+    // TODO Seems to me we should split operations. First, find the matching context and let macro
+    //  code do trustedness checks. Then, using the returned context, run the script proper.
     if (contextName == null) {
       return evalAnonymous(script);
     }
     JSContext jc = contexts.get(contextName);
     if (jc == null) {
-      jc = registerContext(contextName, trusted, trusted);
+      jc = registerContext(contextName, trusted);
     }
 
     return evalScript(jc, script, trusted);

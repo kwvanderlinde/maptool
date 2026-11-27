@@ -489,7 +489,7 @@ public class AddOnLibrary implements Library {
     var jsEngine = JSScriptEngine.getAddOnEngine();
     jsEngine.removeContext(jsContextName);
     // Then create a new JavaScript context for the add-on library
-    var context = jsEngine.registerContext(jsContextName, true, true);
+    var context = jsEngine.registerContext(jsContextName, true);
 
     var needsInit = data.needsInitialization().join();
     if (needsInit) {

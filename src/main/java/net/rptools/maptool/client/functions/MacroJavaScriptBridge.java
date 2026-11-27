@@ -126,8 +126,13 @@ public class MacroJavaScriptBridge extends AbstractFunction implements DefinesSp
         throw new ParserException("Cannot make a trusted JS context from an untrusted context");
       }
 
-      JSScriptEngine.getMainEngine()
-          .registerContext(contextName, MapTool.getParser().isMacroTrusted(), makeTrusted);
+      var newContext =
+          JSScriptEngine.getMainEngine()
+              .registerContext(contextName, makeTrusted, MapTool.getParser().isMacroTrusted());
+      if (newContext == null) {
+        throw new ParserException("Context " + contextName + " already exists");
+      }
+
       return "created";
     }
 
